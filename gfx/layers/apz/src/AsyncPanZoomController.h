@@ -670,6 +670,23 @@ protected:
 
 
 
+
+  
+
+
+  void SetScrollOffset(const CSSPoint& aOffset);
+
+  
+
+
+
+  void ClampAndSetScrollOffset(const CSSPoint& aOffset);
+
+  
+
+
+
+
   void ScrollBy(const CSSPoint& aOffset);
 
   
@@ -677,6 +694,11 @@ protected:
 
 
   void ScrollByAndClamp(const CSSPoint& aOffset);
+
+  
+
+
+  void CopyScrollInfoFrom(const FrameMetrics& aFrameMetrics);
 
   
 
@@ -1185,6 +1207,7 @@ private:
   friend class GenericScrollAnimation;
   friend class WheelScrollAnimation;
   friend class KeyboardScrollAnimation;
+  friend class ZoomAnimation;
 
   friend class GenericOverscrollEffect;
   friend class WidgetOverscrollEffect;

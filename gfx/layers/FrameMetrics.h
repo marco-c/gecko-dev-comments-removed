@@ -481,6 +481,11 @@ public:
     return mViewport;
   }
 
+  CSSRect GetVisualViewport() const
+  {
+    return CSSRect(mScrollOffset, CalculateCompositedSizeInCssPixels());
+  }
+
   void SetExtraResolution(const ScreenToLayerScale2D& aExtraResolution)
   {
     mExtraResolution = aExtraResolution;
@@ -525,6 +530,13 @@ public:
   bool IsScrollInfoLayer() const {
     return mIsScrollInfoLayer;
   }
+
+  
+  
+  
+  
+  
+  void RecalculateViewportOffset();
 
 private:
   

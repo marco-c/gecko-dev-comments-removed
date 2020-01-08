@@ -78,7 +78,9 @@ static CSSPoint
 ScrollFrameTo(nsIScrollableFrame* aFrame, const FrameMetrics& aMetrics, bool& aSuccessOut)
 {
   aSuccessOut = false;
-  CSSPoint targetScrollPosition = aMetrics.GetScrollOffset();
+  CSSPoint targetScrollPosition = aMetrics.IsRootContent()
+    ? aMetrics.GetViewport().TopLeft()
+    : aMetrics.GetScrollOffset();
 
   if (!aFrame) {
     return targetScrollPosition;
@@ -100,11 +102,13 @@ ScrollFrameTo(nsIScrollableFrame* aFrame, const FrameMetrics& aMetrics, bool& aS
   
   
   
+  
+  
   if (aFrame->GetScrollbarStyles().mVertical == NS_STYLE_OVERFLOW_HIDDEN) {
-    targetScrollPosition.y = geckoScrollPosition.y;
+    MOZ_ASSERT(targetScrollPosition.y == geckoScrollPosition.y);
   }
   if (aFrame->GetScrollbarStyles().mHorizontal == NS_STYLE_OVERFLOW_HIDDEN) {
-    targetScrollPosition.x = geckoScrollPosition.x;
+    MOZ_ASSERT(targetScrollPosition.x == geckoScrollPosition.x);
   }
 
   
@@ -162,6 +166,15 @@ ScrollFrame(nsIContent* aContent,
       
       APZCCallbackHelper::AdjustDisplayPortForScrollDelta(aMetrics, actualScrollOffset);
     }
+  } else if (aMetrics.IsRootContent() &&
+             aMetrics.GetScrollOffset() != aMetrics.GetViewport().TopLeft()) {
+    
+    
+    
+    
+    
+    
+    APZCCallbackHelper::AdjustDisplayPortForScrollDelta(aMetrics, actualScrollOffset);
   } else {
     
     
