@@ -3784,40 +3784,36 @@ CLASS_SPEC(CountQueuingStrategy, 1, 0, 0, 0, JS_NULL_CLASS_OPS);
 
 
 
-
-
-
-
 inline static MOZ_MUST_USE bool
-DequeueValue(JSContext* cx, Handle<ReadableStreamController*> container, MutableHandleValue chunk)
+DequeueValue(JSContext* cx, Handle<ReadableStreamController*> unwrappedContainer, MutableHandleValue chunk)
 {
     
     
     
-    RootedNativeObject queue(cx, container->queue());
-    MOZ_ASSERT(queue->getDenseInitializedLength() > 0);
+    RootedNativeObject unwrappedQueue(cx, unwrappedContainer->queue());
+    MOZ_ASSERT(unwrappedQueue->getDenseInitializedLength() > 0);
 
     
     
     
-    Rooted<QueueEntry*> pair(cx, ShiftFromList<QueueEntry>(cx, queue));
-    MOZ_ASSERT(pair);
+    Rooted<QueueEntry*> unwrappedPair(cx, ShiftFromList<QueueEntry>(cx, unwrappedQueue));
+    MOZ_ASSERT(unwrappedPair);
 
     
     
     
     
     
-    double totalSize = container->queueTotalSize();
+    double totalSize = unwrappedContainer->queueTotalSize();
 
-    totalSize -= pair->size();
+    totalSize -= unwrappedPair->size();
     if (totalSize < 0) {
         totalSize = 0;
     }
-    container->setQueueTotalSize(totalSize);
+    unwrappedContainer->setQueueTotalSize(totalSize);
 
-    RootedValue val(cx, pair->value());
-    if (container->compartment() != cx->compartment() && !cx->compartment()->wrap(cx, &val)) {
+    RootedValue val(cx, unwrappedPair->value());
+    if (!cx->compartment()->wrap(cx, &val)) {
         return false;
     }
 
@@ -3829,14 +3825,14 @@ DequeueValue(JSContext* cx, Handle<ReadableStreamController*> container, Mutable
 
 
 
-
-
-
-
 static MOZ_MUST_USE bool
-EnqueueValueWithSize(JSContext* cx, Handle<ReadableStreamController*> container, HandleValue value,
+EnqueueValueWithSize(JSContext* cx,
+                     Handle<ReadableStreamController*> unwrappedContainer,
+                     HandleValue value,
                      HandleValue sizeVal)
 {
+    cx->check(value, sizeVal);
+
     
     
     
@@ -3855,11 +3851,10 @@ EnqueueValueWithSize(JSContext* cx, Handle<ReadableStreamController*> container,
 
     
     
-    RootedNativeObject queue(cx, container->queue());
-
-    RootedValue wrappedVal(cx, value);
     {
-        AutoRealm ar(cx, container);
+        AutoRealm ar(cx, unwrappedContainer);
+        RootedNativeObject queue(cx, unwrappedContainer->queue());
+        RootedValue wrappedVal(cx, value);
         if (!cx->compartment()->wrap(cx, &wrappedVal)) {
             return false;
         }
@@ -3876,7 +3871,7 @@ EnqueueValueWithSize(JSContext* cx, Handle<ReadableStreamController*> container,
 
     
     
-    container->setQueueTotalSize(container->queueTotalSize() + size);
+    unwrappedContainer->setQueueTotalSize(unwrappedContainer->queueTotalSize() + size);
 
     return true;
 }
@@ -3934,6 +3929,8 @@ inline static MOZ_MUST_USE bool
 InvokeOrNoop(JSContext* cx, HandleValue O, HandlePropertyName P, HandleValue arg,
              MutableHandleValue rval)
 {
+    cx->check(O, P, arg);
+
     
     
     
@@ -3958,6 +3955,8 @@ InvokeOrNoop(JSContext* cx, HandleValue O, HandlePropertyName P, HandleValue arg
 static MOZ_MUST_USE JSObject*
 PromiseInvokeOrNoop(JSContext* cx, HandleValue O, HandlePropertyName P, HandleValue arg)
 {
+    cx->check(O, P, arg);
+
     
     MOZ_ASSERT(!O.isUndefined());
 
