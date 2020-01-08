@@ -1,0 +1,22 @@
+
+
+
+
+
+
+#ifndef MOZILLA_GFX_BUFFER_EDGE_PAD_H
+#define MOZILLA_GFX_BUFFER_EDGE_PAD_H
+
+#include "nsRegionFwd.h"
+
+namespace mozilla {
+namespace gfx {
+
+class DrawTarget;
+
+void PadDrawTargetOutFromRegion(DrawTarget* aDrawTarget, const nsIntRegion &aRegion);
+
+} 
+} 
+
+#endif 

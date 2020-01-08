@@ -34,6 +34,8 @@
 
 #include "mozilla/DebugOnly.h"
 
+#include "nsRegionFwd.h"
+
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GTK)
   #ifndef MOZ_ENABLE_FREETYPE
   #define MOZ_ENABLE_FREETYPE
@@ -1295,6 +1297,11 @@ public:
 
 
   virtual void Blur(const AlphaBoxBlur& aBlur);
+
+  
+
+
+  virtual void PadEdges(const IntRegion& aRegion);
 
   
 
