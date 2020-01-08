@@ -1562,7 +1562,11 @@ pref("javascript.options.spectre.jit_to_C++_calls", true);
 #endif
 
 
+#ifdef NIGHTLY_BUILD
+pref("javascript.options.streams", true);
+#else
 pref("javascript.options.streams", false);
+#endif
 
 
 pref("advanced.mailftp",                    false);
