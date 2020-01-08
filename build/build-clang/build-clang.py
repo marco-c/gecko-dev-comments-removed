@@ -10,6 +10,7 @@ import subprocess
 import platform
 import json
 import argparse
+import fnmatch
 import glob
 import errno
 import re
@@ -222,6 +223,9 @@ def build_one_stage(cc, cxx, asm, ld, ar, ranlib, libtool,
         if is_windows():
             cmake_args.insert(-1, "-DLLVM_EXPORT_SYMBOLS_FOR_PLUGINS=ON")
             cmake_args.insert(-1, "-DLLVM_USE_CRT_RELEASE=MT")
+        else:
+            
+            cmake_args += ["-DLLVM_LINK_LLVM_DYLIB=ON"]
         if ranlib is not None:
             cmake_args += ["-DCMAKE_RANLIB=%s" % slashify_path(ranlib)]
         if libtool is not None:
@@ -369,8 +373,14 @@ def prune_final_dir_for_clang_tidy(final_dir):
     
     re_ver_num = re.compile(r"^\d+\.\d+\.\d+$", re.I)
     for f in glob.glob("%s/lib/*" % final_dir):
-        if os.path.basename(f) != "clang":
-            delete(f)
+        name = os.path.basename(f)
+        if name == "clang":
+            continue
+        if is_darwin() and name == 'libLLVM.dylib':
+            continue
+        if is_linux() and fnmatch.fnmatch(name, 'libLLVM*.so'):
+            continue
+        delete(f)
     for f in glob.glob("%s/lib/clang/*" % final_dir):
         if re_ver_num.search(os.path.basename(f)) is None:
             delete(f)
@@ -600,11 +610,11 @@ if __name__ == "__main__":
         extra_asmflags = []
         extra_ldflags = []
     elif is_linux():
-        extra_cflags = ["-static-libgcc"]
-        extra_cxxflags = ["-static-libgcc", "-static-libstdc++"]
+        extra_cflags = []
+        extra_cxxflags = []
         extra_cflags2 = ["-fPIC"]
         
-        extra_cxxflags2 = ["-fPIC", '-Qunused-arguments', "-static-libstdc++"]
+        extra_cxxflags2 = ["-fPIC", '-Qunused-arguments']
         extra_asmflags = []
         extra_ldflags = []
 
