@@ -6,7 +6,7 @@
 
 
 
-#include "nsSMILCSSProperty.h"
+#include "SMILCSSProperty.h"
 
 #include "mozilla/dom/Element.h"
 #include "mozilla/Move.h"
@@ -17,21 +17,20 @@
 #include "nsSMILValue.h"
 #include "nsCSSProps.h"
 
-using namespace mozilla;
-using namespace mozilla::dom;
+namespace mozilla {
 
 
-nsSMILCSSProperty::nsSMILCSSProperty(nsCSSPropertyID aPropID, Element* aElement,
-                                     ComputedStyle* aBaseComputedStyle)
+SMILCSSProperty::SMILCSSProperty(nsCSSPropertyID aPropID, Element* aElement,
+                                 ComputedStyle* aBaseComputedStyle)
     : mPropID(aPropID),
       mElement(aElement),
       mBaseComputedStyle(aBaseComputedStyle) {
   MOZ_ASSERT(IsPropertyAnimatable(mPropID),
-             "Creating a nsSMILCSSProperty for a property "
+             "Creating a SMILCSSProperty for a property "
              "that's not supported for animation");
 }
 
-nsSMILValue nsSMILCSSProperty::GetBaseValue() const {
+nsSMILValue SMILCSSProperty::GetBaseValue() const {
   
   
   
@@ -73,7 +72,7 @@ nsSMILValue nsSMILCSSProperty::GetBaseValue() const {
   return baseValue;
 }
 
-nsresult nsSMILCSSProperty::ValueFromString(
+nsresult SMILCSSProperty::ValueFromString(
     const nsAString& aStr, const SVGAnimationElement* aSrcElement,
     nsSMILValue& aValue, bool& aPreventCachingOfSandwich) const {
   NS_ENSURE_TRUE(IsPropertyAnimatable(mPropID), NS_ERROR_FAILURE);
@@ -94,12 +93,12 @@ nsresult nsSMILCSSProperty::ValueFromString(
   return NS_OK;
 }
 
-nsresult nsSMILCSSProperty::SetAnimValue(const nsSMILValue& aValue) {
+nsresult SMILCSSProperty::SetAnimValue(const nsSMILValue& aValue) {
   NS_ENSURE_TRUE(IsPropertyAnimatable(mPropID), NS_ERROR_FAILURE);
   return mElement->SMILOverrideStyle()->SetSMILValue(mPropID, aValue);
 }
 
-void nsSMILCSSProperty::ClearAnimValue() {
+void SMILCSSProperty::ClearAnimValue() {
   
   mElement->SMILOverrideStyle()->SetPropertyValue(mPropID, EmptyString(),
                                                   nullptr);
@@ -107,7 +106,7 @@ void nsSMILCSSProperty::ClearAnimValue() {
 
 
 
-bool nsSMILCSSProperty::IsPropertyAnimatable(nsCSSPropertyID aPropID) {
+bool SMILCSSProperty::IsPropertyAnimatable(nsCSSPropertyID aPropID) {
   
   if (!Servo_Property_IsAnimatable(aPropID)) {
     return false;
@@ -198,3 +197,5 @@ bool nsSMILCSSProperty::IsPropertyAnimatable(nsCSSPropertyID aPropID) {
       return false;
   }
 }
+
+}  

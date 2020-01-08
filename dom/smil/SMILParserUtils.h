@@ -11,7 +11,7 @@
 #include "nsStringFwd.h"
 
 class nsISMILAttr;
-class nsSMILKeySpline;
+class SMILKeySpline;
 class nsSMILTimeValue;
 class nsSMILValue;
 class nsSMILRepeatCount;
@@ -21,14 +21,13 @@ namespace mozilla {
 namespace dom {
 class SVGAnimationElement;
 }  
-}  
 
 
 
 
 
 
-class nsSMILParserUtils {
+class SMILParserUtils {
  public:
   
   class MOZ_STACK_CLASS GenericValueParser {
@@ -39,7 +38,7 @@ class nsSMILParserUtils {
   static const nsDependentSubstring TrimWhitespace(const nsAString& aString);
 
   static bool ParseKeySplines(const nsAString& aSpec,
-                              FallibleTArray<nsSMILKeySpline>& aKeySplines);
+                              FallibleTArray<SMILKeySpline>& aKeySplines);
 
   
   static bool ParseSemicolonDelimitedProgressList(
@@ -83,5 +82,7 @@ class nsSMILParserUtils {
 
   static int32_t CheckForNegativeNumber(const nsAString& aStr);
 };
+
+}  
 
 #endif  

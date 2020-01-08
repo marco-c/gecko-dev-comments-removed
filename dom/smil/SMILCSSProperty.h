@@ -20,14 +20,13 @@ class ComputedStyle;
 namespace dom {
 class Element;
 }  
-}  
 
 
 
 
 
 
-class nsSMILCSSProperty : public nsISMILAttr {
+class SMILCSSProperty : public nsISMILAttr {
  public:
   
 
@@ -38,14 +37,13 @@ class nsSMILCSSProperty : public nsISMILAttr {
 
 
 
-  nsSMILCSSProperty(nsCSSPropertyID aPropID, mozilla::dom::Element* aElement,
-                    mozilla::ComputedStyle* aBaseComputedStyle);
+  SMILCSSProperty(nsCSSPropertyID aPropID, dom::Element* aElement,
+                  ComputedStyle* aBaseComputedStyle);
 
   
   virtual nsresult ValueFromString(
-      const nsAString& aStr,
-      const mozilla::dom::SVGAnimationElement* aSrcElement, nsSMILValue& aValue,
-      bool& aPreventCachingOfSandwich) const override;
+      const nsAString& aStr, const dom::SVGAnimationElement* aSrcElement,
+      nsSMILValue& aValue, bool& aPreventCachingOfSandwich) const override;
   virtual nsSMILValue GetBaseValue() const override;
   virtual nsresult SetAnimValue(const nsSMILValue& aValue) override;
   virtual void ClearAnimValue() override;
@@ -69,14 +67,16 @@ class nsSMILCSSProperty : public nsISMILAttr {
   
   
   
-  mozilla::dom::Element* mElement;
+  dom::Element* mElement;
 
   
   
   
   
   
-  mozilla::ComputedStyle* mBaseComputedStyle;
+  ComputedStyle* mBaseComputedStyle;
 };
+
+}  
 
 #endif  

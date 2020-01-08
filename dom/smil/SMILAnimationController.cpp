@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/SMILAnimationController.h"
+#include "SMILAnimationController.h"
 
 #include <algorithm>
 
@@ -20,7 +20,7 @@
 #include "nsIPresShellInlines.h"
 #include "nsITimer.h"
 #include "SMILCompositor.h"
-#include "nsSMILCSSProperty.h"
+#include "SMILCSSProperty.h"
 
 using namespace mozilla::dom;
 

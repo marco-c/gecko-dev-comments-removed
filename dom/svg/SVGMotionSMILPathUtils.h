@@ -11,11 +11,11 @@
 #define MOZILLA_SVGMOTIONSMILPATHUTILS_H_
 
 #include "mozilla/Attributes.h"
-#include "gfxPlatform.h"
-#include "mozilla/gfx/2D.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/SMILParserUtils.h"
+#include "mozilla/gfx/2D.h"
+#include "gfxPlatform.h"
 #include "nsDebug.h"
-#include "nsSMILParserUtils.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
 
@@ -77,7 +77,7 @@ class SVGMotionSMILPathUtils {
   
   
   class MOZ_STACK_CLASS MotionValueParser
-      : public nsSMILParserUtils::GenericValueParser {
+      : public SMILParserUtils::GenericValueParser {
    public:
     MotionValueParser(PathGenerator* aPathGenerator,
                       FallibleTArray<double>* aPointDistances)

@@ -5,13 +5,14 @@
 
 
 #include "SVGMotionSMILAnimationFunction.h"
+
 #include "mozilla/dom/SVGAnimationElement.h"
 #include "mozilla/dom/SVGPathElement.h"  
 #include "mozilla/dom/SVGMPathElement.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/SMILParserUtils.h"
 #include "nsAttrValue.h"
 #include "nsAttrValueInlines.h"
-#include "nsSMILParserUtils.h"
 #include "SVGAngle.h"
 #include "SVGPathDataParser.h"
 #include "SVGMotionSMILType.h"
@@ -154,7 +155,7 @@ void SVGMotionSMILAnimationFunction::RebuildPathAndVerticesFromBasicAttrs(
     const nsAString& valuesStr = GetAttr(nsGkAtoms::values)->GetStringValue();
     SVGMotionSMILPathUtils::MotionValueParser parser(&pathGenerator,
                                                      &mPathVertices);
-    success = nsSMILParserUtils::ParseValuesGeneric(valuesStr, parser);
+    success = SMILParserUtils::ParseValuesGeneric(valuesStr, parser);
   } else if (HasAttr(nsGkAtoms::to) || HasAttr(nsGkAtoms::by)) {
     
     if (HasAttr(nsGkAtoms::from)) {
@@ -362,8 +363,8 @@ nsresult SVGMotionSMILAnimationFunction::SetKeyPoints(
 
   mHasChanged = true;
 
-  if (!nsSMILParserUtils::ParseSemicolonDelimitedProgressList(aKeyPoints, false,
-                                                              mKeyPoints)) {
+  if (!SMILParserUtils::ParseSemicolonDelimitedProgressList(aKeyPoints, false,
+                                                            mKeyPoints)) {
     mKeyPoints.Clear();
     return NS_ERROR_FAILURE;
   }
