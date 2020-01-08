@@ -2880,7 +2880,7 @@ TransformGfxRectToAncestor(const nsIFrame *aFrame,
                            const nsIFrame *aAncestor,
                            bool* aPreservesAxisAlignedRectangles = nullptr,
                            Maybe<Matrix4x4Flagged>* aMatrixCache = nullptr,
-                           bool aStopAtStackingContextAndDisplayPort = false,
+                           bool aStopAtStackingContextAndDisplayPortAndOOFFrame = false,
                            nsIFrame** aOutAncestor = nullptr)
 {
   Matrix4x4Flagged ctm;
@@ -2890,7 +2890,7 @@ TransformGfxRectToAncestor(const nsIFrame *aFrame,
   } else {
     
     uint32_t flags = 0;
-    if (aStopAtStackingContextAndDisplayPort) {
+    if (aStopAtStackingContextAndDisplayPortAndOOFFrame) {
       flags |= nsIFrame::STOP_AT_STACKING_CONTEXT_AND_DISPLAY_PORT;
     }
     ctm = nsLayoutUtils::GetTransformToAncestor(aFrame, aAncestor, flags, aOutAncestor);
@@ -2957,7 +2957,7 @@ nsLayoutUtils::TransformFrameRectToAncestor(const nsIFrame* aFrame,
                                             const nsIFrame* aAncestor,
                                             bool* aPreservesAxisAlignedRectangles ,
                                             Maybe<Matrix4x4Flagged>* aMatrixCache ,
-                                            bool aStopAtStackingContextAndDisplayPort ,
+                                            bool aStopAtStackingContextAndDisplayPortAndOOFFrame ,
                                             nsIFrame** aOutAncestor )
 {
   SVGTextFrame* text = GetContainingSVGTextFrame(aFrame);
@@ -2969,7 +2969,7 @@ nsLayoutUtils::TransformFrameRectToAncestor(const nsIFrame* aFrame,
     result = ToRect(text->TransformFrameRectFromTextChild(aRect, aFrame));
     result = TransformGfxRectToAncestor(text, result, aAncestor,
                                         nullptr, aMatrixCache,
-                                        aStopAtStackingContextAndDisplayPort, aOutAncestor);
+                                        aStopAtStackingContextAndDisplayPortAndOOFFrame, aOutAncestor);
     
     
     if (aPreservesAxisAlignedRectangles)
@@ -2981,7 +2981,7 @@ nsLayoutUtils::TransformFrameRectToAncestor(const nsIFrame* aFrame,
                   NSAppUnitsToFloatPixels(aRect.height, srcAppUnitsPerDevPixel));
     result = TransformGfxRectToAncestor(aFrame, result, aAncestor,
                                         aPreservesAxisAlignedRectangles, aMatrixCache,
-                                        aStopAtStackingContextAndDisplayPort, aOutAncestor);
+                                        aStopAtStackingContextAndDisplayPortAndOOFFrame, aOutAncestor);
   }
 
   float destAppUnitsPerDevPixel = aAncestor->PresContext()->AppUnitsPerDevPixel();

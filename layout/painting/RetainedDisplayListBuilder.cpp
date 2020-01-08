@@ -347,31 +347,40 @@ public:
       
       
       return true;
-    } else if (type == DisplayItemType::TYPE_TABLE_BORDER_COLLAPSE) {
+    }
+
+    if (type == DisplayItemType::TYPE_TABLE_BORDER_COLLAPSE) {
       
-      
-      
-      
-      return true;
-    } else if (type == DisplayItemType::TYPE_TEXT_OVERFLOW) {
-      
-      
-      
-      
-      
-      
-      return true;
-    } else if (type == DisplayItemType::TYPE_SUBDOCUMENT) {
-      
-      
-      
-      return true;
-    } else if (type == DisplayItemType::TYPE_CARET) {
       
       
       
       return true;
     }
+
+    if (type == DisplayItemType::TYPE_TEXT_OVERFLOW) {
+      
+      
+      
+      
+      
+      
+      return true;
+    }
+
+    if (type == DisplayItemType::TYPE_SUBDOCUMENT) {
+      
+      
+      
+      return true;
+    }
+
+    if (type == DisplayItemType::TYPE_CARET) {
+      
+      
+      
+      return true;
+    }
+
     return false;
   }
 
@@ -506,11 +515,12 @@ public:
         PredecessorStackItem item = mStack.PopLastElement();
         AutoTArray<MergedListIndex,2> result =
           ResolveNodeIndexesOldToMerged(item.mDirectPredecessors);
+
         if (mStack.IsEmpty()) {
           return result;
-        } else {
-          ProcessOldNode(item.mNode, std::move(result));
         }
+
+        ProcessOldNode(item.mNode, std::move(result));
       } else {
         
         

@@ -48,6 +48,8 @@ public:
 
   struct PixelRoundedRect
   {
+    PixelRoundedRect() = delete;
+
     PixelRoundedRect(const DisplayItemClip::RoundedRect& aRRect,
                      nsPresContext* aPresContext)
       : mRect(aPresContext->AppUnitsToGfxUnits(aRRect.mRect.x),
@@ -60,6 +62,7 @@ public:
         mRadii[corner] = aPresContext->AppUnitsToGfxUnits(aRRect.mRadii[corner]);
       }
     }
+
     PixelRoundedRect(const PixelRoundedRect& aPRR)
       : mRect(aPRR.mRect)
     {
@@ -118,9 +121,6 @@ public:
     gfx::Rect mRect;
     
     gfxFloat mRadii[8];
-
-  private:
-    PixelRoundedRect() = delete;
   };
 
   struct MaskLayerImageKeyRef;

@@ -119,7 +119,7 @@ public:
   };
 
   nsImageRenderer(nsIFrame* aForFrame, const nsStyleImage* aImage, uint32_t aFlags);
-  ~nsImageRenderer();
+  ~nsImageRenderer() = default;
   
 
 
