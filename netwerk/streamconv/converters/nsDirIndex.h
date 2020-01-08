@@ -3,11 +3,12 @@
 
 
 
+#ifndef nsDirIndex_h__
+#define nsDirIndex_h__
+
 #include "nsIDirIndex.h"
 #include "nsString.h"
 #include "mozilla/Attributes.h"
-
-
 
 class nsDirIndex final : public nsIDirIndex {
 
@@ -28,3 +29,5 @@ protected:
     int64_t mSize;
     PRTime mLastModified;
 };
+
+#endif
