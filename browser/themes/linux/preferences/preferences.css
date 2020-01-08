@@ -54,19 +54,6 @@
 
 
 
-.bottomBox {
-  padding-bottom: 4px;
-}
-
-
-
-
-#SanitizeDialogPane > groupbox {
-  margin-top: 0;
-}
-
-
-
 #noFxaAccount {
   line-height: 1.2em;
 }
