@@ -319,7 +319,7 @@ using mozilla::dom::ContentChild;
 using mozilla::intl::LocaleService;
 
 
-static void
+static void MOZ_NEVER_INLINE
 SaveWordToEnv(const char *name, const nsACString & word)
 {
   char *expr = Smprintf("%s=%s", name, PromiseFlatCString(word).get()).release();

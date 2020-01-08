@@ -394,7 +394,7 @@ SetArgv0ToFullBinaryPath(wchar_t* aArgv[])
 #endif 
 
 
-inline void
+MOZ_NEVER_INLINE inline void
 SaveToEnv(const char *aEnvString)
 {
 #if defined(MOZILLA_INTERNAL_API)
