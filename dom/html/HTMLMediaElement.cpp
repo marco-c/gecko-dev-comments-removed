@@ -6070,8 +6070,10 @@ HTMLMediaElement::UpdateReadyStateInternal()
     return;
   }
 
-  if (IsVideo() && HasVideo() && !IsPlaybackEnded() && GetImageContainer() &&
-      !GetImageContainer()->HasCurrentImage()) {
+  if (IsVideo() &&
+      VideoTracks() && !VideoTracks()->IsEmpty() &&
+      !IsPlaybackEnded() &&
+      GetImageContainer() && !GetImageContainer()->HasCurrentImage()) {
     
     
     
