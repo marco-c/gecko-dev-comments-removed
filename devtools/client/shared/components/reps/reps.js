@@ -661,7 +661,7 @@ const ObjectWithURL = __webpack_require__(1853);
 const GripArray = __webpack_require__(1797);
 const GripMap = __webpack_require__(1799);
 const GripMapEntry = __webpack_require__(1800);
-const Grip = __webpack_require__(1783);
+const Grip = __webpack_require__(1784);
 
 
 
@@ -796,8 +796,7 @@ StringRep.propTypes = {
   member: PropTypes.object,
   object: PropTypes.object.isRequired,
   openLink: PropTypes.func,
-  className: PropTypes.string,
-  title: PropTypes.string
+  className: PropTypes.string
 };
 
 function StringRep(props) {
@@ -809,8 +808,7 @@ function StringRep(props) {
     useQuotes = true,
     escapeWhitespace = true,
     member,
-    openLink,
-    title
+    openLink
   } = props;
 
   let text = object;
@@ -839,8 +837,7 @@ function StringRep(props) {
   const config = getElementConfig({
     className,
     style,
-    actor: object.actor,
-    title
+    actor: object.actor
   });
 
   if (!isLong) {
@@ -880,16 +877,12 @@ function formatText(opts, text) {
 }
 
 function getElementConfig(opts) {
-  const { className, style, actor, title } = opts;
+  const { className, style, actor } = opts;
 
   const config = {};
 
   if (actor) {
     config["data-link-actor-id"] = actor;
-  }
-
-  if (title) {
-    config.title = title;
   }
 
   const classNames = ["objectBox", "objectBox-string"];
@@ -1043,6 +1036,8 @@ module.exports = {
 "use strict";
 
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 
 
 
@@ -1112,17 +1107,13 @@ function arrayIterator(props, array, max) {
     let item;
 
     try {
-      item = ItemRep({
-        ...props,
-        ...config,
+      item = ItemRep(_extends({}, props, config, {
         object: array[i]
-      });
+      }));
     } catch (exc) {
-      item = ItemRep({
-        ...props,
-        ...config,
+      item = ItemRep(_extends({}, props, config, {
         object: exc
-      });
+      }));
     }
     items.push(item);
   }
@@ -1150,11 +1141,10 @@ function ItemRep(props) {
   const { Rep } = __webpack_require__(1767);
 
   const { object, delim, mode } = props;
-  return span({}, Rep({
-    ...props,
+  return span({}, Rep(_extends({}, props, {
     object: object,
     mode: mode
-  }), delim);
+  })), delim);
 }
 
 function getLength(object) {
@@ -1185,6 +1175,8 @@ module.exports = {
 
 "use strict";
 
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
 
@@ -1226,7 +1218,7 @@ PropRep.propTypes = {
 
 
 function PropRep(props) {
-  const Grip = __webpack_require__(1783);
+  const Grip = __webpack_require__(1784);
   const { Rep } = __webpack_require__(1767);
 
   let { name, mode, equal, suppressQuotes } = props;
@@ -1240,18 +1232,17 @@ function PropRep(props) {
     }
     key = span({ className: "nodeName" }, name);
   } else {
-    key = Rep({
-      ...props,
+    key = Rep(_extends({}, props, {
       className: "nodeName",
       object: name,
       mode: mode || MODE.TINY,
       defaultRep: Grip
-    });
+    }));
   }
 
   return [key, span({
     className: "objectEqual"
-  }, equal), Rep({ ...props })];
+  }, equal), Rep(_extends({}, props))];
 }
 
 
@@ -1293,11 +1284,13 @@ module.exports = {
 
  }),
 
- 1783:
+ 1784:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
 
@@ -1426,7 +1419,7 @@ function propIterator(props, object, max) {
   const propertiesLength = getPropertiesLength(object);
 
   if (object.preview && object.preview.safeGetterValues) {
-    properties = { ...properties, ...object.preview.safeGetterValues };
+    properties = _extends({}, properties, object.preview.safeGetterValues);
   }
 
   let indexes = getPropIndexes(properties, max, isInterestingProp);
@@ -1451,8 +1444,7 @@ function propIterator(props, object, max) {
     const length = max - indexes.length;
 
     const symbolsProps = ownSymbols.slice(0, length).map(symbolItem => {
-      return PropRep({
-        ...props,
+      return PropRep(_extends({}, props, {
         mode: MODE.TINY,
         name: symbolItem,
         object: symbolItem.descriptor.value,
@@ -1460,7 +1452,7 @@ function propIterator(props, object, max) {
         defaultRep: Grip,
         title: null,
         suppressQuotes
-      });
+      }));
     });
 
     propsArray.push(...symbolsProps);
@@ -1502,8 +1494,7 @@ function getProps(componentProps, properties, indexes, suppressQuotes) {
     const name = propertiesKeys[i];
     const value = getPropValue(properties[name]);
 
-    return PropRep({
-      ...componentProps,
+    return PropRep(_extends({}, componentProps, {
       mode: MODE.TINY,
       name,
       object: value,
@@ -1511,7 +1502,7 @@ function getProps(componentProps, properties, indexes, suppressQuotes) {
       defaultRep: Grip,
       title: null,
       suppressQuotes
-    });
+    }));
   });
 }
 
@@ -1598,11 +1589,13 @@ module.exports = Grip;
 
  }),
 
- 1784:
+ 1785:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
 
@@ -2086,7 +2079,7 @@ function makeNodesForProperties(objProps, parent) {
 
   const parentValue = getValue(parent);
 
-  const allProperties = { ...ownProperties, ...safeGetterValues };
+  const allProperties = _extends({}, ownProperties, safeGetterValues);
 
   
   const propertiesNames = sortProperties(Object.keys(allProperties)).filter(name => {
@@ -2237,10 +2230,9 @@ function getEvaluatedItem(item, evaluations) {
     return item;
   }
 
-  return {
-    ...item,
+  return _extends({}, item, {
     contents: evaluations.get(item.path)
-  };
+  });
 }
 
 function getChildrenWithEvaluations(options) {
@@ -2402,6 +2394,20 @@ function getNonPrototypeParentGripValue(item) {
   return getValue(parentGripNode);
 }
 
+function getParentGripValue(item) {
+  const parentNode = getParent(item);
+  if (!parentNode) {
+    return null;
+  }
+
+  const parentGripNode = getClosestGripNode(parentNode);
+  if (!parentGripNode) {
+    return null;
+  }
+
+  return getValue(parentGripNode);
+}
+
 module.exports = {
   createNode,
   createGetterNode,
@@ -2412,6 +2418,7 @@ module.exports = {
   getClosestGripNode,
   getClosestNonBucketNode,
   getParent,
+  getParentGripValue,
   getNonPrototypeParentGripValue,
   getNumericalPropertiesCount,
   getValue,
@@ -2457,11 +2464,13 @@ module.exports = {
 
  }),
 
- 1785:
+ 1786:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 function initialState() {
   return {
@@ -2478,7 +2487,7 @@ function initialState() {
 function reducer(state = initialState(), action = {}) {
   const { type, data } = action;
 
-  const cloneState = overrides => ({ ...state, ...overrides });
+  const cloneState = overrides => _extends({}, state, overrides);
 
   if (type === "NODE_EXPAND") {
     return cloneState({
@@ -2510,6 +2519,13 @@ function reducer(state = initialState(), action = {}) {
         getterValue: data.result && data.result.value && (data.result.value.return || data.result.value.throw)
       })
     });
+  }
+
+
+  
+  
+  if (type === "RESUME" || type == "NAVIGATE") {
+    return initialState();
   }
 
   return state;
@@ -2560,11 +2576,13 @@ module.exports.default = reducer;
 
  }),
 
- 1786:
+ 1787:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
 
@@ -2572,7 +2590,7 @@ module.exports.default = reducer;
 
 const client = __webpack_require__(1804);
 const loadProperties = __webpack_require__(1803);
-const node = __webpack_require__(1784);
+const node = __webpack_require__(1785);
 const { nodeIsError, nodeIsPrimitive } = node;
 const selection = __webpack_require__(1859);
 
@@ -2593,12 +2611,11 @@ function shouldRenderRootsInReps(roots) {
 }
 
 function renderRep(item, props) {
-  return Rep({
-    ...props,
+  return Rep(_extends({}, props, {
     object: node.getValue(item),
     mode: props.mode || MODE.TINY,
     defaultRep: Grip
-  });
+  }));
 }
 
 module.exports = {
@@ -3065,6 +3082,8 @@ module.exports = {
 "use strict";
 
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 
 
 
@@ -3238,13 +3257,12 @@ function arrayIterator(props, grip, max) {
     }
 
     if (res.length < max) {
-      res.push(Rep({
-        ...props,
+      res.push(Rep(_extends({}, props, {
         object,
         mode: MODE.TINY,
         
         title: undefined
-      }));
+      })));
     }
 
     return res;
@@ -3547,6 +3565,8 @@ module.exports = {
 "use strict";
 
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 
 
 
@@ -3579,14 +3599,13 @@ function GripMapEntry(props) {
 
   return span({
     className: "objectBox objectBox-map-entry"
-  }, PropRep({
-    ...props,
+  }, PropRep(_extends({}, props, {
     name: key,
     object: value,
     equal: " \u2192 ",
     title: null,
     suppressQuotes: false
-  }));
+  })));
 }
 
 function supportsObject(grip, noGrip = false) {
@@ -4454,6 +4473,8 @@ exports.default = Tree;
 "use strict";
 
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 
 
 
@@ -4482,7 +4503,7 @@ const {
   nodeIsProxy,
   nodeNeedsNumericalBuckets,
   nodeIsLongString
-} = __webpack_require__(1784);
+} = __webpack_require__(1785);
 
 function loadItemProperties(item, createObjectClient, createLongStringClient, loadedProperties) {
   const gripItem = getClosestGripNode(item);
@@ -4526,7 +4547,7 @@ function mergeResponses(responses) {
 
   for (const response of responses) {
     if (response.hasOwnProperty("ownProperties")) {
-      data.ownProperties = { ...data.ownProperties, ...response.ownProperties };
+      data.ownProperties = _extends({}, data.ownProperties, response.ownProperties);
     }
 
     if (response.ownSymbols && response.ownSymbols.length > 0) {
@@ -4605,7 +4626,7 @@ module.exports = {
 "use strict";
 
 
-const { getValue, nodeHasFullText } = __webpack_require__(1784); 
+const { getValue, nodeHasFullText } = __webpack_require__(1785); 
 
 
 
@@ -4856,6 +4877,8 @@ module.exports = {
 "use strict";
 
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 
 
 
@@ -4938,14 +4961,13 @@ function propIterator(props, object, max) {
   const propertiesNames = Object.keys(object);
 
   const pushPropRep = (name, value) => {
-    elements.push(PropRep({
-      ...props,
+    elements.push(PropRep(_extends({}, props, {
       key: name,
       mode: MODE.TINY,
       name,
       object: value,
       equal: ": "
-    }));
+    })));
     propertiesNumber++;
 
     if (propertiesNumber < propertiesNames.length) {
@@ -5153,6 +5175,8 @@ module.exports = {
 "use strict";
 
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 
 
 
@@ -5180,12 +5204,11 @@ function Accessor(props) {
     const { Rep, Grip } = __webpack_require__(1767);
     return span({
       className: "objectBox objectBox-accessor objectTitle"
-    }, Rep({
-      ...props,
+    }, Rep(_extends({}, props, {
       object: evaluation.getterValue,
       mode: props.mode || MODE.TINY,
       defaultRep: Grip
-    }));
+    })));
   }
 
   if (hasGetter(object) && onInvokeGetterButtonClick) {
@@ -5391,7 +5414,7 @@ function Attribute(props) {
   return span({
     "data-link-actor-id": object.actor,
     className: "objectBox-Attr"
-  }, span({ className: "attrName" }, getTitle(object)), span({ className: "attrEqual" }, "="), StringRep({ className: "attrValue", object: value, title: value }));
+  }, span({ className: "attrName" }, getTitle(object)), span({ className: "attrEqual" }, "="), StringRep({ className: "attrValue", object: value }));
 }
 
 function getTitle(grip) {
@@ -5605,6 +5628,8 @@ module.exports = {
 "use strict";
 
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 
 
 
@@ -5616,7 +5641,7 @@ const PropTypes = __webpack_require__(1758);
 const { isGrip, wrapRender } = __webpack_require__(1760);
 
 const { MODE } = __webpack_require__(1762);
-const { rep } = __webpack_require__(1783);
+const { rep } = __webpack_require__(1784);
 
 
 
@@ -5631,17 +5656,14 @@ Event.propTypes = {
 };
 
 function Event(props) {
-  const gripProps = {
-    ...props,
+  const gripProps = _extends({}, props, {
     title: getTitle(props),
-    object: {
-      ...props.object,
-      preview: {
-        ...props.object.preview,
+    object: _extends({}, props.object, {
+      preview: _extends({}, props.object.preview, {
         ownProperties: {}
-      }
-    }
-  };
+      })
+    })
+  });
 
   if (gripProps.object.preview.target) {
     Object.assign(gripProps.object.preview.ownProperties, {
@@ -5712,6 +5734,8 @@ module.exports = {
 "use strict";
 
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 
 
 
@@ -5780,14 +5804,13 @@ function getProps(props, promiseState) {
 
   return keys.reduce((res, key, i) => {
     const object = promiseState[key];
-    res = res.concat(PropRep({
-      ...props,
+    res = res.concat(PropRep(_extends({}, props, {
       mode: MODE.TINY,
       name: `<${key}>`,
       object,
       equal: ": ",
       suppressQuotes: true
-    }));
+    })));
 
     
     if (i !== keys.length - 1) {
@@ -6018,14 +6041,12 @@ const PropTypes = __webpack_require__(1758);
 
 
 const { isGrip, wrapRender } = __webpack_require__(1760);
-const { rep: StringRep, isLongString } = __webpack_require__(1770);
+const { rep: StringRep } = __webpack_require__(1770);
 const { MODE } = __webpack_require__(1762);
 const nodeConstants = __webpack_require__(1795);
 
 const dom = __webpack_require__(1759);
 const { span } = dom;
-
-const MAX_ATTRIBUTE_LENGTH = 50;
 
 
 
@@ -6136,18 +6157,7 @@ function getElements(grip, mode) {
   }
   const attributeElements = attributeKeys.reduce((arr, name, i, keys) => {
     const value = attributes[name];
-
-    let title = isLongString(value) ? value.initial : value;
-    if (title.length < MAX_ATTRIBUTE_LENGTH) {
-      title = null;
-    }
-
-    const attribute = span({}, span({ className: "attrName" }, name), span({ className: "attrEqual" }, "="), StringRep({
-      className: "attrValue",
-      object: value,
-      cropLimit: MAX_ATTRIBUTE_LENGTH,
-      title
-    }));
+    const attribute = span({}, span({ className: "attrName" }, name), span({ className: "attrEqual" }, "="), StringRep({ className: "attrValue", object: value }));
 
     return arr.concat([" ", attribute]);
   }, []);
@@ -6166,8 +6176,7 @@ function supportsObject(object, noGrip = false) {
 
 module.exports = {
   rep: wrapRender(ElementNode),
-  supportsObject,
-  MAX_ATTRIBUTE_LENGTH
+  supportsObject
 };
 
  }),
@@ -6493,8 +6502,8 @@ module.exports = {
 
 
 const ObjectInspector = __webpack_require__(1855);
-const utils = __webpack_require__(1786);
-const reducer = __webpack_require__(1785);
+const utils = __webpack_require__(1787);
+const reducer = __webpack_require__(1786);
 
 module.exports = { ObjectInspector, utils, reducer };
 
@@ -6505,6 +6514,8 @@ module.exports = { ObjectInspector, utils, reducer };
 
 "use strict";
 
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var _devtoolsComponents = __webpack_require__(1791);
 
@@ -6520,7 +6531,7 @@ const { Component, createFactory, createElement } = __webpack_require__(0);
 const { connect } = __webpack_require__(1763);
 const actions = __webpack_require__(1856);
 
-const selectors = __webpack_require__(1785);
+const selectors = __webpack_require__(1786);
 
 const Tree = createFactory(_devtoolsComponents2.default.Tree);
 __webpack_require__(1857);
@@ -6529,7 +6540,7 @@ const ObjectInspectorItem = createFactory(__webpack_require__(1858));
 
 const classnames = __webpack_require__(175);
 
-const Utils = __webpack_require__(1786);
+const Utils = __webpack_require__(1787);
 const { renderRep, shouldRenderRootsInReps } = Utils;
 const {
   getChildrenWithEvaluations,
@@ -6739,15 +6750,14 @@ class ObjectInspector extends Component {
       onCollapse: item => this.setExpanded(item, false),
       onFocus: focusable ? this.focusItem : null,
 
-      renderItem: (item, depth, focused, arrow, expanded) => ObjectInspectorItem({
-        ...this.props,
+      renderItem: (item, depth, focused, arrow, expanded) => ObjectInspectorItem(_extends({}, this.props, {
         item,
         depth,
         focused,
         arrow,
         expanded,
         setExpanded: this.setExpanded
-      })
+      }))
     });
   }
 }
@@ -6783,7 +6793,7 @@ const { loadItemProperties } = __webpack_require__(1803);
 
 
 
-const { getLoadedProperties, getActors } = __webpack_require__(1785);
+const { getLoadedProperties, getActors } = __webpack_require__(1786);
 
 
 
@@ -6907,6 +6917,8 @@ module.exports = {
 "use strict";
 
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _devtoolsServices = __webpack_require__(22);
 
 var _devtoolsServices2 = _interopRequireDefault(_devtoolsServices);
@@ -6926,7 +6938,7 @@ const isMacOS = appinfo.OS === "Darwin";
 const classnames = __webpack_require__(175);
 const { MODE } = __webpack_require__(1762);
 
-const Utils = __webpack_require__(1786);
+const Utils = __webpack_require__(1787);
 
 const {
   getValue,
@@ -7000,15 +7012,14 @@ class ObjectInspectorItem extends Component {
 
     if (nodeIsFunction(item) && !nodeIsGetter(item) && !nodeIsSetter(item) && (mode === MODE.TINY || !mode)) {
       return {
-        label: Utils.renderRep(item, {
-          ...this.props,
+        label: Utils.renderRep(item, _extends({}, this.props, {
           functionName: label
-        })
+        }))
       };
     }
 
     if (nodeHasProperties(item) || nodeHasAccessors(item) || nodeIsMapEntry(item) || nodeIsLongString(item) || isPrimitive) {
-      const repProps = { ...this.props };
+      const repProps = _extends({}, this.props);
       if (depth > 0) {
         repProps.mode = mode === MODE.LONG ? MODE.SHORT : MODE.TINY;
       }
@@ -7108,10 +7119,10 @@ class ObjectInspectorItem extends Component {
       onClick: onLabelClick ? event => {
         event.stopPropagation();
 
-        
-        if (Utils.selection.documentHasSelection()) {
-          return;
-        }
+const objectProperty = /([\w\d\$]+)$/;
+const arrayProperty = /\[(.*?)\]$/;
+const functionProperty = /([\w\d]+)[\/\.<]*?$/;
+const annonymousProperty = /([\w\d]+)\(\^\)$/;
 
         onLabelClick(item, {
           depth,
