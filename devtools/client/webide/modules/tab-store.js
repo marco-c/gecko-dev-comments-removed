@@ -153,8 +153,11 @@ TabStore.prototype = {
       
       
       await store.listTabs();
+
+      const { outerWindowID } = store._selectedTab;
+      const activeTabFront = await store._connection.client.mainRoot.getTab({ outerWindowID });
       return TargetFactory.forRemoteTab({
-        form: store._selectedTab,
+        activeTab: activeTabFront,
         client: store._connection.client,
         chrome: false,
       });
