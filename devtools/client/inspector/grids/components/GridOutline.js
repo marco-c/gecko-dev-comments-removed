@@ -44,6 +44,29 @@ class GridOutline extends PureComponent {
     };
   }
 
+  static getDerivedStateFromProps(props) {
+    const selectedGrid = props.grids.find(grid => grid.highlighted);
+
+    
+    
+    
+    const { width, height } = selectedGrid && selectedGrid.gridFragments.length
+                            ? getTotalWidthAndHeight(selectedGrid)
+                            : { width: 0, height: 0 };
+    let showOutline;
+
+    if (selectedGrid && selectedGrid.gridFragments.length) {
+      const { cols, rows } = selectedGrid.gridFragments[0];
+
+      
+      
+      showOutline = (cols.lines.length <= GRID_OUTLINE_MAX_COLUMNS_PREF) &&
+                    (rows.lines.length <= GRID_OUTLINE_MAX_ROWS_PREF);
+    }
+
+    return { height, width, selectedGrid, showOutline };
+  }
+
   constructor(props) {
     super(props);
 
@@ -57,7 +80,6 @@ class GridOutline extends PureComponent {
     this.doHighlightCell = this.doHighlightCell.bind(this);
     this.getGridAreaName = this.getGridAreaName.bind(this);
     this.getHeight = this.getHeight.bind(this);
-    this.getTotalWidthAndHeight = this.getTotalWidthAndHeight.bind(this);
     this.onHighlightCell = this.onHighlightCell.bind(this);
     this.renderCannotShowOutlineText = this.renderCannotShowOutlineText.bind(this);
     this.renderGrid = this.renderGrid.bind(this);
@@ -65,29 +87,6 @@ class GridOutline extends PureComponent {
     this.renderGridOutline = this.renderGridOutline.bind(this);
     this.renderGridOutlineBorder = this.renderGridOutlineBorder.bind(this);
     this.renderOutline = this.renderOutline.bind(this);
-  }
-
-  componentWillReceiveProps({ grids }) {
-    const selectedGrid = grids.find(grid => grid.highlighted);
-
-    
-    
-    
-    const { width, height } = selectedGrid && selectedGrid.gridFragments.length
-                            ? this.getTotalWidthAndHeight(selectedGrid)
-                            : { width: 0, height: 0 };
-    let showOutline;
-
-    if (selectedGrid && selectedGrid.gridFragments.length) {
-      const { cols, rows } = selectedGrid.gridFragments[0];
-
-      
-      
-      showOutline = (cols.lines.length <= GRID_OUTLINE_MAX_COLUMNS_PREF) &&
-                    (rows.lines.length <= GRID_OUTLINE_MAX_ROWS_PREF);
-    }
-
-    this.setState({ height, width, selectedGrid, showOutline });
   }
 
   doHighlightCell(target, hide) {
@@ -157,38 +156,6 @@ class GridOutline extends PureComponent {
     }
 
     return height;
-  }
-
-  
-
-
-
-
-
-
-  getTotalWidthAndHeight(grid) {
-    
-    
-    const { gridFragments } = grid;
-    const { rows, cols } = gridFragments[0];
-
-    let height = 0;
-    for (let i = 0; i < rows.lines.length - 1; i++) {
-      height += GRID_CELL_SCALE_FACTOR * (rows.tracks[i].breadth / 100);
-    }
-
-    let width = 0;
-    for (let i = 0; i < cols.lines.length - 1; i++) {
-      width += GRID_CELL_SCALE_FACTOR * (cols.tracks[i].breadth / 100);
-    }
-
-    
-    
-    if (grid.writingMode != "horizontal-tb") {
-      [ width, height ] = [ height, width ];
-    }
-
-    return { width, height };
   }
 
   
@@ -394,6 +361,38 @@ class GridOutline extends PureComponent {
       :
       null;
   }
+}
+
+
+
+
+
+
+
+
+function getTotalWidthAndHeight(grid) {
+  
+  
+  const { gridFragments } = grid;
+  const { rows, cols } = gridFragments[0];
+
+  let height = 0;
+  for (let i = 0; i < rows.lines.length - 1; i++) {
+    height += GRID_CELL_SCALE_FACTOR * (rows.tracks[i].breadth / 100);
+  }
+
+  let width = 0;
+  for (let i = 0; i < cols.lines.length - 1; i++) {
+    width += GRID_CELL_SCALE_FACTOR * (cols.tracks[i].breadth / 100);
+  }
+
+  
+  
+  if (grid.writingMode != "horizontal-tb") {
+    [ width, height ] = [ height, width ];
+  }
+
+  return { width, height };
 }
 
 module.exports = GridOutline;
