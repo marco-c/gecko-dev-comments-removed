@@ -3,8 +3,9 @@
 
 
 
-var EXPORTED_SYMBOLS = ["ClickEventHandler"];
+var EXPORTED_SYMBOLS = ["ClickHandlerChild"];
 
+ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 ChromeUtils.defineModuleGetter(this, "BlockedSiteContent",
@@ -18,11 +19,7 @@ ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
 ChromeUtils.defineModuleGetter(this, "WebNavigationFrames",
                                "resource://gre/modules/WebNavigationFrames.jsm");
 
-class ClickEventHandler {
-  constructor(mm) {
-    this.mm = mm;
-  }
-
+class ClickHandlerChild extends ActorChild {
   handleEvent(event) {
     if (!event.isTrusted || event.defaultPrevented || event.button == 2) {
       return;
