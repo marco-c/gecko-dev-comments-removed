@@ -187,7 +187,7 @@ class GeckoChildProcessHost : public ChildProcessHost {
 
   
   
-  bool RunPerformAsyncLaunch(StringVector aExtraOpts);
+  void RunPerformAsyncLaunch(StringVector aExtraOpts);
 
   enum class BinaryPathType { Self, PluginContainer };
 
