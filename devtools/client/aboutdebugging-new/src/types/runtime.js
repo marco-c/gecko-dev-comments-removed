@@ -48,11 +48,13 @@ const usbRuntimeConnectionParameter = {
 
 const runtimeExtra = {
   
+  
   connectionParameters: PropTypes.oneOfType([
     PropTypes.shape(networkRuntimeConnectionParameter),
     PropTypes.shape(usbRuntimeConnectionParameter),
-  ]).isRequired,
+  ]),
 
+  
   
   deviceName: PropTypes.string,
 };
@@ -62,14 +64,19 @@ const runtime = {
   id: PropTypes.string.isRequired,
 
   
-  runtimeDetails: PropTypes.shape(runtimeDetails),
-
-  
   
   extra: PropTypes.shape(runtimeExtra),
 
   
+  
+  isUnknown: PropTypes.bool.isRequired,
+
+  
   name: PropTypes.string.isRequired,
+
+  
+  
+  runtimeDetails: PropTypes.shape(runtimeDetails),
 
   
   type: PropTypes.string.isRequired,
