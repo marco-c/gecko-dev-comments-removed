@@ -398,9 +398,22 @@ Target.prototype = {
       return front;
     }
     front = getFront(this.client, typeName, this.form);
+    this.fronts.set(typeName, front);
+    
+    front = await front;
     this.emit(typeName, front);
     this.fronts.set(typeName, front);
     return front;
+  },
+
+  getCachedFront(typeName) {
+    
+    const front = this.fronts.get(typeName);
+    
+    if (front && front.actorID) {
+      return front;
+    }
+    return null;
   },
 
   get client() {
