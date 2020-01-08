@@ -848,6 +848,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
     static MOZ_MUST_USE bool slowPathCheckNoExecute(JSContext* cx, HandleScript script);
     static ResumeMode slowPathOnEnterFrame(JSContext* cx, AbstractFramePtr frame);
+    static ResumeMode slowPathOnResumeFrame(JSContext* cx, AbstractFramePtr frame);
     static MOZ_MUST_USE bool slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
                                                   jsbytecode* pc, bool ok);
     static MOZ_MUST_USE bool slowPathOnNewGenerator(JSContext* cx, AbstractFramePtr frame,
@@ -978,6 +979,23 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
     static inline ResumeMode onEnterFrame(JSContext* cx, AbstractFramePtr frame);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static inline ResumeMode onResumeFrame(JSContext* cx, AbstractFramePtr frame);
 
     
 

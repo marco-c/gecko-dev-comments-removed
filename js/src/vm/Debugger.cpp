@@ -1004,6 +1004,16 @@ Debugger::slowPathOnEnterFrame(JSContext* cx, AbstractFramePtr frame)
     return resumeMode;
 }
 
+ ResumeMode
+Debugger::slowPathOnResumeFrame(JSContext* cx, AbstractFramePtr frame)
+{
+    
+    
+    
+    return slowPathOnEnterFrame(cx, frame);
+}
+
+
 static void
 DebuggerFrame_maybeDecrementFrameScriptStepModeCount(FreeOp* fop, AbstractFramePtr frame,
                                                      NativeObject* frameobj);
