@@ -147,7 +147,11 @@ private:
   LogModule& operator=(const LogModule&) = delete;
 
   char* mName;
-  Atomic<LogLevel, Relaxed> mLevel;
+
+  
+  
+  
+  Atomic<LogLevel, Relaxed, recordreplay::Behavior::DontPreserve> mLevel;
 };
 
 
@@ -176,7 +180,10 @@ public:
 private:
   const char* const mLogName;
   const CorruptionCanaryForStatics mCanary;
-  Atomic<LogModule*, ReleaseAcquire> mLog;
+
+  
+  
+  Atomic<LogModule*, ReleaseAcquire, recordreplay::Behavior::DontPreserve> mLog;
 };
 
 namespace detail {
