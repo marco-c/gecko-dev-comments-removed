@@ -1343,8 +1343,9 @@ class Redirection
             }
         }
 
+        
         AutoEnterOOMUnsafeRegion oomUnsafe;
-        Redirection* redir = js_pod_malloc<Redirection>();
+        Redirection* redir = js_pod_malloc<Redirection>(1);
         if (!redir) {
             oomUnsafe.crash("Simulator redirection");
         }

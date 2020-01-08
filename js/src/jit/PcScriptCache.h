@@ -25,6 +25,7 @@ struct PcScriptCacheEntry
 
 struct PcScriptCache
 {
+  private:
     static const uint32_t Length = 73;
 
     
@@ -34,6 +35,11 @@ struct PcScriptCache
 
     
     mozilla::Array<PcScriptCacheEntry, Length> entries;
+
+  public:
+    explicit PcScriptCache(uint64_t gcNumber) {
+        clear(gcNumber);
+    }
 
     void clear(uint64_t gcNumber) {
         for (uint32_t i = 0; i < Length; i++)

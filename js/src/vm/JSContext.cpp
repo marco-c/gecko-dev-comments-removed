@@ -1359,8 +1359,6 @@ JSContext::~JSContext()
     
     MOZ_ASSERT(!resolvingList);
 
-    js_delete(ionPcScriptCache.ref());
-
     if (dtoaState)
         DestroyDtoaState(dtoaState);
 
