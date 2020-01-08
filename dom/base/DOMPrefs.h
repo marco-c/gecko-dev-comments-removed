@@ -19,13 +19,11 @@ public:
   
   static bool DumpEnabled();
 
-#define DOM_PREF(name, pref) static bool name();
 #define DOM_WEBIDL_PREF(name) static bool name(JSContext* aCx, JSObject* aObj);
 #define DOM_UINT32_PREF(name, pref, defaultValue) static uint32_t name();
 
 #include "DOMPrefsInternal.h"
 
-#undef DOM_PREF
 #undef DOM_WEBIDL_PREF
 #undef DOM_UINT32_PREF
 };
