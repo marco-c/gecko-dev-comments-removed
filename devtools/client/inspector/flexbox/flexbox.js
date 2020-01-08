@@ -279,9 +279,14 @@ class FlexboxInspector {
 
 
 
+
   onToggleFlexItemShown(node) {
     this.highlighters.toggleFlexItemHighlighter(node);
     this.store.dispatch(toggleFlexItemShown(node));
+
+    if (node) {
+      this.selection.setNodeFront(node);
+    }
   }
 
   
