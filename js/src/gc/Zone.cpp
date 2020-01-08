@@ -119,9 +119,9 @@ Zone::setNeedsIncrementalBarrier(bool needs)
 }
 
 void
-Zone::beginSweepTypes(bool releaseTypes)
+Zone::beginSweepTypes()
 {
-    types.beginSweep(releaseTypes);
+    types.beginSweep();
 }
 
 Zone::DebuggerVector*
@@ -209,7 +209,7 @@ Zone::sweepWeakMaps()
 }
 
 void
-Zone::discardJitCode(FreeOp* fop, bool discardBaselineCode)
+Zone::discardJitCode(FreeOp* fop, bool discardBaselineCode, bool releaseTypes)
 {
     if (!jitZone()) {
         return;
@@ -258,6 +258,12 @@ Zone::discardJitCode(FreeOp* fop, bool discardBaselineCode)
 
         if (script->hasBaselineScript()) {
             script->baselineScript()->setControlFlowGraph(nullptr);
+        }
+
+        
+        
+        if (releaseTypes) {
+            script->maybeReleaseTypes();
         }
     }
 

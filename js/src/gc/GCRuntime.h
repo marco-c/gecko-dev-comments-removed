@@ -861,9 +861,6 @@ class GCRuntime
     MainThreadData<bool> sweepOnBackgroundThread;
 
     
-    MainThreadData<bool> releaseObservedTypes;
-
-    
     HelperThreadLockData<ZoneList> backgroundSweepZones;
 
     

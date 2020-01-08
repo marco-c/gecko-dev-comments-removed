@@ -379,10 +379,6 @@ class TypeZone
     
     ZoneData<LifoAlloc> sweepTypeLifoAlloc;
 
-    
-    
-    ZoneData<bool> sweepReleaseTypes;
-
     ZoneData<bool> sweepingTypes;
     ZoneData<bool> oomSweepingTypes;
 
@@ -403,7 +399,7 @@ class TypeZone
         return typeLifoAlloc_.ref();
     }
 
-    void beginSweep(bool releaseTypes);
+    void beginSweep();
     void endSweep(JSRuntime* rt);
     void clearAllNewScriptsOnOOM();
 

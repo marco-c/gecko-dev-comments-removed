@@ -2302,12 +2302,18 @@ class JSScript : public js::gc::TenuredCell
         return jitCodeRaw_;
     }
 
-    bool isRelazifiable() const {
-        return (selfHosted() || lazyScript) && !hasInnerFunctions() && !types_ &&
+    
+    
+    
+    bool isRelazifiableIgnoringJitCode() const {
+        return (selfHosted() || lazyScript) && !hasInnerFunctions() &&
                !isGenerator() && !isAsync() &&
                !isDefaultClassConstructor() &&
-               !hasBaselineScript() && !hasAnyIonScript() &&
                !hasFlag(MutableFlags::DoNotRelazify);
+    }
+    bool isRelazifiable() const {
+        MOZ_ASSERT_IF(hasBaselineScript() || hasIonScript(), types_);
+        return isRelazifiableIgnoringJitCode() && !types_;
     }
     void setLazyScript(js::LazyScript* lazy) {
         lazyScript = lazy;
@@ -2413,9 +2419,9 @@ class JSScript : public js::gc::TenuredCell
     inline bool ensureHasTypes(JSContext* cx, js::AutoKeepTypeScripts&);
 
     inline js::TypeScript* types(const js::AutoSweepTypeScript& sweep);
-
     inline bool typesNeedsSweep() const;
 
+    void maybeReleaseTypes();
     void sweepTypes(const js::AutoSweepTypeScript& sweep);
 
     inline js::GlobalObject& global() const;

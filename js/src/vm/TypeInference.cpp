@@ -4873,24 +4873,6 @@ JSScript::sweepTypes(const js::AutoSweepTypeScript& sweep)
         inlinedCompilations.shrinkTo(dest);
     }
 
-    
-    
-    
-    if (types.sweepReleaseTypes &&
-        !types.keepTypeScripts &&
-        !hasBaselineScript() &&
-        !hasIonScript())
-    {
-        types_->destroy();
-        types_ = nullptr;
-
-        
-        
-        clearFlag(MutableFlags::HasFreezeConstraints);
-
-        return;
-    }
-
     unsigned num = TypeScript::NumTypeSets(this);
     StackTypeSet* typeArray = types_->typeArray();
 
@@ -4904,6 +4886,23 @@ JSScript::sweepTypes(const js::AutoSweepTypeScript& sweep)
         
         clearFlag(MutableFlags::HasFreezeConstraints);
     }
+}
+
+void
+JSScript::maybeReleaseTypes()
+{
+    if (!types_ || zone()->types.keepTypeScripts || hasBaselineScript()) {
+        return;
+    }
+
+    MOZ_ASSERT(!hasIonScript());
+
+    types_->destroy();
+    types_ = nullptr;
+
+    
+    
+    clearFlag(MutableFlags::HasFreezeConstraints);
 }
 
 void
@@ -4950,7 +4949,6 @@ TypeZone::TypeZone(Zone* zone)
     currentCompilationId_(zone),
     generation(zone, 0),
     sweepTypeLifoAlloc(zone, (size_t) TYPE_LIFO_ALLOC_PRIMARY_CHUNK_SIZE),
-    sweepReleaseTypes(zone, false),
     sweepingTypes(zone, false),
     oomSweepingTypes(zone, false),
     keepTypeScripts(zone, false),
@@ -4965,12 +4963,9 @@ TypeZone::~TypeZone()
 }
 
 void
-TypeZone::beginSweep(bool releaseTypes)
+TypeZone::beginSweep()
 {
     MOZ_ASSERT(zone()->isGCSweepingOrCompacting());
-    MOZ_ASSERT(!sweepReleaseTypes);
-
-    sweepReleaseTypes = releaseTypes;
 
     
     
@@ -4982,8 +4977,6 @@ TypeZone::beginSweep(bool releaseTypes)
 void
 TypeZone::endSweep(JSRuntime* rt)
 {
-    sweepReleaseTypes = false;
-
     rt->gc.freeAllLifoBlocksAfterSweeping(&sweepTypeLifoAlloc.ref());
 }
 
