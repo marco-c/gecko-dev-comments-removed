@@ -250,8 +250,10 @@ class LinuxDumper {
   
   wasteful_vector<elf_aux_val_t> auxv_;
 
+private:
+  bool IsIPCSharedMemorySegment(const char* name);
+
 #if defined(__ANDROID__)
- private:
   
   
   
