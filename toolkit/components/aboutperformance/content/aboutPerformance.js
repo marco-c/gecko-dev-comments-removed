@@ -16,6 +16,10 @@ const {WebExtensionPolicy} = Cu.getGlobalForObject(Services);
 
 
 
+const TIME_BEFORE_SORTING_AGAIN = 5000;
+
+
+
 
 const TEST_DRIVER_TOPIC = "test-about:performance-test-driver";
 
@@ -1020,6 +1024,19 @@ var View = {
     row.parentNode.insertBefore(this._fragment, row.nextSibling);
     this._fragment = document.createDocumentFragment();
   },
+  displayEnergyImpact(elt, energyImpact) {
+    if (!energyImpact)
+      elt.textContent = "–";
+    else {
+      let impact = "high";
+      if (energyImpact < 1)
+        impact = "low";
+      else if (energyImpact < 25)
+        impact = "medium";
+      document.l10n.setAttributes(elt, "energy-impact-" + impact,
+                                  {value: energyImpact});
+    }
+  },
   appendRow(name, energyImpact, tooltip, type, image = "") {
     let row = document.createElement("tr");
 
@@ -1049,17 +1066,7 @@ var View = {
     row.appendChild(elt);
 
     elt = document.createElement("td");
-    if (!energyImpact)
-      elt.textContent = "–";
-    else {
-      let impact = "high";
-      if (energyImpact < 1)
-        impact = "low";
-      else if (energyImpact < 25)
-        impact = "medium";
-      document.l10n.setAttributes(elt, "energy-impact-" + impact,
-                                  {value: energyImpact});
-    }
+    this.displayEnergyImpact(elt, energyImpact);
     row.appendChild(elt);
 
     if (tooltip)
@@ -1156,7 +1163,12 @@ var Control = {
       tabbrowser.selectedTab = tab;
       tabbrowser.ownerGlobal.focus();
     });
+
+    tbody.addEventListener("mousemove", () => {
+      this._lastMouseEvent = Date.now();
+    });
   },
+  _lastMouseEvent: 0,
   async update() {
     let mode = this._displayMode;
     if (this._autoRefreshInterval || !State._buffer[0]) {
@@ -1180,6 +1192,32 @@ var Control = {
       
       View.DOMCache.trimTo(state.deltas);
     } else {
+      
+      
+      
+      if (Date.now() - this._lastMouseEvent < TIME_BEFORE_SORTING_AGAIN) {
+        let energyImpactPerId = new Map();
+        for (let {id, dispatchesSincePrevious,
+                  durationSincePrevious} of State.getCounters()) {
+          let energyImpact = this._computeEnergyImpact(dispatchesSincePrevious,
+                                                       durationSincePrevious);
+          energyImpactPerId.set(id, energyImpact);
+        }
+
+        let row = document.getElementById("dispatch-tbody").firstChild;
+        while (row) {
+          if (row.windowId && energyImpactPerId.has(row.windowId)) {
+            
+            
+            
+            const kEnergyImpactColumn = 2;
+            let elt = row.childNodes[kEnergyImpactColumn];
+            View.displayEnergyImpact(elt, energyImpactPerId.get(row.windowId));
+          }
+          row = row.nextSibling;
+        }
+        return;
+      }
 
       let selectedId = -1;
       
