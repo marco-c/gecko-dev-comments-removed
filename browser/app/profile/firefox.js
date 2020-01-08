@@ -1386,10 +1386,6 @@ pref("geo.provider.use_gpsd", true);
 #endif
 
 
-
-pref("network.disable.ipc.security", true);
-
-
 pref("browser.uiCustomization.debug", false);
 
 

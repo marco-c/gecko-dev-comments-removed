@@ -1623,7 +1623,7 @@ pref("network.tickle-wifi.duration", 400);
 pref("network.tickle-wifi.delay", 16);
 
 
-pref("network.disable.ipc.security", false);
+pref("network.disable.ipc.security", true);
 
 
 pref("network.protocol-handler.external-default", true);      
