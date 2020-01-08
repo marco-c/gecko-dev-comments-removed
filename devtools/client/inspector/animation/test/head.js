@@ -556,6 +556,51 @@ const waitForRendering = async function(animationInspector) {
 
 
 
+function _afterDispatchDone(store, type) {
+  return new Promise(resolve => {
+    store.dispatch({
+      
+      
+      
+      type: "@@service/waitUntil",
+      predicate: action => {
+        if (action.type === type) {
+          return true;
+        }
+        return false;
+      },
+      run: (dispatch, getState, action) => {
+        resolve(action);
+      }
+    });
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function waitForDispatch(inspector, type, repeat) {
+  let count = 0;
+
+  while (count < repeat()) {
+    await _afterDispatchDone(inspector.store, type);
+    count++;
+  }
+}
+
+
+
 
 
 

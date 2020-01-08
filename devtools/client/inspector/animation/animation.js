@@ -325,7 +325,12 @@ class AnimationInspector {
     
     
     
-    animations = await this.updateAnimations(animations);
+    try {
+      animations = await this.updateAnimations(animations);
+    } catch (_) {
+      console.error(`Updating Animations failed`);
+      return;
+    }
 
     this.updateState(animations.concat(addedAnimations));
   }
