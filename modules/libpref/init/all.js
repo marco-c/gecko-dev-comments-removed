@@ -5832,7 +5832,7 @@ pref("layers.mlgpu.enable-on-windows7", true);
 #endif
 
 
-pref("dom.xhr.lowercase_header.enabled", false);
+pref("dom.xhr.lowercase_header.enabled", true);
 
 
 
