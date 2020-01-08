@@ -6,8 +6,9 @@
 
 "use strict";
 
+
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/inspector/shared/test/head.js",
+  "chrome://mochitests/content/browser/devtools/client/inspector/test/head.js",
   this);
 
 
