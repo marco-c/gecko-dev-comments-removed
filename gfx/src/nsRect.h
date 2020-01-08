@@ -130,7 +130,7 @@ struct nsRect :
     *this = aRect1.Union(aRect2);
   }
 
-#if defined(_MSC_VER) && !defined(__clang__)
+#if defined(_MSC_VER) && !defined(__clang__) && (defined(_M_X64) || defined(_M_IX86))
   
   MOZ_MUST_USE nsRect Intersect(const nsRect& aRect) const
   {
