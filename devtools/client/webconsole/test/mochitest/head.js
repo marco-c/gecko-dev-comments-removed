@@ -19,6 +19,18 @@ Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/shared/test/shared-head.js",
   this);
 
+
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/debugger/new/test/mochitest/helpers.js",
+  this);
+
+
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/debugger/new/test/mochitest/helpers/context.js",
+  this);
+
 var {HUDService} = require("devtools/client/webconsole/hudservice");
 var WCUL10n = require("devtools/client/webconsole/webconsole-l10n");
 const DOCS_GA_PARAMS = `?${new URLSearchParams({
@@ -535,9 +547,17 @@ async function openDebugger(options = {}) {
   const panel = toolbox.getCurrentPanel();
 
   
-  panel._view.Variables.lazyEmpty = false;
+  if (panel._view) {
+    panel._view.Variables.lazyEmpty = false;
+  }
 
-  await panel.panelWin.DebuggerController.waitForSourcesLoaded();
+  
+  if (panel.panelWin && panel.panelWin.DebuggerController) {
+    await panel.panelWin.DebuggerController.waitForSourcesLoaded();
+  } else {
+    
+    await toolbox.threadClient.getSources();
+  }
   return {target, toolbox, panel};
 }
 
