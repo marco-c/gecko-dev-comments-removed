@@ -103,8 +103,9 @@ static inline void
 TracePersistentRootedList(JSTracer* trc, mozilla::LinkedList<PersistentRooted<void*>>& list,
                          const char* name)
 {
-    for (PersistentRooted<void*>* r : list)
+    for (PersistentRooted<void*>* r : list) {
         TraceStackOrPersistentRoot(trc, reinterpret_cast<PersistentRooted<T>*>(r)->address(), name);
+    }
 }
 
 void
@@ -135,8 +136,9 @@ static void
 FinishPersistentRootedChain(mozilla::LinkedList<PersistentRooted<void*>>& listArg)
 {
     auto& list = reinterpret_cast<mozilla::LinkedList<PersistentRooted<T>>&>(listArg);
-    while (!list.isEmpty())
+    while (!list.isEmpty()) {
         list.getFirst()->reset();
+    }
 }
 
 void
@@ -196,8 +198,9 @@ AutoGCRooter::trace(JSTracer* trc)
 
 
 
-        for (WrapperValue* p = vector->begin(); p < vector->end(); p++)
+        for (WrapperValue* p = vector->begin(); p < vector->end(); p++) {
             TraceManuallyBarrieredEdge(trc, &p->get(), "js::AutoWrapperVector.vector");
+        }
         return;
       }
 
@@ -207,8 +210,9 @@ AutoGCRooter::trace(JSTracer* trc)
 
       case Tag::Array: {
         auto array = static_cast<AutoArrayRooter*>(this);
-        if (Value* vp = array->begin())
+        if (Value* vp = array->begin()) {
             TraceRootRange(trc, array->length(), vp, "js::AutoArrayRooter");
+        }
         return;
       }
     }
@@ -219,39 +223,45 @@ AutoGCRooter::trace(JSTracer* trc)
  void
 AutoGCRooter::traceAll(JSContext* cx, JSTracer* trc)
 {
-    for (AutoGCRooter* gcr = cx->autoGCRooters_; gcr; gcr = gcr->down)
+    for (AutoGCRooter* gcr = cx->autoGCRooters_; gcr; gcr = gcr->down) {
         gcr->trace(trc);
+    }
 }
 
  void
 AutoGCRooter::traceAllWrappers(JSContext* cx, JSTracer* trc)
 {
     for (AutoGCRooter* gcr = cx->autoGCRooters_; gcr; gcr = gcr->down) {
-        if (gcr->tag_ == Tag::WrapperVector || gcr->tag_ == Tag::Wrapper)
+        if (gcr->tag_ == Tag::WrapperVector || gcr->tag_ == Tag::Wrapper) {
             gcr->trace(trc);
+        }
     }
 }
 
 void
 StackShape::trace(JSTracer* trc)
 {
-    if (base)
+    if (base) {
         TraceRoot(trc, &base, "StackShape base");
+    }
 
     TraceRoot(trc, (jsid*) &propid, "StackShape id");
 
-    if ((attrs & JSPROP_GETTER) && rawGetter)
+    if ((attrs & JSPROP_GETTER) && rawGetter) {
         TraceRoot(trc, (JSObject**)&rawGetter, "StackShape getter");
+    }
 
-    if ((attrs & JSPROP_SETTER) && rawSetter)
+    if ((attrs & JSPROP_SETTER) && rawSetter) {
         TraceRoot(trc, (JSObject**)&rawSetter, "StackShape setter");
+    }
 }
 
 void
 PropertyDescriptor::trace(JSTracer* trc)
 {
-    if (obj)
+    if (obj) {
         TraceRoot(trc, &obj, "Descriptor::obj");
+    }
     TraceRoot(trc, &value, "Descriptor::value");
     if ((attrs & JSPROP_GETTER) && getter) {
         JSObject* tmp = JS_FUNC_TO_DATA_PTR(JSObject*, getter);
@@ -272,12 +282,14 @@ js::gc::GCRuntime::traceRuntimeForMajorGC(JSTracer* trc, AutoGCSession& session)
 
     
     
-    if (rt->isBeingDestroyed())
+    if (rt->isBeingDestroyed()) {
         return;
+    }
 
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK_ROOTS);
-    if (atomsZone->isCollecting())
+    if (atomsZone->isCollecting()) {
         traceRuntimeAtoms(trc, session.checkAtomsAccess());
+    }
     traceKeptAtoms(trc);
     Compartment::traceIncomingCrossCompartmentEdgesForZoneGC(trc);
     traceRuntimeCommon(trc, MarkRuntime);
@@ -342,8 +354,9 @@ js::gc::GCRuntime::traceKeptAtoms(JSTracer* trc)
     
     
     for (GCZonesIter zone(trc->runtime()); !zone.done(); zone.next()) {
-        if (zone->hasKeptAtoms())
+        if (zone->hasKeptAtoms()) {
             zone->traceAtomCache(trc);
+        }
     }
 }
 
@@ -385,8 +398,9 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
 
     
     
-    for (RealmsIter r(rt); !r.done(); r.next())
+    for (RealmsIter r(rt); !r.done(); r.next()) {
         r->traceRoots(trc, traceOrMark);
+    }
 
     
     HelperThreadState().trace(trc);
@@ -412,8 +426,9 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
 
         
         if (JSTraceDataOp op = grayRootTracer.op) {
-            if (traceOrMark == TraceRuntime)
+            if (traceOrMark == TraceRuntime) {
                 (*op)(trc, grayRootTracer.data);
+            }
         }
     }
 }
@@ -445,8 +460,9 @@ js::gc::GCRuntime::finishRoots()
 
     rt->finishSelfHosting();
 
-    for (RealmsIter r(rt); !r.done(); r.next())
+    for (RealmsIter r(rt); !r.done(); r.next()) {
         r->finishRoots();
+    }
 
 #ifdef DEBUG
     
@@ -516,12 +532,14 @@ js::gc::GCRuntime::bufferGrayRoots()
     
     
     MOZ_ASSERT(grayBufferState == GrayBufferState::Unused);
-    for (GCZonesIter zone(rt); !zone.done(); zone.next())
+    for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
         MOZ_ASSERT(zone->gcGrayRoots().empty());
+    }
 
     BufferGrayRootsTracer grayBufferer(rt);
-    if (JSTraceDataOp op = grayRootTracer.op)
+    if (JSTraceDataOp op = grayRootTracer.op) {
         (*op)(&grayBufferer, grayRootTracer.data);
+    }
 
     
     if (grayBufferer.failed()) {
@@ -553,8 +571,9 @@ BufferGrayRootsTracer::bufferRoot(T* thing)
         
         SetMaybeAliveFlag(thing);
 
-        if (!zone->gcGrayRoots().append(tenured))
+        if (!zone->gcGrayRoots().append(tenured)) {
             bufferingGrayRootsFailed = true;
+        }
     }
 }
 
@@ -565,8 +584,9 @@ GCRuntime::markBufferedGrayRoots(JS::Zone* zone)
     MOZ_ASSERT(zone->isGCMarkingGray() || zone->isGCCompacting());
 
     auto& roots = zone->gcGrayRoots();
-    if (roots.empty())
+    if (roots.empty()) {
         return;
+    }
 
     for (size_t i = 0; i < roots.length(); i++) {
         Cell* cell = roots[i];
@@ -592,8 +612,9 @@ GCRuntime::resetBufferedGrayRoots() const
 {
     MOZ_ASSERT(grayBufferState != GrayBufferState::Okay,
                "Do not clear the gray buffers unless we are Failed or becoming Unused");
-    for (GCZonesIter zone(rt); !zone.done(); zone.next())
+    for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
         zone->gcGrayRoots().clearAndFree();
+    }
 }
 
 JS_PUBLIC_API(void)
