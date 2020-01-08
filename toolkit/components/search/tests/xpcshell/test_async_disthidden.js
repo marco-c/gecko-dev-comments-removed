@@ -30,7 +30,7 @@ add_task(async function test_disthidden() {
   let engines = Services.search.getEngines();
   
   
-  Assert.equal(engines.length, 5);
+  Assert.equal(engines.length, 6);
 
   
   let engine = Services.search.getEngineByName("Test search engine");

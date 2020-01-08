@@ -22,7 +22,7 @@ function run_test() {
   let engines = Services.search.getEngines();
   
   
-  Assert.equal(engines.length, 5);
+  Assert.equal(engines.length, 6);
 
   Assert.ok(Services.search.isInitialized);
 
