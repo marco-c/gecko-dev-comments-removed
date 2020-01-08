@@ -50,7 +50,45 @@ class App extends Component {
   constructor(props) {
     super(props);
 
+    this.onClick = this.onClick.bind(this);
     this.onPaste = this.onPaste.bind(this);
+  }
+
+  onClick(event) {
+    const target = event.originalTarget || event.target;
+    const {
+      hud,
+    } = this.props;
+
+    
+    if (event.detail !== 1 || event.button !== 0) {
+      return;
+    }
+
+    
+    if (target.closest("a")) {
+      return;
+    }
+
+    
+    if (target.closest("input")) {
+      return;
+    }
+    
+    
+    if (!target.closest(".webconsole-output-wrapper")) {
+      return;
+    }
+
+    
+    const selection = hud.document.defaultView.getSelection();
+    if (selection && !selection.isCollapsed) {
+      return;
+    }
+
+    if (hud && hud.jsterm) {
+      hud.jsterm.focus();
+    }
   }
 
   onPaste(event) {
@@ -140,6 +178,7 @@ class App extends Component {
     return (
       div({
         className: classNames.join(" "),
+        onClick: this.onClick,
         ref: node => {
           this.node = node;
         }},
