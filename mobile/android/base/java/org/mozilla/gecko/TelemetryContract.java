@@ -108,6 +108,9 @@ public interface TelemetryContract {
         NETERROR("neterror.1"),
 
         
+        PWA("pwa.1"),
+
+        
         _TEST1("_test_event_1.1"),
         _TEST2("_test_event_2.1"),
         _TEST3("_test_event_3.1"),
