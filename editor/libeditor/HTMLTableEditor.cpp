@@ -1005,6 +1005,16 @@ HTMLEditor::DeleteTableCell(int32_t aNumber)
 NS_IMETHODIMP
 HTMLEditor::DeleteTableCellContents()
 {
+  nsresult rv = DeleteTableCellContentsWithTransaction();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
+
+nsresult
+HTMLEditor::DeleteTableCellContentsWithTransaction()
+{
   RefPtr<Selection> selection;
   RefPtr<Element> table;
   RefPtr<Element> cell;
@@ -1014,9 +1024,13 @@ HTMLEditor::DeleteTableCellContents()
                                getter_AddRefs(cell),
                                nullptr, nullptr,
                                &startRowIndex, &startColIndex);
-  NS_ENSURE_SUCCESS(rv, rv);
-  
-  NS_ENSURE_TRUE(cell, NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  if (NS_WARN_IF(!selection) || NS_WARN_IF(!cell)) {
+    
+    return NS_OK;
+  }
 
 
   AutoPlaceholderBatch beginBatching(this);
@@ -1035,7 +1049,6 @@ HTMLEditor::DeleteTableCellContents()
   }
 
   if (firstSelectedCellElement) {
-    ErrorResult error;
     CellIndexes firstCellIndexes(*firstSelectedCellElement, error);
     if (NS_WARN_IF(error.Failed())) {
       return error.StealNSResult();
@@ -1050,32 +1063,19 @@ HTMLEditor::DeleteTableCellContents()
                                              false);
 
   while (cell) {
-    DeleteCellContents(cell);
-    if (firstSelectedCellElement) {
-      
-      cell = GetNextSelectedTableCellElement(*selection, error);
-      if (NS_WARN_IF(error.Failed())) {
-        return error.StealNSResult();
-      }
-    } else {
-      cell = nullptr;
+    DebugOnly<nsresult> rv = DeleteAllChildrenWithTransaction(*cell);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+      "Failed to remove all children of the cell element");
+    
+    
+    if (!firstSelectedCellElement) {
+      return NS_OK;
     }
-  }
-  return NS_OK;
-}
-
-nsresult
-HTMLEditor::DeleteCellContents(Element* aCell)
-{
-  
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::eDeleteNode,
-                                      nsIEditor::eNext);
-
-  while (nsCOMPtr<nsINode> child = aCell->GetLastChild()) {
-    nsresult rv = DeleteNodeWithTransaction(*child);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+    
+    
+    cell = GetNextSelectedTableCellElement(*selection, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
     }
   }
   return NS_OK;
@@ -1252,7 +1252,9 @@ HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
         
         
         
-        DeleteCellContents(cell);
+        DebugOnly<nsresult> rv = DeleteAllChildrenWithTransaction(*cell);
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+          "Failed to remove all children of the cell element");
       }
       
       rowIndex += actualRowSpan - 1;

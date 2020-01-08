@@ -642,6 +642,15 @@ protected:
   GetNextSelectedTableCellElement(Selection& aSelection,
                                   ErrorResult& aRv) const;
 
+  
+
+
+
+
+
+
+  nsresult DeleteTableCellContentsWithTransaction();
+
   void IsNextCharInNodeWhitespace(nsIContent* aContent,
                                   int32_t aOffset,
                                   bool* outIsSpace,
@@ -1624,7 +1633,10 @@ protected:
   
 
 
-  nsresult DeleteCellContents(Element* aCell);
+
+
+
+  nsresult DeleteAllChildrenWithTransaction(Element& aElement);
 
   
 
