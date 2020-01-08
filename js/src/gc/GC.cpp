@@ -8977,15 +8977,18 @@ JS_PUBLIC_API void js::gc::detail::AssertCellIsNotGray(const Cell* cell) {
     
     
     
-    JSRuntime* rt = tc->zone()->runtimeFromMainThread();
-    AutoEnterOOMUnsafeRegion oomUnsafe;
-    if (!rt->gc.cellsToAssertNotGray.ref().append(cell)) {
-      oomUnsafe.crash("Can't append to delayed gray checks list");
+
+    if (!tc->isMarkedBlack()) {
+      JSRuntime* rt = tc->zone()->runtimeFromMainThread();
+      AutoEnterOOMUnsafeRegion oomUnsafe;
+      if (!rt->gc.cellsToAssertNotGray.ref().append(cell)) {
+        oomUnsafe.crash("Can't append to delayed gray checks list");
+      }
     }
     return;
   }
 
-  MOZ_ASSERT(!detail::CellIsMarkedGray(tc));
+  MOZ_ASSERT(!tc->isMarkedGray());
 }
 
 extern JS_PUBLIC_API bool js::gc::detail::ObjectIsMarkedBlack(
