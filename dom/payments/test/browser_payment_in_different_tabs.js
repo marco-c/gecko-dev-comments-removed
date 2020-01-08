@@ -3,8 +3,6 @@
 
 const kTestPage = kTestRoot + "simple_payment_request.html";
 
-registerCleanupFunction(cleanup);
-
 add_task(async function() {
   Services.prefs.setBoolPref("dom.payments.request.enabled", true);
   await BrowserTestUtils.withNewTab(kTestPage,
