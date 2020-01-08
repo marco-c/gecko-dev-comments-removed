@@ -2,6 +2,8 @@
 
 
 
+
+
 import { isOriginalId } from "devtools-source-map";
 import {
   locationMoved,
@@ -17,9 +19,17 @@ import { getGeneratedLocation } from "../../utils/source-maps";
 import { getTextAtPosition } from "../../utils/source";
 import { recordEvent } from "../../utils/telemetry";
 
+import type { SourceLocation } from "../../types";
+import type { ThunkArgs } from "../types";
+import type { addBreakpointOptions } from "./";
+
 async function addBreakpointPromise(getState, client, sourceMaps, breakpoint) {
   const state = getState();
   const source = getSource(state, breakpoint.location.sourceId);
+
+  if (!source) {
+    throw new Error(`Unable to find source: ${breakpoint.location.sourceId}`);
+  }
 
   const location = {
     ...breakpoint.location,
