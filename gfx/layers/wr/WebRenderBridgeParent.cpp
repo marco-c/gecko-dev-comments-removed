@@ -263,28 +263,6 @@ WebRenderBridgeParent::~WebRenderBridgeParent()
 }
 
 mozilla::ipc::IPCResult
-WebRenderBridgeParent::RecvCreate(const gfx::IntSize& aSize)
-{
-  if (mDestroyed) {
-    return IPC_OK();
-  }
-
-  MOZ_ASSERT(mApi);
-
-#ifdef MOZ_WIDGET_ANDROID
-  
-  
-  
-
-
-
-
-#endif
-
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult
 WebRenderBridgeParent::RecvShutdown()
 {
   return HandleShutdown();
