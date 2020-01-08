@@ -1791,6 +1791,22 @@ private:
                                    bool*          aHaveFirstLetterStyle,
                                    bool*          aHaveFirstLineStyle);
 
+
+  
+  
+  
+  
+  
+  
+  
+  
+  nsContainerFrame* InitAndWrapInColumnSetFrameIfNeeded(
+    nsFrameConstructorState& aState,
+    nsIContent* aContent,
+    nsContainerFrame* aParentFrame,
+    nsContainerFrame* aBlockFrame,
+    ComputedStyle* aComputedStyle);
+
   
   
   
