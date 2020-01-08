@@ -125,13 +125,6 @@ public:
 
     void CommonInit();
 
-#if defined(OS_WIN) && defined(MOZ_SANDBOX)
-    
-    
-    static void SetFlashRoamingPath(const std::wstring& aRoamingPath);
-    static std::wstring GetFlashRoamingPath();
-#endif
-
     
     bool InitForChrome(const std::string& aPluginFilename,
                        base::ProcessId aParentPid,
