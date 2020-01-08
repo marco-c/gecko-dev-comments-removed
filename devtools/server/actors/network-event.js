@@ -102,14 +102,17 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     this._cause = networkEvent.cause;
     this._fromCache = networkEvent.fromCache;
     this._fromServiceWorker = networkEvent.fromServiceWorker;
+    this._channelId = networkEvent.channelId;
 
+    
     
     
     
     this._stackTrace = networkEvent.cause.stacktrace;
     delete networkEvent.cause.stacktrace;
     networkEvent.cause.stacktraceAvailable =
-      !!(this._stackTrace && this._stackTrace.length);
+      !!(this._stackTrace &&
+         (typeof this._stackTrace == "boolean" || this._stackTrace.length));
 
     for (const prop of ["method", "url", "httpVersion", "headersSize"]) {
       this._request[prop] = networkEvent[prop];
@@ -245,9 +248,29 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
 
-  getStackTrace() {
+  async getStackTrace() {
+    let stacktrace = this._stackTrace;
+    
+    
+    
+    if (stacktrace && typeof stacktrace == "boolean") {
+      const messageManager = this.netMonitorActor.messageManager;
+      stacktrace = await new Promise(resolve => {
+        const onMessage = ({ data }) => {
+          const { channelId, stack } = data;
+          if (channelId == this._channelId) {
+            messageManager.removeMessageListener("debug:request-stack", onMessage);
+            resolve(stack);
+          }
+        };
+        messageManager.addMessageListener("debug:request-stack", onMessage);
+        messageManager.sendAsyncMessage("debug:request-stack", this._channelId);
+      });
+      this._stackTrace = stacktrace;
+    }
+
     return {
-      stacktrace: this._stackTrace,
+      stacktrace,
     };
   },
 
