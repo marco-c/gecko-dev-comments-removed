@@ -4,7 +4,7 @@ import socket
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 
-from ..wptcommandline import require_arg
+from ..wptcommandline import require_arg  
 
 here = os.path.split(__file__)[0]
 
