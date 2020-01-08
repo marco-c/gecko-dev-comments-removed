@@ -105,7 +105,8 @@ nsNativeTheme::GetContentState(nsIFrame* aFrame, StyleAppearance aWidgetType)
   
 #if defined(XP_MACOSX)
   
-  if (aWidgetType == StyleAppearance::NumberInput ||
+  if (aWidgetType == StyleAppearance::MenulistTextfield ||
+      aWidgetType == StyleAppearance::NumberInput ||
       aWidgetType == StyleAppearance::Textfield ||
       aWidgetType == StyleAppearance::TextfieldMultiline ||
       aWidgetType == StyleAppearance::Searchfield ||
@@ -347,6 +348,7 @@ nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext, nsIFrame* aFrame,
 
   return (aWidgetType == StyleAppearance::NumberInput ||
           aWidgetType == StyleAppearance::Button ||
+          aWidgetType == StyleAppearance::MenulistTextfield ||
           aWidgetType == StyleAppearance::Textfield ||
           aWidgetType == StyleAppearance::TextfieldMultiline ||
           aWidgetType == StyleAppearance::Listbox ||
