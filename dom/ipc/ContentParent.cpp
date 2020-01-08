@@ -110,6 +110,7 @@
 #include "mozilla/Unused.h"
 #include "mozilla/HangDetails.h"
 #include "nsAnonymousTemporaryFile.h"
+#include "nsAppDirectoryServiceDefs.h"
 #include "nsAppRunner.h"
 #include "nsCDefaultURIFixup.h"
 #include "nsCExternalHandlerService.h"
@@ -119,6 +120,7 @@
 #include "nsConsoleService.h"
 #include "nsContentUtils.h"
 #include "nsDebugImpl.h"
+#include "nsDirectoryService.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsEmbedCID.h"
 #include "nsFrameLoader.h"
@@ -212,6 +214,10 @@
 
 #ifdef MOZ_WEBRTC
 #include "signaling/src/peerconnection/WebrtcGlobalParent.h"
+#endif
+
+#if defined(XP_MACOSX)
+#include "nsMacUtilsImpl.h"
 #endif
 
 #if defined(ANDROID) || defined(LINUX)
@@ -608,6 +614,10 @@ static const char* sObserverTopics[] = {
   "private-cookie-changed",
   "clear-site-data-reload-needed",
 };
+
+#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
+bool ContentParent::sEarlySandboxInit = false;
+#endif
 
 
 
@@ -2145,6 +2155,115 @@ ContentParent::GetTestShellSingleton()
   return static_cast<TestShellParent*>(p);
 }
 
+#ifdef XP_MACOSX
+void
+ContentParent::AppendSandboxParams(std::vector<std::string> &aArgs)
+{
+  nsCOMPtr<nsIProperties>
+    directoryService(do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID));
+  if (!directoryService) {
+    MOZ_CRASH("Failed to get the directory service");
+  }
+
+  
+  aArgs.push_back("-sbStartup");
+
+  
+  int contentSandboxLevel =
+    Preferences::GetInt("security.sandbox.content.level");
+  std::ostringstream os;
+  os << contentSandboxLevel;
+  std::string contentSandboxLevelString = os.str();
+  aArgs.push_back("-sbLevel");
+  aArgs.push_back(contentSandboxLevelString);
+
+  
+  if (Preferences::GetBool("security.sandbox.logging.enabled") ||
+      PR_GetEnv("MOZ_SANDBOX_LOGGING")) {
+    aArgs.push_back("-sbLogging");
+  }
+
+  
+  if (GetRemoteType().EqualsLiteral(FILE_REMOTE_TYPE)) {
+    aArgs.push_back("-sbAllowFileAccess");
+  }
+
+  
+  if (!Preferences::GetBool("media.cubeb.sandbox")) {
+    aArgs.push_back("-sbAllowAudio");
+  }
+
+  
+  nsAutoCString appPath;
+  if (!nsMacUtilsImpl::GetAppPath(appPath)) {
+    MOZ_CRASH("Failed to get app dir paths");
+  }
+  aArgs.push_back("-sbAppPath");
+  aArgs.push_back(appPath.get());
+
+  
+  nsAutoCString testingReadPath1;
+  Preferences::GetCString("security.sandbox.content.mac.testing_read_path1",
+                          testingReadPath1);
+  if (!testingReadPath1.IsEmpty()) {
+    aArgs.push_back("-sbTestingReadPath");
+    aArgs.push_back(testingReadPath1.get());
+  }
+
+  
+  nsAutoCString testingReadPath2;
+  Preferences::GetCString("security.sandbox.content.mac.testing_read_path2",
+                          testingReadPath2);
+  if (!testingReadPath2.IsEmpty()) {
+    aArgs.push_back("-sbTestingReadPath");
+    aArgs.push_back(testingReadPath2.get());
+  }
+
+  
+  
+  nsresult rv;
+  if (mozilla::IsDevelopmentBuild()) {
+    
+    nsCOMPtr<nsIFile> repoDir;
+    rv = mozilla::GetRepoDir(getter_AddRefs(repoDir));
+    if (NS_FAILED(rv)) {
+      MOZ_CRASH("Failed to get path to repo dir");
+    }
+    nsCString repoDirPath;
+    Unused << repoDir->GetNativePath(repoDirPath);
+    aArgs.push_back("-sbTestingReadPath");
+    aArgs.push_back(repoDirPath.get());
+
+    
+    nsCOMPtr<nsIFile> objDir;
+    rv = mozilla::GetObjDir(getter_AddRefs(objDir));
+    if (NS_FAILED(rv)) {
+      MOZ_CRASH("Failed to get path to build object dir");
+    }
+    nsCString objDirPath;
+    Unused << objDir->GetNativePath(objDirPath);
+    aArgs.push_back("-sbTestingReadPath");
+    aArgs.push_back(objDirPath.get());
+  }
+
+  
+#ifdef DEBUG
+  
+  
+  
+  char *bloatLog = PR_GetEnv("XPCOM_MEM_BLOAT_LOG");
+  if (bloatLog != nullptr) {
+    
+    
+    nsAutoCString bloatDirectoryPath =
+      nsMacUtilsImpl::GetDirectoryPath(bloatLog);
+    aArgs.push_back("-sbDebugWriteDir");
+    aArgs.push_back(bloatDirectoryPath.get());
+  }
+#endif 
+}
+#endif 
+
 bool
 ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
 {
@@ -2232,6 +2351,12 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
   if (gSafeMode) {
     extraArgs.push_back("-safeMode");
   }
+
+#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
+  if (sEarlySandboxInit && IsContentSandboxEnabled()) {
+    AppendSandboxParams(extraArgs);
+  }
+#endif
 
   nsCString parentBuildID(mozilla::PlatformBuildID());
   extraArgs.push_back("-parentBuildID");
@@ -2352,6 +2477,17 @@ ContentParent::ContentParent(ContentParent* aOpener,
   NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
   bool isFile = mRemoteType.EqualsLiteral(FILE_REMOTE_TYPE);
   mSubprocess = new ContentProcessHost(this, isFile);
+
+#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
+  
+  
+  
+  
+  if (!ContentParent::sEarlySandboxInit) {
+    ContentParent::sEarlySandboxInit =
+      Preferences::GetBool("security.sandbox.content.mac.earlyinit");
+  }
+#endif
 }
 
 ContentParent::~ContentParent()
@@ -2621,6 +2757,12 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority)
   
   
   shouldSandbox = IsContentSandboxEnabled();
+
+#ifdef XP_MACOSX
+  
+  
+  shouldSandbox = shouldSandbox && !sEarlySandboxInit;
+#endif
 
 #ifdef XP_LINUX
   if (shouldSandbox) {
