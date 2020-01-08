@@ -66,6 +66,12 @@ exports.getToolbox = function() {
   return gDevTools.getToolbox(target);
 };
 
+exports.navigateTo = function(url) {
+  let tab = getActiveTab();
+  let target = TargetFactory.forTab(tab);
+  target.activeTab.navigateTo(url);
+};
+
 
 
 
