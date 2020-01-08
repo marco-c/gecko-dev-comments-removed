@@ -5,7 +5,7 @@
 
 
 #include "PaintWorkletGlobalScope.h"
-#include "WorkletPrincipal.h"
+#include "mozilla/dom/WorkletPrincipal.h"
 #include "mozilla/dom/PaintWorkletGlobalScopeBinding.h"
 #include "mozilla/dom/FunctionBinding.h"
 
