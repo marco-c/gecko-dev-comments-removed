@@ -402,9 +402,38 @@ nsresult nsPluginFile::GetPluginInfo(nsPluginInfo& info, PRLibrary **outLibrary)
   
   
   
+  if (nsCocoaFeatures::OnYosemiteOrLater()) {
+    if (fileName.EqualsLiteral("fbplugin") ||
+        StringBeginsWith(fileName, NS_LITERAL_CSTRING("fbplugin_"))) {
+      nsAutoCString msg;
+      msg.AppendPrintf("Preventing load of %s (see bug 1086977)",
+                       fileName.get());
+      NS_WARNING(msg.get());
+      return NS_ERROR_FAILURE;
+    }
+
+    
+    
+    
+    
+    CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::Bug_1086977,
+                                       fileName);
+  }
+
+  
+  
+  
+  
 
   
   rv = LoadPlugin(outLibrary);
+
+  if (nsCocoaFeatures::OnYosemiteOrLater()) {
+    
+    
+    CrashReporter::RemoveCrashReportAnnotation(
+      CrashReporter::Annotation::Bug_1086977);
+  }
 
   if (NS_FAILED(rv))
     return rv;
