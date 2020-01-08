@@ -2003,12 +2003,15 @@ public:
 
 
 
-
-
-
-#define EVENT(name_, id_, type_, struct_)                             \
-  mozilla::dom::EventHandlerNonNull* GetOn##name_();                  \
-  void SetOn##name_(mozilla::dom::EventHandlerNonNull* listener);
+#define EVENT(name_, id_, type_, struct_)                               \
+  mozilla::dom::EventHandlerNonNull* GetOn##name_()                     \
+  {                                                                     \
+    return GetEventHandler(nsGkAtoms::on##name_);                       \
+  }                                                                     \
+  void SetOn##name_(mozilla::dom::EventHandlerNonNull* handler)         \
+  {                                                                     \
+    SetEventHandler(nsGkAtoms::on##name_, handler);                     \
+  }
 #define TOUCH_EVENT EVENT
 #define DOCUMENT_ONLY_EVENT EVENT
 #include "mozilla/EventNameList.h"
