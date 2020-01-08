@@ -1648,12 +1648,11 @@ bool nsDisplayImage::CreateWebRenderCommands(
     return false;
   }
 
-  if (mFrame->IsImageFrame()) {
-    
-    nsImageFrame* f = static_cast<nsImageFrame*>(mFrame);
-    if (f->HasImageMap()) {
-      return false;
-    }
+  MOZ_ASSERT(mFrame->IsImageFrame() || mFrame->IsImageControlFrame());
+  
+  nsImageFrame* frame = static_cast<nsImageFrame*>(mFrame);
+  if (frame->HasImageMap()) {
+    return false;
   }
 
   uint32_t flags = imgIContainer::FLAG_ASYNC_NOTIFY;
@@ -1709,10 +1708,7 @@ bool nsDisplayImage::CreateWebRenderCommands(
   
   if (updatePrevImage) {
     mPrevImage = mImage;
-    if (mFrame->IsImageFrame()) {
-      nsImageFrame* f = static_cast<nsImageFrame*>(mFrame);
-      f->mPrevImage = f->mImage;
-    }
+    frame->mPrevImage = frame->mImage;
   }
 
   
@@ -1805,7 +1801,7 @@ already_AddRefed<imgIRequest> nsImageFrame::GetCurrentRequest() const {
 
 void nsImageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                     const nsDisplayListSet& aLists) {
-  if (!IsVisibleForPainting()) return;
+  if (!IsVisibleForPainting(aBuilder)) return;
 
   DisplayBorderBackgroundOutline(aBuilder, aLists);
 
