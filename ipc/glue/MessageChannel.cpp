@@ -2101,6 +2101,15 @@ MessageChannel::MessageTask::Clear()
 NS_IMETHODIMP
 MessageChannel::MessageTask::GetPriority(uint32_t* aPriority)
 {
+  if (recordreplay::IsRecordingOrReplaying()) {
+    
+    
+    
+    
+    
+    *aPriority = PRIORITY_NORMAL;
+    return NS_OK;
+  }
   switch (mMessage.priority()) {
   case Message::NORMAL_PRIORITY:
     *aPriority = PRIORITY_NORMAL;
