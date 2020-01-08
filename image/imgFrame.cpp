@@ -213,6 +213,7 @@ imgFrame::imgFrame()
   , mPalettedImageData(nullptr)
   , mPaletteDepth(0)
   , mNonPremult(false)
+  , mIsFullFrame(false)
   , mCompositingFailed(false)
 {
 }
@@ -235,7 +236,8 @@ imgFrame::InitForDecoder(const nsIntSize& aImageSize,
                          SurfaceFormat aFormat,
                          uint8_t aPaletteDepth ,
                          bool aNonPremult ,
-                         const Maybe<AnimationParams>& aAnimParams )
+                         const Maybe<AnimationParams>& aAnimParams ,
+                         bool aIsFullFrame )
 {
   
   
@@ -258,8 +260,10 @@ imgFrame::InitForDecoder(const nsIntSize& aImageSize,
     mTimeout = aAnimParams->mTimeout;
     mBlendMethod = aAnimParams->mBlendMethod;
     mDisposalMethod = aAnimParams->mDisposalMethod;
+    mIsFullFrame = aAnimParams->mFrameNum == 0 || aIsFullFrame;
   } else {
     mBlendRect = aRect;
+    mIsFullFrame = true;
   }
 
   

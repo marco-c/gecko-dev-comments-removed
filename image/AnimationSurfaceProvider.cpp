@@ -34,8 +34,8 @@ AnimationSurfaceProvider::AnimationSurfaceProvider(NotNull<RasterImage*> aImage,
 
   
   
-  
-  size_t pixelSize = aDecoder->GetType() == DecoderType::GIF
+  size_t pixelSize = !aDecoder->ShouldBlendAnimation() &&
+                     aDecoder->GetType() == DecoderType::GIF
                      ? sizeof(uint8_t) : sizeof(uint32_t);
 
   

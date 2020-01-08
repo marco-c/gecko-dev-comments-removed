@@ -59,7 +59,8 @@ public:
                           SurfaceFormat aFormat,
                           uint8_t aPaletteDepth = 0,
                           bool aNonPremult = false,
-                          const Maybe<AnimationParams>& aAnimParams = Nothing());
+                          const Maybe<AnimationParams>& aAnimParams = Nothing(),
+                          bool aIsFullFrame = false);
 
   nsresult InitForAnimator(const nsIntSize& aSize,
                            SurfaceFormat aFormat)
@@ -68,8 +69,12 @@ public:
     AnimationParams animParams { frameRect, FrameTimeout::Forever(),
                                   1, BlendMethod::OVER,
                                  DisposalMethod::NOT_SPECIFIED };
-    return InitForDecoder(aSize, frameRect,
-                          aFormat, 0, false, Some(animParams));
+    
+    
+    
+    return InitForDecoder(aSize, frameRect, aFormat,  0,
+                           false, Some(animParams),
+                           false);
   }
 
 
@@ -190,6 +195,8 @@ public:
 
   const IntRect& GetDirtyRect() const { return mDirtyRect; }
   void SetDirtyRect(const IntRect& aDirtyRect) { mDirtyRect = aDirtyRect; }
+
+  bool IsFullFrame() const { return mIsFullFrame; }
 
   bool GetCompositingFailed() const;
   void SetCompositingFailed(bool val);
@@ -340,6 +347,9 @@ private:
 
   bool mNonPremult;
 
+  
+  
+  bool mIsFullFrame;
 
   
   
