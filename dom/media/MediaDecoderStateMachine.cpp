@@ -2355,7 +2355,20 @@ DecodingState::Step()
   TimeUnit before = mMaster->GetMediaTime();
   mMaster->UpdatePlaybackPositionPeriodically();
 
-  if (mMaster->mMediaSink->IsStarted() && !mMaster->mLooping) {
+  
+  
+  if (before > mMaster->GetMediaTime()) {
+    MOZ_ASSERT(mMaster->mLooping);
+    mMaster->mOnPlaybackEvent.Notify(MediaPlaybackEvent::Loop);
+  
+  
+  
+  
+  
+  
+  
+  
+  } else if (mMaster->mMediaSink->IsStarted() && !mMaster->mLooping) {
     TimeUnit adjusted = mMaster->GetClock();
     Reader()->AdjustByLooping(adjusted);
     if (adjusted < before) {
