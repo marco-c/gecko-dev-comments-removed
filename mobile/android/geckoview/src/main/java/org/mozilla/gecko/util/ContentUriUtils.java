@@ -51,14 +51,20 @@ public class ContentUriUtils {
             
             if (isExternalStorageDocument(uri)) {
                 final String docId = DocumentsContract.getDocumentId(uri);
+                
+                
                 final String[] split = docId.split(":");
                 final String type = split[0];
+                final String docPath = split[1];
 
+                final String rootPath;
                 if ("primary".equalsIgnoreCase(type)) {
-                    return Environment.getExternalStorageDirectory() + "/" + split[1];
+                    rootPath = Environment.getExternalStorageDirectory().getAbsolutePath();
+                } else {
+                    rootPath = FileUtils.getExternalStoragePath(context, type);
                 }
-
-                
+                return !TextUtils.isEmpty(rootPath) ?
+                        rootPath + "/" + docPath : null;
             }
             
             else if (isDownloadsDocument(uri)) {

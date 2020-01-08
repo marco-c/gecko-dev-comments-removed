@@ -4,11 +4,16 @@
 
 package org.mozilla.gecko.util;
 
+import android.annotation.TargetApi;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
+import android.os.Environment;
+import android.os.storage.StorageVolume;
 import android.provider.MediaStore;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -336,5 +341,77 @@ public class FileUtils {
 
     public static boolean isContentUri(String sUri) {
         return sUri != null && sUri.startsWith(CONTENT_SCHEME);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    @TargetApi(19)
+    public static @Nullable String getExternalStoragePath(Context context, @Nullable String uuid) {
+        
+        
+        
+        
+        
+        
+        
+        
+        File [] externalStorages = context.getExternalFilesDirs(null);
+        String uuidDir = !TextUtils.isEmpty(uuid) ? '/' + uuid + '/' : null;
+
+        String firstNonEmulatedStorage = null;
+        String targetStorage = null;
+        for (File externalStorage : externalStorages) {
+            if (isExternalStorageEmulated(externalStorage)) {
+                
+                
+                continue;
+            }
+            String storagePath = externalStorage.getAbsolutePath();
+            
+
+
+
+
+
+            storagePath = storagePath.substring(0, storagePath.indexOf("/Android"));
+            if (firstNonEmulatedStorage == null) {
+                firstNonEmulatedStorage = storagePath;
+            }
+            if (!TextUtils.isEmpty(uuidDir) && storagePath.contains(uuidDir)) {
+                targetStorage = storagePath;
+                break;
+            }
+        }
+        if (targetStorage == null) {
+            
+            
+            
+            targetStorage = firstNonEmulatedStorage;
+        }
+        return targetStorage;
+    }
+
+    
+
+
+
+
+    public static boolean isExternalStorageEmulated(File path) {
+        if (Build.VERSION.SDK_INT >= 21) {
+            return Environment.isExternalStorageEmulated(path);
+        } else {
+            String absPath = path.getAbsolutePath();
+            
+            
+            return absPath.contains("/sdcard0") || absPath.contains("/storage/emulated");
+        }
     }
 }
