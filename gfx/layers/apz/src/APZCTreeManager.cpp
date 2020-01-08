@@ -1130,10 +1130,17 @@ static bool WillHandleInput(const PanGestureOrScrollWheelInput& aPanInput) {
   APZCTM_LOG("Flushing repaints for layers id 0x%" PRIx64 "\n",
              uint64_t(aLayersId));
   RefPtr<GeckoContentController> controller = GetContentController(aLayersId);
+#ifndef MOZ_WIDGET_ANDROID
+  
+  
+  
   MOZ_ASSERT(controller);
-  controller->DispatchToRepaintThread(NewRunnableMethod(
-      "layers::GeckoContentController::NotifyFlushComplete", controller,
-      &GeckoContentController::NotifyFlushComplete));
+#endif
+  if (controller) {
+    controller->DispatchToRepaintThread(NewRunnableMethod(
+        "layers::GeckoContentController::NotifyFlushComplete", controller,
+        &GeckoContentController::NotifyFlushComplete));
+  }
 }
 
 nsEventStatus APZCTreeManager::ReceiveInputEvent(
