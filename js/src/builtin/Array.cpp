@@ -791,8 +791,12 @@ js::ArraySetLength(JSContext* cx, Handle<ArrayObject*> arr, HandleId id,
             MOZ_ASSERT(oldCapacity >= oldInitializedLength);
             if (oldInitializedLength > newLen)
                 arr->setDenseInitializedLengthMaybeNonExtensible(cx, newLen);
-            if (oldCapacity > newLen)
-                arr->shrinkElements(cx, newLen);
+            if (oldCapacity > newLen) {
+                if (arr->isExtensible())
+                    arr->shrinkElements(cx, newLen);
+                else
+                    MOZ_ASSERT(arr->getDenseInitializedLength() == arr->getDenseCapacity());
+            }
 
             
             
