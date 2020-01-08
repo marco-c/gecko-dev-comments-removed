@@ -2843,24 +2843,28 @@ HTMLEditor::GetElementOrParentByTagNameInternal(const nsAtom& aTagName,
 
   bool getLink = IsLinkTag(aTagName);
   bool getNamedAnchor = IsNamedAnchorTag(aTagName);
-  const nsAtom& tagName = getLink || getNamedAnchor ? *nsGkAtoms::a : aTagName;
   for (; currentElement; currentElement = currentElement->GetParentElement()) {
-    
-    if ((getLink && HTMLEditUtils::IsLink(currentElement)) ||
-        (getNamedAnchor && HTMLEditUtils::IsNamedAnchor(currentElement))) {
-      return currentElement;
-    }
-    if (&tagName == nsGkAtoms::list_) {
+    if (getLink) {
+      
+      if (HTMLEditUtils::IsLink(currentElement)) {
+        return currentElement;
+      }
+    } else if (getNamedAnchor) {
+      
+      if (HTMLEditUtils::IsNamedAnchor(currentElement)) {
+        return currentElement;
+      }
+    } else if (&aTagName == nsGkAtoms::list_) {
       
       if (HTMLEditUtils::IsList(currentElement)) {
         return currentElement;
       }
-    } else if (&tagName == nsGkAtoms::td) {
+    } else if (&aTagName == nsGkAtoms::td) {
       
       if (HTMLEditUtils::IsTableCell(currentElement)) {
         return currentElement;
       }
-    } else if (&tagName == currentElement->NodeInfo()->NameAtom()) {
+    } else if (&aTagName == currentElement->NodeInfo()->NameAtom()) {
       return currentElement;
     }
 
