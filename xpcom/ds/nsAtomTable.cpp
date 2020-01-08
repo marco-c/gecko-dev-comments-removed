@@ -595,16 +595,14 @@ static bool gStaticAtomsDone = false;
 void
 NS_InitAtomTable()
 {
+  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!gAtomTable);
-  gAtomTable = new nsAtomTable();
 
   
   
-  
-  
-  
-  
-  nsGkAtoms::RegisterStaticAtoms();
+  gAtomTable = new nsAtomTable();
+  gAtomTable->RegisterStaticAtoms(nsGkAtoms::sAtoms, nsGkAtoms::sAtomsLen);
+  gStaticAtomsDone = true;
 }
 
 void
@@ -677,15 +675,6 @@ nsAtomTable::RegisterStaticAtoms(const nsStaticAtom* aAtoms, size_t aAtomsLen)
     }
     he->mAtom = const_cast<nsStaticAtom*>(atom);
   }
-}
-
-void
-NS_RegisterStaticAtoms(const nsStaticAtom* aAtoms, size_t aAtomsLen)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(gAtomTable);
-  gAtomTable->RegisterStaticAtoms(aAtoms, aAtomsLen);
-  gStaticAtomsDone = true;
 }
 
 already_AddRefed<nsAtom>
