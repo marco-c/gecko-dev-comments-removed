@@ -66,32 +66,31 @@ TextEditor::PrepareTransferable(nsITransferable** transferable)
 
 nsresult
 TextEditor::InsertTextAt(const nsAString& aStringToInsert,
-                         nsINode* aDestinationNode,
-                         int32_t aDestOffset,
+                         const EditorDOMPoint& aPointToInsert,
                          bool aDoDeleteSelection)
 {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  if (aDestinationNode) {
-    nsCOMPtr<nsINode> targetNode = aDestinationNode;
-    int32_t targetOffset = aDestOffset;
+  MOZ_ASSERT(aPointToInsert.IsSet());
 
-    if (aDoDeleteSelection) {
-      
-      
-      AutoTrackDOMPoint tracker(mRangeUpdater, &targetNode, &targetOffset);
-      nsresult rv = DeleteSelectionAsSubAction(eNone, eStrip);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
+  EditorDOMPoint collapseAt(aPointToInsert);
+  if (aDoDeleteSelection) {
+    
+    
+    AutoTrackDOMPoint tracker(mRangeUpdater, &collapseAt);
+    nsresult rv = DeleteSelectionAsSubAction(eNone, eStrip);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
 
-    ErrorResult error;
-    SelectionRefPtr()->Collapse(RawRangeBoundary(targetNode, targetOffset),
-                                error);
-    if (NS_WARN_IF(error.Failed())) {
-      return error.StealNSResult();
-    }
+    
+    
+  }
+
+  ErrorResult error;
+  SelectionRefPtr()->Collapse(collapseAt, error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
   }
 
   nsresult rv = InsertTextAsSubAction(aStringToInsert);
@@ -104,7 +103,6 @@ TextEditor::InsertTextAt(const nsAString& aStringToInsert,
 nsresult
 TextEditor::InsertTextFromTransferable(nsITransferable* aTransferable)
 {
-  nsresult rv = NS_OK;
   nsAutoCString bestFlavor;
   nsCOMPtr<nsISupports> genericDataObj;
   if (NS_SUCCEEDED(
@@ -124,40 +122,44 @@ TextEditor::InsertTextFromTransferable(nsITransferable* aTransferable)
       nsContentUtils::PlatformToDOMLineBreaks(stuffToPaste);
 
       AutoPlaceholderBatch treatAsOneTransaction(*this);
-      rv = InsertTextAt(stuffToPaste, nullptr, 0, true);
+      nsresult rv = InsertTextAsSubAction(stuffToPaste);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
   }
 
   
+  ScrollSelectionIntoView(false);
 
-  if (NS_SUCCEEDED(rv)) {
-    ScrollSelectionIntoView(false);
-  }
-
-  return rv;
+  return NS_OK;
 }
 
 nsresult
 TextEditor::InsertFromDataTransfer(DataTransfer* aDataTransfer,
                                    int32_t aIndex,
                                    nsIDocument* aSourceDoc,
-                                   nsINode* aDestinationNode,
-                                   int32_t aDestOffset,
+                                   const EditorDOMPoint& aDroppedAt,
                                    bool aDoDeleteSelection)
 {
-  nsCOMPtr<nsIVariant> data;
-  aDataTransfer->GetDataAtNoSecurityCheck(NS_LITERAL_STRING("text/plain"), aIndex,
-                                          getter_AddRefs(data));
-  if (data) {
-    nsAutoString insertText;
-    data->GetAsAString(insertText);
-    nsContentUtils::PlatformToDOMLineBreaks(insertText);
+  MOZ_ASSERT(GetEditAction() == EditAction::eDrop);
+  MOZ_ASSERT(mPlaceholderBatch,
+    "TextEditor::InsertFromDataTransfer() should be called only by OnDrop() "
+    "and there should've already been placeholder transaction");
+  MOZ_ASSERT(aDroppedAt.IsSet());
 
-    AutoPlaceholderBatch treatAsOneTransaction(*this);
-    return InsertTextAt(insertText, aDestinationNode, aDestOffset, aDoDeleteSelection);
+  nsCOMPtr<nsIVariant> data;
+  aDataTransfer->GetDataAtNoSecurityCheck(NS_LITERAL_STRING("text/plain"),
+                                          aIndex, getter_AddRefs(data));
+  if (!data) {
+    return NS_OK;
   }
 
-  return NS_OK;
+  nsAutoString insertText;
+  data->GetAsAString(insertText);
+  nsContentUtils::PlatformToDOMLineBreaks(insertText);
+
+  return InsertTextAt(insertText, aDroppedAt, aDoDeleteSelection);
 }
 
 nsresult
@@ -175,10 +177,14 @@ TextEditor::OnDrop(DragEvent* aDropEvent)
   }
 
   RefPtr<DataTransfer> dataTransfer = aDropEvent->GetDataTransfer();
-  NS_ENSURE_TRUE(dataTransfer, NS_ERROR_FAILURE);
+  if (NS_WARN_IF(!dataTransfer)) {
+    return NS_ERROR_FAILURE;
+  }
 
   nsCOMPtr<nsIDragSession> dragSession = nsContentUtils::GetDragSession();
-  NS_ASSERTION(dragSession, "No drag session");
+  if (NS_WARN_IF(!dragSession)) {
+    return NS_ERROR_FAILURE;
+  }
 
   nsCOMPtr<nsINode> sourceNode = dataTransfer->GetMozSourceNode();
 
@@ -203,90 +209,80 @@ TextEditor::OnDrop(DragEvent* aDropEvent)
   }
 
   uint32_t numItems = dataTransfer->MozItemCount();
-  if (numItems < 1) {
+  if (NS_WARN_IF(!numItems)) {
     return NS_ERROR_FAILURE;  
   }
 
   
-  AutoPlaceholderBatch treatAsOneTransaction(*this);
+  
+  EditorDOMPoint droppedAt(aDropEvent->GetRangeParent(),
+                           aDropEvent->RangeOffset());
+  if (NS_WARN_IF(!droppedAt.IsSet())) {
+    return NS_ERROR_FAILURE;
+  }
 
+  
+  
+  
   bool deleteSelection = false;
-
-  
-  
-  nsCOMPtr<nsINode> newSelectionParent = aDropEvent->GetRangeParent();
-  NS_ENSURE_TRUE(newSelectionParent, NS_ERROR_FAILURE);
-
-  int32_t newSelectionOffset = aDropEvent->RangeOffset();
-
-  
-  
-  
-  if (!SelectionRefPtr()->IsCollapsed()) {
-    
-    bool cursorIsInSelection = false;
-
+  if (!SelectionRefPtr()->IsCollapsed()&& srcdoc == destdoc) {
     uint32_t rangeCount = SelectionRefPtr()->RangeCount();
-
     for (uint32_t j = 0; j < rangeCount; j++) {
-      RefPtr<nsRange> range = SelectionRefPtr()->GetRangeAt(j);
-      if (!range) {
+      nsRange* range = SelectionRefPtr()->GetRangeAt(j);
+      if (NS_WARN_IF(!range)) {
         
         continue;
       }
-
-      IgnoredErrorResult rv;
-      cursorIsInSelection =
-        range->IsPointInRange(*newSelectionParent, newSelectionOffset, rv);
-      if (rv.Failed()) {
+      IgnoredErrorResult errorIgnored;
+      if (range->IsPointInRange(*droppedAt.GetContainer(),
+                                droppedAt.Offset(),
+                                errorIgnored) && !errorIgnored.Failed()) {
         
-        cursorIsInSelection = false;
-      }
-      if (cursorIsInSelection) {
-        break;
-      }
-    }
-
-    if (cursorIsInSelection) {
-      
-      if (srcdoc == destdoc) {
+        
+        
+        
+        
+        
         return NS_OK;
       }
-
-      
-      
-      
-      
-    } else {
-      
-      if (srcdoc == destdoc) {
-        
-        uint32_t dropEffect = dataTransfer->DropEffectInt();
-        deleteSelection = !(dropEffect & nsIDragService::DRAGDROP_ACTION_COPY);
-      } else {
-        
-        deleteSelection = false;
-      }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    uint32_t dropEffect = dataTransfer->DropEffectInt();
+    deleteSelection = !(dropEffect & nsIDragService::DRAGDROP_ACTION_COPY);
   }
 
   if (IsPlaintextEditor()) {
-    nsCOMPtr<nsIContent> content = do_QueryInterface(newSelectionParent);
-    while (content) {
+    for (nsIContent* content = droppedAt.GetContainerAsContent();
+         content;
+         content = content->GetParent()) {
       nsCOMPtr<nsIFormControl> formControl(do_QueryInterface(content));
       if (formControl && !formControl->AllowDrop()) {
         
         
         return NS_OK;
       }
-      content = content->GetParent();
     }
   }
 
+  
+  AutoPlaceholderBatch treatAsOneTransaction(*this);
+
   for (uint32_t i = 0; i < numItems; ++i) {
-    InsertFromDataTransfer(dataTransfer, i, srcdoc,
-                           newSelectionParent,
-                           newSelectionOffset, deleteSelection);
+    InsertFromDataTransfer(dataTransfer, i, srcdoc, droppedAt, deleteSelection);
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    
+    
+    
+    deleteSelection = false;
   }
 
   ScrollSelectionIntoView(false);

@@ -1944,18 +1944,6 @@ protected:
 
   nsresult InitializeSelection(dom::EventTarget* aFocusEventTarget);
 
-  
-
-
-
-
-  virtual nsresult InsertFromDataTransfer(dom::DataTransfer* aDataTransfer,
-                                          int32_t aIndex,
-                                          nsIDocument* aSourceDoc,
-                                          nsINode* aDestinationNode,
-                                          int32_t aDestOffset,
-                                          bool aDoDeleteSelection) = 0;
-
   enum NotificationForEditorObservers
   {
     eNotifyEditorObserversOfEnd,

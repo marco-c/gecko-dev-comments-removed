@@ -1738,7 +1738,7 @@ protected:
   public:
     BlobReader(dom::BlobImpl* aBlob, HTMLEditor* aHTMLEditor,
                bool aIsSafe, nsIDocument* aSourceDoc,
-               nsINode* aDestinationNode, int32_t aDestOffset,
+               const EditorDOMPoint& aPointToInsert,
                bool aDoDeleteSelection);
 
     NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(BlobReader)
@@ -1755,8 +1755,7 @@ protected:
     RefPtr<dom::BlobImpl> mBlob;
     RefPtr<HTMLEditor> mHTMLEditor;
     nsCOMPtr<nsIDocument> mSourceDoc;
-    nsCOMPtr<nsINode> mDestinationNode;
-    int32_t mDestOffset;
+    EditorDOMPoint mPointToInsert;
     EditAction mEditAction;
     bool mIsSafe;
     bool mDoDeleteSelection;
@@ -2073,29 +2072,39 @@ protected:
                                       bool aAddCites,
                                       nsINode** aNodeInserted);
 
+  
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult InsertObject(const nsACString& aType, nsISupports* aObject,
                         bool aIsSafe,
                         nsIDocument* aSourceDoc,
-                        nsINode* aDestinationNode,
-                        int32_t aDestOffset,
+                        const EditorDOMPoint& aPointToInsert,
                         bool aDoDeleteSelection);
 
   
   
   virtual nsresult PrepareTransferable(nsITransferable** transferable) override;
   nsresult PrepareHTMLTransferable(nsITransferable** transferable);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult InsertFromTransferable(nsITransferable* transferable,
                                     nsIDocument* aSourceDoc,
                                     const nsAString& aContextStr,
                                     const nsAString& aInfoStr,
                                     bool havePrivateHTMLFlavor,
                                     bool aDoDeleteSelection);
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT
   virtual nsresult InsertFromDataTransfer(dom::DataTransfer* aDataTransfer,
                                           int32_t aIndex,
                                           nsIDocument* aSourceDoc,
-                                          nsINode* aDestinationNode,
-                                          int32_t aDestOffset,
+                                          const EditorDOMPoint& aDroppedAt,
                                           bool aDoDeleteSelection) override;
+
   bool HavePrivateHTMLFlavor(nsIClipboard* clipboard );
   nsresult ParseCFHTML(nsCString& aCfhtml, char16_t** aStuffToPaste,
                        char16_t** aCfcontext);
@@ -2222,13 +2231,13 @@ protected:
 
 
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult DoInsertHTMLWithContext(const nsAString& aInputString,
                                    const nsAString& aContextStr,
                                    const nsAString& aInfoStr,
                                    const nsAString& aFlavor,
                                    nsIDocument* aSourceDoc,
-                                   nsINode* aDestNode,
-                                   int32_t aDestOffset,
+                                   const EditorDOMPoint& aPointToInsert,
                                    bool aDeleteSelection,
                                    bool aTrustedInput,
                                    bool aClearStyle = true);

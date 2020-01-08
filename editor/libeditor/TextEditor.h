@@ -381,17 +381,36 @@ protected:
 
   nsresult InsertLineBreakAsSubAction();
 
+  
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT
   nsresult InsertTextAt(const nsAString& aStringToInsert,
-                        nsINode* aDestinationNode,
-                        int32_t aDestOffset,
+                        const EditorDOMPoint& aPointToInsert,
                         bool aDoDeleteSelection);
 
+  
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT
   virtual nsresult InsertFromDataTransfer(dom::DataTransfer* aDataTransfer,
                                           int32_t aIndex,
                                           nsIDocument* aSourceDoc,
-                                          nsINode* aDestinationNode,
-                                          int32_t aDestOffset,
-                                          bool aDoDeleteSelection) override;
+                                          const EditorDOMPoint& aDroppedAt,
+                                          bool aDoDeleteSelection);
 
   
 
