@@ -2,7 +2,7 @@
 
 
 
-html {
+:root {
   height: 100%;
 }
 
@@ -159,7 +159,7 @@ payment-dialog[changes-prevented][complete-status="success"] #pay {
 }
 
 #cancel {
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 #disabled-overlay {
