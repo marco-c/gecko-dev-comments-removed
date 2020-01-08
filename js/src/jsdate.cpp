@@ -38,6 +38,7 @@
 #include "js/Date.h"
 #include "js/Wrapper.h"
 #include "util/StringBuffer.h"
+#include "util/Text.h"
 #include "vm/DateTime.h"
 #include "vm/GlobalObject.h"
 #include "vm/Interpreter.h"
@@ -435,6 +436,45 @@ JS::SetTimeResolutionUsec(uint32_t resolution, bool jitter)
     sJitter = jitter;
 }
 
+#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
+
+
+static double
+LocalTZA(double t, DateTimeInfo::TimeZoneOffset offset)
+{
+    MOZ_ASSERT(IsFinite(t));
+
+    int64_t milliseconds = static_cast<int64_t>(t);
+    int32_t offsetMilliseconds = DateTimeInfo::getOffsetMilliseconds(milliseconds, offset);
+    return static_cast<double>(offsetMilliseconds);
+}
+
+
+
+static double
+LocalTime(double t)
+{
+    if (!IsFinite(t))
+        return GenericNaN();
+
+    MOZ_ASSERT(StartOfTime <= t && t <= EndOfTime);
+    return t + LocalTZA(t, DateTimeInfo::TimeZoneOffset::UTC);
+}
+
+
+
+static double
+UTC(double t)
+{
+    if (!IsFinite(t))
+        return GenericNaN();
+
+    if (t < (StartOfTime - msPerDay) || t > (EndOfTime + msPerDay))
+        return GenericNaN();
+
+    return t - LocalTZA(t, DateTimeInfo::TimeZoneOffset::Local);
+}
+#else
 
 
 
@@ -532,6 +572,7 @@ UTC(double t)
 
     return t - AdjustTime(t - DateTimeInfo::localTZA() - msPerHour);
 }
+#endif 
 
 
 static double
@@ -1774,20 +1815,8 @@ date_getUTCMinutes(JSContext* cx, unsigned argc, Value* vp)
     return CallNonGenericMethod<IsDate, DateObject::getUTCMinutes_impl>(cx, args);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
  MOZ_ALWAYS_INLINE bool
-DateObject::getUTCSeconds_impl(JSContext* cx, const CallArgs& args)
+DateObject::getSeconds_impl(JSContext* cx, const CallArgs& args)
 {
     DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
     dateObj->fillLocalTimeSlots();
@@ -1805,11 +1834,33 @@ DateObject::getUTCSeconds_impl(JSContext* cx, const CallArgs& args)
 }
 
 static bool
+date_getSeconds(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    return CallNonGenericMethod<IsDate, DateObject::getSeconds_impl>(cx, args);
+}
+
+ MOZ_ALWAYS_INLINE bool
+DateObject::getUTCSeconds_impl(JSContext* cx, const CallArgs& args)
+{
+    double result = args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
+    if (IsFinite(result))
+        result = SecFromTime(result);
+
+    args.rval().setNumber(result);
+    return true;
+}
+
+static bool
 date_getUTCSeconds(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
     return CallNonGenericMethod<IsDate, DateObject::getUTCSeconds_impl>(cx, args);
 }
+
+
+
+
 
 
 
@@ -2659,6 +2710,41 @@ date_toJSON(JSContext* cx, unsigned argc, Value* vp)
     return Call(cx, toISO, obj, args.rval());
 }
 
+#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
+static JSString*
+TimeZoneComment(JSContext* cx, double utcTime, double localTime)
+{
+    const char* locale = cx->runtime()->getDefaultLocale();
+    if (!locale) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEFAULT_LOCALE_ERROR);
+        return nullptr;
+    }
+
+    char16_t tzbuf[100];
+    tzbuf[0] = ' ';
+    tzbuf[1] = '(';
+
+    char16_t* timeZoneStart = tzbuf + 2;
+    constexpr size_t remainingSpace = mozilla::ArrayLength(tzbuf) - 2 - 1; 
+
+    int64_t utcMilliseconds = static_cast<int64_t>(utcTime);
+    if (!DateTimeInfo::timeZoneDisplayName(timeZoneStart, remainingSpace, utcMilliseconds, locale))
+    {
+        JS_ReportOutOfMemory(cx);
+        return nullptr;
+    }
+
+    
+    size_t len = js_strlen(timeZoneStart);
+    if (len == 0)
+        return cx->names().empty;
+
+    
+    timeZoneStart[len] = ')';
+
+    return NewStringCopyN<CanGC>(cx, tzbuf, 2 + len + 1);
+}
+#else
 
 static PRMJTime
 ToPRMJTime(double localTime, double utcTime)
@@ -2727,6 +2813,7 @@ TimeZoneComment(JSContext* cx, double utcTime, double localTime)
 
     return cx->names().empty;
 }
+#endif 
 
 enum class FormatSpec {
     DateTime,
@@ -2751,11 +2838,17 @@ FormatDate(JSContext* cx, double utcTime, FormatSpec format, MutableHandleValue 
     if (format == FormatSpec::DateTime || format == FormatSpec::Time) {
         
         
-        int minutes = (int) floor((localTime - utcTime) / msPerMinute);
+        int minutes = (int) trunc((localTime - utcTime) / msPerMinute);
 
         
         offset = (minutes / 60) * 100 + minutes % 60;
 
+        
+        
+        
+        
+        
+        
         
         
         
@@ -3066,7 +3159,7 @@ static const JSFunctionSpec date_methods[] = {
     JS_FN("getUTCHours",         date_getUTCHours,        0,0),
     JS_FN("getMinutes",          date_getMinutes,         0,0),
     JS_FN("getUTCMinutes",       date_getUTCMinutes,      0,0),
-    JS_FN("getSeconds",          date_getUTCSeconds,      0,0),
+    JS_FN("getSeconds",          date_getSeconds,         0,0),
     JS_FN("getUTCSeconds",       date_getUTCSeconds,      0,0),
     JS_FN("getMilliseconds",     date_getUTCMilliseconds, 0,0),
     JS_FN("getUTCMilliseconds",  date_getUTCMilliseconds, 0,0),

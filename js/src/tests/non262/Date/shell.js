@@ -72,6 +72,16 @@
         }
     }
 
+    function getDefaultLocale() {
+        
+        var locale = global.getDefaultLocale();
+        if (locale.match(/^[a-z][a-z0-9\-]+$/i))
+            return locale;
+
+        
+        return undefined;
+    }
+
     let defaultTimeZone = null;
     let defaultLocale = null;
 
@@ -88,6 +98,20 @@
         }
     }
     global.inTimeZone = inTimeZone;
+
+    
+    function withLocale(locale, fn) {
+        if (defaultLocale === null)
+            defaultLocale = getDefaultLocale();
+
+        setDefaultLocale(locale);
+        try {
+            fn();
+        } finally {
+            setDefaultLocale(defaultLocale);
+        }
+    }
+    global.withLocale = withLocale;
 
     const Month = {
         January: 0,

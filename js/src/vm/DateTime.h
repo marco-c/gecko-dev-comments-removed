@@ -9,10 +9,20 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/UniquePtr.h"
 
 #include <stdint.h>
 
+#include "js/Utility.h"
 #include "threading/ExclusiveData.h"
+
+#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
+#include "unicode/uversion.h"
+
+U_NAMESPACE_BEGIN
+class TimeZone;
+U_NAMESPACE_END
+#endif 
 
 namespace js {
 
@@ -114,6 +124,7 @@ class DateTimeInfo
     friend void FinishDateTimeState();
 
     DateTimeInfo();
+    ~DateTimeInfo();
 
   public:
     
@@ -139,6 +150,32 @@ class DateTimeInfo
         auto guard = instance->lock();
         return guard->localTZA_;
     }
+
+#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
+    enum class TimeZoneOffset { UTC, Local };
+
+    
+
+
+
+    static int32_t getOffsetMilliseconds(int64_t milliseconds, TimeZoneOffset offset) {
+        auto guard = instance->lock();
+        return guard->internalGetOffsetMilliseconds(milliseconds, offset);
+    }
+
+    
+
+
+
+
+
+    static bool timeZoneDisplayName(char16_t* buf, size_t buflen, int64_t utcMilliseconds,
+                                    const char* locale)
+    {
+        auto guard = instance->lock();
+        return guard->internalTimeZoneDisplayName(buf, buflen, utcMilliseconds, locale);
+    }
+#endif 
 
   private:
     
@@ -188,16 +225,44 @@ class DateTimeInfo
 
     RangeCache dstRange_; 
 
+#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
     
     
     
     
-    
-    
-    static const int64_t MinTimeT = 0; 
-    static const int64_t MaxTimeT = 2145830400; 
 
-    static const int64_t RangeExpansionAmount = 30 * SecondsPerDay;
+    
+    static constexpr int64_t MinTimeT = static_cast<int64_t>(StartOfTime / msPerSecond);
+    static constexpr int64_t MaxTimeT = static_cast<int64_t>(EndOfTime / msPerSecond);
+
+    RangeCache utcRange_; 
+    RangeCache localRange_; 
+
+    
+
+
+
+    mozilla::UniquePtr<icu::TimeZone> timeZone_;
+
+    
+
+
+
+    JS::UniqueChars locale_;
+    JS::UniqueTwoByteChars standardName_;
+    JS::UniqueTwoByteChars daylightSavingsName_;
+#else
+    
+    
+    
+    
+    
+    
+    static constexpr int64_t MinTimeT = 0; 
+    static constexpr int64_t MaxTimeT = 2145830400; 
+#endif 
+
+    static constexpr int64_t RangeExpansionAmount = 30 * SecondsPerDay;
 
     bool internalUpdateTimeZoneAdjustment(ResetTimeZoneMode mode);
 
@@ -218,6 +283,27 @@ class DateTimeInfo
     int32_t computeDSTOffsetMilliseconds(int64_t utcSeconds);
 
     int32_t internalGetDSTOffsetMilliseconds(int64_t utcMilliseconds);
+
+#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
+    
+
+
+
+    int32_t computeUTCOffsetMilliseconds(int64_t localSeconds);
+
+    
+
+
+
+    int32_t computeLocalOffsetMilliseconds(int64_t utcSeconds);
+
+    int32_t internalGetOffsetMilliseconds(int64_t milliseconds, TimeZoneOffset offset);
+
+    bool internalTimeZoneDisplayName(char16_t* buf, size_t buflen, int64_t utcMilliseconds,
+                                     const char* locale);
+
+    icu::TimeZone* timeZone();
+#endif 
 };
 
 enum class IcuTimeZoneStatus { Valid, NeedsUpdate };

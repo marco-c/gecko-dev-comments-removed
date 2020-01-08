@@ -25,19 +25,19 @@ assertEq(/^(PST|PDT)$/.test(getTimeZone()), true);
 
 {
     let dt1 = new Date(2040, Month.March, 31);
-    assertDateTime(dt1, "Sat Mar 31 2040 00:00:00 GMT-0700 (PDT)");
+    assertDateTime(dt1, "Sat Mar 31 2040 00:00:00 GMT-0700 (PDT)", "Pacific Daylight Time");
 
     let dt2 = new Date(2040, Month.November, 1);
-    assertDateTime(dt2, "Thu Nov 01 2040 00:00:00 GMT-0700 (PDT)");
+    assertDateTime(dt2, "Thu Nov 01 2040 00:00:00 GMT-0700 (PDT)", "Pacific Daylight Time");
 }
 
 
 {
     let dt1 = new Date(2038, Month.March, 31);
-    assertDateTime(dt1, "Wed Mar 31 2038 00:00:00 GMT-0700 (PDT)");
+    assertDateTime(dt1, "Wed Mar 31 2038 00:00:00 GMT-0700 (PDT)", "Pacific Daylight Time");
 
     let dt2 = new Date(2038, Month.November, 1);
-    assertDateTime(dt2, "Mon Nov 01 2038 00:00:00 GMT-0700 (PDT)");
+    assertDateTime(dt2, "Mon Nov 01 2038 00:00:00 GMT-0700 (PDT)", "Pacific Daylight Time");
 }
 
 if (typeof reportCompare === "function")
