@@ -14,6 +14,8 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.os.Build;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
 import android.view.View;
 import android.widget.EdgeEffect;
@@ -48,7 +50,7 @@ public final class OverscrollEdgeEffect {
 
 
 
-    public void setTheme(final Context context) {
+    public void setTheme(final @NonNull Context context) {
         ThreadUtils.assertOnUiThread();
 
         final PorterDuffXfermode mode = new PorterDuffXfermode(PorterDuff.Mode.SRC);
@@ -90,7 +92,7 @@ public final class OverscrollEdgeEffect {
 
 
 
-    public void setInvalidationCallback(final Runnable runnable) {
+    public void setInvalidationCallback(final @Nullable Runnable runnable) {
         ThreadUtils.assertOnUiThread();
         mInvalidationCallback = runnable;
     }
@@ -101,7 +103,7 @@ public final class OverscrollEdgeEffect {
 
 
 
-    public Runnable getInvalidationCallback() {
+    public @Nullable Runnable getInvalidationCallback() {
         ThreadUtils.assertOnUiThread();
         return mInvalidationCallback;
     }
@@ -167,7 +169,7 @@ public final class OverscrollEdgeEffect {
 
 
 
-    public void draw(final Canvas canvas) {
+    public void draw(final @NonNull Canvas canvas) {
         ThreadUtils.assertOnUiThread();
 
         final Rect pageRect = new Rect();

@@ -483,7 +483,7 @@ public final class SessionTextInput {
 
 
     @UiThread
-    public GeckoSession.TextInputDelegate getDelegate() {
+    public @NonNull GeckoSession.TextInputDelegate getDelegate() {
         ThreadUtils.assertOnUiThread();
         if (mDelegate == null) {
             mDelegate = DefaultDelegate.INSTANCE;
@@ -534,7 +534,7 @@ public final class SessionTextInput {
 
 
     @UiThread
-    public void autofill(final SparseArray<CharSequence> values) {
+    public void autofill(final @NonNull SparseArray<CharSequence> values) {
         if (mAutoFillRoots == null) {
             return;
         }

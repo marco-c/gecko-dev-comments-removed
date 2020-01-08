@@ -501,7 +501,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
-    public String[] getArguments() {
+    public @NonNull String[] getArguments() {
         return mArgs;
     }
 
@@ -510,7 +510,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
-    public Bundle getExtras() {
+    public @NonNull Bundle getExtras() {
         return mExtras;
     }
 
@@ -593,7 +593,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
-    public Float getDisplayDensityOverride() {
+    public @Nullable Float getDisplayDensityOverride() {
         if (mDisplayDensityOverride > 0.0f) {
             return mDisplayDensityOverride;
         }
@@ -605,14 +605,14 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
-    public Integer getDisplayDpiOverride() {
+    public @Nullable Integer getDisplayDpiOverride() {
         if (mDisplayDpiOverride > 0) {
             return mDisplayDpiOverride;
         }
         return null;
     }
 
-    public Class<? extends Service> getCrashHandler() {
+    public @Nullable Class<? extends Service> getCrashHandler() {
         return mCrashHandler;
     }
 
@@ -622,7 +622,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
-    public Rect getScreenSizeOverride() {
+    public @Nullable Rect getScreenSizeOverride() {
         if ((mScreenWidthOverride > 0) && (mScreenHeightOverride > 0)) {
             return new Rect(0, 0, mScreenWidthOverride, mScreenHeightOverride);
         }
@@ -634,7 +634,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
-    public String[] getLocales() {
+    public @Nullable String[] getLocales() {
         return mRequestedLocales;
     }
 
@@ -643,7 +643,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
-    public void setLocales(String[] requestedLocales) {
+    public void setLocales(@Nullable String[] requestedLocales) {
         mRequestedLocales = requestedLocales;
         flushLocales();
     }
@@ -877,7 +877,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
     }
 
     
-    public void readFromParcel(final Parcel source) {
+    public void readFromParcel(final @NonNull Parcel source) {
         mUseContentProcess = ParcelableUtils.readBoolean(source);
         mArgs = source.createStringArray();
         mExtras.readFromParcel(source);

@@ -8,6 +8,7 @@ package org.mozilla.geckoview;
 
 import android.support.annotation.AnyThread;
 import android.support.annotation.IntDef;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
 import android.util.Log;
@@ -291,7 +292,7 @@ public class MediaElement {
 
 
         @UiThread
-        void onPlaybackStateChange(MediaElement mediaElement, @MediaStateFlags int mediaState);
+        void onPlaybackStateChange(@NonNull MediaElement mediaElement, @MediaStateFlags int mediaState);
 
         
 
@@ -301,7 +302,7 @@ public class MediaElement {
 
 
         @UiThread
-        void onReadyStateChange(MediaElement mediaElement, @ReadyStateFlags int readyState);
+        void onReadyStateChange(@NonNull MediaElement mediaElement, @ReadyStateFlags int readyState);
 
         
 
@@ -310,7 +311,7 @@ public class MediaElement {
 
 
         @UiThread
-        void onMetadataChange(MediaElement mediaElement, Metadata metaData);
+        void onMetadataChange(@NonNull MediaElement mediaElement, @NonNull Metadata metaData);
 
         
 
@@ -319,44 +320,8 @@ public class MediaElement {
 
 
         @UiThread
-        void onLoadProgress(MediaElement mediaElement, LoadProgressInfo progressInfo);
-
-        
-
-
-
-
-
-
-        @UiThread
-        void onVolumeChange(MediaElement mediaElement, double volume, boolean muted);
-
-        
-
-
-
-
-
-        @UiThread
-        void onTimeChange(MediaElement mediaElement, double time);
-
-        
-
-
-
-
-
-        @UiThread
-        void onPlaybackRateChange(MediaElement mediaElement, double rate);
-
-        
-
-
-
-
-
-        @UiThread
-        void onFullscreenChange(MediaElement mediaElement, boolean fullscreen);
+        void onLoadProgress(@NonNull MediaElement mediaElement,
+                            @NonNull LoadProgressInfo progressInfo);
 
         
 
@@ -366,7 +331,44 @@ public class MediaElement {
 
 
         @UiThread
-        void onError(MediaElement mediaElement, @MediaErrorFlags int errorCode);
+        void onVolumeChange(@NonNull MediaElement mediaElement, double volume, boolean muted);
+
+        
+
+
+
+
+
+        @UiThread
+        void onTimeChange(@NonNull MediaElement mediaElement, double time);
+
+        
+
+
+
+
+
+        @UiThread
+        void onPlaybackRateChange(@NonNull MediaElement mediaElement, double rate);
+
+        
+
+
+
+
+
+        @UiThread
+        void onFullscreenChange(@NonNull MediaElement mediaElement, boolean fullscreen);
+
+        
+
+
+
+
+
+
+        @UiThread
+        void onError(@NonNull MediaElement mediaElement, @MediaErrorFlags int errorCode);
     }
 
      long getVideoId() {

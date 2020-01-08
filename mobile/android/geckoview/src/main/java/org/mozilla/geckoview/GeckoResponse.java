@@ -7,6 +7,7 @@
 package org.mozilla.geckoview;
 
 import android.support.annotation.AnyThread;
+import android.support.annotation.Nullable;
 
 
 
@@ -18,5 +19,5 @@ public interface GeckoResponse<T> {
 
 
     @AnyThread
-    void respond(T value);
+    void respond(@Nullable T value);
 }
