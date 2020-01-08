@@ -14,6 +14,7 @@
 
 #include "mozilla/Base64.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
+#include "mozilla/layers/CompositorThread.h" 
 #include "gfxPrefs.h"
 #include "gfxUtils.h"
 #include "gfxVRPuppet.h"
@@ -394,7 +395,7 @@ VRDisplayPuppet::SubmitFrame(ID3D11Texture2D* aSource,
       }
       
       
-      MessageLoop* loop = VRListenerThreadHolder::Loop();
+      MessageLoop* loop = CompositorThreadHolder::Loop();
       loop->PostTask(NewRunnableMethod<const uint32_t, VRSubmitFrameResultInfo>(
         "VRManager::DispatchSubmitFrameResult",
         vm, &VRManager::DispatchSubmitFrameResult, mDisplayInfo.mDisplayID, result
@@ -540,7 +541,7 @@ VRDisplayPuppet::SubmitFrame(MacIOSurface* aMacIOSurface,
         }
         
         
-        MessageLoop* loop = VRListenerThreadHolder::Loop();
+        MessageLoop* loop = CompositorThreadHolder::Loop();
         loop->PostTask(NewRunnableMethod<const uint32_t, VRSubmitFrameResultInfo>(
           "VRManager::DispatchSubmitFrameResult",
           vm, &VRManager::DispatchSubmitFrameResult, mDisplayInfo.mDisplayID, result

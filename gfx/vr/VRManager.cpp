@@ -263,8 +263,6 @@ VRManager::UpdateRequestedDevices()
 void
 VRManager::NotifyVsync(const TimeStamp& aVsyncTimestamp)
 {
-  MOZ_ASSERT(VRListenerThreadHolder::IsInVRListenerThread());
-
   for (const auto& manager : mManagers) {
     manager->NotifyVSync();
   }
@@ -273,11 +271,10 @@ VRManager::NotifyVsync(const TimeStamp& aVsyncTimestamp)
 void
 VRManager::StartTasks()
 {
-  MOZ_ASSERT(VRListenerThread());
   if (!mTaskTimer) {
     mTaskInterval = GetOptimalTaskInterval();
     mTaskTimer = NS_NewTimer();
-    mTaskTimer->SetTarget(VRListenerThreadHolder::Loop()->SerialEventTarget());
+    mTaskTimer->SetTarget(CompositorThreadHolder::Loop()->SerialEventTarget());
     mTaskTimer->InitWithNamedFuncCallback(
       TaskTimerCallback,
       this,
@@ -291,17 +288,8 @@ void
 VRManager::StopTasks()
 {
   if (mTaskTimer) {
-    MOZ_ASSERT(VRListenerThread());
     mTaskTimer->Cancel();
     mTaskTimer = nullptr;
-  }
-}
-
- void
-VRManager::StopVRListenerThreadTasks()
-{
-  if (sVRManagerSingleton) {
-    sVRManagerSingleton->StopTasks();
   }
 }
 
@@ -322,13 +310,6 @@ VRManager::TaskTimerCallback(nsITimer* aTimer, void* aClosure)
 void
 VRManager::RunTasks()
 {
-  
-  
-  
-  if (!VRListenerThreadHolder::IsInVRListenerThread()) {
-    return;
-  }
-
   
   
   
@@ -397,8 +378,6 @@ VRManager::GetOptimalTaskInterval()
 void
 VRManager::Run1msTasks(double aDeltaTime)
 {
-  MOZ_ASSERT(VRListenerThreadHolder::IsInVRListenerThread());
-
   for (const auto& manager : mManagers) {
     manager->Run1msTasks(aDeltaTime);
   }
@@ -419,8 +398,6 @@ VRManager::Run1msTasks(double aDeltaTime)
 void
 VRManager::Run10msTasks()
 {
-  MOZ_ASSERT(VRListenerThreadHolder::IsInVRListenerThread());
-
   UpdateRequestedDevices();
 
   for (const auto& manager : mManagers) {
@@ -443,8 +420,6 @@ VRManager::Run10msTasks()
 void
 VRManager::Run100msTasks()
 {
-  MOZ_ASSERT(VRListenerThreadHolder::IsInVRListenerThread());
-
   
   
   
@@ -495,7 +470,6 @@ VRManager::CheckForInactiveTimeout()
 void
 VRManager::NotifyVRVsync(const uint32_t& aDisplayID)
 {
-  MOZ_ASSERT(VRListenerThreadHolder::IsInVRListenerThread());
   for (const auto& manager: mManagers) {
     if (manager->GetIsPresenting()) {
       manager->HandleInput();

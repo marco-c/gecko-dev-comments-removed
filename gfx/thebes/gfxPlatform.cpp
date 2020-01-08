@@ -1170,7 +1170,6 @@ gfxPlatform::InitLayersIPC()
     }
 
     layers::CompositorThreadHolder::Start();
-    gfx::VRListenerThreadHolder::Start();
   }
 }
 
@@ -1199,7 +1198,6 @@ gfxPlatform::ShutdownLayersIPC()
         layers::ImageBridgeChild::ShutDown();
         
         layers::CompositorThreadHolder::Shutdown();
-        gfx::VRListenerThreadHolder::Shutdown();
         image::ImageMemoryReporter::ShutdownForWebRender();
         
         

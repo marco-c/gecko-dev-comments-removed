@@ -35,7 +35,6 @@
 #endif
 #include "mozilla/widget/CompositorWidget.h"
 #include "VRManager.h"
-#include "VRThread.h"
 
 namespace mozilla {
 
@@ -82,8 +81,8 @@ CompositorVsyncScheduler::CompositorVsyncScheduler(CompositorVsyncSchedulerOwner
   , mWidget(aWidget)
   , mCurrentCompositeTaskMonitor("CurrentCompositeTaskMonitor")
   , mCurrentCompositeTask(nullptr)
-  , mCurrentVRListenerTaskMonitor("CurrentVRTaskMonitor")
-  , mCurrentVRListenerTask(nullptr)
+  , mCurrentVRTaskMonitor("CurrentVRTaskMonitor")
+  , mCurrentVRTask(nullptr)
 {
   mVsyncObserver = new Observer(this);
 
@@ -137,15 +136,15 @@ CompositorVsyncScheduler::PostCompositeTask(TimeStamp aCompositeTimestamp)
 void
 CompositorVsyncScheduler::PostVRTask(TimeStamp aTimestamp)
 {
-  MonitorAutoLock lockVR(mCurrentVRListenerTaskMonitor);
-  if (mCurrentVRListenerTask == nullptr && VRListenerThreadHolder::Loop()) {
+  MonitorAutoLock lockVR(mCurrentVRTaskMonitor);
+  if (mCurrentVRTask == nullptr && CompositorThreadHolder::Loop()) {
     RefPtr<Runnable> task = NewRunnableMethod<TimeStamp>(
       "layers::CompositorVsyncScheduler::DispatchVREvents",
       this,
       &CompositorVsyncScheduler::DispatchVREvents,
       aTimestamp);
-    mCurrentVRListenerTask = task;
-    VRListenerThreadHolder::Loop()->PostDelayedTask(task.forget(), 0);
+    mCurrentVRTask = task;
+    CompositorThreadHolder::Loop()->PostDelayedTask(task.forget(), 0);
   }
 }
 
@@ -320,13 +319,13 @@ void
 CompositorVsyncScheduler::DispatchVREvents(TimeStamp aVsyncTimestamp)
 {
   {
-    MonitorAutoLock lock(mCurrentVRListenerTaskMonitor);
-    mCurrentVRListenerTask = nullptr;
+    MonitorAutoLock lock(mCurrentVRTaskMonitor);
+    mCurrentVRTask = nullptr;
   }
   
   
   
-  if (!VRListenerThreadHolder::IsInVRListenerThread()) {
+  if (!CompositorThreadHolder::IsInCompositorThread()) {
     return;
   }
 

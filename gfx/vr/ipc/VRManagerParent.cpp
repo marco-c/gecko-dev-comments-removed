@@ -85,7 +85,7 @@ VRManagerParent::UnregisterFromManager()
  bool
 VRManagerParent::CreateForContent(Endpoint<PVRManagerParent>&& aEndpoint)
 {
-  MessageLoop* loop = VRListenerThreadHolder::Loop();
+  MessageLoop* loop = CompositorThreadHolder::Loop();
 
   RefPtr<VRManagerParent> vmp = new VRManagerParent(aEndpoint.OtherPid(), true);
   loop->PostTask(NewRunnableMethod<Endpoint<PVRManagerParent>&&>(
@@ -109,7 +109,7 @@ VRManagerParent::Bind(Endpoint<PVRManagerParent>&& aEndpoint)
 }
 
  void
-VRManagerParent::RegisterVRManagerInVRListenerThread(VRManagerParent* aVRManager)
+VRManagerParent::RegisterVRManagerInCompositorThread(VRManagerParent* aVRManager)
 {
   aVRManager->RegisterWithManager();
 }
@@ -117,22 +117,22 @@ VRManagerParent::RegisterVRManagerInVRListenerThread(VRManagerParent* aVRManager
  VRManagerParent*
 VRManagerParent::CreateSameProcess()
 {
-  MessageLoop* loop = VRListenerThreadHolder::Loop();
+  MessageLoop* loop = CompositorThreadHolder::Loop();
   RefPtr<VRManagerParent> vmp = new VRManagerParent(base::GetCurrentProcId(), false);
-  vmp->mVRListenerThreadHolder = VRListenerThreadHolder::GetSingleton();
+  vmp->mCompositorThreadHolder = CompositorThreadHolder::GetSingleton();
   vmp->mSelfRef = vmp;
-  loop->PostTask(NewRunnableFunction("RegisterVRManagerInVRListenerThreadRunnable",
-                                     RegisterVRManagerInVRListenerThread, vmp.get()));
+  loop->PostTask(NewRunnableFunction("RegisterVRManagerIncompositorThreadRunnable",
+                                     RegisterVRManagerInCompositorThread, vmp.get()));
   return vmp.get();
 }
 
 bool
 VRManagerParent::CreateForGPUProcess(Endpoint<PVRManagerParent>&& aEndpoint)
 {
-  MessageLoop* loop = VRListenerThreadHolder::Loop();
+  MessageLoop* loop = CompositorThreadHolder::Loop();
 
   RefPtr<VRManagerParent> vmp = new VRManagerParent(aEndpoint.OtherPid(), false);
-  vmp->mVRListenerThreadHolder = VRListenerThreadHolder::GetSingleton();
+  vmp->mCompositorThreadHolder = CompositorThreadHolder::GetSingleton();
   vmp->mSelfRef = vmp;
   loop->PostTask(NewRunnableMethod<Endpoint<PVRManagerParent>&&>(
     "gfx::VRManagerParent::Bind",
@@ -145,7 +145,7 @@ VRManagerParent::CreateForGPUProcess(Endpoint<PVRManagerParent>&& aEndpoint)
 void
 VRManagerParent::DeferredDestroy()
 {
-  mVRListenerThreadHolder = nullptr;
+  mCompositorThreadHolder = nullptr;
   mSelfRef = nullptr;
 }
 
@@ -162,15 +162,12 @@ VRManagerParent::ActorDestroy(ActorDestroyReason why)
 void
 VRManagerParent::OnChannelConnected(int32_t aPid)
 {
-  mVRListenerThreadHolder = VRListenerThreadHolder::GetSingleton();
+  mCompositorThreadHolder = CompositorThreadHolder::GetSingleton();
 }
 
 mozilla::ipc::IPCResult
 VRManagerParent::RecvRefreshDisplays()
 {
-  
-  MOZ_ASSERT(VRListenerThreadHolder::IsInVRListenerThread());
-
   
   
   

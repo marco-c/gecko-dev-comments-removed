@@ -8,6 +8,7 @@
 #include "gfxPrefs.h"
 #include "gfxVR.h"
 #include "ipc/VRLayerParent.h"
+#include "mozilla/layers/CompositorThread.h" 
 #include "mozilla/layers/TextureHost.h"
 #include "mozilla/dom/GamepadBinding.h" 
 #include "VRThread.h"
@@ -342,7 +343,7 @@ VRDisplayHost::SubmitFrameInternal(const layers::SurfaceDescriptor &aTexture,
 
 
   VRManager* vm = VRManager::Get();
-  MessageLoop* loop = VRListenerThreadHolder::Loop();
+  MessageLoop* loop = CompositorThreadHolder::Loop();
 
   loop->PostTask(NewRunnableMethod<const uint32_t>(
     "gfx::VRManager::NotifyVRVsync",
