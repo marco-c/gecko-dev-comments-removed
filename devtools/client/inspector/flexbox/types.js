@@ -9,10 +9,7 @@ const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 exports.flexbox = {
 
   
-  actorID: PropTypes.string,
-
-  
-  color: PropTypes.string,
+  actorID: PropTypes.number,
 
   
   highlighted: PropTypes.bool,

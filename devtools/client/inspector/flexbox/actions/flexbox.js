@@ -7,7 +7,6 @@
 const {
   CLEAR_FLEXBOX,
   UPDATE_FLEXBOX,
-  UPDATE_FLEXBOX_COLOR,
   UPDATE_FLEXBOX_HIGHLIGHTED,
 } = require("./index");
 
@@ -29,19 +28,6 @@ module.exports = {
     return {
       type: UPDATE_FLEXBOX,
       flexbox,
-    };
-  },
-
-  
-
-
-
-
-
-  updateFlexboxColor(color) {
-    return {
-      type: UPDATE_FLEXBOX_COLOR,
-      color,
     };
   },
 

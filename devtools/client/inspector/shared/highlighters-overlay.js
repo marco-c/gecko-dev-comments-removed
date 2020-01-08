@@ -221,18 +221,6 @@ class HighlightersOverlay {
 
 
 
-  getFlexboxHighlighterSettings(nodeFront) {
-    const { flexbox } = this.store.getState();
-    const color = flexbox.color;
-    return { color };
-  }
-
-  
-
-
-
-
-
 
 
   async toggleFlexboxHighlighter(node, options = {}) {
@@ -257,8 +245,6 @@ class HighlightersOverlay {
     if (!highlighter) {
       return;
     }
-
-    options = Object.assign({}, options, this.getFlexboxHighlighterSettings(node));
 
     const isShown = await highlighter.show(node, options);
     if (!isShown) {

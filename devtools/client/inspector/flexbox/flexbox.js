@@ -9,14 +9,8 @@ const { throttle } = require("devtools/client/inspector/shared/utils");
 const {
   clearFlexbox,
   updateFlexbox,
-  updateFlexboxColor,
   updateFlexboxHighlighted,
 } = require("./actions/flexbox");
-
-loader.lazyRequireGetter(this, "parseURL", "devtools/client/shared/source-utils", true);
-loader.lazyRequireGetter(this, "asyncStorage", "devtools/shared/async-storage");
-
-const FLEXBOX_COLOR = "#9400FF";
 
 class FlexboxInspector {
   constructor(inspector, window) {
@@ -28,7 +22,6 @@ class FlexboxInspector {
     this.onHighlighterShown = this.onHighlighterShown.bind(this);
     this.onHighlighterHidden = this.onHighlighterHidden.bind(this);
     this.onReflow = throttle(this.onReflow, 500, this);
-    this.onSetFlexboxOverlayColor = this.onSetFlexboxOverlayColor.bind(this);
     this.onSidebarSelect = this.onSidebarSelect.bind(this);
     this.onToggleFlexboxHighlighter = this.onToggleFlexboxHighlighter.bind(this);
     this.onUpdatePanel = this.onUpdatePanel.bind(this);
@@ -93,19 +86,8 @@ class FlexboxInspector {
 
   getComponentProps() {
     return {
-      getSwatchColorPickerTooltip: this.getSwatchColorPickerTooltip,
-      onSetFlexboxOverlayColor: this.onSetFlexboxOverlayColor,
       onToggleFlexboxHighlighter: this.onToggleFlexboxHighlighter,
     };
-  }
-
-  
-
-
-
-
-  async getCustomFlexboxColors() {
-    return await asyncStorage.getItem("flexboxInspectorHostColors") || {};
   }
 
   
@@ -212,31 +194,6 @@ class FlexboxInspector {
 
 
 
-
-
-  async onSetFlexboxOverlayColor(color) {
-    this.store.dispatch(updateFlexboxColor(color));
-
-    const { flexbox } = this.store.getState();
-
-    if (flexbox.highlighted) {
-      this.highlighters.showFlexboxHighlighter(flexbox.nodeFront);
-    }
-
-    const currentUrl = this.inspector.target.url;
-    
-    
-    const hostname = parseURL(currentUrl).hostname || parseURL(currentUrl).protocol;
-    const customFlexboxColors = await this.getCustomFlexboxColors();
-
-    customFlexboxColors[hostname] = color;
-    await asyncStorage.setItem("flexboxInspectorHostColors", customFlexboxColors);
-  }
-
-  
-
-
-
   onSidebarSelect() {
     if (!this.isPanelVisible()) {
       this.inspector.reflowTracker.untrackReflows(this, this.onReflow);
@@ -335,16 +292,8 @@ class FlexboxInspector {
     const highlighted = this._highlighters &&
       nodeFront == this.highlighters.flexboxHighlighterShown;
 
-    const currentUrl = this.inspector.target.url;
-    
-    
-    const hostname = parseURL(currentUrl).hostname || parseURL(currentUrl).protocol;
-    const customColors = await this.getCustomFlexboxColors();
-    const color = customColors[hostname] ? customColors[hostname] : FLEXBOX_COLOR;
-
     this.store.dispatch(updateFlexbox({
       actorID: flexboxFront.actorID,
-      color,
       highlighted,
       nodeFront,
     }));
