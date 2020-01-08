@@ -88,11 +88,20 @@ enum class FontRenderMode : uint32_t {
   Sentinel 
 };
 
+
 enum class ImageFormat : uint32_t {
+  
+  
+  
   R8 = 1,
+  
   BGRA8 = 3,
+  
   RGBAF32 = 4,
+  
+  
   RG8 = 5,
+  
   RGBAI32 = 6,
 
   Sentinel 
@@ -599,6 +608,9 @@ struct ComplexClipRegion {
            mode == aOther.mode;
   }
 };
+
+
+
 
 struct ImageKey {
   IdNamespace mNamespace;
