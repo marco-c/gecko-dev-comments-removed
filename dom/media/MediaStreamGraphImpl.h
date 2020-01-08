@@ -674,6 +674,10 @@ public:
   
 
 
+  GraphTime mEndTime;
+  
+
+
   TimeStamp mLastMainThreadUpdate;
   
 
@@ -812,11 +816,6 @@ public:
 #endif
     return mLifecycleState;
   }
-  
-
-
-
-  Atomic<GraphTime> mEndTime;
 
   
 

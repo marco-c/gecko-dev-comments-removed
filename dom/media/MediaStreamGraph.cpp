@@ -1526,11 +1526,7 @@ MediaStreamGraphImpl::ForceShutDown(media::ShutdownTicket* aShutdownTicket)
   mForceShutdownTicket = aShutdownTicket;
   MonitorAutoLock lock(mMonitor);
   mForceShutDown = true;
-  if (IsNonRealtime()) {
-    
-    
-    StartNonRealtimeProcessing(0);
-  } else if (LifecycleStateRef() == LIFECYCLE_THREAD_NOT_STARTED) {
+  if (LifecycleStateRef() == LIFECYCLE_THREAD_NOT_STARTED) {
     
     
     
@@ -1793,10 +1789,7 @@ MediaStreamGraphImpl::RunInStableState(bool aSourceIsMSG)
       }
     }
 
-    
-    
-    if (LifecycleStateRef() == LIFECYCLE_THREAD_NOT_STARTED &&
-        (mRealtime || mNonRealtimeProcessing)) {
+    if (LifecycleStateRef() == LIFECYCLE_THREAD_NOT_STARTED) {
       LifecycleStateRef() = LIFECYCLE_RUNNING;
       
       
@@ -3673,6 +3666,8 @@ MediaStreamGraphImpl::MediaStreamGraphImpl(GraphDriverType aDriverRequested,
                                            AbstractThread* aMainThread)
   : MediaStreamGraph(aSampleRate)
   , mFirstCycleBreaker(0)
+  
+  , mEndTime(aDriverRequested == OFFLINE_THREAD_DRIVER ? 0 : GRAPH_TIME_MAX)
   , mPortCount(0)
   , mInputDeviceID(nullptr)
   , mOutputDeviceID(nullptr)
@@ -3680,8 +3675,6 @@ MediaStreamGraphImpl::MediaStreamGraphImpl(GraphDriverType aDriverRequested,
   , mGraphDriverAsleep(false)
   , mMonitor("MediaStreamGraphImpl")
   , mLifecycleState(LIFECYCLE_THREAD_NOT_STARTED)
-  
-  , mEndTime(aDriverRequested == OFFLINE_THREAD_DRIVER ? 0 : GRAPH_TIME_MAX)
   , mForceShutDown(false)
   , mPostedRunInStableStateEvent(false)
   , mDetectedNotRunning(false)
@@ -3855,11 +3848,6 @@ MediaStreamGraph::DestroyNonRealtimeInstance(MediaStreamGraph* aGraph)
 
   MediaStreamGraphImpl* graph = static_cast<MediaStreamGraphImpl*>(aGraph);
 
-  if (!graph->mNonRealtimeProcessing) {
-    
-    graph->StartNonRealtimeProcessing(0);
-  }
-
   graph->ForceShutDown(nullptr);
 }
 
@@ -3905,13 +3893,6 @@ MediaStreamGraphImpl::CollectReports(nsIHandleReportCallback* aHandleReport,
     nsCOMPtr<nsIHandleReportCallback> mHandleReport;
     nsCOMPtr<nsISupports> mHandlerData;
   };
-
-  
-  
-  if (!(mRealtime || mNonRealtimeProcessing)) {
-    CollectSizesForMemoryReport(do_AddRef(aHandleReport), do_AddRef(aData));
-    return NS_OK;
-  }
 
   AppendMessage(MakeUnique<Message>(this, aHandleReport, aData));
 
@@ -4352,11 +4333,26 @@ MediaStreamGraph::StartNonRealtimeProcessing(uint32_t aTicksToProcess)
   if (graph->mNonRealtimeProcessing)
     return;
 
-  graph->mEndTime =
-    graph->RoundUpToEndOfAudioBlock(graph->mStateComputedTime +
-                                    aTicksToProcess);
+  class Message : public ControlMessage {
+  public:
+    explicit Message(MediaStreamGraphImpl* aGraph, uint32_t aTicksToProcess)
+      : ControlMessage(nullptr)
+      , mGraph(aGraph)
+      , mTicksToProcess(aTicksToProcess)
+    {}
+    void Run() override
+    {
+      mGraph->mEndTime =
+        mGraph->RoundUpToEndOfAudioBlock(mGraph->mStateComputedTime +
+                                         mTicksToProcess);
+    }
+    
+    MediaStreamGraphImpl* MOZ_NON_OWNING_REF mGraph;
+    uint32_t mTicksToProcess;
+  };
+
   graph->mNonRealtimeProcessing = true;
-  graph->EnsureRunInStableState();
+  graph->AppendMessage(MakeUnique<Message>(graph, aTicksToProcess));
 }
 
 void
