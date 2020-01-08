@@ -702,9 +702,11 @@ impl<H, T> ThinArc<H, T> {
         F: FnOnce(&Arc<HeaderSliceWithLength<H, [T]>>) -> U,
     {
         
-        let transient = unsafe { NoDrop::new(Arc {
-            p: ptr::NonNull::new_unchecked(thin_to_thick(self.ptr)),
-        })};
+        let transient = unsafe {
+            NoDrop::new(Arc {
+                p: ptr::NonNull::new_unchecked(thin_to_thick(self.ptr)),
+            })
+        };
 
         
         let result = f(&transient);
@@ -722,7 +724,7 @@ impl<H, T> ThinArc<H, T> {
     
     pub fn from_header_and_iter<I>(header: H, items: I) -> Self
     where
-        I: Iterator<Item = T> + ExactSizeIterator
+        I: Iterator<Item = T> + ExactSizeIterator,
     {
         let header = HeaderWithLength::new(header, items.len());
         Arc::into_thin(Arc::from_header_and_iter(header, items))
@@ -1056,7 +1058,6 @@ pub struct ArcUnion<A, B> {
 unsafe impl<A: Sync + Send, B: Send + Sync> Send for ArcUnion<A, B> {}
 unsafe impl<A: Sync + Send, B: Send + Sync> Sync for ArcUnion<A, B> {}
 
-
 impl<A: PartialEq, B: PartialEq> PartialEq for ArcUnion<A, B> {
     fn eq(&self, other: &Self) -> bool {
         use ArcUnionBorrow::*;
@@ -1104,16 +1105,12 @@ impl<A, B> ArcUnion<A, B> {
 
     
     pub fn from_first(other: Arc<A>) -> Self {
-        unsafe {
-            Self::new(Arc::into_raw(other) as *mut _)
-        }
+        unsafe { Self::new(Arc::into_raw(other) as *mut _) }
     }
 
     
     pub fn from_second(other: Arc<B>) -> Self {
-        unsafe {
-            Self::new(((Arc::into_raw(other) as usize) | 0x1) as *mut _)
-        }
+        unsafe { Self::new(((Arc::into_raw(other) as usize) | 0x1) as *mut _) }
     }
 
     
