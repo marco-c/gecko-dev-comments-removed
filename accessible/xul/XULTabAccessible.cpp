@@ -5,6 +5,7 @@
 
 #include "XULTabAccessible.h"
 
+#include "ARIAMap.h"
 #include "nsAccUtils.h"
 #include "Relation.h"
 #include "Role.h"
@@ -123,6 +124,17 @@ XULTabAccessible::RelationByType(RelationType aType) const
   return rel;
 }
 
+void
+XULTabAccessible::ApplyARIAState(uint64_t* aState) const
+{
+  HyperTextAccessibleWrap::ApplyARIAState(aState);
+  
+  
+  
+  if (nsAccUtils::IsARIASelected(this)) {
+    *aState |= states::SELECTED;
+  }
+}
 
 
 
@@ -157,6 +169,16 @@ XULTabsAccessible::NativeName(nsString& aName) const
 {
   
   return eNameOK;
+}
+
+void
+XULTabsAccessible::ApplyARIAState(uint64_t* aState) const
+{
+  XULSelectControlAccessible::ApplyARIAState(aState);
+  
+  
+  MOZ_ASSERT(Elm());
+  aria::MapToState(aria::eARIAMultiSelectable, Elm(), aState);
 }
 
 
