@@ -85,79 +85,67 @@ NSSCertDBTrustDomain::NSSCertDBTrustDomain(
       mSCTListFromCertificate(),
       mSCTListFromOCSPStapling() {}
 
-
-
-static Result FindIssuerInner(const UniqueCERTCertList& candidates,
-                              bool useRoots, Input encodedIssuerName,
-                              TrustDomain::IssuerChecker& checker,
-                               bool& keepGoing) {
-  keepGoing = true;
-  for (CERTCertListNode* n = CERT_LIST_HEAD(candidates);
-       !CERT_LIST_END(n, candidates); n = CERT_LIST_NEXT(n)) {
-    bool candidateIsRoot = !!n->cert->isRoot;
-    if (candidateIsRoot != useRoots) {
-      continue;
-    }
-    Input certDER;
-    Result rv = certDER.Init(n->cert->derCert.data, n->cert->derCert.len);
-    if (rv != Success) {
-      continue;  
-    }
-
-    const SECItem encodedIssuerNameItem = {
-        siBuffer, const_cast<unsigned char*>(encodedIssuerName.UnsafeGetData()),
-        encodedIssuerName.GetLength()};
-    ScopedAutoSECItem nameConstraints;
-    SECStatus srv = CERT_GetImposedNameConstraints(&encodedIssuerNameItem,
-                                                   &nameConstraints);
-    if (srv != SECSuccess) {
-      if (PR_GetError() != SEC_ERROR_EXTENSION_NOT_FOUND) {
-        return Result::FATAL_ERROR_LIBRARY_FAILURE;
-      }
-
-      
-      rv = checker.Check(certDER, nullptr, keepGoing);
-    } else {
-      
-      Input nameConstraintsInput;
-      if (nameConstraintsInput.Init(nameConstraints.data,
-                                    nameConstraints.len) != Success) {
-        return Result::FATAL_ERROR_LIBRARY_FAILURE;
-      }
-      rv = checker.Check(certDER, &nameConstraintsInput, keepGoing);
-    }
-    if (rv != Success) {
-      return rv;
-    }
-    if (!keepGoing) {
-      break;
-    }
-  }
-
-  return Success;
-}
-
 Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
                                         IssuerChecker& checker, Time) {
+  
   
   
   SECItem encodedIssuerNameItem = UnsafeMapInputToSECItem(encodedIssuerName);
   UniqueCERTCertList candidates(CERT_CreateSubjectCertList(
       nullptr, CERT_GetDefaultCertDB(), &encodedIssuerNameItem, 0, false));
-  if (candidates) {
-    
+  if (!candidates) {
+    return Success;
+  }
+
+  Vector<Input> rootCandidates;
+  Vector<Input> intermediateCandidates;
+  for (CERTCertListNode* n = CERT_LIST_HEAD(candidates);
+       !CERT_LIST_END(n, candidates); n = CERT_LIST_NEXT(n)) {
+    Input certDER;
+    Result rv = certDER.Init(n->cert->derCert.data, n->cert->derCert.len);
+    if (rv != Success) {
+      continue;  
+    }
+    if (n->cert->isRoot) {
+      if (!rootCandidates.append(certDER)) {
+        return Result::FATAL_ERROR_NO_MEMORY;
+      }
+    } else {
+      if (!intermediateCandidates.append(certDER)) {
+        return Result::FATAL_ERROR_NO_MEMORY;
+      }
+    }
+  }
+
+  
+  ScopedAutoSECItem nameConstraints;
+  Input nameConstraintsInput;
+  Input* nameConstraintsInputPtr = nullptr;
+  SECStatus srv =
+      CERT_GetImposedNameConstraints(&encodedIssuerNameItem, &nameConstraints);
+  if (srv == SECSuccess) {
+    if (nameConstraintsInput.Init(nameConstraints.data, nameConstraints.len) !=
+        Success) {
+      return Result::FATAL_ERROR_LIBRARY_FAILURE;
+    }
+    nameConstraintsInputPtr = &nameConstraintsInput;
+  } else if (PR_GetError() != SEC_ERROR_EXTENSION_NOT_FOUND) {
+    return Result::FATAL_ERROR_LIBRARY_FAILURE;
+  }
+
+  
+  if (!rootCandidates.appendAll(intermediateCandidates)) {
+    return Result::FATAL_ERROR_NO_MEMORY;
+  }
+
+  for (Input candidate : rootCandidates) {
     bool keepGoing;
-    Result rv = FindIssuerInner(candidates, true, encodedIssuerName, checker,
-                                keepGoing);
+    Result rv = checker.Check(candidate, nameConstraintsInputPtr, keepGoing);
     if (rv != Success) {
       return rv;
     }
-    if (keepGoing) {
-      rv = FindIssuerInner(candidates, false, encodedIssuerName, checker,
-                           keepGoing);
-      if (rv != Success) {
-        return rv;
-      }
+    if (!keepGoing) {
+      return Success;
     }
   }
 
