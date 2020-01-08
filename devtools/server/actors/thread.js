@@ -84,7 +84,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this.global = global;
 
     this._allEventsListener = this._allEventsListener.bind(this);
-    this.onNewGlobal = this.onNewGlobal.bind(this);
     this.onNewSourceEvent = this.onNewSourceEvent.bind(this);
     this.onUpdatedSourceEvent = this.onUpdatedSourceEvent.bind(this);
 
@@ -111,7 +110,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       this._dbg.uncaughtExceptionHook = this.uncaughtExceptionHook;
       this._dbg.onDebuggerStatement = this.onDebuggerStatement;
       this._dbg.onNewScript = this.onNewScript;
-      this._dbg.on("newGlobal", this.onNewGlobal);
       if (this._dbg.replaying) {
         this._dbg.replayingOnForcedPause = this.replayingOnForcedPause.bind(this);
       }
@@ -200,19 +198,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
     this._sources = null;
     this._scripts = null;
-  },
-
-  
-
-
-  onNewGlobal: function(global) {
-    
-    this.conn.send({
-      from: this.actorID,
-      type: "newGlobal",
-      
-      hostAnnotations: global.hostAnnotations
-    });
   },
 
   

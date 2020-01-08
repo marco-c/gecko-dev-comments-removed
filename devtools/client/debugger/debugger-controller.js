@@ -296,10 +296,6 @@ var DebuggerController = {
   connectThread: function () {
     const { newSource, fetchEventListeners } = bindActionCreators(actions, this.dispatch);
 
-    
-    
-    
-
     this.activeThread.addListener("newSource", (event, packet) => {
       newSource(packet.source);
 
@@ -344,7 +340,6 @@ var DebuggerController = {
       return;
     }
 
-    this.client.removeListener("newGlobal");
     this.activeThread.removeListener("newSource");
     this.activeThread.removeListener("blackboxchange");
 

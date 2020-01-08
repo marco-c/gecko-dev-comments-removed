@@ -57,12 +57,6 @@ const { reportException } = require("devtools/shared/DevToolsUtils");
 
 
 
-
-
-
-
-
-
 module.exports = function makeDebugger({ findDebuggees, shouldAddNewGlobalAsDebuggee }) {
   let dbg;
   if (Debugger.recordReplayProcessKind() == "Middleman") {
@@ -97,10 +91,7 @@ const reportDebuggerHookException = e => reportException("Debugger Hook", e);
 
 function safeAddDebuggee(dbg, global) {
   try {
-    const wrappedGlobal = dbg.addDebuggee(global);
-    if (wrappedGlobal) {
-      dbg.emit("newGlobal", wrappedGlobal);
-    }
+    dbg.addDebuggee(global);
   } catch (e) {
     
   }
