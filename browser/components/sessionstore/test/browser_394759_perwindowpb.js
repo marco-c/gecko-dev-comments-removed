@@ -19,7 +19,7 @@ function promiseTestOpenCloseWindow(aIsPrivate, aTest) {
     BrowserTestUtils.loadURI(win.gBrowser.selectedBrowser, aTest.url);
     await promiseBrowserLoaded(win.gBrowser.selectedBrowser, true, aTest.url);
     
-    ss.setWindowValue(win, aTest.key, aTest.value);
+    ss.setCustomWindowValue(win, aTest.key, aTest.value);
     await TabStateFlusher.flushWindow(win);
     
     await BrowserTestUtils.closeWindow(win);

@@ -23,19 +23,19 @@ add_task(async function() {
   let value = "Unique value: " + Math.random();
 
   
-  ok(test(() => ss.setWindowValue(window, key, value)), "set a window value");
+  ok(test(() => ss.setCustomWindowValue(window, key, value)), "set a window value");
 
   
-  is(ss.getWindowValue(window, key), value, "stored window value matches original");
+  is(ss.getCustomWindowValue(window, key), value, "stored window value matches original");
 
   
-  ok(test(() => ss.deleteWindowValue(window, key)), "delete the window value");
+  ok(test(() => ss.deleteCustomWindowValue(window, key)), "delete the window value");
 
   
-  is(ss.getWindowValue(window, key), "", "window value was deleted");
+  is(ss.getCustomWindowValue(window, key), "", "window value was deleted");
 
   
-  ok(test(() => ss.deleteWindowValue(window, key)), "delete non-existent window value");
+  ok(test(() => ss.deleteCustomWindowValue(window, key)), "delete non-existent window value");
 
   
 
