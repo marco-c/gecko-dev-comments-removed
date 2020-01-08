@@ -204,7 +204,58 @@ ReauthenticateUserWindows(const nsACString& aPrompt,
           ("Login failed (wrong user)."));
   return NS_ERROR_FAILURE;
 }
-#endif
+#endif 
+
+#ifdef XP_MACOSX
+#include <CoreFoundation/CoreFoundation.h>
+#include <Security/Security.h>
+
+static nsresult
+ReauthenticateUserMacOS(const nsACString& aPrompt,
+               bool& aReauthenticated)
+{
+  
+  
+  
+  
+  
+  AuthorizationItem authorizationItems[] = {
+    { "system.login.screensaver", 0, NULL, 0 },
+  };
+  AuthorizationRights authorizationRights = {
+    ArrayLength(authorizationItems),
+    authorizationItems,
+  };
+  const nsCString& promptFlat = PromiseFlatCString(aPrompt);
+  
+  AuthorizationItem environmentItems[] =  {
+    { kAuthorizationEnvironmentPrompt,
+      promptFlat.Length(),
+      (void*)promptFlat.get(),
+      0
+    },
+  };
+  AuthorizationEnvironment environment = {
+    ArrayLength(environmentItems),
+    environmentItems,
+  };
+  AuthorizationFlags flags = kAuthorizationFlagDefaults |
+                             kAuthorizationFlagInteractionAllowed |
+                             kAuthorizationFlagExtendRights |
+                             kAuthorizationFlagPreAuthorize |
+                             kAuthorizationFlagDestroyRights;
+  AuthorizationRef authorizationRef = nullptr;
+  OSStatus result = AuthorizationCreate(&authorizationRights,
+                                        &environment,
+                                        flags,
+                                        &authorizationRef);
+  aReauthenticated = result == errAuthorizationSuccess;
+  if (authorizationRef) {
+    AuthorizationFree(authorizationRef, kAuthorizationFlagDestroyRights);
+  }
+  return NS_OK;
+}
+#endif 
 
 static nsresult
 ReauthenticateUser(const nsACString& prompt,  bool& reauthenticated)
@@ -212,6 +263,8 @@ ReauthenticateUser(const nsACString& prompt,  bool& reauthenticated)
   reauthenticated = false;
 #if defined(XP_WIN)
   return ReauthenticateUserWindows(prompt, reauthenticated);
+#elif defined(XP_MACOSX)
+  return ReauthenticateUserMacOS(prompt, reauthenticated);
 #endif 
   return NS_OK;
 }
