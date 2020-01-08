@@ -564,7 +564,9 @@ pref("media.recorder.audio_node.enabled", false);
 pref("media.recorder.video.frame_drops", true);
 
 
-pref("media.autoplay.enabled", true);
+
+pref("media.autoplay.default", 0);
+
 
 
 
