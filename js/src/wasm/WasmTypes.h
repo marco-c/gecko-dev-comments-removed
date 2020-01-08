@@ -37,7 +37,7 @@
 #include "js/Utility.h"
 #include "js/Vector.h"
 #include "vm/MallocProvider.h"
-#include "wasm/WasmBinaryConstants.h"
+#include "wasm/WasmConstants.h"
 
 namespace js {
 
@@ -1136,27 +1136,32 @@ typedef Vector<DataSegment, 0, SystemAllocPolicy> DataSegmentVector;
 class FuncTypeIdDesc
 {
   public:
-    enum class Kind { None, Immediate, Global };
     static const uintptr_t ImmediateBit = 0x1;
 
   private:
-    Kind kind_;
+    FuncTypeIdDescKind kind_;
     size_t bits_;
 
-    FuncTypeIdDesc(Kind kind, size_t bits) : kind_(kind), bits_(bits) {}
+    FuncTypeIdDesc(FuncTypeIdDescKind kind, size_t bits) : kind_(kind), bits_(bits) {}
 
   public:
-    Kind kind() const { return kind_; }
+    FuncTypeIdDescKind kind() const { return kind_; }
     static bool isGlobal(const FuncType& funcType);
 
-    FuncTypeIdDesc() : kind_(Kind::None), bits_(0) {}
+    FuncTypeIdDesc() : kind_(FuncTypeIdDescKind::None), bits_(0) {}
     static FuncTypeIdDesc global(const FuncType& funcType, uint32_t globalDataOffset);
     static FuncTypeIdDesc immediate(const FuncType& funcType);
 
-    bool isGlobal() const { return kind_ == Kind::Global; }
+    bool isGlobal() const { return kind_ == FuncTypeIdDescKind::Global; }
 
-    size_t immediate() const { MOZ_ASSERT(kind_ == Kind::Immediate); return bits_; }
-    uint32_t globalDataOffset() const { MOZ_ASSERT(kind_ == Kind::Global); return bits_; }
+    size_t immediate() const {
+        MOZ_ASSERT(kind_ == FuncTypeIdDescKind::Immediate);
+        return bits_;
+    }
+    uint32_t globalDataOffset() const {
+        MOZ_ASSERT(kind_ == FuncTypeIdDescKind::Global);
+        return bits_;
+    }
 };
 
 
@@ -1294,46 +1299,6 @@ class TypeDef
 };
 
 typedef Vector<TypeDef, 0, SystemAllocPolicy> TypeDefVector;
-
-
-
-
-
-
-
-enum class Trap
-{
-    
-    Unreachable,
-    
-    IntegerOverflow,
-    
-    InvalidConversionToInteger,
-    
-    IntegerDivideByZero,
-    
-    OutOfBounds,
-    
-    
-    UnalignedAccess,
-    
-    IndirectCallToNull,
-    
-    IndirectCallBadSig,
-
-    
-    
-    StackOverflow,
-
-    
-    
-    CheckInterrupt,
-
-    
-    ThrowReported,
-
-    Limit
-};
 
 
 
