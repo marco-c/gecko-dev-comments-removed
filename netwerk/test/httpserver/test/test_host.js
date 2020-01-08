@@ -180,7 +180,10 @@ add_task(async function run_test_3() {
 
   
   
-  runRawTests(tests, () => { srv.stop(); }, (idx) => dump(`running test no ${idx}`));
+  await new Promise(resolve => runRawTests(tests, resolve, (idx) => dump(`running test no ${idx}`)));
+
+  
+  await new Promise(resolve => srv.stop(resolve));
 });
 
 
