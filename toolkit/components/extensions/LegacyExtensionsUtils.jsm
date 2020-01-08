@@ -14,8 +14,6 @@ var EXPORTED_SYMBOLS = ["LegacyExtensionsUtils"];
 
 
 
-ChromeUtils.defineModuleGetter(this, "AddonManagerPrivate",
-                               "resource://gre/modules/AddonManager.jsm");
 ChromeUtils.defineModuleGetter(this, "Extension",
                                "resource://gre/modules/Extension.jsm");
 ChromeUtils.defineModuleGetter(this, "ExtensionChild",
@@ -192,7 +190,7 @@ class EmbeddedExtension {
 
       
       
-      this.extension.startup(AddonManagerPrivate.BOOTSTRAP_REASON_TO_STRING_MAP[reason]).catch((err) => {
+      this.extension.startup(reason).catch((err) => {
         this.started = false;
         this.startupPromise = null;
         this.extension.off("startup", onBeforeStarted);
@@ -219,7 +217,7 @@ class EmbeddedExtension {
       let {extension} = this;
       this.extension = null;
 
-      await extension.shutdown(AddonManagerPrivate.BOOTSTRAP_REASON_TO_STRING_MAP[reason]);
+      await extension.shutdown(reason);
     }
     return undefined;
   }
