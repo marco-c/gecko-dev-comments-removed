@@ -14,7 +14,7 @@ use print_tree::{PrintTree, PrintTreePrinter};
 use resource_cache::ResourceCache;
 use scene::SceneProperties;
 use spatial_node::{ScrollFrameInfo, SpatialNode, SpatialNodeType, StickyFrameInfo};
-use util::{LayoutFastTransform, LayoutToWorldFastTransform};
+use util::LayoutToWorldFastTransform;
 
 pub type ScrollStates = FastHashMap<ExternalScrollId, ScrollFrameInfo>;
 
@@ -104,7 +104,7 @@ pub struct TransformUpdateState {
     pub current_coordinate_system_id: CoordinateSystemId,
 
     
-    pub coordinate_system_relative_transform: LayoutFastTransform,
+    pub coordinate_system_relative_offset: LayoutVector2D,
 
     
     
@@ -242,7 +242,7 @@ impl ClipScrollTree {
             nearest_scrolling_ancestor_offset: LayoutVector2D::zero(),
             nearest_scrolling_ancestor_viewport: LayoutRect::zero(),
             current_coordinate_system_id: CoordinateSystemId::root(),
-            coordinate_system_relative_transform: LayoutFastTransform::identity(),
+            coordinate_system_relative_offset: LayoutVector2D::zero(),
             invertible: true,
         };
 

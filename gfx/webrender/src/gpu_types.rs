@@ -8,7 +8,7 @@ use clip_scroll_tree::SpatialNodeIndex;
 use gpu_cache::{GpuCacheAddress, GpuDataRequest};
 use prim_store::{EdgeAaSegmentMask, Transform};
 use render_task::RenderTaskAddress;
-use util::{MatrixHelpers, TransformedRectKind};
+use util::{LayoutToWorldFastTransform, TransformedRectKind};
 
 
 
@@ -374,12 +374,12 @@ impl TransformPaletteId {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[repr(C)]
 pub struct TransformData {
-    pub transform: LayoutToWorldTransform,
-    pub inv_transform: WorldToLayoutTransform,
+    transform: LayoutToWorldTransform,
+    inv_transform: WorldToLayoutTransform,
 }
 
 impl TransformData {
-    pub fn invalid() -> Self {
+    fn invalid() -> Self {
         TransformData {
             transform: LayoutToWorldTransform::identity(),
             inv_transform: WorldToLayoutTransform::identity(),
@@ -389,7 +389,7 @@ impl TransformData {
 
 
 pub struct TransformMetadata {
-    pub transform_kind: TransformedRectKind,
+    transform_kind: TransformedRectKind,
 }
 
 
@@ -405,38 +405,60 @@ pub struct TransformPalette {
 }
 
 impl TransformPalette {
-    pub fn new(spatial_node_count: usize) -> TransformPalette {
+    pub fn new(spatial_node_count: usize) -> Self {
         TransformPalette {
             transforms: Vec::with_capacity(spatial_node_count),
             metadata: Vec::with_capacity(spatial_node_count),
         }
     }
 
-    
-    
-    pub fn set(
-        &mut self,
-        index: SpatialNodeIndex,
-        data: TransformData,
-    ) {
-        let index = index.0 as usize;
-
+    #[inline]
+    fn grow(&mut self, index: SpatialNodeIndex) {
         
         
         
         
-        while index >= self.transforms.len() {
+        while self.transforms.len() <= index.0 as usize {
             self.transforms.push(TransformData::invalid());
             self.metadata.push(TransformMetadata {
                 transform_kind: TransformedRectKind::AxisAligned,
             });
         }
+    }
 
-        
-        self.metadata[index] = TransformMetadata {
-            transform_kind: data.transform.transform_kind(),
+    pub fn invalidate(&mut self, index: SpatialNodeIndex) {
+        self.grow(index);
+        self.metadata[index.0 as usize] = TransformMetadata {
+            transform_kind: TransformedRectKind::AxisAligned,
         };
-        self.transforms[index] = data;
+        self.transforms[index.0 as usize] = TransformData::invalid();
+    }
+
+    
+    
+    pub fn set(
+        &mut self, index: SpatialNodeIndex, fast_transform: &LayoutToWorldFastTransform,
+    ) -> bool {
+        self.grow(index);
+
+        match fast_transform.inverse() {
+            Some(inverted) => {
+                
+                self.metadata[index.0 as usize] = TransformMetadata {
+                    transform_kind: fast_transform.kind()
+                };
+                
+                self.transforms[index.0 as usize] = TransformData {
+                    transform: fast_transform.to_transform().into_owned(),
+                    inv_transform: inverted.to_transform().into_owned(),
+                };
+                true
+            }
+            None => {
+                self.invalidate(index);
+                false
+            }
+        }
     }
 
     
@@ -448,14 +470,13 @@ impl TransformPalette {
         &self,
         index: SpatialNodeIndex,
     ) -> Transform {
-        let index = index.0;
-        let transform = &self.transforms[index];
-        let metadata = &self.metadata[index];
+        let data = &self.transforms[index.0 as usize];
+        let metadata = &self.metadata[index.0 as usize];
 
         Transform {
-            m: transform.transform,
+            m: &data.transform,
             transform_kind: metadata.transform_kind,
-            backface_is_visible: transform.transform.is_backface_visible(),
+            backface_is_visible: data.transform.is_backface_visible(),
         }
     }
 

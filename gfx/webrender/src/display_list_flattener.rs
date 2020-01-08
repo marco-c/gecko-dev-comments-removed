@@ -224,22 +224,22 @@ impl<'a> DisplayListFlattener<'a> {
         &self,
         pipeline_id: PipelineId,
         complex_clips: ItemRange<ComplexClipRegion>,
-    ) -> Vec<ComplexClipRegion> {
-        if complex_clips.is_empty() {
-            return vec![];
-        }
-        self.scene.get_display_list_for_pipeline(pipeline_id).get(complex_clips).collect()
+    ) -> impl 'a + Iterator<Item = ComplexClipRegion> {
+        //Note: we could make this a bit more complex to early out
+        // on `complex_clips.is_empty()` if it's worth it
+        self.scene
+            .get_display_list_for_pipeline(pipeline_id)
+            .get(complex_clips)
     }
 
     fn get_clip_chain_items(
         &self,
         pipeline_id: PipelineId,
         items: ItemRange<ClipId>,
-    ) -> Vec<ClipId> {
-        if items.is_empty() {
-            return vec![];
-        }
-        self.scene.get_display_list_for_pipeline(pipeline_id).get(items).collect()
+    ) -> impl 'a + Iterator<Item = ClipId> {
+        self.scene
+            .get_display_list_for_pipeline(pipeline_id)
+            .get(items)
     }
 
     fn flatten_root(&mut self, pipeline: &'a ScenePipeline, frame_size: &LayoutSize) {
@@ -262,8 +262,8 @@ impl<'a> DisplayListFlattener<'a> {
             GlyphRasterSpace::Screen,
         );
 
-        
-        
+        // For the root pipeline, there's no need to add a full screen rectangle
+        // here, as it's handled by the framebuffer clear.
         if self.scene.root_pipeline_id != Some(pipeline_id) {
             if let Some(pipeline) = self.scene.pipelines.get(&pipeline_id) {
                 if let Some(bg_color) = pipeline.background_color {
@@ -324,8 +324,8 @@ impl<'a> DisplayListFlattener<'a> {
                 )
             };
 
-            
-            
+            // If flatten_item created a sub-traversal, we need `traversal` to have the
+            // same state as the completed subtraversal, so we reinitialize it here.
             if let Some(subtraversal) = subtraversal {
                 *traversal = subtraversal;
             }
@@ -350,7 +350,7 @@ impl<'a> DisplayListFlattener<'a> {
         );
 
         let index = self.clip_scroll_tree.add_sticky_frame(
-            clip_and_scroll.spatial_node_index, 
+            clip_and_scroll.spatial_node_index, /* parent id */
             sticky_frame_info,
             info.id.pipeline_id(),
         );
@@ -373,10 +373,10 @@ impl<'a> DisplayListFlattener<'a> {
             info.image_mask,
             reference_frame_relative_offset,
         );
-        
-        
-        
-        
+        // Just use clip rectangle as the frame rect for this scroll frame.
+        // This is useful when calculating scroll extents for the
+        // SpatialNode::scroll(..) API as well as for properly setting sticky
+        // positioning offsets.
         let frame_rect = item.clip_rect().translate(reference_frame_relative_offset);
         let content_rect = item.rect().translate(reference_frame_relative_offset);
 
@@ -428,14 +428,14 @@ impl<'a> DisplayListFlattener<'a> {
         reference_frame_relative_offset: LayoutVector2D,
         is_backface_visible: bool,
     ) {
-        
+        // Avoid doing unnecessary work for empty stacking contexts.
         if traversal.current_stacking_context_empty() {
             traversal.skip_current_stacking_context();
             return;
         }
 
         let composition_operations = {
-            
+            // TODO(optimization?): self.traversal.display_list()
             let display_list = self.scene.get_display_list_for_pipeline(pipeline_id);
             CompositeOps::new(
                 stacking_context.filter_ops_for_compositing(display_list, item.filters()),
@@ -479,7 +479,7 @@ impl<'a> DisplayListFlattener<'a> {
             },
         };
 
-        
+        //TODO: use or assert on `clip_and_scroll_ids.clip_node_id` ?
         let clip_chain_index = self.add_clip_node(
             info.clip_id,
             clip_and_scroll_ids.scroll_node_id,
@@ -685,8 +685,7 @@ impl<'a> DisplayListFlattener<'a> {
             }
             SpecificDisplayItem::ClipChain(ref info) => {
                 let items = self.get_clip_chain_items(pipeline_id, item.clip_chain_items())
-                    .iter()
-                    .map(|id| self.id_to_index_mapper.get_clip_node_index(*id))
+                    .map(|id| self.id_to_index_mapper.get_clip_node_index(id))
                     .collect();
                 let parent = match info.parent {
                     Some(id) => Some(
@@ -717,7 +716,7 @@ impl<'a> DisplayListFlattener<'a> {
                 );
             }
 
-            
+            // Do nothing; these are dummy items for the display list parser
             SpecificDisplayItem::SetGradientStops => {}
 
             SpecificDisplayItem::PopStackingContext | SpecificDisplayItem::PopReferenceFrame => {
@@ -748,9 +747,9 @@ impl<'a> DisplayListFlattener<'a> {
         }
     }
 
-    
-    
-    
+    /// Create a primitive and add it to the prim store. This method doesn't
+    /// add the primitive to the draw list, so can be used for creating
+    /// sub-primitives.
     pub fn create_primitive(
         &mut self,
         info: &LayoutPrimitiveInfo,
@@ -792,20 +791,20 @@ impl<'a> DisplayListFlattener<'a> {
         self.hit_testing_runs.push(HitTestingRun(vec![new_item], clip_and_scroll));
     }
 
-    
+    /// Add an already created primitive to the draw lists.
     pub fn add_primitive_to_draw_list(
         &mut self,
         prim_index: PrimitiveIndex,
         clip_and_scroll: ScrollNodeAndClipChain,
     ) {
-        
+        // Add primitive to the top-most Picture on the stack.
         let pic_index = self.picture_stack.last().unwrap();
         let pic = &mut self.prim_store.pictures[pic_index.0];
         pic.add_primitive(prim_index, clip_and_scroll);
     }
 
-    
-    
+    /// Convenience interface that creates a primitive entry and adds it
+    /// to the draw list.
     pub fn add_primitive(
         &mut self,
         clip_and_scroll: ScrollNodeAndClipChain,
@@ -814,16 +813,16 @@ impl<'a> DisplayListFlattener<'a> {
         container: PrimitiveContainer,
     ) {
         if !self.shadow_stack.is_empty() {
-            
-            
+            // TODO(gw): Restructure this so we don't need to move the shadow
+            //           stack out (borrowck due to create_primitive below).
             let shadow_stack = mem::replace(&mut self.shadow_stack, Vec::new());
             for &(ref shadow, shadow_pic_index) in &shadow_stack {
-                
+                // Offset the local rect and clip rect by the shadow offset.
                 let mut info = info.clone();
                 info.rect = info.rect.translate(&shadow.offset);
                 info.clip_rect = info.clip_rect.translate(&shadow.offset);
 
-                
+                // Offset any local clip sources by the shadow offset.
                 let clip_sources: Vec<ClipSource> = clip_sources
                     .iter()
                     .map(|cs| cs.offset(&shadow.offset))
@@ -833,14 +832,14 @@ impl<'a> DisplayListFlattener<'a> {
                     clip_and_scroll.spatial_node_index,
                 );
 
-                
+                // Construct and add a primitive for the given shadow.
                 let shadow_prim_index = self.create_primitive(
                     &info,
                     clip_sources,
                     container.create_shadow(shadow),
                 );
 
-                
+                // Add the new primitive to the shadow picture.
                 let shadow_pic = &mut self.prim_store.pictures[shadow_pic_index.0];
                 shadow_pic.add_primitive(shadow_prim_index, clip_and_scroll);
             }
@@ -882,26 +881,26 @@ impl<'a> DisplayListFlattener<'a> {
             clip_chain_id
         );
 
-        
-        
+        // Construct the necessary set of Picture primitives
+        // to draw this stacking context.
         let current_reference_frame_index = self.current_reference_frame_index();
 
-        
-        
-        
-        
-        
-        
+        // An arbitrary large clip rect. For now, we don't
+        // specify a clip specific to the stacking context.
+        // However, now that they are represented as Picture
+        // primitives, we can apply any kind of clip mask
+        // to them, as for a normal primitive. This is needed
+        // to correctly handle some CSS cases (see #1957).
         let max_clip = LayoutRect::max_rect();
 
-        
+        // If there is no root picture, create one for the main framebuffer.
         if self.sc_stack.is_empty() {
-            
+            // Should be no pictures at all if the stack is empty...
             debug_assert!(self.prim_store.pictures.is_empty());
             debug_assert_eq!(transform_style, TransformStyle::Flat);
 
-            
-            
+            // This picture stores primitive runs for items on the
+            // main framebuffer.
             let pic_index = self.prim_store.add_image_picture(
                 None,
                 false,
@@ -913,51 +912,51 @@ impl<'a> DisplayListFlattener<'a> {
 
             self.picture_stack.push(pic_index);
         } else if composite_ops.mix_blend_mode.is_some() && self.sc_stack.len() > 2 {
-            
-            
-            
-            
-            
-            
+            // If we have a mix-blend-mode, and we aren't the primary framebuffer,
+            // the stacking context needs to be isolated to blend correctly as per
+            // the CSS spec.
+            // TODO(gw): The way we detect not being the primary framebuffer (len > 2)
+            //           is hacky and depends on how we create a root stacking context
+            //           during flattening.
             let parent_pic_index = self.picture_stack.last().unwrap();
             let parent_pic = &mut self.prim_store.pictures[parent_pic_index.0];
 
-            
-            
+            // If not already isolated for some other reason,
+            // make this picture as isolated.
             if parent_pic.composite_mode.is_none() {
                 parent_pic.composite_mode = Some(PictureCompositeMode::Blit);
             }
         }
 
-        
-        
-        
+        // Get the transform-style of the parent stacking context,
+        // which determines if we *might* need to draw this on
+        // an intermediate surface for plane splitting purposes.
         let parent_transform_style = match self.sc_stack.last() {
             Some(sc) => sc.transform_style,
             None => TransformStyle::Flat,
         };
 
-        
-        
-        
-        
-        
+        // If this is preserve-3d *or* the parent is, then this stacking
+        // context is participating in the 3d rendering context. In that
+        // case, hoist the picture up to the 3d rendering context
+        // container, so that it's rendered as a sibling with other
+        // elements in this context.
         let participating_in_3d_context =
             composite_ops.count() == 0 &&
             (parent_transform_style == TransformStyle::Preserve3D ||
              transform_style == TransformStyle::Preserve3D);
 
-        
-        
-        
+        // If this is participating in a 3d context *and* the
+        // parent was not a 3d context, then this must be the
+        // element that establishes a new 3d context.
         let establishes_3d_context =
             participating_in_3d_context &&
             parent_transform_style == TransformStyle::Flat;
 
         let rendering_context_3d_pic_index = if establishes_3d_context {
-            
-            
-            
+            // If establishing a 3d context, we need to add a picture
+            // that will be the container for all the planes and any
+            // un-transformed content.
             let container_index = self.prim_store.add_image_picture(
                 None,
                 false,
@@ -991,11 +990,11 @@ impl<'a> DisplayListFlattener<'a> {
         };
 
         let mut parent_pic_index = if !establishes_3d_context && participating_in_3d_context {
-            
-            
-            
-            
-            
+            // If we're in a 3D context, we will parent the picture
+            // to the first stacking context we find that is a
+            // 3D rendering context container. This follows the spec
+            // by hoisting these items out into the same 3D context
+            // for plane splitting.
             self.sc_stack
                 .iter()
                 .rev()
@@ -1006,7 +1005,7 @@ impl<'a> DisplayListFlattener<'a> {
             *self.picture_stack.last().unwrap()
         };
 
-        
+        // For each filter, create a new image with that composite mode.
         for filter in composite_ops.filters.iter().rev() {
             let src_pic_index = self.prim_store.add_image_picture(
                 Some(PictureCompositeMode::Filter(*filter)),
@@ -1035,7 +1034,7 @@ impl<'a> DisplayListFlattener<'a> {
             self.picture_stack.push(src_pic_index);
         }
 
-        
+        // Same for mix-blend-mode.
         if let Some(mix_blend_mode) = composite_ops.mix_blend_mode {
             let src_pic_index = self.prim_store.add_image_picture(
                 Some(PictureCompositeMode::MixBlend(mix_blend_mode)),
@@ -1064,34 +1063,34 @@ impl<'a> DisplayListFlattener<'a> {
             self.picture_stack.push(src_pic_index);
         }
 
-        
-        
+        // By default, this picture will be collapsed into
+        // the owning target.
         let mut composite_mode = None;
         let mut frame_output_pipeline_id = None;
 
-        
-        
+        // If this stacking context if the root of a pipeline, and the caller
+        // has requested it as an output frame, create a render task to isolate it.
         if is_pipeline_root && self.output_pipelines.contains(&pipeline_id) {
             composite_mode = Some(PictureCompositeMode::Blit);
             frame_output_pipeline_id = Some(pipeline_id);
         }
 
-        
-        
-        
-        
+        // Force an intermediate surface if the stacking context
+        // has a clip node. In the future, we may decide during
+        // prepare step to skip the intermediate surface if the
+        // clip node doesn't affect the stacking context rect.
         if participating_in_3d_context || clipping_node.is_some() {
-            
-            
-            
-            
-            
-            
-            
+            // TODO(gw): For now, as soon as this picture is in
+            //           a 3D context, we draw it to an intermediate
+            //           surface and apply plane splitting. However,
+            //           there is a large optimization opportunity here.
+            //           During culling, we can check if there is actually
+            //           perspective present, and skip the plane splitting
+            //           completely when that is not the case.
             composite_mode = Some(PictureCompositeMode::Blit);
         }
 
-        
+        // Add picture for this actual stacking context contents to render into.
         let pic_index = self.prim_store.add_image_picture(
             composite_mode,
             participating_in_3d_context,
@@ -1101,10 +1100,10 @@ impl<'a> DisplayListFlattener<'a> {
             true,
         );
 
-        
+        // Create a brush primitive that draws this picture.
         let sc_prim = BrushPrimitive::new_picture(pic_index);
 
-        
+        // Add the brush to the parent picture.
         let sc_prim_index = self.prim_store.add_primitive(
             &LayoutRect::zero(),
             &max_clip,
@@ -1117,11 +1116,11 @@ impl<'a> DisplayListFlattener<'a> {
         let parent_pic = &mut self.prim_store.pictures[parent_pic_index.0];
         parent_pic.add_primitive(sc_prim_index, clip_and_scroll);
 
-        
+        // Add this as the top-most picture for primitives to be added to.
         self.picture_stack.push(pic_index);
 
-        
-        
+        // Push the SC onto the stack, so we know how to handle things in
+        // pop_stacking_context.
         let sc = FlattenedStackingContext {
             composite_ops,
             is_backface_visible,
@@ -1137,13 +1136,13 @@ impl<'a> DisplayListFlattener<'a> {
     pub fn pop_stacking_context(&mut self) {
         let sc = self.sc_stack.pop().unwrap();
 
-        
+        // Always pop at least the main picture for this stacking context.
         let mut pop_count = 1;
 
-        
+        // Remove the picture for any filter/mix-blend-mode effects.
         pop_count += sc.composite_ops.count();
 
-        
+        // Remove the 3d context container if created
         if sc.rendering_context_3d_pic_index.is_some() {
             pop_count += 1;
         }
@@ -1156,8 +1155,8 @@ impl<'a> DisplayListFlattener<'a> {
             self.prim_store.optimize_picture_if_possible(pic_index);
         }
 
-        
-        
+        // By the time the stacking context stack is empty, we should
+        // also have cleared the picture stack.
         if self.sc_stack.is_empty() {
             self.picture_stack.pop().expect("bug: picture stack invalid");
             debug_assert!(self.picture_stack.is_empty());
@@ -1241,12 +1240,15 @@ impl<'a> DisplayListFlattener<'a> {
         );
     }
 
-    pub fn add_clip_node(
+    pub fn add_clip_node<I>(
         &mut self,
         new_node_id: ClipId,
         parent_id: ClipId,
-        clip_region: ClipRegion,
-    ) -> ClipChainIndex {
+        clip_region: ClipRegion<I>,
+    ) -> ClipChainIndex
+    where
+        I: IntoIterator<Item = ComplexClipRegion>
+    {
         let parent_clip_chain_index = self.id_to_index_mapper.get_clip_chain_index(&parent_id);
         let spatial_node = self.id_to_index_mapper.get_spatial_node_index(parent_id);
 
@@ -1301,21 +1303,21 @@ impl<'a> DisplayListFlattener<'a> {
         let current_reference_frame_index = self.current_reference_frame_index();
         let max_clip = LayoutRect::max_rect();
 
-        
-        
-        
+        // Quote from https://drafts.csswg.org/css-backgrounds-3/#shadow-blur
+        // "the image that would be generated by applying to the shadow a
+        // Gaussian blur with a standard deviation equal to half the blur radius."
         let std_deviation = shadow.blur_radius * 0.5;
 
-        
-        
-        
-        
+        // If the shadow has no blur, any elements will get directly rendered
+        // into the parent picture surface, instead of allocating and drawing
+        // into an intermediate surface. In this case, we will need to apply
+        // the local clip rect to primitives.
         let apply_local_clip_rect = shadow.blur_radius == 0.0;
 
-        
-        
-        
-        
+        // Create a picture that the shadow primitives will be added to. If the
+        // blur radius is 0, the code in Picture::prepare_for_render will
+        // detect this and mark the picture to be drawn directly into the
+        // parent picture, which avoids an intermediate surface and blur.
         let shadow_pic_index = self.prim_store.add_image_picture(
             Some(PictureCompositeMode::Filter(FilterOp::Blur(std_deviation))),
             false,
@@ -1325,7 +1327,7 @@ impl<'a> DisplayListFlattener<'a> {
             apply_local_clip_rect,
         );
 
-        
+        // Create the primitive to draw the shadow picture into the scene.
         let shadow_prim = BrushPrimitive::new_picture(shadow_pic_index);
         let shadow_prim_index = self.prim_store.add_primitive(
             &LayoutRect::zero(),
@@ -1336,8 +1338,8 @@ impl<'a> DisplayListFlattener<'a> {
             PrimitiveContainer::Brush(shadow_prim),
         );
 
-        
-        
+        // Add the shadow primitive. This must be done before pushing this
+        // picture on to the shadow stack, to avoid infinite recursion!
         self.add_primitive_to_draw_list(shadow_prim_index, clip_and_scroll);
         self.shadow_stack.push((shadow, shadow_pic_index));
     }
@@ -1356,8 +1358,8 @@ impl<'a> DisplayListFlattener<'a> {
         extra_clips: Vec<ClipSource>,
     ) {
         if color.a == 0.0 {
-            
-            
+            // Don't add transparent rectangles to the draw list, but do consider them for hit
+            // testing. This allows specifying invisible hit testing areas.
             self.add_primitive_to_hit_testing_list(info, clip_and_scroll);
             return;
         }
@@ -1477,7 +1479,7 @@ impl<'a> DisplayListFlattener<'a> {
         let rect = info.rect;
         match border_item.details {
             BorderDetails::NinePatch(ref border) => {
-                
+                // Calculate the modified rect as specific by border-image-outset
                 let origin = LayoutPoint::new(
                     rect.origin.x - border.outset.left,
                     rect.origin.y - border.outset.top,
@@ -1488,7 +1490,7 @@ impl<'a> DisplayListFlattener<'a> {
                 );
                 let rect = LayoutRect::new(origin, size);
 
-                
+                // Calculate the local texel coords of the slices.
                 let px0 = 0.0;
                 let px1 = border.slice.left as f32;
                 let px2 = border.width as f32 - border.slice.right as f32;
@@ -1524,11 +1526,11 @@ impl<'a> DisplayListFlattener<'a> {
                     if uv_rect.uv1.x > uv_rect.uv0.x &&
                        uv_rect.uv1.y > uv_rect.uv0.y {
 
-                        
-                        
+                        // Use segment relative interpolation for all
+                        // instances in this primitive.
                         let mut brush_flags = BrushFlags::SEGMENT_RELATIVE;
 
-                        
+                        // Enable repeat modes on the segment.
                         if repeat_horizontal == RepeatMode::Repeat {
                             brush_flags |= BrushFlags::SEGMENT_REPEAT_X;
                         }
@@ -1553,10 +1555,10 @@ impl<'a> DisplayListFlattener<'a> {
                     }
                 }
 
-                
+                // Build the list of image segments
                 let mut segments = vec![];
 
-                
+                // Top left
                 add_segment(
                     &mut segments,
                     LayoutRect::from_floats(tl_outer.x, tl_outer.y, tl_inner.x, tl_inner.y),
@@ -1564,7 +1566,7 @@ impl<'a> DisplayListFlattener<'a> {
                     RepeatMode::Stretch,
                     RepeatMode::Stretch
                 );
-                
+                // Top right
                 add_segment(
                     &mut segments,
                     LayoutRect::from_floats(tr_inner.x, tr_outer.y, tr_outer.x, tr_inner.y),
@@ -1572,7 +1574,7 @@ impl<'a> DisplayListFlattener<'a> {
                     RepeatMode::Stretch,
                     RepeatMode::Stretch
                 );
-                
+                // Bottom right
                 add_segment(
                     &mut segments,
                     LayoutRect::from_floats(br_inner.x, br_inner.y, br_outer.x, br_outer.y),
@@ -1580,7 +1582,7 @@ impl<'a> DisplayListFlattener<'a> {
                     RepeatMode::Stretch,
                     RepeatMode::Stretch
                 );
-                
+                // Bottom left
                 add_segment(
                     &mut segments,
                     LayoutRect::from_floats(bl_outer.x, bl_inner.y, bl_inner.x, bl_outer.y),
@@ -1589,7 +1591,7 @@ impl<'a> DisplayListFlattener<'a> {
                     RepeatMode::Stretch
                 );
 
-                
+                // Center
                 if border.fill {
                     add_segment(
                         &mut segments,
@@ -1600,9 +1602,9 @@ impl<'a> DisplayListFlattener<'a> {
                     );
                 }
 
-                
+                // Add edge segments.
 
-                
+                // Top
                 add_segment(
                     &mut segments,
                     LayoutRect::from_floats(tl_inner.x, tl_outer.y, tr_inner.x, tl_inner.y),
@@ -1610,7 +1612,7 @@ impl<'a> DisplayListFlattener<'a> {
                     border.repeat_horizontal,
                     RepeatMode::Stretch,
                 );
-                
+                // Bottom
                 add_segment(
                     &mut segments,
                     LayoutRect::from_floats(bl_inner.x, bl_inner.y, br_inner.x, bl_outer.y),
@@ -1618,7 +1620,7 @@ impl<'a> DisplayListFlattener<'a> {
                     border.repeat_horizontal,
                     RepeatMode::Stretch,
                 );
-                
+                // Left
                 add_segment(
                     &mut segments,
                     LayoutRect::from_floats(tl_outer.x, tl_inner.y, tl_inner.x, bl_inner.y),
@@ -1626,7 +1628,7 @@ impl<'a> DisplayListFlattener<'a> {
                     RepeatMode::Stretch,
                     border.repeat_vertical,
                 );
-                
+                // Right
                 add_segment(
                     &mut segments,
                     LayoutRect::from_floats(tr_inner.x, tr_inner.y, br_outer.x, br_inner.y),
@@ -1699,18 +1701,18 @@ impl<'a> DisplayListFlattener<'a> {
         let mut prim_rect = info.rect;
         simplify_repeated_primitive(&stretch_size, &mut tile_spacing, &mut prim_rect);
 
-        
-        
-        
-        
-        
-        
+        // Try to ensure that if the gradient is specified in reverse, then so long as the stops
+        // are also supplied in reverse that the rendered result will be equivalent. To do this,
+        // a reference orientation for the gradient line must be chosen, somewhat arbitrarily, so
+        // just designate the reference orientation as start < end. Aligned gradient rendering
+        // manages to produce the same result regardless of orientation, so don't worry about
+        // reversing in that case.
         let reverse_stops = start_point.x > end_point.x ||
             (start_point.x == end_point.x && start_point.y > end_point.y);
 
-        
-        
-        
+        // To get reftests exactly matching with reverse start/end
+        // points, it's necessary to reverse the gradient
+        // line in some cases.
         let (sp, ep) = if reverse_stops {
             (end_point, start_point)
         } else {

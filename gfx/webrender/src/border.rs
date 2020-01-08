@@ -9,9 +9,19 @@ use app_units::Au;
 use ellipse::Ellipse;
 use display_list_flattener::DisplayListFlattener;
 use gpu_types::{BorderInstance, BorderSegment, BrushFlags};
-use prim_store::{BrushKind, BrushPrimitive, BrushSegment};
+use prim_store::{BrushKind, BrushPrimitive, BrushSegment, VECS_PER_SEGMENT};
 use prim_store::{BorderSource, EdgeAaSegmentMask, PrimitiveContainer, ScrollNodeAndClipChain};
+use renderer::{MAX_VERTEX_TEXTURE_WIDTH};
 use util::{lerp, RectHelpers};
+
+
+
+
+
+
+
+
+pub const MAX_BORDER_RESOLUTION: u32 = 2048;
 
 trait AuSizeConverter {
     fn to_au(&self) -> LayoutSizeAu;
@@ -345,18 +355,24 @@ impl BorderCornerClipSource {
             1.0 - 2.0 * outer_scale.y,
         );
 
+        
+        
+        
+        let clip_limit = MAX_VERTEX_TEXTURE_WIDTH / VECS_PER_SEGMENT;
+        let max_clip_count = self.max_clip_count.min(clip_limit);
+
         match self.kind {
             BorderCornerClipKind::Dash => {
                 
                 let dash_arc_length =
-                    0.5 * self.ellipse.total_arc_length / self.max_clip_count as f32;
+                    0.5 * self.ellipse.total_arc_length / max_clip_count as f32;
                 
                 
                 
                 
                 
                 let mut current_arc_length = 0.25 * dash_arc_length;
-                for _ in 0 .. self.max_clip_count {
+                for _ in 0 .. max_clip_count {
                     let arc_length0 = current_arc_length;
                     current_arc_length += dash_arc_length;
 
@@ -401,7 +417,7 @@ impl BorderCornerClipSource {
                     ]);
                 }
             }
-            BorderCornerClipKind::Dot if self.max_clip_count == 1 => {
+            BorderCornerClipKind::Dot if max_clip_count == 1 => {
                 let dot_diameter = lerp(self.widths.width, self.widths.height, 0.5);
                 dot_dash_data.push([
                     self.widths.width / 2.0, self.widths.height / 2.0, 0.5 * dot_diameter, 0.,
@@ -422,7 +438,7 @@ impl BorderCornerClipSource {
                     self.widths.height,
                 ));
 
-                for dot_index in 0 .. self.max_clip_count {
+                for dot_index in 0 .. max_clip_count {
                     let prev_forward_pos = *forward_dots.last().unwrap();
                     let prev_back_pos = *back_dots.last().unwrap();
 
@@ -926,6 +942,23 @@ impl BorderRenderTaskInfo {
         }
 
         instances
+    }
+
+    
+    
+    
+    
+    pub fn get_max_scale(radii: &BorderRadius) -> LayoutToDeviceScale {
+        let r = radii.top_left.width
+            .max(radii.top_left.height)
+            .max(radii.top_right.width)
+            .max(radii.top_right.height)
+            .max(radii.bottom_left.width)
+            .max(radii.bottom_left.height)
+            .max(radii.bottom_right.width)
+            .max(radii.bottom_right.height);
+
+        LayoutToDeviceScale::new(MAX_BORDER_RESOLUTION as f32 / r)
     }
 }
 
