@@ -31,6 +31,7 @@ typedef struct {
   
 
   guint8 depressed;
+  guint8 backdrop;
   gint32 curpos; 
   gint32 maxpos;
   gint32 scale;  
