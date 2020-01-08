@@ -748,6 +748,8 @@ MessagePort::CloneAndDisentangle(MessagePortIdentifier& aIdentifier)
     
     if (!port->ConnectToPBackground()) {
       
+      mState = eStateDisentangled;
+      UpdateMustKeepAlive();
       return;
     }
 
