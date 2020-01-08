@@ -532,7 +532,7 @@ static void InvalidateImages(nsIFrame* aFrame) {
   }
 }
 
-void ImageLoader::DoRedraw(FrameSet* aFrameSet, bool aForcePaint) {
+void ImageLoader::RequestPaintIfNeeded(FrameSet* aFrameSet, bool aForcePaint) {
   NS_ASSERTION(aFrameSet, "Must have a frame set");
   NS_ASSERTION(mDocument, "Should have returned earlier!");
 
@@ -730,7 +730,7 @@ nsresult ImageLoader::OnFrameComplete(imgIRequest* aRequest) {
   
   
   
-  DoRedraw(frameSet,  true);
+  RequestPaintIfNeeded(frameSet,  true);
 
   return NS_OK;
 }
@@ -745,7 +745,7 @@ nsresult ImageLoader::OnFrameUpdate(imgIRequest* aRequest) {
     return NS_OK;
   }
 
-  DoRedraw(frameSet,  false);
+  RequestPaintIfNeeded(frameSet,  false);
 
   return NS_OK;
 }
