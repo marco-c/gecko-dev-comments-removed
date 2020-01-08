@@ -23,11 +23,8 @@ class TabParent;
 } 
 
 namespace layers {
+class CompositorOptions;
 struct TextureFactoryIdentifier;
-} 
-
-namespace layout {
-class PRenderFrameParent;
 } 
 
 
@@ -95,12 +92,12 @@ public:
   static OpenWindowResult
   OpenWindowOOP(dom::TabParent* aOpenerTabParent,
                 dom::TabParent* aPopupTabParent,
-                layout::PRenderFrameParent* aRenderFrame,
                 const nsAString& aURL,
                 const nsAString& aName,
                 const nsAString& aFeatures,
                 layers::TextureFactoryIdentifier* aTextureFactoryIdentifier,
-                layers::LayersId* aLayersId);
+                layers::LayersId* aLayersId,
+                layers::CompositorOptions* aCompositorOptions);
 
   
 

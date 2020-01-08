@@ -19,8 +19,10 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/gfx/CrossProcessPaint.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
+#include "mozilla/layout/RenderFrameParent.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Move.h"
+#include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsIAuthPromptProvider.h"
 #include "nsIBrowserDOMWindow.h"
@@ -53,10 +55,6 @@ class CpowHolder;
 
 namespace layers {
 struct TextureFactoryIdentifier;
-} 
-
-namespace layout {
-class RenderFrameParent;
 } 
 
 namespace widget {
@@ -162,7 +160,6 @@ public:
 
   virtual mozilla::ipc::IPCResult
   RecvBrowserFrameOpenWindow(PBrowserParent* aOpener,
-                             PRenderFrameParent* aRenderFrame,
                              const nsString& aURL,
                              const nsString& aName,
                              const nsString& aFeatures,
@@ -582,9 +579,10 @@ public:
 
   layout::RenderFrameParent* GetRenderFrame();
 
-  bool SetRenderFrame(PRenderFrameParent* aRFParent);
+  bool SetRenderFrame();
   bool GetRenderFrameInfo(TextureFactoryIdentifier* aTextureFactoryIdentifier,
-                          layers::LayersId* aLayersId);
+                          layers::LayersId* aLayersId,
+                          CompositorOptions* aCompositorOptions);
 
   mozilla::ipc::IPCResult RecvEnsureLayersConnected(CompositorOptions* aCompositorOptions) override;
 
@@ -620,9 +618,9 @@ protected:
   Element* mFrameElement;
   nsCOMPtr<nsIBrowserDOMWindow> mBrowserDOMWindow;
 
-  virtual PRenderFrameParent* AllocPRenderFrameParent() override;
+  virtual mozilla::ipc::IPCResult RecvCreatePRenderFrame() override;
 
-  virtual bool DeallocPRenderFrameParent(PRenderFrameParent* aFrame) override;
+  virtual mozilla::ipc::IPCResult RecvDestroyPRenderFrame() override;
 
   virtual mozilla::ipc::IPCResult RecvRemotePaintIsReady() override;
 
@@ -774,6 +772,7 @@ private:
 
   static void RemoveTabParentFromTable(layers::LayersId aLayersId);
 
+  UniquePtr<layout::RenderFrameParent> mRenderFrame;
   LayersObserverEpoch mLayerTreeEpoch;
 
   
