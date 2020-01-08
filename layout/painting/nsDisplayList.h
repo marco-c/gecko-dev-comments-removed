@@ -1815,9 +1815,7 @@ public:
 
   bool IsInWillChangeBudget(nsIFrame* aFrame, const nsSize& aSize);
 
-  void RemoveFromWillChangeBudget(nsIFrame* aFrame);
-
-  void ClearWillChangeBudget();
+  void ClearWillChangeBudget(nsIFrame* aFrame);
 
   void EnterSVGEffectsContents(nsDisplayList* aHoistedItemsStorage);
   void ExitSVGEffectsContents();
@@ -2042,19 +2040,13 @@ private:
 
   struct FrameWillChangeBudget
   {
-    FrameWillChangeBudget()
-      : mPresContext(nullptr)
-      , mUsage(0)
-    {
-    }
-
-    FrameWillChangeBudget(nsPresContext* aPresContext, uint32_t aUsage)
-      : mPresContext(aPresContext)
+    FrameWillChangeBudget(nsIFrame* aFrame, uint32_t aUsage)
+      : mFrame(aFrame)
       , mUsage(aUsage)
     {
     }
 
-    nsPresContext* mPresContext;
+    nsIFrame* mFrame;
     uint32_t mUsage;
   };
 
@@ -2092,8 +2084,7 @@ private:
 
   
   
-  nsDataHashtable<nsPtrHashKey<nsIFrame>, FrameWillChangeBudget>
-    mWillChangeBudgetSet;
+  nsDataHashtable<nsPtrHashKey<nsIFrame>, uint32_t> mWillChangeBudgetSet;
 
   
   uint32_t mUsedAGRBudget;
@@ -3368,7 +3359,7 @@ public:
   
 
 
-  virtual void DeleteAll(nsDisplayListBuilder* aBuilder);
+  void DeleteAll(nsDisplayListBuilder* aBuilder);
 
   
 
@@ -3763,7 +3754,7 @@ public:
     return *this;
   }
 
-  void DeleteAll(nsDisplayListBuilder* aBuilder) override
+  void DeleteAll(nsDisplayListBuilder* aBuilder)
   {
     for (OldItemInfo& i : mOldItems) {
       if (i.mItem) {
