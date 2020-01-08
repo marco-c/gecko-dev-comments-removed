@@ -289,6 +289,11 @@ function fakeGzipCompressStringForNextPing(length) {
   };
 }
 
+function fakePrioEncode() {
+  const m = ChromeUtils.import("resource://gre/modules/TelemetrySession.jsm", {});
+  m.Policy.prioEncode = (batchID, prioParams) => prioParams;
+}
+
 
 function futureDate(date, offset) {
   return new Date(date.getTime() + offset);

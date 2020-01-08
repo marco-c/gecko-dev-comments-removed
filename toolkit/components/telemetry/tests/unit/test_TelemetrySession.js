@@ -930,6 +930,37 @@ add_task(async function test_environmentChange() {
   Assert.ok(!(COUNT_ID in ping.payload.histograms));
   Assert.ok(!(KEYED_ID in ping.payload.keyedHistograms));
 
+  
+  startHour = TelemetryUtils.truncateToHours(now);
+  gMonotonicNow = fakeMonotonicNow(gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE);
+  now = fakeNow(futureDate(now, 10 * MILLISECONDS_PER_MINUTE));
+
+  fakePrioEncode();
+
+  
+  let prioMeasures = [
+    "BROWSER_IS_USER_DEFAULT",
+    "NEWTAB_PAGE_ENABLED",
+  ];
+
+  for (let measure of prioMeasures) {
+    const value = Telemetry.getHistogramById(measure);
+    value.clear();
+    value.add(1);
+  }
+
+  let expectedPrioResult = {
+    "browserIsUserDefault": true,
+    "newTabPageEnabled": true,
+    "pdfViewerUsed": false,
+  };
+
+  Preferences.set(PREF_TEST, 3);
+  ping = await PingServer.promiseNextPing();
+  Assert.ok(!!ping);
+
+  Assert.deepEqual(ping.payload.prio, expectedPrioResult);
+
   await TelemetryController.testShutdown();
 });
 

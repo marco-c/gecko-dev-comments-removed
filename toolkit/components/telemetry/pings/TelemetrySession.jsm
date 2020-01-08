@@ -108,6 +108,7 @@ var Policy = {
   generateSubsessionUUID: () => generateUUID(),
   setSchedulerTickTimeout: (callback, delayMs) => setTimeout(callback, delayMs),
   clearSchedulerTickTimeout: id => clearTimeout(id),
+  prioEncode: (batchID, prioParams) => PrioEncoder.encode(batchID, prioParams),
 };
 
 
@@ -983,7 +984,7 @@ var Impl = {
 
     
     if (Services.prefs.getBoolPref(PRIO_ENABLED_PREF, false)) {
-      payloadObj.prio = protect(() => this._prioEncode());
+      payloadObj.prio = protect(() => this._prioEncode(payloadObj));
     }
 
     
@@ -1609,7 +1610,9 @@ var Impl = {
 
 
 
-  _prioEncode() {
+
+
+  _prioEncode(payloadObj) {
     
     const prioEncodedHistograms = {
       "BROWSER_IS_USER_DEFAULT": "browserIsUserDefault",
@@ -1621,9 +1624,12 @@ var Impl = {
     let prioParams = {};
     for (const [histogramName, prioName] of Object.entries(prioEncodedHistograms)) {
       try {
-        const histogram = Telemetry.getHistogramById(histogramName);
-        const firstCount = Boolean(histogram.snapshot().sum);
-        prioParams[prioName] = firstCount;
+        if (histogramName in payloadObj.histograms) {
+          const histogram = payloadObj.histograms[histogramName];
+          prioParams[prioName] = Boolean(histogram.sum);
+        } else {
+          prioParams[prioName] = false;
+        }
 
       } catch (ex) {
         this._log.error(ex);
@@ -1636,7 +1642,7 @@ var Impl = {
     let prioEncodedData;
 
     try {
-      prioEncodedData = PrioEncoder.encode(batchID, prioParams);
+      prioEncodedData = Policy.prioEncode(batchID, prioParams);
     } catch (ex) {
       this._log.error(ex);
     }
