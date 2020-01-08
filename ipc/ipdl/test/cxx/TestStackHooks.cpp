@@ -83,7 +83,8 @@ TestStackHooksChild::RecvStart()
 
     
     
-    MessageLoop::current()->PostTask(NewRunnableFunction(RunTestsFn));
+    MessageLoop::current()->PostTask(NewRunnableFunction("RunTestsFn",
+                                                         RunTestsFn));
 
     return IPC_OK();
 }

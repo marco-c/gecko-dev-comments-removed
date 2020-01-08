@@ -259,7 +259,7 @@ DeleteSubprocess(MessageLoop* uiLoop)
 {
   
   delete gSubprocess;
-  uiLoop->PostTask(NewRunnableFunction(QuitXPCOM));
+  uiLoop->PostTask(NewRunnableFunction("QuitXPCOM", QuitXPCOM));
 }
 
 void
@@ -267,7 +267,8 @@ DeferredParentShutdown()
 {
     
     XRE_GetIOMessageLoop()->PostTask(
-        NewRunnableFunction(DeleteSubprocess, MessageLoop::current()));
+        NewRunnableFunction("DeleteSubprocess", DeleteSubprocess,
+                            MessageLoop::current()));
 }
 
 void
@@ -301,12 +302,12 @@ QuitParent()
     if (gChildThread) {
         gParentDone = true;
         MessageLoop::current()->PostTask(
-            NewRunnableFunction(TryThreadedShutdown));
+            NewRunnableFunction("TryThreadedShutdown", TryThreadedShutdown));
     } else {
         
         
         MessageLoop::current()->PostTask(
-            NewRunnableFunction(DeferredParentShutdown));
+            NewRunnableFunction("DeferredParentShutdown", DeferredParentShutdown));
     }
 }
 
@@ -322,10 +323,10 @@ QuitChild()
 {
     if (gChildThread) { 
         gParentMessageLoop->PostTask(
-            NewRunnableFunction(ChildCompleted));
+            NewRunnableFunction("ChildCompleted", ChildCompleted));
     } else { 
         MessageLoop::current()->PostTask(
-            NewRunnableFunction(ChildDie));
+            NewRunnableFunction("ChildDie", ChildDie));
     }
 }
 
