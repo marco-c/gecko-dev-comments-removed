@@ -1804,6 +1804,12 @@ protected:
 
   nsresult ShowResizersInternal(Element& aResizedElement);
 
+  
+
+
+
+  nsresult HideResizersInternal();
+
   ManualNACPtr CreateResizer(int16_t aLocation, nsIContent& aParentContent);
   void SetAnonymousElementPosition(int32_t aX, int32_t aY,
                                    Element* aResizer);

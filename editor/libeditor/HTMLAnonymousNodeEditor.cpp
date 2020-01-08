@@ -294,9 +294,9 @@ HTMLEditor::HideAnonymousEditingUIs()
     NS_ASSERTION(!mInlineEditedCell, "HideInlineTableEditingUI failed");
   }
   if (mResizedObject) {
-    DebugOnly<nsresult> rv = HideResizers();
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HideResizers() failed");
-    NS_ASSERTION(!mResizedObject, "HideResizers failed");
+    DebugOnly<nsresult> rv = HideResizersInternal();
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HideResizersInternal() failed");
+    NS_ASSERTION(!mResizedObject, "HideResizersInternal() failed");
   }
 }
 
@@ -321,9 +321,9 @@ HTMLEditor::HideAnonymousEditingUIsIfUnnecessary()
   if (!IsObjectResizerEnabled() && mResizedObject) {
     
     
-    DebugOnly<nsresult> rv = HideResizers();
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HideResizers() failed");
-    NS_ASSERTION(!mResizedObject, "HideResizers failed");
+    DebugOnly<nsresult> rv = HideResizersInternal();
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HideResizersInternal() failed");
+    NS_ASSERTION(!mResizedObject, "HideResizersInternal() failed");
   }
 }
 
@@ -429,11 +429,11 @@ HTMLEditor::RefereshEditingUI(Selection& aSelection)
     
     
     
-    nsresult rv = HideResizers();
+    nsresult rv = HideResizersInternal();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-    NS_ASSERTION(!mResizedObject, "HideResizers failed");
+    NS_ASSERTION(!mResizedObject, "HideResizersInternal() failed");
   }
 
   if (IsInlineTableEditorEnabled() && mInlineEditedCell &&
