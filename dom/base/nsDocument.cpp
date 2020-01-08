@@ -10148,8 +10148,7 @@ void nsIDocument::CleanupFullscreenState() {
   
   if (nsIPresShell* shell = GetShell()) {
     if (shell->GetMobileViewportManager()) {
-      shell->SetResolutionAndScaleTo(mSavedResolution,
-                                     nsIPresShell::ChangeOrigin::eMainThread);
+      shell->SetResolutionAndScaleTo(mSavedResolution, nsGkAtoms::restore);
     }
   }
 
@@ -10547,7 +10546,7 @@ bool nsIDocument::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
         
         child->mSavedResolution = shell->GetResolution();
         shell->SetResolutionAndScaleTo(manager->ComputeIntrinsicResolution(),
-                                       nsIPresShell::ChangeOrigin::eMainThread);
+                                       nsGkAtoms::other);
       }
     }
 
@@ -11567,14 +11566,13 @@ already_AddRefed<Element> nsIDocument::CreateHTMLElement(nsAtom* aTag) {
 }
 
 bool MarkDocumentTreeToBeInSyncOperation(nsIDocument* aDoc, void* aData) {
-  nsCOMArray<nsIDocument>* documents =
-      static_cast<nsCOMArray<nsIDocument>*>(aData);
+  auto* documents = static_cast<nsTArray<nsCOMPtr<nsIDocument>>*>(aData);
   if (aDoc) {
     aDoc->SetIsInSyncOperation(true);
     if (nsCOMPtr<nsPIDOMWindowInner> window = aDoc->GetInnerWindow()) {
       window->TimeoutManager().BeginSyncOperation();
     }
-    documents->AppendObject(aDoc);
+    documents->AppendElement(aDoc);
     aDoc->EnumerateSubDocuments(MarkDocumentTreeToBeInSyncOperation, aData);
   }
   return true;
@@ -11598,11 +11596,11 @@ nsAutoSyncOperation::nsAutoSyncOperation(nsIDocument* aDoc) {
 }
 
 nsAutoSyncOperation::~nsAutoSyncOperation() {
-  for (int32_t i = 0; i < mDocuments.Count(); ++i) {
-    if (nsCOMPtr<nsPIDOMWindowInner> window = mDocuments[i]->GetInnerWindow()) {
+  for (nsCOMPtr<nsIDocument>& doc : mDocuments) {
+    if (nsCOMPtr<nsPIDOMWindowInner> window = doc->GetInnerWindow()) {
       window->TimeoutManager().EndSyncOperation();
     }
-    mDocuments[i]->SetIsInSyncOperation(false);
+    doc->SetIsInSyncOperation(false);
   }
   CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
   if (ccjs) {
