@@ -168,8 +168,7 @@ static bool IsEnableBlockingWebAudioByUserGesturePolicy() {
   return IsAudioContextAllowedToPlay(aContext);
 }
 
- bool AutoplayPolicy::IsAllowedToPlay(
-    const HTMLMediaElement& aElement) {
+static bool IsAllowedToPlayInternal(const HTMLMediaElement& aElement) {
   const uint32_t autoplayDefault = DefaultAutoplayBehaviour();
   
   
@@ -190,12 +189,15 @@ static bool IsEnableBlockingWebAudioByUserGesturePolicy() {
     return true;
   }
 
-  const bool result = IsMediaElementAllowedToPlay(aElement) ||
-                      autoplayDefault == nsIAutoplay::ALLOWED;
+  return IsMediaElementAllowedToPlay(aElement) ||
+         autoplayDefault == nsIAutoplay::ALLOWED;
+}
 
+ bool AutoplayPolicy::IsAllowedToPlay(
+    const HTMLMediaElement& aElement) {
+  const bool result = IsAllowedToPlayInternal(aElement);
   AUTOPLAY_LOG("IsAllowedToPlay, mediaElement=%p, isAllowToPlay=%s", &aElement,
                result ? "allowed" : "blocked");
-
   return result;
 }
 
