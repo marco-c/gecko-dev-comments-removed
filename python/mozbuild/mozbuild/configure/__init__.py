@@ -561,15 +561,18 @@ class ConfigureSandbox(dict):
             self._raw_options[option] = option_string
 
         when = self._conditions.get(option)
-        if (when and not self._value_for(when) and
-            value is not None and value.origin != 'default'):
-            if value.origin == 'environment':
-                
-                
-                return None
-            raise InvalidOptionError(
-                '%s is not available in this configuration'
-                % option_string.split('=', 1)[0])
+        
+        
+        
+        if when and not self._value_for(when) and value is not None:
+            
+            
+            
+            if value.origin not in ('default', 'environment'):
+                raise InvalidOptionError(
+                    '%s is not available in this configuration'
+                    % option_string.split('=', 1)[0])
+            return None
 
         return value
 
