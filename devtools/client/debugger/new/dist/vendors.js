@@ -8384,10 +8384,6 @@ var _url = __webpack_require__(334);
 
 var url = _interopRequireWildcard(_url);
 
-var _lodashMove = __webpack_require__(3751);
-
-var lodashMove = _interopRequireWildcard(_lodashMove);
-
 var _classnames = __webpack_require__(175);
 
 var _classnames2 = _interopRequireDefault(_classnames);
@@ -8396,6 +8392,10 @@ var _devtoolsSplitter = __webpack_require__(1440);
 
 var _devtoolsSplitter2 = _interopRequireDefault(_devtoolsSplitter);
 
+var _lodashMove = __webpack_require__(3751);
+
+var _lodashMove2 = _interopRequireDefault(_lodashMove);
+
 var _Svg = __webpack_require__(1359);
 
 var _Svg2 = _interopRequireDefault(_Svg);
@@ -8403,6 +8403,9 @@ var _Svg2 = _interopRequireDefault(_Svg);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+
+
 
 
 
@@ -8435,7 +8438,7 @@ const vendored = exports.vendored = {
   "devtools-splitter": _devtoolsSplitter2.default,
   "devtools-utils": devtoolsUtils,
   "fuzzaldrin-plus": fuzzaldrinPlus,
-  "lodash-move": lodashMove,
+  "lodash-move": _lodashMove2.default,
   "react-transition-group/Transition": transition,
   reselect,
   
@@ -8443,8 +8446,6 @@ const vendored = exports.vendored = {
   Svg: _Svg2.default,
   url
 };
-
-
 
  }),
 
