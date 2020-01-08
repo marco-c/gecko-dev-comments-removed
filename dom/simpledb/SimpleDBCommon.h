@@ -1,0 +1,18 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_simpledb_SimpledbCommon_h
+#define mozilla_dom_simpledb_SimpledbCommon_h
+
+namespace mozilla {
+namespace dom {
+
+extern const char* kPrefSimpleDBEnabled;
+
+} 
+} 
+
+#endif 
