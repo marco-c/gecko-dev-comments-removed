@@ -30,7 +30,12 @@ namespace {
 
 
 
-const uint32_t kWorkerStackSize = 256 * sizeof(size_t) * 1024;
+
+
+
+
+
+const uint32_t kWorkerStackSize = 256 * sizeof(size_t) * 1024 - 8192;
 
 } 
 
