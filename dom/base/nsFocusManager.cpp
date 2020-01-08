@@ -3362,7 +3362,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
         int32_t tabIndex =
             HostOrSlotTabIndexValue(currentContent, &focusableHostSlot);
         
-        if (!focusableHostSlot && tabIndex >= 0 &&
+        if ((!aForward || !focusableHostSlot) && tabIndex >= 0 &&
             (aIgnoreTabIndex || aCurrentTabIndex == tabIndex)) {
           nsIContent* contentToFocus = GetNextTabbableContentInScope(
               currentContent, currentContent, aOriginalStartContent, aForward,
@@ -3458,19 +3458,6 @@ nsresult nsFocusManager::GetNextTabbableContent(
             else if (currentContent == aRootContent ||
                      (currentContent != startContent &&
                       (aForward || !GetRedirectedFocus(currentContent)))) {
-              
-              
-              if (!aForward && currentContent->GetShadowRoot()) {
-                nsIContent* contentToFocus = GetNextTabbableContentInScope(
-                    currentContent, currentContent, aOriginalStartContent,
-                    aForward, aForward ? 1 : 0, aIgnoreTabIndex,
-                    aForDocumentNavigation, true );
-                if (contentToFocus) {
-                  NS_ADDREF(*aResultContent = contentToFocus);
-                  return NS_OK;
-                }
-              }
-
               NS_ADDREF(*aResultContent = currentContent);
               return NS_OK;
             }
