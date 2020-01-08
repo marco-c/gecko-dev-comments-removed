@@ -503,7 +503,9 @@ MOZ_ALWAYS_INLINE ObjectGroup* ObjectGroupRealm::DefaultNewGroupCache::lookup(
 
       
       
-      if (associated && associated->as<JSFunction>().wasNewScriptCleared()) {
+      
+      if (associated && (associated->as<JSFunction>().wasNewScriptCleared() ||
+                         associated->as<JSFunction>().realm() != cx->realm())) {
         associated = nullptr;
       }
 
