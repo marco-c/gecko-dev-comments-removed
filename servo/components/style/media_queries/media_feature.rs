@@ -4,14 +4,13 @@
 
 
 
-use super::Device;
-use super::media_feature_expression::{AspectRatio, RangeOrOperator};
-
 use Atom;
 use cssparser::Parser;
 use parser::ParserContext;
 use std::fmt;
 use style_traits::ParseError;
+use super::Device;
+use super::media_feature_expression::{AspectRatio, RangeOrOperator};
 use values::computed::{CSSPixelLength, Resolution};
 
 
@@ -132,7 +131,7 @@ bitflags! {
 }
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[allow(missing_docs)]
 pub enum AllowsRanges {
     Yes,
