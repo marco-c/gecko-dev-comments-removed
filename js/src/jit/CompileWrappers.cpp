@@ -205,6 +205,12 @@ CompileZone::addressOfNurseryCurrentEnd()
 const void*
 CompileZone::addressOfStringNurseryCurrentEnd()
 {
+    
+    
+    
+    
+    
+    
     return zone()->runtimeFromAnyThread()->gc.addressOfStringNurseryCurrentEnd();
 }
 
