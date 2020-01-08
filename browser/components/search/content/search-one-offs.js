@@ -1219,6 +1219,7 @@ class SearchOneOffs {
     let target = event.originalTarget;
     
     if (!target.classList.contains("searchbar-engine-one-off-item") ||
+        target.classList.contains("search-setting-button-compact") ||
         target.classList.contains("dummy")) {
       event.preventDefault();
       return;
