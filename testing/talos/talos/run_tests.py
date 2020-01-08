@@ -122,11 +122,13 @@ def run_tests(config, browser_config):
         if not test.get('profile', False):
             test['profile'] = config.get('profile')
 
+    browser_config['extra_args'] = []
+
     
     
     
     if browser_config['develop']:
-        browser_config['extra_args'] = '--no-remote'
+        browser_config['extra_args'].append('--no-remote')
 
     
     if browser_config['subtests']:
