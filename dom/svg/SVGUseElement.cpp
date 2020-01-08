@@ -4,10 +4,10 @@
 
 
 
+#include "mozilla/dom/SVGUseElement.h"
+
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/ErrorResult.h"
-
-#include "mozilla/dom/SVGUseElement.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/dom/SVGUseElementBinding.h"
 #include "nsGkAtoms.h"

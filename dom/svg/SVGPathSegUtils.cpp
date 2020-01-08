@@ -4,10 +4,9 @@
 
 
 
-#include "mozilla/ArrayUtils.h"  
-
 #include "SVGPathSegUtils.h"
 
+#include "mozilla/ArrayUtils.h"  
 #include "gfx2DGlue.h"
 #include "SVGPathDataParser.h"
 #include "nsTextFormatter.h"

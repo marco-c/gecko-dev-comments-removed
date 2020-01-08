@@ -4,9 +4,9 @@
 
 
 
-#include "mozilla/DebugOnly.h"
-
 #include "SVGPathSegListSMILType.h"
+
+#include "mozilla/DebugOnly.h"
 #include "nsSMILValue.h"
 #include "SVGPathSegUtils.h"
 #include "SVGPathData.h"

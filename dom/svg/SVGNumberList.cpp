@@ -4,9 +4,9 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #include "SVGNumberList.h"
+
+#include "mozilla/ArrayUtils.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsString.h"
 #include "nsTextFormatter.h"

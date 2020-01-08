@@ -4,9 +4,9 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #include "SVGTransformListParser.h"
+
+#include "mozilla/ArrayUtils.h"
 #include "SVGContentUtils.h"
 #include "nsSVGTransform.h"
 #include "nsGkAtoms.h"

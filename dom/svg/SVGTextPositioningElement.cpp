@@ -4,9 +4,9 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #include "mozilla/dom/SVGTextPositioningElement.h"
+
+#include "mozilla/ArrayUtils.h"
 #include "SVGAnimatedLengthList.h"
 #include "DOMSVGAnimatedLengthList.h"
 #include "DOMSVGAnimatedNumberList.h"

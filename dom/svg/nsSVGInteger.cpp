@@ -4,9 +4,10 @@
 
 
 
+#include "nsSVGInteger.h"
+
 #include "nsError.h"
 #include "nsSVGAttrTearoffTable.h"
-#include "nsSVGInteger.h"
 #include "nsSMILValue.h"
 #include "SMILIntegerType.h"
 #include "SVGContentUtils.h"

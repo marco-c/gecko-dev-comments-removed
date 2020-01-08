@@ -4,10 +4,10 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #include "mozilla/dom/SVGMPathElement.h"
+
 #include "nsDebug.h"
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/dom/SVGAnimateMotionElement.h"
 #include "mozilla/dom/SVGPathElement.h"
 #include "nsContentUtils.h"

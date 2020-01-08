@@ -4,9 +4,9 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #include "SVGAnimatedPreserveAspectRatio.h"
+
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/dom/SVGAnimatedPreserveAspectRatioBinding.h"
 #include "nsSMILValue.h"
 #include "nsSVGAttrTearoffTable.h"

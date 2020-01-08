@@ -4,8 +4,9 @@
 
 
 
-#include "mozilla/ContentEvents.h"
 #include "mozilla/dom/SVGSVGElement.h"
+
+#include "mozilla/ContentEvents.h"
 #include "mozilla/dom/SVGSVGElementBinding.h"
 #include "mozilla/dom/SVGMatrix.h"
 #include "mozilla/dom/SVGRect.h"

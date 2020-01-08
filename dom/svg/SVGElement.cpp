@@ -4,11 +4,11 @@
 
 
 
+#include "mozilla/dom/SVGElement.h"
+
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Unused.h"
-
-#include "SVGElement.h"
 
 #include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/dom/SVGAnimatedEnumeration.h"

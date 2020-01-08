@@ -4,8 +4,9 @@
 
 
 
-#include "mozilla/dom/Element.h"
 #include "mozilla/dom/SVGStyleElement.h"
+
+#include "mozilla/dom/Element.h"
 #include "nsContentUtils.h"
 #include "mozilla/dom/SVGStyleElementBinding.h"
 

@@ -4,11 +4,11 @@
 
 
 
+#include "mozilla/dom/SVGImageElement.h"
+
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/EventStates.h"
-
-#include "mozilla/dom/SVGImageElement.h"
 #include "mozilla/gfx/2D.h"
 #include "nsCOMPtr.h"
 #include "nsIURI.h"

@@ -4,8 +4,9 @@
 
 
 
-#include "SVGElement.h"
 #include "DOMSVGLengthList.h"
+
+#include "SVGElement.h"
 #include "DOMSVGLength.h"
 #include "nsError.h"
 #include "SVGAnimatedLengthList.h"

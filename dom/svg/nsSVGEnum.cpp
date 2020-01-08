@@ -4,9 +4,10 @@
 
 
 
+#include "nsSVGEnum.h"
+
 #include "nsError.h"
 #include "nsSVGAttrTearoffTable.h"
-#include "nsSVGEnum.h"
 #include "nsAtom.h"
 #include "SVGElement.h"
 #include "nsSMILValue.h"

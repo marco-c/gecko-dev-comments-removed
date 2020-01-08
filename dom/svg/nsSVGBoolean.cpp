@@ -4,9 +4,10 @@
 
 
 
+#include "nsSVGBoolean.h"
+
 #include "nsError.h"
 #include "nsSVGAttrTearoffTable.h"
-#include "nsSVGBoolean.h"
 #include "nsSMILValue.h"
 #include "SMILBoolType.h"
 #include "SVGAnimatedBoolean.h"

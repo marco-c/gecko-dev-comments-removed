@@ -4,8 +4,9 @@
 
 
 
-#include "mozilla/dom/SVGComponentTransferFunctionElement.h"
 #include "mozilla/dom/SVGFEComponentTransferElement.h"
+
+#include "mozilla/dom/SVGComponentTransferFunctionElement.h"
 #include "mozilla/dom/SVGFEComponentTransferElementBinding.h"
 #include "nsSVGUtils.h"
 #include "mozilla/gfx/2D.h"

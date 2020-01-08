@@ -4,8 +4,9 @@
 
 
 
-#include "DOMSVGAnimatedNumberList.h"
 #include "mozilla/dom/SVGFEColorMatrixElement.h"
+
+#include "DOMSVGAnimatedNumberList.h"
 #include "mozilla/dom/SVGFEColorMatrixElementBinding.h"
 #include "nsSVGUtils.h"
 

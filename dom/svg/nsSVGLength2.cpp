@@ -4,9 +4,9 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #include "nsSVGLength2.h"
+
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/dom/SVGAnimatedLength.h"
 #include "mozilla/dom/SVGViewportElement.h"
 #include "nsContentUtils.h"  
