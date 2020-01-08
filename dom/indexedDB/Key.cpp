@@ -122,7 +122,6 @@ Key::ToLocaleBasedKey(Key& aTarget, const nsCString& aLocale) const
   }
 
   aTarget.mBuffer.Truncate();
-  aTarget.mBuffer.SetCapacity(mBuffer.Length());
 
   auto* it = reinterpret_cast<const unsigned char*>(mBuffer.BeginReading());
   auto* end = reinterpret_cast<const unsigned char*>(mBuffer.EndReading());
@@ -149,6 +148,8 @@ Key::ToLocaleBasedKey(Key& aTarget, const nsCString& aLocale) const
     aTarget.mBuffer = mBuffer;
     return NS_OK;
   }
+
+  aTarget.mBuffer.SetCapacity(mBuffer.Length());
 
   
   auto* start = reinterpret_cast<const unsigned char*>(mBuffer.BeginReading());

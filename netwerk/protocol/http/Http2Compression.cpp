@@ -1096,7 +1096,6 @@ Http2Compressor::EncodeHeaderBlock(const nsCString &nvInput,
   mSetInitialMaxBufferSizeAllowed = false;
   mOutput = &output;
   output.Truncate();
-  output.SetCapacity(1024);
   mParsedContentLength = -1;
 
   

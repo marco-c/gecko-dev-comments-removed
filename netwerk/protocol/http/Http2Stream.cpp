@@ -556,7 +556,7 @@ Http2Stream::GenerateOpen()
   
   
 
-  nsCString compressedData;
+  nsAutoCStringN<1025> compressedData;
   nsAutoCString authorityHeader;
   nsresult rv = head->GetHeader(nsHttp::Host, authorityHeader);
   if (NS_FAILED(rv)) {
