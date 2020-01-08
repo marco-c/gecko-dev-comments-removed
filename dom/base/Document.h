@@ -2446,6 +2446,12 @@ class Document : public nsINode,
 
   bool IsVisibleConsideringAncestors() const;
 
+  void SetSuppressedEventListener(EventListener* aListener);
+
+  EventListener* GetSuppressedEventListener() {
+    return mSuppressedEventListener;
+  }
+
   
 
 
@@ -4136,6 +4142,8 @@ class Document : public nsINode,
   
   
   nsTArray<RefPtr<mozilla::net::ChannelEventQueue>> mSuspendedQueues;
+
+  RefPtr<EventListener> mSuppressedEventListener;
 
   
 
