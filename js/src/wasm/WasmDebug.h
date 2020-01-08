@@ -96,7 +96,9 @@ class DebugState
     WasmBreakpointSite* getOrCreateBreakpointSite(JSContext* cx, uint32_t offset);
     bool hasBreakpointSite(uint32_t offset);
     void destroyBreakpointSite(FreeOp* fop, uint32_t offset);
-    bool clearBreakpointsIn(JSContext* cx, WasmInstanceObject* instance, js::Debugger* dbg, JSObject* handler);
+    void clearBreakpointsIn(FreeOp* fp, WasmInstanceObject* instance, js::Debugger* dbg,
+                            JSObject* handler);
+    void clearAllBreakpoints(FreeOp* fp, WasmInstanceObject* instance);
 
     
     
