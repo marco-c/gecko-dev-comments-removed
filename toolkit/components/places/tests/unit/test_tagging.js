@@ -59,12 +59,6 @@ function run_test() {
   Assert.equal(uri2tags[0], "Tag 1");
 
   
-  var tag1uris = tagssvc.getURIsForTag("tag 1");
-  Assert.equal(tag1uris.length, 2);
-  Assert.ok(tag1uris[0].equals(uri1));
-  Assert.ok(tag1uris[1].equals(uri2));
-
-  
   tagssvc.untagURI(uri1, ["tag 1"]);
   Assert.equal(tag1node.childCount, 1);
 
