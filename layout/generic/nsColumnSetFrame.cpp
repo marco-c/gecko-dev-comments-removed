@@ -765,7 +765,7 @@ nsColumnSetFrame::ReflowChildren(ReflowOutput&     aDesiredSize,
                                        availSize, &kidCBSize);
       kidReflowInput.mFlags.mIsTopOfPage = true;
       kidReflowInput.mFlags.mTableIsSplittable = false;
-      kidReflowInput.mFlags.mIsColumnBalancing = aConfig.mBalanceColCount < INT32_MAX;
+      kidReflowInput.mFlags.mIsColumnBalancing = aConfig.mIsBalancing;
 
       
       
@@ -878,7 +878,7 @@ nsColumnSetFrame::ReflowChildren(ReflowOutput&     aDesiredSize,
 
       if ((contentBEnd > aReflowInput.ComputedMaxBSize() ||
            contentBEnd > aReflowInput.ComputedBSize()) &&
-           aConfig.mBalanceColCount < INT32_MAX) {
+          aConfig.mIsBalancing) {
         
         
         
