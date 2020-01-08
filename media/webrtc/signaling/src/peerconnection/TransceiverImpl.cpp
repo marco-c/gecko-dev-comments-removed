@@ -479,9 +479,13 @@ TransceiverImpl::SyncWithJS(dom::RTCRtpTransceiver& aJsTransceiver,
     }
   }
 
-  
-
-  mJsepTransceiver->mSendTrack.SetJsConstraints(constraints);
+  if (mJsepTransceiver->mSendTrack.SetJsConstraints(constraints)) {
+    if (mTransmitPipeline->Transmitting()) {
+      WebrtcGmpPCHandleSetter setter(mPCHandle);
+      DebugOnly<nsresult> rv = UpdateConduit();
+      MOZ_ASSERT(NS_SUCCEEDED(rv));
+    }
+  }
 
   
   
