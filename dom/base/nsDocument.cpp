@@ -9570,6 +9570,21 @@ nsIDocument::CreateStaticClone(nsIDocShell* aCloneContainer)
         }
       }
 
+      for (int t = 0; t < AdditionalSheetTypeCount; ++t) {
+        auto& sheets = mAdditionalSheets[additionalSheetType(t)];
+        for (StyleSheet* sheet : sheets) {
+          if (sheet->IsApplicable()) {
+            RefPtr<StyleSheet> clonedSheet =
+              sheet->Clone(nullptr, nullptr, clonedDoc, nullptr);
+            NS_WARNING_ASSERTION(clonedSheet,
+                                 "Cloning a stylesheet didn't work!");
+            if (clonedSheet) {
+              clonedDoc->AddAdditionalStyleSheet(additionalSheetType(t), clonedSheet);
+            }
+          }
+        }
+      }
+
       
       
       if (const FontFaceSet* set = GetFonts()) {
