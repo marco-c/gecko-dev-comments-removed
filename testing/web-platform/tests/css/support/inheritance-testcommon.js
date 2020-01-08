@@ -10,6 +10,14 @@ function assert_initial(property, initial) {
   }, 'Property ' + property + ' has initial value ' + initial);
 }
 
+
+
+
+
+
+
+
+
 function assert_inherited(property, initial, other) {
   assert_initial(property, initial);
 
@@ -32,6 +40,15 @@ function assert_inherited(property, initial, other) {
     target.style[property] = '';
   }, 'Property ' + property + ' inherits');
 }
+
+
+
+
+
+
+
+
+
 
 function assert_not_inherited(property, initial, other) {
   assert_initial(property, initial);
