@@ -125,6 +125,7 @@ public:
     
     NS_FORWARD_NSIINPUTSTREAM(mStream->)
     NS_FORWARD_NSISEEKABLESTREAM(mSeekableStream->)
+    NS_FORWARD_NSITELLABLESTREAM(mSeekableStream->)
     NS_FORWARD_NSICLONEABLEINPUTSTREAM(mCloneableInputStream->)
 
     

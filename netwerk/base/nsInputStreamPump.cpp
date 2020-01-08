@@ -576,8 +576,8 @@ nsInputStreamPump::OnStateTransfer()
         
         
         int64_t offsetBefore;
-        nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(mAsyncStream);
-        if (seekable && NS_FAILED(seekable->Tell(&offsetBefore))) {
+        nsCOMPtr<nsITellableStream> tellable = do_QueryInterface(mAsyncStream);
+        if (tellable && NS_FAILED(tellable->Tell(&offsetBefore))) {
             MOZ_ASSERT_UNREACHABLE("Tell failed on readable stream");
             offsetBefore = 0;
         }
@@ -602,11 +602,11 @@ nsInputStreamPump::OnStateTransfer()
         
         if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(mStatus)) {
             
-            if (seekable) {
+            if (tellable) {
                 
                 
                 int64_t offsetAfter;
-                if (NS_FAILED(seekable->Tell(&offsetAfter)))
+                if (NS_FAILED(tellable->Tell(&offsetAfter)))
                     offsetAfter = offsetBefore + odaAvail;
                 if (offsetAfter > offsetBefore)
                     mStreamOffset += (offsetAfter - offsetBefore);
