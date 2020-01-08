@@ -103,7 +103,6 @@ public:
   }
 
   already_AddRefed<nsIVariant> DataNoSecurityCheck();
-  
   already_AddRefed<nsIVariant> Data(nsIPrincipal* aPrincipal, ErrorResult& aRv);
 
   
