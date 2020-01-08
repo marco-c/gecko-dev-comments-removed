@@ -64,14 +64,20 @@ payment-method-picker.rich-picker {
   flex-grow: 1;
   grid-area: csc;
   margin: 10px 0; 
-  
-  z-index: 1;
 }
 
 .rich-picker .security-code {
   border: 1px solid #0C0C0D33;
   
-  border-inline-start: none !important;
+  margin-inline-start: -1px;
   flex-grow: 1;
   padding: 8px;
+}
+
+.rich-picker .security-code:-moz-ui-invalid,
+.rich-picker .security-code:focus {
+  
+  
+
+  z-index: 1;
 }
