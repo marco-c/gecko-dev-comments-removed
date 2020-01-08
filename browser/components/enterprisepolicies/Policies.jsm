@@ -489,8 +489,28 @@ var Policies = {
 
   "Extensions": {
     onBeforeUIStartup(manager, param) {
+      let uninstallingPromise = Promise.resolve();
+      if ("Uninstall" in param) {
+        uninstallingPromise = runOncePerModification("extensionsUninstall", JSON.stringify(param.Uninstall), async () => {
+          
+          
+          Services.prefs.clearUserPref("browser.policies.runOncePerModification.extensionsInstall");
+          let addons = await AddonManager.getAddonsByIDs(param.Uninstall);
+          for (let addon of addons) {
+            if (addon) {
+              try {
+                await addon.uninstall();
+              } catch (e) {
+                
+                
+              }
+            }
+          }
+        });
+      }
       if ("Install" in param) {
-        runOncePerModification("extensionsInstall", JSON.stringify(param.Install), () => {
+        runOncePerModification("extensionsInstall", JSON.stringify(param.Install), async () => {
+          await uninstallingPromise;
           for (let location of param.Install) {
             let url;
             if (location.includes("://")) {
@@ -539,21 +559,6 @@ var Policies = {
               install.addListener(listener);
               install.install();
             });
-          }
-        });
-      }
-      if ("Uninstall" in param) {
-        runOncePerModification("extensionsUninstall", JSON.stringify(param.Uninstall), async () => {
-          let addons = await AddonManager.getAddonsByIDs(param.Uninstall);
-          for (let addon of addons) {
-            if (addon) {
-              try {
-                addon.uninstall();
-              } catch (e) {
-                
-                
-              }
-            }
           }
         });
       }
@@ -1056,15 +1061,20 @@ function runOnce(actionName, callback) {
 
 
 
-function runOncePerModification(actionName, policyValue, callback) {
+
+
+
+
+
+async function runOncePerModification(actionName, policyValue, callback) {
   let prefName = `browser.policies.runOncePerModification.${actionName}`;
   let oldPolicyValue = Services.prefs.getStringPref(prefName, undefined);
   if (policyValue === oldPolicyValue) {
     log.debug(`Not running action ${actionName} again because the policy's value is unchanged`);
-    return;
+    return Promise.resolve();
   }
   Services.prefs.setStringPref(prefName, policyValue);
-  callback();
+  return callback();
 }
 
 let gChromeURLSBlocked = false;
