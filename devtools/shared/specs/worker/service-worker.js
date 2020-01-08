@@ -3,43 +3,7 @@
 
 "use strict";
 
-const {RetVal, generateActorSpec} = require("devtools/shared/protocol");
-
-const pushSubscriptionSpec = generateActorSpec({
-  typeName: "pushSubscription",
-});
-
-exports.pushSubscriptionSpec = pushSubscriptionSpec;
-
-const serviceWorkerRegistrationSpec = generateActorSpec({
-  typeName: "serviceWorkerRegistration",
-
-  events: {
-    "push-subscription-modified": {
-      type: "push-subscription-modified",
-    },
-    "registration-changed": {
-      type: "registration-changed",
-    },
-  },
-
-  methods: {
-    start: {
-      request: {},
-    },
-    unregister: {
-      request: {},
-    },
-    getPushSubscription: {
-      request: {},
-      response: {
-        subscription: RetVal("nullable:pushSubscription"),
-      },
-    },
-  },
-});
-
-exports.serviceWorkerRegistrationSpec = serviceWorkerRegistrationSpec;
+const { generateActorSpec } = require("devtools/shared/protocol");
 
 const serviceWorkerSpec = generateActorSpec({
   typeName: "serviceWorker",

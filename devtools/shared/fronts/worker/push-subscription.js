@@ -1,0 +1,39 @@
+
+
+
+"use strict";
+
+const { pushSubscriptionSpec } =
+  require("devtools/shared/specs/worker/push-subscription");
+const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
+
+class PushSubscriptionFront extends FrontClassWithSpec(pushSubscriptionSpec) {
+  get endpoint() {
+    return this._form.endpoint;
+  }
+
+  get pushCount() {
+    return this._form.pushCount;
+  }
+
+  get lastPush() {
+    return this._form.lastPush;
+  }
+
+  get quota() {
+    return this._form.quota;
+  }
+
+  form(form, detail) {
+    if (detail === "actorid") {
+      this.actorID = form;
+      return;
+    }
+
+    this.actorID = form.actor;
+    this._form = form;
+  }
+}
+
+exports.PushSubscriptionFront = PushSubscriptionFront;
+registerFront(PushSubscriptionFront);
