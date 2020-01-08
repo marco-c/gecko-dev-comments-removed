@@ -14,6 +14,7 @@ const TOOL_URL = "chrome://devtools/content/responsive.html/index.xhtml";
 loader.lazyRequireGetter(this, "DebuggerClient", "devtools/shared/client/debugger-client", true);
 loader.lazyRequireGetter(this, "DebuggerServer", "devtools/server/main", true);
 loader.lazyRequireGetter(this, "throttlingProfiles", "devtools/client/shared/components/throttling/profiles");
+loader.lazyRequireGetter(this, "SettingOnboardingTooltip", "devtools/client/responsive.html/setting-onboarding-tooltip");
 loader.lazyRequireGetter(this, "swapToInnerBrowser", "devtools/client/responsive.html/browser/swap", true);
 loader.lazyRequireGetter(this, "startup", "devtools/client/responsive.html/utils/window", true);
 loader.lazyRequireGetter(this, "message", "devtools/client/responsive.html/utils/message");
@@ -27,6 +28,7 @@ loader.lazyRequireGetter(this, "Telemetry", "devtools/client/shared/telemetry");
 
 const RELOAD_CONDITION_PREF_PREFIX = "devtools.responsive.reloadConditions.";
 const RELOAD_NOTIFICATION_PREF = "devtools.responsive.reloadNotification.enabled";
+const SHOW_SETTING_TOOLTIP_PREF = "devtools.responsive.show-setting-tooltip";
 
 function debug(msg) {
   
@@ -378,6 +380,12 @@ ResponsiveUI.prototype = {
     await this.connectToServer();
 
     
+    if (Services.prefs.getBoolPref(SHOW_SETTING_TOOLTIP_PREF)) {
+      this.settingOnboardingTooltip =
+        new SettingOnboardingTooltip(ui.toolWindow.document);
+    }
+
+    
     message.post(this.toolWindow, "post-init");
 
     debug("Init done");
@@ -434,6 +442,11 @@ ResponsiveUI.prototype = {
       if (reloadNeeded) {
         this.getViewportBrowser().reload();
       }
+    }
+
+    if (this.settingOnboardingTooltip) {
+      this.settingOnboardingTooltip.destroy();
+      this.settingOnboardingTooltip = null;
     }
 
     
