@@ -37,8 +37,6 @@
 #include "vm/UnboxedObject-inl.h"
 
 using namespace js;
-using namespace js::gc;
-using namespace js::jit;
 
 ObjectRealm::ObjectRealm(JS::Zone* zone)
   : innerViews(zone)
@@ -127,6 +125,8 @@ Realm::init(JSContext* cx, JSPrincipals* principals)
 jit::JitRuntime*
 JSRuntime::createJitRuntime(JSContext* cx)
 {
+    using namespace js::jit;
+
     MOZ_ASSERT(!jitRuntime_);
 
     if (!CanLikelyAllocateMoreExecutableMemory()) {
@@ -158,6 +158,7 @@ bool
 Realm::ensureJitRealmExists(JSContext* cx)
 {
     using namespace js::jit;
+
     if (jitRealm_)
         return true;
 
@@ -679,7 +680,7 @@ AddInnerLazyFunctionsFromScript(JSScript* script, AutoObjectVector& lazyFunction
 }
 
 static bool
-AddLazyFunctionsForRealm(JSContext* cx, AutoObjectVector& lazyFunctions, AllocKind kind)
+AddLazyFunctionsForRealm(JSContext* cx, AutoObjectVector& lazyFunctions, gc::AllocKind kind)
 {
     
     
@@ -720,12 +721,12 @@ CreateLazyScriptsForRealm(JSContext* cx)
 {
     AutoObjectVector lazyFunctions(cx);
 
-    if (!AddLazyFunctionsForRealm(cx, lazyFunctions, AllocKind::FUNCTION))
+    if (!AddLazyFunctionsForRealm(cx, lazyFunctions, gc::AllocKind::FUNCTION))
         return false;
 
     
     
-    if (!AddLazyFunctionsForRealm(cx, lazyFunctions, AllocKind::FUNCTION_EXTENDED))
+    if (!AddLazyFunctionsForRealm(cx, lazyFunctions, gc::AllocKind::FUNCTION_EXTENDED))
         return false;
 
     
@@ -836,7 +837,7 @@ Realm::collectCoverage() const
 bool
 Realm::collectCoverageForPGO() const
 {
-    return !JitOptions.disablePgo;
+    return !jit::JitOptions.disablePgo;
 }
 
 bool
@@ -971,7 +972,7 @@ AutoSetNewObjectMetadata::~AutoSetNewObjectMetadata()
         
         
         
-        AutoSuppressGC autoSuppressGC(cx_);
+        gc::AutoSuppressGC autoSuppressGC(cx_);
 
         JSObject* obj = cx_->realm()->objectMetadataState_.as<PendingMetadata>();
 

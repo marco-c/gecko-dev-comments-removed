@@ -45,7 +45,6 @@
 #include "vm/NativeObject-inl.h"
 
 using namespace js;
-using namespace js::gc;
 
 using mozilla::DebugOnly;
 using mozilla::Maybe;
@@ -689,7 +688,7 @@ TypeSet::addType(Type type, LifoAlloc* alloc)
 
 
 
-class TypeSetRef : public BufferableRef
+class TypeSetRef : public gc::BufferableRef
 {
     Zone* zone;
     ConstraintTypeSet* types;
