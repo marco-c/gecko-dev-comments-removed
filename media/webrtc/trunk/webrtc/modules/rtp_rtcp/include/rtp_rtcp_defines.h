@@ -111,6 +111,7 @@ enum RTPExtensionType {
   kRtpExtensionRtpStreamId,
   kRtpExtensionRepairedRtpStreamId,
   kRtpExtensionMid,
+  kRtpExtensionCsrcAudioLevel,
   kRtpExtensionNumberOfExtensions  
 };
 
