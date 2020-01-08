@@ -63,6 +63,14 @@ def import_clang_tidy(source_dir):
 def build_package(package_build_dir, cmake_args):
     if not os.path.exists(package_build_dir):
         os.mkdir(package_build_dir)
+    
+    
+    
+    if os.path.exists(package_build_dir + "/CMakeCache.txt"):
+        os.remove(package_build_dir + "/CMakeCache.txt")
+    if os.path.exists(package_build_dir + "/CMakeFiles"):
+        shutil.rmtree(package_build_dir + "/CMakeFiles")
+
     run_in(package_build_dir, ["cmake"] + cmake_args)
     run_in(package_build_dir, ["ninja", "install"])
 
@@ -176,7 +184,8 @@ def is_windows():
 def build_one_stage(cc, cxx, asm, ld, ar, ranlib, libtool,
                     src_dir, stage_dir, build_libcxx,
                     osx_cross_compile, build_type, assertions,
-                    python_path, gcc_dir, libcxx_include_dir):
+                    python_path, gcc_dir, libcxx_include_dir,
+                    is_final_stage=False):
     if not os.path.exists(stage_dir):
         os.mkdir(stage_dir)
 
@@ -184,58 +193,61 @@ def build_one_stage(cc, cxx, asm, ld, ar, ranlib, libtool,
     inst_dir = stage_dir + "/clang"
 
     
-    
-    
-    if os.path.exists(build_dir + "/CMakeCache.txt"):
-        os.remove(build_dir + "/CMakeCache.txt")
-    if os.path.exists(build_dir + "/CMakeFiles"):
-        shutil.rmtree(build_dir + "/CMakeFiles")
-
-    
     def slashify_path(path):
         return path.replace('\\', '/')
 
-    cmake_args = ["-GNinja",
-                  "-DCMAKE_C_COMPILER=%s" % slashify_path(cc[0]),
-                  "-DCMAKE_CXX_COMPILER=%s" % slashify_path(cxx[0]),
-                  "-DCMAKE_ASM_COMPILER=%s" % slashify_path(asm[0]),
-                  "-DCMAKE_LINKER=%s" % slashify_path(ld[0]),
-                  "-DCMAKE_AR=%s" % slashify_path(ar),
-                  "-DCMAKE_C_FLAGS=%s" % ' '.join(cc[1:]),
-                  "-DCMAKE_CXX_FLAGS=%s" % ' '.join(cxx[1:]),
-                  "-DCMAKE_ASM_FLAGS=%s" % ' '.join(asm[1:]),
-                  "-DCMAKE_EXE_LINKER_FLAGS=%s" % ' '.join(ld[1:]),
-                  "-DCMAKE_SHARED_LINKER_FLAGS=%s" % ' '.join(ld[1:]),
-                  "-DCMAKE_BUILD_TYPE=%s" % build_type,
-                  "-DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64",
-                  "-DLLVM_ENABLE_ASSERTIONS=%s" % ("ON" if assertions else "OFF"),
-                  "-DPYTHON_EXECUTABLE=%s" % slashify_path(python_path),
-                  "-DCMAKE_INSTALL_PREFIX=%s" % inst_dir,
-                  "-DLLVM_TOOL_LIBCXX_BUILD=%s" % ("ON" if build_libcxx else "OFF"),
-                  "-DLIBCXX_LIBCPPABI_VERSION=\"\"",
-                  src_dir]
-    if is_windows():
-        cmake_args.insert(-1, "-DLLVM_EXPORT_SYMBOLS_FOR_PLUGINS=ON")
-        cmake_args.insert(-1, "-DLLVM_USE_CRT_RELEASE=MT")
-    if ranlib is not None:
-        cmake_args += ["-DCMAKE_RANLIB=%s" % slashify_path(ranlib)]
-    if libtool is not None:
-        cmake_args += ["-DCMAKE_LIBTOOL=%s" % slashify_path(libtool)]
-    if osx_cross_compile:
-        cmake_args += ["-DCMAKE_SYSTEM_NAME=Darwin",
-                       "-DCMAKE_SYSTEM_VERSION=10.10",
-                       "-DLLVM_ENABLE_THREADS=OFF",
-                       "-DLIBCXXABI_LIBCXX_INCLUDES=%s" % libcxx_include_dir,
-                       "-DCMAKE_OSX_SYSROOT=%s" % slashify_path(os.getenv("CROSS_SYSROOT")),
-                       "-DCMAKE_FIND_ROOT_PATH=%s" % slashify_path(os.getenv("CROSS_CCTOOLS_PATH")), 
-                       "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER",
-                       "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY",
-                       "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY",
-                       "-DCMAKE_MACOSX_RPATH=ON",
-                       "-DCMAKE_OSX_ARCHITECTURES=x86_64",
-                       "-DDARWIN_osx_ARCHS=x86_64",
-                       "-DDARWIN_osx_SYSROOT=%s" % slashify_path(os.getenv("CROSS_SYSROOT")),
-                       "-DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-apple-darwin11"]
+    def cmake_base_args(cc, cxx, asm, ld, ar, ranlib, libtool, inst_dir):
+        cmake_args = [
+            "-GNinja",
+            "-DCMAKE_C_COMPILER=%s" % slashify_path(cc[0]),
+            "-DCMAKE_CXX_COMPILER=%s" % slashify_path(cxx[0]),
+            "-DCMAKE_ASM_COMPILER=%s" % slashify_path(asm[0]),
+            "-DCMAKE_LINKER=%s" % slashify_path(ld[0]),
+            "-DCMAKE_AR=%s" % slashify_path(ar),
+            "-DCMAKE_C_FLAGS=%s" % ' '.join(cc[1:]),
+            "-DCMAKE_CXX_FLAGS=%s" % ' '.join(cxx[1:]),
+            "-DCMAKE_ASM_FLAGS=%s" % ' '.join(asm[1:]),
+            "-DCMAKE_EXE_LINKER_FLAGS=%s" % ' '.join(ld[1:]),
+            "-DCMAKE_SHARED_LINKER_FLAGS=%s" % ' '.join(ld[1:]),
+            "-DCMAKE_BUILD_TYPE=%s" % build_type,
+            "-DCMAKE_INSTALL_PREFIX=%s" % inst_dir,
+            "-DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64",
+            "-DLLVM_ENABLE_ASSERTIONS=%s" % ("ON" if assertions else "OFF"),
+            "-DPYTHON_EXECUTABLE=%s" % slashify_path(python_path),
+            "-DLLVM_TOOL_LIBCXX_BUILD=%s" % ("ON" if build_libcxx else "OFF"),
+            "-DLIBCXX_LIBCPPABI_VERSION=\"\"",
+        ]
+        if is_windows():
+            cmake_args.insert(-1, "-DLLVM_EXPORT_SYMBOLS_FOR_PLUGINS=ON")
+            cmake_args.insert(-1, "-DLLVM_USE_CRT_RELEASE=MT")
+        if ranlib is not None:
+            cmake_args += ["-DCMAKE_RANLIB=%s" % slashify_path(ranlib)]
+        if libtool is not None:
+            cmake_args += ["-DCMAKE_LIBTOOL=%s" % slashify_path(libtool)]
+        if osx_cross_compile:
+            cmake_args += [
+                "-DCMAKE_SYSTEM_NAME=Darwin",
+                "-DCMAKE_SYSTEM_VERSION=10.10",
+                "-DLLVM_ENABLE_THREADS=OFF",
+                "-DLIBCXXABI_LIBCXX_INCLUDES=%s" % libcxx_include_dir,
+                "-DCMAKE_OSX_SYSROOT=%s" % slashify_path(os.getenv("CROSS_SYSROOT")),
+                "-DCMAKE_FIND_ROOT_PATH=%s" % slashify_path(os.getenv("CROSS_CCTOOLS_PATH")), 
+                "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER",
+                "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY",
+                "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY",
+                "-DCMAKE_MACOSX_RPATH=ON",
+                "-DCMAKE_OSX_ARCHITECTURES=x86_64",
+                "-DDARWIN_osx_ARCHS=x86_64",
+                "-DDARWIN_osx_SYSROOT=%s" % slashify_path(os.getenv("CROSS_SYSROOT")),
+                "-DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-apple-darwin11"
+            ]
+        return cmake_args
+
+    cmake_args = cmake_base_args(
+        cc, cxx, asm, ld, ar, ranlib, libtool, inst_dir)
+    cmake_args += [
+        src_dir
+    ]
     build_package(build_dir, cmake_args)
 
     if is_linux():
@@ -243,6 +255,44 @@ def build_one_stage(cc, cxx, asm, ld, ar, ranlib, libtool,
     
     
     if is_windows():
+        
+        
+        
+        build_32_bit = False
+        if is_final_stage:
+            
+            
+            
+            
+            old_lib = os.environ['LIB']
+            new_lib = []
+            for l in old_lib.split(os.pathsep):
+                if l.endswith('x64'):
+                    l = l[:-3] + 'x86'
+                    build_32_bit = True
+                elif l.endswith('amd64'):
+                    l = l[:-5]
+                    build_32_bit = True
+                new_lib.append(l)
+        if build_32_bit:
+            os.environ['LIB'] = os.pathsep.join(new_lib)
+            compiler_rt_build_dir = stage_dir + '/compiler-rt'
+            compiler_rt_inst_dir = inst_dir + '/lib/clang/'
+            subdirs = os.listdir(compiler_rt_inst_dir)
+            assert len(subdirs) == 1
+            compiler_rt_inst_dir += subdirs[0]
+            cmake_args = cmake_base_args(
+                [os.path.join(inst_dir, 'bin', 'clang-cl.exe'), '-m32'] + cc[1:],
+                [os.path.join(inst_dir, 'bin', 'clang-cl.exe'), '-m32'] + cxx[1:],
+                [os.path.join(inst_dir, 'bin', 'clang-cl.exe'), '-m32'] + asm[1:],
+                ld, ar, ranlib, libtool, compiler_rt_inst_dir)
+            cmake_args += [
+                '-DLLVM_CONFIG_PATH=%s' % slashify_path(
+                    os.path.join(inst_dir, 'bin', 'llvm-config')),
+                os.path.join(src_dir, 'projects', 'compiler-rt'),
+            ]
+            build_package(compiler_rt_build_dir, cmake_args)
+            os.environ['LIB'] = old_lib
         install_import_library(build_dir, inst_dir)
         install_asan_symbols(build_dir, inst_dir)
 
@@ -615,7 +665,8 @@ if __name__ == "__main__":
             [ld] + extra_ldflags,
             ar, ranlib, libtool,
             llvm_source_dir, stage2_dir, build_libcxx, osx_cross_compile,
-            build_type, assertions, python_path, gcc_dir, libcxx_include_dir)
+            build_type, assertions, python_path, gcc_dir, libcxx_include_dir,
+            stages == 2)
 
     if stages > 2:
         stage3_dir = build_dir + '/stage3'
@@ -630,7 +681,8 @@ if __name__ == "__main__":
             [ld] + extra_ldflags,
             ar, ranlib, libtool,
             llvm_source_dir, stage3_dir, build_libcxx, osx_cross_compile,
-            build_type, assertions, python_path, gcc_dir, libcxx_include_dir)
+            build_type, assertions, python_path, gcc_dir, libcxx_include_dir,
+            stages == 3)
 
     package_name = "clang"
     if build_clang_tidy:
