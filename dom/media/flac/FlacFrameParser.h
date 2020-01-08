@@ -49,7 +49,7 @@ class FlacFrameParser {
   int64_t BlockDuration(const uint8_t* aPacket, size_t aLength) const;
 
   
-  MetadataTags* GetTags() const;
+  UniquePtr<MetadataTags> GetTags() const;
 
   AudioInfo mInfo;
 

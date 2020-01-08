@@ -118,7 +118,7 @@ class OggCodecState {
   }
 
   
-  virtual MetadataTags* GetTags() { return nullptr; }
+  virtual UniquePtr<MetadataTags> GetTags() { return nullptr; }
 
   
   virtual int64_t Time(int64_t granulepos) { return -1; }
@@ -241,10 +241,11 @@ class OggCodecState {
   
   
   
-  static bool AddVorbisComment(MetadataTags* aTags, const char* aComment,
+  static bool AddVorbisComment(UniquePtr<MetadataTags>& aTags,
+                               const char* aComment,
                                uint32_t aLength);
 
- protected:
+protected:
   
   
   
@@ -289,7 +290,7 @@ class VorbisState : public OggCodecState {
   const TrackInfo* GetInfo() const override { return &mInfo; }
 
   
-  MetadataTags* GetTags() override;
+  UniquePtr<MetadataTags> GetTags() override;
 
  private:
   AudioInfo mInfo;
@@ -408,7 +409,7 @@ class OpusState : public OggCodecState {
   static int64_t Time(int aPreSkip, int64_t aGranulepos);
 
   
-  MetadataTags* GetTags() override;
+  UniquePtr<MetadataTags> GetTags() override;
 
  private:
   nsAutoPtr<OpusParser> mParser;
@@ -582,7 +583,7 @@ class FlacState : public OggCodecState {
   nsresult PageIn(ogg_page* aPage) override;
 
   
-  MetadataTags* GetTags() override;
+  UniquePtr<MetadataTags> GetTags() override;
 
   const TrackInfo* GetInfo() const override;
 
