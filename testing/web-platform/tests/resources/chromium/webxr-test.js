@@ -102,7 +102,7 @@ class MockDevice {
   
   setXRPresentationFrameData(poseMatrix, views) {
     if (poseMatrix == null) {
-      this.presentation_provider_.pose_ = null;
+      this.pose_ = null;
     } else {
       this.setPoseFromMatrix(poseMatrix);
     }
