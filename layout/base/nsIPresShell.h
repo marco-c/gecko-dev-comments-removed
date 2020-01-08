@@ -66,6 +66,7 @@ class nsIReflowCallback;
 class nsCSSFrameConstructor;
 template<class E> class nsCOMArray;
 class AutoWeakFrame;
+class MobileViewportManager;
 class WeakFrame;
 class nsIScrollableFrame;
 class nsDisplayList;
@@ -375,6 +376,13 @@ public:
 
 
   virtual void UpdateViewportOverridden(bool aAfterInitialization) = 0;
+
+  
+
+
+
+
+  virtual RefPtr<MobileViewportManager> GetMobileViewportManager() const = 0;
 
   
 

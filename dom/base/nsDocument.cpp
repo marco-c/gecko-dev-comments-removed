@@ -11169,10 +11169,8 @@ nsIDocument::CleanupFullscreenState()
 
   
   if (nsIPresShell* shell = GetShell()) {
-    if (nsPresContext* context = shell->GetPresContext()) {
-      if (context->IsRootContentDocument()) {
-        shell->SetResolutionAndScaleTo(mSavedResolution);
-      }
+    if (shell->GetMobileViewportManager()) {
+      shell->SetResolutionAndScaleTo(mSavedResolution);
     }
   }
 
@@ -11587,12 +11585,10 @@ nsIDocument::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest)
     
     
     if (nsIPresShell* shell = child->GetShell()) {
-      if (nsPresContext* context = shell->GetPresContext()) {
-        if (context->IsRootContentDocument()) {
-          
-          child->mSavedResolution = shell->GetResolution();
-          shell->SetResolutionAndScaleTo(1.0f);
-        }
+      if (RefPtr<MobileViewportManager> manager = shell->GetMobileViewportManager()) {
+        
+        child->mSavedResolution = shell->GetResolution();
+        shell->SetResolutionAndScaleTo(manager->ComputeIntrinsicResolution());
       }
     }
 

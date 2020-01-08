@@ -44,6 +44,17 @@ public:
   void SetRestoreResolution(float aResolution,
                             mozilla::LayoutDeviceIntSize aDisplaySize);
 
+  
+
+
+
+
+
+
+
+
+  float ComputeIntrinsicResolution() const;
+
 private:
   void SetRestoreResolution(float aResolution);
 
@@ -73,7 +84,7 @@ public:
 
   
   mozilla::CSSToScreenScale ClampZoom(const mozilla::CSSToScreenScale& aZoom,
-                                      const nsViewportInfo& aViewportInfo);
+                                      const nsViewportInfo& aViewportInfo) const;
 
   
   mozilla::LayoutDeviceToLayerScale
@@ -93,6 +104,11 @@ public:
 
   
   void UpdateDisplayPortMargins();
+
+  
+  mozilla::CSSToScreenScale ComputeIntrinsicScale(const nsViewportInfo& aViewportInfo,
+                                                  const mozilla::ScreenIntSize& aDisplaySize,
+                                                  const mozilla::CSSSize& aViewportSize) const;
 
   nsCOMPtr<nsIDocument> mDocument;
   nsIPresShell* MOZ_NON_OWNING_REF mPresShell; 
