@@ -37,11 +37,8 @@ add_task(async function test_search() {
     await ContentTask.spawn(browser, prefArray, aPrefArray => {
       let filteredPrefArray =
           aPrefArray.filter(pref => pref.includes("button"));
-      
-      
-      
       Assert.equal(content.document.getElementById("prefs").childElementCount,
-                   filteredPrefArray.length + 1);
+                   filteredPrefArray.length);
 
       
       let search = content.document.getElementById("search");
@@ -62,9 +59,8 @@ add_task(async function test_search() {
 
     EventUtils.sendKey("return");
     await ContentTask.spawn(browser, prefArray, aPrefArray => {
-      
       Assert.equal(content.document.getElementById("prefs").childElementCount,
-                   1);
+                   0);
 
       
       let search = content.document.getElementById("search");
