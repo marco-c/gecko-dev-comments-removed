@@ -38,6 +38,52 @@ class AsyncPanZoomController;
 
 
 
+class VelocityTracker {
+public:
+  virtual ~VelocityTracker() = default;
+
+  
+
+
+
+  virtual void StartTracking(ParentLayerCoord aPos, uint32_t aTimestamp) = 0;
+  
+
+
+
+
+
+
+
+  virtual Maybe<float> AddPosition(ParentLayerCoord aPos,
+                                   uint32_t aTimestampMs,
+                                   bool aIsAxisLocked) = 0;
+  
+
+
+
+
+
+
+  virtual float HandleDynamicToolbarMovement(uint32_t aStartTimestampMs,
+                                             uint32_t aEndTimestampMs,
+                                             ParentLayerCoord aDelta) = 0;
+  
+
+
+
+
+  virtual float ComputeVelocity(uint32_t aTimestampMs) = 0;
+  
+
+
+  virtual void Clear() = 0;
+};
+
+
+
+
+
 
 class Axis {
 public:
@@ -51,10 +97,6 @@ public:
 
 
   void UpdateWithTouchAtDevicePoint(ParentLayerCoord aPos, uint32_t aTimestampMs);
-
-protected:
-  float ApplyFlingCurveToVelocity(float aVelocity) const;
-  void AddVelocityToQueue(uint32_t aTimestampMs, float aVelocity);
 
 public:
   void HandleDynamicToolbarMovement(uint32_t aStartTimestampMs,
@@ -252,6 +294,9 @@ public:
 
   virtual const char* Name() const = 0;
 
+  
+  float ToLocalVelocity(float aVelocityInchesPerMs) const;
+
 protected:
   
   
@@ -261,13 +306,6 @@ protected:
   
   
   ParentLayerCoord mPos;
-
-  
-  
-  
-  
-  uint32_t mVelocitySampleTimeMs;
-  ParentLayerCoord mVelocitySamplePos;
 
   ParentLayerCoord mStartPos;
   float mVelocity;      
@@ -283,8 +321,7 @@ protected:
   
   
   
-  
-  nsTArray<std::pair<uint32_t, float> > mVelocityQueue;
+  UniquePtr<VelocityTracker> mVelocityTracker;
 
   const FrameMetrics& GetFrameMetrics() const;
   const ScrollMetadata& GetScrollMetadata() const;
@@ -297,9 +334,6 @@ protected:
 
   
   void StepOverscrollAnimation(double aStepDurationMilliseconds);
-
-  
-  float ToLocalVelocity(float aVelocityInchesPerMs) const;
 };
 
 class AxisX : public Axis {
