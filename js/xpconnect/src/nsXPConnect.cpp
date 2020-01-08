@@ -326,6 +326,11 @@ void
 xpc::ErrorReport::LogToConsoleWithStack(JS::HandleObject aStack,
                                         JS::HandleObject aStackGlobal)
 {
+    
+    
+    if (recordreplay::HasDivergedFromRecording())
+        return;
+
     if (aStack) {
         MOZ_ASSERT(aStackGlobal);
         MOZ_ASSERT(JS_IsGlobalObject(aStackGlobal));
