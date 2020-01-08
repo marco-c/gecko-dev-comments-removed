@@ -512,11 +512,7 @@ protected:
   
 
 
-
-
-
-  void CreateBulletFrameForListItem(bool aCreateBulletList,
-                                    bool aListStylePositionInside);
+  void CreateBulletFrameForListItem();
 
 public:
   
