@@ -1,0 +1,34 @@
+
+
+
+
+
+#ifndef mozilla_nsRelativeFilePref_h
+#define mozilla_nsRelativeFilePref_h
+
+#include "nsCOMPtr.h"
+#include "nsIFile.h"
+#include "nsString.h"
+
+
+
+namespace mozilla {
+
+class nsRelativeFilePref final : public nsIRelativeFilePref
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIRELATIVEFILEPREF
+
+  nsRelativeFilePref();
+
+private:
+  virtual ~nsRelativeFilePref();
+
+  nsCOMPtr<nsIFile> mFile;
+  nsCString mRelativeToKey;
+};
+
+} 
+
+#endif 
