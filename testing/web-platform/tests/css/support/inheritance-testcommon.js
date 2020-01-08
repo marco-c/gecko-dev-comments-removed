@@ -1,7 +1,10 @@
 'use strict';
 
+(function() {
+
 function assert_initial(property, initial) {
   test(() => {
+    const target = document.getElementById('target');
     if (!getComputedStyle(target)[property])
       return;
     target.style[property] = 'initial';
@@ -18,10 +21,14 @@ function assert_initial(property, initial) {
 
 
 
+
+
 function assert_inherited(property, initial, other) {
   assert_initial(property, initial);
 
   test(() => {
+    const container = document.getElementById('container');
+    const target = document.getElementById('target');
     if (!getComputedStyle(target)[property])
       return;
     container.style[property] = 'initial';
@@ -50,10 +57,14 @@ function assert_inherited(property, initial, other) {
 
 
 
+
+
 function assert_not_inherited(property, initial, other) {
   assert_initial(property, initial);
 
   test(() => {
+    const container = document.getElementById('container');
+    const target = document.getElementById('target');
     if (!getComputedStyle(target)[property])
       return;
     container.style[property] = 'initial';
@@ -69,3 +80,7 @@ function assert_not_inherited(property, initial, other) {
     target.style[property] = '';
   }, 'Property ' + property + ' does not inherit');
 }
+
+window.assert_inherited = assert_inherited;
+window.assert_not_inherited = assert_not_inherited;
+})();
