@@ -24,6 +24,7 @@
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 #include "mozilla/SandboxSettings.h"
+#include "nsCocoaFeatures.h"
 #endif
 
 using mozilla::dom::FakePluginTagInit;
@@ -435,14 +436,32 @@ nsPluginTag::InitSandboxLevel()
 
 #elif defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   if (mIsFlashPlugin) {
-    if (PR_GetEnv("MOZ_DISABLE_NPAPI_SANDBOX") ||
-        NS_FAILED(Preferences::GetInt("dom.ipc.plugins.sandbox-level.flash",
-                                      &mSandboxLevel))) {
+    
+    
+    int legacyOSMinorMax = Preferences::GetInt(
+        "dom.ipc.plugins.sandbox-level.flash.max-legacy-os-minor", 10);
+
+    const char* levelPref = "dom.ipc.plugins.sandbox-level.flash";
+
+    if (PR_GetEnv("MOZ_DISABLE_NPAPI_SANDBOX")) {
+      
       mSandboxLevel = 0;
+    } else if (nsCocoaFeatures::OSXVersionMajor() == 10 &&
+               nsCocoaFeatures::OSXVersionMinor() <= legacyOSMinorMax) {
+      
+      
+      
+      const char* legacyLevelPref =
+        "dom.ipc.plugins.sandbox-level.flash.legacy";
+      int32_t compatLevel = Preferences::GetInt(legacyLevelPref, 0);
+      int32_t level = Preferences::GetInt(levelPref, 0);
+      mSandboxLevel = std::min(compatLevel, level);
     } else {
-      mSandboxLevel = ClampFlashSandboxLevel(mSandboxLevel);
+      
+      mSandboxLevel = Preferences::GetInt(levelPref, 0);
     }
 
+    mSandboxLevel = ClampFlashSandboxLevel(mSandboxLevel);
     if (mSandboxLevel > 0) {
       
       
