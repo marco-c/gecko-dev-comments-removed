@@ -229,23 +229,23 @@ class RetAddrEntry
     }
 };
 
-struct BaselineScript
+struct BaselineScript final
 {
   private:
     
-    HeapPtr<JitCode*> method_;
+    HeapPtr<JitCode*> method_ = nullptr;
 
     
     
     
-    HeapPtr<EnvironmentObject*> templateEnv_;
+    HeapPtr<EnvironmentObject*> templateEnv_ = nullptr;
 
     
-    FallbackICStubSpace fallbackStubSpace_;
+    FallbackICStubSpace fallbackStubSpace_ = {};
 
     
     
-    Vector<DependentWasmImport>* dependentWasmImports_;
+    Vector<DependentWasmImport>* dependentWasmImports_ = nullptr;
 
     
     uint32_t prologueOffset_;
@@ -261,10 +261,10 @@ struct BaselineScript
     
 #ifdef JS_TRACE_LOGGING
 # ifdef DEBUG
-    bool traceLoggerScriptsEnabled_;
-    bool traceLoggerEngineEnabled_;
+    bool traceLoggerScriptsEnabled_ = false;
+    bool traceLoggerEngineEnabled_ = false;
 # endif
-    TraceLoggerEvent traceLoggerScriptEvent_;
+    TraceLoggerEvent traceLoggerScriptEvent_ = {};
 #endif
 
     
@@ -308,60 +308,67 @@ struct BaselineScript
     };
 
   private:
-    uint32_t flags_;
+    uint32_t flags_ = 0;
 
   private:
     void trace(JSTracer* trc);
 
-    uint32_t icEntriesOffset_;
-    uint32_t icEntries_;
+    uint32_t icEntriesOffset_ = 0;
+    uint32_t icEntries_ = 0;
 
-    uint32_t retAddrEntriesOffset_;
-    uint32_t retAddrEntries_;
+    uint32_t retAddrEntriesOffset_ = 0;
+    uint32_t retAddrEntries_ = 0;
 
-    uint32_t pcMappingIndexOffset_;
-    uint32_t pcMappingIndexEntries_;
+    uint32_t pcMappingIndexOffset_ = 0;
+    uint32_t pcMappingIndexEntries_ = 0;
 
-    uint32_t pcMappingOffset_;
-    uint32_t pcMappingSize_;
-
-    
-    
-    uint32_t bytecodeTypeMapOffset_;
+    uint32_t pcMappingOffset_ = 0;
+    uint32_t pcMappingSize_ = 0;
 
     
     
-    uint32_t yieldEntriesOffset_;
+    uint32_t bytecodeTypeMapOffset_ = 0;
 
     
     
-    uint32_t traceLoggerToggleOffsetsOffset_;
-    uint32_t numTraceLoggerToggleOffsets_;
+    uint32_t yieldEntriesOffset_ = 0;
 
     
     
-    
-    uint16_t inlinedBytecodeLength_;
+    uint32_t traceLoggerToggleOffsetsOffset_ = 0;
+    uint32_t numTraceLoggerToggleOffsets_ = 0;
 
     
     
     
-    
-    
-    uint8_t maxInliningDepth_;
+    uint16_t inlinedBytecodeLength_ = 0;
 
     
-    IonBuilder *pendingBuilder_;
+    
+    
+    
+    
+    uint8_t maxInliningDepth_ = UINT8_MAX;
 
-    ControlFlowGraph* controlFlowGraph_;
+    
+    IonBuilder *pendingBuilder_ = nullptr;
 
-  public:
+    ControlFlowGraph* controlFlowGraph_ = nullptr;
+
+    
     
     BaselineScript(uint32_t prologueOffset, uint32_t epilogueOffset,
                    uint32_t profilerEnterToggleOffset,
                    uint32_t profilerExitToggleOffset,
-                   uint32_t postDebugPrologueOffset);
+                   uint32_t postDebugPrologueOffset)
+      : prologueOffset_(prologueOffset),
+        epilogueOffset_(epilogueOffset),
+        profilerEnterToggleOffset_(profilerEnterToggleOffset),
+        profilerExitToggleOffset_(profilerExitToggleOffset),
+        postDebugPrologueOffset_(postDebugPrologueOffset)
+    { }
 
+  public:
     ~BaselineScript() {
         
         
