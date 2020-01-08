@@ -231,6 +231,9 @@ def get_decision_parameters(config, options):
     parameters['release_partner_build_number'] = 1
     parameters['release_enable_emefree'] = False
     parameters['release_product'] = None
+    parameters['try_mode'] = None
+    parameters['try_task_config'] = None
+    parameters['try_options'] = None
 
     
     
@@ -271,40 +274,39 @@ def get_decision_parameters(config, options):
 
     
     if 'try' in project:
-        parameters['try_mode'] = None
-        if os.path.isfile(task_config_file):
-            logger.info("using try tasks from {}".format(task_config_file))
-            parameters['try_mode'] = 'try_task_config'
-            with open(task_config_file, 'r') as fh:
-                parameters['try_task_config'] = json.load(fh)
-        else:
-            parameters['try_task_config'] = None
-
-        if 'try:' in parameters['message']:
-            parameters['try_mode'] = 'try_option_syntax'
-            args = parse_message(parameters['message'])
-            parameters['try_options'] = args
-        else:
-            parameters['try_options'] = None
-
-        if parameters['try_mode']:
-            
-            
-            
-            parameters['optimize_target_tasks'] = False
-        else:
-            
-            
-            parameters['optimize_target_tasks'] = True
-
-    else:
-        parameters['try_mode'] = None
-        parameters['try_task_config'] = None
-        parameters['try_options'] = None
+        set_try_config(parameters, task_config_file)
 
     result = Parameters(**parameters)
     result.check()
     return result
+
+
+def set_try_config(parameters, task_config_file):
+    parameters['try_mode'] = None
+    if os.path.isfile(task_config_file):
+        logger.info("using try tasks from {}".format(task_config_file))
+        parameters['try_mode'] = 'try_task_config'
+        with open(task_config_file, 'r') as fh:
+            parameters['try_task_config'] = json.load(fh)
+    else:
+        parameters['try_task_config'] = None
+
+    if 'try:' in parameters['message']:
+        parameters['try_mode'] = 'try_option_syntax'
+        args = parse_message(parameters['message'])
+        parameters['try_options'] = args
+    else:
+        parameters['try_options'] = None
+
+    if parameters['try_mode']:
+        
+        
+        
+        parameters['optimize_target_tasks'] = False
+    else:
+        
+        
+        parameters['optimize_target_tasks'] = True
 
 
 def write_artifact(filename, data):
