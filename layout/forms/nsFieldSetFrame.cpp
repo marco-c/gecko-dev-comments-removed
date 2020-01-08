@@ -316,18 +316,22 @@ nsFieldSetFrame::GetIntrinsicISize(gfxContext* aRenderingContext,
 {
   nscoord legendWidth = 0;
   nscoord contentWidth = 0;
-  if (nsIFrame* legend = GetLegend()) {
-    legendWidth =
-      nsLayoutUtils::IntrinsicForContainer(aRenderingContext, legend, aType);
-  }
+  if (!StyleDisplay()->IsContainSize()) {
+    
+    
+    if (nsIFrame* legend = GetLegend()) {
+      legendWidth =
+        nsLayoutUtils::IntrinsicForContainer(aRenderingContext, legend, aType);
+    }
 
-  if (nsIFrame* inner = GetInner()) {
-    
-    
-    
-    contentWidth =
-      nsLayoutUtils::IntrinsicForContainer(aRenderingContext, inner, aType,
-                                           nsLayoutUtils::IGNORE_PADDING);
+    if (nsIFrame* inner = GetInner()) {
+      
+      
+      
+      contentWidth =
+        nsLayoutUtils::IntrinsicForContainer(aRenderingContext, inner, aType,
+                                             nsLayoutUtils::IGNORE_PADDING);
+    }
   }
 
   return std::max(legendWidth, contentWidth);
@@ -588,6 +592,21 @@ nsFieldSetFrame::Reflow(nsPresContext*           aPresContext,
   LogicalSize finalSize(wm, contentRect.ISize(wm) + border.IStartEnd(wm),
                         mLegendSpace + border.BStartEnd(wm) +
                         (inner ? inner->BSize(wm) : 0));
+  if (aReflowInput.mStyleDisplay->IsContainSize()) {
+    
+    
+    
+    
+    
+    
+    
+    nscoord contentBoxBSize =
+      aReflowInput.ComputedBSize() == NS_UNCONSTRAINEDSIZE
+      ? aReflowInput.ApplyMinMaxBSize(0)
+      : aReflowInput.ComputedBSize();
+    finalSize.BSize(wm) = contentBoxBSize +
+      aReflowInput.ComputedLogicalBorderPadding().BStartEnd(wm);
+  }
   aDesiredSize.SetSize(wm, finalSize);
   aDesiredSize.SetOverflowAreasToDesiredBounds();
 
@@ -669,6 +688,11 @@ bool
 nsFieldSetFrame::GetVerticalAlignBaseline(WritingMode aWM,
                                           nscoord* aBaseline) const
 {
+  if (StyleDisplay()->IsContainSize()) {
+    
+    
+    return false;
+  }
   nsIFrame* inner = GetInner();
   MOZ_ASSERT(!inner->GetWritingMode().IsOrthogonalTo(aWM));
   if (!inner->GetVerticalAlignBaseline(aWM, aBaseline)) {
@@ -684,6 +708,11 @@ nsFieldSetFrame::GetNaturalBaselineBOffset(WritingMode          aWM,
                                            BaselineSharingGroup aBaselineGroup,
                                            nscoord*             aBaseline) const
 {
+  if (StyleDisplay()->IsContainSize()) {
+    
+    
+    return false;
+  }
   nsIFrame* inner = GetInner();
   MOZ_ASSERT(!inner->GetWritingMode().IsOrthogonalTo(aWM));
   if (!inner->GetNaturalBaselineBOffset(aWM, aBaselineGroup, aBaseline)) {
