@@ -603,7 +603,91 @@ function addAutofillTasks(origins) {
 
   
   
-  add_task(async function bookmarked() {
+  add_task(async function bookmarkBelowThreshold() {
+    
+    for (let i = 0; i < 3; i++) {
+      await PlacesTestUtils.addVisits([{
+        uri: "http://not-" + url,
+      }]);
+    }
+
+    
+    await addBookmark({
+      uri: "http://" + url,
+    });
+
+    
+    
+    let placeFrecency =
+      await PlacesTestUtils.fieldInDB("http://" + url, "frecency");
+    let originFrecency = await getOriginFrecency("http://", host);
+    let threshold = await getOriginAutofillThreshold();
+    Assert.ok(placeFrecency < threshold,
+              `Place frecency should be below the threshold: ` +
+              `placeFrecency=${placeFrecency} threshold=${threshold}`);
+    Assert.ok(originFrecency < threshold,
+              `Origin frecency should be below the threshold: ` +
+              `originFrecency=${originFrecency} threshold=${threshold}`);
+
+    
+    await check_autocomplete({
+      search,
+      autofilled: url,
+      completed: "http://" + url,
+      matches: [
+        {
+          value: url,
+          comment,
+          style: ["autofill", "heuristic"],
+        },
+        {
+          value: "http://not-" + url,
+          comment: "test visit for http://not-" + url,
+          style: ["favicon"],
+        },
+      ],
+    });
+
+    await cleanup();
+  });
+
+  
+  add_task(async function bookmarkAboveThreshold() {
+    
+    await addBookmark({
+      uri: "http://" + url,
+    });
+
+    
+    
+    
+    let placeFrecency =
+      await PlacesTestUtils.fieldInDB("http://" + url, "frecency");
+    let originFrecency = await getOriginFrecency("http://", host);
+    let threshold = await getOriginAutofillThreshold();
+    Assert.equal(placeFrecency, threshold);
+    Assert.equal(originFrecency, threshold);
+
+    
+    await check_autocomplete({
+      search,
+      autofilled: url,
+      completed: "http://" + url,
+      matches: [
+        {
+          value: url,
+          comment,
+          style: ["autofill", "heuristic"],
+        },
+      ],
+    });
+
+    await cleanup();
+  });
+
+  
+  
+  add_task(async function suggestHistoryFalse() {
     
     
     Services.prefs.setBoolPref("browser.urlbar.suggest.history", false);
@@ -638,7 +722,7 @@ function addAutofillTasks(origins) {
   });
 
   
-  add_task(async function bookmarkedPrefix() {
+  add_task(async function suggestHistoryFalsePrefix() {
     
     
     Services.prefs.setBoolPref("browser.urlbar.suggest.history", false);
@@ -692,27 +776,12 @@ function addAutofillTasks(origins) {
     Assert.ok(placeFrecency <= 0);
 
     
-    let db = await PlacesUtils.promiseDBConnection();
-    let rows = await db.execute(`
-      SELECT frecency FROM moz_origins WHERE host = '${host}';
-    `);
-    Assert.equal(rows.length, 1);
-    let originFrecency = rows[0].getResultByIndex(0);
+    let originFrecency = await getOriginFrecency("http://", host);
     Assert.equal(originFrecency, 0);
 
     
-    rows = await db.execute(`
-      SELECT
-        IFNULL((SELECT value FROM moz_meta WHERE key = "origin_frecency_count"), 0),
-        IFNULL((SELECT value FROM moz_meta WHERE key = "origin_frecency_sum"), 0),
-        IFNULL((SELECT value FROM moz_meta WHERE key = "origin_frecency_sum_of_squares"), 0)
-    `);
-    let count = rows[0].getResultByIndex(0);
-    let sum = rows[0].getResultByIndex(1);
-    let squares = rows[0].getResultByIndex(2);
-    Assert.equal(count, 0);
-    Assert.equal(sum, 0);
-    Assert.equal(squares, 0);
+    let threshold = await getOriginAutofillThreshold();
+    Assert.equal(threshold, 0);
 
     await check_autocomplete({
       search,
@@ -729,4 +798,63 @@ function addAutofillTasks(origins) {
 
     await cleanup();
   });
+}
+
+
+
+
+
+
+
+
+
+
+
+async function getOriginFrecency(prefix, host) {
+  let db = await PlacesUtils.promiseDBConnection();
+  let rows = await db.execute(`
+    SELECT frecency
+    FROM moz_origins
+    WHERE prefix = :prefix AND host = :host
+  `, { prefix, host });
+  Assert.equal(rows.length, 1);
+  return rows[0].getResultByIndex(0);
+}
+
+
+
+
+
+
+
+async function getOriginFrecencyStats() {
+  let db = await PlacesUtils.promiseDBConnection();
+  let rows = await db.execute(`
+    SELECT
+      IFNULL((SELECT value FROM moz_meta WHERE key = "origin_frecency_count"), 0),
+      IFNULL((SELECT value FROM moz_meta WHERE key = "origin_frecency_sum"), 0),
+      IFNULL((SELECT value FROM moz_meta WHERE key = "origin_frecency_sum_of_squares"), 0)
+  `);
+  let count = rows[0].getResultByIndex(0);
+  let sum = rows[0].getResultByIndex(1);
+  let squares = rows[0].getResultByIndex(2);
+  return { count, sum, squares };
+}
+
+
+
+
+
+
+
+async function getOriginAutofillThreshold() {
+  let { count, sum, squares } = await getOriginFrecencyStats();
+  if (!count) {
+    return 0;
+  }
+  if (count == 1) {
+    return sum;
+  }
+  let stddevMultiplier = UrlbarPrefs.get("autoFill.stddevMultiplier");
+  return (sum / count) + (stddevMultiplier * Math.sqrt((squares - ((sum * sum) / count)) / count));
 }
