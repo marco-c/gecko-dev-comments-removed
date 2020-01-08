@@ -306,6 +306,7 @@ MacroAssembler::subFromStackPtr(Imm32 imm32)
 
 
 
+
 void
 MacroAssembler::setupUnalignedABICall(Register scratch)
 {
@@ -1272,6 +1273,7 @@ MacroAssembler::convertInt64ToFloat32(Register64 input, FloatRegister output)
     vmovss(Address(esp, 0), output);
     freeStack(2 * sizeof(intptr_t));
 }
+
 
 
 

@@ -37,6 +37,7 @@ namespace jit {
 
 
 
+
 CodeOffset
 MacroAssembler::PushWithPatch(ImmWord word)
 {
@@ -797,6 +798,7 @@ MacroAssembler::storeFloat32(FloatRegister src, const T& dest)
 
 template void MacroAssembler::storeFloat32(FloatRegister src, const Address& dest);
 template void MacroAssembler::storeFloat32(FloatRegister src, const BaseIndex& dest);
+
 
 
 

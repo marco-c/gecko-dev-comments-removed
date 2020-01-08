@@ -274,6 +274,7 @@ MacroAssemblerX86Shared::minMaxFloat32(FloatRegister first, FloatRegister second
 
 
 
+
 void
 MacroAssembler::flush()
 {
@@ -1671,5 +1672,6 @@ MacroAssembler::speculationBarrier()
     MOZ_ASSERT(HasSSE2());
     masm.lfence();
 }
+
 
 

@@ -16,6 +16,7 @@ namespace jit {
 
 
 
+
 void
 MacroAssembler::move64(Register64 src, Register64 dest)
 {
@@ -1009,6 +1010,7 @@ MacroAssembler::branchTruncateFloat32MaybeModUint32(FloatRegister src, Register 
     ma_ext(ScratchRegister, ScratchRegister, Assembler::CauseV, 1);
     ma_b(ScratchRegister, Imm32(0), fail, Assembler::NotEqual);
 }
+
 
 
 

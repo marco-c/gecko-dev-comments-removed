@@ -17,6 +17,7 @@ namespace jit {
 
 
 
+
 void
 MacroAssembler::move64(Imm64 imm, Register64 dest)
 {
@@ -962,6 +963,7 @@ MacroAssembler::truncateDoubleToUInt64(Address src, Address dest, Register temp,
 
     bind(&done);
 }
+
 
 
 

@@ -14,6 +14,7 @@ namespace jit {
 
 
 
+
 void
 MacroAssembler::move64(Register64 src, Register64 dest)
 {
@@ -2332,6 +2333,7 @@ MacroAssembler::clampIntToUint8(Register reg)
     ma_mov(Imm32(0xff), reg, NotEqual);
     ma_mov(Imm32(0), reg, Signed);
 }
+
 
 
 

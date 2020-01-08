@@ -4366,6 +4366,7 @@ MacroAssembler::subFromStackPtr(Imm32 imm32)
 
 
 
+
 void
 MacroAssembler::flush()
 {
@@ -6173,6 +6174,7 @@ MacroAssembler::speculationBarrier()
     
     as_csdb();
 }
+
 
 
 

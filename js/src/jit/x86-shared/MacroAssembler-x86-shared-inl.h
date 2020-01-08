@@ -16,6 +16,7 @@ namespace jit {
 
 
 
+
 void
 MacroAssembler::moveFloat32ToGPR(FloatRegister src, Register dest)
 {
@@ -1329,6 +1330,7 @@ MacroAssembler::clampIntToUint8(Register reg)
     }
     bind(&inRange);
 }
+
 
 
 
