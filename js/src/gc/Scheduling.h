@@ -433,6 +433,24 @@ class GCSchedulingTunables {
 
   UnprotectedData<uint32_t> nurseryFreeThresholdForIdleCollection_;
 
+  
+
+
+
+
+
+
+
+  UnprotectedData<float> pretenureThreshold_;
+
+  
+
+
+
+
+
+  UnprotectedData<uint32_t> pretenureGroupThreshold_;
+
  public:
   GCSchedulingTunables();
 
@@ -470,6 +488,10 @@ class GCSchedulingTunables {
   uint32_t nurseryFreeThresholdForIdleCollection() const {
     return nurseryFreeThresholdForIdleCollection_;
   }
+
+  bool attemptPretenuring() const { return pretenureThreshold_ < 1.0f; }
+  float pretenureThreshold() const { return pretenureThreshold_; }
+  uint32_t pretenureGroupThreshold() const { return pretenureGroupThreshold_; }
 
   MOZ_MUST_USE bool setParameter(JSGCParamKey key, uint32_t value,
                                  const AutoLockGC& lock);

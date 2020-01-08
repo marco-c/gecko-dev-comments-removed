@@ -265,6 +265,24 @@ typedef enum JSGCParamKey {
 
 
   JSGC_NURSERY_FREE_THRESHOLD_FOR_IDLE_COLLECTION = 27,
+
+  
+
+
+
+
+
+
+  JSGC_PRETENURE_THRESHOLD = 28,
+
+  
+
+
+
+
+
+
+  JSGC_PRETENURE_GROUP_THRESHOLD = 29,
 } JSGCParamKey;
 
 

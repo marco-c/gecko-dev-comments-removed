@@ -175,7 +175,7 @@ struct MovingTracer : JS::CallbackTracer {
 
 struct TenureCount {
   ObjectGroup* group;
-  int count;
+  unsigned count;
 
   
   

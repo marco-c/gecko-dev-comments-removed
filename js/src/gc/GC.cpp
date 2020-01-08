@@ -348,6 +348,12 @@ static const bool CompactingEnabled = true;
 static const uint32_t NurseryFreeThresholdForIdleCollection =
     Nursery::NurseryChunkUsableSize / 4;
 
+
+static const float PretenureThreashold = 0.6f;
+
+
+static const float PretenureGroupThreshold = 3000;
+
 }  
 }  
 }  
@@ -1464,6 +1470,20 @@ bool GCSchedulingTunables::setParameter(JSGCParamKey key, uint32_t value,
       }
       nurseryFreeThresholdForIdleCollection_ = value;
       break;
+    case JSGC_PRETENURE_THRESHOLD: {
+      
+      if (value == 0 || value > 100) {
+        return false;
+      }
+      pretenureThreshold_ = value / 100.0f;
+      break;
+    }
+    case JSGC_PRETENURE_GROUP_THRESHOLD:
+      if (value <= 0) {
+        return false;
+      }
+      pretenureGroupThreshold_ = value;
+      break;
     default:
       MOZ_CRASH("Unknown GC parameter.");
   }
@@ -1551,7 +1571,9 @@ GCSchedulingTunables::GCSchedulingTunables()
       minEmptyChunkCount_(TuningDefaults::MinEmptyChunkCount),
       maxEmptyChunkCount_(TuningDefaults::MaxEmptyChunkCount),
       nurseryFreeThresholdForIdleCollection_(
-          TuningDefaults::NurseryFreeThresholdForIdleCollection) {}
+          TuningDefaults::NurseryFreeThresholdForIdleCollection),
+      pretenureThreshold_(TuningDefaults::PretenureThreashold),
+      pretenureGroupThreshold_(TuningDefaults::PretenureGroupThreshold) {}
 
 void GCRuntime::resetParameter(JSGCParamKey key, AutoLockGC& lock) {
   switch (key) {
@@ -1633,6 +1655,12 @@ void GCSchedulingTunables::resetParameter(JSGCParamKey key,
       nurseryFreeThresholdForIdleCollection_ =
           TuningDefaults::NurseryFreeThresholdForIdleCollection;
       break;
+    case JSGC_PRETENURE_THRESHOLD:
+      pretenureThreshold_ = TuningDefaults::PretenureThreashold;
+      break;
+    case JSGC_PRETENURE_GROUP_THRESHOLD:
+      pretenureGroupThreshold_ = TuningDefaults::PretenureGroupThreshold;
+      break;
     default:
       MOZ_CRASH("Unknown GC parameter.");
   }
@@ -1691,6 +1719,10 @@ uint32_t GCRuntime::getParameter(JSGCParamKey key, const AutoLockGC& lock) {
       return tunables.maxEmptyChunkCount();
     case JSGC_COMPACTING_ENABLED:
       return compactingEnabled;
+    case JSGC_PRETENURE_THRESHOLD:
+      return uint32_t(tunables.pretenureThreshold() * 100);
+    case JSGC_PRETENURE_GROUP_THRESHOLD:
+      return tunables.pretenureGroupThreshold();
     default:
       MOZ_ASSERT(key == JSGC_NUMBER);
       return uint32_t(number);
@@ -7883,13 +7915,8 @@ Realm* js::NewRealm(JSContext* cx, JSPrincipals* principals,
     zone = zoneHolder.get();
   }
 
-  bool invisibleToDebugger = options.creationOptions().invisibleToDebugger();
-  if (comp) {
-    
-    
-    MOZ_ASSERT(comp->invisibleToDebugger() == invisibleToDebugger);
-  } else {
-    compHolder = cx->make_unique<JS::Compartment>(zone, invisibleToDebugger);
+  if (!comp) {
+    compHolder = cx->make_unique<JS::Compartment>(zone);
     if (!compHolder) {
       return nullptr;
     }
