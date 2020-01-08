@@ -209,29 +209,39 @@ var PreferenceExperiments = {
 
 
 
+
+
+
+
+
+
+
   async saveStartupPrefs() {
     const prefBranch = Services.prefs.getBranch(STARTUP_EXPERIMENT_PREFS_BRANCH);
     prefBranch.deleteBranch("");
 
-    for (const experiment of await this.getAllActive()) {
-      const name = experiment.preferenceName;
-      const value = experiment.preferenceValue;
-
-      switch (typeof value) {
+    
+    
+    
+    
+    
+    const defaultBranchExperiments = (await this.getAllActive()).filter(exp => exp.preferenceBranchType === "default");
+    for (const {preferenceName, preferenceValue} of defaultBranchExperiments) {
+      switch (typeof preferenceValue) {
         case "string":
-          prefBranch.setCharPref(name, value);
+          prefBranch.setCharPref(preferenceName, preferenceValue);
           break;
 
         case "number":
-          prefBranch.setIntPref(name, value);
+          prefBranch.setIntPref(preferenceName, preferenceValue);
           break;
 
         case "boolean":
-          prefBranch.setBoolPref(name, value);
+          prefBranch.setBoolPref(preferenceName, preferenceValue);
           break;
 
         default:
-          throw new Error(`Invalid preference type ${typeof value}`);
+          throw new Error(`Invalid preference type ${typeof preferenceValue}`);
       }
     }
   },
