@@ -91,6 +91,13 @@ async function testPrincipal(globalPrincipal) {
         wantXrays: globalHasXrays,
         invisibleToDebugger: gGlobalIsInvisible
       });
+      
+      
+      
+      
+      if (!globalHasXrays) {
+        gGlobal = Cu.waiveXrays(gGlobal);
+      }
       await test();
     }
   }
