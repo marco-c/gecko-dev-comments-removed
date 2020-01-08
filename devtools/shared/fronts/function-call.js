@@ -10,10 +10,6 @@ const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol"
 
 
 class FunctionCallFront extends FrontClassWithSpec(functionCallSpec) {
-  constructor(client, form) {
-    super(client, form);
-  }
-
   
 
 
