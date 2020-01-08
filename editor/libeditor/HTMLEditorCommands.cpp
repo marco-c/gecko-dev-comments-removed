@@ -245,6 +245,9 @@ StyleUpdatingCommand::ToggleState(HTMLEditor* aHTMLEditor)
 
   if (doTagRemoval) {
     
+    
+    
+    
     if (mTagName == nsGkAtoms::b) {
       nsresult rv =
         aHTMLEditor->RemoveInlineProperty(nsGkAtoms::strong, nullptr);
@@ -273,17 +276,20 @@ StyleUpdatingCommand::ToggleState(HTMLEditor* aHTMLEditor)
   }
 
   
-  aHTMLEditor->BeginTransaction();
+  AutoTransactionBatch bundleAllTransactions(*aHTMLEditor);
 
-  nsresult rv = NS_OK;
   if (mTagName == nsGkAtoms::sub || mTagName == nsGkAtoms::sup) {
-    rv = aHTMLEditor->RemoveInlineProperty(mTagName, nullptr);
-  }
-  if (NS_SUCCEEDED(rv)) {
-    rv = aHTMLEditor->SetInlineProperty(mTagName, nullptr, EmptyString());
+    nsresult rv = aHTMLEditor->RemoveInlineProperty(mTagName, nullptr);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
-  aHTMLEditor->EndTransaction();
+  nsresult rv =
+    aHTMLEditor->SetInlineProperty(mTagName, nullptr, EmptyString());
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   return rv;
 }

@@ -1680,7 +1680,8 @@ NS_IMETHODIMP
 HTMLEditor::InsertTextWithQuotations(const nsAString& aStringToInsert)
 {
   
-  BeginTransaction();
+  
+  AutoTransactionBatch bundleAllTransactions(*this);
   AutoPlaceholderBatch beginBatching(this);
 
   
@@ -1766,8 +1767,6 @@ HTMLEditor::InsertTextWithQuotations(const nsAString& aStringToInsert)
     curHunkIsQuoted = quoted;
     hunkStart = lineStart;
   }
-
-  EndTransaction();
 
   return rv;
 }

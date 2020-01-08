@@ -6,6 +6,7 @@
 #include "TextServicesDocument.h"
 
 #include "mozilla/Assertions.h"         
+#include "mozilla/EditorUtils.h"        
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/mozalloc.h"           
@@ -23,7 +24,6 @@
 #include "nsID.h"                       
 #include "nsIEditor.h"                  
 #include "nsINode.h"                    
-#include "nsIPlaintextEditor.h"         
 #include "nsISelectionController.h"     
 #include "nsISupportsBase.h"            
 #include "nsISupportsUtils.h"           
@@ -31,9 +31,6 @@
 #include "nsRange.h"                    
 #include "nsString.h"                   
 #include "nscore.h"                     
-
-#define LOCK_DOC(doc)
-#define UNLOCK_DOC(doc)
 
 namespace mozilla {
 
@@ -112,20 +109,16 @@ TextServicesDocument::InitWithEditor(nsIEditor* aEditor)
 
   NS_ENSURE_TRUE(aEditor, NS_ERROR_NULL_POINTER);
 
-  LOCK_DOC(this);
-
   
   
 
   nsresult rv = aEditor->GetSelectionController(getter_AddRefs(selCon));
 
   if (NS_FAILED(rv)) {
-    UNLOCK_DOC(this);
     return rv;
   }
 
   if (!selCon || (mSelCon && selCon != mSelCon)) {
-    UNLOCK_DOC(this);
     return NS_ERROR_FAILURE;
   }
 
@@ -138,7 +131,6 @@ TextServicesDocument::InitWithEditor(nsIEditor* aEditor)
 
   nsCOMPtr<nsIDocument> doc = aEditor->AsEditorBase()->GetDocument();
   if (!doc || (mDocument && doc != mDocument)) {
-    UNLOCK_DOC(this);
     return NS_ERROR_FAILURE;
   }
 
@@ -148,7 +140,6 @@ TextServicesDocument::InitWithEditor(nsIEditor* aEditor)
     rv = CreateDocumentContentIterator(getter_AddRefs(mIterator));
 
     if (NS_FAILED(rv)) {
-      UNLOCK_DOC(this);
       return rv;
     }
 
@@ -157,7 +148,6 @@ TextServicesDocument::InitWithEditor(nsIEditor* aEditor)
     rv = FirstBlock();
 
     if (NS_FAILED(rv)) {
-      UNLOCK_DOC(this);
       return rv;
     }
   }
@@ -165,8 +155,6 @@ TextServicesDocument::InitWithEditor(nsIEditor* aEditor)
   mTextEditor = aEditor->AsTextEditor();
 
   rv = aEditor->AddEditActionListener(this);
-
-  UNLOCK_DOC(this);
 
   return rv;
 }
@@ -176,8 +164,6 @@ TextServicesDocument::SetExtent(nsRange* aRange)
 {
   NS_ENSURE_ARG_POINTER(aRange);
   NS_ENSURE_TRUE(mDocument, NS_ERROR_FAILURE);
-
-  LOCK_DOC(this);
 
   
   
@@ -189,7 +175,6 @@ TextServicesDocument::SetExtent(nsRange* aRange)
   nsresult rv = CreateContentIterator(mExtent, getter_AddRefs(mIterator));
 
   if (NS_FAILED(rv)) {
-    UNLOCK_DOC(this);
     return rv;
   }
 
@@ -199,8 +184,6 @@ TextServicesDocument::SetExtent(nsRange* aRange)
   mIteratorStatus = IteratorStatus::eDone;
 
   rv = FirstBlock();
-
-  UNLOCK_DOC(this);
 
   return rv;
 }
@@ -376,14 +359,12 @@ TextServicesDocument::GetCurrentTextBlock(nsString *aStr)
 
   NS_ENSURE_TRUE(mIterator, NS_ERROR_FAILURE);
 
-  LOCK_DOC(this);
-
   nsresult rv = CreateOffsetTable(&mOffsetTable, mIterator, &mIteratorStatus,
                                   mExtent, aStr);
-
-  UNLOCK_DOC(this);
-
-  return rv;
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 nsresult
@@ -391,12 +372,9 @@ TextServicesDocument::FirstBlock()
 {
   NS_ENSURE_TRUE(mIterator, NS_ERROR_FAILURE);
 
-  LOCK_DOC(this);
-
   nsresult rv = FirstTextNode(mIterator, &mIteratorStatus);
 
   if (NS_FAILED(rv)) {
-    UNLOCK_DOC(this);
     return rv;
   }
 
@@ -413,8 +391,6 @@ TextServicesDocument::FirstBlock()
     mNextTextBlock  = nullptr;
   }
 
-  UNLOCK_DOC(this);
-
   
   return rv;
 }
@@ -426,22 +402,18 @@ TextServicesDocument::LastSelectedBlock(BlockSelectionStatus* aSelStatus,
 {
   NS_ENSURE_TRUE(aSelStatus && aSelOffset && aSelLength, NS_ERROR_NULL_POINTER);
 
-  LOCK_DOC(this);
-
   mIteratorStatus = IteratorStatus::eDone;
 
   *aSelStatus = BlockSelectionStatus::eBlockNotFound;
   *aSelOffset = *aSelLength = -1;
 
   if (!mSelCon || !mIterator) {
-    UNLOCK_DOC(this);
     return NS_ERROR_FAILURE;
   }
 
   RefPtr<Selection> selection =
     mSelCon->GetSelection(nsISelectionController::SELECTION_NORMAL);
   if (NS_WARN_IF(!selection)) {
-    UNLOCK_DOC(this);
     return NS_ERROR_FAILURE;
   }
 
@@ -458,13 +430,11 @@ TextServicesDocument::LastSelectedBlock(BlockSelectionStatus* aSelStatus,
     range = selection->GetRangeAt(0);
 
     if (!range) {
-      UNLOCK_DOC(this);
       return NS_ERROR_FAILURE;
     }
 
     parent = range->GetStartContainer();
     if (!parent) {
-      UNLOCK_DOC(this);
       return NS_ERROR_FAILURE;
     }
 
@@ -477,14 +447,12 @@ TextServicesDocument::LastSelectedBlock(BlockSelectionStatus* aSelStatus,
       rv = mIterator->PositionAt(parent);
 
       if (NS_FAILED(rv)) {
-        UNLOCK_DOC(this);
         return rv;
       }
 
       rv = FirstTextNodeInCurrentBlock(mIterator);
 
       if (NS_FAILED(rv)) {
-        UNLOCK_DOC(this);
         return rv;
       }
 
@@ -494,14 +462,12 @@ TextServicesDocument::LastSelectedBlock(BlockSelectionStatus* aSelStatus,
                              mExtent, nullptr);
 
       if (NS_FAILED(rv)) {
-        UNLOCK_DOC(this);
         return rv;
       }
 
       rv = GetSelection(aSelStatus, aSelOffset, aSelLength);
 
       if (NS_FAILED(rv)) {
-        UNLOCK_DOC(this);
         return rv;
       }
 
@@ -518,22 +484,18 @@ TextServicesDocument::LastSelectedBlock(BlockSelectionStatus* aSelStatus,
                 parent, range->StartOffset(), false);
 
       if (NS_WARN_IF(!range)) {
-        UNLOCK_DOC(this);
         return NS_ERROR_FAILURE;
       }
 
       if (range->Collapsed()) {
         
         
-
-        UNLOCK_DOC(this);
         return NS_OK;
       }
 
       rv = CreateContentIterator(range, getter_AddRefs(iter));
 
       if (NS_FAILED(rv)) {
-        UNLOCK_DOC(this);
         return rv;
       }
 
@@ -550,21 +512,18 @@ TextServicesDocument::LastSelectedBlock(BlockSelectionStatus* aSelStatus,
       }
 
       if (!content) {
-        UNLOCK_DOC(this);
         return NS_OK;
       }
 
       rv = mIterator->PositionAt(content);
 
       if (NS_FAILED(rv)) {
-        UNLOCK_DOC(this);
         return rv;
       }
 
       rv = FirstTextNodeInCurrentBlock(mIterator);
 
       if (NS_FAILED(rv)) {
-        UNLOCK_DOC(this);
         return rv;
       }
 
@@ -574,19 +533,15 @@ TextServicesDocument::LastSelectedBlock(BlockSelectionStatus* aSelStatus,
                              mExtent, nullptr);
 
       if (NS_FAILED(rv)) {
-        UNLOCK_DOC(this);
         return rv;
       }
 
       rv = GetSelection(aSelStatus, aSelOffset, aSelLength);
 
       if (NS_FAILED(rv)) {
-        UNLOCK_DOC(this);
         return rv;
       }
     }
-
-    UNLOCK_DOC(this);
 
     
     return rv;
@@ -602,7 +557,6 @@ TextServicesDocument::LastSelectedBlock(BlockSelectionStatus* aSelStatus,
   NS_ASSERTION(rangeCount > 0, "Unexpected range count!");
 
   if (rangeCount <= 0) {
-    UNLOCK_DOC(this);
     return NS_OK;
   }
 
@@ -615,7 +569,6 @@ TextServicesDocument::LastSelectedBlock(BlockSelectionStatus* aSelStatus,
     range = selection->GetRangeAt(i);
 
     if (!range) {
-      UNLOCK_DOC(this);
       return NS_OK; 
     }
 
@@ -624,7 +577,6 @@ TextServicesDocument::LastSelectedBlock(BlockSelectionStatus* aSelStatus,
     nsresult rv = CreateContentIterator(range, getter_AddRefs(iter));
 
     if (NS_FAILED(rv)) {
-      UNLOCK_DOC(this);
       return rv;
     }
 
@@ -641,14 +593,12 @@ TextServicesDocument::LastSelectedBlock(BlockSelectionStatus* aSelStatus,
         rv = mIterator->PositionAt(iter->GetCurrentNode());
 
         if (NS_FAILED(rv)) {
-          UNLOCK_DOC(this);
           return rv;
         }
 
         rv = FirstTextNodeInCurrentBlock(mIterator);
 
         if (NS_FAILED(rv)) {
-          UNLOCK_DOC(this);
           return rv;
         }
 
@@ -658,13 +608,10 @@ TextServicesDocument::LastSelectedBlock(BlockSelectionStatus* aSelStatus,
                                mExtent, nullptr);
 
         if (NS_FAILED(rv)) {
-          UNLOCK_DOC(this);
           return rv;
         }
 
         rv = GetSelection(aSelStatus, aSelOffset, aSelLength);
-
-        UNLOCK_DOC(this);
 
         return rv;
 
@@ -682,13 +629,11 @@ TextServicesDocument::LastSelectedBlock(BlockSelectionStatus* aSelStatus,
   range = selection->GetRangeAt(rangeCount - 1);
 
   if (!range) {
-    UNLOCK_DOC(this);
     return NS_ERROR_FAILURE;
   }
 
   parent = range->GetEndContainer();
   if (!parent) {
-    UNLOCK_DOC(this);
     return NS_ERROR_FAILURE;
   }
 
@@ -696,22 +641,18 @@ TextServicesDocument::LastSelectedBlock(BlockSelectionStatus* aSelStatus,
             parent, range->EndOffset(), false);
 
   if (NS_WARN_IF(!range)) {
-    UNLOCK_DOC(this);
     return NS_ERROR_FAILURE;
   }
 
   if (range->Collapsed()) {
     
     
-
-    UNLOCK_DOC(this);
     return NS_OK;
   }
 
   nsresult rv = CreateContentIterator(range, getter_AddRefs(iter));
 
   if (NS_FAILED(rv)) {
-    UNLOCK_DOC(this);
     return rv;
   }
 
@@ -724,14 +665,12 @@ TextServicesDocument::LastSelectedBlock(BlockSelectionStatus* aSelStatus,
       rv = mIterator->PositionAt(iter->GetCurrentNode());
 
       if (NS_FAILED(rv)) {
-        UNLOCK_DOC(this);
         return rv;
       }
 
       rv = FirstTextNodeInCurrentBlock(mIterator);
 
       if (NS_FAILED(rv)) {
-        UNLOCK_DOC(this);
         return rv;
       }
 
@@ -742,15 +681,14 @@ TextServicesDocument::LastSelectedBlock(BlockSelectionStatus* aSelStatus,
                              mExtent, nullptr);
 
       if (NS_FAILED(rv)) {
-        UNLOCK_DOC(this);
         return rv;
       }
 
       rv = GetSelection(aSelStatus, aSelOffset, aSelLength);
-
-      UNLOCK_DOC(this);
-
-      return rv;
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+      return NS_OK;
     }
 
     iter->Next();
@@ -758,9 +696,6 @@ TextServicesDocument::LastSelectedBlock(BlockSelectionStatus* aSelStatus,
 
   
   
-
-  UNLOCK_DOC(this);
-
   return NS_OK;
 }
 
@@ -768,8 +703,6 @@ nsresult
 TextServicesDocument::PrevBlock()
 {
   NS_ENSURE_TRUE(mIterator, NS_ERROR_FAILURE);
-
-  LOCK_DOC(this);
 
   if (mIteratorStatus == IteratorStatus::eDone) {
     return NS_OK;
@@ -783,13 +716,11 @@ TextServicesDocument::PrevBlock()
 
       if (NS_FAILED(rv)) {
         mIteratorStatus = IteratorStatus::eDone;
-        UNLOCK_DOC(this);
         return rv;
       }
 
       if (mIterator->IsDone()) {
         mIteratorStatus = IteratorStatus::eDone;
-        UNLOCK_DOC(this);
         return NS_OK;
       }
 
@@ -822,8 +753,6 @@ TextServicesDocument::PrevBlock()
     mNextTextBlock = nullptr;
   }
 
-  UNLOCK_DOC(this);
-
   
   return rv;
 }
@@ -832,8 +761,6 @@ nsresult
 TextServicesDocument::NextBlock()
 {
   NS_ENSURE_TRUE(mIterator, NS_ERROR_FAILURE);
-
-  LOCK_DOC(this);
 
   if (mIteratorStatus == IteratorStatus::eDone) {
     return NS_OK;
@@ -848,13 +775,11 @@ TextServicesDocument::NextBlock()
 
       if (NS_FAILED(rv)) {
         mIteratorStatus = IteratorStatus::eDone;
-        UNLOCK_DOC(this);
         return rv;
       }
 
       if (mIterator->IsDone()) {
         mIteratorStatus = IteratorStatus::eDone;
-        UNLOCK_DOC(this);
         return NS_OK;
       }
 
@@ -893,8 +818,6 @@ TextServicesDocument::NextBlock()
     mNextTextBlock = nullptr;
   }
 
-  UNLOCK_DOC(this);
-
   
   return rv;
 }
@@ -908,11 +831,7 @@ TextServicesDocument::IsDone(bool* aIsDone)
 
   NS_ENSURE_TRUE(mIterator, NS_ERROR_FAILURE);
 
-  LOCK_DOC(this);
-
   *aIsDone = mIteratorStatus == IteratorStatus::eDone;
-
-  UNLOCK_DOC(this);
 
   return NS_OK;
 }
@@ -923,11 +842,7 @@ TextServicesDocument::SetSelection(int32_t aOffset,
 {
   NS_ENSURE_TRUE(mSelCon && aOffset >= 0 && aLength >= 0, NS_ERROR_FAILURE);
 
-  LOCK_DOC(this);
-
   nsresult rv = SetSelectionInternal(aOffset, aLength, true);
-
-  UNLOCK_DOC(this);
 
   
   
@@ -941,8 +856,6 @@ TextServicesDocument::ScrollSelectionIntoView()
 {
   NS_ENSURE_TRUE(mSelCon, NS_ERROR_FAILURE);
 
-  LOCK_DOC(this);
-
   
   
   nsresult rv =
@@ -950,8 +863,6 @@ TextServicesDocument::ScrollSelectionIntoView()
       nsISelectionController::SELECTION_NORMAL,
       nsISelectionController::SELECTION_FOCUS_REGION,
       nsISelectionController::SCROLL_SYNCHRONOUS);
-
-  UNLOCK_DOC(this);
 
   return rv;
 }
@@ -967,8 +878,6 @@ TextServicesDocument::DeleteSelection()
     return NS_OK;
   }
 
-  LOCK_DOC(this);
-
   
   
   
@@ -983,7 +892,6 @@ TextServicesDocument::DeleteSelection()
                         getter_AddRefs(origEndNode), &origEndOffset);
 
     if (NS_FAILED(rv)) {
-      UNLOCK_DOC(this);
       return rv;
     }
   }
@@ -1019,7 +927,6 @@ TextServicesDocument::DeleteSelection()
         nsresult rv = SplitOffsetEntry(i, selLength);
 
         if (NS_FAILED(rv)) {
-          UNLOCK_DOC(this);
           return rv;
         }
 
@@ -1063,7 +970,6 @@ TextServicesDocument::DeleteSelection()
           nsresult rv = SplitOffsetEntry(i, entry->mLength - selLength);
 
           if (NS_FAILED(rv)) {
-            UNLOCK_DOC(this);
             return rv;
           }
 
@@ -1100,7 +1006,6 @@ TextServicesDocument::DeleteSelection()
     textEditor->DeleteSelectionAsAction(nsIEditor::ePrevious,
                                         nsIEditor::eStrip);
   if (NS_FAILED(rv)) {
-    UNLOCK_DOC(this);
     return rv;
   }
 
@@ -1117,7 +1022,6 @@ TextServicesDocument::DeleteSelection()
                            getter_AddRefs(curEndNode), &curEndOffset);
 
     if (NS_FAILED(rv)) {
-      UNLOCK_DOC(this);
       return rv;
     }
 
@@ -1142,7 +1046,6 @@ TextServicesDocument::DeleteSelection()
       rv = CreateContentIterator(mExtent, getter_AddRefs(mIterator));
 
       if (NS_FAILED(rv)) {
-        UNLOCK_DOC(this);
         return rv;
       }
 
@@ -1211,8 +1114,6 @@ TextServicesDocument::DeleteSelection()
   
   
 
-  UNLOCK_DOC(this);
-
   return rv;
 }
 
@@ -1247,20 +1148,15 @@ TextServicesDocument::InsertText(const nsString* aText)
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
+  
+  
+  
+  
+  
+  AutoTransactionBatch bundleAllTransactions(*mTextEditor);
 
-  LOCK_DOC(this);
-
-  RefPtr<TextEditor> textEditor = mTextEditor;
-  nsresult rv = textEditor->BeginTransaction();
+  nsresult rv = mTextEditor->InsertTextAsAction(*aText);
   if (NS_FAILED(rv)) {
-    UNLOCK_DOC(this);
-    return rv;
-  }
-
-  rv = textEditor->InsertTextAsAction(*aText);
-  if (NS_FAILED(rv)) {
-    textEditor->EndTransaction();
-    UNLOCK_DOC(this);
     return rv;
   }
 
@@ -1276,26 +1172,14 @@ TextServicesDocument::InsertText(const nsString* aText)
     if (entry->mIsInsertedText) {
       
       
-
       entry->mLength += strLength;
     } else {
       
       
-
       itEntry = new OffsetEntry(entry->mNode, entry->mStrOffset, strLength);
-
-      if (!itEntry) {
-        textEditor->EndTransaction();
-        UNLOCK_DOC(this);
-        return NS_ERROR_OUT_OF_MEMORY;
-      }
-
       itEntry->mIsInsertedText = true;
       itEntry->mNodeOffset = entry->mNodeOffset;
-
       if (!mOffsetTable.InsertElementAt(mSelStartIndex, itEntry)) {
-        textEditor->EndTransaction();
-        UNLOCK_DOC(this);
         return NS_ERROR_FAILURE;
       }
     }
@@ -1311,16 +1195,12 @@ TextServicesDocument::InsertText(const nsString* aText)
 
     if (mOffsetTable.Length() > i) {
       itEntry = mOffsetTable[i];
-
       if (!itEntry) {
-        textEditor->EndTransaction();
-        UNLOCK_DOC(this);
         return NS_ERROR_FAILURE;
       }
 
       
       
-
       if (!itEntry->mIsInsertedText || itEntry->mStrOffset != mSelStartOffset) {
         itEntry = 0;
       }
@@ -1329,18 +1209,9 @@ TextServicesDocument::InsertText(const nsString* aText)
     if (!itEntry) {
       
       
-
       itEntry = new OffsetEntry(entry->mNode, mSelStartOffset, 0);
-
-      if (!itEntry) {
-        textEditor->EndTransaction();
-        UNLOCK_DOC(this);
-        return NS_ERROR_OUT_OF_MEMORY;
-      }
-
       itEntry->mNodeOffset = entry->mNodeOffset + entry->mLength;
       itEntry->mIsInsertedText = true;
-
       if (!mOffsetTable.InsertElementAt(i, itEntry)) {
         delete itEntry;
         return NS_ERROR_FAILURE;
@@ -1358,8 +1229,6 @@ TextServicesDocument::InsertText(const nsString* aText)
     RefPtr<Selection> selection =
       mSelCon->GetSelection(nsISelectionController::SELECTION_NORMAL);
     if (NS_WARN_IF(!selection)) {
-      textEditor->EndTransaction();
-      UNLOCK_DOC(this);
       return rv;
     }
 
@@ -1367,8 +1236,6 @@ TextServicesDocument::InsertText(const nsString* aText)
                              itEntry->mNodeOffset + itEntry->mLength);
 
     if (NS_FAILED(rv)) {
-      textEditor->EndTransaction();
-      UNLOCK_DOC(this);
       return rv;
     }
   } else if (entry->mStrOffset + entry->mLength > mSelStartOffset) {
@@ -1380,27 +1247,14 @@ TextServicesDocument::InsertText(const nsString* aText)
     uint32_t i = entry->mLength - (mSelStartOffset - entry->mStrOffset);
 
     rv = SplitOffsetEntry(mSelStartIndex, i);
-
     if (NS_FAILED(rv)) {
-      textEditor->EndTransaction();
-      UNLOCK_DOC(this);
       return rv;
     }
 
     itEntry = new OffsetEntry(entry->mNode, mSelStartOffset, strLength);
-
-    if (!itEntry) {
-      textEditor->EndTransaction();
-      UNLOCK_DOC(this);
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-
     itEntry->mIsInsertedText = true;
     itEntry->mNodeOffset     = entry->mNodeOffset + entry->mLength;
-
     if (!mOffsetTable.InsertElementAt(mSelStartIndex + 1, itEntry)) {
-      textEditor->EndTransaction();
-      UNLOCK_DOC(this);
       return NS_ERROR_FAILURE;
     }
 
@@ -1429,27 +1283,17 @@ TextServicesDocument::InsertText(const nsString* aText)
 
   if (!collapsedSelection) {
     rv = SetSelection(savedSelOffset, savedSelLength);
-
     if (NS_FAILED(rv)) {
-      textEditor->EndTransaction();
-      UNLOCK_DOC(this);
       return rv;
     }
 
     rv = DeleteSelection();
-
     if (NS_FAILED(rv)) {
-      textEditor->EndTransaction();
-      UNLOCK_DOC(this);
       return rv;
     }
   }
 
-  rv = textEditor->EndTransaction();
-
-  UNLOCK_DOC(this);
-
-  return rv;
+  return NS_OK;
 }
 
 void
@@ -1459,8 +1303,6 @@ TextServicesDocument::DidDeleteNode(nsINode* aChild)
     return;
   }
 
-  LOCK_DOC(this);
-
   int32_t nodeIndex = 0;
   bool hasEntry = false;
   OffsetEntry *entry;
@@ -1468,14 +1310,12 @@ TextServicesDocument::DidDeleteNode(nsINode* aChild)
   nsresult rv =
     NodeHasOffsetEntry(&mOffsetTable, aChild, &hasEntry, &nodeIndex);
   if (NS_FAILED(rv)) {
-    UNLOCK_DOC(this);
     return;
   }
 
   if (!hasEntry) {
     
     
-    UNLOCK_DOC(this);
     return;
   }
 
@@ -1494,9 +1334,7 @@ TextServicesDocument::DidDeleteNode(nsINode* aChild)
   int32_t tcount = mOffsetTable.Length();
   while (nodeIndex < tcount) {
     entry = mOffsetTable[nodeIndex];
-
     if (!entry) {
-      UNLOCK_DOC(this);
       return;
     }
 
@@ -1506,8 +1344,6 @@ TextServicesDocument::DidDeleteNode(nsINode* aChild)
 
     nodeIndex++;
   }
-
-  UNLOCK_DOC(this);
 }
 
 void
@@ -1558,8 +1394,6 @@ TextServicesDocument::DidJoinNodes(nsINode& aLeftNode,
     return;
   }
 
-  LOCK_DOC(this);
-
   OffsetEntry *entry = mOffsetTable[rightIndex];
   NS_ASSERTION(entry->mNodeOffset == 0, "Unexpected offset value for rightIndex.");
 
@@ -1595,8 +1429,6 @@ TextServicesDocument::DidJoinNodes(nsINode& aLeftNode,
   if (mIterator->GetCurrentNode() == &aLeftNode) {
     mIterator->PositionAt(&aRightNode);
   }
-
-  UNLOCK_DOC(this);
 }
 
 nsresult
@@ -2065,19 +1897,12 @@ TextServicesDocument::GetSelection(BlockSelectionStatus* aSelStatus,
     mSelCon->GetSelection(nsISelectionController::SELECTION_NORMAL);
   NS_ENSURE_TRUE(selection, NS_ERROR_FAILURE);
 
-  
-  
-
-  
-
   nsresult rv;
   if (selection->IsCollapsed()) {
     rv = GetCollapsedSelection(aSelStatus, aSelOffset, aSelLength);
   } else {
     rv = GetUncollapsedSelection(aSelStatus, aSelOffset, aSelLength);
   }
-
-  
 
   
   return rv;
