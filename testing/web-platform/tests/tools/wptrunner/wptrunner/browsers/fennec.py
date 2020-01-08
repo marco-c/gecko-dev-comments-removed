@@ -34,60 +34,10 @@ __wptrunner__ = {"product": "fennec",
                  "run_info_extras": "run_info_extras",
                  "update_properties": "update_properties"}
 
-class FennecProfile(FirefoxProfile):
-    
-    FirefoxProfile.preferences.update({
-        
-        "app.normandy.api_url": "",
-        
-        "apz.content_response_timeout": 60000,
-        
-        "browser.dom.window.dump.enabled": True,
-        "devtools.console.stdout.chrome": True,
-        
-        "browser.safebrowsing.blockedURIs.enabled": False,
-        "browser.safebrowsing.downloads.enabled": False,
-        "browser.safebrowsing.passwords.enabled": False,
-        "browser.safebrowsing.malware.enabled": False,
-        "browser.safebrowsing.phishing.enabled": False,
-        
-        "browser.sessionstore.resume_from_crash": False,
-        
-        "browser.snippets.enabled": False,
-        "browser.snippets.syncPromo.enabled": False,
-        "browser.snippets.firstrunHomepage.enabled": False,
-        
-        
-        "browser.tabs.disableBackgroundZombification": True,
-        
-        "browser.tabs.remote.autostart": False,
-        
-        "browser.warnOnQuit": False,
-        
-        "datareporting.healthreport.about.reportUrl": "http://%(server)s/dummy/abouthealthreport/",
-        
-        "dom.disable_beforeunload": True,
-        
-        "dom.ipc.reportProcessHangs": False,
-        
-        "dom.max_chrome_script_run_time": 0,
-        "dom.max_script_run_time": 0,
-        
-        "extensions.webservice.discoverURL": "http://%(server)s/dummy/discoveryURL",
-        
-        "hangmonitor.timeout": 0,
-
-        "javascript.options.showInConsole": True,
-        
-        "services.settings.server": "http://%(server)s/dummy/blocklist/",
-        
-        
-        "signon.rememberSignons": False,
-    })
-
 
 def check_args(**kwargs):
     pass
+
 
 def browser_kwargs(test_type, run_info_data, config, **kwargs):
     return {"package_name": kwargs["package_name"],
@@ -186,7 +136,7 @@ class FennecBrowser(FirefoxBrowser):
 
         preferences = self.load_prefs()
 
-        self.profile = FennecProfile(preferences=preferences)
+        self.profile = FirefoxProfile(preferences=preferences)
         self.profile.set_preferences({"marionette.port": self.marionette_port,
                                       "dom.disable_open_during_load": False,
                                       "places.history.enabled": False,

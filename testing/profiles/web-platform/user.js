@@ -26,3 +26,11 @@ user_pref("toolkit.startup.max_resumed_crashes", -1);
 user_pref("gfx.font_ahem_antialias_none", true);
 
 user_pref("network.http.phishy-userpass-length", 255);
+
+user_pref("browser.safebrowsing.blockedURIs.enabled", false);
+user_pref("browser.safebrowsing.downloads.enabled", false);
+user_pref("browser.safebrowsing.passwords.enabled", false);
+user_pref("browser.safebrowsing.malware.enabled", false);
+user_pref("browser.safebrowsing.phishing.enabled", false);
+
+user_pref("dom.disable_beforeunload", true);
