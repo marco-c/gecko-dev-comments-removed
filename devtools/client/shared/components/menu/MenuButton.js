@@ -291,10 +291,6 @@ class MenuButton extends PureComponent {
   }
 
   render() {
-    
-    
-    
-    
     const menu = ReactDOM.createPortal(
       typeof this.props.children === "function"
         ? this.props.children()

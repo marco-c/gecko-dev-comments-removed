@@ -362,7 +362,6 @@ HTMLTooltip.prototype = {
   
 
 
-
   get panel() {
     return this.container.querySelector(".tooltip-panel");
   },
@@ -402,14 +401,9 @@ HTMLTooltip.prototype = {
 
 
 
-
-
-  setContent: function(content, {width = "auto", height = "auto"} = {}) {
+  setContentSize: function({width = "auto", height = "auto"} = {}) {
     this.preferredWidth = width;
     this.preferredHeight = height;
-
-    this.panel.innerHTML = "";
-    this.panel.appendChild(content);
   },
 
   
