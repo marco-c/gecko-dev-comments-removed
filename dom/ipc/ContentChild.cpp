@@ -1619,7 +1619,8 @@ GetDirectoryPath(const char *aPath) {
 #endif 
 
 extern "C" {
-void CGSSetDenyWindowServerConnections(bool);
+CGError
+CGSSetDenyWindowServerConnections(bool);
 void CGSShutdownServerConnections();
 };
 
@@ -1631,13 +1632,15 @@ StartMacOSContentSandbox()
     return false;
   }
 
-  if (!XRE_UseNativeEventProcessing()) {
+  if (Preferences::GetBool(
+        "security.sandbox.content.mac.disconnect-windowserver")) {
     
     
     
     
-    CGSSetDenyWindowServerConnections(true);
     CGSShutdownServerConnections();
+    CGError result = CGSSetDenyWindowServerConnections(true);
+    MOZ_DIAGNOSTIC_ASSERT(result == kCGErrorSuccess);
   }
 
   nsAutoCString appPath, appBinaryPath, appDir;
