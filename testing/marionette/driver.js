@@ -3048,28 +3048,7 @@ GeckoDriver.prototype.maximizeWindow = async function() {
       break;
   }
 
-  const origSize = {
-    outerWidth: win.outerWidth,
-    outerHeight: win.outerHeight,
-  };
-
-  
-  async function windowSizeChange() {
-    return new PollPromise((resolve, reject) => {
-      let curSize = {
-        outerWidth: win.outerWidth,
-        outerHeight: win.outerHeight,
-      };
-      if (curSize.outerWidth != origSize.outerWidth ||
-          curSize.outerHeight != origSize.outerHeight) {
-        resolve();
-      } else {
-        reject();
-      }
-    });
-  }
-
-  if (WindowState.from(win.windowState) != win.Maximized) {
+  if (WindowState.from(win.windowState) != WindowState.Maximized) {
     let cb;
     await new TimedPromise(resolve => {
       cb = new DebounceCallback(resolve);
@@ -3077,28 +3056,6 @@ GeckoDriver.prototype.maximizeWindow = async function() {
       win.maximize();
     }, {throws: null});
     win.removeEventListener("sizemodechange", cb);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    await windowSizeChange();
   }
 
   return this.curBrowser.rect;
