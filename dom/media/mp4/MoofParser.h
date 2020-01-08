@@ -208,6 +208,15 @@ class Sgpd final : public Atom
   Result<Ok, nsresult> Parse(Box& aBox);
 };
 
+
+
+
+
+
+struct SampleDescriptionEntry {
+  bool mIsEncryptedEntry = false;
+};
+
 class Moof final : public Atom {
  public:
   Moof(Box& aBox, Trex& aTrex, Mvhd& aMvhd, Mdhd& aMdhd, Edts& aEdts,
@@ -293,6 +302,7 @@ class MoofParser : public DecoderDoctorLifeLogger<MoofParser> {
   FallibleTArray<CencSampleEncryptionInfoEntry>
       mTrackSampleEncryptionInfoEntries;
   FallibleTArray<SampleToGroupEntry> mTrackSampleToGroupEntries;
+  FallibleTArray<SampleDescriptionEntry> mSampleDescriptions;
 
   nsTArray<Moof>& Moofs() { return mMoofs; }
 
