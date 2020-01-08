@@ -849,7 +849,7 @@ struct WrExternalImageId {
   }
 };
 
-using LockExternalImageCallback = WrExternalImage(*)(void*, WrExternalImageId, uint8_t);
+using LockExternalImageCallback = WrExternalImage(*)(void*, WrExternalImageId, uint8_t, ImageRendering);
 
 using UnlockExternalImageCallback = void(*)(void*, WrExternalImageId, uint8_t);
 
