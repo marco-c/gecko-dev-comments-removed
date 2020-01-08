@@ -1008,12 +1008,6 @@ public class GeckoSession extends LayerSession
         if ((change == WINDOW_OPEN || change == WINDOW_TRANSFER_IN) && !inProgress) {
             mTextInput.onWindowChanged(mWindow);
         }
-        if ((change == WINDOW_CLOSE || change == WINDOW_TRANSFER_OUT) && !inProgress) {
-            if (mAccessibility != null) {
-                mAccessibility.clearAutoFill();
-            }
-            mTextInput.clearAutoFill();
-        }
     }
 
     
@@ -1308,33 +1302,10 @@ public class GeckoSession extends LayerSession
 
 
 
-
-
-
-
     public void setActive(boolean active) {
-        final GeckoBundle msg = new GeckoBundle(1);
+        final GeckoBundle msg = new GeckoBundle();
         msg.putBoolean("active", active);
         mEventDispatcher.dispatch("GeckoView:SetActive", msg);
-    }
-
-    
-
-
-
-
-
-
-
-
-    public void setFocused(boolean focused) {
-        final GeckoBundle msg = new GeckoBundle(1);
-        msg.putBoolean("focused", focused);
-        mEventDispatcher.dispatch("GeckoView:SetFocused", msg);
-
-        if (focused && mAccessibility != null) {
-            mAccessibility.onWindowFocus();
-        }
     }
 
     
@@ -3372,45 +3343,5 @@ public class GeckoSession extends LayerSession
 
 
         void updateCursorAnchorInfo(@NonNull GeckoSession session, @NonNull CursorAnchorInfo info);
-
-        @Retention(RetentionPolicy.SOURCE)
-        @IntDef({AUTO_FILL_NOTIFY_STARTED, AUTO_FILL_NOTIFY_COMMITTED, AUTO_FILL_NOTIFY_CANCELED,
-                AUTO_FILL_NOTIFY_VIEW_ADDED, AUTO_FILL_NOTIFY_VIEW_REMOVED,
-                AUTO_FILL_NOTIFY_VIEW_UPDATED, AUTO_FILL_NOTIFY_VIEW_ENTERED,
-                AUTO_FILL_NOTIFY_VIEW_EXITED})
-         @interface AutoFillNotification {}
-
-        
-        int AUTO_FILL_NOTIFY_STARTED = 0;
-        
-        int AUTO_FILL_NOTIFY_COMMITTED = 1;
-        
-        int AUTO_FILL_NOTIFY_CANCELED = 2;
-        
-        int AUTO_FILL_NOTIFY_VIEW_ADDED = 3;
-        
-        int AUTO_FILL_NOTIFY_VIEW_REMOVED = 4;
-        
-        int AUTO_FILL_NOTIFY_VIEW_UPDATED = 5;
-        
-        int AUTO_FILL_NOTIFY_VIEW_ENTERED = 6;
-        
-        int AUTO_FILL_NOTIFY_VIEW_EXITED = 7;
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-        void notifyAutoFill(@NonNull GeckoSession session, @AutoFillNotification int notification,
-                            int virtualId);
     }
 }
