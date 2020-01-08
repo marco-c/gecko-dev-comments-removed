@@ -666,6 +666,11 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
 
 
+  static void ReInitFrameRate();
+
+  
+
+
   virtual bool SupportsApzWheelInput() const { return false; }
   bool SupportsApzTouchInput() const;
   bool SupportsApzDragInput() const;

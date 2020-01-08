@@ -162,6 +162,8 @@ using namespace mozilla::gfx;
 gfxPlatform* gPlatform = nullptr;
 static bool gEverInitialized = false;
 
+static int32_t gLastUsedFrameRate = -1;
+
 const ContentDeviceData* gContentDeviceInitData = nullptr;
 
 static Mutex* gGfxPlatformPrefsLock = nullptr;
@@ -927,14 +929,21 @@ void gfxPlatform::Init() {
     }
   }
 
-  if (XRE_IsParentProcess() || recordreplay::IsRecordingOrReplaying()) {
-    if (gfxPlatform::ForceSoftwareVsync()) {
-      gPlatform->mVsyncSource =
-          (gPlatform)->gfxPlatform::CreateHardwareVsyncSource();
-    } else {
-      gPlatform->mVsyncSource = gPlatform->CreateHardwareVsyncSource();
+  gLastUsedFrameRate = ForceSoftwareVsync() ? GetSoftwareVsyncRate() : -1;
+  auto updateFrameRateCallback = [](const GfxPrefValue& aValue) -> void {
+    int32_t newRate = ForceSoftwareVsync() ? GetSoftwareVsyncRate() : -1;
+    if (newRate != gLastUsedFrameRate) {
+      gLastUsedFrameRate = newRate;
+      ReInitFrameRate();
     }
-  }
+  };
+  gfxPrefs::SetLayoutFrameRateChangeCallback(updateFrameRateCallback);
+  gfxPrefs::SetIsLowEndMachineDoNotUseDirectlyChangeCallback(
+      updateFrameRateCallback);
+  gfxPrefs::SetAdjustToMachineChangeCallback(updateFrameRateCallback);
+  gfxPrefs::SetResistFingerprintingChangeCallback(updateFrameRateCallback);
+  
+  ReInitFrameRate();
 
 #ifdef USE_SKIA
   SkGraphics::Init();
@@ -2986,6 +2995,25 @@ gfxPlatform::CreateHardwareVsyncSource() {
 
  int gfxPlatform::GetDefaultFrameRate() {
   return ShouldAdjustForLowEndMachine() ? 30 : 60;
+}
+
+ void gfxPlatform::ReInitFrameRate() {
+  if (XRE_IsParentProcess() || recordreplay::IsRecordingOrReplaying()) {
+    RefPtr<VsyncSource> oldSource = gPlatform->mVsyncSource;
+
+    
+    if (gfxPlatform::ForceSoftwareVsync()) {
+      gPlatform->mVsyncSource =
+          (gPlatform)->gfxPlatform::CreateHardwareVsyncSource();
+    } else {
+      gPlatform->mVsyncSource = gPlatform->CreateHardwareVsyncSource();
+    }
+    
+    if (oldSource) {
+      oldSource->MoveListenersToNewSource(gPlatform->mVsyncSource);
+      oldSource->Shutdown();
+    }
+  }
 }
 
 void gfxPlatform::GetAzureBackendInfo(mozilla::widget::InfoObject& aObj) {
