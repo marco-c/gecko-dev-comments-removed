@@ -959,6 +959,13 @@ MOZ_MUST_USE static bool EnqueuePromiseReactionJob(
   if (!IsProxy(reactionObj)) {
     MOZ_RELEASE_ASSERT(reactionObj->is<PromiseReactionRecord>());
     reaction = &reactionObj->as<PromiseReactionRecord>();
+    if (cx->realm() != reaction->realm()) {
+      
+      
+      
+      
+      ar.emplace(cx, reaction);
+    }
   } else {
     JSObject* unwrappedReactionObj = UncheckedUnwrap(reactionObj);
     if (JS_IsDeadWrapper(unwrappedReactionObj)) {
