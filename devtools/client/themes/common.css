@@ -53,6 +53,11 @@ html|button, html|select, html|input {
 }
 
 
+html|button > * {
+  pointer-events: none;
+}
+
+
 .devtools-autocomplete-popup {
   overflow: hidden;
 
