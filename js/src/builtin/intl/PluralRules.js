@@ -226,24 +226,10 @@ function Intl_PluralRules_resolvedOptions() {
 
     var internals = getPluralRulesInternals(pluralRules);
 
-    var internalsPluralCategories = internals.pluralCategories;
-    if (internalsPluralCategories === null) {
-        internalsPluralCategories = intl_GetPluralCategories(pluralRules);
-        internals.pluralCategories = internalsPluralCategories;
-    }
-
-    
-    
-    
-    var pluralCategories = [];
-    for (var i = 0; i < internalsPluralCategories.length; i++)
-        _DefineDataProperty(pluralCategories, i, internalsPluralCategories[i]);
-
     
     var result = {
         locale: internals.locale,
         type: internals.type,
-        pluralCategories,
         minimumIntegerDigits: internals.minimumIntegerDigits,
         minimumFractionDigits: internals.minimumFractionDigits,
         maximumFractionDigits: internals.maximumFractionDigits,
@@ -260,6 +246,20 @@ function Intl_PluralRules_resolvedOptions() {
         _DefineDataProperty(result, "maximumSignificantDigits",
                             internals.maximumSignificantDigits);
     }
+
+    
+    var internalsPluralCategories = internals.pluralCategories;
+    if (internalsPluralCategories === null) {
+        internalsPluralCategories = intl_GetPluralCategories(pluralRules);
+        internals.pluralCategories = internalsPluralCategories;
+    }
+
+    var pluralCategories = [];
+    for (var i = 0; i < internalsPluralCategories.length; i++)
+        _DefineDataProperty(pluralCategories, i, internalsPluralCategories[i]);
+
+    
+    _DefineDataProperty(result, "pluralCategories", pluralCategories);
 
     
     return result;

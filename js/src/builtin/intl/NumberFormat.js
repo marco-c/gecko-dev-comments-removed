@@ -480,10 +480,6 @@ function Intl_NumberFormat_resolvedOptions() {
         locale: internals.locale,
         numberingSystem: internals.numberingSystem,
         style: internals.style,
-        minimumIntegerDigits: internals.minimumIntegerDigits,
-        minimumFractionDigits: internals.minimumFractionDigits,
-        maximumFractionDigits: internals.maximumFractionDigits,
-        useGrouping: internals.useGrouping,
     };
 
     
@@ -497,6 +493,10 @@ function Intl_NumberFormat_resolvedOptions() {
         _DefineDataProperty(result, "currencyDisplay", internals.currencyDisplay);
     }
 
+    _DefineDataProperty(result, "minimumIntegerDigits", internals.minimumIntegerDigits);
+    _DefineDataProperty(result, "minimumFractionDigits", internals.minimumFractionDigits);
+    _DefineDataProperty(result, "maximumFractionDigits", internals.maximumFractionDigits);
+
     
     assert(hasOwn("minimumSignificantDigits", internals) ===
            hasOwn("maximumSignificantDigits", internals),
@@ -508,6 +508,8 @@ function Intl_NumberFormat_resolvedOptions() {
         _DefineDataProperty(result, "maximumSignificantDigits",
                             internals.maximumSignificantDigits);
     }
+
+    _DefineDataProperty(result, "useGrouping", internals.useGrouping);
 
     
     return result;
