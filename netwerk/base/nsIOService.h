@@ -121,6 +121,13 @@ class nsIOService final : public nsIIOService,
   bool SocketProcessReady();
   void NotifySocketProcessPrefsChanged(const char* aName);
 
+  bool IsSocketProcessLaunchComplete();
+
+  
+  
+  
+  void CallOrWaitForSocketProcess(const std::function<void()>& aFunc);
+
   friend SocketProcessMemoryReporter;
   RefPtr<MemoryReportingProcess> GetSocketProcessMemoryReporter();
 
@@ -190,6 +197,8 @@ class nsIOService final : public nsIIOService,
   bool mSettingOffline;
   bool mSetOfflineValue;
 
+  bool mSocketProcessLaunchComplete;
+
   mozilla::Atomic<bool, mozilla::Relaxed> mShutdown;
   mozilla::Atomic<bool, mozilla::Relaxed> mHttpHandlerAlreadyShutingDown;
 
@@ -229,7 +238,11 @@ class nsIOService final : public nsIIOService,
   mozilla::Atomic<PRIntervalTime> mNetTearingDownStarted;
 
   SocketProcessHost* mSocketProcess;
-  nsTArray<const char*> mQueuedPrefNames;
+
+  
+  
+  
+  nsTArray<std::function<void()>> mPendingEvents;
 
  public:
   
