@@ -162,8 +162,6 @@ PerformanceTimingData::PerformanceTimingData(nsITimedChannel* aChannel,
     
     aChannel->GetHandleFetchEventEnd(&mWorkerResponseEnd);
 
-    aChannel->GetNativeServerTiming(mServerTiming);
-
     
     
     
@@ -232,6 +230,8 @@ PerformanceTimingData::SetPropertiesFromHttpChannel(nsIHttpChannel* aHttpChannel
   bool redirectsPassCheck = false;
   aChannel->GetAllRedirectsPassTimingAllowCheck(&redirectsPassCheck);
   mReportCrossOriginRedirect = mTimingAllowed && redirectsPassCheck;
+
+  aChannel->GetNativeServerTiming(mServerTiming);
 }
 
 PerformanceTiming::~PerformanceTiming()
