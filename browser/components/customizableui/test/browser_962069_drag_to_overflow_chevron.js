@@ -8,6 +8,10 @@ var originalWindowWidth;
 
 
 add_task(async function() {
+  
+  BrowserTestUtils.loadURI(gBrowser, "http://mochi.test:8888/");
+  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+
   originalWindowWidth = window.outerWidth;
   let navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
   ok(!navbar.hasAttribute("overflowing"), "Should start with a non-overflowing toolbar.");
