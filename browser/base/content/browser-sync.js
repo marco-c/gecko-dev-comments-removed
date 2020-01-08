@@ -51,9 +51,9 @@ var gSync = {
 
   
   
-  get syncConfiguredAndLoading() {
+  get sendTabConfiguredAndLoading() {
     return UIState.get().status == UIState.STATUS_SIGNED_IN &&
-           (!this.syncReady || Weave.Service.clientsEngine.isFirstSync);
+           (!this.syncReady || !Weave.Service.clientsEngine.hasSyncedThisSession);
   },
 
   get isSignedIn() {
@@ -368,7 +368,7 @@ var gSync = {
       }
     }
 
-    if (gSync.syncConfiguredAndLoading) {
+    if (gSync.sendTabConfiguredAndLoading) {
       
       return;
     }
@@ -542,7 +542,7 @@ var gSync = {
         break;
       }
     }
-    const enabled = !this.syncConfiguredAndLoading && hasASendableURI;
+    const enabled = !this.sendTabConfiguredAndLoading && hasASendableURI;
 
     let sendTabsToDevice = document.getElementById("context_sendTabToDevice");
     sendTabsToDevice.disabled = !enabled;
@@ -582,7 +582,7 @@ var gSync = {
 
     const targetURI = showSendLink ? contextMenu.linkURL :
                                      contextMenu.browser.currentURI.spec;
-    const enabled = !this.syncConfiguredAndLoading && this.isSendableURI(targetURI);
+    const enabled = !this.sendTabConfiguredAndLoading && this.isSendableURI(targetURI);
     contextMenu.setItemAttr(showSendPage ? "context-sendpagetodevice" :
                                            "context-sendlinktodevice",
                                            "disabled", !enabled || null);

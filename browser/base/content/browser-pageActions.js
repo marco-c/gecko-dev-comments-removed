@@ -1065,7 +1065,9 @@ BrowserPageActions.sendToDevice = {
       item.classList.add("pageAction-sendToDevice-device", "subviewbutton");
       if (clientId) {
         item.classList.add("subviewbutton-iconic");
-        item.setAttribute("tooltiptext", gSync.formatLastSyncDate(lastModified));
+        if (lastModified) {
+          item.setAttribute("tooltiptext", gSync.formatLastSyncDate(lastModified));
+        }
       }
 
       item.addEventListener("command", event => {
@@ -1086,14 +1088,14 @@ BrowserPageActions.sendToDevice = {
     bodyNode.removeAttribute("state");
     
     
-    if (gSync.syncConfiguredAndLoading) {
+    if (gSync.sendTabConfiguredAndLoading) {
       bodyNode.setAttribute("state", "notready");
       
       Services.tm.dispatchToMainThread(async () => {
         await Weave.Service.sync({why: "pageactions", engines: []}); 
         
         
-        if (!window.closed && !gSync.syncConfiguredAndLoading) {
+        if (!window.closed && !gSync.sendTabConfiguredAndLoading) {
           this.onShowingSubview(panelViewNode);
         }
       });
