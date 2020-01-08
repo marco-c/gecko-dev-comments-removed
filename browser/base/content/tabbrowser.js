@@ -2948,6 +2948,11 @@ window._gBrowser = {
 
     
     
+    this.replaceInSuccession(aTab, aTab.successor);
+    this.setSuccessor(aTab, null);
+
+    
+    
     
     
     let evt = new CustomEvent("TabClose", { bubbles: true, detail: { adoptedBy: adoptedByTab } });
@@ -3123,6 +3128,12 @@ window._gBrowser = {
   _findTabToBlurTo(aTab) {
     if (!aTab.selected) {
       return null;
+    }
+
+    
+    
+    if (aTab.successor) {
+      return aTab.successor;
     }
 
     if (aTab.owner &&
@@ -3514,6 +3525,11 @@ window._gBrowser = {
       this.tabContainer._updateHiddenTabsStatus();
 
       this.tabContainer._setPositionalAttributes();
+
+      
+      
+      this.replaceInSuccession(aTab, aTab.successor);
+      this.setSuccessor(aTab, null);
 
       let event = document.createEvent("Events");
       event.initEvent("TabHide", true, false);
@@ -4708,6 +4724,40 @@ window._gBrowser = {
 
       Services.obs.notifyObservers(tab, "AudibleAutoplayMediaOccurred");
     });
+  },
+
+  setSuccessor(aTab, successorTab) {
+    if (aTab.ownerGlobal != window) {
+      throw new Error("Cannot set the successor of another window's tab");
+    }
+    if (successorTab == aTab) {
+      successorTab = null;
+    }
+    if (successorTab && successorTab.ownerGlobal != window) {
+      throw new Error("Cannot set the successor to another window's tab");
+    }
+    if (aTab.successor) {
+      aTab.successor.predecessors.delete(aTab);
+    }
+    aTab.successor = successorTab;
+    if (successorTab) {
+      if (!successorTab.predecessors) {
+        successorTab.predecessors = new Set();
+      }
+      successorTab.predecessors.add(aTab);
+    }
+  },
+
+  
+
+
+
+  replaceInSuccession(aTab, aOtherTab) {
+    if (aTab.predecessors) {
+      for (const predecessor of Array.from(aTab.predecessors)) {
+        this.setSuccessor(predecessor, aOtherTab);
+      }
+    }
   },
 };
 
