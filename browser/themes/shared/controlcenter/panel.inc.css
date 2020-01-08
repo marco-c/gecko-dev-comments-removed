@@ -487,15 +487,15 @@ description#identity-popup-content-verifier,
 
 
 #identity-popup-content-blocking-content:not([enabled]) #identity-popup-content-blocking-report-breakage,
-#identity-popup-content-blocking-content:not([detected]):not([hasException]) #identity-popup-content-blocking-report-breakage {
+#identity-popup-content-blocking-content:not([active]):not([hasException]) #identity-popup-content-blocking-report-breakage {
   display: none;
 }
 
 
 
-#main-window:not([privatebrowsingmode]) #identity-popup-content-blocking-content[enabled][detected]:not([hasException]) > #tracking-action-unblock,
+#main-window:not([privatebrowsingmode]) #identity-popup-content-blocking-content[active]:not([hasException]) > #tracking-action-unblock,
 
-#main-window[privatebrowsingmode] #identity-popup-content-blocking-content[enabled][detected]:not([hasException]) > #tracking-action-unblock-private,
+#main-window[privatebrowsingmode] #identity-popup-content-blocking-content[active]:not([hasException]) > #tracking-action-unblock-private,
 
 #identity-popup-content-blocking-content[enabled][hasException] > #tracking-action-block {
   display: -moz-box;
