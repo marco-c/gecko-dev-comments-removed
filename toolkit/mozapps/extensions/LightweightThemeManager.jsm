@@ -78,25 +78,6 @@ var _defaultThemeIsInDarkMode = false;
 
 var _defaultDarkThemeID = null;
 
-
-
-
-(function() {
-  let wasThemeSelected = _prefs.getBoolPref("isThemeSelected", false);
-
-  if (wasThemeSelected) {
-    _prefs.clearUserPref("isThemeSelected");
-    let themes = [];
-    try {
-      themes = JSON.parse(_prefs.getStringPref("usedThemes"));
-    } catch (e) { }
-
-    if (Array.isArray(themes) && themes[0]) {
-      _prefs.setCharPref("selectedThemeID", themes[0].id);
-    }
-  }
-})();
-
 var LightweightThemeManager = {
   get name() {
     return "LightweightThemeManager";
