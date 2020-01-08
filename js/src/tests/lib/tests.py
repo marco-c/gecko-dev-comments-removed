@@ -12,21 +12,23 @@ from contextlib import contextmanager
 JITFLAGS = {
     'all': [
         [],  
-        ['--ion-eager', '--ion-offthread-compile=off'],  
+        ['--ion-eager', '--ion-offthread-compile=off',  
+         '--more-compartments'],
         ['--ion-eager', '--ion-offthread-compile=off',
          '--ion-check-range-analysis', '--ion-extra-checks', '--no-sse3', '--no-threads'],
         ['--baseline-eager'],
-        ['--no-baseline', '--no-ion'],
+        ['--no-baseline', '--no-ion', '--more-compartments'],
     ],
     
     'ion': [
         ['--baseline-eager'],
-        ['--ion-eager', '--ion-offthread-compile=off']
+        ['--ion-eager', '--ion-offthread-compile=off', '--more-compartments']
     ],
     
     'debug': [
         [],  
-        ['--ion-eager', '--ion-offthread-compile=off'],  
+        ['--ion-eager', '--ion-offthread-compile=off',  
+         '--more-compartments'],
         ['--baseline-eager'],
     ],
     
