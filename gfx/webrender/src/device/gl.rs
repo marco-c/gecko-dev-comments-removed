@@ -3,18 +3,19 @@
 
 
 use super::super::shader_source;
-use api::{ColorF, ImageFormat};
+use api::{ColorF, ImageFormat, MemoryReport};
 use api::{DeviceIntPoint, DeviceIntRect, DeviceUintRect, DeviceUintSize};
 use api::TextureTarget;
 #[cfg(any(feature = "debug_renderer", feature="capture"))]
 use api::ImageDescriptor;
 use euclid::Transform3D;
 use gleam::gl;
-use internal_types::{FastHashMap, RenderTargetInfo};
+use internal_types::{FastHashMap, LayerIndex, RenderTargetInfo};
 use log::Level;
 use smallvec::SmallVec;
 use std::cell::RefCell;
 use std::cmp;
+use std::collections::hash_map::Entry;
 use std::fs::File;
 use std::io::Read;
 use std::marker::PhantomData;
@@ -442,19 +443,34 @@ pub struct Texture {
     width: u32,
     height: u32,
     filter: TextureFilter,
-    render_target: Option<RenderTargetInfo>,
-    fbo_ids: Vec<FBOId>,
-    depth_rb: Option<RBOId>,
+    
+    
+    
+    fbos: Vec<FBOId>,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fbos_with_depth: Vec<FBOId>,
     last_frame_used: FrameId,
 }
 
 impl Texture {
     pub fn get_dimensions(&self) -> DeviceUintSize {
         DeviceUintSize::new(self.width, self.height)
-    }
-
-    pub fn get_render_target_layer_count(&self) -> usize {
-        self.fbo_ids.len()
     }
 
     pub fn get_layer_count(&self) -> i32 {
@@ -470,17 +486,8 @@ impl Texture {
         self.filter
     }
 
-    #[cfg(any(feature = "debug_renderer", feature = "capture"))]
-    pub fn get_render_target(&self) -> Option<RenderTargetInfo> {
-        self.render_target.clone()
-    }
-
-    pub fn has_depth(&self) -> bool {
-        self.depth_rb.is_some()
-    }
-
-    pub fn get_rt_info(&self) -> Option<&RenderTargetInfo> {
-        self.render_target.as_ref()
+    pub fn supports_depth(&self) -> bool {
+        !self.fbos_with_depth.is_empty()
     }
 
     pub fn used_in_frame(&self, frame_id: FrameId) -> bool {
@@ -713,6 +720,22 @@ pub enum ShaderError {
     Link(String, String),        
 }
 
+
+
+struct SharedDepthTarget {
+    
+    rbo_id: RBOId,
+    
+    refcount: usize,
+}
+
+#[cfg(feature = "debug")]
+impl Drop for SharedDepthTarget {
+    fn drop(&mut self) {
+        debug_assert!(thread::panicking() || self.refcount == 0);
+    }
+}
+
 pub struct Device {
     gl: Rc<gl::Gl>,
     
@@ -736,6 +759,12 @@ pub struct Device {
     bgra_format_external: gl::GLuint,
 
     
+    
+    
+    
+    depth_targets: FastHashMap<DeviceUintSize, SharedDepthTarget>,
+
+    
     inside_frame: bool,
 
     
@@ -757,6 +786,35 @@ pub struct Device {
 
     
     extensions: Vec<String>,
+}
+
+
+#[derive(Clone, Copy)]
+pub struct TextureDrawTarget<'a> {
+    
+    pub texture: &'a Texture,
+    
+    pub layer: LayerIndex,
+    
+    pub with_depth: bool,
+}
+
+
+#[derive(Clone, Copy)]
+pub struct TextureReadTarget<'a> {
+    
+    pub texture: &'a Texture,
+    
+    pub layer: LayerIndex,
+}
+
+impl<'a> From<TextureDrawTarget<'a>> for TextureReadTarget<'a> {
+    fn from(t: TextureDrawTarget<'a>) -> Self {
+        TextureReadTarget {
+            texture: t.texture,
+            layer: t.layer,
+        }
+    }
 }
 
 impl Device {
@@ -828,6 +886,8 @@ impl Device {
 
             bgra_format_internal,
             bgra_format_external,
+
+            depth_targets: FastHashMap::default(),
 
             bound_textures: [0; 16],
             bound_program: 0,
@@ -1006,9 +1066,9 @@ impl Device {
         }
     }
 
-    pub fn bind_read_target(&mut self, texture_and_layer: Option<(&Texture, i32)>) {
-        let fbo_id = texture_and_layer.map_or(FBOId(self.default_read_fbo), |texture_and_layer| {
-            texture_and_layer.0.fbo_ids[texture_and_layer.1 as usize]
+    pub fn bind_read_target(&mut self, texture_target: Option<TextureReadTarget>) {
+        let fbo_id = texture_target.map_or(FBOId(self.default_read_fbo), |target| {
+            target.texture.fbos[target.layer]
         });
 
         self.bind_read_target_impl(fbo_id)
@@ -1025,11 +1085,15 @@ impl Device {
 
     pub fn bind_draw_target(
         &mut self,
-        texture_and_layer: Option<(&Texture, i32)>,
+        texture_target: Option<TextureDrawTarget>,
         dimensions: Option<DeviceUintSize>,
     ) {
-        let fbo_id = texture_and_layer.map_or(FBOId(self.default_draw_fbo), |texture_and_layer| {
-            texture_and_layer.0.fbo_ids[texture_and_layer.1 as usize]
+        let fbo_id = texture_target.map_or(FBOId(self.default_draw_fbo), |target| {
+            if target.with_depth {
+                target.texture.fbos_with_depth[target.layer]
+            } else {
+                target.texture.fbos[target.layer]
+            }
         });
 
         self.bind_draw_target_impl(fbo_id);
@@ -1232,9 +1296,8 @@ impl Device {
             layer_count,
             format,
             filter,
-            render_target,
-            fbo_ids: vec![],
-            depth_rb: None,
+            fbos: vec![],
+            fbos_with_depth: vec![],
             last_frame_used: self.frame_id,
         };
         self.bind_texture(DEFAULT_TEXTURE, &texture);
@@ -1309,7 +1372,10 @@ impl Device {
 
         
         if let Some(rt_info) = render_target {
-            self.init_fbos(&mut texture, rt_info);
+            self.init_fbos(&mut texture, false);
+            if rt_info.has_depth {
+                self.init_fbos(&mut texture, true);
+            }
         }
 
         texture
@@ -1349,7 +1415,7 @@ impl Device {
         debug_assert!(dst.height >= src.height);
 
         let rect = DeviceIntRect::new(DeviceIntPoint::zero(), src.get_dimensions().to_i32());
-        for (read_fbo, draw_fbo) in src.fbo_ids.iter().zip(&dst.fbo_ids) {
+        for (read_fbo, draw_fbo) in src.fbos.iter().zip(&dst.fbos) {
             self.bind_read_target_impl(*read_fbo);
             self.bind_draw_target_impl(*draw_fbo);
             self.blit_render_target(rect, rect);
@@ -1359,15 +1425,19 @@ impl Device {
 
     
     
+    
+    
+    
     pub fn invalidate_render_target(&mut self, texture: &Texture) {
-        let attachments: &[gl::GLenum] = if texture.has_depth() {
-            &[gl::COLOR_ATTACHMENT0, gl::DEPTH_ATTACHMENT]
+        let (fbos, attachments) = if texture.supports_depth() {
+            (&texture.fbos_with_depth,
+             &[gl::COLOR_ATTACHMENT0, gl::DEPTH_ATTACHMENT] as &[gl::GLenum])
         } else {
-            &[gl::COLOR_ATTACHMENT0]
+            (&texture.fbos, &[gl::COLOR_ATTACHMENT0] as &[gl::GLenum])
         };
 
         let original_bound_fbo = self.bound_draw_fbo;
-        for fbo_id in texture.fbo_ids.iter() {
+        for fbo_id in fbos.iter() {
             
             
             
@@ -1386,42 +1456,28 @@ impl Device {
         rt_info: RenderTargetInfo,
     ) {
         texture.last_frame_used = self.frame_id;
-        texture.render_target = Some(rt_info);
 
         
-        
-        
-        
-        if rt_info.has_depth != texture.has_depth() {
-            self.deinit_fbos(texture);
-            self.init_fbos(texture, rt_info);
+        if rt_info.has_depth && !texture.supports_depth() {
+            self.init_fbos(texture, true);
         }
     }
 
-    fn init_fbos(&mut self, texture: &mut Texture, rt_info: RenderTargetInfo) {
-        
-        assert!(texture.fbo_ids.is_empty());
-        texture.fbo_ids.extend(
-            self.gl.gen_framebuffers(texture.layer_count).into_iter().map(FBOId)
-        );
+    fn init_fbos(&mut self, texture: &mut Texture, with_depth: bool) {
+        let (fbos, depth_rb) = if with_depth {
+            let depth_target = self.acquire_depth_target(texture.get_dimensions());
+            (&mut texture.fbos_with_depth, Some(depth_target))
+        } else {
+            (&mut texture.fbos, None)
+        };
 
         
-        if rt_info.has_depth {
-            let renderbuffer_ids = self.gl.gen_renderbuffers(1);
-            let depth_rb = renderbuffer_ids[0];
-            texture.depth_rb = Some(RBOId(depth_rb));
-            self.gl.bind_renderbuffer(gl::RENDERBUFFER, depth_rb);
-            self.gl.renderbuffer_storage(
-                gl::RENDERBUFFER,
-                gl::DEPTH_COMPONENT24,
-                texture.width as _,
-                texture.height as _,
-            );
-        }
+        assert!(fbos.is_empty());
+        fbos.extend(self.gl.gen_framebuffers(texture.layer_count).into_iter().map(FBOId));
 
         
         let original_bound_fbo = self.bound_draw_fbo;
-        for (fbo_index, &fbo_id) in texture.fbo_ids.iter().enumerate() {
+        for (fbo_index, &fbo_id) in fbos.iter().enumerate() {
             self.bind_external_draw_target(fbo_id);
             match texture.target {
                 gl::TEXTURE_2D_ARRAY => {
@@ -1445,7 +1501,7 @@ impl Device {
                 }
             }
 
-            if let Some(depth_rb) = texture.depth_rb {
+            if let Some(depth_rb) = depth_rb {
                 self.gl.framebuffer_renderbuffer(
                     gl::DRAW_FRAMEBUFFER,
                     gl::DEPTH_ATTACHMENT,
@@ -1457,19 +1513,47 @@ impl Device {
         self.bind_external_draw_target(original_bound_fbo);
     }
 
-    fn deinit_fbos(&mut self, texture: &mut Texture) {
-        if let Some(RBOId(depth_rb)) = texture.depth_rb.take() {
-            self.gl.delete_renderbuffers(&[depth_rb]);
-            texture.depth_rb = None;
-        }
-
-        if !texture.fbo_ids.is_empty() {
-            let fbo_ids: Vec<_> = texture
-                .fbo_ids
+    fn deinit_fbos(&mut self, fbos: &mut Vec<FBOId>) {
+        if !fbos.is_empty() {
+            let fbo_ids: SmallVec<[gl::GLuint; 8]> = fbos
                 .drain(..)
                 .map(|FBOId(fbo_id)| fbo_id)
                 .collect();
             self.gl.delete_framebuffers(&fbo_ids[..]);
+        }
+    }
+
+    fn acquire_depth_target(&mut self, dimensions: DeviceUintSize) -> RBOId {
+        let gl = &self.gl;
+        let target = self.depth_targets.entry(dimensions).or_insert_with(|| {
+            let renderbuffer_ids = gl.gen_renderbuffers(1);
+            let depth_rb = renderbuffer_ids[0];
+            gl.bind_renderbuffer(gl::RENDERBUFFER, depth_rb);
+            gl.renderbuffer_storage(
+                gl::RENDERBUFFER,
+                gl::DEPTH_COMPONENT24,
+                dimensions.width as _,
+                dimensions.height as _,
+            );
+            SharedDepthTarget {
+                rbo_id: RBOId(depth_rb),
+                refcount: 0,
+            }
+        });
+        target.refcount += 1;
+        target.rbo_id
+    }
+
+    fn release_depth_target(&mut self, dimensions: DeviceUintSize) {
+        let mut entry = match self.depth_targets.entry(dimensions) {
+            Entry::Occupied(x) => x,
+            Entry::Vacant(..) => panic!("Releasing unknown depth target"),
+        };
+        debug_assert!(entry.get().refcount != 0);
+        entry.get_mut().refcount -= 1;
+        if entry.get().refcount == 0 {
+            let t = entry.remove();
+            self.gl.delete_renderbuffers(&[t.rbo_id.0]);
         }
     }
 
@@ -1492,7 +1576,13 @@ impl Device {
 
     pub fn delete_texture(&mut self, mut texture: Texture) {
         debug_assert!(self.inside_frame);
-        self.deinit_fbos(&mut texture);
+        let had_depth = texture.supports_depth();
+        self.deinit_fbos(&mut texture.fbos);
+        self.deinit_fbos(&mut texture.fbos_with_depth);
+        if had_depth {
+            self.release_depth_target(texture.get_dimensions());
+        }
+
         self.gl.delete_textures(&[texture.id]);
 
         for bound_texture in &mut self.bound_textures {
@@ -2316,6 +2406,18 @@ impl Device {
                 pixel_type: gl::UNSIGNED_BYTE,
             },
         }
+    }
+
+    
+    pub fn report_memory(&self) -> MemoryReport {
+        let mut report = MemoryReport::default();
+        for dim in self.depth_targets.keys() {
+            
+            
+            let pixels: u32 = dim.width * dim.height;
+            report.depth_target_textures += (pixels as usize) * 4;
+        }
+        report
     }
 }
 

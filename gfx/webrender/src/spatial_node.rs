@@ -122,7 +122,6 @@ impl SpatialNode {
         let source_perspective = source_perspective.map_or_else(
             LayoutFastTransform::identity, |perspective| perspective.into());
         let info = ReferenceFrameInfo {
-            resolved_transform: LayoutFastTransform::identity(),
             source_transform: source_transform.unwrap_or(PropertyBinding::Value(identity)),
             source_perspective,
             origin_in_parent_reference_frame,
@@ -256,7 +255,7 @@ impl SpatialNode {
                 let scrolled_perspective = info.source_perspective
                     .pre_translate(&state.parent_accumulated_scroll_offset)
                     .post_translate(-state.parent_accumulated_scroll_offset);
-                info.resolved_transform =
+                let resolved_transform =
                     LayoutFastTransform::with_vector(info.origin_in_parent_reference_frame)
                     .pre_mul(&source_transform.into())
                     .pre_mul(&scrolled_perspective);
@@ -265,7 +264,7 @@ impl SpatialNode {
                 
                 
                 
-                let relative_transform = info.resolved_transform
+                let relative_transform = resolved_transform
                     .post_translate(state.parent_accumulated_scroll_offset)
                     .to_transform()
                     .with_destination::<LayoutPixel>();
@@ -622,10 +621,6 @@ impl ScrollFrameInfo {
 
 #[derive(Copy, Clone, Debug)]
 pub struct ReferenceFrameInfo {
-    
-    
-    pub resolved_transform: LayoutFastTransform,
-
     
     
     

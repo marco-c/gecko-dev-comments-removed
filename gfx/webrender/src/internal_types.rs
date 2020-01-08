@@ -44,6 +44,19 @@ pub struct CacheTextureId(pub u64);
 
 
 
+
+
+
+
+
+pub type LayerIndex = usize;
+
+
+
+
+
+
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
