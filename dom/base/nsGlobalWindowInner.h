@@ -340,9 +340,6 @@ public:
   nsresult PostHandleEvent(mozilla::EventChainPostVisitor& aVisitor) override;
 
   
-  virtual nsPIDOMWindowOuter* GetPrivateRoot() override;
-
-  
   virtual bool IsTopLevelWindowActive() override;
 
   virtual PopupControlState GetPopupControlState() const override;

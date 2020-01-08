@@ -354,8 +354,6 @@ public:
 
   mozilla::dom::TabGroup* TabGroup();
 
-  virtual nsPIDOMWindowOuter* GetPrivateRoot() = 0;
-
   virtual mozilla::dom::CustomElementRegistry* CustomElements() = 0;
 
   
