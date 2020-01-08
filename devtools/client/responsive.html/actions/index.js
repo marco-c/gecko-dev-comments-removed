@@ -41,6 +41,9 @@ createEnum([
   CHANGE_NETWORK_THROTTLING,
 
   
+  "CHANGE_USER_AGENT",
+
+  
   
   
   "CHANGE_PIXEL_RATIO",
@@ -83,6 +86,9 @@ createEnum([
 
   
   "TOGGLE_TOUCH_SIMULATION",
+
+  
+  "TOGGLE_USER_AGENT_INPUT",
 
   
   "UPDATE_DEVICE_DISPLAYED",

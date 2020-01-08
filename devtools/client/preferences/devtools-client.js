@@ -336,6 +336,12 @@ pref("devtools.responsive.show-setting-tooltip", true);
 pref("devtools.responsive.show-setting-tooltip", false);
 #endif
 
+#if defined(NIGHTLY_BUILD)
+pref("devtools.responsive.showUserAgentInput", true);
+#else
+pref("devtools.responsive.showUserAgentInput", false);
+#endif
+
 
 pref("devtools.aboutdebugging.new-enabled", false);
 pref("devtools.aboutdebugging.network-locations", "[]");
