@@ -171,9 +171,7 @@ nsStyleDisplay::IsFixedPosContainingBlockForNonSVGTextFrames(
 bool
 nsStyleDisplay::IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames() const
 {
-  
-  
-  return IsContainPaint();
+  return IsContainPaint() || IsContainLayout();
 }
 
 bool

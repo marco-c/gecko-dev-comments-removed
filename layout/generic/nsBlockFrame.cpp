@@ -7097,7 +7097,8 @@ nsBlockFrame::Init(nsIContent*       aContent,
   if (StyleDisplay()->mDisplay == mozilla::StyleDisplay::FlowRoot ||
       (GetParent() && StyleVisibility()->mWritingMode !=
                       GetParent()->StyleVisibility()->mWritingMode) ||
-      StyleDisplay()->IsContainPaint()) {
+      StyleDisplay()->IsContainPaint() ||
+      StyleDisplay()->IsContainLayout()) {
     AddStateBits(NS_BLOCK_FORMATTING_CONTEXT_STATE_BITS);
   }
 
