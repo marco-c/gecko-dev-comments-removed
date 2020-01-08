@@ -401,7 +401,9 @@ BaseBookmarksEngine.prototype = {
           "bookmarks");
       }
     } catch (ex) {
-      if (Async.isShutdownException(ex) || ex.status > 0) {
+      if (Async.isShutdownException(ex) || ex.status > 0 ||
+          ex.name == "MergeConflictError") {
+        
         
         throw ex;
       }

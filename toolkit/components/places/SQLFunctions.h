@@ -590,6 +590,32 @@ private:
   ~SqrtFunction() {}
 };
 
+
+
+
+
+
+
+
+
+
+class NoteSyncChangeFunction final : public mozIStorageFunction
+{
+public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_MOZISTORAGEFUNCTION
+
+  
+
+
+
+
+
+  static nsresult create(mozIStorageConnection *aDBConn);
+private:
+  ~NoteSyncChangeFunction() {}
+};
+
 } 
 } 
 

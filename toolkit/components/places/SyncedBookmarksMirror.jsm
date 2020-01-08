@@ -447,6 +447,33 @@ class SyncedBookmarksMirror {
     
     let flowID = PlacesUtils.history.makeGuid();
 
+    let changeRecords;
+    try {
+      changeRecords = await this.tryApply(flowID, localTimeSeconds,
+                                          remoteTimeSeconds,
+                                          observersToNotify,
+                                          weakUpload);
+    } catch (ex) {
+      
+      
+      let why = (typeof ex.message == "string" ? ex.message :
+                 String(ex)).slice(0, 85);
+      this.recordTelemetryEvent("mirror", "apply", "error", { flowID, why });
+      throw ex;
+    }
+
+    MirrorLog.debug("Replaying recorded observer notifications");
+    try {
+      await observersToNotify.notifyAll();
+    } catch (ex) {
+      MirrorLog.warn("Error notifying Places observers", ex);
+    }
+
+    return changeRecords;
+  }
+
+  async tryApply(flowID, localTimeSeconds, remoteTimeSeconds, observersToNotify,
+                 weakUpload) {
     let { missingParents, missingChildren, parentsWithGaps } =
       await this.fetchRemoteOrphans();
     if (missingParents.length) {
@@ -501,149 +528,145 @@ class SyncedBookmarksMirror {
                       remoteTree.toASCIITreeString());
     }
 
-    let changeRecords;
-    try {
-      changeRecords = await this.db.executeTransaction(async () => {
-        let localTree = await withTiming(
-          "Building local tree from Places",
-          () => this.fetchLocalTree(localTimeSeconds),
-          (time, tree) => this.recordTelemetryEvent("mirror", "apply",
-            "fetchLocalTree", { flowID, time, deletions: tree.deletedGuids.size,
-                                nodes: tree.byGuid.size })
-        );
-        if (MirrorLog.level <= Log.Level.Debug) {
-          MirrorLog.debug("Built local tree from Places\n" +
-                          localTree.toASCIITreeString());
-        }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let totalSyncChanges = PlacesUtils.bookmarks.totalSyncChanges;
 
-        let newRemoteContents = await withTiming(
-          "Fetching content info for new mirror items",
-          () => this.fetchNewRemoteContents(),
-          (time, contents) => this.recordTelemetryEvent("mirror", "apply",
-            "fetchNewRemoteContents", { flowID, time, count: contents.size })
-        );
+    let localTree = await withTiming(
+      "Building local tree from Places",
+      () => this.fetchLocalTree(localTimeSeconds),
+      (time, tree) => this.recordTelemetryEvent("mirror", "apply",
+        "fetchLocalTree", { flowID, time, deletions: tree.deletedGuids.size,
+                            nodes: tree.byGuid.size })
+    );
+    if (MirrorLog.level <= Log.Level.Debug) {
+      MirrorLog.debug("Built local tree from Places\n" +
+                      localTree.toASCIITreeString());
+    }
 
-        let newLocalContents = await withTiming(
-          "Fetching content info for new Places items",
-          () => this.fetchNewLocalContents(),
-          (time, contents) => this.recordTelemetryEvent("mirror", "apply",
-            "fetchNewLocalContents", { flowID, time, count: contents.size })
-        );
+    let newRemoteContents = await withTiming(
+      "Fetching content info for new mirror items",
+      () => this.fetchNewRemoteContents(),
+      (time, contents) => this.recordTelemetryEvent("mirror", "apply",
+        "fetchNewRemoteContents", { flowID, time, count: contents.size })
+    );
 
-        let merger = new BookmarkMerger(localTree, newLocalContents,
-                                        remoteTree, newRemoteContents);
-        let mergedRoot = await withTiming(
-          "Building complete merged tree",
-          () => merger.merge(),
-          time => {
-            this.recordTelemetryEvent("mirror", "apply", "merge",
-              { flowID, time, nodes: merger.mergedGuids.size,
-                localDeletions: merger.deleteLocally.size,
-                remoteDeletions: merger.deleteRemotely.size,
-                dupes: merger.dupeCount });
+    let newLocalContents = await withTiming(
+      "Fetching content info for new Places items",
+      () => this.fetchNewLocalContents(),
+      (time, contents) => this.recordTelemetryEvent("mirror", "apply",
+        "fetchNewLocalContents", { flowID, time, count: contents.size })
+    );
 
-            this.recordTelemetryEvent("mirror", "merge", "structure",
-              merger.structureCounts);
+    let merger = new BookmarkMerger(localTree, newLocalContents,
+                                    remoteTree, newRemoteContents);
+    let mergedRoot = await withTiming(
+      "Building complete merged tree",
+      () => merger.merge(),
+      time => {
+        this.recordTelemetryEvent("mirror", "apply", "merge",
+          { flowID, time, nodes: merger.mergedGuids.size,
+            localDeletions: merger.deleteLocally.size,
+            remoteDeletions: merger.deleteRemotely.size,
+            dupes: merger.dupeCount });
+
+        this.recordTelemetryEvent("mirror", "merge", "structure",
+          merger.structureCounts);
+      }
+    );
+    if (MirrorLog.level <= Log.Level.Debug) {
+      MirrorLog.debug([
+        "Built new merged tree",
+        mergedRoot.toASCIITreeString(),
+        ...merger.deletionsToStrings(),
+      ].join("\n"));
+    }
+
+    
+    
+    
+    if (!await merger.subsumes(localTree)) {
+      throw new SyncedBookmarksMirror.ConsistencyError(
+        "Merged tree doesn't mention all items from local tree");
+    }
+    if (!await merger.subsumes(remoteTree)) {
+      throw new SyncedBookmarksMirror.ConsistencyError(
+        "Merged tree doesn't mention all items from remote tree");
+    }
+
+    return this.db.executeTransaction(async () => {
+      if (totalSyncChanges != PlacesUtils.bookmarks.totalSyncChanges) {
+        throw new SyncedBookmarksMirror.MergeConflictError(
+          "Local tree changed during merge");
+      }
+
+      await withTiming(
+        "Applying merged tree",
+        async () => {
+          let deletions = [];
+          for await (let deletion of yieldingIterator(merger.deletions())) {
+            deletions.push(deletion);
           }
-        );
+          await this.updateLocalItemsInPlaces(mergedRoot, deletions);
+        },
+        time => this.recordTelemetryEvent("mirror", "apply",
+          "updateLocalItemsInPlaces", { flowID, time })
+      );
 
-        if (MirrorLog.level <= Log.Level.Debug) {
-          MirrorLog.debug([
-            "Built new merged tree",
-            mergedRoot.toASCIITreeString(),
-            ...merger.deletionsToStrings(),
-          ].join("\n"));
-        }
-
-        
-        
-        
-        if (!await merger.subsumes(localTree)) {
-          throw new SyncedBookmarksMirror.ConsistencyError(
-            "Merged tree doesn't mention all items from local tree");
-        }
-        if (!await merger.subsumes(remoteTree)) {
-          throw new SyncedBookmarksMirror.ConsistencyError(
-            "Merged tree doesn't mention all items from remote tree");
-        }
-
-        await withTiming(
-          "Applying merged tree",
-          async () => {
-            let deletions = [];
-            for await (let deletion of yieldingIterator(merger.deletions())) {
-              deletions.push(deletion);
-            }
-            await this.updateLocalItemsInPlaces(mergedRoot, deletions);
-          },
-          time => this.recordTelemetryEvent("mirror", "apply",
-            "updateLocalItemsInPlaces", { flowID, time })
-        );
-
-        
-        
-        
-        
-        
-
-        await withTiming(
-          "Recording observer notifications",
-          () => this.noteObserverChanges(observersToNotify),
-          time => this.recordTelemetryEvent("mirror", "apply",
-            "noteObserverChanges", { flowID, time })
-        );
-
-        await withTiming(
-          "Staging locally changed items for upload",
-          () => this.stageItemsToUpload(weakUpload),
-          time => this.recordTelemetryEvent("mirror", "apply",
-            "stageItemsToUpload", { flowID, time })
-        );
-
-        let changeRecords = await withTiming(
-          "Fetching records for local items to upload",
-          () => this.fetchLocalChangeRecords(),
-          (time, records) => this.recordTelemetryEvent("mirror", "apply",
-            "fetchLocalChangeRecords", { flowID,
-              count: Object.keys(records).length })
-        );
-
-        await withTiming(
-          "Cleaning up merge tables",
-          async () => {
-            await this.db.execute(`DELETE FROM mergeStates`);
-            await this.db.execute(`DELETE FROM itemsAdded`);
-            await this.db.execute(`DELETE FROM guidsChanged`);
-            await this.db.execute(`DELETE FROM itemsChanged`);
-            await this.db.execute(`DELETE FROM itemsRemoved`);
-            await this.db.execute(`DELETE FROM itemsMoved`);
-            await this.db.execute(`DELETE FROM annosChanged`);
-            await this.db.execute(`DELETE FROM idsToWeaklyUpload`);
-            await this.db.execute(`DELETE FROM itemsToUpload`);
-          },
-          time => this.recordTelemetryEvent("mirror", "apply", "cleanup",
-            { flowID, time })
-        );
-
-        return changeRecords;
-      });
-    } catch (ex) {
       
       
-      let why = (typeof ex.message == "string" ? ex.message :
-                 String(ex)).slice(0, 85);
-      this.recordTelemetryEvent("mirror", "apply", "error", { flowID, why });
-      throw ex;
-    }
+      
+      
+      
 
-    MirrorLog.debug("Replaying recorded observer notifications");
-    try {
-      await observersToNotify.notifyAll();
-    } catch (ex) {
-      MirrorLog.warn("Error notifying Places observers", ex);
-    }
+      await withTiming(
+        "Recording observer notifications",
+        () => this.noteObserverChanges(observersToNotify),
+        time => this.recordTelemetryEvent("mirror", "apply",
+          "noteObserverChanges", { flowID, time })
+      );
 
-    return changeRecords;
+      await withTiming(
+        "Staging locally changed items for upload",
+        () => this.stageItemsToUpload(weakUpload),
+        time => this.recordTelemetryEvent("mirror", "apply",
+          "stageItemsToUpload", { flowID, time })
+      );
+
+      let changeRecords = await withTiming(
+        "Fetching records for local items to upload",
+        () => this.fetchLocalChangeRecords(),
+        (time, records) => this.recordTelemetryEvent("mirror", "apply",
+          "fetchLocalChangeRecords", { flowID,
+            count: Object.keys(records).length })
+      );
+
+      await withTiming(
+        "Cleaning up merge tables",
+        async () => {
+          await this.db.execute(`DELETE FROM mergeStates`);
+          await this.db.execute(`DELETE FROM itemsAdded`);
+          await this.db.execute(`DELETE FROM guidsChanged`);
+          await this.db.execute(`DELETE FROM itemsChanged`);
+          await this.db.execute(`DELETE FROM itemsRemoved`);
+          await this.db.execute(`DELETE FROM itemsMoved`);
+          await this.db.execute(`DELETE FROM annosChanged`);
+          await this.db.execute(`DELETE FROM idsToWeaklyUpload`);
+          await this.db.execute(`DELETE FROM itemsToUpload`);
+        },
+        time => this.recordTelemetryEvent("mirror", "apply", "cleanup",
+          { flowID, time })
+      );
+
+      return changeRecords;
+    });
   }
 
   
@@ -1874,6 +1897,18 @@ class ConsistencyError extends Error {
   }
 }
 SyncedBookmarksMirror.ConsistencyError = ConsistencyError;
+
+
+
+
+
+class MergeConflictError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "MergeConflictError";
+  }
+}
+SyncedBookmarksMirror.MergeConflictError = MergeConflictError;
 
 
 
