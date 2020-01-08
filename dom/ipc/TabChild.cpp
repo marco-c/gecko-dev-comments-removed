@@ -2923,7 +2923,7 @@ TabChild::NotifyPainted()
     if (!mNotified) {
         
         if (!recordreplay::IsRecordingOrReplaying()) {
-            mRemoteFrame->SendNotifyCompositorTransaction();
+            SendNotifyCompositorTransaction();
         }
         mNotified = true;
     }

@@ -8,10 +8,8 @@
 #define mozilla_layout_RenderFrameParent_h
 
 #include "mozilla/Attributes.h"
-#include <map>
 
 #include "mozilla/dom/ipc/IdType.h"
-#include "mozilla/layers/APZUtils.h"
 #include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layout/PRenderFrameParent.h"
@@ -22,94 +20,48 @@ class nsSubDocumentFrame;
 
 namespace mozilla {
 
-class InputEvent;
 
 namespace layers {
-class AsyncDragMetrics;
-class TargetConfig;
 struct TextureFactoryIdentifier;
-struct ScrollableLayerGuid;
 } 
 
 namespace layout {
 
 class RenderFrameParent final : public PRenderFrameParent
 {
-  typedef mozilla::layers::AsyncDragMetrics AsyncDragMetrics;
-  typedef mozilla::layers::FrameMetrics FrameMetrics;
   typedef mozilla::layers::CompositorOptions CompositorOptions;
-  typedef mozilla::layers::ContainerLayer ContainerLayer;
-  typedef mozilla::layers::Layer Layer;
   typedef mozilla::layers::LayerManager LayerManager;
   typedef mozilla::layers::LayersId LayersId;
-  typedef mozilla::layers::TargetConfig TargetConfig;
-  typedef mozilla::ContainerLayerParameters ContainerLayerParameters;
   typedef mozilla::layers::TextureFactoryIdentifier TextureFactoryIdentifier;
-  typedef mozilla::layers::ScrollableLayerGuid ScrollableLayerGuid;
-  typedef mozilla::layers::TouchBehaviorFlags TouchBehaviorFlags;
-  typedef mozilla::layers::ZoomConstraints ZoomConstraints;
-  typedef ScrollableLayerGuid::ViewID ViewID;
-
 public:
-
-
-  
-
-
-
 
   explicit RenderFrameParent(nsFrameLoader* aFrameLoader);
   virtual ~RenderFrameParent();
 
-  bool Init(nsFrameLoader* aFrameLoader);
-  bool IsInitted();
+  bool Initialize(nsFrameLoader* aFrameLoader);
   void Destroy();
 
-
-  already_AddRefed<Layer> BuildLayer(nsDisplayListBuilder* aBuilder,
-                                     nsIFrame* aFrame,
-                                     LayerManager* aManager,
-                                     nsDisplayItem* aItem,
-                                     const ContainerLayerParameters& aContainerParameters);
-
+  void EnsureLayersConnected(CompositorOptions* aCompositorOptions);
+  LayerManager* AttachLayerManager();
   void OwnerContentChanged(nsIContent* aContent);
 
-  bool HitTest(const nsRect& aRect);
+  nsFrameLoader* GetFrameLoader() const { return mFrameLoader; }
+  LayersId GetLayersId() const { return mLayersId; }
+  CompositorOptions GetCompositorOptions() const { return mCompositorOptions; }
 
-  void GetTextureFactoryIdentifier(TextureFactoryIdentifier* aTextureFactoryIdentifier);
+  void GetTextureFactoryIdentifier(TextureFactoryIdentifier* aTextureFactoryIdentifier) const;
 
-  inline LayersId GetLayersId() const { return mLayersId; }
-  inline bool IsLayersConnected() const { return mLayersConnected; }
-  inline CompositorOptions GetCompositorOptions() const { return mCompositorOptions; }
-
-  void TakeFocusForClickFromTap();
-
-  void EnsureLayersConnected(CompositorOptions* aCompositorOptions);
-
-  LayerManager* AttachLayerManager();
-
-  nsFrameLoader* FrameLoader() const
-  {
-    return mFrameLoader;
-  }
+  bool IsInitialized() const { return mInitialized; }
+  bool IsLayersConnected() const { return mLayersConnected; }
 
 protected:
   void ActorDestroy(ActorDestroyReason why) override;
 
-  virtual mozilla::ipc::IPCResult RecvNotifyCompositorTransaction() override;
-
 private:
-  void TriggerRepaint();
-  void DispatchEventForPanZoomController(const InputEvent& aEvent);
-
   
   
   
   LayersId mLayersId;
-  
-  
-  
-  bool mLayersConnected;
   
   
   
@@ -118,24 +70,11 @@ private:
   RefPtr<nsFrameLoader> mFrameLoader;
   RefPtr<LayerManager> mLayerManager;
 
+  bool mInitialized;
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool mFrameLoaderDestroyed;
-
-  bool mAsyncPanZoomEnabled;
-  bool mInitted;
+  bool mLayersConnected;
 };
 
 } 
@@ -148,7 +87,15 @@ private:
 
 class nsDisplayRemote final : public nsDisplayItem
 {
+  typedef mozilla::dom::TabId TabId;
+  typedef mozilla::gfx::Matrix4x4 Matrix4x4;
+  typedef mozilla::layers::EventRegionsOverride EventRegionsOverride;
+  typedef mozilla::layers::Layer Layer;
+  typedef mozilla::layers::LayersId LayersId;
+  typedef mozilla::layers::RefLayer RefLayer;
   typedef mozilla::layout::RenderFrameParent RenderFrameParent;
+  typedef mozilla::LayoutDeviceRect LayoutDeviceRect;
+  typedef mozilla::LayoutDeviceIntPoint LayoutDeviceIntPoint;
 
 public:
   nsDisplayRemote(nsDisplayListBuilder* aBuilder,
@@ -177,13 +124,12 @@ public:
   NS_DISPLAY_DECL_NAME("Remote", TYPE_REMOTE)
 
 private:
-  mozilla::layers::LayersId GetRemoteLayersId() const;
+  LayersId GetRemoteLayersId() const;
   RenderFrameParent* GetRenderFrameParent() const;
 
-  mozilla::dom::TabId mTabId;
-  mozilla::LayoutDeviceIntPoint mOffset;
-  mozilla::layers::EventRegionsOverride mEventRegionsOverride;
+  TabId mTabId;
+  LayoutDeviceIntPoint mOffset;
+  EventRegionsOverride mEventRegionsOverride;
 };
-
 
 #endif  
