@@ -983,7 +983,8 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
     
     
-    js::MainThreadData<JS::ModuleDynamicImportHook> moduleDynamicImportHook;
+    
+    mozilla::Atomic<JS::ModuleDynamicImportHook> moduleDynamicImportHook;
 
   public:
 #if defined(JS_BUILD_BINAST)
