@@ -49,12 +49,21 @@ public:
 
   
   
+  bool HasParameter(const nsTSubstring<char_type>& aName) const;
+
+  
+  
   
   
   
   bool GetParameterValue(const nsTSubstring<char_type>& aName,
                          nsTSubstring<char_type>& aOutput,
                          bool aAppend = false) const;
+
+  
+  
+  void SetParameterValue(const nsTSubstring<char_type>& aName,
+                         const nsTSubstring<char_type>& aValue);
 };
 
 using MimeType = TMimeType<char16_t>;
