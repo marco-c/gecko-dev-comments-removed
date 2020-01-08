@@ -14,7 +14,7 @@ import sys
 
 
 
-NDK_VERSION = 'r17b'
+NDK_VERSION = 'r15c'
 
 ANDROID_NDK_EXISTS = '''
 Looks like you have the Android NDK installed at:
