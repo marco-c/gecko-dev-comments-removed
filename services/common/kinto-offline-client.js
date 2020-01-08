@@ -77,6 +77,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 ChromeUtils.import("resource://gre/modules/Timer.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyGlobalGetters(global, ["fetch", "indexedDB"]);
+
 const { EventEmitter } = ChromeUtils.import("resource://gre/modules/EventEmitter.jsm", {});
 const { generateUUID } = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
 
@@ -105,8 +106,10 @@ class Kinto extends _KintoBase2.default {
 
   collection(collName, options = {}) {
     const idSchema = {
-      validate: _utils.RE_UUID.test.bind(_utils.RE_UUID),
-      generate: function () {
+      validate(id) {
+        return typeof id == "string" && _utils.RE_RECORD_ID.test(id);
+      },
+      generate() {
         return generateUUID().toString().replace(/[{}]/g, "");
       }
     };
@@ -396,7 +399,9 @@ class IDB extends _base2.default {
 
 
 
-  constructor(dbname) {
+
+
+  constructor(storeName, options = {}) {
     super();
     this._db = null;
     
@@ -404,6 +409,8 @@ class IDB extends _base2.default {
 
 
 
+    this.storeName = storeName;
+    const { dbname = storeName } = options;
     this.dbname = dbname;
   }
 
@@ -429,7 +436,7 @@ class IDB extends _base2.default {
         
         const db = event.target.result;
         
-        const collStore = db.createObjectStore(this.dbname, {
+        const collStore = db.createObjectStore(this.storeName, {
           keyPath: "id"
         });
         
@@ -480,7 +487,7 @@ class IDB extends _base2.default {
 
 
   prepare(mode = undefined, name = null) {
-    const storeName = name || this.dbname;
+    const storeName = name || this.storeName;
     
     
     const transaction = mode ? this._db.transaction([storeName], mode) : this._db.transaction([storeName]);
@@ -652,7 +659,7 @@ class IDB extends _base2.default {
     await this.open();
     return new Promise((resolve, reject) => {
       const { transaction, store } = this.prepare("readwrite", "__meta__");
-      store.put({ name: "lastModified", value: value });
+      store.put({ name: `${this.storeName}-lastModified`, value: value });
       transaction.onerror = event => reject(event.target.error);
       transaction.oncomplete = event => resolve(value);
     });
@@ -668,7 +675,7 @@ class IDB extends _base2.default {
     await this.open();
     return new Promise((resolve, reject) => {
       const { transaction, store } = this.prepare(undefined, "__meta__");
-      const request = store.get("lastModified");
+      const request = store.get(`${this.storeName}-lastModified`);
       transaction.onerror = event => reject(event.target.error);
       transaction.oncomplete = event => {
         resolve(request.result && request.result.value || null);
@@ -950,7 +957,7 @@ function createUUIDSchema() {
     },
 
     validate(id) {
-      return (0, _utils.isUUID)(id);
+      return typeof id == "string" && _utils.RE_RECORD_ID.test(id);
     }
   };
 }
@@ -2320,11 +2327,10 @@ Object.defineProperty(exports, "__esModule", {
 exports.sortObjects = sortObjects;
 exports.filterObject = filterObject;
 exports.filterObjects = filterObjects;
-exports.isUUID = isUUID;
 exports.waterfall = waterfall;
 exports.deepEqual = deepEqual;
 exports.omitKeys = omitKeys;
-const RE_UUID = exports.RE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const RE_RECORD_ID = exports.RE_RECORD_ID = /^[a-zA-Z0-9][a-zA-Z0-9_-]*$/;
 
 
 
@@ -2388,16 +2394,6 @@ function filterObjects(filters, list) {
   return list.filter(entry => {
     return filterObject(filters, entry);
   });
-}
-
-
-
-
-
-
-
-function isUUID(uuid) {
-  return RE_UUID.test(uuid);
 }
 
 
