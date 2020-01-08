@@ -282,6 +282,51 @@ HTMLEditor::DeleteRefToAnonymousNode(ManualNACPtr aContent,
   
 }
 
+void
+HTMLEditor::HideAnonymousEditingUIs()
+{
+  if (mAbsolutelyPositionedObject) {
+    HideGrabber();
+    NS_ASSERTION(!mAbsolutelyPositionedObject, "HideGrabber failed");
+  }
+  if (mInlineEditedCell) {
+    HideInlineTableEditingUI();
+    NS_ASSERTION(!mInlineEditedCell, "HideInlineTableEditingUI failed");
+  }
+  if (mResizedObject) {
+    DebugOnly<nsresult> rv = HideResizers();
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HideResizers() failed");
+    NS_ASSERTION(!mResizedObject, "HideResizers failed");
+  }
+}
+
+void
+HTMLEditor::HideAnonymousEditingUIsIfUnnecessary()
+{
+  
+  
+  
+  if (!IsAbsolutePositionEditorEnabled() && mAbsolutelyPositionedObject) {
+    
+    
+    HideGrabber();
+    NS_ASSERTION(!mAbsolutelyPositionedObject, "HideGrabber failed");
+  }
+  if (!IsInlineTableEditorEnabled() && mInlineEditedCell) {
+    
+    
+    HideInlineTableEditingUI();
+    NS_ASSERTION(!mInlineEditedCell, "HideInlineTableEditingUI failed");
+  }
+  if (!IsObjectResizerEnabled() && mResizedObject) {
+    
+    
+    DebugOnly<nsresult> rv = HideResizers();
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HideResizers() failed");
+    NS_ASSERTION(!mResizedObject, "HideResizers failed");
+  }
+}
+
 NS_IMETHODIMP
 HTMLEditor::CheckSelectionStateForAnonymousButtons(Selection* aSelection)
 {
@@ -298,6 +343,10 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(Selection* aSelection)
 nsresult
 HTMLEditor::RefereshEditingUI(Selection& aSelection)
 {
+  
+  
+  HideAnonymousEditingUIsIfUnnecessary();
+
   
   if (!IsObjectResizerEnabled() &&
       !IsAbsolutePositionEditorEnabled() &&
@@ -387,7 +436,7 @@ HTMLEditor::RefereshEditingUI(Selection& aSelection)
     NS_ASSERTION(!mResizedObject, "HideResizers failed");
   }
 
-  if (mIsInlineTableEditingEnabled && mInlineEditedCell &&
+  if (IsInlineTableEditorEnabled() && mInlineEditedCell &&
       mInlineEditedCell != cellElement) {
     
     
@@ -431,7 +480,7 @@ HTMLEditor::RefereshEditingUI(Selection& aSelection)
     }
   }
 
-  if (mIsInlineTableEditingEnabled && cellElement &&
+  if (IsInlineTableEditorEnabled() && cellElement &&
       IsModifiableNode(*cellElement) && cellElement != hostContent) {
     if (mInlineEditedCell) {
       nsresult rv = RefreshInlineTableEditingUI();
