@@ -15,8 +15,6 @@ ChromeUtils.defineModuleGetter(this, "CustomizableUI",
                                "resource:///modules/CustomizableUI.jsm");
 ChromeUtils.defineModuleGetter(this, "LegacyExtensionsUtils",
                                "resource://gre/modules/LegacyExtensionsUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "PageActions",
-                               "resource:///modules/PageActions.jsm");
 ChromeUtils.defineModuleGetter(this, "Services",
                                "resource://gre/modules/Services.jsm");
 
@@ -162,7 +160,6 @@ function start(webExtension) {
   return webExtension.startup(startupReason, addonData).then((api) => {
     api.browser.runtime.onMessage.addListener(handleMessage);
     LibraryButton.init(webExtension);
-    initPhotonPageAction(api, webExtension);
   }).catch((err) => {
     
     
@@ -177,10 +174,6 @@ function start(webExtension) {
 function stop(webExtension, reason) {
   if (reason !== APP_SHUTDOWN) {
     LibraryButton.uninit();
-    if (photonPageAction) {
-      photonPageAction.remove();
-      photonPageAction = null;
-    }
   }
   return Promise.resolve(webExtension.shutdown(reason));
 }
@@ -210,58 +203,4 @@ function handleMessage(msg, sender, sendReply) {
       sendReply({type: "success", value: true});
     }
   }
-}
-
-let photonPageAction;
-
-
-
-
-
-function initPhotonPageAction(api, webExtension) {
-  const id = "screenshots";
-  let port = null;
-
-  const {tabManager} = webExtension.extension;
-
-  
-  photonPageAction = PageActions.actionForID(id) || PageActions.addAction(new PageActions.Action({
-    id,
-    title: "Take a Screenshot",
-    iconURL: webExtension.extension.getURL("icons/icon-v2.svg"),
-    _insertBeforeActionID: null,
-    onCommand(event, buttonNode) {
-      if (port) {
-        const browserWin = buttonNode.ownerGlobal;
-        const tab = tabManager.getWrapper(browserWin.gBrowser.selectedTab);
-        port.postMessage({
-          type: "click",
-          tab: {id: tab.id, url: tab.url}
-        });
-      }
-    },
-  }));
-
-  
-  api.browser.runtime.onConnect.addListener((listenerPort) => {
-    if (listenerPort.name !== "photonPageActionPort") {
-      return;
-    }
-    port = listenerPort;
-    port.onMessage.addListener((message) => {
-      switch (message.type) {
-      case "setProperties":
-        if (message.title) {
-          photonPageAction.setTitle(message.title);
-        }
-        if (message.iconPath) {
-          photonPageAction.setIconURL(webExtension.extension.getURL(message.iconPath));
-        }
-        break;
-      default:
-        console.error("Unrecognized message:", message);
-        break;
-      }
-    });
-  });
 }
