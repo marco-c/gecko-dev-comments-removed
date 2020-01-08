@@ -56,6 +56,10 @@ public:
   
   static gfx::IntSize GetFrameSize(Span<const uint8_t> aBuffer, Codec aCodec);
 
+  
+  
+  static int GetVP9Profile(Span<const uint8_t> aBuffer);
+
 private:
   ~VPXDecoder();
   RefPtr<DecodePromise> ProcessDecode(MediaRawData* aSample);

@@ -5,6 +5,7 @@
 
 
 #include "VPXDecoder.h"
+#include "BitReader.h"
 #include "TimeUnits.h"
 #include "gfx2DGlue.h"
 #include "mozilla/PodOperations.h"
@@ -337,5 +338,33 @@ VPXDecoder::GetFrameSize(Span<const uint8_t> aBuffer, Codec aCodec)
 
   return gfx::IntSize(si.w, si.h);
 }
+
+
+int
+VPXDecoder::GetVP9Profile(Span<const uint8_t> aBuffer)
+{
+  if (aBuffer.Length() < 2) {
+    
+    return -1;
+  }
+  BitReader br(aBuffer.Elements(), aBuffer.Length() * 8);
+
+  uint32_t frameMarker = br.ReadBits(2); 
+  if (frameMarker != 2) {
+    
+    return -1;
+  }
+  uint32_t profile = br.ReadBits(1); 
+  profile |= br.ReadBits(1) << 1; 
+  if (profile == 3) {
+    profile += br.ReadBits(1); 
+    if (profile > 3) {
+      
+      return -1;
+    }
+  }
+  return profile;
+}
+
 } 
 #undef LOG
