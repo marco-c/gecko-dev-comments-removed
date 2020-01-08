@@ -227,12 +227,6 @@ protected:
       mCallback->Call("promise callback");
       aAso.CheckForInterrupt();
     }
-    
-    
-    
-    
-    
-    mCallback->Reset();
   }
 
   virtual bool Suppressed() override
