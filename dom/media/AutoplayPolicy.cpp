@@ -195,7 +195,7 @@ AutoplayPolicy::IsAllowedToPlay(const HTMLMediaElement& aElement)
 }
 
  bool
-AutoplayPolicy::IsAudioContextAllowedToPlay(NotNull<AudioContext*> aContext)
+AutoplayPolicy::IsAllowedToPlay(const AudioContext& aContext)
 {
   if (!Preferences::GetBool("media.autoplay.block-webaudio", false)) {
     return true;
@@ -210,11 +210,11 @@ AutoplayPolicy::IsAudioContextAllowedToPlay(NotNull<AudioContext*> aContext)
   }
 
   
-  if (aContext->IsOffline()) {
+  if (aContext.IsOffline()) {
     return true;
   }
 
-  if (IsWindowAllowedToPlay(aContext->GetOwner())) {
+  if (IsWindowAllowedToPlay(aContext.GetParentObject())) {
     return true;
   }
 

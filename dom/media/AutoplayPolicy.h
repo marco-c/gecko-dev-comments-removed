@@ -39,14 +39,14 @@ public:
   static bool IsAllowedToPlay(const HTMLMediaElement& aElement);
 
   
+  static bool IsAllowedToPlay(const AudioContext& aContext);
+
+  
   
   
   
   
   static bool WouldBeAllowedToPlayIfAutoplayDisabled(const HTMLMediaElement& aElement);
-
-  
-  static bool IsAudioContextAllowedToPlay(NotNull<AudioContext*> aContext);
 
   
   

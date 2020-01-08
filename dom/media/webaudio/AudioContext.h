@@ -341,6 +341,12 @@ private:
 
   nsTArray<MediaStream*> GetAllStreams() const;
 
+  
+  void EnsureAutoplayRequested();
+
+  void ResumeInternal();
+  void SuspendInternal(void* aPromise);
+
 private:
   
   
