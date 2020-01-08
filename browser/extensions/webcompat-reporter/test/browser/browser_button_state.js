@@ -1,3 +1,5 @@
+"use strict";
+
 const REPORTABLE_PAGE = "http://example.com/";
 const REPORTABLE_PAGE2 = "https://example.com/";
 const NONREPORTABLE_PAGE = "about:mozilla";
@@ -9,19 +11,19 @@ add_task(async function test_button_state_disabled() {
 
   let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, REPORTABLE_PAGE);
   await openPageActions();
-  is(isButtonDisabled(), false, "Check that button is enabled for reportable schemes on tab load");
+  is(await isPanelItemEnabled(), true, "Check that panel item is enabled for reportable schemes on tab load");
 
   let tab2 = await BrowserTestUtils.openNewForegroundTab(gBrowser, NONREPORTABLE_PAGE);
   await openPageActions();
-  is(isButtonDisabled(), true, "Check that button is disabled for non-reportable schemes on tab load");
+  is(await isPanelItemDisabled(), true, "Check that panel item is disabled for non-reportable schemes on tab load");
 
   let tab3 = await BrowserTestUtils.openNewForegroundTab(gBrowser, REPORTABLE_PAGE2);
   await openPageActions();
-  is(isButtonDisabled(), false, "Check that button is enabled for reportable schemes on tab load");
+  is(await isPanelItemEnabled(), true, "Check that panel item is enabled for reportable schemes on tab load");
 
-  BrowserTestUtils.removeTab(tab1);
-  BrowserTestUtils.removeTab(tab2);
-  BrowserTestUtils.removeTab(tab3);
+  await BrowserTestUtils.removeTab(tab1);
+  await BrowserTestUtils.removeTab(tab2);
+  await BrowserTestUtils.removeTab(tab3);
 });
 
 
@@ -31,16 +33,19 @@ add_task(async function test_button_state_in_urlbar() {
 
   pinToURLBar();
   let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, REPORTABLE_PAGE);
-  is(isURLButtonEnabled(), true, "Check that button (in urlbar) is enabled for reportable schemes on tab load");
+  await openPageActions();
+  is(await isURLButtonPresent(), true, "Check that urlbar icon is enabled for reportable schemes on tab load");
 
   let tab2 = await BrowserTestUtils.openNewForegroundTab(gBrowser, NONREPORTABLE_PAGE);
-  is(isURLButtonEnabled(), false, "Check that button (in urlbar) is hidden for non-reportable schemes on tab load");
+  await openPageActions();
+  is(await isURLButtonPresent(), false, "Check that urlbar icon is hidden for non-reportable schemes on tab load");
 
   let tab3 = await BrowserTestUtils.openNewForegroundTab(gBrowser, REPORTABLE_PAGE2);
-  is(isURLButtonEnabled(), true, "Check that button (in urlbar) is enabled for reportable schemes on tab load");
+  await openPageActions();
+  is(await isURLButtonPresent(), true, "Check that urlbar icon is enabled for reportable schemes on tab load");
 
   unpinFromURLBar();
-  BrowserTestUtils.removeTab(tab1);
-  BrowserTestUtils.removeTab(tab2);
-  BrowserTestUtils.removeTab(tab3);
+  await BrowserTestUtils.removeTab(tab1);
+  await BrowserTestUtils.removeTab(tab2);
+  await BrowserTestUtils.removeTab(tab3);
 });
