@@ -4444,7 +4444,8 @@ window._gBrowser = {
         return;
       }
 
-      var tab = this._getTabForContentWindow(event.target);
+      let browser = event.target.docShell.chromeEventHandler;
+      let tab = this.getTabForBrowser(browser);
       if (tab) {
         
         this.removeTab(tab, { skipPermitUnload: true });
@@ -4464,7 +4465,7 @@ window._gBrowser = {
       
       
       let tabForEvent = targetIsWindow ?
-        this._getTabForContentWindow(event.target.top) :
+        this.getTabForBrowser(event.target.docShell.chromeEventHandler) :
         this.getTabForBrowser(event.originalTarget);
 
       
@@ -4527,7 +4528,8 @@ window._gBrowser = {
       if (contentWin != contentWin.top)
         return;
 
-      var tab = this._getTabForContentWindow(contentWin);
+      let browser = contentWin.docShell.chromeEventHandler;
+      var tab = this.getTabForBrowser(browser);
       if (!tab || tab.hasAttribute("pending"))
         return;
 
