@@ -20,16 +20,6 @@ types.addDictType("accessibleWithChildren", {
   children: "array:accessible"
 });
 
-
-
-
-types.addDictType("accessibleRelation", {
-  
-  type: "string",
-  
-  targets: "array:accessible"
-});
-
 const accessibleSpec = generateActorSpec({
   typeName: "accessible",
 
@@ -84,12 +74,6 @@ const accessibleSpec = generateActorSpec({
       request: {},
       response: {
         children: RetVal("array:accessible")
-      }
-    },
-    getRelations: {
-      request: {},
-      response: {
-        relations: RetVal("array:accessibleRelation")
       }
     }
   }

@@ -14,8 +14,8 @@ const {
 
 
 
-exports.reset = (accessibility, supports) =>
-  dispatch => dispatch({ accessibility, supports, type: RESET });
+exports.reset = accessibility =>
+  dispatch => dispatch({ accessibility, type: RESET });
 
 
 
