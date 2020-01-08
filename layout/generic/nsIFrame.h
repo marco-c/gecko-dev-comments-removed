@@ -868,17 +868,11 @@ public:
 
 
 
+
+
+
+
   inline nsContainerFrame* GetInFlowParent() const;
-
-  
-
-
-
-
-
-
-
-  inline nsContainerFrame* GetInFlowParentIgnoringAnonBoxes() const;
 
   
 
