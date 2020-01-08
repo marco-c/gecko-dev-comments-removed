@@ -139,6 +139,8 @@ RemoteWorkerManager::LaunchInternal(RemoteWorkerController* aController,
     return;
   }
 
+  workerActor->Initialize();
+
   
   aController->SetWorkerActor(workerActor);
   workerActor->SetController(aController);

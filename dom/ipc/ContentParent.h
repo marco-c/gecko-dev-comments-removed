@@ -363,6 +363,15 @@ public:
                         const ContentParentId& aCpId,
                         bool aMarkedDestroying);
 
+  
+  void
+  RegisterRemoteWorkerActor();
+
+  
+  
+  void
+  UnregisterRemoveWorkerActor();
+
   void ReportChildAlreadyBlocked();
 
   bool RequestRunToCompletion();
@@ -1300,6 +1309,13 @@ private:
   
   
   nsCOMPtr<nsITimer> mForceKillTimer;
+
+  
+  
+  
+  
+  Atomic<uint32_t> mRemoteWorkerActors;
+
   
   
   
