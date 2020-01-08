@@ -170,25 +170,42 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin):
         
         
 
+        base_url = "http://commondatastorage.googleapis.com/chromium-browser-snapshots"
+
+        
+        
+
         if 'mac' in self.platform_name():
-            chrome_archive_file = "googlechrome.dmg"
-            chrome_url = "https://dl.google.com/chrome/mac/stable/GGRO/%s" % chrome_archive_file
-            self.chrome_path = os.path.join(self.chrome_dest, 'Google Chrome.app',
-                                            'Contents', 'MacOS', 'Google Chrome')
+            
+            
+            chromium_rev = "575625"
+            chrome_archive_file = "chrome-mac.zip"
+            chrome_url = "%s/Mac/%s/%s" % (base_url, chromium_rev, chrome_archive_file)
+            self.chrome_path = os.path.join(self.chrome_dest, 'chrome-mac', 'Chromium.app',
+                                            'Contents', 'MacOS', 'Chromium')
 
         elif 'linux' in self.platform_name():
-            chrome_archive_file = "google-chrome-stable_current_amd64.deb"
-            chrome_url = "https://dl.google.com/linux/direct/%s" % chrome_archive_file
-            self.chrome_path = os.path.join(self.chrome_dest, 'opt', 'google',
-                                            'chrome', 'google-chrome')
+            
+            
+            chromium_rev = "575640"
+            chrome_archive_file = "chrome-linux.zip"
+            chrome_url = "%s/Linux_x64/%s/%s" % (base_url, chromium_rev, chrome_archive_file)
+            self.chrome_path = os.path.join(self.chrome_dest, 'chrome-linux', 'chrome')
 
         else:
             
+            
+            
+            chromium_rev = "575637"
+            chrome_archive_file = "chrome-win32.zip"  
+
+            
             if '64' in self.platform_name():
-                chrome_archive_file = "standalonesetup64.exe"
+                chrome_url = "%s/Win_x64/%s/%s" % (base_url, chromium_rev, chrome_archive_file)
             else:
-                chrome_archive_file = "standalonesetup.exe"
-            chrome_url = "https://dl.google.com/chrome/install/%s" % chrome_archive_file
+                chrome_url = "%s/Win_x32/%s/%s" % (base_url, chromium_rev, chrome_archive_file)
+
+            self.chrome_path = os.path.join(self.chrome_dest, 'chrome-win32', 'Chrome.exe')
 
         chrome_archive = os.path.join(self.chrome_dest, chrome_archive_file)
 
@@ -205,28 +222,7 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin):
             self.download_file(chrome_url, parent_dir=self.chrome_dest)
 
         commands = []
-
-        if 'mac' in self.platform_name():
-            
-            commands.append(["open", chrome_archive_file])
-
-            
-            commands.append(["cp", "-r", "/Volumes/Google Chrome/Google Chrome.app", "."])
-
-        elif 'linux' in self.platform_name():
-            
-            
-            commands.append(["ar", "x", chrome_archive_file])
-
-            
-            
-            commands.append(['tar', '-xJf',
-                            os.path.join(self.chrome_dest, 'data.tar.xz'),
-                            '-C', self.chrome_dest])
-
-        else:
-            
-            pass
+        commands.append(['unzip', '-q', '-o', chrome_archive_file, '-d', self.chrome_dest])
 
         
         for next_command in commands:
