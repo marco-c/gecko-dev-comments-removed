@@ -20,7 +20,7 @@ use gpu_types::{TransformPalette, TransformPaletteId, UvRectKind};
 use internal_types::FastHashSet;
 use plane_split::{Clipper, Polygon, Splitter};
 use prim_store::{PictureIndex, PrimitiveInstance, SpaceMapper, VisibleFace, PrimitiveInstanceKind};
-use prim_store::{get_raster_rects, CoordinateSpaceMapping};
+use prim_store::{get_raster_rects, CoordinateSpaceMapping, PointKey};
 use prim_store::{OpacityBindingStorage, PrimitiveTemplateKind, ImageInstanceStorage, OpacityBindingIndex, SizeKey};
 use render_backend::FrameResources;
 use render_task::{ClearMode, RenderTask, RenderTaskCacheEntryHandle, TileBlit};
@@ -78,7 +78,8 @@ pub type TileRect = TypedRect<i32, TileCoordinate>;
 
 
 
-pub const TILE_SIZE_DP: i32 = 512;
+pub const TILE_SIZE_WIDTH: i32 = 1024;
+pub const TILE_SIZE_HEIGHT: i32 = 256;
 
 
 #[derive(Debug)]
@@ -248,12 +249,26 @@ impl Tile {
 pub struct TileTransformIndex(u32);
 
 
+#[derive(Debug, Eq, PartialEq, Hash)]
+pub struct PrimitiveDescriptor {
+    
+    prim_uid: ItemUid,
+    
+    origin: PointKey,
+    
+    first_clip: u16,
+    
+    clip_count: u16,
+}
+
+
 
 #[derive(Debug, Eq, PartialEq, Hash)]
 pub struct TileDescriptor {
     
     
-    pub prim_uids: Vec<ItemUid>,
+    
+    pub prims: Vec<PrimitiveDescriptor>,
 
     
     
@@ -288,7 +303,7 @@ impl TileDescriptor {
         raster_transform: TransformKey,
     ) -> Self {
         TileDescriptor {
-            prim_uids: Vec::new(),
+            prims: Vec::new(),
             clip_uids: Vec::new(),
             transform_ids: Vec::new(),
             opacity_bindings: Vec::new(),
@@ -302,7 +317,7 @@ impl TileDescriptor {
     
     
     fn clear(&mut self) {
-        self.prim_uids.clear();
+        self.prims.clear();
         self.clip_uids.clear();
         self.transform_ids.clear();
         self.transforms.clear();
@@ -416,8 +431,8 @@ impl TileCache {
         let world_tile_rect = WorldRect::from_floats(
             0.0,
             0.0,
-            TILE_SIZE_DP as f32 / frame_context.device_pixel_scale.0,
-            TILE_SIZE_DP as f32 / frame_context.device_pixel_scale.0,
+            TILE_SIZE_WIDTH as f32 / frame_context.device_pixel_scale.0,
+            TILE_SIZE_HEIGHT as f32 / frame_context.device_pixel_scale.0,
         );
         let local_tile_rect = world_mapper
             .unmap(&world_tile_rect)
@@ -556,15 +571,32 @@ impl TileCache {
 
         
         let pic_rect = TypedRect::from_untyped(&pic_rect.to_untyped());
-        let local_pic_rect = pic_rect.translate(&-self.local_origin.to_vector());
-
-        let x0 = (local_pic_rect.origin.x / self.local_tile_size.width).floor() as i32;
-        let y0 = (local_pic_rect.origin.y / self.local_tile_size.height).floor() as i32;
-        let x1 = ((local_pic_rect.origin.x + local_pic_rect.size.width) / self.local_tile_size.width).ceil() as i32;
-        let y1 = ((local_pic_rect.origin.y + local_pic_rect.size.height) / self.local_tile_size.height).ceil() as i32;
+        let (p0, p1) = self.get_tile_coords_for_rect(&pic_rect);
 
         
-        self.reconfigure_tiles_if_required(x0, y0, x1, y1);
+        self.reconfigure_tiles_if_required(p0.x, p0.y, p1.x, p1.y);
+    }
+
+    
+    fn get_tile_coords_for_rect(
+        &self,
+        rect: &LayoutRect,
+    ) -> (TileOffset, TileOffset) {
+        
+        let origin = rect.origin - self.local_origin;
+
+        
+        let p0 = TileOffset::new(
+            (origin.x / self.local_tile_size.width).floor() as i32,
+            (origin.y / self.local_tile_size.height).floor() as i32,
+        );
+
+        let p1 = TileOffset::new(
+            ((origin.x + rect.size.width) / self.local_tile_size.width).ceil() as i32,
+            ((origin.y + rect.size.height) / self.local_tile_size.height).ceil() as i32,
+        );
+
+        (p0, p1)
     }
 
     
@@ -693,13 +725,7 @@ impl TileCache {
         }
 
         
-        let origin = rect.origin - self.local_origin;
-
-        
-        let x0 = (origin.x / self.local_tile_size.width).floor() as i32;
-        let y0 = (origin.y / self.local_tile_size.height).floor() as i32;
-        let x1 = ((origin.x + rect.size.width) / self.local_tile_size.width).ceil() as i32;
-        let y1 = ((origin.y + rect.size.height) / self.local_tile_size.height).ceil() as i32;
+        let (p0, p1) = self.get_tile_coords_for_rect(&rect);
 
         
         let mut opacity_bindings: SmallVec<[PropertyBindingId; 4]> = SmallVec::new();
@@ -795,8 +821,8 @@ impl TileCache {
 
         
         
-        for y in y0 - self.tile_rect.origin.y .. y1 - self.tile_rect.origin.y {
-            for x in x0 - self.tile_rect.origin.x .. x1 - self.tile_rect.origin.x {
+        for y in p0.y - self.tile_rect.origin.y .. p1.y - self.tile_rect.origin.y {
+            for x in p0.x - self.tile_rect.origin.x .. p1.x - self.tile_rect.origin.x {
                 let index = (y * self.tile_rect.size.width + x) as usize;
                 let tile = &mut self.tiles[index];
 
@@ -835,7 +861,12 @@ impl TileCache {
                 }
 
                 
-                tile.descriptor.prim_uids.push(prim_instance.uid());
+                tile.descriptor.prims.push(PrimitiveDescriptor {
+                    prim_uid: prim_instance.uid(),
+                    origin: prim_instance.prim_origin.into(),
+                    first_clip: tile.descriptor.clip_uids.len() as u16,
+                    clip_count: clip_chain_uids.len() as u16,
+                });
                 tile.descriptor.clip_uids.extend_from_slice(&clip_chain_uids);
             }
         }
@@ -2184,8 +2215,8 @@ impl PicturePrimitive {
                         
                         
                         let descriptor = ImageDescriptor::new(
-                            TILE_SIZE_DP,
-                            TILE_SIZE_DP,
+                            TILE_SIZE_WIDTH,
+                            TILE_SIZE_HEIGHT,
                             ImageFormat::BGRA8,
                             true,
                             false,
@@ -2235,8 +2266,8 @@ impl PicturePrimitive {
                                     
                                     
                                     let offset = DeviceIntPoint::new(
-                                        (x - dirty_region.tile_offset.x) * TILE_SIZE_DP,
-                                        (y - dirty_region.tile_offset.y) * TILE_SIZE_DP,
+                                        (x - dirty_region.tile_offset.x) * TILE_SIZE_WIDTH,
+                                        (y - dirty_region.tile_offset.y) * TILE_SIZE_HEIGHT,
                                     );
 
                                     blits.push(TileBlit {
