@@ -1654,6 +1654,51 @@ AttemptToRenameBothPKCS11ModuleDBVersions(const nsACString& profilePath)
   }
   return AttemptToRenamePKCS11ModuleDB(profilePath, sqlModuleDBFilename);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void
+MaybeCleanUpOldNSSFiles(const nsACString& profilePath)
+{
+  UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
+  if (!slot) {
+    return;
+  }
+  
+  
+  
+  bool hasPassword = PK11_NeedLogin(slot.get()) &&
+                     !PK11_NeedUserInit(slot.get());
+  if (!hasPassword) {
+    return;
+  }
+  nsCOMPtr<nsIFile> dbFile = do_CreateInstance("@mozilla.org/file/local;1");
+  if (!dbFile) {
+    return;
+  }
+  nsresult rv = dbFile->InitWithNativePath(profilePath);
+  if (NS_FAILED(rv)) {
+    return;
+  }
+  NS_NAMED_LITERAL_CSTRING(keyDBFilename, "key3.db");
+  rv = dbFile->AppendNative(keyDBFilename);
+  if (NS_FAILED(rv)) {
+    return;
+  }
+  
+  
+  Unused << dbFile->Remove(false);
+}
 #endif 
 
 
@@ -1685,6 +1730,9 @@ InitializeNSSWithFallbacks(const nsACString& profilePath, bool nocertdb,
   SECStatus srv = ::mozilla::psm::InitializeNSS(profilePath, false, !safeMode);
   if (srv == SECSuccess) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("initialized NSS in r/w mode"));
+#ifndef ANDROID
+    MaybeCleanUpOldNSSFiles(profilePath);
+#endif 
     return NS_OK;
   }
 #ifndef ANDROID
