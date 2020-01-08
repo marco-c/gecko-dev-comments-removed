@@ -27,6 +27,11 @@ class StructuredCloneData;
 
 
 
+#ifdef IsLoggingEnabled
+
+#undef IsLoggingEnabled
+#endif
+
 class MessageManagerFuzzer {
  public:
   static void TryMutate(JSContext* aCx, const nsAString& aMessageName,

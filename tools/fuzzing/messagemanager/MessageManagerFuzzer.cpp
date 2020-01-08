@@ -27,6 +27,11 @@
 #include "nsLocalFile.h"
 #include "nsTArray.h"
 
+#ifdef IsLoggingEnabled
+
+#undef IsLoggingEnabled
+#endif
+
 #define MESSAGEMANAGER_FUZZER_DEFAULT_MUTATION_PROBABILITY 2
 #define MSGMGR_FUZZER_LOG(fmt, args...)                        \
   if (MessageManagerFuzzer::IsLoggingEnabled()) {              \
