@@ -6430,13 +6430,6 @@ nsGlobalWindowOuter::GetPrivateRoot()
   return top;
 }
 
-Location*
-nsGlobalWindowOuter::GetLocation()
-{
-  
-  FORWARD_TO_INNER(GetLocation, (), nullptr);
-}
-
 void
 nsGlobalWindowOuter::ActivateOrDeactivate(bool aActivate)
 {
