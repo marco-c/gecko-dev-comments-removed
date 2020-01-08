@@ -5,16 +5,9 @@
 
 
 
-use std::cell::UnsafeCell;
-use std::ops::{Deref, DerefMut};
-use std::time::{Duration, Instant};
-use std::fmt;
-use std::mem;
-use std::marker::PhantomData;
+use lock_api;
 use raw_mutex::RawMutex;
 
-#[cfg(feature = "owning_ref")]
-use owning_ref::StableAddress;
 
 
 
@@ -92,277 +85,29 @@ use owning_ref::StableAddress;
 
 
 
+pub type Mutex<T> = lock_api::Mutex<RawMutex, T>;
 
-pub struct Mutex<T: ?Sized> {
-    raw: RawMutex,
-    data: UnsafeCell<T>,
-}
 
-unsafe impl<T: ?Sized + Send> Send for Mutex<T> {}
-unsafe impl<T: ?Sized + Send> Sync for Mutex<T> {}
 
 
 
 
+pub type MutexGuard<'a, T> = lock_api::MutexGuard<'a, RawMutex, T>;
 
 
-#[must_use]
-pub struct MutexGuard<'a, T: ?Sized + 'a> {
-    raw: &'a RawMutex,
-    data: *mut T,
-    marker: PhantomData<&'a mut T>,
-}
 
-unsafe impl<'a, T: ?Sized + Sync + 'a> Sync for MutexGuard<'a, T> {}
-
-impl<T> Mutex<T> {
-    
-    #[cfg(feature = "nightly")]
-    #[inline]
-    pub const fn new(val: T) -> Mutex<T> {
-        Mutex {
-            data: UnsafeCell::new(val),
-            raw: RawMutex::new(),
-        }
-    }
-
-    
-    #[cfg(not(feature = "nightly"))]
-    #[inline]
-    pub fn new(val: T) -> Mutex<T> {
-        Mutex {
-            data: UnsafeCell::new(val),
-            raw: RawMutex::new(),
-        }
-    }
-
-    
-    #[inline]
-    pub fn into_inner(self) -> T {
-        unsafe { self.data.into_inner() }
-    }
-}
-
-impl<T: ?Sized> Mutex<T> {
-    #[inline]
-    fn guard(&self) -> MutexGuard<T> {
-        MutexGuard {
-            raw: &self.raw,
-            data: self.data.get(),
-            marker: PhantomData,
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn lock(&self) -> MutexGuard<T> {
-        self.raw.lock();
-        self.guard()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn try_lock(&self) -> Option<MutexGuard<T>> {
-        if self.raw.try_lock() {
-            Some(self.guard())
-        } else {
-            None
-        }
-    }
-
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn try_lock_for(&self, timeout: Duration) -> Option<MutexGuard<T>> {
-        if self.raw.try_lock_for(timeout) {
-            Some(self.guard())
-        } else {
-            None
-        }
-    }
-
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn try_lock_until(&self, timeout: Instant) -> Option<MutexGuard<T>> {
-        if self.raw.try_lock_until(timeout) {
-            Some(self.guard())
-        } else {
-            None
-        }
-    }
-
-    
-    
-    
-    
-    #[inline]
-    pub fn get_mut(&mut self) -> &mut T {
-        unsafe { &mut *self.data.get() }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub unsafe fn raw_unlock(&self) {
-        self.raw.unlock(false);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub unsafe fn raw_unlock_fair(&self) {
-        self.raw.unlock(true);
-    }
-}
-impl Mutex<()> {
-    
-    
-    
-    
-    #[inline]
-    pub fn raw_lock(&self) {
-        self.raw.lock();
-    }
-
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn raw_try_lock(&self) -> bool {
-        self.raw.try_lock()
-    }
-}
-
-impl<T: ?Sized + Default> Default for Mutex<T> {
-    #[inline]
-    fn default() -> Mutex<T> {
-        Mutex::new(Default::default())
-    }
-}
-
-impl<T: ?Sized + fmt::Debug> fmt::Debug for Mutex<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.try_lock() {
-            Some(guard) => write!(f, "Mutex {{ data: {:?} }}", &*guard),
-            None => write!(f, "Mutex {{ <locked> }}"),
-        }
-    }
-}
-
-impl<'a, T: ?Sized + 'a> MutexGuard<'a, T> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn unlock_fair(self) {
-        self.raw.unlock(true);
-        mem::forget(self);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn map<U: ?Sized, F>(orig: Self, f: F) -> MutexGuard<'a, U>
-    where
-        F: FnOnce(&mut T) -> &mut U,
-    {
-        let raw = orig.raw;
-        let data = f(unsafe { &mut *orig.data });
-        mem::forget(orig);
-        MutexGuard {
-            raw,
-            data,
-            marker: PhantomData,
-        }
-    }
-}
-
-impl<'a, T: ?Sized + 'a> Deref for MutexGuard<'a, T> {
-    type Target = T;
-    #[inline]
-    fn deref(&self) -> &T {
-        unsafe { &*self.data }
-    }
-}
-
-impl<'a, T: ?Sized + 'a> DerefMut for MutexGuard<'a, T> {
-    #[inline]
-    fn deref_mut(&mut self) -> &mut T {
-        unsafe { &mut *self.data }
-    }
-}
-
-impl<'a, T: ?Sized + 'a> Drop for MutexGuard<'a, T> {
-    #[inline]
-    fn drop(&mut self) {
-        self.raw.unlock(false);
-    }
-}
-
-#[cfg(feature = "owning_ref")]
-unsafe impl<'a, T: ?Sized> StableAddress for MutexGuard<'a, T> {}
-
-
-#[inline]
-pub(crate) fn guard_lock<'a, T: ?Sized>(guard: &MutexGuard<'a, T>) -> &'a RawMutex {
-    &guard.raw
-}
+
+
+
+
+
+pub type MappedMutexGuard<'a, T> = lock_api::MappedMutexGuard<'a, RawMutex, T>;
 
 #[cfg(test)]
 mod tests {
+    use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::mpsc::channel;
     use std::sync::Arc;
-    use std::sync::atomic::{AtomicUsize, Ordering};
     use std::thread;
     use {Condvar, Mutex};
 
@@ -531,5 +276,23 @@ mod tests {
 
         let mutex = Mutex::new(());
         sync(mutex.lock());
+    }
+
+    #[test]
+    fn test_mutex_debug() {
+        let mutex = Mutex::new(vec![0u8, 10]);
+
+        assert_eq!(format!("{:?}", mutex), "Mutex { data: [0, 10] }");
+        assert_eq!(
+            format!("{:#?}", mutex),
+            "Mutex {
+    data: [
+        0,
+        10
+    ]
+}"
+        );
+        let _lock = mutex.lock();
+        assert_eq!(format!("{:?}", mutex), "Mutex { <locked> }");
     }
 }

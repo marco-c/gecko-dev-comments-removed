@@ -5,281 +5,53 @@
 
 
 
-use std::cell::UnsafeCell;
-use std::ops::Deref;
-use std::time::{Duration, Instant};
-use std::fmt;
-use std::mem;
-use std::marker::PhantomData;
-use raw_remutex::RawReentrantMutex;
-
-#[cfg(feature = "owning_ref")]
-use owning_ref::StableAddress;
+use lock_api::{self, GetThreadId};
+use raw_mutex::RawMutex;
 
 
+pub struct RawThreadId;
 
+unsafe impl GetThreadId for RawThreadId {
+    const INIT: RawThreadId = RawThreadId;
 
-
-
-
-
-
-
-
-
-
-pub struct ReentrantMutex<T: ?Sized> {
-    raw: RawReentrantMutex,
-    data: UnsafeCell<T>,
-}
-
-unsafe impl<T: ?Sized + Send> Send for ReentrantMutex<T> {}
-unsafe impl<T: ?Sized + Send> Sync for ReentrantMutex<T> {}
-
-
-
-
-
-
-#[must_use]
-pub struct ReentrantMutexGuard<'a, T: ?Sized + 'a> {
-    raw: &'a RawReentrantMutex,
-    data: *const T,
-    marker: PhantomData<&'a T>,
-}
-
-unsafe impl<'a, T: ?Sized + Sync + 'a> Sync for ReentrantMutexGuard<'a, T> {}
-
-impl<T> ReentrantMutex<T> {
-    
-    #[cfg(feature = "nightly")]
-    #[inline]
-    pub const fn new(val: T) -> ReentrantMutex<T> {
-        ReentrantMutex {
-            data: UnsafeCell::new(val),
-            raw: RawReentrantMutex::new(),
-        }
-    }
-
-    
-    #[cfg(not(feature = "nightly"))]
-    #[inline]
-    pub fn new(val: T) -> ReentrantMutex<T> {
-        ReentrantMutex {
-            data: UnsafeCell::new(val),
-            raw: RawReentrantMutex::new(),
-        }
-    }
-
-    
-    #[inline]
-    pub fn into_inner(self) -> T {
-        unsafe { self.data.into_inner() }
+    fn nonzero_thread_id(&self) -> usize {
+        
+        
+        thread_local!(static KEY: u8 = unsafe { ::std::mem::uninitialized() });
+        KEY.with(|x| x as *const _ as usize)
     }
 }
 
-impl<T: ?Sized> ReentrantMutex<T> {
-    #[inline]
-    fn guard(&self) -> ReentrantMutexGuard<T> {
-        ReentrantMutexGuard {
-            raw: &self.raw,
-            data: self.data.get(),
-            marker: PhantomData,
-        }
-    }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn lock(&self) -> ReentrantMutexGuard<T> {
-        self.raw.lock();
-        self.guard()
-    }
 
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn try_lock(&self) -> Option<ReentrantMutexGuard<T>> {
-        if self.raw.try_lock() {
-            Some(self.guard())
-        } else {
-            None
-        }
-    }
 
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn try_lock_for(&self, timeout: Duration) -> Option<ReentrantMutexGuard<T>> {
-        if self.raw.try_lock_for(timeout) {
-            Some(self.guard())
-        } else {
-            None
-        }
-    }
 
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn try_lock_until(&self, timeout: Instant) -> Option<ReentrantMutexGuard<T>> {
-        if self.raw.try_lock_until(timeout) {
-            Some(self.guard())
-        } else {
-            None
-        }
-    }
 
-    
-    
-    
-    
-    #[inline]
-    pub fn get_mut(&mut self) -> &mut T {
-        unsafe { &mut *self.data.get() }
-    }
 
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub unsafe fn raw_unlock(&self) {
-        self.raw.unlock(false);
-    }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub unsafe fn raw_unlock_fair(&self) {
-        self.raw.unlock(true);
-    }
-}
-impl ReentrantMutex<()> {
-    
-    
-    
-    
-    #[inline]
-    pub fn raw_lock(&self) {
-        self.raw.lock();
-    }
 
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn raw_try_lock(&self) -> bool {
-        self.raw.try_lock()
-    }
-}
 
-impl<T: ?Sized + Default> Default for ReentrantMutex<T> {
-    #[inline]
-    fn default() -> ReentrantMutex<T> {
-        ReentrantMutex::new(Default::default())
-    }
-}
 
-impl<T: ?Sized + fmt::Debug> fmt::Debug for ReentrantMutex<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.try_lock() {
-            Some(guard) => write!(f, "ReentrantMutex {{ data: {:?} }}", &*guard),
-            None => write!(f, "ReentrantMutex {{ <locked> }}"),
-        }
-    }
-}
 
-impl<'a, T: ?Sized + 'a> ReentrantMutexGuard<'a, T> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn unlock_fair(self) {
-        self.raw.unlock(true);
-        mem::forget(self);
-    }
+pub type ReentrantMutex<T> = lock_api::ReentrantMutex<RawMutex, RawThreadId, T>;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn map<U: ?Sized, F>(orig: Self, f: F) -> ReentrantMutexGuard<'a, U>
-    where
-        F: FnOnce(&T) -> &U,
-    {
-        let raw = orig.raw;
-        let data = f(unsafe { &*orig.data });
-        mem::forget(orig);
-        ReentrantMutexGuard {
-            raw,
-            data,
-            marker: PhantomData,
-        }
-    }
-}
 
-impl<'a, T: ?Sized + 'a> Deref for ReentrantMutexGuard<'a, T> {
-    type Target = T;
-    #[inline]
-    fn deref(&self) -> &T {
-        unsafe { &*self.data }
-    }
-}
 
-impl<'a, T: ?Sized + 'a> Drop for ReentrantMutexGuard<'a, T> {
-    #[inline]
-    fn drop(&mut self) {
-        self.raw.unlock(false);
-    }
-}
 
-#[cfg(feature = "owning_ref")]
-unsafe impl<'a, T: ?Sized> StableAddress for ReentrantMutexGuard<'a, T> {}
+
+
+pub type ReentrantMutexGuard<'a, T> =
+    lock_api::ReentrantMutexGuard<'a, RawMutex, RawThreadId, T>;
+
+
+
+
+
+
+
+
+pub type MappedReentrantMutexGuard<'a, T> =
+    lock_api::MappedReentrantMutexGuard<'a, RawMutex, RawThreadId, T>;
 
 #[cfg(test)]
 mod tests {
@@ -334,5 +106,21 @@ mod tests {
         }).join()
             .unwrap();
         let _lock3 = m.try_lock();
+    }
+
+    #[test]
+    fn test_reentrant_mutex_debug() {
+        let mutex = ReentrantMutex::new(vec![0u8, 10]);
+
+        assert_eq!(format!("{:?}", mutex), "ReentrantMutex { data: [0, 10] }");
+        assert_eq!(
+            format!("{:#?}", mutex),
+            "ReentrantMutex {
+    data: [
+        0,
+        10
+    ]
+}"
+        );
     }
 }

@@ -5,16 +5,9 @@
 
 
 
-use std::cell::UnsafeCell;
-use std::ops::{Deref, DerefMut};
-use std::time::{Duration, Instant};
-use std::fmt;
-use std::mem;
-use std::marker::PhantomData;
+use lock_api;
 use raw_rwlock::RawRwLock;
 
-#[cfg(feature = "owning_ref")]
-use owning_ref::StableAddress;
 
 
 
@@ -93,947 +86,49 @@ use owning_ref::StableAddress;
 
 
 
+pub type RwLock<T> = lock_api::RwLock<RawRwLock, T>;
 
-pub struct RwLock<T: ?Sized> {
-    raw: RawRwLock,
-    data: UnsafeCell<T>,
-}
 
-unsafe impl<T: ?Sized + Send> Send for RwLock<T> {}
-unsafe impl<T: ?Sized + Send + Sync> Sync for RwLock<T> {}
 
+pub type RwLockReadGuard<'a, T> = lock_api::RwLockReadGuard<'a, RawRwLock, T>;
 
 
-#[must_use]
-pub struct RwLockReadGuard<'a, T: ?Sized + 'a> {
-    raw: &'a RawRwLock,
-    data: *const T,
-    marker: PhantomData<&'a T>,
-}
 
-unsafe impl<'a, T: ?Sized + Sync + 'a> Sync for RwLockReadGuard<'a, T> {}
+pub type RwLockWriteGuard<'a, T> = lock_api::RwLockWriteGuard<'a, RawRwLock, T>;
 
 
 
-#[must_use]
-pub struct RwLockWriteGuard<'a, T: ?Sized + 'a> {
-    raw: &'a RawRwLock,
-    data: *mut T,
-    marker: PhantomData<&'a mut T>,
-}
-
-unsafe impl<'a, T: ?Sized + Sync + 'a> Sync for RwLockWriteGuard<'a, T> {}
-
-
-
-#[must_use]
-pub struct RwLockUpgradableReadGuard<'a, T: ?Sized + 'a> {
-    raw: &'a RawRwLock,
-    data: *mut T,
-    marker: PhantomData<&'a T>,
-}
-
-unsafe impl<'a, T: ?Sized + Sync + 'a> Sync for RwLockUpgradableReadGuard<'a, T> {}
-
-impl<T> RwLock<T> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "nightly")]
-    #[inline]
-    pub const fn new(val: T) -> RwLock<T> {
-        RwLock {
-            data: UnsafeCell::new(val),
-            raw: RawRwLock::new(),
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(not(feature = "nightly"))]
-    #[inline]
-    pub fn new(val: T) -> RwLock<T> {
-        RwLock {
-            data: UnsafeCell::new(val),
-            raw: RawRwLock::new(),
-        }
-    }
-
-    
-    #[inline]
-    pub fn into_inner(self) -> T {
-        unsafe { self.data.into_inner() }
-    }
-}
-
-impl<T: ?Sized> RwLock<T> {
-    #[inline]
-    fn read_guard(&self) -> RwLockReadGuard<T> {
-        RwLockReadGuard {
-            raw: &self.raw,
-            data: self.data.get(),
-            marker: PhantomData,
-        }
-    }
-
-    #[inline]
-    fn write_guard(&self) -> RwLockWriteGuard<T> {
-        RwLockWriteGuard {
-            raw: &self.raw,
-            data: self.data.get(),
-            marker: PhantomData,
-        }
-    }
-
-    #[inline]
-    fn upgradable_guard(&self) -> RwLockUpgradableReadGuard<T> {
-        RwLockUpgradableReadGuard {
-            raw: &self.raw,
-            data: self.data.get(),
-            marker: PhantomData,
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn read(&self) -> RwLockReadGuard<T> {
-        self.raw.lock_shared(false);
-        self.read_guard()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn try_read(&self) -> Option<RwLockReadGuard<T>> {
-        if self.raw.try_lock_shared(false) {
-            Some(self.read_guard())
-        } else {
-            None
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn try_read_for(&self, timeout: Duration) -> Option<RwLockReadGuard<T>> {
-        if self.raw.try_lock_shared_for(false, timeout) {
-            Some(self.read_guard())
-        } else {
-            None
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn try_read_until(&self, timeout: Instant) -> Option<RwLockReadGuard<T>> {
-        if self.raw.try_lock_shared_until(false, timeout) {
-            Some(self.read_guard())
-        } else {
-            None
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn read_recursive(&self) -> RwLockReadGuard<T> {
-        self.raw.lock_shared(true);
-        self.read_guard()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn try_read_recursive(&self) -> Option<RwLockReadGuard<T>> {
-        if self.raw.try_lock_shared(true) {
-            Some(self.read_guard())
-        } else {
-            None
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn try_read_recursive_for(&self, timeout: Duration) -> Option<RwLockReadGuard<T>> {
-        if self.raw.try_lock_shared_for(true, timeout) {
-            Some(self.read_guard())
-        } else {
-            None
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn try_read_recursive_until(&self, timeout: Instant) -> Option<RwLockReadGuard<T>> {
-        if self.raw.try_lock_shared_until(true, timeout) {
-            Some(self.read_guard())
-        } else {
-            None
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn write(&self) -> RwLockWriteGuard<T> {
-        self.raw.lock_exclusive();
-        self.write_guard()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn try_write(&self) -> Option<RwLockWriteGuard<T>> {
-        if self.raw.try_lock_exclusive() {
-            Some(self.write_guard())
-        } else {
-            None
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn try_write_for(&self, timeout: Duration) -> Option<RwLockWriteGuard<T>> {
-        if self.raw.try_lock_exclusive_for(timeout) {
-            Some(self.write_guard())
-        } else {
-            None
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn try_write_until(&self, timeout: Instant) -> Option<RwLockWriteGuard<T>> {
-        if self.raw.try_lock_exclusive_until(timeout) {
-            Some(self.write_guard())
-        } else {
-            None
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn upgradable_read(&self) -> RwLockUpgradableReadGuard<T> {
-        self.raw.lock_upgradable();
-        self.upgradable_guard()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn try_upgradable_read(&self) -> Option<RwLockUpgradableReadGuard<T>> {
-        if self.raw.try_lock_upgradable() {
-            Some(self.upgradable_guard())
-        } else {
-            None
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn try_upgradable_read_for(
-        &self,
-        timeout: Duration,
-    ) -> Option<RwLockUpgradableReadGuard<T>> {
-        if self.raw.try_lock_upgradable_for(timeout) {
-            Some(self.upgradable_guard())
-        } else {
-            None
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn try_upgradable_read_until(
-        &self,
-        timeout: Instant,
-    ) -> Option<RwLockUpgradableReadGuard<T>> {
-        if self.raw.try_lock_upgradable_until(timeout) {
-            Some(self.upgradable_guard())
-        } else {
-            None
-        }
-    }
-
-    
-    
-    
-    
-    #[inline]
-    pub fn get_mut(&mut self) -> &mut T {
-        unsafe { &mut *self.data.get() }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub unsafe fn raw_unlock_read(&self) {
-        self.raw.unlock_shared(false);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub unsafe fn raw_unlock_write(&self) {
-        self.raw.unlock_exclusive(false);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub unsafe fn raw_unlock_upgradable_read(&self) {
-        self.raw.unlock_upgradable(false);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub unsafe fn raw_unlock_read_fair(&self) {
-        self.raw.unlock_shared(true);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub unsafe fn raw_unlock_write_fair(&self) {
-        self.raw.unlock_exclusive(true);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub unsafe fn raw_unlock_upgradable_read_fair(&self) {
-        self.raw.unlock_upgradable(true);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub unsafe fn raw_downgrade(&self) {
-        self.raw.exclusive_to_shared();
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub unsafe fn raw_downgrade_upgradable_read(&self) {
-        self.raw.upgradable_to_shared();
-    }
-}
-
-impl RwLock<()> {
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn raw_read(&self) {
-        self.raw.lock_shared(false);
-    }
-
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn raw_try_read(&self) -> bool {
-        self.raw.try_lock_shared(false)
-    }
-
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn raw_read_recursive(&self) {
-        self.raw.lock_shared(true);
-    }
-
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn raw_try_read_recursive(&self) -> bool {
-        self.raw.try_lock_shared(true)
-    }
-
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn raw_write(&self) {
-        self.raw.lock_exclusive();
-    }
-
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn raw_try_write(&self) -> bool {
-        self.raw.try_lock_exclusive()
-    }
-
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn raw_upgradable_read(&self) {
-        self.raw.lock_upgradable();
-    }
-
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn raw_try_upgradable_read(&self) -> bool {
-        self.raw.try_lock_upgradable()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub unsafe fn raw_upgrade(&self) {
-        self.raw.upgradable_to_exclusive();
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub unsafe fn raw_try_upgrade(&self) -> bool {
-        self.raw.try_upgradable_to_exclusive()
-    }
-}
-
-impl<T: ?Sized + Default> Default for RwLock<T> {
-    #[inline]
-    fn default() -> RwLock<T> {
-        RwLock::new(Default::default())
-    }
-}
-
-impl<T: ?Sized + fmt::Debug> fmt::Debug for RwLock<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.try_read() {
-            Some(guard) => write!(f, "RwLock {{ data: {:?} }}", &*guard),
-            None => write!(f, "RwLock {{ <locked> }}"),
-        }
-    }
-}
-
-impl<'a, T: ?Sized + 'a> RwLockReadGuard<'a, T> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn unlock_fair(self) {
-        self.raw.unlock_shared(true);
-        mem::forget(self);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn map<U: ?Sized, F>(orig: Self, f: F) -> RwLockReadGuard<'a, U>
-    where
-        F: FnOnce(&T) -> &U,
-    {
-        let raw = orig.raw;
-        let data = f(unsafe { &*orig.data });
-        mem::forget(orig);
-        RwLockReadGuard {
-            raw,
-            data,
-            marker: PhantomData,
-        }
-    }
-}
-
-impl<'a, T: ?Sized + 'a> Deref for RwLockReadGuard<'a, T> {
-    type Target = T;
-    #[inline]
-    fn deref(&self) -> &T {
-        unsafe { &*self.data }
-    }
-}
-
-impl<'a, T: ?Sized + 'a> Drop for RwLockReadGuard<'a, T> {
-    #[inline]
-    fn drop(&mut self) {
-        self.raw.unlock_shared(false);
-    }
-}
-
-#[cfg(feature = "owning_ref")]
-unsafe impl<'a, T: ?Sized> StableAddress for RwLockReadGuard<'a, T> {}
-
-impl<'a, T: ?Sized + 'a> RwLockWriteGuard<'a, T> {
-    
-    
-    
-    
-    
-    
-    pub fn downgrade(self) -> RwLockReadGuard<'a, T> {
-        self.raw.exclusive_to_shared();
-        let raw = self.raw;
-        
-        
-        let data = unsafe { &*self.data };
-        mem::forget(self);
-        RwLockReadGuard {
-            raw,
-            data,
-            marker: PhantomData,
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn map<U: ?Sized, F>(orig: Self, f: F) -> RwLockWriteGuard<'a, U>
-    where
-        F: FnOnce(&mut T) -> &mut U,
-    {
-        let raw = orig.raw;
-        let data = f(unsafe { &mut *orig.data });
-        mem::forget(orig);
-        RwLockWriteGuard {
-            raw,
-            data,
-            marker: PhantomData,
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn unlock_fair(self) {
-        self.raw.unlock_exclusive(true);
-        mem::forget(self);
-    }
-}
-
-impl<'a, T: ?Sized + 'a> Deref for RwLockWriteGuard<'a, T> {
-    type Target = T;
-    #[inline]
-    fn deref(&self) -> &T {
-        unsafe { &*self.data }
-    }
-}
-
-impl<'a, T: ?Sized + 'a> DerefMut for RwLockWriteGuard<'a, T> {
-    #[inline]
-    fn deref_mut(&mut self) -> &mut T {
-        unsafe { &mut *self.data }
-    }
-}
-
-impl<'a, T: ?Sized + 'a> Drop for RwLockWriteGuard<'a, T> {
-    #[inline]
-    fn drop(&mut self) {
-        self.raw.unlock_exclusive(false);
-    }
-}
-
-#[cfg(feature = "owning_ref")]
-unsafe impl<'a, T: ?Sized> StableAddress for RwLockWriteGuard<'a, T> {}
-
-impl<'a, T: ?Sized + 'a> RwLockUpgradableReadGuard<'a, T> {
-    
-    
-    
-    
-    
-    
-    
-    pub fn downgrade(self) -> RwLockReadGuard<'a, T> {
-        self.raw.upgradable_to_shared();
-        let raw = self.raw;
-        
-        
-        let data = unsafe { &*self.data };
-        mem::forget(self);
-        RwLockReadGuard {
-            raw,
-            data,
-            marker: PhantomData,
-        }
-    }
-
-    
-    
-    pub fn upgrade(self) -> RwLockWriteGuard<'a, T> {
-        self.raw.upgradable_to_exclusive();
-        let raw = self.raw;
-        
-        
-        let data = unsafe { &mut *self.data };
-        mem::forget(self);
-        RwLockWriteGuard {
-            raw,
-            data,
-            marker: PhantomData,
-        }
-    }
-
-    
-    
-    
-    pub fn try_upgrade(self) -> Result<RwLockWriteGuard<'a, T>, Self> {
-        if self.raw.try_upgradable_to_exclusive() {
-            let raw = self.raw;
-            
-            
-            let data = unsafe { &mut *self.data };
-            mem::forget(self);
-            Ok(RwLockWriteGuard {
-                raw,
-                data,
-                marker: PhantomData,
-            })
-        } else {
-            Err(self)
-        }
-    }
-
-    
-    
-    
-    
-    
-    pub fn try_upgrade_for(self, timeout: Duration) -> Result<RwLockWriteGuard<'a, T>, Self> {
-        if self.raw.try_upgradable_to_exclusive_for(timeout) {
-            let raw = self.raw;
-            
-            
-            let data = unsafe { &mut *self.data };
-            mem::forget(self);
-            Ok(RwLockWriteGuard {
-                raw,
-                data,
-                marker: PhantomData,
-            })
-        } else {
-            Err(self)
-        }
-    }
-
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn try_upgrade_until(self, timeout: Instant) -> Result<RwLockWriteGuard<'a, T>, Self> {
-        if self.raw.try_upgradable_to_exclusive_until(timeout) {
-            let raw = self.raw;
-            
-            
-            let data = unsafe { &mut *self.data };
-            mem::forget(self);
-            Ok(RwLockWriteGuard {
-                raw,
-                data,
-                marker: PhantomData,
-            })
-        } else {
-            Err(self)
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn unlock_fair(self) {
-        self.raw.unlock_upgradable(true);
-        mem::forget(self);
-    }
-}
-
-impl<'a, T: ?Sized + 'a> Deref for RwLockUpgradableReadGuard<'a, T> {
-    type Target = T;
-    #[inline]
-    fn deref(&self) -> &T {
-        unsafe { &*self.data }
-    }
-}
-
-impl<'a, T: ?Sized + 'a> Drop for RwLockUpgradableReadGuard<'a, T> {
-    #[inline]
-    fn drop(&mut self) {
-        self.raw.unlock_upgradable(false);
-    }
-}
-
-#[cfg(feature = "owning_ref")]
-unsafe impl<'a, T: ?Sized> StableAddress for RwLockUpgradableReadGuard<'a, T> {}
+
+
+
+
+
+pub type MappedRwLockReadGuard<'a, T> = lock_api::MappedRwLockReadGuard<'a, RawRwLock, T>;
+
+
+
+
+
+
+
+
+pub type MappedRwLockWriteGuard<'a, T> = lock_api::MappedRwLockWriteGuard<'a, RawRwLock, T>;
+
+
+
+pub type RwLockUpgradableReadGuard<'a, T> =
+    lock_api::RwLockUpgradableReadGuard<'a, RawRwLock, T>;
 
 #[cfg(test)]
 mod tests {
     extern crate rand;
     use self::rand::Rng;
-    use std::sync::mpsc::channel;
-    use std::thread;
-    use std::sync::Arc;
     use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::mpsc::channel;
+    use std::sync::Arc;
+    use std::thread;
     use std::time::Duration;
-    use RwLock;
+    use {RwLock, RwLockUpgradableReadGuard, RwLockWriteGuard};
 
     #[derive(Eq, PartialEq, Debug)]
     struct NonCopy(i32);
@@ -1063,7 +158,7 @@ mod tests {
             thread::spawn(move || {
                 let mut rng = rand::thread_rng();
                 for _ in 0..M {
-                    if rng.gen_weighted_bool(N) {
+                    if rng.gen_bool(1.0 / N as f64) {
                         drop(r.write());
                     } else {
                         drop(r.read());
@@ -1152,7 +247,7 @@ mod tests {
                 let tmp = *lock;
                 assert!(tmp >= 0);
                 thread::yield_now();
-                let mut lock = lock.upgrade();
+                let mut lock = RwLockUpgradableReadGuard::upgrade(lock);
                 assert_eq!(tmp, *lock);
                 *lock = -1;
                 thread::yield_now();
@@ -1416,7 +511,7 @@ mod tests {
                     let mut writer = x.write();
                     *writer += 1;
                     let cur_val = *writer;
-                    let reader = writer.downgrade();
+                    let reader = RwLockWriteGuard::downgrade(writer);
                     assert_eq!(cur_val, *reader);
                 }
             }));
@@ -1439,5 +534,31 @@ mod tests {
 
         
         let _lock2 = arc.read_recursive();
+    }
+
+    #[test]
+    fn test_rwlock_debug() {
+        let x = RwLock::new(vec![0u8, 10]);
+
+        assert_eq!(format!("{:?}", x), "RwLock { data: [0, 10] }");
+        assert_eq!(
+            format!("{:#?}", x),
+            "RwLock {
+    data: [
+        0,
+        10
+    ]
+}"
+        );
+        let _lock = x.write();
+        assert_eq!(format!("{:?}", x), "RwLock { <locked> }");
+    }
+
+    #[test]
+    fn test_clone() {
+        let rwlock = RwLock::new(Arc::new(1));
+        let a = rwlock.read_recursive();
+        let b = a.clone();
+        assert_eq!(Arc::strong_count(&b), 2);
     }
 }
