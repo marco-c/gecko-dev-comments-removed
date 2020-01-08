@@ -290,6 +290,7 @@ function waitForEvent(topic, status = null) {
 
 
 
+
 function getNotificationButton(win, notificationId, button) {
   let notification = win.document.getElementById(`appMenu-${notificationId}-notification`);
   is(notification.hidden, false, `${notificationId} notification is showing`);
@@ -306,8 +307,10 @@ function getNotificationButton(win, notificationId, button) {
 
 
 
-function checkWhatsNewLink(id, url) {
-  let whatsNewLink = document.getElementById(id);
+
+
+function checkWhatsNewLink(win, id, url) {
+  let whatsNewLink = win.document.getElementById(id);
   is(whatsNewLink.href,
      url || URL_HTTP_UPDATE_SJS + "?uiURL=DETAILS",
      "What's new link points to the test_details URL");
