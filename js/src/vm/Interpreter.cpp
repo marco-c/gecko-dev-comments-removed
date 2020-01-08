@@ -4621,8 +4621,8 @@ bool js::DefFunOperation(JSContext* cx, HandleScript script,
 
 
 
-  unsigned attrs = script->isActiveEval() ? JSPROP_ENUMERATE
-                                          : JSPROP_ENUMERATE | JSPROP_PERMANENT;
+  unsigned attrs = script->isForEval() ? JSPROP_ENUMERATE
+                                       : JSPROP_ENUMERATE | JSPROP_PERMANENT;
 
   
   if (!prop || pobj != parent) {

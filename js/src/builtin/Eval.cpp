@@ -105,7 +105,6 @@ class EvalScriptGuard {
     if (*p_) {
       script_ = (*p_)->script;
       p_->remove(cx_, cx_->caches().evalCache, lookup_);
-      script_->uncacheForEval();
     }
   }
 
@@ -113,7 +112,6 @@ class EvalScriptGuard {
     
     MOZ_ASSERT(!script_ && script);
     script_ = script;
-    script_->setActiveEval();
   }
 
   bool foundScript() { return !!script_; }

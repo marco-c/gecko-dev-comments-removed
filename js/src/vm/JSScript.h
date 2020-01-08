@@ -1691,6 +1691,9 @@ class JSScript : public js::gc::TenuredCell {
 
     
     ArgsHasVarBinding = 1 << 21,
+
+    
+    IsForEval = 1 << 22,
   };
   
   
@@ -1710,10 +1713,6 @@ class JSScript : public js::gc::TenuredCell {
     HasBeenCloned = 1 << 2,
 
     
-    IsActiveEval = 1 << 3,
-
-    
-    IsCachedEval = 1 << 4,
 
     
     HasScriptCounts = 1 << 5,
@@ -2038,28 +2037,13 @@ class JSScript : public js::gc::TenuredCell {
   void setHasRunOnce() { setFlag(MutableFlags::HasRunOnce); }
   void setHasBeenCloned() { setFlag(MutableFlags::HasBeenCloned); }
 
-  bool isActiveEval() const { return hasFlag(MutableFlags::IsActiveEval); }
-  bool isCachedEval() const { return hasFlag(MutableFlags::IsCachedEval); }
-
   void cacheForEval() {
-    MOZ_ASSERT(isActiveEval());
-    MOZ_ASSERT(!isCachedEval());
-    clearFlag(MutableFlags::IsActiveEval);
-    setFlag(MutableFlags::IsCachedEval);
+    MOZ_ASSERT(isForEval());
     
     
     
     clearFlag(MutableFlags::HasRunOnce);
   }
-
-  void uncacheForEval() {
-    MOZ_ASSERT(isCachedEval());
-    MOZ_ASSERT(!isActiveEval());
-    clearFlag(MutableFlags::IsCachedEval);
-    setFlag(MutableFlags::IsActiveEval);
-  }
-
-  void setActiveEval() { setFlag(MutableFlags::IsActiveEval); }
 
   bool isLikelyConstructorWrapper() const {
     return hasFlag(ImmutableFlags::IsLikelyConstructorWrapper);
@@ -2368,9 +2352,9 @@ class JSScript : public js::gc::TenuredCell {
  public:
   
   bool isForEval() const {
-    MOZ_ASSERT_IF(isCachedEval() || isActiveEval(),
-                  bodyScope()->is<js::EvalScope>());
-    return isCachedEval() || isActiveEval();
+    bool forEval = hasFlag(ImmutableFlags::IsForEval);
+    MOZ_ASSERT_IF(forEval, bodyScope()->is<js::EvalScope>());
+    return forEval;
   }
 
   

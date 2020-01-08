@@ -8543,8 +8543,6 @@ static bool EvaluateInEnv(JSContext* cx, Handle<Env*> env,
     if (!script) {
       return false;
     }
-
-    script->setActiveEval();
   } else {
     
     
