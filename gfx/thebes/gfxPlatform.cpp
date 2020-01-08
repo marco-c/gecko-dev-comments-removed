@@ -841,6 +841,14 @@ gfxPlatform::Init()
     
     gfxInfo = services::GetGfxInfo();
 
+    if (XRE_IsParentProcess()) {
+      
+      gfxVars::SetDXInterop2Blocked(IsDXInterop2Blocked());
+      gfxVars::SetDXNV12Blocked(IsDXNV12Blocked());
+      gfxVars::SetDXP010Blocked(IsDXP010Blocked());
+      gfxVars::SetDXP016Blocked(IsDXP016Blocked());
+    }
+
 #if defined(XP_WIN)
     gPlatform = new gfxWindowsPlatform;
 #elif defined(XP_MACOSX)
@@ -961,10 +969,6 @@ gfxPlatform::Init()
     InitOpenGLConfig();
 
     if (XRE_IsParentProcess()) {
-      gfxVars::SetDXInterop2Blocked(IsDXInterop2Blocked());
-      gfxVars::SetDXNV12Blocked(IsDXNV12Blocked());
-      gfxVars::SetDXP010Blocked(IsDXP010Blocked());
-      gfxVars::SetDXP016Blocked(IsDXP016Blocked());
       Preferences::Unlock(FONT_VARIATIONS_PREF);
       if (!gPlatform->HasVariationFontSupport()) {
         
