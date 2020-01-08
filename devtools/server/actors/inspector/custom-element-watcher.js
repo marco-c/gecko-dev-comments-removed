@@ -15,6 +15,8 @@ const EventEmitter = require("devtools/shared/event-emitter");
 
 
 
+
+
 class CustomElementWatcher extends EventEmitter {
   constructor(chromeEventHandler) {
     super();
@@ -59,11 +61,8 @@ class CustomElementWatcher extends EventEmitter {
     const registryMap = this._getMapForRegistry(registry);
 
     const name = nodeActor.rawNode.localName;
-    if (!registryMap.has(name)) {
-      
-      registryMap.set(name, new Set());
-    }
-    registryMap.get(name).add(nodeActor);
+    const actorsSet = this._getActorsForName(name, registryMap);
+    actorsSet.add(nodeActor);
   }
 
   
@@ -78,7 +77,7 @@ class CustomElementWatcher extends EventEmitter {
     const registry = win.customElements;
     const registryMap = this._getMapForRegistry(registry);
     const name = nodeActor.rawNode.localName;
-    if (registryMap && registryMap.has(name)) {
+    if (registryMap.has(name)) {
       registryMap.get(name).delete(nodeActor);
     }
   }
@@ -92,6 +91,17 @@ class CustomElementWatcher extends EventEmitter {
       this.watchedRegistries.set(registry, new Map());
     }
     return this.watchedRegistries.get(registry);
+  }
+
+  
+
+
+
+  _getActorsForName(name, registryMap) {
+    if (!registryMap.has(name)) {
+      registryMap.set(name, new Set());
+    }
+    return registryMap.get(name);
   }
 
   _shouldWatchDefinition(nodeActor) {
@@ -110,9 +120,8 @@ class CustomElementWatcher extends EventEmitter {
     const registryMap = this._getMapForRegistry(registry);
 
     const name = event.detail;
-    const nodeActors = registryMap.get(name);
-
-    this.emit("element-defined", nodeActors);
+    const actors = this._getActorsForName(name, registryMap);
+    this.emit("element-defined", { name, actors });
     registryMap.delete(name);
   }
 

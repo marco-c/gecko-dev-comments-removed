@@ -353,7 +353,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
-  onCustomElementDefined: function(actors) {
+  onCustomElementDefined: function({name, actors}) {
     actors.forEach(actor => this.queueMutation({
       target: actor.actorID,
       type: "customElementDefined",
