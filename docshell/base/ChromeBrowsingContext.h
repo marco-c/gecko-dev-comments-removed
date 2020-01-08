@@ -55,7 +55,9 @@ class ChromeBrowsingContext final : public BrowsingContext {
   
   
   
-  void NotifyUserGestureActivationFromIPC();
+  
+  void NotifySetUserGestureActivationFromIPC(bool aIsUserGestureActivation);
+
  protected:
   void Traverse(nsCycleCollectionTraversalCallback& cb);
   void Unlink();

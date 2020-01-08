@@ -1255,6 +1255,10 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   void CallDocumentFlushedResolvers();
   void CancelDocumentFlushedResolvers();
 
+  
+  
+  bool ShouldResetBrowsingContextUserGestureActivation();
+
  public:
   
   virtual nsresult Dispatch(mozilla::TaskCategory aCategory,

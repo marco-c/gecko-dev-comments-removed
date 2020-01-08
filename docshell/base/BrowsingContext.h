@@ -147,7 +147,12 @@ class BrowsingContext : public nsWrapperCache,
 
   
   
+  void NotifyResetUserGestureActivation();
+
+  
+  
   void SetUserGestureActivation();
+  void ResetUserGestureActivation();
 
   
   bool GetUserGestureActivation();
