@@ -698,7 +698,7 @@ class ParseNode
           private:
             friend class NameNode;
             JSAtom*      atom;          
-            ParseNode*  expr;           
+            ParseNode*  initOrStmt;     
 
         } name;
         struct {
@@ -814,11 +814,11 @@ class NullaryNode : public ParseNode
 class NameNode : public ParseNode
 {
   protected:
-    NameNode(ParseNodeKind kind, JSOp op, JSAtom* atom, ParseNode* expr, const TokenPos& pos)
+    NameNode(ParseNodeKind kind, JSOp op, JSAtom* atom, ParseNode* initOrStmt, const TokenPos& pos)
       : ParseNode(kind, op, PN_NAME, pos)
     {
         pn_u.name.atom = atom;
-        pn_u.name.expr = expr;
+        pn_u.name.initOrStmt = initOrStmt;
     }
 
   public:
@@ -826,7 +826,7 @@ class NameNode : public ParseNode
       : ParseNode(kind, op, PN_NAME, pos)
     {
         pn_u.name.atom = atom;
-        pn_u.name.expr = nullptr;
+        pn_u.name.initOrStmt = nullptr;
     }
 
     static bool test(const ParseNode& node) {
@@ -841,21 +841,21 @@ class NameNode : public ParseNode
         return pn_u.name.atom;
     }
 
-    ParseNode* expression() const {
-        return pn_u.name.expr;
+    ParseNode* initializer() const {
+        return pn_u.name.initOrStmt;
     }
 
     void setAtom(JSAtom* atom) {
         pn_u.name.atom = atom;
     }
 
-    void setExpression(ParseNode* expr) {
-        pn_u.name.expr = expr;
+    void setInitializer(ParseNode* init) {
+        pn_u.name.initOrStmt = init;
     }
 
     
-    ParseNode** unsafeExpressionReference() {
-        return &pn_u.name.expr;
+    ParseNode** unsafeInitializerReference() {
+        return &pn_u.name.initOrStmt;
     }
 };
 
@@ -1543,7 +1543,7 @@ class LabeledStatement : public NameNode
     }
 
     ParseNode* statement() const {
-        return expression();
+        return initializer();
     }
 
     static bool test(const ParseNode& node) {
@@ -1551,6 +1551,11 @@ class LabeledStatement : public NameNode
         MOZ_ASSERT_IF(match, node.isArity(PN_NAME));
         MOZ_ASSERT_IF(match, node.isOp(JSOP_NOP));
         return match;
+    }
+
+    
+    ParseNode** unsafeStatementReference() {
+        return unsafeInitializerReference();
     }
 };
 
