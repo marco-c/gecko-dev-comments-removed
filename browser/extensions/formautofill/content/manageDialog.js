@@ -124,7 +124,7 @@ class ManageRecords {
     let selectedGuids = this._selectedOptions.map(option => option.value);
     this.clearRecordElements();
     for (let record of records) {
-      let option = new Option(await this.getLabel(record),
+      let option = new Option(this.getLabel(record),
                               record.guid,
                               false,
                               selectedGuids.includes(record.guid));
@@ -329,7 +329,7 @@ class ManageCreditCards extends ManageRecords {
     
     if (!creditCard || await OSKeyStore.ensureLoggedIn(true)) {
       let decryptedCCNumObj = {};
-      if (creditCard) {
+      if (creditCard && creditCard["cc-number-encrypted"]) {
         try {
           decryptedCCNumObj["cc-number"] = await OSKeyStore.decrypt(creditCard["cc-number-encrypted"]);
         } catch (ex) {
@@ -359,24 +359,11 @@ class ManageCreditCards extends ManageRecords {
 
 
 
-
-
-  async getLabel(creditCard, showCreditCards = false) {
-    let cardObj = new CreditCard({
-      encryptedNumber: creditCard["cc-number-encrypted"],
-      number: creditCard["cc-number"],
+  getLabel(creditCard) {
+    return CreditCard.getLabel({
       name: creditCard["cc-name"],
-      network: creditCard["cc-type"],
+      number: creditCard["cc-number"],
     });
-    return cardObj.getLabel({showNumbers: showCreditCards});
-  }
-
-  async updateLabels(options, isDecrypted) {
-    for (let option of options) {
-      option.text = await this.getLabel(option.record, isDecrypted);
-    }
-    
-    this._elements.records.dispatchEvent(new CustomEvent("LabelsUpdated"));
   }
 
   async renderRecordElements(records) {

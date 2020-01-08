@@ -6,9 +6,6 @@
 
 var EXPORTED_SYMBOLS = ["CreditCard"];
 
-ChromeUtils.defineModuleGetter(this, "OSKeyStore",
-                               "resource://formautofill/OSKeyStore.jsm");
-
 
 
 
@@ -35,6 +32,13 @@ class CreditCard {
 
 
 
+
+
+
+
+
+
+
   constructor({
     name,
     number,
@@ -50,16 +54,14 @@ class CreditCard {
     this._encryptedNumber = encryptedNumber;
     this._ccv = ccv;
     this.number = number;
-    
-    if (expirationString && (!expirationMonth || !expirationYear)) {
-      this.expirationString = expirationString;
-    } else {
-      this.expirationMonth = expirationMonth;
-      this.expirationYear = expirationYear;
-    }
-    if (network) {
-      this.network = network;
-    }
+    let { month, year } = CreditCard.normalizeExpiration({
+      expirationString,
+      expirationMonth,
+      expirationYear,
+    });
+    this._expirationMonth = month;
+    this._expirationYear = year;
+    this.network = network;
   }
 
   set name(value) {
@@ -71,7 +73,7 @@ class CreditCard {
       this._expirationMonth = undefined;
       return;
     }
-    this._expirationMonth = this._normalizeExpirationMonth(value);
+    this._expirationMonth = CreditCard.normalizeExpirationMonth(value);
   }
 
   get expirationMonth() {
@@ -83,7 +85,7 @@ class CreditCard {
       this._expirationYear = undefined;
       return;
     }
-    this._expirationYear = this._normalizeExpirationYear(value);
+    this._expirationYear = CreditCard.normalizeExpirationYear(value);
   }
 
   get expirationYear() {
@@ -91,7 +93,7 @@ class CreditCard {
   }
 
   set expirationString(value) {
-    let {month, year} = this._parseExpirationString(value);
+    let {month, year} = CreditCard.parseExpirationString(value);
     this.expirationMonth = month;
     this.expirationYear = year;
   }
@@ -104,6 +106,14 @@ class CreditCard {
     return this._number;
   }
 
+  
+
+
+
+
+
+
+
   set number(value) {
     if (value) {
       let normalizedNumber = value.replace(/[-\s]/g, "");
@@ -111,8 +121,15 @@ class CreditCard {
       
       
       normalizedNumber = normalizedNumber.match(/^\d{12,}$/) ?
-        normalizedNumber : null;
+        normalizedNumber : "";
       this._number = normalizedNumber;
+    } else {
+      this._number = "";
+    }
+
+    if (value && !this.isValidNumber()) {
+      this._number = "";
+      throw new Error("Invalid credit card number");
     }
   }
 
@@ -184,60 +201,30 @@ class CreditCard {
   }
 
   get maskedNumber() {
-    if (!this.isValidNumber()) {
-      throw new Error("Invalid credit card number");
-    }
-    return "*".repeat(4) + " " + this._number.substr(-4);
+    return CreditCard.getMaskedNumber(this._number);
   }
 
   get longMaskedNumber() {
-    if (!this.isValidNumber()) {
-      throw new Error("Invalid credit card number");
-    }
-    return "*".repeat(this.number.length - 4) + this.number.substr(-4);
+    return CreditCard.getLongMaskedNumber(this._number);
   }
 
   
 
 
 
-
-  async getLabel({showNumbers} = {}) {
+  static getLabel({number, name}) {
     let parts = [];
-    let label;
 
-    if (showNumbers) {
-      if (this._encryptedNumber) {
-        try {
-          label = await OSKeyStore.decrypt(this._encryptedNumber);
-        } catch (ex) {
-          
-          label = this._number;
-          Cu.reportError(ex);
-        }
-      } else {
-        label = this._number;
-      }
+    if (number) {
+      parts.push(CreditCard.getMaskedNumber(number));
     }
-    if (this._unmodifiedNumber && !label) {
-      if (this.isValidNumber()) {
-        label = this.maskedNumber;
-      } else {
-        let maskedNumber = CreditCard.formatMaskedNumber(this._unmodifiedNumber);
-        label = `${maskedNumber.affix} ${maskedNumber.label}`;
-      }
-    }
-
-    if (label) {
-      parts.push(label);
-    }
-    if (this._name) {
-      parts.push(this._name);
+    if (name) {
+      parts.push(name);
     }
     return parts.join(", ");
   }
 
-  _normalizeExpirationMonth(month) {
+  static normalizeExpirationMonth(month) {
     month = parseInt(month, 10);
     if (isNaN(month) || month < 1 || month > 12) {
       return undefined;
@@ -245,7 +232,7 @@ class CreditCard {
     return month;
   }
 
-  _normalizeExpirationYear(year) {
+  static normalizeExpirationYear(year) {
     year = parseInt(year, 10);
     if (isNaN(year) || year < 0) {
       return undefined;
@@ -256,7 +243,7 @@ class CreditCard {
     return year;
   }
 
-  _parseExpirationString(expirationString) {
+  static parseExpirationString(expirationString) {
     let rules = [
       {
         regex: "(\\d{4})[-/](\\d{1,2})",
@@ -307,6 +294,18 @@ class CreditCard {
     return {month: undefined, year: undefined};
   }
 
+  static normalizeExpiration({expirationString, expirationMonth, expirationYear}) {
+    
+    let parsedExpiration = {};
+    if (expirationString && (!expirationMonth || !expirationYear)) {
+      parsedExpiration = CreditCard.parseExpirationString(expirationString);
+    }
+    return {
+      month: CreditCard.normalizeExpirationMonth(parsedExpiration.month || expirationMonth),
+      year: CreditCard.normalizeExpirationYear(parsedExpiration.year || expirationYear),
+    };
+  }
+
   static formatMaskedNumber(maskedNumber) {
     return {
       affix: "****",
@@ -315,18 +314,24 @@ class CreditCard {
   }
 
   static getMaskedNumber(number) {
-    let creditCard = new CreditCard({number});
-    return creditCard.maskedNumber;
+    return "*".repeat(4) + " " + number.substr(-4);
   }
 
   static getLongMaskedNumber(number) {
-    let creditCard = new CreditCard({number});
-    return creditCard.longMaskedNumber;
+    return "*".repeat(number.length - 4) + number.substr(-4);
   }
 
+  
+
+
+
   static isValidNumber(number) {
-    let creditCard = new CreditCard({number});
-    return creditCard.isValidNumber();
+    try {
+      new CreditCard({number});
+    } catch (ex) {
+      return false;
+    }
+    return true;
   }
 
   static isValidNetwork(network) {
