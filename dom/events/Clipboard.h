@@ -45,6 +45,12 @@ public:
 
   static LogModule* GetClipboardLog();
 
+  
+  
+  
+  
+  
+  static bool ReadTextEnabled(JSContext* aCx, JSObject* aGlobal);
 
   virtual JSObject*
   WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
@@ -53,7 +59,7 @@ private:
   
   
   
-  bool IsTestingPrefEnabled();
+  static bool IsTestingPrefEnabled();
 
   already_AddRefed<Promise> ReadHelper(JSContext* aCx, nsIPrincipal& aSubjectPrincipal,
                                        ClipboardReadType aClipboardReadType, ErrorResult& aRv);
