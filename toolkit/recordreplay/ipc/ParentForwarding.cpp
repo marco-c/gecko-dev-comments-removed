@@ -147,6 +147,15 @@ struct MOZ_RAII AutoMarkMainThreadWaitingForIPDLReply
   }
 };
 
+static void
+BeginShutdown()
+{
+  
+  
+  
+  MainThreadMessageLoop()->PostTask(NewRunnableFunction("Shutdown", Shutdown));
+}
+
 class MiddlemanProtocol : public ipc::IToplevelProtocol
 {
 public:
@@ -172,7 +181,8 @@ public:
                 IPC::StringFromIPCMessageType(aMessage->type()),
                 (int) aMessage->routing_id());
       if (!aProtocol->GetIPCChannel()->Send(aMessage)) {
-        MOZ_CRASH("MiddlemanProtocol::ForwardMessageAsync");
+        MOZ_RELEASE_ASSERT(aProtocol->mSide == ipc::ParentSide);
+        BeginShutdown();
       }
     } else {
       delete aMessage;
@@ -209,7 +219,8 @@ public:
     MOZ_RELEASE_ASSERT(!*aReply);
     Message* nReply = new Message();
     if (!aProtocol->GetIPCChannel()->Send(aMessage, nReply)) {
-      MOZ_CRASH("MiddlemanProtocol::ForwardMessageSync");
+      MOZ_RELEASE_ASSERT(aProtocol->mSide == ipc::ParentSide);
+      BeginShutdown();
     }
 
     MonitorAutoLock lock(*gMonitor);
@@ -245,7 +256,8 @@ public:
     MOZ_RELEASE_ASSERT(!*aReply);
     Message* nReply = new Message();
     if (!aProtocol->GetIPCChannel()->Call(aMessage, nReply)) {
-      MOZ_CRASH("MiddlemanProtocol::ForwardCallMessage");
+      MOZ_RELEASE_ASSERT(aProtocol->mSide == ipc::ParentSide);
+      BeginShutdown();
     }
 
     MonitorAutoLock lock(*gMonitor);
@@ -281,11 +293,11 @@ public:
 
   virtual void OnChannelClose() override {
     MOZ_RELEASE_ASSERT(mSide == ipc::ChildSide);
-    MainThreadMessageLoop()->PostTask(NewRunnableFunction("Shutdown", Shutdown));
+    BeginShutdown();
   }
 
   virtual void OnChannelError() override {
-    MainThreadMessageLoop()->PostTask(NewRunnableFunction("Shutdown", Shutdown));
+    BeginShutdown();
   }
 };
 
