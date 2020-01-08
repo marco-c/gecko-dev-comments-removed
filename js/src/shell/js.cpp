@@ -6686,34 +6686,44 @@ GetSharedObject(JSContext* cx, unsigned argc, Value* vp)
             
             MOZ_ASSERT(cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled());
 
+            
+            
+
             SharedArrayRawBuffer* buf = mbx->val.sarb.buffer;
             uint32_t length = mbx->val.sarb.length;
             if (!buf->addReference()) {
                 JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_SC_SAB_REFCNT_OFLO);
                 return false;
             }
-            auto dropBuf = MakeScopeExit([buf] { buf->dropReference(); });
+
+            
+            
 
             Rooted<ArrayBufferObjectMaybeShared*> maybesab(cx, SharedArrayBufferObject::New(cx, buf, length));
             if (!maybesab) {
+                buf->dropReference();
                 return false;
             }
+
+            
+            
+            
+            
+            
+
             if (mbx->tag == MailboxTag::SharedArrayBuffer) {
                 newObj = maybesab;
             } else {
                 if (!GlobalObject::ensureConstructor(cx, cx->global(), JSProto_WebAssembly)) {
                     return false;
                 }
-
                 RootedObject proto(cx, &cx->global()->getPrototype(JSProto_WasmMemory).toObject());
                 newObj = WasmMemoryObject::create(cx, maybesab, proto);
                 MOZ_ASSERT_IF(newObj, newObj->as<WasmMemoryObject>().isShared());
+                if (!newObj) {
+                    return false;
+                }
             }
-            if (!newObj) {
-                return false;
-            }
-
-            dropBuf.release();
 
             break;
           }
