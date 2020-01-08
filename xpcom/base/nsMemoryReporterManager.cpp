@@ -1433,8 +1433,10 @@ public:
 
     size_t eventQueueSizes = 0;
     size_t wrapperSizes = 0;
+    size_t threadCount = 0;
 
     for (auto* thread : nsThread::Enumerate()) {
+      threadCount++;
       eventQueueSizes += thread->SizeOfEventQueues(MallocSizeOf);
       wrapperSizes += thread->ShallowSizeOfIncludingThis(MallocSizeOf);
 
@@ -1528,6 +1530,36 @@ public:
       "explicit/threads/overhead/wrappers", KIND_HEAP, UNITS_BYTES,
       wrapperSizes,
       "The sizes of nsThread/PRThread wrappers.");
+
+#if defined(XP_WIN)
+    
+    
+    
+    
+    constexpr size_t kKernelSize = (sizeof(void*) == 8 ? 24 : 12) * 1024;
+#elif defined(XP_LINUX)
+    
+    
+    
+#if defined(__x86_64__) || defined(__i386__)
+    constexpr size_t kKernelSize = 4 * 1024;
+#else
+    constexpr size_t kKernelSize = 8 * 1024;
+#endif
+#elif defined(XP_MACOSX)
+    
+    
+    
+    constexpr size_t kKernelSize = 16 * 1024;
+#else
+    
+    constexpr size_t kKernelSize = 8 * 1024;
+#endif
+
+    MOZ_COLLECT_REPORT(
+      "explicit/threads/overhead/kernel", KIND_NONHEAP, UNITS_BYTES,
+      threadCount * kKernelSize,
+      "The total kernel overhead for all active threads.");
 
     return NS_OK;
   }
