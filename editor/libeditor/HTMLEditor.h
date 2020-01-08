@@ -341,7 +341,6 @@ public:
 
 
 
-
   Element*
   GetElementOrParentByTagName(const nsAtom& aTagName, nsINode* aNode);
 
@@ -851,13 +850,11 @@ protected:
 
 
 
-
   Element*
   GetElementOrParentByTagNameAtSelection(Selection& aSelection,
                                          const nsAtom& aTagName);
 
   
-
 
 
 
