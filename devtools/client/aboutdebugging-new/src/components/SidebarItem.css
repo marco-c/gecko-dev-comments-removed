@@ -3,6 +3,11 @@
 
 
 .sidebar-item {
+  --sidebar-item-icon-color: var(--grey-30);
+  --sidebar-item-selected-color: var(--blue-55);
+}
+
+.sidebar-item {
   align-items: center;
   display: flex;
   font-size: 20px;
