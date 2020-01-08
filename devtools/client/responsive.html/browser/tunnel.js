@@ -161,6 +161,11 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       
+      outer.destroy();
+
+      
+      
+      
       
       
       
@@ -171,18 +176,8 @@ function tunnelToInnerBrowser(outer, inner) {
       
       outer.setAttribute("remote", "true");
       outer.setAttribute("remoteType", inner.remoteType);
+      outer.construct();
 
-      
-      
-      
-      outer.destroy();
-
-      
-      
-      
-      Services.tm.spinEventLoopUntil(() => {
-        return outer._remoteWebNavigation;
-      });
       
       if (!outer.isRemoteBrowser) {
         throw new Error("Browser failed to switch to remote browser binding");
@@ -285,6 +280,7 @@ function tunnelToInnerBrowser(outer, inner) {
       
       outer.setAttribute("remote", "false");
       outer.removeAttribute("remoteType");
+      outer.construct();
 
       
       for (const property of PROPERTIES_FROM_BROWSER_WINDOW) {
