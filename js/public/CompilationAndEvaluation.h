@@ -40,9 +40,12 @@ union Value;
 
 
 
+
+
+
 extern JS_PUBLIC_API(bool)
-JS_BufferIsCompilableUnit(JSContext* cx, JS::Handle<JSObject*> obj, const char* utf8,
-                          size_t length);
+JS_Utf8BufferIsCompilableUnit(JSContext* cx, JS::Handle<JSObject*> obj,
+                              const char* utf8, size_t length);
 
 
 

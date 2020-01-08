@@ -331,12 +331,15 @@ XPCShellEnvironment::ProcessFile(JSContext *cx,
             }
             bufp += strlen(bufp);
             lineno++;
-        } while (!JS_BufferIsCompilableUnit(cx, global, buffer, strlen(buffer)));
+        } while (!JS_Utf8BufferIsCompilableUnit(cx, global, buffer, strlen(buffer)));
 
         
         JS_ClearPendingException(cx);
+
         JS::CompileOptions options(cx);
         options.setFileAndLine("typein", startline);
+        options.setUTF8(true);
+
         JS::Rooted<JSScript*> script(cx);
         if (JS_CompileScript(cx, buffer, strlen(buffer), options, &script)) {
             JS::WarningReporter older;
