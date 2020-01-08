@@ -116,6 +116,7 @@
 #include "nsIPrefBranch.h"
 #include "nsISocketFilter.h"
 #include "nsDebug.h"
+#include "nsNetUtil.h"
 
 #ifdef XP_WIN
 #include "mozilla/WindowsVersion.h"
@@ -2160,6 +2161,10 @@ NrSocketBase::CreateSocket(nr_transport_addr *addr,
 {
   int r, _status;
 
+  if (IsForbiddenAddress(addr)) {
+    ABORT(R_REJECTED);
+  }
+
   
   if (XRE_IsParentProcess()) {
     *sock = new NrSocket();
@@ -2196,6 +2201,26 @@ abort:
   return _status;
 }
 
+
+bool NrSocketBase::IsForbiddenAddress(nr_transport_addr *addr) {
+  int r, port;
+
+  r = nr_transport_addr_get_port(addr, &port);
+  if (r) {
+    return true;
+  }
+
+  
+  if (port != 0) {
+    
+    nsresult rv = NS_CheckPortSafety(port, nullptr);
+    if(NS_FAILED(rv)) {
+      return true;
+    }
+  }
+
+  return false;
+}
 
 static int nr_socket_local_destroy(void **objp) {
   if(!objp || !*objp)
