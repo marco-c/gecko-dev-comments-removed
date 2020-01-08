@@ -1787,6 +1787,7 @@ nsHttpConnection::CloseTransaction(nsAHttpTransaction *trans, nsresult reason,
     if (mUsingSpdyVersion != SpdyVersion::NONE) {
         DontReuse();
         
+        mSpdySession->SetCleanShutdown(aIsShutdown);
         mUsingSpdyVersion = SpdyVersion::NONE;
         mSpdySession = nullptr;
     }
