@@ -31,6 +31,22 @@ this.identity = class extends ExtensionAPI {
           url.pathname = path;
           return url.href;
         },
+        launchWebAuthFlow: function(details) {
+          
+          let url, redirectURI;
+          try {
+            url = new URL(details.url);
+          } catch (e) {
+            return Promise.reject({message: "details.url is invalid"});
+          }
+          try {
+            redirectURI = new URL(url.searchParams.get("redirect_uri") || this.getRedirectURL());
+          } catch (e) {
+            return Promise.reject({message: "redirect_uri is invalid"});
+          }
+
+          return context.childManager.callParentAsyncFunction("identity.launchWebAuthFlowInParent", [details, redirectURI.href]);
+        },
       },
     };
   }

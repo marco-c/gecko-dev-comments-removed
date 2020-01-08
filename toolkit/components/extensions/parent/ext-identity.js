@@ -5,7 +5,7 @@
 ChromeUtils.defineModuleGetter(this, "Services",
                                "resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyGlobalGetters(this, ["URL", "XMLHttpRequest"]);
+XPCOMUtils.defineLazyGlobalGetters(this, ["XMLHttpRequest"]);
 
 var {
   promiseDocumentLoaded,
@@ -94,23 +94,7 @@ this.identity = class extends ExtensionAPI {
   getAPI(context) {
     return {
       identity: {
-        launchWebAuthFlow: function(details) {
-          
-          let url, redirectURI;
-          try {
-            url = new URL(details.url);
-          } catch (e) {
-            return Promise.reject({message: "details.url is invalid"});
-          }
-          try {
-            redirectURI = new URL(url.searchParams.get("redirect_uri"));
-            if (!redirectURI) {
-              return Promise.reject({message: "redirect_uri is missing"});
-            }
-          } catch (e) {
-            return Promise.reject({message: "redirect_uri is invalid"});
-          }
-
+        launchWebAuthFlowInParent: function(details, redirectURI) {
           
           
           return checkRedirected(details.url, redirectURI).catch((requestError) => {
