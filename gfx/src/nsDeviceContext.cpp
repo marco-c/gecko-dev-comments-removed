@@ -60,16 +60,28 @@ public:
 
     void FontMetricsDeleted(const nsFontMetrics* aFontMetrics);
     void Compact();
-    void Flush();
+
+    
+    void Flush(int32_t aFlushCount = -1);
 
     void UpdateUserFonts(gfxUserFontSet* aUserFontSet);
 
 protected:
+    
+    
+    
+    
+    
+    static const int32_t kMaxCacheEntries = 128;
+
     ~nsFontCache() {}
 
     nsDeviceContext*          mContext; 
     RefPtr<nsAtom>         mLocaleLanguage;
-    nsTArray<nsFontMetrics*>  mFontMetrics;
+
+    
+    
+    AutoTArray<nsFontMetrics*,kMaxCacheEntries> mFontMetrics;
 };
 
 NS_IMPL_ISUPPORTS(nsFontCache, nsIObserver)
@@ -119,8 +131,7 @@ nsFontCache::GetMetricsFor(const nsFont& aFont,
 
     
     
-
-    int32_t n = mFontMetrics.Length() - 1;
+    const int32_t n = mFontMetrics.Length() - 1;
     for (int32_t i = n; i >= 0; --i) {
         nsFontMetrics* fm = mFontMetrics[i];
         if (fm->Font().Equals(aFont) &&
@@ -138,6 +149,11 @@ nsFontCache::GetMetricsFor(const nsFont& aFont,
     }
 
     
+    
+    
+    if (n >= kMaxCacheEntries - 1) {
+        Flush(kMaxCacheEntries / 2);
+    }
 
     nsFontMetrics::Params params = aParams;
     params.language = language;
@@ -185,10 +201,14 @@ nsFontCache::Compact()
     }
 }
 
+
 void
-nsFontCache::Flush()
+nsFontCache::Flush(int32_t aFlushCount)
 {
-    for (int32_t i = mFontMetrics.Length()-1; i >= 0; --i) {
+    int32_t n = aFlushCount < 0
+        ? mFontMetrics.Length()
+        : std::min<int32_t>(aFlushCount, mFontMetrics.Length());
+    for (int32_t i = n - 1; i >= 0; --i) {
         nsFontMetrics* fm = mFontMetrics[i];
         
         
@@ -196,7 +216,7 @@ nsFontCache::Flush()
         fm->Destroy();
         NS_RELEASE(fm);
     }
-    mFontMetrics.Clear();
+    mFontMetrics.RemoveElementsAt(0, n);
 }
 
 nsDeviceContext::nsDeviceContext()
