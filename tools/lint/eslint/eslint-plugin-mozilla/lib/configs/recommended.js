@@ -36,6 +36,10 @@ module.exports = {
     "SharedArrayBuffer": false,
     "StopIteration": false,
     "dump": true,
+    
+    
+    
+    "location": true,
     "openDialog": false,
     "saveStack": false,
     "sizeToContent": false,
