@@ -144,7 +144,6 @@ class StreamTracks {
 
   StreamTracks()
       : mGraphRate(0),
-        mTracksKnownTime(0),
         mForgottenTime(0),
         mTracksDirty(false)
 #ifdef DEBUG
@@ -194,21 +193,7 @@ class StreamTracks {
     mTracks.InsertElementSorted(track, CompareTracksByID());
     mTracksDirty = true;
 
-    if (mTracksKnownTime == STREAM_TIME_MAX) {
-      
-      
-      NS_WARNING(
-          "Adding track to StreamTracks that should have no more tracks");
-    } else {
-      
-    }
     return *track;
-  }
-
-  void AdvanceKnownTracksTime(StreamTime aKnownTime) {
-    NS_ASSERTION(aKnownTime >= mTracksKnownTime,
-                 "Can't move tracks-known time earlier");
-    mTracksKnownTime = aKnownTime;
   }
 
   
@@ -299,9 +284,6 @@ class StreamTracks {
 
  protected:
   TrackRate mGraphRate;  
-  
-  
-  StreamTime mTracksKnownTime;
   StreamTime mForgottenTime;
 
  private:

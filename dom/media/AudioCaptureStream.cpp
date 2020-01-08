@@ -108,9 +108,6 @@ void AudioCaptureStream::ProcessInput(GraphTime aFrom, GraphTime aTo,
     
     mMixer.FinishMixing();
   }
-
-  
-  mTracks.AdvanceKnownTracksTime(GraphTimeToStreamTimeWithBlocking((aTo)));
 }
 
 void AudioCaptureStream::MixerCallback(AudioDataValue* aMixedBuffer,

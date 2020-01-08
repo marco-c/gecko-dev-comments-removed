@@ -143,8 +143,6 @@ void TrackUnionStream::ProcessInput(GraphTime aFrom, GraphTime aTo,
     
     
     FinishOnGraphThread();
-  } else {
-    mTracks.AdvanceKnownTracksTime(GraphTimeToStreamTimeWithBlocking(aTo));
   }
   if (allHaveCurrentData) {
     

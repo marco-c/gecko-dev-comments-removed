@@ -701,7 +701,6 @@ class SourceMediaStream : public MediaStream {
 
 
 
-
   void AddTrack(TrackID aID, MediaSegment* aSegment, uint32_t aFlags = 0) {
     AddTrackInternal(aID, GraphRate(), aSegment, aFlags);
   }
@@ -739,12 +738,6 @@ class SourceMediaStream : public MediaStream {
 
 
   void EndTrack(TrackID aID);
-  
-
-
-
-  void AdvanceKnownTracksTime(StreamTime aKnownTime);
-  void AdvanceKnownTracksTimeWithLockHeld(StreamTime aKnownTime);
   
 
 
@@ -867,7 +860,6 @@ class SourceMediaStream : public MediaStream {
   
   Mutex mMutex;
   
-  StreamTime mUpdateKnownTracksTime;
   
   
   
