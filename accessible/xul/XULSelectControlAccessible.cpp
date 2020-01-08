@@ -45,7 +45,7 @@ void XULSelectControlAccessible::Shutdown() {
 void XULSelectControlAccessible::SelectedItems(nsTArray<Accessible*>* aItems) {
   
   nsCOMPtr<nsIDOMXULMultiSelectControlElement> xulMultiSelect =
-      do_QueryInterface(mSelectControl);
+      mSelectControl->AsXULMultiSelectControl();
   if (xulMultiSelect) {
     int32_t length = 0;
     xulMultiSelect->GetSelectedCount(&length);
