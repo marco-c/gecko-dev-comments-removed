@@ -39,7 +39,6 @@
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 XPCOMUtils.defineLazyServiceGetter(this, "aomStartup",
                                    "@mozilla.org/addons/addon-manager-startup;1",
@@ -96,23 +95,7 @@ this.pageloader = class extends ExtensionAPI {
     if (env.exists("MOZ_USE_PAGELOADER")) {
       
       
-      
-      async function tryLoad() {
-        try {
-          ChromeUtils.import("resource://talos-powers/TalosParentProfiler.jsm");
-        } catch (err) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-          return tryLoad();
-        }
-
-        return null;
-      }
-
-      
-      
-      tryLoad().then(() => {
-        talosStart();
-      });
+      talosStart();
     }
   }
 

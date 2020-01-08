@@ -2,6 +2,7 @@
 
 
 
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 
 
@@ -15,8 +16,11 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "TalosParentProfiler",
-                                  "resource://talos-powers/TalosParentProfiler.jsm");
+
+
+XPCOMUtils.defineLazyScriptGetter(this, "TalosParentProfiler",
+                                  "resource://talos-powers/TalosParentProfiler.js");
+
 ChromeUtils.defineModuleGetter(this, "Services",
                                "resource://gre/modules/Services.jsm");
 

@@ -1,0 +1,213 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var TalosParentProfiler;
+
+(function() {
+  ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+  
+  
+  
+  
+  let initted = Services.profiler.IsActive();
+
+  
+  let currentTest = "unknown";
+
+  
+  let interval, entries, threadsArray, profileDir;
+
+  
+  
+  let TalosPowers =
+    Cc["@mozilla.org/talos/talos-powers-service;1"]
+      .getService(Ci.nsISupports)
+      .wrappedJSObject;
+
+  
+
+
+
+
+
+
+
+
+  function searchToObject(locationSearch) {
+    let pairs = locationSearch.substring(1).split("&");
+    let result = {};
+
+    for (let i in pairs) {
+      if (pairs[i] !== "") {
+        let pair = pairs[i].split("=");
+        result[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || "");
+      }
+    }
+
+    return result;
+  }
+
+  TalosParentProfiler = {
+    
+
+
+
+
+
+
+
+
+
+    initFromObject(obj = {}) {
+      if (!initted) {
+        if (("gecko_profile_dir" in obj) && typeof obj.gecko_profile_dir == "string" &&
+            ("gecko_profile_interval" in obj) && Number.isFinite(obj.gecko_profile_interval * 1) &&
+            ("gecko_profile_entries" in obj) && Number.isFinite(obj.gecko_profile_entries * 1) &&
+            ("gecko_profile_threads" in obj) && typeof obj.gecko_profile_threads == "string") {
+          interval = obj.gecko_profile_interval;
+          entries = obj.gecko_profile_entries;
+          threadsArray = obj.gecko_profile_threads.split(",");
+          profileDir = obj.gecko_profile_dir;
+          initted = true;
+        } else {
+          console.error("Profiler could not init with object: " + JSON.stringify(obj));
+        }
+      }
+    },
+
+    
+
+
+
+
+
+    initFromURLQueryParams(locationSearch) {
+      this.initFromObject(searchToObject(locationSearch));
+    },
+
+    
+
+
+
+
+
+
+
+    beginTest(testName) {
+      if (initted) {
+        currentTest = testName;
+        TalosPowers.profilerBegin({ entries, interval, threadsArray });
+      } else {
+        let msg = "You should not call beginTest without having first " +
+                  "initted the Profiler";
+        console.error(msg);
+      }
+    },
+
+    
+
+
+
+
+
+
+
+
+    finishTest() {
+      if (initted) {
+        let profileFile = profileDir + "/" + currentTest + ".profile";
+        return TalosPowers.profilerFinish(profileFile);
+      }
+        let msg = "You should not call finishTest without having first " +
+                  "initted the Profiler";
+        console.error(msg);
+        return Promise.reject(msg);
+
+    },
+
+    
+
+
+
+
+
+
+
+
+    finishStartupProfiling() {
+      if (initted) {
+        let profileFile = profileDir + "/startup.profile";
+        return TalosPowers.profilerFinish(profileFile);
+      }
+      return Promise.resolve();
+    },
+
+    
+
+
+
+
+
+    resume(marker = "") {
+      if (initted) {
+        TalosPowers.profilerResume(marker);
+      }
+    },
+
+    
+
+
+
+
+
+    pause(marker = "") {
+      if (initted) {
+        TalosPowers.profilerPause(marker);
+      }
+    },
+
+    
+
+
+
+
+
+    mark(marker) {
+      if (initted) {
+        
+        if (!marker) {
+          marker = currentTest;
+        }
+
+        TalosPowers.profilerMarker(marker);
+      }
+    },
+
+    afterProfileGathered() {
+      if (!initted) {
+        return Promise.resolve();
+      }
+
+      return new Promise(resolve => {
+        Services.obs.addObserver(function onGathered() {
+          Services.obs.removeObserver(onGathered, "talos-profile-gathered");
+          resolve();
+        }, "talos-profile-gathered");
+      });
+    },
+  };
+})();
