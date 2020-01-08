@@ -74,6 +74,9 @@ public:
   
   virtual bool NotifyNotUsedAfterComposition(TextureHost* aTextureHost);
 
+  virtual void MaybeUnlockBeforeNextComposition(TextureHost* aTextureHost) {}
+  virtual void TryUnlockTextures() {}
+
   
   virtual void Destroy();
 

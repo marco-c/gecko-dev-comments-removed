@@ -305,7 +305,9 @@ public:
   virtual bool IsDirectMap() override { return true; }
 
   
-  virtual void Sync() override;
+  
+  
+  virtual bool Sync(bool aBlocking) override;
 
 private:
   bool UpdateInternal(gfx::DataSourceSurface* aSurface,
