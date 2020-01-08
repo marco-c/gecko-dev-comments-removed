@@ -31,6 +31,7 @@ function typeToString(type) {
         case -2 : return 'i64';
         case -3 : return 'f32';
         case -4 : return 'f64';
+        case -5 : return 'v128';
         case -16 : return 'anyfunc';
         default: throw new Error('Unexpected type');
     }
@@ -72,9 +73,20 @@ function formatFloat64(n) {
         return '-nan';
     return (data2 < 0 ? '-' : '+') + 'nan:0x' + payload.toString(16);
 }
+function formatI32Array(bytes, count) {
+    var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    var result = [];
+    for (var i = 0; i < count; i++)
+        result.push("0x" + formatHex(dv.getInt32(i << 2, true), 8));
+    return result.join(' ');
+}
 function memoryAddressToString(address, code) {
     var defaultAlignFlags;
     switch (code) {
+        case 64768 :
+        case 64769 :
+            defaultAlignFlags = 4;
+            break;
         case 41 :
         case 55 :
         case 43 :
@@ -189,7 +201,7 @@ function limitsToString(limits) {
 }
 var paddingCache = ['0', '00', '000'];
 function formatHex(n, width) {
-    var s = n.toString(16).toUpperCase();
+    var s = (n >>> 0).toString(16).toUpperCase();
     if (width === undefined || s.length >= width)
         return s;
     var paddingIndex = width - s.length - 1;
@@ -618,6 +630,8 @@ var WasmDisassembler =  (function () {
             case 65100 :
             case 65101 :
             case 65102 :
+            case 64768 :
+            case 64769 :
                 var memoryAddress = memoryAddressToString(operator.memoryAddress, operator.code);
                 if (memoryAddress !== null) {
                     this.appendBuffer(' ');
@@ -638,6 +652,28 @@ var WasmDisassembler =  (function () {
                 break;
             case 68 :
                 this.appendBuffer(" " + formatFloat64(operator.literal));
+                break;
+            case 64770 :
+                this.appendBuffer(" i32 " + formatI32Array(operator.literal, 4));
+                break;
+            case 64771 :
+                this.appendBuffer(" " + formatI32Array(operator.lines, 4));
+                break;
+            case 64773 :
+            case 64774 :
+            case 64775 :
+            case 64777 :
+            case 64778 :
+            case 64779 :
+            case 64781 :
+            case 64782 :
+            case 64787 :
+            case 64788 :
+            case 64784 :
+            case 64785 :
+            case 64790 :
+            case 64791 :
+                this.appendBuffer(" " + operator.lineIndex);
                 break;
         }
     };
