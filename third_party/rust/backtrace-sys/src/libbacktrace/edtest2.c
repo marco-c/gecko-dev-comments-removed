@@ -1,0 +1,43 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern int f3(int, int);
+extern int f2(int);
+
+int f2(int x)
+{
+  
+
+  return f3(x, __LINE__) + 3;
+}
