@@ -201,7 +201,7 @@ var DebuggerServer = {
 
 
 
-  _addListener(listener) {
+  addSocketListener(listener) {
     if (!Services.prefs.getBoolPref("devtools.debugger.remote-enabled")) {
       throw new Error("Can't add a SocketListener, remote debugging disabled");
     }
@@ -215,7 +215,7 @@ var DebuggerServer = {
 
 
 
-  _removeListener(listener) {
+  removeSocketListener(listener) {
     
     for (const connID of Object.getOwnPropertyNames(this._connections)) {
       const connection = this._connections[connID];
