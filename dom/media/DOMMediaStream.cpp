@@ -32,21 +32,8 @@
 #include "nsRFPService.h"
 #include "nsServiceManagerUtils.h"
 
-
-
-
-#ifdef GetCurrentTime
-#undef GetCurrentTime
-#endif
-
 #ifdef LOG
 #undef LOG
-#endif
-
-
-
-#ifdef GetCurrentTime
-#undef GetCurrentTime
 #endif
 
 using namespace mozilla;
@@ -414,9 +401,9 @@ NS_INTERFACE_MAP_END_INHERITING(DOMMediaStream)
 
 DOMMediaStream::DOMMediaStream(nsPIDOMWindowInner* aWindow,
                                MediaStreamTrackSourceGetter* aTrackSourceGetter)
-  : mLogicalStreamStartTime(0), mWindow(aWindow),
-    mInputStream(nullptr), mOwnedStream(nullptr), mPlaybackStream(nullptr),
-    mTracksPendingRemoval(0), mTrackSourceGetter(aTrackSourceGetter),
+  : mWindow(aWindow), mInputStream(nullptr), mOwnedStream(nullptr),
+    mPlaybackStream(nullptr), mTracksPendingRemoval(0),
+    mTrackSourceGetter(aTrackSourceGetter),
     mPlaybackTrackListener(MakeAndAddRef<PlaybackTrackListener>(this)),
     mTracksCreated(false), mNotifiedOfMediaStreamGraphShutdown(false),
     mActive(false), mSetInactiveOnFinish(false), mCORSMode(CORS_NONE)
@@ -563,20 +550,6 @@ DOMMediaStream::Constructor(const GlobalObject& aGlobal,
   }
 
   return newStream.forget();
-}
-
-double
-DOMMediaStream::CurrentTime()
-{
-  if (!mPlaybackStream) {
-    return 0.0;
-  }
-  
-  
-  
-  return nsRFPService::ReduceTimePrecisionAsSecs(mPlaybackStream->
-    StreamTimeToSeconds(mPlaybackStream->GetCurrentTime() - mLogicalStreamStartTime),
-    GetRandomTimelineSeed());
 }
 
 already_AddRefed<Promise>
