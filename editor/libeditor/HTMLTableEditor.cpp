@@ -196,27 +196,28 @@ HTMLEditor::InsertTableCellsWithTransaction(int32_t aNumberOfCellsToInsert,
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-  if (NS_WARN_IF(!curCell)) {
+  if (NS_WARN_IF(!table) || NS_WARN_IF(!curCell)) {
     
     return NS_OK;
   }
 
   
   
-  int32_t curStartRowIndex = 0, curStartColIndex = 0;
-  int32_t rowSpan = 0, colSpan = 0;
-  int32_t actualRowSpan = 0, actualColSpan = 0;
-  bool isSelected = false;
-  rv = GetCellDataAt(table, startRowIndex, startColIndex,
-                     getter_AddRefs(curCell),
-                     &curStartRowIndex, &curStartColIndex, &rowSpan, &colSpan,
-                     &actualRowSpan, &actualColSpan, &isSelected);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  if (NS_WARN_IF(!curCell)) {
+  IgnoredErrorResult ignoredError;
+  CellData cellDataAtSelection(*this, *table, startRowIndex, startColIndex,
+                               ignoredError);
+  if (NS_WARN_IF(cellDataAtSelection.FailedOrNotFound())) {
     return NS_ERROR_FAILURE;
   }
+  MOZ_ASSERT(curCell == cellDataAtSelection.mElement);
+
+  
+  
+  
+  int32_t    colSpan =          cellDataAtSelection.mColSpan;
+  
+  
+  
 
   int32_t newCellIndex;
   switch (aInsertPosition) {
@@ -434,27 +435,27 @@ HTMLEditor::InsertTableColumnsWithTransaction(int32_t aNumberOfColumnsToInsert,
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-  if (NS_WARN_IF(!curCell)) {
+  if (NS_WARN_IF(!table) || NS_WARN_IF(!curCell)) {
     
     return NS_OK;
   }
 
   
-  int32_t curStartRowIndex = 0, curStartColIndex = 0;
-  int32_t rowSpan = 0, colSpan = 0;
-  int32_t actualRowSpan = 0, actualColSpan = 0;
-  bool isSelected = false;
-  rv = GetCellDataAt(table, startRowIndex, startColIndex,
-                     getter_AddRefs(curCell),
-                     &curStartRowIndex, &curStartColIndex,
-                     &rowSpan, &colSpan,
-                     &actualRowSpan, &actualColSpan, &isSelected);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  if (NS_WARN_IF(!curCell)) {
+  IgnoredErrorResult ignoredError;
+  CellData cellDataAtSelection(*this, *table, startRowIndex, startColIndex,
+                               ignoredError);
+  if (NS_WARN_IF(cellDataAtSelection.FailedOrNotFound())) {
     return NS_ERROR_FAILURE;
   }
+  MOZ_ASSERT(curCell == cellDataAtSelection.mElement);
+
+  
+  
+  
+  int32_t    colSpan =          cellDataAtSelection.mColSpan;
+  
+  int32_t    actualColSpan =    cellDataAtSelection.mEffectiveColSpan;
+  
 
   ErrorResult error;
   TableSize tableSize(*this, *table, error);
@@ -512,19 +513,22 @@ HTMLEditor::InsertTableColumnsWithTransaction(int32_t aNumberOfColumnsToInsert,
   for (int32_t rowIndex = 0; rowIndex < tableSize.mRowCount; rowIndex++) {
     if (startColIndex < tableSize.mColumnCount) {
       
-      int32_t curStartRowIndex = 0, curStartColIndex = 0;
-      int32_t rowSpan = 0, colSpan = 0;
-      int32_t actualRowSpan = 0, actualColSpan = 0;
-      bool isSelected = false;
-      rv = GetCellDataAt(table, rowIndex, startColIndex,
-                         getter_AddRefs(curCell),
-                         &curStartRowIndex, &curStartColIndex,
-                         &rowSpan, &colSpan,
-                         &actualRowSpan, &actualColSpan, &isSelected);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
+      CellData cellData(*this, *table, rowIndex, startColIndex, ignoredError);
+      if (NS_WARN_IF(cellData.FailedOrNotFound())) {
+        return NS_ERROR_FAILURE;
       }
 
+      RefPtr<Element> curCell = std::move(cellData.mElement);
+      
+      int32_t    curStartColIndex =       cellData.mFirst.mColumn;
+      
+      int32_t    colSpan =                cellData.mColSpan;
+      
+      
+      
+
+      
+      
       
       
       if (!curCell) {
@@ -545,7 +549,6 @@ HTMLEditor::InsertTableColumnsWithTransaction(int32_t aNumberOfColumnsToInsert,
       
       
       
-      IgnoredErrorResult ignoredError;
       selection->Collapse(RawRangeBoundary(curCell, 0), ignoredError);
       NS_WARNING_ASSERTION(!ignoredError.Failed(),
         "Failed to collapse Selection into the cell");
@@ -593,7 +596,6 @@ HTMLEditor::InsertTableColumnsWithTransaction(int32_t aNumberOfColumnsToInsert,
     
     
     
-    IgnoredErrorResult ignoredError;
     selection->Collapse(RawRangeBoundary(curCell, 0), ignoredError);
     NS_WARNING_ASSERTION(!ignoredError.Failed(),
       "Failed to collapse Selection into the cell");
@@ -636,28 +638,28 @@ HTMLEditor::InsertTableRowsWithTransaction(int32_t aNumberOfRowsToInsert,
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-  if (NS_WARN_IF(!curCell)) {
+  if (NS_WARN_IF(!table) || NS_WARN_IF(!curCell)) {
     
     return NS_OK;
   }
 
   
   
-  int32_t curStartRowIndex = 0, curStartColIndex = 0;
-  int32_t rowSpan = 0, colSpan = 0;
-  int32_t actualRowSpan = 0, actualColSpan = 0;
-  bool isSelected = false;
-  rv = GetCellDataAt(table, startRowIndex, startColIndex,
-                     getter_AddRefs(curCell),
-                     &curStartRowIndex, &curStartColIndex,
-                     &rowSpan, &colSpan,
-                     &actualRowSpan, &actualColSpan, &isSelected);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  if (NS_WARN_IF(!curCell)) {
+  IgnoredErrorResult ignoredError;
+  CellData cellDataAtSelection(*this, *table, startRowIndex, startColIndex,
+                               ignoredError);
+  if (NS_WARN_IF(cellDataAtSelection.FailedOrNotFound())) {
     return NS_ERROR_FAILURE;
   }
+  MOZ_ASSERT(curCell == cellDataAtSelection.mElement);
+
+  
+  
+  int32_t    rowSpan =          cellDataAtSelection.mRowSpan;
+  
+  int32_t    actualRowSpan =    cellDataAtSelection.mEffectiveRowSpan;
+  
+  
 
   ErrorResult error;
   TableSize tableSize(*this, *table, error);
@@ -705,22 +707,22 @@ HTMLEditor::InsertTableRowsWithTransaction(int32_t aNumberOfRowsToInsert,
     
     
     for (int32_t colIndex = 0, actualColSpan = 0;; colIndex += actualColSpan) {
-      RefPtr<Element> cellElement;
-      int32_t curStartRowIndex = 0, curStartColIndex = 0;
-      int32_t rowSpan = 0, colSpan = 0;
-      int32_t actualRowSpan = 0;
-      nsresult rv = GetCellDataAt(table, startRowIndex, colIndex,
-                                  getter_AddRefs(cellElement),
-                                  &curStartRowIndex, &curStartColIndex,
-                                  &rowSpan, &colSpan,
-                                  &actualRowSpan, &actualColSpan,
-                                  &isSelected);
-      if (NS_FAILED(rv)) {
+      CellData cellData(*this, *table, startRowIndex, colIndex, ignoredError);
+      if (cellData.FailedOrNotFound()) {
         break; 
       }
 
+      RefPtr<Element> cellElement = std::move(cellData.mElement);
+      int32_t    curStartRowIndex =           cellData.mFirst.mRow;
+      
+      int32_t    rowSpan =                    cellData.mRowSpan;
+      
+      
+                 actualColSpan =              cellData.mEffectiveColSpan;
+      
+
+      
       if (NS_WARN_IF(!cellElement)) {
-        
         actualColSpan = 1;
         continue;
       }
@@ -751,19 +753,19 @@ HTMLEditor::InsertTableRowsWithTransaction(int32_t aNumberOfRowsToInsert,
     
     const int32_t kLastRowIndex = tableSize.mRowCount - 1;
     for (int32_t colIndex = 0, actualColSpan = 0;; colIndex += actualColSpan) {
-      RefPtr<Element> cellElement;
-      int32_t curStartRowIndex = 0, curStartColIndex = 0;
-      int32_t rowSpan = 0, colSpan = 0;
-      int32_t actualRowSpan = 0;
-      nsresult rv = GetCellDataAt(table, kLastRowIndex, colIndex,
-                                  getter_AddRefs(cellElement),
-                                  &curStartRowIndex, &curStartColIndex,
-                                  &rowSpan, &colSpan,
-                                  &actualRowSpan, &actualColSpan,
-                                  &isSelected);
-      if (NS_FAILED(rv)) {
+      CellData cellData(*this, *table, kLastRowIndex, colIndex, ignoredError);
+      if (cellData.FailedOrNotFound()) {
         break; 
       }
+
+      RefPtr<Element> cellElement = std::move(cellData.mElement);
+      int32_t    curStartRowIndex =           cellData.mFirst.mRow;
+      
+      int32_t    rowSpan =                    cellData.mRowSpan;
+      
+      
+                 actualColSpan =              cellData.mEffectiveColSpan;
+      
 
       if (!rowSpan) {
         MOZ_ASSERT(cellsInRow >= actualColSpan);
@@ -1399,26 +1401,26 @@ HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
 {
   
   ErrorResult error;
+  IgnoredErrorResult ignoredError;
   for (int32_t rowIndex = 0;; rowIndex++) {
-    RefPtr<Element> cell;
-    int32_t startRowIndex = 0, startColIndex = 0;
-    int32_t rowSpan = 0, colSpan = 0;
-    int32_t actualRowSpan = 0, actualColSpan = 0;
-    bool isSelected = false;
-    nsresult rv =
-      GetCellDataAt(&aTableElement, rowIndex, aColumnIndex,
-                    getter_AddRefs(cell),
-                    &startRowIndex, &startColIndex, &rowSpan, &colSpan,
-                    &actualRowSpan, &actualColSpan, &isSelected);
+    CellData cellData(*this, aTableElement, rowIndex, aColumnIndex,
+                      ignoredError);
     
     
     
     
-    
-    
-    if (NS_FAILED(rv) || !cell) {
+    if (cellData.FailedOrNotFound()) {
       return NS_OK;
     }
+
+    RefPtr<Element> cell = std::move(cellData.mElement);
+    int32_t    startRowIndex =       cellData.mFirst.mRow;
+    int32_t    startColIndex =       cellData.mFirst.mColumn;
+    
+    int32_t    colSpan =             cellData.mColSpan;
+    int32_t    actualRowSpan =       cellData.mEffectiveRowSpan;
+    
+    
 
     
     MOZ_ASSERT(colSpan >= 0);
@@ -1451,7 +1453,7 @@ HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
     if (numberOfCellsInRow != 1) {
       
       
-      rv = DeleteNodeWithTransaction(*cell);
+      nsresult rv = DeleteNodeWithTransaction(*cell);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -1480,8 +1482,8 @@ HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
       if (NS_WARN_IF(!selection)) {
         return NS_ERROR_FAILURE;
       }
-      rv = DeleteTableElementAndChildrenWithTransaction(*selection,
-                                                        aTableElement);
+      nsresult rv =
+        DeleteTableElementAndChildrenWithTransaction(*selection, aTableElement);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -1490,7 +1492,7 @@ HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
 
     
     
-    rv = DeleteTableRowWithTransaction(aTableElement, startRowIndex);
+    nsresult rv = DeleteTableRowWithTransaction(aTableElement, startRowIndex);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -1677,26 +1679,30 @@ HTMLEditor::DeleteTableRowWithTransaction(Element& aTableElement,
   AutoTArray<SpanCell, 10> spanCellArray;
   RefPtr<Element> cellInDeleteRow;
   int32_t columnIndex = 0;
+  IgnoredErrorResult ignoredError;
   while (aRowIndex < tableSize.mRowCount &&
          columnIndex < tableSize.mColumnCount) {
-    RefPtr<Element> cell;
-    int32_t startRowIndex = 0, startColIndex = 0;
-    int32_t rowSpan = 0, colSpan = 0;
-    int32_t actualRowSpan = 0, actualColSpan = 0;
-    bool isSelected = false;
-    nsresult rv =
-      GetCellDataAt(&aTableElement, aRowIndex, columnIndex,
-                    getter_AddRefs(cell),
-                    &startRowIndex, &startColIndex, &rowSpan, &colSpan,
-                    &actualRowSpan, &actualColSpan, &isSelected);
-    
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+    CellData cellData(*this, aTableElement, aRowIndex, columnIndex,
+                      ignoredError);
+    if (NS_WARN_IF(cellData.FailedOrNotFound())) {
+      return NS_ERROR_FAILURE;
     }
 
+    RefPtr<Element> cell = std::move(cellData.mElement);
+    int32_t    startRowIndex =       cellData.mFirst.mRow;
+    int32_t    startColIndex =       cellData.mFirst.mColumn;
+    int32_t    rowSpan =             cellData.mRowSpan;
+    
+    int32_t    actualRowSpan =       cellData.mEffectiveRowSpan;
+    int32_t    actualColSpan =       cellData.mEffectiveColSpan;
+    
+
+    
+    
     if (!cell) {
       break;
     }
+
     
     
     if (startRowIndex < aRowIndex) {
@@ -1717,9 +1723,10 @@ HTMLEditor::DeleteTableRowWithTransaction(Element& aTableElement,
         
         int32_t aboveRowToInsertNewCellInto = aRowIndex - startRowIndex + 1;
         int32_t numOfRawSpanRemainingBelow = actualRowSpan - 1;
-        rv = SplitCellIntoRows(&aTableElement, startRowIndex, startColIndex,
-                               aboveRowToInsertNewCellInto,
-                               numOfRawSpanRemainingBelow, nullptr);
+        nsresult rv =
+          SplitCellIntoRows(&aTableElement, startRowIndex, startColIndex,
+                            aboveRowToInsertNewCellInto,
+                            numOfRawSpanRemainingBelow, nullptr);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -1858,7 +1865,6 @@ HTMLEditor::SelectBlockOfCells(Element* aStartCell,
     std::max(startCellIndexes.mRow, endCellIndexes.mRow);
 
   RefPtr<Element> cell;
-  int32_t currentRowIndex, currentColIndex;
   cell = GetFirstSelectedTableCellElement(*selection, error);
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();
@@ -1892,19 +1898,28 @@ HTMLEditor::SelectBlockOfCells(Element* aStartCell,
     }
   }
 
-  int32_t rowSpan, colSpan, actualRowSpan, actualColSpan;
-  bool    isSelected;
   nsresult rv = NS_OK;
+  IgnoredErrorResult ignoredError;
   for (int32_t row = minRow; row <= maxRow; row++) {
-    for (int32_t col = minColumn; col <= maxColumn;
-        col += std::max(actualColSpan, 1)) {
-      rv = GetCellDataAt(table, row, col, getter_AddRefs(cell),
-                         &currentRowIndex, &currentColIndex,
-                         &rowSpan, &colSpan,
-                         &actualRowSpan, &actualColSpan, &isSelected);
-      if (NS_FAILED(rv)) {
-        break;
+    for (int32_t col = minColumn, actualColSpan = 0;
+         col <= maxColumn;
+         col += std::max(actualColSpan, 1)) {
+      CellData cellData(*this, *table, row, col, ignoredError);
+      if (cellData.FailedOrNotFound()) {
+        return NS_ERROR_FAILURE;
       }
+
+      RefPtr<Element> cell = std::move(cellData.mElement);
+      int32_t    currentRowIndex =     cellData.mFirst.mRow;
+      int32_t    currentColIndex =     cellData.mFirst.mColumn;
+      
+      
+      
+                 actualColSpan =       cellData.mEffectiveColSpan;
+      bool       isSelected =          cellData.mIsSelected;
+
+      
+      
       
       if (!isSelected && cell &&
           row == currentRowIndex && col == currentColIndex) {
@@ -1915,7 +1930,6 @@ HTMLEditor::SelectBlockOfCells(Element* aStartCell,
       }
     }
   }
-  
   
   return rv;
 }
@@ -1959,19 +1973,28 @@ HTMLEditor::SelectAllTableCells()
 
   
   bool cellSelected = false;
-  int32_t rowSpan, colSpan, actualRowSpan, actualColSpan, currentRowIndex, currentColIndex;
-  bool    isSelected;
+  IgnoredErrorResult ignoredError;
   for (int32_t row = 0; row < tableSize.mRowCount; row++) {
-    for (int32_t col = 0;
+    for (int32_t col = 0, actualColSpan = 0;
          col < tableSize.mColumnCount;
          col += std::max(actualColSpan, 1)) {
-      rv = GetCellDataAt(table, row, col, getter_AddRefs(cell),
-                         &currentRowIndex, &currentColIndex,
-                         &rowSpan, &colSpan,
-                         &actualRowSpan, &actualColSpan, &isSelected);
-      if (NS_FAILED(rv)) {
+      CellData cellData(*this, *table, row, col, ignoredError);
+      if (NS_WARN_IF(cellData.FailedOrNotFound())) {
+        rv = NS_ERROR_FAILURE;
         break;
       }
+
+      RefPtr<Element> cell = std::move(cellData.mElement);
+      int32_t    currentRowIndex =     cellData.mFirst.mRow;
+      int32_t    currentColIndex =     cellData.mFirst.mColumn;
+      
+      
+      
+                 actualColSpan =       cellData.mEffectiveColSpan;
+      
+
+      
+      
       
       if (cell && row == currentRowIndex && col == currentColIndex) {
         rv =  AppendNodeToSelectionAsRange(cell);
@@ -2044,17 +2067,27 @@ HTMLEditor::SelectTableRow()
 
   
   bool cellSelected = false;
-  int32_t rowSpan, colSpan, actualRowSpan, actualColSpan, currentRowIndex, currentColIndex;
-  bool    isSelected;
-  for (int32_t col = 0;
+  IgnoredErrorResult ignoredError;
+  for (int32_t col = 0, actualColSpan = 0;
        col < tableSize.mColumnCount;
        col += std::max(actualColSpan, 1)) {
-    rv = GetCellDataAt(table, startRowIndex, col, getter_AddRefs(cell),
-                       &currentRowIndex, &currentColIndex, &rowSpan, &colSpan,
-                       &actualRowSpan, &actualColSpan, &isSelected);
-    if (NS_FAILED(rv)) {
+    CellData cellData(*this, *table, startRowIndex, col, ignoredError);
+    if (NS_WARN_IF(cellData.FailedOrNotFound())) {
+      rv = NS_ERROR_FAILURE;
       break;
     }
+
+    RefPtr<Element> cell = std::move(cellData.mElement);
+    int32_t    currentRowIndex =     cellData.mFirst.mRow;
+    int32_t    currentColIndex =     cellData.mFirst.mColumn;
+    
+    
+    
+               actualColSpan =       cellData.mEffectiveColSpan;
+    
+
+    
+    
     
     if (cell && currentRowIndex == startRowIndex && currentColIndex == col) {
       rv = AppendNodeToSelectionAsRange(cell);
@@ -2122,17 +2155,27 @@ HTMLEditor::SelectTableColumn()
 
   
   bool cellSelected = false;
-  int32_t rowSpan, colSpan, actualRowSpan, actualColSpan, currentRowIndex, currentColIndex;
-  bool    isSelected;
-  for (int32_t row = 0;
+  IgnoredErrorResult ignoredError;
+  for (int32_t row = 0, actualRowSpan = 0;
        row < tableSize.mRowCount;
        row += std::max(actualRowSpan, 1)) {
-    rv = GetCellDataAt(table, row, startColIndex, getter_AddRefs(cell),
-                       &currentRowIndex, &currentColIndex, &rowSpan, &colSpan,
-                       &actualRowSpan, &actualColSpan, &isSelected);
-    if (NS_FAILED(rv)) {
+    CellData cellData(*this, *table, row, startColIndex, ignoredError);
+    if (NS_WARN_IF(cellData.FailedOrNotFound())) {
+      rv = NS_ERROR_FAILURE;
       break;
     }
+
+    RefPtr<Element> cell = std::move(cellData.mElement);
+    int32_t    currentRowIndex =     cellData.mFirst.mRow;
+    int32_t    currentColIndex =     cellData.mFirst.mColumn;
+    
+    
+               actualRowSpan =       cellData.mEffectiveRowSpan;
+    
+    
+
+    
+    
     
     if (cell && currentRowIndex == row && currentColIndex == startColIndex) {
       rv = AppendNodeToSelectionAsRange(cell);
@@ -2251,21 +2294,27 @@ HTMLEditor::SplitCellIntoColumns(Element* aTable,
                                  int32_t aColSpanRight,
                                  Element** aNewCell)
 {
-  NS_ENSURE_TRUE(aTable, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(!aTable)) {
+    return NS_ERROR_INVALID_ARG;
+  }
   if (aNewCell) {
     *aNewCell = nullptr;
   }
 
-  RefPtr<Element> cell;
-  int32_t startRowIndex, startColIndex, rowSpan, colSpan, actualRowSpan, actualColSpan;
-  bool    isSelected;
-  nsresult rv =
-    GetCellDataAt(aTable, aRowIndex, aColIndex, getter_AddRefs(cell),
-                  &startRowIndex, &startColIndex,
-                  &rowSpan, &colSpan,
-                  &actualRowSpan, &actualColSpan, &isSelected);
-  NS_ENSURE_SUCCESS(rv, rv);
-  NS_ENSURE_TRUE(cell, NS_ERROR_NULL_POINTER);
+  IgnoredErrorResult ignoredError;
+  CellData cellData(*this, *aTable, aRowIndex, aColIndex, ignoredError);
+  if (NS_WARN_IF(cellData.FailedOrNotFound())) {
+    return NS_ERROR_FAILURE;
+  }
+
+  RefPtr<Element> cell = std::move(cellData.mElement);
+  
+  
+  
+  
+  int32_t    actualRowSpan =       cellData.mEffectiveRowSpan;
+  int32_t    actualColSpan =       cellData.mEffectiveColSpan;
+  
 
   
   if (actualColSpan <= 1 || (aColSpanLeft + aColSpanRight) > actualColSpan) {
@@ -2273,15 +2322,19 @@ HTMLEditor::SplitCellIntoColumns(Element* aTable,
   }
 
   
-  rv = SetColSpan(cell, aColSpanLeft);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsresult rv = SetColSpan(cell, aColSpanLeft);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   
   RefPtr<Element> newCell;
   rv = InsertCell(cell, actualRowSpan, aColSpanRight, true, false,
                   getter_AddRefs(newCell));
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
   if (!newCell) {
     return NS_OK;
   }
@@ -2307,20 +2360,20 @@ HTMLEditor::SplitCellIntoRows(Element* aTable,
     *aNewCell = nullptr;
   }
 
-  RefPtr<Element> cell;
-  int32_t startRowIndex, startColIndex, rowSpan, colSpan, actualRowSpan, actualColSpan;
-  bool    isSelected;
-  nsresult rv =
-    GetCellDataAt(aTable, aRowIndex, aColIndex, getter_AddRefs(cell),
-                  &startRowIndex, &startColIndex,
-                  &rowSpan, &colSpan,
-                  &actualRowSpan, &actualColSpan, &isSelected);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  if (NS_WARN_IF(!cell)) {
+  IgnoredErrorResult ignoredError;
+  CellData cellData(*this, *aTable, aRowIndex, aColIndex, ignoredError);
+  if (NS_WARN_IF(cellData.FailedOrNotFound())) {
     return NS_ERROR_FAILURE;
   }
+
+  RefPtr<Element> cell = std::move(cellData.mElement);
+  int32_t    startRowIndex =       cellData.mFirst.mRow;
+  int32_t    startColIndex =       cellData.mFirst.mColumn;
+  
+  
+  int32_t    actualRowSpan =       cellData.mEffectiveRowSpan;
+  int32_t    actualColSpan =       cellData.mEffectiveColSpan;
+  
 
   
   if (actualRowSpan <= 1 || (aRowSpanAbove + aRowSpanBelow) > actualRowSpan) {
@@ -2333,27 +2386,34 @@ HTMLEditor::SplitCellIntoRows(Element* aTable,
     return error.StealNSResult();
   }
 
+  
   RefPtr<Element> cell2;
   RefPtr<Element> lastCellFound;
-  int32_t startRowIndex2, startColIndex2, rowSpan2, colSpan2, actualRowSpan2, actualColSpan2;
-  bool    isSelected2;
-  int32_t colIndex = 0;
   bool insertAfter = (startColIndex > 0);
-  
-  int32_t rowBelowIndex = startRowIndex+aRowSpanAbove;
-
-  
-  for (;;) {
-    
-    rv = GetCellDataAt(aTable, rowBelowIndex,
-                       colIndex, getter_AddRefs(cell2),
-                       &startRowIndex2, &startColIndex2, &rowSpan2, &colSpan2,
-                       &actualRowSpan2, &actualColSpan2, &isSelected2);
+  for (int32_t colIndex = 0, actualColSpan2 = 0,
+               rowBelowIndex = startRowIndex + aRowSpanAbove;
+       colIndex <= tableSize.mColumnCount;
+       colIndex += std::max(actualColSpan2, 1)) {
+    CellData cellDataAtInsertionPoint(*this, *aTable, rowBelowIndex, colIndex,
+                                      ignoredError);
     
     
-    if (NS_FAILED(rv) || !cell) {
+    
+    
+    
+    
+    if (NS_WARN_IF(cellDataAtInsertionPoint.FailedOrNotFound())) {
       return NS_ERROR_FAILURE;
     }
+
+    cell2 =           std::move(cellDataAtInsertionPoint.mElement);
+    int32_t    startRowIndex2 = cellDataAtInsertionPoint.mFirst.mRow;
+    int32_t    startColIndex2 = cellDataAtInsertionPoint.mFirst.mColumn;
+    
+    
+    
+               actualColSpan2 = cellDataAtInsertionPoint.mEffectiveColSpan;
+    
 
     
     if (cell2 && startRowIndex2 == rowBelowIndex) {
@@ -2377,13 +2437,6 @@ HTMLEditor::SplitCellIntoRows(Element* aTable,
       }
       lastCellFound = cell2;
     }
-    
-    colIndex += std::max(actualColSpan2, 1);
-
-    
-    if (colIndex > tableSize.mColumnCount) {
-      break;
-    }
   }
 
   if (!cell2 && lastCellFound) {
@@ -2396,16 +2449,19 @@ HTMLEditor::SplitCellIntoRows(Element* aTable,
   }
 
   
-  rv = SetRowSpan(cell, aRowSpanAbove);
-  NS_ENSURE_SUCCESS(rv, rv);
-
+  nsresult rv = SetRowSpan(cell, aRowSpanAbove);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   
   RefPtr<Element> newCell;
   rv = InsertCell(cell2, aRowSpanBelow, actualColSpan, insertAfter, false,
                   getter_AddRefs(newCell));
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
   if (!newCell) {
     return NS_OK;
   }
@@ -2466,11 +2522,7 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
 {
   RefPtr<Element> table;
   RefPtr<Element> targetCell;
-  int32_t startRowIndex, startColIndex, rowSpan, colSpan, actualRowSpan, actualColSpan;
-  bool    isSelected;
-  RefPtr<Element> cell2;
-  int32_t startRowIndex2, startColIndex2, rowSpan2, colSpan2, actualRowSpan2, actualColSpan2;
-  bool    isSelected2;
+  int32_t startRowIndex, startColIndex;
 
   
   nsresult rv = GetCellContext(nullptr,
@@ -2478,9 +2530,11 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
                                getter_AddRefs(targetCell),
                                nullptr, nullptr,
                                &startRowIndex, &startColIndex);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
   if (!table || !targetCell) {
-    return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
+    return NS_OK;
   }
 
   AutoPlaceholderBatch beginBatching(this);
@@ -2539,18 +2593,19 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
     
     int32_t lastRowIndex = firstSelectedCell.mIndexes.mRow;
     int32_t lastColIndex = firstSelectedCell.mIndexes.mColumn;
-    int32_t rowIndex, colIndex;
 
     
     
-    
-    for (rowIndex = firstSelectedCell.mIndexes.mRow;
+    IgnoredErrorResult ignoredError;
+    for (int32_t rowIndex = firstSelectedCell.mIndexes.mRow;
          rowIndex <= lastRowIndex;
          rowIndex++) {
       int32_t currentRowCount = tableSize.mRowCount;
       
       rv = FixBadRowSpan(table, rowIndex, tableSize.mRowCount);
-      NS_ENSURE_SUCCESS(rv, rv);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
       
       lastRowIndex -= currentRowCount - tableSize.mRowCount;
 
@@ -2558,14 +2613,23 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
       bool lastRowIsSet = false;
       int32_t lastColInRow = 0;
       int32_t firstColInRow = firstSelectedCell.mIndexes.mColumn;
-      for (colIndex = firstSelectedCell.mIndexes.mColumn;
+      int32_t colIndex = firstSelectedCell.mIndexes.mColumn;
+      for (int32_t actualColSpan2 = 0;
            colIndex < tableSize.mColumnCount;
            colIndex += std::max(actualColSpan2, 1)) {
-        rv = GetCellDataAt(table, rowIndex, colIndex, getter_AddRefs(cell2),
-                           &startRowIndex2, &startColIndex2,
-                           &rowSpan2, &colSpan2,
-                           &actualRowSpan2, &actualColSpan2, &isSelected2);
-        NS_ENSURE_SUCCESS(rv, rv);
+        CellData cellData(*this, *table, rowIndex, colIndex, ignoredError);
+        if (NS_WARN_IF(cellData.FailedOrNotFound())) {
+          return NS_ERROR_FAILURE;
+        }
+
+        
+        
+        
+        
+        
+        
+                   actualColSpan2 =          cellData.mEffectiveColSpan;
+        bool       isSelected2 =             cellData.mIsSelected;
 
         if (isSelected2) {
           if (!cellFoundInRow) {
@@ -2580,7 +2644,7 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
             
             
             
-            lastRowIndex = std::max(0,rowIndex - 1);
+            lastRowIndex = std::max(0, rowIndex - 1);
             lastRowIsSet = true;
             break;
           }
@@ -2593,7 +2657,7 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
               colIndex <= lastColIndex) {
             
             
-            lastRowIndex = std::max(0,rowIndex - 1);
+            lastRowIndex = std::max(0, rowIndex - 1);
             lastRowIsSet = true;
           }
           
@@ -2614,10 +2678,10 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
             
             
             
-            lastRowIndex = std::max(0,rowIndex - 1);
+            lastRowIndex = std::max(0, rowIndex - 1);
           } else {
             
-            lastRowIndex = rowIndex+1;
+            lastRowIndex = rowIndex + 1;
           }
         }
         
@@ -2625,7 +2689,7 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
       } else {
         
         
-        lastRowIndex = std::max(0,rowIndex - 1);
+        lastRowIndex = std::max(0, rowIndex - 1);
       }
     }
 
@@ -2633,15 +2697,23 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
     nsTArray<RefPtr<Element>> deleteList;
 
     
-    for (rowIndex = 0; rowIndex < tableSize.mRowCount; rowIndex++) {
-      for (colIndex = 0;
+    for (int32_t rowIndex = 0; rowIndex < tableSize.mRowCount; rowIndex++) {
+      for (int32_t colIndex = 0, actualColSpan2 = 0;
            colIndex < tableSize.mColumnCount;
            colIndex += std::max(actualColSpan2, 1)) {
-        rv = GetCellDataAt(table, rowIndex, colIndex, getter_AddRefs(cell2),
-                           &startRowIndex2, &startColIndex2,
-                           &rowSpan2, &colSpan2,
-                           &actualRowSpan2, &actualColSpan2, &isSelected2);
-        NS_ENSURE_SUCCESS(rv, rv);
+        CellData cellData(*this, *table, rowIndex, colIndex, ignoredError);
+        if (NS_WARN_IF(cellData.FailedOrNotFound())) {
+          return NS_ERROR_FAILURE;
+        }
+
+        RefPtr<Element> cell2 = std::move(cellData.mElement);
+        int32_t    startRowIndex2 =       cellData.mFirst.mRow;
+        int32_t    startColIndex2 =       cellData.mFirst.mColumn;
+        
+        
+        
+                   actualColSpan2 =       cellData.mEffectiveColSpan;
+        bool       isSelected2 =          cellData.mIsSelected;
 
         
         if (!actualColSpan2) {
@@ -2742,19 +2814,42 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to normalize the table");
   } else {
     
-    rv = GetCellDataAt(table, startRowIndex, startColIndex,
-                       getter_AddRefs(targetCell),
-                       &startRowIndex, &startColIndex, &rowSpan, &colSpan,
-                       &actualRowSpan, &actualColSpan, &isSelected);
-    NS_ENSURE_SUCCESS(rv, rv);
-    NS_ENSURE_TRUE(targetCell, NS_ERROR_NULL_POINTER);
+    
+    IgnoredErrorResult ignoredError;
+    CellData leftCellData(*this, *table, startRowIndex, startColIndex,
+                          ignoredError);
+    if (NS_WARN_IF(leftCellData.FailedOrNotFound())) {
+      return NS_ERROR_FAILURE;
+    }
+
+    RefPtr<Element> targetCell = std::move(leftCellData.mElement);
+               startRowIndex =             leftCellData.mFirst.mRow;
+               startColIndex =             leftCellData.mFirst.mColumn;
+    
+    
+    int32_t    actualRowSpan =             leftCellData.mEffectiveRowSpan;
+    int32_t    actualColSpan =             leftCellData.mEffectiveColSpan;
+    
 
     
-    rv = GetCellDataAt(table, startRowIndex, startColIndex + actualColSpan,
-                       getter_AddRefs(cell2),
-                       &startRowIndex2, &startColIndex2, &rowSpan2, &colSpan2,
-                       &actualRowSpan2, &actualColSpan2, &isSelected2);
-    NS_ENSURE_SUCCESS(rv, rv);
+    CellData rightCellData(*this, *table,
+                           startRowIndex, startColIndex + actualColSpan,
+                           ignoredError);
+    if (NS_WARN_IF(rightCellData.FailedOrNotFound())) {
+      return NS_ERROR_FAILURE;
+    }
+
+    RefPtr<Element> cell2 = std::move(rightCellData.mElement);
+    int32_t    startRowIndex2 =       rightCellData.mFirst.mRow;
+    int32_t    startColIndex2 =       rightCellData.mFirst.mColumn;
+    
+    
+    int32_t    actualRowSpan2 =       rightCellData.mEffectiveRowSpan;
+    int32_t    actualColSpan2 =       rightCellData.mEffectiveColSpan;
+    
+
+    
+    
     if (!cell2) {
       return NS_OK; 
     }
@@ -2889,31 +2984,36 @@ HTMLEditor::FixBadRowSpan(Element* aTable,
     return error.StealNSResult();
   }
 
-  RefPtr<Element> cell;
-  int32_t startRowIndex, startColIndex, rowSpan, colSpan, actualRowSpan, actualColSpan;
-  bool    isSelected;
-
   int32_t minRowSpan = -1;
-  int32_t colIndex;
-
-  for (colIndex = 0;
+  IgnoredErrorResult ignoredError;
+  for (int32_t colIndex = 0, actualColSpan = 0;
        colIndex < tableSize.mColumnCount;
        colIndex += std::max(actualColSpan, 1)) {
-    nsresult rv =
-      GetCellDataAt(aTable, aRowIndex, colIndex, getter_AddRefs(cell),
-                    &startRowIndex, &startColIndex, &rowSpan, &colSpan,
-                    &actualRowSpan, &actualColSpan, &isSelected);
+    CellData cellData(*this, *aTable, aRowIndex, colIndex, ignoredError);
     
     
     
     
     
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+    if (NS_WARN_IF(cellData.FailedOrNotFound())) {
+      return NS_ERROR_FAILURE;
     }
+
+    RefPtr<Element> cell = std::move(cellData.mElement);
+    int32_t    startRowIndex =       cellData.mFirst.mRow;
+    
+    int32_t    rowSpan =             cellData.mRowSpan;
+    
+    
+               actualColSpan =       cellData.mEffectiveColSpan;
+    
+
+    
+    
     if (!cell) {
       break;
     }
+
     if (rowSpan > 0 &&
         startRowIndex == aRowIndex &&
         (rowSpan < minRowSpan || minRowSpan == -1)) {
@@ -2925,21 +3025,30 @@ HTMLEditor::FixBadRowSpan(Element* aTable,
     
     
     int32_t rowsReduced = minRowSpan - 1;
-    for (colIndex = 0;
+    for (int32_t colIndex = 0, actualColSpan = 0;
          colIndex < tableSize.mColumnCount;
          colIndex += std::max(actualColSpan, 1)) {
-      nsresult rv =
-        GetCellDataAt(aTable, aRowIndex, colIndex, getter_AddRefs(cell),
-                      &startRowIndex, &startColIndex, &rowSpan, &colSpan,
-                      &actualRowSpan, &actualColSpan, &isSelected);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
+      CellData cellData(*this, *aTable, aRowIndex, colIndex, ignoredError);
+      if (NS_WARN_IF(cellData.FailedOrNotFound())) {
+        return NS_ERROR_FAILURE;
       }
+
+      RefPtr<Element> cell = std::move(cellData.mElement);
+      int32_t    startRowIndex =       cellData.mFirst.mRow;
+      int32_t    startColIndex =       cellData.mFirst.mColumn;
+      int32_t    rowSpan =             cellData.mRowSpan;
+      
+      
+                 actualColSpan =       cellData.mEffectiveColSpan;
+      
+
+      
+      
       
       if (cell && rowSpan > 0 &&
           startRowIndex == aRowIndex &&
           startColIndex ==  colIndex ) {
-        rv = SetRowSpan(cell, rowSpan-rowsReduced);
+        nsresult rv = SetRowSpan(cell, rowSpan-rowsReduced);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -2970,28 +3079,32 @@ HTMLEditor::FixBadColSpan(Element* aTable,
     return error.StealNSResult();
   }
 
-  RefPtr<Element> cell;
-  int32_t startRowIndex, startColIndex, rowSpan, colSpan, actualRowSpan, actualColSpan;
-  bool    isSelected;
-
   int32_t minColSpan = -1;
-  int32_t rowIndex;
-
-  for (rowIndex = 0;
+  IgnoredErrorResult ignoredError;
+  for (int32_t rowIndex = 0, actualRowSpan = 0;
        rowIndex < tableSize.mRowCount;
        rowIndex += std::max(actualRowSpan, 1)) {
-    nsresult rv =
-      GetCellDataAt(aTable, rowIndex, aColIndex, getter_AddRefs(cell),
-                    &startRowIndex, &startColIndex, &rowSpan, &colSpan,
-                    &actualRowSpan, &actualColSpan, &isSelected);
+    CellData cellData(*this, *aTable, rowIndex, aColIndex, ignoredError);
     
     
     
     
     
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+    if (NS_WARN_IF(cellData.FailedOrNotFound())) {
+      return NS_ERROR_FAILURE;
     }
+
+    RefPtr<Element> cell = std::move(cellData.mElement);
+    
+    int32_t    startColIndex =       cellData.mFirst.mColumn;
+    
+    int32_t    colSpan =             cellData.mColSpan;
+               actualRowSpan =       cellData.mEffectiveRowSpan;
+    
+    
+
+    
+    
     if (!cell) {
       break;
     }
@@ -3006,21 +3119,30 @@ HTMLEditor::FixBadColSpan(Element* aTable,
     
     
     int32_t colsReduced = minColSpan - 1;
-    for (rowIndex = 0;
+    for (int32_t rowIndex = 0, actualRowSpan = 0;
          rowIndex < tableSize.mRowCount;
          rowIndex += std::max(actualRowSpan, 1)) {
-      nsresult rv =
-        GetCellDataAt(aTable, rowIndex, aColIndex, getter_AddRefs(cell),
-                      &startRowIndex, &startColIndex, &rowSpan, &colSpan,
-                      &actualRowSpan, &actualColSpan, &isSelected);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
+      CellData cellData(*this, *aTable, rowIndex, aColIndex, ignoredError);
+      if (NS_WARN_IF(cellData.FailedOrNotFound())) {
+        return NS_ERROR_FAILURE;
       }
+
+      RefPtr<Element> cell = std::move(cellData.mElement);
+      int32_t    startRowIndex =       cellData.mFirst.mRow;
+      int32_t    startColIndex =       cellData.mFirst.mColumn;
+      
+      int32_t    colSpan =             cellData.mColSpan;
+                 actualRowSpan =       cellData.mEffectiveRowSpan;
+      
+      
+
+      
+      
       
       if (cell && colSpan > 0 &&
           startColIndex == aColIndex &&
           startRowIndex ==  rowIndex) {
-        rv = SetColSpan(cell, colSpan-colsReduced);
+        nsresult rv = SetColSpan(cell, colSpan-colsReduced);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -3108,24 +3230,28 @@ HTMLEditor::NormalizeTable(Selection& aSelection,
   }
 
   
+  IgnoredErrorResult ignoredError;
   for (int32_t rowIndex = 0; rowIndex < tableSize.mRowCount; rowIndex++) {
     RefPtr<Element> previousCellElementInRow;
     for (int32_t colIndex = 0; colIndex < tableSize.mColumnCount; colIndex++) {
-      int32_t startRowIndex = 0, startColIndex = 0;
-      int32_t rowSpan = 0, colSpan = 0;
-      int32_t actualRowSpan = 0, actualColSpan = 0;
-      bool isSelected;
-      RefPtr<Element> cellElement;
-      nsresult rv =
-        GetCellDataAt(tableElement, rowIndex, colIndex,
-                      getter_AddRefs(cellElement),
-                      &startRowIndex, &startColIndex, &rowSpan, &colSpan,
-                      &actualRowSpan, &actualColSpan, &isSelected);
+      CellData cellData(*this, *tableElement, rowIndex, colIndex, ignoredError);
       
       
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
+      
+      
+      if (NS_WARN_IF(cellData.FailedOrNotFound())) {
+        return NS_ERROR_FAILURE;
       }
+
+      RefPtr<Element> cellElement = std::move(cellData.mElement);
+      int32_t    startRowIndex =              cellData.mFirst.mRow;
+      
+      
+      
+      
+      
+      
+
       if (!cellElement) {
         
         
@@ -3135,8 +3261,9 @@ HTMLEditor::NormalizeTable(Selection& aSelection,
         }
 
         
-        rv = InsertCell(previousCellElementInRow, 1, 1, true, false,
-                        getter_AddRefs(cellElement));
+        nsresult rv =
+          InsertCell(previousCellElementInRow, 1, 1, true, false,
+                     getter_AddRefs(cellElement));
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -3261,25 +3388,25 @@ HTMLEditor::GetNumberOfCellsInRow(Element& aTableElement,
 
   int32_t numberOfCells = 0;
   for (int32_t columnIndex = 0; columnIndex < tableSize.mColumnCount;) {
-    RefPtr<Element> cellElement;
-    int32_t startRowIndex = 0, startColIndex = 0;
-    int32_t rowSpan = 0, colSpan = 0;
-    int32_t actualRowSpan = 0, actualColSpan = 0;
-    bool isSelected = false;
-    nsresult rv =
-      GetCellDataAt(&aTableElement, aRowIndex, columnIndex,
-                    getter_AddRefs(cellElement),
-                    &startRowIndex, &startColIndex, &rowSpan, &colSpan,
-                    &actualRowSpan, &actualColSpan, &isSelected);
+    CellData cellData(*this, aTableElement, aRowIndex, columnIndex,
+                      ignoredError);
     
     
     
     
-    
-    
-    if (NS_FAILED(rv)) {
+    if (cellData.FailedOrNotFound()) {
       break;
     }
+
+    RefPtr<Element> cellElement = std::move(cellData.mElement);
+    int32_t    startRowIndex =              cellData.mFirst.mRow;
+    
+    
+    
+    
+    int32_t    actualColSpan =              cellData.mEffectiveColSpan;
+    
+
     if (cellElement) {
       
       if (startRowIndex == aRowIndex) {
@@ -4246,28 +4373,44 @@ HTMLEditor::AllCellsInRowSelected(Element* aTable,
                                   int32_t aRowIndex,
                                   int32_t aNumberOfColumns)
 {
-  NS_ENSURE_TRUE(aTable, false);
+  if (NS_WARN_IF(!aTable)) {
+    return false;
+  }
 
-  int32_t curStartRowIndex, curStartColIndex, rowSpan, colSpan, actualRowSpan, actualColSpan;
-  bool    isSelected;
-
-  for (int32_t col = 0; col < aNumberOfColumns;
+  IgnoredErrorResult ignoredError;
+  for (int32_t col = 0, actualColSpan = 0;
+       col < aNumberOfColumns;
        col += std::max(actualColSpan, 1)) {
-    RefPtr<Element> cell;
-    nsresult rv = GetCellDataAt(aTable, aRowIndex, col, getter_AddRefs(cell),
-                                &curStartRowIndex, &curStartColIndex,
-                                &rowSpan, &colSpan,
-                                &actualRowSpan, &actualColSpan, &isSelected);
+    CellData cellData(*this, *aTable, aRowIndex, col, ignoredError);
+    if (NS_WARN_IF(cellData.FailedOrNotFound())) {
+      return false;
+    }
 
-    NS_ENSURE_SUCCESS(rv, false);
+    RefPtr<Element> cell = std::move(cellData.mElement);
     
     
-    NS_ENSURE_TRUE(cell, (col > 0) ? true : false);
+    
+    
+    
+               actualColSpan =       cellData.mEffectiveColSpan;
+    bool       isSelected =          cellData.mIsSelected;
 
     
-    NS_ENSURE_TRUE(isSelected, false);
+    
+    
+    
+    if (NS_WARN_IF(!cell)) {
+      return col > 0;
+    }
 
-    NS_ASSERTION((actualColSpan > 0),"ActualColSpan = 0 in AllCellsInRowSelected");
+    
+    
+    
+    if (NS_WARN_IF(!isSelected)) {
+      return false;
+    }
+
+    MOZ_ASSERT(actualColSpan > 0);
   }
   return true;
 }
@@ -4277,26 +4420,42 @@ HTMLEditor::AllCellsInColumnSelected(Element* aTable,
                                      int32_t aColIndex,
                                      int32_t aNumberOfRows)
 {
-  NS_ENSURE_TRUE(aTable, false);
+  if (NS_WARN_IF(!aTable)) {
+    return false;
+  }
 
-  int32_t curStartRowIndex, curStartColIndex, rowSpan, colSpan, actualRowSpan, actualColSpan;
-  bool    isSelected;
-
-  for (int32_t row = 0; row < aNumberOfRows;
+  IgnoredErrorResult ignoredError;
+  for (int32_t row = 0, actualRowSpan = 0;
+       row < aNumberOfRows;
        row += std::max(actualRowSpan, 1)) {
-    RefPtr<Element> cell;
-    nsresult rv = GetCellDataAt(aTable, row, aColIndex, getter_AddRefs(cell),
-                                &curStartRowIndex, &curStartColIndex,
-                                &rowSpan, &colSpan,
-                                &actualRowSpan, &actualColSpan, &isSelected);
+    CellData cellData(*this, *aTable, row, aColIndex, ignoredError);
+    if (NS_WARN_IF(cellData.FailedOrNotFound())) {
+      return false;
+    }
 
-    NS_ENSURE_SUCCESS(rv, false);
+    RefPtr<Element> cell = std::move(cellData.mElement);
     
     
-    NS_ENSURE_TRUE(cell, (row > 0) ? true : false);
+    
+    
+               actualRowSpan =       cellData.mEffectiveRowSpan;
+    
+    bool       isSelected =          cellData.mIsSelected;
 
     
-    NS_ENSURE_TRUE(isSelected, false);
+    
+    
+    
+    if (NS_WARN_IF(!cell)) {
+      return row > 0;
+    }
+
+    
+    
+    
+    if (NS_WARN_IF(!isSelected)) {
+      return false;
+    }
   }
   return true;
 }
