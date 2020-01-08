@@ -1657,11 +1657,23 @@ public class GeckoSessionTestRule implements TestRule {
 
         boolean calledAny = false;
         int index = mLastWaitEnd;
+        long startTime = SystemClock.uptimeMillis();
+
         beforeWait();
 
         while (!calledAny || !methodCalls.isEmpty()) {
             while (index >= mCallRecords.size()) {
                 UiThreadUtils.loopUntilIdle(mTimeoutMillis);
+                
+                
+                
+                if (SystemClock.uptimeMillis() - startTime > mTimeoutMillis) {
+                    break;
+                }
+            }
+
+            if (SystemClock.uptimeMillis() - startTime > mTimeoutMillis) {
+                throw new UiThreadUtils.TimeoutException("Timed out after " + mTimeoutMillis + "ms");
             }
 
             final MethodCall recorded = mCallRecords.get(index).methodCall;
