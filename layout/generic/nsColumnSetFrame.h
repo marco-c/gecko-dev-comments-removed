@@ -102,42 +102,42 @@ protected:
   struct ReflowConfig {
     
     
-    int32_t mBalanceColCount;
+    int32_t mBalanceColCount = INT32_MAX;
 
     
-    nscoord mColISize;
-
-    
-    
-    nscoord mExpectedISizeLeftOver;
-
-    
-    nscoord mColGap;
+    nscoord mColISize = NS_INTRINSICSIZE;
 
     
     
-    
-    nscoord mColMaxBSize;
+    nscoord mExpectedISizeLeftOver = 0;
 
     
-    
-    bool mIsBalancing;
-
-    
-    
-    nscoord mKnownFeasibleBSize;
-
-    
-    
-    nscoord mKnownInfeasibleBSize;
-
-    
-    nscoord mComputedBSize;
+    nscoord mColGap = NS_INTRINSICSIZE;
 
     
     
     
-    nscoord mConsumedBSize;
+    nscoord mColMaxBSize = NS_INTRINSICSIZE;
+
+    
+    
+    bool mIsBalancing = false;
+
+    
+    
+    nscoord mKnownFeasibleBSize = NS_INTRINSICSIZE;
+
+    
+    
+    nscoord mKnownInfeasibleBSize = 0;
+
+    
+    nscoord mComputedBSize = NS_INTRINSICSIZE;
+
+    
+    
+    
+    nscoord mConsumedBSize = 0;
   };
 
   
@@ -180,8 +180,7 @@ protected:
 
 
   ReflowConfig ChooseColumnStrategy(const ReflowInput& aReflowInput,
-                                    bool aForceAuto, nscoord aFeasibleBSize,
-                                    nscoord aInfeasibleBSize);
+                                    bool aForceAuto);
 
   
 
