@@ -196,6 +196,12 @@ pref("dom.enable_performance_observer", true);
 pref("dom.requestIdleCallback.enabled", true);
 
 
+
+
+
+pref("dom.pointer-lock.enabled", true);
+
+
 pref("dom.gamepad.enabled", true);
 pref("dom.gamepad.test.enabled", false);
 #ifdef RELEASE_OR_BETA
