@@ -555,6 +555,12 @@ xpc::SimulateActivityCallback(bool aActive)
 void
 XPCJSContext::ActivityCallback(void* arg, bool active)
 {
+    
+    
+    if (recordreplay::IsRecordingOrReplaying()) {
+        return;
+    }
+
     if (!active) {
         ProcessHangMonitor::ClearHang();
     }
@@ -567,6 +573,12 @@ XPCJSContext::ActivityCallback(void* arg, bool active)
 bool
 XPCJSContext::InterruptCallback(JSContext* cx)
 {
+    
+    
+    if (recordreplay::IsRecordingOrReplaying()) {
+        return true;
+    }
+
     XPCJSContext* self = XPCJSContext::Get();
 
     
