@@ -23,6 +23,8 @@ bool CheckContextLost(const GLContext* gl);
 
 
 
+
+
 #define LOCAL_GL_COMPRESSED_RGB_PVRTC_4BPPV1            0x8C00
 #define LOCAL_GL_COMPRESSED_RGB_PVRTC_2BPPV1            0x8C01
 #define LOCAL_GL_COMPRESSED_RGBA_PVRTC_4BPPV1           0x8C02
@@ -92,5 +94,7 @@ bool CheckContextLost(const GLContext* gl);
 #define LOCAL_GL_CONTEXT_CORE_PROFILE_BIT_ARB           0x00000001
 #define LOCAL_GL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB  0x00000002
 #define LOCAL_GL_CONTEXT_ROBUST_ACCESS_BIT_ARB          0x00000004
+
+
 
 #endif

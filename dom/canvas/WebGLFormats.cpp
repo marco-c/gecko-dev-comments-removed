@@ -119,6 +119,8 @@ static void
 InitCompressedFormatInfo()
 {
     
+
+    
     
     AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGB8_ETC2                     ,  64, 4, 4, CompressionFamily::ES3);
     AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_SRGB8_ETC2                    ,  64, 4, 4, CompressionFamily::ES3);
@@ -194,6 +196,8 @@ InitCompressedFormatInfo()
 
     
     AddCompressedFormatInfo(EffectiveFormat::ETC1_RGB8_OES, 64, 4, 4, CompressionFamily::ETC1);
+
+    
 }
 
 
@@ -272,6 +276,9 @@ AddFormatInfo(EffectiveFormat format, const char* name, GLenum sizedFormat,
 static void
 InitFormatInfo()
 {
+    
+    
+
 #define FOO(x) EffectiveFormat::x, #x, LOCAL_GL_ ## x
 
     
@@ -489,6 +496,7 @@ InitFormatInfo()
 
 #undef SET_BY_SUFFIX
 
+
     
 
 #define SET_BY_SUFFIX(X) \
@@ -521,6 +529,8 @@ InitFormatInfo()
     SET_COPY_DECAY(R11F_G11F_B10F, R16F, RG16F, R11F_G11F_B10F, MAX, Luminance16F, MAX, MAX)
 
 #undef SET_COPY_DECAY
+
+    
 }
 
 
@@ -767,9 +777,11 @@ AddLegacyFormats_LA8(FormatUsageAuthority* fua, gl::GLContext* gl)
         dui = {LOCAL_GL_RG8, LOCAL_GL_RG, LOCAL_GL_UNSIGNED_BYTE};
         fnAdd(EffectiveFormat::Luminance8Alpha8, FormatUsageInfo::kLumAlphaSwizzleRGBA);
     } else {
+        
         AddSimpleUnsized(fua, LOCAL_GL_LUMINANCE      , LOCAL_GL_UNSIGNED_BYTE, EffectiveFormat::Luminance8      );
         AddSimpleUnsized(fua, LOCAL_GL_ALPHA          , LOCAL_GL_UNSIGNED_BYTE, EffectiveFormat::Alpha8          );
         AddSimpleUnsized(fua, LOCAL_GL_LUMINANCE_ALPHA, LOCAL_GL_UNSIGNED_BYTE, EffectiveFormat::Luminance8Alpha8);
+        
     }
 
     return true;
@@ -779,6 +791,8 @@ static bool
 AddUnsizedFormats(FormatUsageAuthority* fua, gl::GLContext* gl)
 {
     
+
+    
     AddSimpleUnsized(fua, LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_BYTE         , EffectiveFormat::RGBA8  );
     AddSimpleUnsized(fua, LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_SHORT_4_4_4_4, EffectiveFormat::RGBA4  );
     AddSimpleUnsized(fua, LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_SHORT_5_5_5_1, EffectiveFormat::RGB5_A1);
@@ -787,6 +801,8 @@ AddUnsizedFormats(FormatUsageAuthority* fua, gl::GLContext* gl)
 
     
     return AddLegacyFormats_LA8(fua, gl);
+
+    
 }
 
 void
@@ -894,6 +910,7 @@ FormatUsageAuthority::CreateForWebGL2(gl::GLContext* gl)
         ptr->AddTexUnpack(usage, pi, dui);
     };
 
+    
 #define FOO(x) EffectiveFormat::x, LOCAL_GL_ ## x
 
     
@@ -984,6 +1001,7 @@ FormatUsageAuthority::CreateForWebGL2(gl::GLContext* gl)
     fnAddSizedUnpack(FOO(DEPTH32F_STENCIL8), LOCAL_GL_DEPTH_STENCIL, LOCAL_GL_FLOAT_32_UNSIGNED_INT_24_8_REV);
 
 #undef FOO
+    
 
     
 
