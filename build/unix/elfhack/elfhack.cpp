@@ -1079,8 +1079,11 @@ int do_relocation_section(Elf *elf, unsigned int rel_type, unsigned int rel_type
     relhackcode->insertBefore(first_executable);
 
     
+    
+    
+    
     size_t align = first_executable->getSegmentByType(PT_LOAD)->getAlign();
-    size_t new_size = relhack->getSize() + relhackcode->getSize();
+    size_t new_size = relhack->getSize() + relhackcode->getSize() + relhackcode->getAddr() & (align - 1);
     if (!force && (new_size >= old_size || old_size - new_size < align)) {
         fprintf(stderr, "No gain. Skipping\n");
         return -1;
