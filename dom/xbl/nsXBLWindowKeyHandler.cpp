@@ -34,111 +34,11 @@
 #include "mozilla/dom/EventBinding.h"
 #include "mozilla/dom/KeyboardEvent.h"
 #include "mozilla/layers/KeyboardMap.h"
+#include "mozilla/ShortcutKeys.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::layers;
-
-class nsXBLSpecialDocInfo : public nsIObserver
-{
-public:
-  RefPtr<nsXBLDocumentInfo> mHTMLBindings;
-
-  static const char sHTMLBindingStr[];
-  static const char sUserHTMLBindingStr[];
-
-  bool mInitialized;
-
-public:
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIOBSERVER
-
-  void LoadDocInfo();
-  void GetHandlers(const nsACString& aRef,
-                   nsXBLPrototypeHandler** handler);
-
-  nsXBLSpecialDocInfo() : mInitialized(false) {}
-
-protected:
-  virtual ~nsXBLSpecialDocInfo() {}
-
-};
-
-const char nsXBLSpecialDocInfo::sHTMLBindingStr[] =
-  "chrome://global/content/platformHTMLBindings.xml";
-
-NS_IMPL_ISUPPORTS(nsXBLSpecialDocInfo, nsIObserver)
-
-NS_IMETHODIMP
-nsXBLSpecialDocInfo::Observe(nsISupports* aSubject,
-                             const char* aTopic,
-                             const char16_t* aData)
-{
-  MOZ_ASSERT(!strcmp(aTopic, "xpcom-shutdown"), "wrong topic");
-
-  
-  mHTMLBindings = nullptr;
-  mInitialized = false;
-  nsContentUtils::UnregisterShutdownObserver(this);
-
-  return NS_OK;
-}
-
-void nsXBLSpecialDocInfo::LoadDocInfo()
-{
-  if (mInitialized)
-    return;
-  mInitialized = true;
-  nsContentUtils::RegisterShutdownObserver(this);
-
-  nsXBLService* xblService = nsXBLService::GetInstance();
-  if (!xblService)
-    return;
-
-  
-  nsCOMPtr<nsIURI> bindingURI;
-  NS_NewURI(getter_AddRefs(bindingURI), sHTMLBindingStr);
-  if (!bindingURI) {
-    return;
-  }
-  xblService->LoadBindingDocumentInfo(nullptr, nullptr,
-                                      bindingURI,
-                                      nullptr,
-                                      true,
-                                      getter_AddRefs(mHTMLBindings));
-}
-
-
-
-
-
-void
-nsXBLSpecialDocInfo::GetHandlers(const nsACString& aRef,
-                                 nsXBLPrototypeHandler** aHandler)
-{
-  if (mHTMLBindings) {
-    nsXBLPrototypeBinding* binding = mHTMLBindings->GetPrototypeBinding(aRef);
-
-    NS_ASSERTION(binding, "No binding found for the XBL window key handler.");
-    if (!binding)
-      return;
-
-    *aHandler = binding->GetPrototypeHandlers();
-  }
-}
-
-
-static StaticRefPtr<nsXBLSpecialDocInfo> sXBLSpecialDocInfo;
-uint32_t nsXBLWindowKeyHandler::sRefCnt = 0;
-
- void
-nsXBLWindowKeyHandler::EnsureSpecialDocInfo()
-{
-  if (!sXBLSpecialDocInfo) {
-    sXBLSpecialDocInfo = new nsXBLSpecialDocInfo();
-  }
-  sXBLSpecialDocInfo->LoadDocInfo();
-}
 
 nsXBLWindowKeyHandler::nsXBLWindowKeyHandler(Element* aElement,
                                              EventTarget* aTarget)
@@ -146,7 +46,6 @@ nsXBLWindowKeyHandler::nsXBLWindowKeyHandler(Element* aElement,
     mHandler(nullptr)
 {
   mWeakPtrForElement = do_GetWeakReference(aElement);
-  ++sRefCnt;
 }
 
 nsXBLWindowKeyHandler::~nsXBLWindowKeyHandler()
@@ -154,11 +53,6 @@ nsXBLWindowKeyHandler::~nsXBLWindowKeyHandler()
   
   if (mWeakPtrForElement)
     delete mHandler;
-
-  --sRefCnt;
-  if (!sRefCnt) {
-    sXBLSpecialDocInfo = nullptr;
-  }
 }
 
 NS_IMPL_ISUPPORTS(nsXBLWindowKeyHandler,
@@ -230,14 +124,12 @@ nsXBLWindowKeyHandler::EnsureHandlers()
 
     BuildHandlerChain(el, &mHandler);
   } else { 
-    EnsureSpecialDocInfo();
-
     
     if (IsHTMLEditableFieldFocused()) {
-      sXBLSpecialDocInfo->GetHandlers(NS_LITERAL_CSTRING("editor"), &mHandler);
+      mHandler = ShortcutKeys::GetHandlers(HandlerType::eEditor);
     }
     else {
-      sXBLSpecialDocInfo->GetHandlers(NS_LITERAL_CSTRING("browser"), &mHandler);
+      mHandler = ShortcutKeys::GetHandlers(HandlerType::eBrowser);
     }
   }
 
@@ -396,11 +288,7 @@ nsXBLWindowKeyHandler::RemoveKeyboardEventListenersFrom(
  KeyboardMap
 nsXBLWindowKeyHandler::CollectKeyboardShortcuts()
 {
-  
-  EnsureSpecialDocInfo();
-
-  nsXBLPrototypeHandler* handlers = nullptr;
-  sXBLSpecialDocInfo->GetHandlers(NS_LITERAL_CSTRING("browser"), &handlers);
+  nsXBLPrototypeHandler* handlers = ShortcutKeys::GetHandlers(HandlerType::eBrowser);
 
   
   
