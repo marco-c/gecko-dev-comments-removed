@@ -433,17 +433,19 @@ var ContentBlocking = {
     let isAllowing = state & Ci.nsIWebProgressListener.STATE_LOADED_TRACKING_CONTENT;
     let detected = isBlocking || isAllowing;
 
-    
-    
-    
-    
-    
-    let active = this.enabled && detected;
+    let anyBlockerEnabled = false;
 
     for (let blocker of this.blockers) {
       blocker.categoryItem.classList.toggle("blocked", this.enabled && blocker.enabled);
       blocker.categoryItem.hidden = !blocker.visible;
+      anyBlockerEnabled = anyBlockerEnabled || blocker.enabled;
     }
+
+    
+    
+    
+    
+    let active = this.enabled && detected && anyBlockerEnabled;
 
     let isBrowserPrivate = PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser);
 
