@@ -79,7 +79,6 @@ WebConsoleFrame.prototype = {
     this._initUI();
     await this._initConnection();
     await this.consoleOutput.init();
-
     
     Services.prefs.addObserver(PREF_MESSAGE_TIMESTAMP, this._onToolboxPrefChanged);
     this._onToolboxPrefChanged();
