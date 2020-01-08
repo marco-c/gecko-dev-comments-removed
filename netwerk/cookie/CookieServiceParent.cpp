@@ -259,7 +259,7 @@ CookieServiceParent::RecvGetCookieString(const URIParams& aHost,
 
 mozilla::ipc::IPCResult
 CookieServiceParent::RecvSetCookieString(const URIParams& aHost,
-                                         const URIParams& aChannelURI,
+                                         const OptionalURIParams& aChannelURI,
                                          const bool& aIsForeign,
                                          const bool& aIsTrackingResource,
                                          const bool& aFirstPartyStorageAccessGranted,
@@ -278,8 +278,6 @@ CookieServiceParent::RecvSetCookieString(const URIParams& aHost,
     return IPC_FAIL_NO_REASON(this);
 
   nsCOMPtr<nsIURI> channelURI = DeserializeURI(aChannelURI);
-  if (!channelURI)
-    return IPC_FAIL_NO_REASON(this);
 
   
   
