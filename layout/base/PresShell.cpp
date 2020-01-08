@@ -2266,14 +2266,16 @@ PresShell::IntraLineMove(bool aForward, bool aExtend) {
 
 NS_IMETHODIMP
 PresShell::PageMove(bool aForward, bool aExtend) {
-  nsIFrame* frame;
+  nsIFrame* frame = nullptr;
   if (!aExtend) {
     frame = do_QueryFrame(GetScrollableFrameToScroll(nsIPresShell::eVertical));
-  } else {
-    frame = mSelection->GetFrameToPageSelect();
+    
   }
   if (!frame) {
-    return NS_OK;
+    frame = mSelection->GetFrameToPageSelect();
+    if (!frame) {
+      return NS_OK;
+    }
   }
   RefPtr<nsFrameSelection> frameSelection = mSelection;
   frameSelection->CommonPageMove(aForward, aExtend, frame);
