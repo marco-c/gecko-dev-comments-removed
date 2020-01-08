@@ -367,8 +367,7 @@ function dead_test(finish) {
   addMessageListener("cpows:dead_done", finish);
 }
 
-function localStorage_test(finish)
-{
+function localStorage_test(finish) {
   
   
   
@@ -387,6 +386,6 @@ function localStorage_test(finish)
   addMessageListener("cpows:localStorage_done", finish);
 
   for (let i = 0; i < 3; i++) {
-    try { let l = content.localStorage.length; } catch (ex) {}
+    try { content.localStorage.setItem("foo", "bar"); } catch (ex) {}
   }
 }
