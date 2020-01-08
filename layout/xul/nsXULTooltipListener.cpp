@@ -590,7 +590,7 @@ nsXULTooltipListener::FindTooltip(nsIContent* aTarget, nsIContent** aTooltip)
   }
 
   
-  if (!document->IsXULDocument()) {
+  if (!aTarget->IsXULElement()) {
     nsIPopupContainer* popupContainer =
       nsIPopupContainer::GetPopupContainer(document->GetShell());
     NS_ENSURE_STATE(popupContainer);
