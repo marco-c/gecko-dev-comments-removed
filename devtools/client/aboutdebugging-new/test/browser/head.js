@@ -15,6 +15,11 @@ Services.scriptloader.loadSubScript(
 
 
 Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/shared/test/shared-redux-head.js",
+  this);
+
+
+Services.scriptloader.loadSubScript(
   CHROME_URL_ROOT + "debug-target-pane_collapsibilities_head.js", this);
 
 
@@ -45,6 +50,7 @@ async function openAboutDebugging(page, win) {
   const browser = tab.linkedBrowser;
   const document = browser.contentDocument;
   const window = browser.contentWindow;
+  const { AboutDebugging } = window;
 
   info("Wait until the main about debugging container is available");
   await waitUntil(() => document.querySelector(".app"));
@@ -56,7 +62,20 @@ async function openAboutDebugging(page, win) {
   
   
   
-  await waitUntil(() => findDebugTargetByText("about:debugging", document));
+  info("Wait until tabs are displayed");
+  await waitUntilState(AboutDebugging.store, state => {
+    return state.debugTargets.tabs.length > 0;
+  });
+
+  info("Wait until pre-installed add-ons are displayed");
+  await waitUntilState(AboutDebugging.store, state => {
+    return state.debugTargets.installedExtensions.length > 0;
+  });
+
+  info("Wait until internal 'other workers' are displayed");
+  await waitUntilState(AboutDebugging.store, state => {
+    return state.debugTargets.otherWorkers.length > 0;
+  });
 
   return { tab, document, window };
 }

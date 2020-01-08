@@ -140,3 +140,6 @@ window.addEventListener("DOMContentLoaded", () => {
 window.addEventListener("unload", () => {
   AboutDebugging.destroy();
 }, {once: true});
+
+
+window.AboutDebugging = AboutDebugging;
