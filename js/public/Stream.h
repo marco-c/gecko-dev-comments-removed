@@ -13,40 +13,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef js_Stream_h
 #define js_Stream_h
 
@@ -75,9 +41,6 @@ namespace JS {
 
 
 
-typedef void
-(* RequestReadableStreamDataCallback)(JSContext* cx, HandleObject stream,
-                                      void* underlyingSource, size_t desiredSize);
 
 
 
@@ -94,10 +57,6 @@ typedef void
 
 
 
-typedef void
-(* WriteIntoReadRequestBufferCallback)(JSContext* cx, HandleObject stream,
-                                       void* underlyingSource, void* buffer, size_t length,
-                                       size_t* bytesWritten);
 
 
 
@@ -112,39 +71,25 @@ typedef void
 
 
 
-typedef Value
-(* CancelReadableStreamCallback)(JSContext* cx, HandleObject stream,
-                                 void* underlyingSource, HandleValue reason);
 
 
 
 
 
-typedef void
-(* ReadableStreamClosedCallback)(JSContext* cx, HandleObject stream, void* underlyingSource);
+class JS_PUBLIC_API ReadableStreamUnderlyingSource
+{
+  public:
+    virtual ~ReadableStreamUnderlyingSource() {}
+
+    
 
 
 
 
 
+    virtual void requestData(JSContext* cx, HandleObject stream, size_t desiredSize) = 0;
 
-typedef void
-(* ReadableStreamErroredCallback)(JSContext* cx, HandleObject stream, void* underlyingSource,
-                                  HandleValue reason);
-
-
-
-
-
-
-
-
-
-
-
-
-typedef void
-(* ReadableStreamFinalizeCallback)(void* underlyingSource);
+    
 
 
 
@@ -152,17 +97,59 @@ typedef void
 
 
 
-extern JS_PUBLIC_API void
-SetReadableStreamCallbacks(JSContext* cx,
-                           RequestReadableStreamDataCallback dataRequestCallback,
-                           WriteIntoReadRequestBufferCallback writeIntoReadRequestCallback,
-                           CancelReadableStreamCallback cancelCallback,
-                           ReadableStreamClosedCallback closedCallback,
-                           ReadableStreamErroredCallback erroredCallback,
-                           ReadableStreamFinalizeCallback finalizeCallback);
 
-extern JS_PUBLIC_API bool
-HasReadableStreamCallbacks(JSContext* cx);
+
+
+
+
+
+
+    virtual void writeIntoReadRequestBuffer(JSContext* cx, HandleObject stream,
+                                            void* buffer, size_t length,
+                                            size_t* bytesWritten) = 0;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    virtual Value cancel(JSContext* cx, HandleObject stream, HandleValue reason) = 0;
+
+    
+
+
+
+
+
+    virtual void onClosed(JSContext* cx, HandleObject stream) = 0;
+
+    
+
+
+
+
+
+    virtual void onErrored(JSContext* cx, HandleObject stream, HandleValue reason) = 0;
+
+    
+
+
+
+
+
+
+
+    virtual void finalize() = 0;
+};
 
 
 
@@ -188,13 +175,9 @@ NewReadableDefaultStreamObject(JSContext* cx, HandleObject underlyingSource = nu
 
 
 
-
-
-
-
-
 extern JS_PUBLIC_API JSObject*
-NewReadableExternalSourceStreamObject(JSContext* cx, void* underlyingSource,
+NewReadableExternalSourceStreamObject(JSContext* cx,
+                                      ReadableStreamUnderlyingSource* underlyingSource,
                                       HandleObject proto = nullptr);
 
 
@@ -222,7 +205,8 @@ NewReadableExternalSourceStreamObject(JSContext* cx, void* underlyingSource,
 
 
 extern JS_PUBLIC_API bool
-ReadableStreamGetExternalUnderlyingSource(JSContext* cx, HandleObject stream, void** source);
+ReadableStreamGetExternalUnderlyingSource(JSContext* cx, HandleObject stream,
+                                          ReadableStreamUnderlyingSource** source);
 
 
 
@@ -374,7 +358,6 @@ ReadableStreamTee(JSContext* cx, HandleObject stream,
 
 extern JS_PUBLIC_API bool
 ReadableStreamGetDesiredSize(JSContext* cx, JSObject* stream, bool* hasValue, double* value);
-
 
 
 
