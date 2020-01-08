@@ -62,6 +62,7 @@ using mozilla::OriginAttributes;
 using mozilla::Preferences;
 using mozilla::TimeStamp;
 using mozilla::Telemetry::Accumulate;
+using mozilla::Telemetry::AccumulateCategorical;
 using mozilla::intl::LocaleService;
 using safe_browsing::ClientDownloadRequest;
 using safe_browsing::ClientDownloadRequest_CertificateChain;
@@ -169,9 +170,6 @@ private:
   
   
   nsCString mResponse;
-
-  
-  bool IsBinaryFile();
 
   
   ClientDownloadRequest::DownloadType GetDownloadType(const nsACString& aFilename);
@@ -726,30 +724,81 @@ static const char* const kBinaryFileExtensions[] = {
     
 };
 
-bool
-PendingLookup::IsBinaryFile()
-{
-  nsCString fileName;
-  nsresult rv = mQuery->GetSuggestedFileName(fileName);
-  if (NS_FAILED(rv)) {
-    LOG(("No suggested filename [this = %p]", this));
-    return false;
-  }
-  LOG(("Suggested filename: %s [this = %p]", fileName.get(), this));
+static const char* const kDmgFileExtensions[] = {
+    ".cdr",
+    ".dart",
+    ".dc42",
+    ".diskcopy42",
+    ".dmg",
+    ".dmgpart",
+    ".dvdr",
+    ".img",
+    ".imgpart",
+    ".iso",
+    ".ndif",
+    ".smi",
+    ".sparsebundle",
+    ".sparseimage",
+    ".toast",
+    ".udif",
+};
 
-  for (size_t i = 0; i < ArrayLength(kBinaryFileExtensions); ++i) {
-    if (StringEndsWith(fileName,
-                       nsDependentCString(kBinaryFileExtensions[i]))) {
+static const char* const kRarFileExtensions[] = {
+    ".r00",
+    ".r01",
+    ".r02",
+    ".r03",
+    ".r04",
+    ".r05",
+    ".r06",
+    ".r07",
+    ".r08",
+    ".r09",
+    ".r10",
+    ".r11",
+    ".r12",
+    ".r13",
+    ".r14",
+    ".r15",
+    ".r16",
+    ".r17",
+    ".r18",
+    ".r19",
+    ".r20",
+    ".r21",
+    ".r22",
+    ".r23",
+    ".r24",
+    ".r25",
+    ".r26",
+    ".r27",
+    ".r28",
+    ".r29",
+    ".rar",
+};
+
+static const char* const kZipFileExtensions[] = {
+    ".zip", 
+    ".zipx", 
+};
+
+
+static bool
+IsFileType(const nsACString& aFilename, const char* const aFileExtensions[],
+           const size_t aLength)
+{
+  for (size_t i = 0; i < aLength; ++i) {
+    if (StringEndsWith(aFilename, nsDependentCString(aFileExtensions[i]))) {
       return true;
     }
   }
-
   return false;
 }
 
 ClientDownloadRequest::DownloadType
 PendingLookup::GetDownloadType(const nsACString& aFilename) {
-  MOZ_ASSERT(IsBinaryFile());
+  MOZ_ASSERT(IsFileType(aFilename, kBinaryFileExtensions,
+                        ArrayLength(kBinaryFileExtensions)));
 
   
   if (StringEndsWith(aFilename, NS_LITERAL_CSTRING(".zip"))) {
@@ -838,12 +887,42 @@ PendingLookup::LookupNext()
   }
 
   
+  bool isBinaryFile = false;
+  nsAutoCString fileName;
+  nsresult rv = mQuery->GetSuggestedFileName(fileName);
+  if (NS_SUCCEEDED(rv) && !fileName.IsEmpty()) {
+    LOG(("Suggested filename: %s [this = %p]", fileName.get(), this));
+    isBinaryFile = IsFileType(fileName, kBinaryFileExtensions,
+                              ArrayLength(kBinaryFileExtensions));
+    AccumulateCategorical(isBinaryFile ?
+                          mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY::BinaryFile :
+                          mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY::NonBinaryFile);
+  } else {
+    LOG(("No suggested filename [this = %p]", this));
+    AccumulateCategorical(mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY::MissingFilename);
+  }
+
+  if (IsFileType(fileName, kDmgFileExtensions,
+                 ArrayLength(kDmgFileExtensions))) {
+    AccumulateCategorical(mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY_ARCHIVE::DmgFile);
+  } else if (IsFileType(fileName, kRarFileExtensions,
+                        ArrayLength(kRarFileExtensions))) {
+    AccumulateCategorical(mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY_ARCHIVE::RarFile);
+  } else if (IsFileType(fileName, kZipFileExtensions,
+                        ArrayLength(kZipFileExtensions))) {
+    AccumulateCategorical(mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY_ARCHIVE::ZipFile);
+  } else if (isBinaryFile) {
+    AccumulateCategorical(mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY_ARCHIVE::OtherBinaryFile);
+  }
+
   
-  if (!IsBinaryFile()) {
+  
+  if (!isBinaryFile) {
     LOG(("Not eligible for remote lookups [this=%p]", this));
     return OnComplete(false, NS_OK);
   }
-  nsresult rv = SendRemoteQuery();
+
+  rv = SendRemoteQuery();
   if (NS_FAILED(rv)) {
     return OnComplete(false, rv);
   }
