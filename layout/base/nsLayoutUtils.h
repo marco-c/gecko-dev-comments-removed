@@ -119,6 +119,11 @@ struct DisplayPortMarginsPropertyData {
   uint32_t mPriority;
 };
 
+struct MotionPathData {
+  gfx::Point mTranslate;
+  float mRotate;
+};
+
 } 
 
 
@@ -3112,6 +3117,12 @@ public:
 
 
   static ComputedStyle* StyleForScrollbar(nsIFrame* aScrollbarPart);
+
+  
+
+
+  static mozilla::Maybe<mozilla::MotionPathData>
+  ResolveMotionPath(const nsIFrame* aFrame);
 
 private:
   static uint32_t sFontSizeInflationEmPerLine;

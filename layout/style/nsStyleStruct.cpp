@@ -3636,10 +3636,10 @@ nsStyleDisplay::nsStyleDisplay(const nsStyleDisplay& aSource)
   , mSpecifiedRotate(aSource.mSpecifiedRotate)
   , mSpecifiedTranslate(aSource.mSpecifiedTranslate)
   , mSpecifiedScale(aSource.mSpecifiedScale)
+  , mIndividualTransform(aSource.mIndividualTransform)
   , mMotion(aSource.mMotion
             ? MakeUnique<StyleMotion>(*aSource.mMotion)
             : nullptr)
-  , mCombinedTransform(aSource.mCombinedTransform)
   , mTransformOrigin{ aSource.mTransformOrigin[0],
                       aSource.mTransformOrigin[1],
                       aSource.mTransformOrigin[2] }
@@ -3704,9 +3704,8 @@ nsStyleDisplay::~nsStyleDisplay()
                                 mSpecifiedTranslate);
   ReleaseSharedListOnMainThread("nsStyleDisplay::mSpecifiedScale",
                                 mSpecifiedScale);
-  ReleaseSharedListOnMainThread("nsStyleDisplay::mCombinedTransform",
-                                mCombinedTransform);
-
+  ReleaseSharedListOnMainThread("nsStyleDisplay::mIndividualTransform",
+                                mIndividualTransform);
   MOZ_COUNT_DTOR(nsStyleDisplay);
 }
 
@@ -3734,7 +3733,7 @@ nsStyleDisplay::FinishStyle(
     }
   }
 
-  GenerateCombinedTransform();
+  GenerateCombinedIndividualTransform();
 }
 
 static inline nsChangeHint
@@ -4031,17 +4030,17 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
 }
 
 void
-nsStyleDisplay::GenerateCombinedTransform()
+nsStyleDisplay::GenerateCombinedIndividualTransform()
 {
   
   
   
   
-  mCombinedTransform = nullptr;
+  mIndividualTransform = nullptr;
 
   
   
-  AutoTArray<nsCSSValueSharedList*, 4> shareLists;
+  AutoTArray<nsCSSValueSharedList*, 3> shareLists;
   if (mSpecifiedTranslate) {
     shareLists.AppendElement(mSpecifiedTranslate.get());
   }
@@ -4051,16 +4050,12 @@ nsStyleDisplay::GenerateCombinedTransform()
   if (mSpecifiedScale) {
     shareLists.AppendElement(mSpecifiedScale.get());
   }
-  if (mSpecifiedTransform) {
-    shareLists.AppendElement(mSpecifiedTransform.get());
-  }
 
   if (shareLists.Length() == 0) {
     return;
   }
-
   if (shareLists.Length() == 1) {
-    mCombinedTransform = shareLists[0];
+    mIndividualTransform = shareLists[0];
     return;
   }
 
@@ -4068,7 +4063,7 @@ nsStyleDisplay::GenerateCombinedTransform()
   
   
   
-  AutoTArray<nsCSSValueList*, 6> valueLists;
+  AutoTArray<nsCSSValueList*, 3> valueLists;
   for (auto list: shareLists) {
     if (list) {
       valueLists.AppendElement(list->mHead->Clone());
@@ -4083,8 +4078,9 @@ nsStyleDisplay::GenerateCombinedTransform()
     valueLists[i]->mNext = valueLists[i + 1];
   }
 
-  mCombinedTransform = new nsCSSValueSharedList(valueLists[0]);
+  mIndividualTransform = new nsCSSValueSharedList(valueLists[0]);
 }
+
 
 
 
