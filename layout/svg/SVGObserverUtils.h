@@ -239,6 +239,39 @@ private:
   nsIPresShell *mFramePresShell;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class SVGTemplateElementObserver : public SVGIDRenderingObserver
+{
+public:
+  NS_DECL_ISUPPORTS
+
+  SVGTemplateElementObserver(URLAndReferrerInfo* aURI, nsIFrame* aFrame,
+                             bool aReferenceImage)
+    : SVGIDRenderingObserver(aURI, aFrame->GetContent(), aReferenceImage)
+    , mFrameReference(aFrame)
+  {}
+
+protected:
+  virtual ~SVGTemplateElementObserver() = default; 
+
+  virtual void OnRenderingChange() override;
+
+  nsSVGFrameReferenceFromProperty mFrameReference;
+};
+
 class nsSVGRenderingObserverProperty : public SVGIDRenderingObserver
 {
 public:
@@ -522,6 +555,8 @@ public:
     aProp->Release();
   }
 
+  NS_DECLARE_FRAME_PROPERTY_RELEASABLE(HrefToTemplateProperty,
+                                       SVGTemplateElementObserver)
   NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(FilterProperty,
                                       SVGFilterObserverListForCSSProp,
                                       DestroyFilterProperty)
@@ -534,8 +569,6 @@ public:
   NS_DECLARE_FRAME_PROPERTY_RELEASABLE(StrokeProperty, nsSVGPaintingProperty)
   NS_DECLARE_FRAME_PROPERTY_RELEASABLE(HrefAsTextPathProperty,
                                        SVGTextPathObserver)
-  NS_DECLARE_FRAME_PROPERTY_RELEASABLE(HrefAsPaintingProperty,
-                                       nsSVGPaintingProperty)
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(BackgroundImageProperty,
                                       URIObserverHashtable)
 
@@ -709,6 +742,10 @@ public:
 
   static void
   RemoveTextPathObserver(nsIFrame* aTextPathFrame);
+
+  static SVGTemplateElementObserver*
+  GetTemplateElementObserver(URLAndReferrerInfo* aURI, nsIFrame* aFrame,
+      const mozilla::FramePropertyDescriptor<SVGTemplateElementObserver>* aProperty);
 
   
 

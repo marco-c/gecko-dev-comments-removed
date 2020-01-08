@@ -224,6 +224,26 @@ nsSVGFrameReferenceFromProperty::Get()
   return mFrame;
 }
 
+
+NS_IMPL_ISUPPORTS(SVGTemplateElementObserver, nsIMutationObserver)
+
+void
+SVGTemplateElementObserver::OnRenderingChange()
+{
+  SVGIDRenderingObserver::OnRenderingChange();
+
+  if (nsIFrame* frame = mFrameReference.Get()) {
+    
+    
+    
+    
+    
+    
+    SVGObserverUtils::InvalidateDirectRenderingObservers(frame);
+  }
+}
+
+
 NS_IMPL_ISUPPORTS(nsSVGRenderingObserverProperty, nsIMutationObserver)
 
 void
@@ -234,6 +254,9 @@ nsSVGRenderingObserverProperty::OnRenderingChange()
   nsIFrame* frame = mFrameReference.Get();
 
   if (frame && frame->HasAllStateBits(NS_FRAME_SVG_LAYOUT)) {
+    
+    
+    
     
     
     nsLayoutUtils::PostRestyleEvent(
@@ -647,6 +670,14 @@ void
 SVGObserverUtils::RemoveTextPathObserver(nsIFrame* aTextPathFrame)
 {
   aTextPathFrame->DeleteProperty(HrefAsTextPathProperty());
+}
+
+SVGTemplateElementObserver*
+SVGObserverUtils::GetTemplateElementObserver(URLAndReferrerInfo* aURI,
+  nsIFrame* aFrame,
+  const mozilla::FramePropertyDescriptor<SVGTemplateElementObserver>* aProperty)
+{
+  return GetEffectProperty(aURI, aFrame, aProperty);
 }
 
 nsSVGPaintingProperty*
