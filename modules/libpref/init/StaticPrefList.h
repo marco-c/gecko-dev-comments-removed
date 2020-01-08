@@ -442,6 +442,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "layout.css.unknown-webkit-pseudo-element",
+   layout_css_unknown_webkit_pseudo_element,
+  bool, false
+)
+
+
 
 
 
