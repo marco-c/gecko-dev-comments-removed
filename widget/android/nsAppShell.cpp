@@ -412,7 +412,6 @@ nsAppShell::nsAppShell()
         if (jni::IsAvailable()) {
             GeckoThreadSupport::Init();
             GeckoAppShellSupport::Init();
-            mozilla::GeckoSystemStateListener::Init();
             mozilla::widget::Telemetry::Init();
 
             
