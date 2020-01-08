@@ -181,14 +181,6 @@ VARCACHE_PREF(
 
 
 
-VARCACHE_PREF(
-  "dom.compositionevent.text.dispatch_only_system_group_in_content",
-   dom_compositionevent_text_dispatch_only_system_group_in_content,
-   bool, true
-)
-
-
-
 
 #if !defined(DEBUG) && !defined(MOZ_ASAN) && !defined(MOZ_VALGRIND) && \
     !defined(MOZ_TSAN)
@@ -459,6 +451,20 @@ VARCACHE_PREF(
    dom_block_multiple_popups,
   bool, true
 )
+
+
+
+#ifdef EARLY_BETA_OR_EARLIER
+#define PREF_VALUE false
+#else
+#define PREF_VALUE true
+#endif
+VARCACHE_PREF(
+  "dom.targetBlankNoOpener.enabled",
+   dom_targetBlankNoOpener_enabled,
+  bool, PREF_VALUE
+)
+#undef PREF_VALUE
 
 
 
