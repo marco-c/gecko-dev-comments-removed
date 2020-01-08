@@ -277,11 +277,21 @@ static const Latin1Char REPLACE_UTF8_LATIN1 = '?';
 
 
 
+
+
+
+
+
+
 template <InflateUTF8Action Action, OnUTF8Error ErrorAction, typename CharT>
 static bool
-InflateUTF8StringToBuffer(JSContext* cx, const UTF8Chars src, CharT* dst, size_t* dstlenp,
-                          JS::SmallestEncoding *smallestEncoding)
+InflateUTF8ToUTF16(JSContext* cx, const UTF8Chars src, CharT* dst, size_t* dstlenp,
+                   JS::SmallestEncoding *smallestEncoding)
 {
+    static_assert(std::is_same<CharT, char16_t>::value ||
+                  std::is_same<CharT, Latin1Char>::value,
+                  "bad CharT");
+
     if (Action != Nop) {
         *smallestEncoding = JS::SmallestEncoding::ASCII;
     }
@@ -420,7 +430,7 @@ InflateUTF8StringHelper(JSContext* cx, const UTF8Chars src, size_t* outlen)
     *outlen = 0;
 
     JS::SmallestEncoding encoding;
-    if (!InflateUTF8StringToBuffer<Count, ErrorAction, CharT>(cx, src,  nullptr, outlen, &encoding)) {
+    if (!InflateUTF8ToUTF16<Count, ErrorAction, CharT>(cx, src,  nullptr, outlen, &encoding)) {
         return CharsT();
     }
 
@@ -437,7 +447,7 @@ InflateUTF8StringHelper(JSContext* cx, const UTF8Chars src, size_t* outlen)
             dst[i] = CharT(src[i]);
         }
     } else {
-        MOZ_ALWAYS_TRUE((InflateUTF8StringToBuffer<Copy, OnUTF8Error::InsertReplacementCharacter, CharT>(cx, src, dst, outlen, &encoding)));
+        MOZ_ALWAYS_TRUE((InflateUTF8ToUTF16<Copy, OnUTF8Error::InsertReplacementCharacter, CharT>(cx, src, dst, outlen, &encoding)));
     }
 
     dst[*outlen] = 0;    
@@ -475,7 +485,7 @@ JS::SmallestEncoding
 JS::FindSmallestEncoding(UTF8Chars utf8)
 {
     JS::SmallestEncoding encoding;
-    MOZ_ALWAYS_TRUE((InflateUTF8StringToBuffer<FindEncoding, OnUTF8Error::InsertReplacementCharacter, char16_t>(
+    MOZ_ALWAYS_TRUE((InflateUTF8ToUTF16<FindEncoding, OnUTF8Error::InsertReplacementCharacter, char16_t>(
                           nullptr,
                          utf8,
                           nullptr,
@@ -502,7 +512,7 @@ JS::ConstUTF8CharsZ::validate(size_t aLength)
 {
     MOZ_ASSERT(data_);
     UTF8Chars chars(data_, aLength);
-    InflateUTF8StringToBuffer<Nop, OnUTF8Error::Crash, char16_t>(
+    InflateUTF8ToUTF16<Nop, OnUTF8Error::Crash, char16_t>(
          nullptr,
         chars,
          nullptr,
