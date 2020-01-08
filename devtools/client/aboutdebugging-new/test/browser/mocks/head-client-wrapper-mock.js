@@ -20,6 +20,8 @@ const DEFAULT_PREFERENCES = {
 function createClientMock() {
   return {
     
+    addOneTimeListener: () => {},
+    
     addListener: () => {},
     
     close: () => {},
