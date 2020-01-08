@@ -52,14 +52,89 @@ typedef Maybe<SectionRange> MaybeSectionRange;
 
 
 
+struct CompileArgs;
+class Decoder;
+
+struct CompilerEnvironment
+{
+    
+    
+    enum State
+    {
+        InitialWithArgs,
+        InitialWithModeTierDebug,
+        Computed
+    };
+
+    State state_;
+    union {
+        
+        const CompileArgs* args_;
+
+        
+        struct {
+            CompileMode    mode_;
+            Tier           tier_;
+            DebugEnabled   debug_;
+            HasGcTypes     gcTypes_;
+        };
+    };
+
+  public:
+    
+    
+    explicit CompilerEnvironment(const CompileArgs& args);
+
+    
+    
+    
+    CompilerEnvironment(CompileMode mode,
+                        Tier tier,
+                        DebugEnabled debugEnabled,
+                        HasGcTypes gcTypesConfigured);
+
+    
+    void computeParameters(Decoder& d, HasGcTypes gcFeatureOptIn);
+
+    
+    
+    
+    void computeParameters(HasGcTypes gcFeatureOptIn);
+
+    bool isComputed() const {
+        return state_ == Computed;
+    }
+    CompileMode mode() const {
+        MOZ_ASSERT(isComputed());
+        return mode_;
+    }
+    Tier tier() const {
+        MOZ_ASSERT(isComputed());
+        return tier_;
+    }
+    DebugEnabled debug() const {
+        MOZ_ASSERT(isComputed());
+        return debug_;
+    }
+    HasGcTypes gcTypes() const {
+        MOZ_ASSERT(isComputed());
+        return gcTypes_;
+    }
+};
+
+
+
+
+
+
+
+
 
 struct ModuleEnvironment
 {
     
-    const DebugEnabled        debug;
-    const ModuleKind          kind;
-    const CompileMode         mode;
-    const Shareable           sharedMemoryEnabled;
+    const ModuleKind           kind;
+    const Shareable            sharedMemoryEnabled;
     
     
     
@@ -67,10 +142,8 @@ struct ModuleEnvironment
     
     
     
-    
-    
-    const HasGcTypes          gcTypesConfigured;
-    const Tier                tier;
+    const HasGcTypes           gcTypesConfigured;
+    CompilerEnvironment* const compilerEnv;
 
     
     
@@ -105,18 +178,14 @@ struct ModuleEnvironment
     NameInBytecodeVector      funcNames;
     CustomSectionVector       customSections;
 
-    explicit ModuleEnvironment(CompileMode mode,
-                               Tier tier,
-                               DebugEnabled debug,
-                               HasGcTypes hasGcTypes,
+    explicit ModuleEnvironment(HasGcTypes gcTypesConfigured,
+                               CompilerEnvironment* compilerEnv,
                                Shareable sharedMemoryEnabled,
                                ModuleKind kind = ModuleKind::Wasm)
-      : debug(debug),
-        kind(kind),
-        mode(mode),
+      : kind(kind),
         sharedMemoryEnabled(sharedMemoryEnabled),
-        gcTypesConfigured(hasGcTypes),
-        tier(tier),
+        gcTypesConfigured(gcTypesConfigured),
+        compilerEnv(compilerEnv),
 #ifdef ENABLE_WASM_GC
         gcFeatureOptIn(HasGcTypes::False),
 #endif
@@ -124,6 +193,15 @@ struct ModuleEnvironment
         minMemoryLength(0)
     {}
 
+    Tier tier() const {
+        return compilerEnv->tier();
+    }
+    CompileMode mode() const {
+        return compilerEnv->mode();
+    }
+    DebugEnabled debug() const {
+        return compilerEnv->debug();
+    }
     size_t numTables() const {
         return tables.length();
     }
@@ -140,11 +218,7 @@ struct ModuleEnvironment
         return funcTypes.length() - funcImportGlobalDataOffsets.length();
     }
     HasGcTypes gcTypesEnabled() const {
-#ifdef ENABLE_WASM_GC
-        if (gcTypesConfigured == HasGcTypes::True)
-            return gcFeatureOptIn;
-#endif
-        return HasGcTypes::False;
+        return compilerEnv->gcTypes();
     }
     bool usesMemory() const {
         return memoryUsage != MemoryUsage::None;
@@ -156,7 +230,7 @@ struct ModuleEnvironment
         return kind == ModuleKind::AsmJS;
     }
     bool debugEnabled() const {
-        return debug == DebugEnabled::True;
+        return compilerEnv->debug() == DebugEnabled::True;
     }
     bool funcIsImport(uint32_t funcIndex) const {
         return funcIndex < funcImportGlobalDataOffsets.length();
