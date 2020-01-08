@@ -363,6 +363,24 @@ public:
     MIN_MULTIPLIER_VALUE_ALLOWING_OVER_ONE_PAGE_SCROLL = 1000
   };
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT
+  nsresult HandleMiddleClickPaste(nsIPresShell* aPresShell,
+                                  WidgetMouseEvent* aMouseEvent,
+                                  nsEventStatus* aStatus,
+                                  TextEditor* aTextEditor);
+
 protected:
   
 

@@ -654,6 +654,16 @@ WidgetInputEvent::AccelModifier()
 
 
 
+ bool
+WidgetMouseEvent::IsMiddleClickPasteEnabled()
+{
+  return Preferences::GetBool("middlemouse.paste", false);
+}
+
+
+
+
+
  double
 WidgetWheelEvent::ComputeOverriddenDelta(double aDelta, bool aIsForVertical)
 {
