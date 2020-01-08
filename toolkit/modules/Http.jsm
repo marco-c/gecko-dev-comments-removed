@@ -4,8 +4,6 @@
 
 const EXPORTED_SYMBOLS = ["httpRequest", "percentEncode"];
 
-Cu.importGlobalProperties(["XMLHttpRequest"]);
-
 
 
 
