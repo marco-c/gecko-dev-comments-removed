@@ -266,6 +266,9 @@ class Chrome(BrowserSetup):
             kwargs["binary_args"].append("--enable-experimental-web-platform-features")
 
         
+        kwargs["binary_args"].append("--autoplay-policy=no-user-gesture-required")
+
+        
         kwargs["binary_args"] += ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"]
 
 
