@@ -313,10 +313,8 @@ public:
   
   static const KTableEntry kBorderImageRepeatKTable[];
   static const KTableEntry kBorderStyleKTable[];
-  static const KTableEntry kClipPathGeometryBoxKTable[];
   static const KTableEntry kShapeRadiusKTable[];
   static const KTableEntry kFilterFunctionKTable[];
-  static const KTableEntry kShapeOutsideShapeBoxKTable[];
   static const KTableEntry kBoxShadowTypeKTable[];
   static const KTableEntry kCursorKTable[];
   
