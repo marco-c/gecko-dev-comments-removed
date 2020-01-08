@@ -473,6 +473,8 @@ var interfaceNamesInGlobalScope =
 
     {name: "HTMLMapElement", insecureContext: true},
 
+    {name: "HTMLMarqueeElement", insecureContext: true},
+
     {name: "HTMLMediaElement", insecureContext: true},
 
     {name: "HTMLMenuElement", insecureContext: true},
