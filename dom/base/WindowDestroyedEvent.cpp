@@ -1,3 +1,9 @@
+
+
+
+
+
+
 #include "WindowDestroyedEvent.h"
 
 #include "nsJSUtils.h"
@@ -9,17 +15,14 @@
 #include "nsToolkitCompsCID.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
+#include "xpcpublic.h"
 
 namespace mozilla {
-
-
-
 
 struct BrowserCompartmentMatcher : public js::CompartmentFilter {
   bool match(JS::Compartment* aC) const override
   {
-    nsCOMPtr<nsIPrincipal> pc = nsJSPrincipals::get(JS_GetCompartmentPrincipals(aC));
-    return nsContentUtils::IsSystemOrExpandedPrincipal(pc);
+    return !xpc::MightBeWebContentCompartment(aC);
   }
 };
 
@@ -112,8 +115,11 @@ WindowDestroyedEvent::Run()
         AutoSafeJSContext cx;
         JS::Rooted<JSObject*> obj(cx, currentInner->FastGetGlobalJSObject());
         if (obj && !js::IsSystemRealm(js::GetNonCCWObjectRealm(obj))) {
-          JS::Compartment* cpt = js::GetObjectCompartment(obj);
-          nsCOMPtr<nsIPrincipal> pc = nsJSPrincipals::get(JS_GetCompartmentPrincipals(cpt));
+          JS::Realm* realm = js::GetNonCCWObjectRealm(obj);
+          JS::Compartment* cpt = JS::GetCompartmentForRealm(realm);
+
+          nsCOMPtr<nsIPrincipal> pc =
+            nsJSPrincipals::get(JS::GetRealmPrincipals(realm));
 
           if (BasePrincipal::Cast(pc)->AddonPolicy()) {
             

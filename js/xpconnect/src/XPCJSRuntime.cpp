@@ -513,6 +513,25 @@ IsInSandboxCompartment(JSObject* obj)
 }
 
 bool
+CompartmentOriginInfo::MightBeWebContent() const
+{
+    
+    
+    return !nsContentUtils::IsSystemOrExpandedPrincipal(mOrigin);
+}
+
+bool
+MightBeWebContentCompartment(JS::Compartment* compartment)
+{
+    if (CompartmentPrivate* priv = CompartmentPrivate::Get(compartment)) {
+        return priv->originInfo.MightBeWebContent();
+    }
+
+    
+    return !js::IsSystemCompartment(compartment);
+}
+
+bool
 IsUniversalXPConnectEnabled(JS::Compartment* compartment)
 {
     CompartmentPrivate* priv = CompartmentPrivate::Get(compartment);
