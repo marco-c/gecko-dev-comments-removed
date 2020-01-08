@@ -151,6 +151,11 @@ public:
                 DeclVal<JS::Handle<JS::Value>>(),
                 DeclVal<Args>()...))>;
 
+  template <typename Callback, typename... Args>
+  using ThenResult = typename EnableIf<
+    IsHandlerCallback<Callback, Args...>::value,
+    Result<RefPtr<Promise>, nsresult>>::Type;
+
   
   
   
@@ -167,9 +172,7 @@ public:
   
   
   template <typename Callback, typename... Args>
-  typename EnableIf<
-    IsHandlerCallback<Callback, Args...>::value,
-    Result<RefPtr<Promise>, nsresult>>::Type
+  ThenResult<Callback, Args...>
   ThenWithCycleCollectedArgs(Callback&& aOnResolve, Args&&... aArgs);
 
   Result<RefPtr<Promise>, nsresult>

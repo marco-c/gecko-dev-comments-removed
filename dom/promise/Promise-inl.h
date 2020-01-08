@@ -81,6 +81,28 @@ struct StorageTypeHelper<SmartPtr<T>, true, false>
 template <typename T>
 using StorageType = typename StorageTypeHelper<typename Decay<T>::Type>::Type;
 
+
+
+
+
+
+
+
+
+template <template <typename> class SmartPtr, typename T>
+decltype(DeclVal<SmartPtr<T>>().get())
+ArgType(SmartPtr<T>& aVal)
+{
+  return aVal.get();
+}
+
+template <typename T>
+T&&
+ArgType(T& aVal)
+{
+  return std::move(aVal);
+}
+
 using ::ImplCycleCollectionUnlink;
 
 template <typename Callback, typename... Args>
@@ -118,7 +140,7 @@ protected:
   CallCallback(JSContext* aCx, const Callback& aHandler, JS::Handle<JS::Value> aValue,
                std::index_sequence<Indices...>)
   {
-    return mOnResolve(aCx, aValue, std::forward<Args>(Get<Indices>(mArgs))...);
+    return mOnResolve(aCx, aValue, ArgType(Get<Indices>(mArgs))...);
   }
 
   already_AddRefed<Promise>
@@ -135,9 +157,7 @@ protected:
 } 
 
 template <typename Callback, typename... Args>
-typename EnableIf<
-  Promise::IsHandlerCallback<Callback, Args...>::value,
-  Result<RefPtr<Promise>, nsresult>>::Type
+Promise::ThenResult<Callback, Args...>
 Promise::ThenWithCycleCollectedArgs(Callback&& aOnResolve, Args&&... aArgs)
 {
   using HandlerType = NativeThenHandler<Callback, Args...>;
