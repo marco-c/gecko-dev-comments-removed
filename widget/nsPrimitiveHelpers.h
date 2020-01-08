@@ -31,8 +31,8 @@ public:
     
     
     
-  static void CreateDataFromPrimitive ( const nsACString& aFlavor, nsISupports* aPrimitive, 
-                                         void** aDataBuff, uint32_t aDataLen ) ;
+  static void CreateDataFromPrimitive(const nsACString& aFlavor, nsISupports* aPrimitive,
+                                      void** aDataBuff, uint32_t* aDataLen);
 
 }; 
 
