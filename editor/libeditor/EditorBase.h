@@ -659,7 +659,7 @@ public:
 
 
 
-  virtual already_AddRefed<nsIContent> FindSelectionRoot(nsINode* aNode);
+  virtual Element* FindSelectionRoot(nsINode* aNode) const;
 
   
 

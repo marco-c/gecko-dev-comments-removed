@@ -462,8 +462,8 @@ HTMLEditor::UpdateRootElement()
   }
 }
 
-already_AddRefed<nsIContent>
-HTMLEditor::FindSelectionRoot(nsINode* aNode)
+Element*
+HTMLEditor::FindSelectionRoot(nsINode* aNode) const
 {
   if (NS_WARN_IF(!aNode)) {
     return nullptr;
@@ -472,42 +472,38 @@ HTMLEditor::FindSelectionRoot(nsINode* aNode)
   MOZ_ASSERT(aNode->IsDocument() || aNode->IsContent(),
              "aNode must be content or document node");
 
-  nsCOMPtr<nsIDocument> doc = aNode->GetComposedDoc();
+  nsIDocument* doc = aNode->GetComposedDoc();
   if (!doc) {
     return nullptr;
   }
 
-  nsCOMPtr<nsIContent> content;
   if (aNode->IsInUncomposedDoc() &&
       (doc->HasFlag(NODE_IS_EDITABLE) || !aNode->IsContent())) {
-    content = doc->GetRootElement();
-    return content.forget();
+    return doc->GetRootElement();
   }
-  content = aNode->AsContent();
 
   
   
   
   if (IsReadonly()) {
     
-    content = GetRoot();
-    return content.forget();
+    return GetRoot();
   }
 
+  nsIContent* content = aNode->AsContent();
   if (!content->HasFlag(NODE_IS_EDITABLE)) {
     
     
     if (content->IsElement() &&
         content->AsElement()->State().HasState(NS_EVENT_STATE_MOZ_READWRITE)) {
-      return content.forget();
+      return content->AsElement();
     }
     return nullptr;
   }
 
   
   
-  content = content->GetEditingHost();
-  return content.forget();
+  return content->GetEditingHost();
 }
 
 void
