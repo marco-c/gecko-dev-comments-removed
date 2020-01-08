@@ -7153,6 +7153,16 @@ DoesLayerOrAncestorsHaveOutOfDateFrameMetrics(Layer* aLayer)
 bool
 nsIFrame::TryUpdateTransformOnly(Layer** aLayerResult)
 {
+  
+  
+  
+  
+  
+  
+  if (nsLayoutUtils::AreRetainedDisplayListsEnabled()) {
+    return false;
+  }
+
   Layer* layer = FrameLayerBuilder::GetDedicatedLayer(
     this, DisplayItemType::TYPE_TRANSFORM);
   if (!layer || !layer->HasUserData(LayerIsPrerenderedDataKey())) {
