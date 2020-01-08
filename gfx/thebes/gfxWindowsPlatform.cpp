@@ -431,6 +431,10 @@ void gfxWindowsPlatform::InitAcceleration() {
   if (!DWriteEnabled() && GetDefaultContentBackend() == BackendType::SKIA) {
     InitDWriteSupport();
   }
+  
+  Factory::SetSystemTextQuality(gfxVars::SystemTextQuality());
+  gfxVars::SetSystemTextQualityListener(
+      gfxDWriteFont::SystemTextQualityChanged);
 
   
   
@@ -464,9 +468,6 @@ bool gfxWindowsPlatform::InitDWriteSupport() {
 
   SetupClearTypeParams();
   reporter.SetSuccessful();
-  Factory::SetSystemTextQuality(gfxVars::SystemTextQuality());
-  gfxVars::SetSystemTextQualityListener(
-      gfxDWriteFont::SystemTextQualityChanged);
   return true;
 }
 
