@@ -549,6 +549,12 @@ AddAppDirToCommandLine(std::vector<std::string>& aCmdLine)
                                  NS_GET_IID(nsIFile),
                                  getter_AddRefs(profileDir));
       if (NS_SUCCEEDED(rv)) {
+        
+        
+        
+        
+        
+        mozilla::Unused << profileDir->Normalize();
         nsAutoCString path;
         MOZ_ALWAYS_SUCCEEDS(profileDir->GetNativePath(path));
         aCmdLine.push_back("-profile");
