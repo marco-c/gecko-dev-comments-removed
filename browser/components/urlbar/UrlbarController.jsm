@@ -150,6 +150,14 @@ class UrlbarController {
 
 
 
+  tabContextChanged() {
+    
+  }
+
+  
+
+
+
 
 
   _notify(name, ...params) {
