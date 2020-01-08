@@ -2042,8 +2042,12 @@ imgLoader::ValidateEntry(imgCacheEntry* aEntry,
   
   
   
+  
+  
   void *key = (void*) aCX;
-  if (request->LoadId() != key) {
+  nsCOMPtr<nsIDocument> doc = do_QueryInterface(aCX);
+  uint64_t innerWindowID = doc ? doc->InnerWindowID() : 0;
+  if (request->LoadId() != key || request->InnerWindowID() != innerWindowID) {
     
     
     if (aLoadFlags & nsIRequest::LOAD_BYPASS_CACHE) {
