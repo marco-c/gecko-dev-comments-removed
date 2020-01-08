@@ -17,8 +17,6 @@
 
 
 
-
-
 "use strict";
 var EXPORTED_SYMBOLS = ["PdfJsDefaultPreferences"];
 var PdfJsDefaultPreferences = Object.freeze({
@@ -27,7 +25,6 @@ var PdfJsDefaultPreferences = Object.freeze({
  "sidebarViewOnLoad": 0,
  "cursorToolOnLoad": 0,
  "enableWebGL": false,
- "eventBusDispatchToDOM": false,
  "pdfBugEnabled": false,
  "disableRange": false,
  "disableStream": false,
@@ -42,5 +39,5 @@ var PdfJsDefaultPreferences = Object.freeze({
  "disablePageMode": false,
  "disablePageLabels": false,
  "scrollModeOnLoad": 0,
- "spreadModeOnLoad": 0
+ "spreadModeOnLoad": 0,
 });
