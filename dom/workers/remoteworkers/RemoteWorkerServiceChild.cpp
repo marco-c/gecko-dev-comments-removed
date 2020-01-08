@@ -1,0 +1,19 @@
+
+
+
+
+
+
+#include "RemoteWorkerServiceChild.h"
+#include "RemoteWorkerController.h"
+
+namespace mozilla {
+namespace dom {
+
+RemoteWorkerServiceChild::RemoteWorkerServiceChild()
+{}
+
+RemoteWorkerServiceChild::~RemoteWorkerServiceChild() = default;
+
+} 
+} 

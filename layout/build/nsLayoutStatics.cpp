@@ -109,6 +109,7 @@
 #include "mozilla/dom/ipc/IPCBlobInputStreamStorage.h"
 #include "mozilla/dom/U2FTokenManager.h"
 #include "mozilla/dom/PointerEventHandler.h"
+#include "mozilla/dom/RemoteWorkerService.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "nsThreadManager.h"
 #include "mozilla/css/ImageLoader.h"
@@ -277,6 +278,7 @@ nsLayoutStatics::Initialize()
     
     
     mozilla::dom::DOMPrefs::Initialize();
+    mozilla::dom::RemoteWorkerService::Initialize();
   }
 
   nsThreadManager::InitializeShutdownObserver();
