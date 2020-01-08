@@ -730,3 +730,32 @@ async function enableWebComponents() {
   await pushPref("dom.webcomponents.shadowdom.enabled", true);
   await pushPref("dom.webcomponents.customelements.enabled", true);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function registerActorInContentProcess(url, options) {
+  function convertChromeToFile(uri) {
+    return Cc["@mozilla.org/chrome/chrome-registry;1"]
+             .getService(Ci.nsIChromeRegistry)
+             .convertChromeURL(Services.io.newURI(uri)).spec;
+  }
+  
+  
+  url = url.startsWith("chrome://mochitests") ? convertChromeToFile(url) : url;
+  return ContentTask.spawn(gBrowser.selectedBrowser, { url, options }, args => {
+    
+    const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+    const { DebuggerServer } = require("devtools/server/main");
+    DebuggerServer.registerModule(args.url, args.options);
+  });
+}
