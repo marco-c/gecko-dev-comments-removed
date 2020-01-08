@@ -179,6 +179,16 @@ function Editor(config) {
   
   
   this.config.extraKeys.Tab = cm => {
+    if (config.extraKeys && config.extraKeys.Tab) {
+      
+      
+      
+      const res = config.extraKeys.Tab(cm);
+      if (res === false) {
+        return;
+      }
+    }
+
     if (cm.somethingSelected()) {
       cm.indentSelection("add");
       return;
