@@ -8,7 +8,6 @@
 
 const { Cu } = require("chrome");
 const Services = require("Services");
-const { ActorPool, appendExtraActors } = require("devtools/server/actors/common");
 const { Pool } = require("devtools/shared/protocol");
 const { LazyPool, createExtraActors } = require("devtools/shared/protocol/lazy-pool");
 const { DebuggerServer } = require("devtools/server/main");
@@ -234,20 +233,17 @@ RootActor.prototype = {
 
 
   onGetRoot: function() {
-    const reply = {
-      from: this.actorID,
-    };
-
     
     if (!this._globalActorPool) {
       this._globalActorPool = new LazyPool(this.conn);
     }
-    createExtraActors(this._parameters.globalActorFactories, this._globalActorPool, this);
+    const actors = createExtraActors(
+      this._parameters.globalActorFactories,
+      this._globalActorPool,
+      this
+    );
 
-    
-    this._appendExtraActors(reply);
-
-    return reply;
+    return actors;
   },
 
   
@@ -277,7 +273,7 @@ RootActor.prototype = {
     
     
     
-    const newActorPool = new ActorPool(this.conn);
+    const newActorPool = new Pool(this.conn);
     const targetActorList = [];
     let selected;
 
@@ -292,7 +288,7 @@ RootActor.prototype = {
         selected = targetActorList.length;
       }
       targetActor.parentID = this.actorID;
-      newActorPool.addActor(targetActor);
+      newActorPool.manage(targetActor);
       targetActorList.push(targetActor);
     }
 
@@ -302,10 +298,9 @@ RootActor.prototype = {
     
     
     if (this._tabTargetActorPool) {
-      this.conn.removeActorPool(this._tabTargetActorPool);
+      this._tabTargetActorPool.destroy();
     }
     this._tabTargetActorPool = newActorPool;
-    this.conn.addActorPool(this._tabTargetActorPool);
 
     
     Object.assign(reply, {
@@ -323,8 +318,7 @@ RootActor.prototype = {
                message: "This root actor has no browser tabs." };
     }
     if (!this._tabTargetActorPool) {
-      this._tabTargetActorPool = new ActorPool(this.conn);
-      this.conn.addActorPool(this._tabTargetActorPool);
+      this._tabTargetActorPool = new Pool(this.conn);
     }
 
     let targetActor;
@@ -342,7 +336,7 @@ RootActor.prototype = {
     }
 
     targetActor.parentID = this.actorID;
-    this._tabTargetActorPool.addActor(targetActor);
+    this._tabTargetActorPool.manage(targetActor);
 
     return { tab: targetActor.form() };
   },
@@ -365,13 +359,12 @@ RootActor.prototype = {
     }
 
     if (!this._chromeWindowActorPool) {
-      this._chromeWindowActorPool = new ActorPool(this.conn);
-      this.conn.addActorPool(this._chromeWindowActorPool);
+      this._chromeWindowActorPool = new Pool(this.conn);
     }
 
     const actor = new ChromeWindowTargetActor(this.conn, window);
     actor.parentID = this.actorID;
-    this._chromeWindowActorPool.addActor(actor);
+    this._chromeWindowActorPool.manage(actor);
 
     return {
       from: this.actorID,
@@ -396,16 +389,15 @@ RootActor.prototype = {
     addonList.onListChanged = this._onAddonListChanged;
 
     return addonList.getList().then((addonTargetActors) => {
-      const addonTargetActorPool = new ActorPool(this.conn);
+      const addonTargetActorPool = new Pool(this.conn);
       for (const addonTargetActor of addonTargetActors) {
-        addonTargetActorPool.addActor(addonTargetActor);
+        addonTargetActorPool.manage(addonTargetActor);
       }
 
       if (this._addonTargetActorPool) {
-        this.conn.removeActorPool(this._addonTargetActorPool);
+        this._addonTargetActorPool.destroy();
       }
       this._addonTargetActorPool = addonTargetActorPool;
-      this.conn.addActorPool(this._addonTargetActorPool);
 
       return {
         "from": this.actorID,
@@ -466,14 +458,15 @@ RootActor.prototype = {
     registrationList.onListChanged = this._onServiceWorkerRegistrationListChanged;
 
     return registrationList.getList().then(actors => {
-      const pool = new ActorPool(this.conn);
+      const pool = new Pool(this.conn);
       for (const actor of actors) {
-        pool.addActor(actor);
+        pool.manage(actor);
       }
 
-      this.conn.removeActorPool(this._serviceWorkerRegistrationActorPool);
+      if (this._serviceWorkerRegistrationActorPool) {
+        this._serviceWorkerRegistrationActorPool.destroy();
+      }
       this._serviceWorkerRegistrationActorPool = pool;
-      this.conn.addActorPool(this._serviceWorkerRegistrationActorPool);
 
       return {
         "from": this.actorID,
@@ -564,9 +557,6 @@ RootActor.prototype = {
   },
 
   
-  _appendExtraActors: appendExtraActors,
-
-  
 
 
 
@@ -579,9 +569,9 @@ RootActor.prototype = {
       if (this._tabTargetActorPool) {
         
         
-        this._tabTargetActorPool.forEach(tab => {
+        for (const tab in this._tabTargetActorPool.poolChildren()) {
           tab.removeActorByName(name);
-        });
+        }
       }
       delete this._extraActors[name];
     }
