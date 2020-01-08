@@ -8,7 +8,7 @@
   
   {
 
-  class MozTreecol extends MozBaseControl {
+  class MozTreecol extends MozElements.BaseControl {
     static get observedAttributes() {
       return [
         "label",

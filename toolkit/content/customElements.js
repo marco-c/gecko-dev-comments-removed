@@ -45,6 +45,8 @@ window.addEventListener("DOMContentLoaded", () => {
 const gXULDOMParser = new DOMParser();
 gXULDOMParser.forceEnableXULXBL();
 
+const MozElements = {};
+
 const MozElementMixin = Base => class MozElement extends Base {
 
   
@@ -253,7 +255,7 @@ function getInterfaceProxy(obj) {
   return obj._customInterfaceProxy;
 }
 
-class MozBaseControl extends MozXULElement {
+MozElements.BaseControl = class BaseControl extends MozXULElement {
   get disabled() {
     return this.getAttribute("disabled") == "true";
   }
@@ -277,14 +279,15 @@ class MozBaseControl extends MozXULElement {
       this.removeAttribute("tabindex");
     }
   }
-}
+};
 
-MozXULElement.implementCustomInterface(MozBaseControl, [Ci.nsIDOMXULControlElement]);
+MozXULElement.implementCustomInterface(MozElements.BaseControl,
+                                       [Ci.nsIDOMXULControlElement]);
 
 
 window.MozElementMixin = MozElementMixin;
 window.MozXULElement = MozXULElement;
-window.MozBaseControl = MozBaseControl;
+window.MozElements = MozElements;
 
 
 
