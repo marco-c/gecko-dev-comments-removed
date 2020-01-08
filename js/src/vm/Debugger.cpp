@@ -945,7 +945,7 @@ Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame, jsbytecode
     if (frame.isFunctionFrame() && (frame.callee()->isGenerator() || frame.callee()->isAsync())) {
         genObj = GetGeneratorObjectForFrame(cx, frame);
         if (genObj) {
-            if (!genObj->isClosed() && genObj->isSuspended()) {
+            if (!genObj->isBeforeInitialYield() && !genObj->isClosed() && genObj->isSuspended()) {
                 yieldAwaitIndex =
                     genObj->getFixedSlot(GeneratorObject::YIELD_AND_AWAIT_INDEX_SLOT).toInt32();
                 genObj->setRunning();
@@ -1439,19 +1439,6 @@ static bool
 CheckResumptionValue(JSContext* cx, AbstractFramePtr frame, const Maybe<HandleValue>& maybeThisv,
                      ResumeMode resumeMode, MutableHandleValue vp)
 {
-    if (resumeMode == ResumeMode::Return && frame && frame.isFunctionFrame()) {
-        
-        
-        
-        RootedFunction callee(cx, frame.callee());
-        if (callee->isGenerator()) {
-            if (!CheckGeneratorResumptionValue(cx, vp)) {
-                JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEBUG_BAD_YIELD);
-                return false;
-            }
-        }
-    }
-
     if (maybeThisv.isSome()) {
         const HandleValue& thisv = maybeThisv.ref();
         if (resumeMode == ResumeMode::Return && vp.isPrimitive()) {
@@ -1467,6 +1454,45 @@ CheckResumptionValue(JSContext* cx, AbstractFramePtr frame, const Maybe<HandleVa
         }
     }
     return true;
+}
+
+static void
+AdjustGeneratorResumptionValue(JSContext* cx, AbstractFramePtr frame,
+                               ResumeMode& resumeMode, MutableHandleValue vp)
+{
+    if (resumeMode == ResumeMode::Return &&
+        frame &&
+        frame.isFunctionFrame() &&
+        frame.callee()->isGenerator())
+    {
+        
+        
+        
+        
+        
+        
+        Rooted<GeneratorObject*> genObj(cx, GetGeneratorObjectForFrame(cx, frame));
+        if (genObj && !genObj->isBeforeInitialYield()) {
+            
+            
+            JSObject *pair = CreateIterResultObject(cx, vp, true);
+            if (!pair) {
+                
+                MOZ_ALWAYS_TRUE(cx->getPendingException(vp));
+                cx->clearPendingException();
+                resumeMode = ResumeMode::Throw;
+                return;
+            }
+            vp.setObject(*pair);
+
+            
+            GeneratorObject::finalSuspend(genObj);
+        } else {
+            
+            
+            
+        }
+    }
 }
 
 ResumeMode
@@ -1581,6 +1607,7 @@ Debugger::leaveDebugger(Maybe<AutoRealm>& ar,
         resumeMode = ResumeMode::Terminate;
         vp.setUndefined();
     }
+    AdjustGeneratorResumptionValue(cx, frame, resumeMode, vp);
 
     return resumeMode;
 }

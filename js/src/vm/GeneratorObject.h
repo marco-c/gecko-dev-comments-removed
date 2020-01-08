@@ -124,6 +124,9 @@ class GeneratorObject : public NativeObject
     
     
 
+    bool isBeforeInitialYield() const {
+        return getFixedSlot(YIELD_AND_AWAIT_INDEX_SLOT).isUndefined();
+    }
     bool isRunning() const {
         MOZ_ASSERT(!isClosed());
         return getFixedSlot(YIELD_AND_AWAIT_INDEX_SLOT).toInt32() == YIELD_AND_AWAIT_INDEX_RUNNING;
@@ -206,9 +209,6 @@ GeneratorObject*
 GetGeneratorObjectForFrame(JSContext* cx, AbstractFramePtr frame);
 
 void SetGeneratorClosed(JSContext* cx, AbstractFramePtr frame);
-
-MOZ_MUST_USE bool
-CheckGeneratorResumptionValue(JSContext* cx, HandleValue v);
 
 } 
 

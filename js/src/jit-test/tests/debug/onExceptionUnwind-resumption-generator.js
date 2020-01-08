@@ -16,7 +16,7 @@ var uncaughtException;
 dbg.uncaughtExceptionHook = function(e) {
     uncaughtException = e;
     return {
-        return: currentFrame.eval("({ done: true, value: 'uncaught' })").return
+        return: "uncaught"
     };
 };
 function testUncaughtException() {
@@ -40,78 +40,13 @@ dbg.onExceptionUnwind = function(frame) {
         return: "foo"
     };
 };
-testUncaughtException();
-
-
-dbg.onExceptionUnwind = function(frame) {
-    currentFrame = frame;
-    return {
-        return: frame.eval("({})").return
-    };
-};
-testUncaughtException();
-
-
-dbg.onExceptionUnwind = function(frame) {
-    currentFrame = frame;
-    return {
-        return: frame.eval("({ value: 10 })").return
-    };
-};
-testUncaughtException();
-
-
-dbg.onExceptionUnwind = function(frame) {
-    currentFrame = frame;
-    return {
-        return: frame.eval("({ done: true })").return
-    };
-};
-testUncaughtException();
-
-
-dbg.onExceptionUnwind = function(frame) {
-    currentFrame = frame;
-    return {
-        return: frame.eval("({ done: 10, value: 10 })").return
-    };
-};
-testUncaughtException();
-
-
-dbg.onExceptionUnwind = function(frame) {
-    currentFrame = frame;
-    return {
-        return: frame.eval("({ get done() { return true; }, value: 10 })").return
-    };
-};
-testUncaughtException();
-
-
-dbg.onExceptionUnwind = function(frame) {
-    currentFrame = frame;
-    return {
-        return: frame.eval("({ done: true, get value() { return 10; } })").return
-    };
-};
-testUncaughtException();
-
-
-dbg.onExceptionUnwind = function(frame) {
-    currentFrame = frame;
-    return {
-        return: frame.eval("new Proxy({ done: true, value: 10 }, {})").return
-    };
-};
-testUncaughtException();
-
-
-dbg.onExceptionUnwind = function(frame) {
-    currentFrame = frame;
-    return {
-        return: frame.eval("({ done: true, value: 10 })").return
-    };
-};
 var obj = g.eval(`f().next()`);
 assertEq(obj.done, true);
-assertEq(obj.value, 10);
+assertEq(obj.value, "foo");
+
+
+dbg.onExceptionUnwind = function(frame) {
+    currentFrame = frame;
+    return {declaim: "gadzooks"};
+};
+testUncaughtException();
