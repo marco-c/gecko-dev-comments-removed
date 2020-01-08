@@ -122,15 +122,6 @@ ReadRequestedLocales(nsTArray<nsCString>& aRetVal)
     aRetVal.AppendElement(defaultLocale);
   }
 
-  
-  
-  
-  
-  
-  LocaleService::GetInstance()->GetLastFallbackLocale(str);
-  if (!aRetVal.Contains(str)) {
-    aRetVal.AppendElement(str);
-  }
   return true;
 }
 
