@@ -3021,7 +3021,7 @@ JS_DecompileFunction(JSContext* cx, JS::Handle<JSFunction*> fun);
 
 namespace JS {
 
-using ModuleResolveHook = JSObject* (*)(JSContext*, HandleObject, HandleString);
+using ModuleResolveHook = JSObject* (*)(JSContext*, HandleValue, HandleString);
 
 
 
@@ -3035,7 +3035,7 @@ GetModuleResolveHook(JSRuntime* rt);
 extern JS_PUBLIC_API(void)
 SetModuleResolveHook(JSRuntime* rt, ModuleResolveHook func);
 
-using ModuleMetadataHook = bool (*)(JSContext*, HandleObject, HandleObject);
+using ModuleMetadataHook = bool (*)(JSContext*, HandleValue, HandleObject);
 
 
 
@@ -3061,15 +3061,28 @@ CompileModule(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 
 
-
 extern JS_PUBLIC_API(void)
-SetModuleHostDefinedField(JSObject* module, const JS::Value& value);
+SetModulePrivate(JSObject* module, const JS::Value& value);
 
 
 
 
 extern JS_PUBLIC_API(JS::Value)
-GetModuleHostDefinedField(JSObject* module);
+GetModulePrivate(JSObject* module);
+
+
+
+
+
+extern JS_PUBLIC_API(void)
+SetScriptPrivate(JSScript* script, const JS::Value& value);
+
+
+
+
+
+extern JS_PUBLIC_API(JS::Value)
+GetScriptPrivate(JSScript* script);
 
 
 

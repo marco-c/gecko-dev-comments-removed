@@ -56,9 +56,8 @@ ModuleScript::UnlinkModuleRecord()
 {
   
   if (mModuleRecord) {
-    MOZ_ASSERT(JS::GetModuleHostDefinedField(mModuleRecord).toPrivate() ==
-               this);
-    JS::SetModuleHostDefinedField(mModuleRecord, JS::UndefinedValue());
+    MOZ_ASSERT(JS::GetModulePrivate(mModuleRecord).toPrivate() == this);
+    JS::SetModulePrivate(mModuleRecord, JS::UndefinedValue());
     mModuleRecord = nullptr;
   }
 }
@@ -81,7 +80,7 @@ ModuleScript::SetModuleRecord(JS::Handle<JSObject*> aModuleRecord)
 
   
   
-  JS::SetModuleHostDefinedField(mModuleRecord, JS::PrivateValue(this));
+  JS::SetModulePrivate(mModuleRecord, JS::PrivateValue(this));
   HoldJSObjects(this);
 }
 
