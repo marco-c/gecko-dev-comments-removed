@@ -60,128 +60,128 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsDOMCSSAttributeDeclaration)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
 NS_INTERFACE_MAP_END_INHERITING(nsDOMCSSDeclaration)
 
-  NS_IMPL_CYCLE_COLLECTING_ADDREF(nsDOMCSSAttributeDeclaration)
-  NS_IMPL_CYCLE_COLLECTING_RELEASE(nsDOMCSSAttributeDeclaration)
+NS_IMPL_CYCLE_COLLECTING_ADDREF(nsDOMCSSAttributeDeclaration)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(nsDOMCSSAttributeDeclaration)
 
-  nsresult nsDOMCSSAttributeDeclaration::SetCSSDeclaration(
-      DeclarationBlock * aDecl, MutationClosureData * aClosureData) {
-    NS_ASSERTION(mElement, "Must have Element to set the declaration!");
+nsresult nsDOMCSSAttributeDeclaration::SetCSSDeclaration(
+    DeclarationBlock* aDecl, MutationClosureData* aClosureData) {
+  NS_ASSERTION(mElement, "Must have Element to set the declaration!");
 
-    
-    
-    
-    MOZ_ASSERT_IF(!mIsSMILOverride, aClosureData);
+  
+  
+  
+  MOZ_ASSERT_IF(!mIsSMILOverride, aClosureData);
 
-    
-    
-    MOZ_ASSERT_IF(aClosureData, !aClosureData->mClosure);
+  
+  
+  MOZ_ASSERT_IF(aClosureData, !aClosureData->mClosure);
 
-    aDecl->SetDirty();
-    return mIsSMILOverride
-               ? mElement->SetSMILOverrideStyleDeclaration(aDecl, true)
-               : mElement->SetInlineStyleDeclaration(*aDecl, *aClosureData);
+  aDecl->SetDirty();
+  return mIsSMILOverride
+             ? mElement->SetSMILOverrideStyleDeclaration(aDecl, true)
+             : mElement->SetInlineStyleDeclaration(*aDecl, *aClosureData);
+}
+
+nsIDocument* nsDOMCSSAttributeDeclaration::DocToUpdate() {
+  
+  
+  return mElement->OwnerDoc();
+}
+
+DeclarationBlock* nsDOMCSSAttributeDeclaration::GetOrCreateCSSDeclaration(
+    Operation aOperation, DeclarationBlock** aCreated) {
+  MOZ_ASSERT(aOperation != eOperation_Modify || aCreated);
+
+  if (!mElement) return nullptr;
+
+  DeclarationBlock* declaration;
+  if (mIsSMILOverride) {
+    declaration = mElement->GetSMILOverrideStyleDeclaration();
+  } else {
+    declaration = mElement->GetInlineStyleDeclaration();
   }
 
-  nsIDocument* nsDOMCSSAttributeDeclaration::DocToUpdate() {
-    
-    
-    return mElement->OwnerDoc();
+  if (declaration) {
+    return declaration;
   }
 
-  DeclarationBlock* nsDOMCSSAttributeDeclaration::GetOrCreateCSSDeclaration(
-      Operation aOperation, DeclarationBlock * *aCreated) {
-    MOZ_ASSERT(aOperation != eOperation_Modify || aCreated);
+  if (aOperation != eOperation_Modify) {
+    return nullptr;
+  }
 
-    if (!mElement) return nullptr;
-
-    DeclarationBlock* declaration;
-    if (mIsSMILOverride) {
-      declaration = mElement->GetSMILOverrideStyleDeclaration();
-    } else {
-      declaration = mElement->GetInlineStyleDeclaration();
-    }
-
-    if (declaration) {
-      return declaration;
-    }
-
-    if (aOperation != eOperation_Modify) {
-      return nullptr;
-    }
-
-    
-    RefPtr<DeclarationBlock> decl = new DeclarationBlock();
-    
-    
-    decl->SetDirty();
+  
+  RefPtr<DeclarationBlock> decl = new DeclarationBlock();
+  
+  
+  decl->SetDirty();
 #ifdef DEBUG
-    RefPtr<DeclarationBlock> mutableDecl = decl->EnsureMutable();
-    MOZ_ASSERT(mutableDecl == decl);
+  RefPtr<DeclarationBlock> mutableDecl = decl->EnsureMutable();
+  MOZ_ASSERT(mutableDecl == decl);
 #endif
-    decl.swap(*aCreated);
-    return *aCreated;
-  }
+  decl.swap(*aCreated);
+  return *aCreated;
+}
 
-  nsDOMCSSDeclaration::ParsingEnvironment
-  nsDOMCSSAttributeDeclaration::GetParsingEnvironment(nsIPrincipal *
-                                                      aSubjectPrincipal) const {
-    return {
-        mElement->GetURLDataForStyleAttr(aSubjectPrincipal),
-        mElement->OwnerDoc()->GetCompatibilityMode(),
-        mElement->OwnerDoc()->CSSLoader(),
-    };
-  }
+nsDOMCSSDeclaration::ParsingEnvironment
+nsDOMCSSAttributeDeclaration::GetParsingEnvironment(
+    nsIPrincipal* aSubjectPrincipal) const {
+  return {
+      mElement->GetURLDataForStyleAttr(aSubjectPrincipal),
+      mElement->OwnerDoc()->GetCompatibilityMode(),
+      mElement->OwnerDoc()->CSSLoader(),
+  };
+}
 
-  nsresult nsDOMCSSAttributeDeclaration::SetSMILValue(
-      const nsCSSPropertyID aPropID, const nsSMILValue& aValue) {
-    MOZ_ASSERT(mIsSMILOverride);
+nsresult nsDOMCSSAttributeDeclaration::SetSMILValue(
+    const nsCSSPropertyID aPropID, const nsSMILValue& aValue) {
+  MOZ_ASSERT(mIsSMILOverride);
+  
+  
+  
+  RefPtr<DeclarationBlock> created;
+  DeclarationBlock* olddecl =
+      GetOrCreateCSSDeclaration(eOperation_Modify, getter_AddRefs(created));
+  if (!olddecl) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  mozAutoDocUpdate autoUpdate(DocToUpdate(), true);
+  RefPtr<DeclarationBlock> decl = olddecl->EnsureMutable();
+  bool changed = nsSMILCSSValueType::SetPropertyValues(aValue, *decl);
+  if (changed) {
     
     
-    
-    RefPtr<DeclarationBlock> created;
-    DeclarationBlock* olddecl =
-        GetOrCreateCSSDeclaration(eOperation_Modify, getter_AddRefs(created));
-    if (!olddecl) {
-      return NS_ERROR_NOT_AVAILABLE;
+    SetCSSDeclaration(decl, nullptr);
+  }
+  return NS_OK;
+}
+
+nsresult nsDOMCSSAttributeDeclaration::SetPropertyValue(
+    const nsCSSPropertyID aPropID, const nsAString& aValue,
+    nsIPrincipal* aSubjectPrincipal) {
+  
+  
+  
+  
+  
+  if (aPropID == eCSSProperty_opacity || aPropID == eCSSProperty_transform ||
+      aPropID == eCSSProperty_left || aPropID == eCSSProperty_top ||
+      aPropID == eCSSProperty_right || aPropID == eCSSProperty_bottom ||
+      aPropID == eCSSProperty_background_position_x ||
+      aPropID == eCSSProperty_background_position_y ||
+      aPropID == eCSSProperty_background_position) {
+    nsIFrame* frame = mElement->GetPrimaryFrame();
+    if (frame) {
+      ActiveLayerTracker::NotifyInlineStyleRuleModified(frame, aPropID, aValue,
+                                                        this);
     }
-    mozAutoDocUpdate autoUpdate(DocToUpdate(), true);
-    RefPtr<DeclarationBlock> decl = olddecl->EnsureMutable();
-    bool changed = nsSMILCSSValueType::SetPropertyValues(aValue, *decl);
-    if (changed) {
-      
-      
-      SetCSSDeclaration(decl, nullptr);
-    }
-    return NS_OK;
   }
+  return nsDOMCSSDeclaration::SetPropertyValue(aPropID, aValue,
+                                               aSubjectPrincipal);
+}
 
-  nsresult nsDOMCSSAttributeDeclaration::SetPropertyValue(
-      const nsCSSPropertyID aPropID, const nsAString& aValue,
-      nsIPrincipal* aSubjectPrincipal) {
-    
-    
-    
-    
-    
-    if (aPropID == eCSSProperty_opacity || aPropID == eCSSProperty_transform ||
-        aPropID == eCSSProperty_left || aPropID == eCSSProperty_top ||
-        aPropID == eCSSProperty_right || aPropID == eCSSProperty_bottom ||
-        aPropID == eCSSProperty_background_position_x ||
-        aPropID == eCSSProperty_background_position_y ||
-        aPropID == eCSSProperty_background_position) {
-      nsIFrame* frame = mElement->GetPrimaryFrame();
-      if (frame) {
-        ActiveLayerTracker::NotifyInlineStyleRuleModified(frame, aPropID,
-                                                          aValue, this);
-      }
-    }
-    return nsDOMCSSDeclaration::SetPropertyValue(aPropID, aValue,
-                                                 aSubjectPrincipal);
-  }
-
-  void nsDOMCSSAttributeDeclaration::MutationClosureFunction(void* aData) {
-    MutationClosureData* data = static_cast<MutationClosureData*>(aData);
-    
-    data->mClosure = nullptr;
-    data->mElement->InlineStyleDeclarationWillChange(*data);
-  }
+void nsDOMCSSAttributeDeclaration::MutationClosureFunction(void* aData) {
+  MutationClosureData* data = static_cast<MutationClosureData*>(aData);
+  
+  data->mClosure = nullptr;
+  data->mElement->InlineStyleDeclarationWillChange(*data);
+}
