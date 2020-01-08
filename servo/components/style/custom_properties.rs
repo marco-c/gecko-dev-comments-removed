@@ -25,6 +25,7 @@ use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
 
 
 
+#[derive(Debug, MallocSizeOf)]
 pub struct CssEnvironment;
 
 struct EnvironmentVariable {
