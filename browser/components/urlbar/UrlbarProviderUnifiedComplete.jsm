@@ -17,6 +17,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Log: "resource://gre/modules/Log.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   UrlbarMatch: "resource:///modules/UrlbarMatch.jsm",
+  UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
 });
@@ -34,8 +35,9 @@ const TITLE_TAGS_SEPARATOR = " \u2013 ";
 
 
 
-class ProviderUnifiedComplete {
+class ProviderUnifiedComplete extends UrlbarProvider {
   constructor() {
+    super();
     
     this.queries = new Map();
   }
