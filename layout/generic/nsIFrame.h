@@ -3857,7 +3857,6 @@ class nsIFrame : public nsQueryFrame {
   
   
   
-  
   inline bool IsColumnSpan() const;
 
   

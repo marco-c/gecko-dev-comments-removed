@@ -70,7 +70,12 @@ bool nsIFrame::IsColumnSpan() const {
 }
 
 bool nsIFrame::IsColumnSpanInMulticolSubtree() const {
-  return IsColumnSpan() && HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR);
+  return IsColumnSpan() &&
+         (HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR) ||
+          
+          
+          (GetParent() && GetParent()->Style()->GetPseudo() ==
+                              nsCSSAnonBoxes::columnSpanWrapper()));
 }
 
 mozilla::StyleDisplay nsIFrame::GetDisplay() const {
