@@ -283,7 +283,8 @@ Faulty::IsValidProcessType(void)
           || currentProcessType == GeckoProcessType_Content
           || currentProcessType == GeckoProcessType_GMPlugin
           || currentProcessType == GeckoProcessType_GPU
-          || currentProcessType == GeckoProcessType_PDFium)) {
+          || currentProcessType == GeckoProcessType_PDFium
+          || currentProcessType == GeckoProcessType_VR)) {
     
     isValidProcessType = true;
   } else if (targetChildren && targetParent) {

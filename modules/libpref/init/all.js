@@ -5333,15 +5333,17 @@ pref("dom.vr.poseprediction.enabled", true);
 
 pref("dom.vr.require-gesture", true);
 
-pref("gfx.vr.osvr.utilLibPath", "");
-pref("gfx.vr.osvr.commonLibPath", "");
-pref("gfx.vr.osvr.clientLibPath", "");
-pref("gfx.vr.osvr.clientKitLibPath", "");
+pref("dom.vr.process.enabled", false);
 
 pref("dom.vr.puppet.enabled", false);
 
 
 pref("dom.vr.puppet.submitframe", 0);
+
+pref("gfx.vr.osvr.utilLibPath", "");
+pref("gfx.vr.osvr.commonLibPath", "");
+pref("gfx.vr.osvr.clientLibPath", "");
+pref("gfx.vr.osvr.clientKitLibPath", "");
 
 
 
