@@ -13,7 +13,6 @@
 #include "nsTArray.h"
 #include "nsCOMPtr.h"
 #include "nsEscape.h"
-#include "nsIUTF8ConverterService.h"
 #include "nsUConvCID.h"
 #include "nsIServiceManager.h"
 #include "nsMIMEHeaderParamImpl.h"
@@ -32,6 +31,63 @@ static void CopyRawHeader(const char *, uint32_t, const char *, nsACString &);
 static nsresult DecodeRFC2047Str(const char *, const char *, bool, nsACString&);
 static nsresult internalDecodeParameter(const nsACString&, const char*,
                                         const char*, bool, bool, nsACString&);
+
+static nsresult
+ToUTF8(const nsACString& aString,
+       const char* aCharset,
+       bool aAllowSubstitution,
+       nsACString& aResult)
+{
+  if (!aCharset || !*aCharset)
+    return NS_ERROR_INVALID_ARG;
+
+  auto encoding = Encoding::ForLabelNoReplacement(
+                    mozilla::MakeStringSpan(aCharset));
+  if (!encoding) {
+    return NS_ERROR_UCONV_NOCONV;
+  }
+  if (aAllowSubstitution) {
+    nsresult rv = encoding->DecodeWithoutBOMHandling(aString, aResult);
+    if (NS_SUCCEEDED(rv)) {
+      return NS_OK;
+    }
+    return rv;
+  }
+  return encoding->DecodeWithoutBOMHandlingAndWithoutReplacement(aString,
+                                                                 aResult);
+}
+
+static nsresult
+ConvertStringToUTF8(const nsACString& aString,
+                    const char* aCharset,
+                    bool aSkipCheck,
+                    bool aAllowSubstitution,
+                    nsACString& aUTF8String)
+{
+  
+  
+  
+  
+  if (!aSkipCheck && (IsASCII(aString) || IsUTF8(aString))) {
+    aUTF8String = aString;
+    return NS_OK;
+  }
+
+  aUTF8String.Truncate();
+
+  nsresult rv = ToUTF8(aString, aCharset, aAllowSubstitution, aUTF8String);
+
+  
+  
+  
+  
+  if (aSkipCheck && NS_FAILED(rv) && IsUTF8(aString)) {
+    aUTF8String = aString;
+    return NS_OK;
+  }
+
+  return rv;
+}
 
 
 
@@ -117,13 +173,10 @@ nsMIMEHeaderParamImpl::DoGetParameter(const nsACString& aHeaderVal,
     {
         const Encoding* encoding = Encoding::ForLabel(aFallbackCharset);
         nsAutoCString str2;
-        nsCOMPtr<nsIUTF8ConverterService>
-          cvtUTF8(do_GetService(NS_UTF8CONVERTERSERVICE_CONTRACTID));
-        if (cvtUTF8 &&
-            NS_SUCCEEDED(cvtUTF8->ConvertStringToUTF8(str1,
+        if (NS_SUCCEEDED(ConvertStringToUTF8(str1,
                 PromiseFlatCString(aFallbackCharset).get(), false,
                                    encoding != UTF_8_ENCODING,
-                                   1, str2))) {
+                                   str2))) {
           CopyUTF8toUTF16(str2, aResult);
           return NS_OK;
         }
@@ -322,20 +375,13 @@ int32_t parseSegmentNumber(const char *aValue, int32_t aLen)
 
 bool IsValidOctetSequenceForCharset(nsACString& aCharset, const char *aOctets)
 {
-  nsCOMPtr<nsIUTF8ConverterService> cvtUTF8(do_GetService
-    (NS_UTF8CONVERTERSERVICE_CONTRACTID));
-  if (!cvtUTF8) {
-    NS_WARNING("Can't get UTF8ConverterService\n");
-    return false;
-  }
-
   nsAutoCString tmpRaw;
   tmpRaw.Assign(aOctets);
   nsAutoCString tmpDecoded;
 
-  nsresult rv = cvtUTF8->ConvertStringToUTF8(tmpRaw,
-                                             PromiseFlatCString(aCharset).get(),
-                                             false, false, 1, tmpDecoded);
+  nsresult rv = ConvertStringToUTF8(tmpRaw,
+                                    PromiseFlatCString(aCharset).get(),
+                                    false, false, tmpDecoded);
 
   if (rv != NS_OK) {
     
@@ -887,13 +933,8 @@ nsMIMEHeaderParamImpl::DecodeRFC5987Param(const nsACString& aParamVal,
   aLang.Assign(language);
 
   
-  nsresult rv = NS_OK;
-  nsCOMPtr<nsIUTF8ConverterService> cvtUTF8 =
-    do_GetService(NS_UTF8CONVERTERSERVICE_CONTRACTID, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   nsAutoCString utf8;
-  rv = cvtUTF8->ConvertStringToUTF8(value, charset.get(), true, false, 1, utf8);
+  nsresult rv = ConvertStringToUTF8(value, charset.get(), true, false, utf8);
   NS_ENSURE_SUCCESS(rv, rv);
 
   CopyUTF8toUTF16(utf8, aResult);
@@ -910,10 +951,7 @@ internalDecodeParameter(const nsACString& aParamValue, const char* aCharset,
   
   if (aCharset && *aCharset)
   {
-    nsCOMPtr<nsIUTF8ConverterService> cvtUTF8(do_GetService(NS_UTF8CONVERTERSERVICE_CONTRACTID));
-    if (cvtUTF8)
-      return cvtUTF8->ConvertStringToUTF8(aParamValue, aCharset,
-          true, true, 1, aResult);
+    return ConvertStringToUTF8(aParamValue, aCharset, true, true, aResult);
   }
 
   const nsCString& param = PromiseFlatCString(aParamValue);
@@ -1101,14 +1139,11 @@ void CopyRawHeader(const char *aInput, uint32_t aLen,
                      IS_7BIT_NON_ASCII_CHARSET(aDefaultCharset);
 
   
-  nsCOMPtr<nsIUTF8ConverterService>
-    cvtUTF8(do_GetService(NS_UTF8CONVERTERSERVICE_CONTRACTID));
   nsAutoCString utf8Text;
-  if (cvtUTF8 &&
-      NS_SUCCEEDED(
-      cvtUTF8->ConvertStringToUTF8(Substring(aInput, aInput + aLen),
-                                   aDefaultCharset, skipCheck, true, 1,
-                                   utf8Text))) {
+  if (NS_SUCCEEDED(
+      ConvertStringToUTF8(Substring(aInput, aInput + aLen),
+                          aDefaultCharset, skipCheck, true,
+                          utf8Text))) {
     aOutput.Append(utf8Text);
   } else { 
     for (uint32_t i = 0; i < aLen; i++) {
@@ -1138,17 +1173,12 @@ nsresult DecodeQOrBase64Str(const char *aEncoded, size_t aLen, char aQOrBase64,
     return NS_ERROR_INVALID_ARG;
   }
 
-  nsresult rv;
-  nsCOMPtr<nsIUTF8ConverterService>
-    cvtUTF8(do_GetService(NS_UTF8CONVERTERSERVICE_CONTRACTID, &rv));
   nsAutoCString utf8Text;
-  if (NS_SUCCEEDED(rv)) {
-    
-    rv = cvtUTF8->ConvertStringToUTF8(nsDependentCString(decodedText),
-                                      aCharset,
-                                      IS_7BIT_NON_ASCII_CHARSET(aCharset),
-                                      true, 1, utf8Text);
-  }
+  
+  nsresult rv = ConvertStringToUTF8(nsDependentCString(decodedText),
+                                    aCharset,
+                                    IS_7BIT_NON_ASCII_CHARSET(aCharset),
+                                    true, utf8Text);
   free(decodedText);
   if (NS_FAILED(rv)) {
     return rv;
