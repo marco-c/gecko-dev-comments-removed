@@ -150,7 +150,7 @@ this.EventManager.prototype = {
         }
 
         
-        if (!Utils.getState(position).contains(States.FOCUSED)) {
+        if (!position || !Utils.getState(position).contains(States.FOCUSED)) {
           aEvent.accessibleDocument.takeFocus();
         }
 
