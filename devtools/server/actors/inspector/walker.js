@@ -35,6 +35,7 @@ loader.lazyRequireGetter(this, "SKIP_TO_SIBLING", "devtools/server/actors/inspec
 loader.lazyRequireGetter(this, "NodeActor", "devtools/server/actors/inspector/node", true);
 loader.lazyRequireGetter(this, "NodeListActor", "devtools/server/actors/inspector/node", true);
 loader.lazyRequireGetter(this, "LayoutActor", "devtools/server/actors/layout", true);
+loader.lazyRequireGetter(this, "findFlexOrGridParentContainerForNode", "devtools/server/actors/layout", true);
 loader.lazyRequireGetter(this, "getLayoutChangesObserver", "devtools/server/actors/reflow", true);
 loader.lazyRequireGetter(this, "releaseLayoutChangesObserver", "devtools/server/actors/reflow", true);
 loader.lazyRequireGetter(this, "WalkerSearch", "devtools/server/actors/utils/walker-search", true);
@@ -509,13 +510,13 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
-  inlineTextChild: function(node) {
+  inlineTextChild: function({ rawNode }) {
     
-    if (isBeforePseudoElement(node.rawNode) ||
-        isAfterPseudoElement(node.rawNode) ||
-        isShadowHost(node.rawNode) ||
-        node.rawNode.nodeType != Node.ELEMENT_NODE ||
-        node.rawNode.children.length > 0) {
+    if (isBeforePseudoElement(rawNode) ||
+        isAfterPseudoElement(rawNode) ||
+        isShadowHost(rawNode) ||
+        rawNode.nodeType != Node.ELEMENT_NODE ||
+        rawNode.children.length > 0) {
       return undefined;
     }
 
@@ -524,11 +525,11 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       
       
       
-      walker = this.getDocumentWalker(node.rawNode);
+      walker = this.getDocumentWalker(rawNode);
     } catch (e) {
       
       
-      walker = this.getNonAnonymousWalker(node.rawNode);
+      walker = this.getNonAnonymousWalker(rawNode);
     }
 
     const firstChild = walker.firstChild();
@@ -539,17 +540,23 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     
     
     
+    
+    
     const isAssignedSlot =
       !!firstChild &&
-      node.rawNode.nodeName === "SLOT" &&
+      rawNode.nodeName === "SLOT" &&
       isDirectShadowHostChild(firstChild);
+
+    const isFlexItem =
+      !!firstChild &&
+      findFlexOrGridParentContainerForNode(firstChild, "flex", this);
 
     if (!firstChild ||
         walker.nextSibling() ||
         firstChild.nodeType !== Node.TEXT_NODE ||
         firstChild.nodeValue.length > gValueSummaryLength ||
-        isAssignedSlot
-        ) {
+        isAssignedSlot ||
+        isFlexItem) {
       return undefined;
     }
 
