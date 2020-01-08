@@ -10,7 +10,7 @@
 
 var { Ci, Cc } = require("chrome");
 var Services = require("Services");
-var { ActorPool } = require("devtools/server/actors/common");
+var { Pool } = require("devtools/shared/protocol");
 var { ActorRegistry } = require("devtools/server/actor-registry");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var { dumpn } = DevToolsUtils;
@@ -971,7 +971,7 @@ function DebuggerServerConnection(prefix, transport) {
   this._transport.hooks = this;
   this._nextID = 1;
 
-  this._actorPool = new ActorPool(this);
+  this._actorPool = new Pool(this);
   this._extraPools = [this._actorPool];
 
   
@@ -1083,14 +1083,14 @@ DebuggerServerConnection.prototype = {
 
 
   addActor(actor) {
-    this._actorPool.addActor(actor);
+    this._actorPool.manage(actor);
   },
 
   
 
 
   removeActor(actor) {
-    this._actorPool.removeActor(actor);
+    this._actorPool.unmanage(actor);
   },
 
   
