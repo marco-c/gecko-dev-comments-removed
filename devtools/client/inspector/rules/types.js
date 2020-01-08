@@ -104,6 +104,9 @@ exports.rule = {
   }),
 
   
+  pseudoElement: PropTypes.string,
+
+  
   selector: PropTypes.shape(selector),
 
   

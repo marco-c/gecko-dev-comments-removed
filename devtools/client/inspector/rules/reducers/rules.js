@@ -67,6 +67,8 @@ function getRuleState(rule) {
     
     keyframesRule: rule.keyframesRule,
     
+    pseudoElement: rule.pseudoElement,
+    
     selector: rule.selector,
     
     sourceLink: rule.sourceLink,
