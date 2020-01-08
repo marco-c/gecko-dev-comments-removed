@@ -147,7 +147,6 @@ def generate_JSON_definitions(output, *filenames):
             
             
             'expired': False,
-            'expires': scalar.expires,
         })
 
     json.dump(scalar_definitions, output)
