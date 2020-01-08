@@ -53,8 +53,11 @@ function inspectDebugTarget(type, id) {
         break;
       }
       case DEBUG_TARGETS.EXTENSION: {
-        if (runtimeType === RUNTIMES.NETWORK) {
-          await debugRemoteAddon(id, runtimeDetails.client);
+        if (runtimeType === RUNTIMES.NETWORK || runtimeType === RUNTIMES.USB) {
+          
+          
+          const devtoolsClient = runtimeDetails.client.client;
+          await debugRemoteAddon(id, devtoolsClient);
         } else if (runtimeType === RUNTIMES.THIS_FIREFOX) {
           debugLocalAddon(id);
         }
