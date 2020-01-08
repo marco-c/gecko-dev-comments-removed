@@ -104,8 +104,6 @@ nsPrimitiveHelpers :: CreatePrimitiveForCFHTML ( const void* aDataBuff,
   
   
   void* utf8 = moz_xmalloc(*aDataLen);
-  if (!utf8)
-    return;
   memcpy(utf8, aDataBuff, *aDataLen);
   int32_t signedLen = static_cast<int32_t>(*aDataLen);
   nsLinebreakHelpers::ConvertPlatformToDOMLinebreaks(nsDependentCString(kTextMime), &utf8, &signedLen);

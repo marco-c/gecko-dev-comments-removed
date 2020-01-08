@@ -58,16 +58,12 @@ nsXPCTestParams::~nsXPCTestParams()
     /* Copy b into rv. */                                                     \
     *rvLength = *bLength;                                                     \
     *rv = static_cast<type*>(moz_xmalloc(elemSize * (*bLength + padding)));   \
-    if (!*rv)                                                                 \
-        return NS_ERROR_OUT_OF_MEMORY;                                        \
     memcpy(*rv, *b, elemSize * (*bLength + padding));                         \
                                                                               \
     /* Copy a into b. */                                                      \
     *bLength = aLength;                                                       \
     free(*b);                                                                 \
     *b = static_cast<type*>(moz_xmalloc(elemSize * (aLength + padding)));     \
-    if (!*b)                                                                  \
-        return NS_ERROR_OUT_OF_MEMORY;                                        \
     memcpy(*b, a, elemSize * (aLength + padding));                            \
                                                                               \
     /* We need to take ownership of the data we got from a,                   \
@@ -270,8 +266,6 @@ NS_IMETHODIMP nsXPCTestParams::TestInterfaceIs(const nsIID* aIID, void* a,
     
     
     *rvIID = static_cast<nsIID*>(moz_xmalloc(sizeof(nsID)));
-    if (!*rvIID)
-        return NS_ERROR_OUT_OF_MEMORY;
     **rvIID = **bIID;
 
     
@@ -295,8 +289,6 @@ NS_IMETHODIMP nsXPCTestParams::TestInterfaceIsArray(uint32_t aLength, const nsII
     
     
     *rvIID = static_cast<nsIID*>(moz_xmalloc(sizeof(nsID)));
-    if (!*rvIID)
-        return NS_ERROR_OUT_OF_MEMORY;
     **rvIID = **bIID;
     **bIID = *aIID;
 
