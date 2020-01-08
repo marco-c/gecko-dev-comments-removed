@@ -663,15 +663,11 @@ notification[value="translation"] menulist > .menulist-dropmarker {
 
   
 
-
-
-  :root[sizemode="normal"][chromehidden~="menubar"] #TabsToolbar > .titlebar-item,
-  :root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] + #TabsToolbar > .titlebar-item {
+  :root[sizemode="normal"] #TabsToolbar > .titlebar-item {
     margin-top: calc(-1 * var(--space-above-tabbar));
   }
 
   
-
 
   :root[tabsintitlebar][sizemode="normal"]:not([inFullscreen]) #TabsToolbar,
   :root[tabsintitlebar][sizemode="maximized"] #TabsToolbar,
@@ -683,14 +679,12 @@ notification[value="translation"] menulist > .menulist-dropmarker {
 
 
 
-
   .titlebar-buttonbox {
     z-index: 1;
     -moz-box-align: center;
   }
 
   
-
 
   @media (-moz-gtk-csd-minimize-button) {
     .titlebar-min {

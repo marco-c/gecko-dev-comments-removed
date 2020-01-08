@@ -957,18 +957,18 @@ notification[value="translation"] {
 
 
 
+#TabsToolbar > .titlebar-item {
+  margin-bottom: @navbarTabsShadowSize@;
+}
 
-:root[sizemode="normal"][chromehidden~="menubar"] .titlebar-item,
-:root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] + #TabsToolbar > .titlebar-item,
-:root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] > .titlebar-item {
+
+:root[sizemode="normal"] #TabsToolbar > .titlebar-item {
   margin-top: calc(-1 * var(--space-above-tabbar));
 }
 
 
 @media (-moz-os-version: windows-win7) {
-  :root[sizemode="normal"][chromehidden~="menubar"] .titlebar-item,
-  :root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] + #TabsToolbar > .titlebar-item,
-  :root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] > .titlebar-item {
+  :root[sizemode="normal"] #TabsToolbar > .titlebar-item {
     margin-top: calc(-1 * (var(--space-above-tabbar) + 4px));
   }
 }
