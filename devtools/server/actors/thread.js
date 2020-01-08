@@ -545,10 +545,20 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       if (steppingType == "finish") {
         const parentFrame = thread._getNextStepFrame(this);
         if (parentFrame && parentFrame.script) {
+          
+          
+          const ncompletion = thread.dbg.replaying ? null : completion;
           const { onStep, onPop } = thread._makeSteppingHooks(
-            originalLocation, "next", false, completion
+            originalLocation, "next", false, ncompletion
           );
-          parentFrame.onStep = onStep;
+          if (thread.dbg.replaying) {
+            const offsets =
+              thread._findReplayingStepOffsets(originalLocation, parentFrame,
+                                                false);
+            parentFrame.setReplayingOnStep(onStep, offsets);
+          } else {
+            parentFrame.onStep = onStep;
+          }
           
           
           
