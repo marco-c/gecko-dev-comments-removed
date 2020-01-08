@@ -101,6 +101,9 @@ l10n_description_schema = Schema({
     Required('dependent-tasks'): {basestring: object},
 
     
+    Required('primary-dependency'): object,
+
+    
     Required('worker-type'): _by_platform(basestring),
 
     
@@ -197,7 +200,7 @@ def _remove_locales(locales, to_remove=None):
 @transforms.add
 def setup_name(config, jobs):
     for job in jobs:
-        dep = job['dependent-tasks']['build']
+        dep = job['primary-dependency']
         
         
         job['name'] = job.get('name',
@@ -208,7 +211,7 @@ def setup_name(config, jobs):
 @transforms.add
 def copy_in_useful_magic(config, jobs):
     for job in jobs:
-        dep = job['dependent-tasks']['build']
+        dep = job['primary-dependency']
         attributes = copy_attributes_from_dependent_job(dep)
         attributes.update(job.get('attributes', {}))
         
