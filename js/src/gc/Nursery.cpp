@@ -157,6 +157,11 @@ js::Nursery::init(uint32_t maxNurseryBytes, AutoLockGCBgAlloc& lock)
         return false;
 
     
+    
+    if (mozilla::recordreplay::IsRecordingOrReplaying())
+        maxNurseryBytes = 0;
+
+    
     chunkCountLimit_ = maxNurseryBytes >> ChunkShift;
 
     
