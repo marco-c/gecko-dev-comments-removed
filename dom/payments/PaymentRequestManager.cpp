@@ -530,6 +530,22 @@ PaymentRequestManager::UpdatePayment(JSContext* aCx,
 }
 
 nsresult
+PaymentRequestManager::CleanupPayment(PaymentRequest* aRequest)
+{
+  
+  if (auto entry = mActivePayments.Lookup(aRequest)) {
+    NotifyRequestDone(aRequest);
+  }
+  if (mShowingRequest == aRequest) {
+    mShowingRequest = nullptr;
+  }
+  nsAutoString requestId;
+  aRequest->GetInternalId(requestId);
+  IPCPaymentCleanupActionRequest action(requestId);
+  return SendRequestPayment(aRequest, action, false);
+}
+
+nsresult
 PaymentRequestManager::RespondPayment(PaymentRequest* aRequest,
                                       const IPCPaymentActionResponse& aResponse)
 {
