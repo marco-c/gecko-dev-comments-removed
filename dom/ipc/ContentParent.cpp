@@ -2497,7 +2497,7 @@ void ContentParent::InitInternal(ProcessPriority aInitialPriority) {
 
   
   
-  StyleSheet* ucs = nsLayoutStylesheetCache::Singleton()->UserContentSheet();
+  StyleSheet* ucs = nsLayoutStylesheetCache::Singleton()->GetUserContentSheet();
   if (ucs) {
     SerializeURI(ucs->GetSheetURI(), xpcomInit.userContentSheetURL());
   } else {
