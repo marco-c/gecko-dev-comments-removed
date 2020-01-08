@@ -392,6 +392,11 @@ CookieServiceChild::GetCookieStringFromCookieHashTable(nsIURI                 *a
       continue;
 
     
+    if (cookie->IsHttpOnly()) {
+      continue;
+    }
+
+    
     if (cookie->IsSecure() && !isSecure)
       continue;
 
@@ -521,9 +526,7 @@ CookieServiceChild::RecordDocumentCookie(nsCookie               *aCookie,
     return;
   }
 
-  if (!aCookie->IsHttpOnly()) {
-    cookiesList->AppendElement(aCookie);
-  }
+  cookiesList->AppendElement(aCookie);
 }
 
 nsresult
@@ -677,18 +680,37 @@ CookieServiceChild::SetCookieStringInternal(nsIURI *aHostURI,
     return NS_OK;
   }
 
+  nsCookieKey key(baseDomain, attrs);
+  CookiesList *cookies = mCookiesMap.Get(key);
+
   nsCString serverTimeString(aServerTime);
   int64_t serverTime = nsCookieService::ParseServerTime(serverTimeString);
   bool moreCookies;
   do {
     nsCookieAttributes cookieAttributes;
     bool canSetCookie = false;
-    nsCookieKey key(baseDomain, attrs);
     moreCookies = nsCookieService::CanSetCookie(aHostURI, key, cookieAttributes,
                                                 requireHostMatch, cookieStatus,
                                                 cookieString, serverTime, aFromHttp,
                                                 aChannel, mLeaveSecureAlone,
                                                 canSetCookie, mThirdPartyUtil);
+
+    
+    
+    
+    
+    if (cookies && canSetCookie && !aFromHttp) {
+      for (uint32_t i = 0; i < cookies->Length(); ++i) {
+        RefPtr<nsCookie> cookie = cookies->ElementAt(i);
+        if (cookie->Name().Equals(cookieAttributes.name) &&
+            cookie->Host().Equals(cookieAttributes.host) &&
+            cookie->Path().Equals(cookieAttributes.path) &&
+            cookie->IsHttpOnly()) {
+          
+          canSetCookie = false;
+        }
+      }
+    }
 
     if (canSetCookie) {
       SetCookieInternal(cookieAttributes, attrs, aChannel,
