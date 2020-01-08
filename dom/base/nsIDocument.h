@@ -1752,7 +1752,7 @@ public:
 
 
 
-  void AsyncRequestFullscreen(mozilla::UniquePtr<FullscreenRequest>&&);
+  void AsyncRequestFullscreen(mozilla::UniquePtr<FullscreenRequest>);
 
   
   
@@ -1760,7 +1760,7 @@ public:
 
   
   
-  void RequestFullscreen(mozilla::UniquePtr<FullscreenRequest>&& aRequest);
+  void RequestFullscreen(mozilla::UniquePtr<FullscreenRequest> aRequest);
 
   
   
