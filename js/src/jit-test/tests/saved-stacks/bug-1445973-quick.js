@@ -19,9 +19,6 @@
 
 
 
-if (!('oomTest' in this))
-    quit();
-
 function f() {
   
   clearSavedFrames();
