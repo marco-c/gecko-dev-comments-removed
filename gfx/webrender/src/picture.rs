@@ -81,6 +81,29 @@ pub struct PictureId(pub u64);
 
 
 
+
+
+pub struct PictureIdGenerator {
+    next: u64,
+}
+
+impl PictureIdGenerator {
+    pub fn new() -> Self {
+        PictureIdGenerator {
+            next: 0,
+        }
+    }
+
+    pub fn next(&mut self) -> PictureId {
+        let id = PictureId(self.next);
+        self.next += 1;
+        id
+    }
+}
+
+
+
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]

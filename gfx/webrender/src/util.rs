@@ -376,22 +376,6 @@ pub fn extract_inner_rect_safe<U>(
     extract_inner_rect_impl(rect, radii, 1.0)
 }
 
-
-
-pub fn recycle_vec<T>(mut old_vec: Vec<T>) -> Vec<T> {
-    if old_vec.capacity() > 2 * old_vec.len() {
-        
-        
-        
-        return Vec::with_capacity(old_vec.len());
-    }
-
-    old_vec.clear();
-
-    old_vec
-}
-
-
 #[cfg(test)]
 pub mod test {
     use super::*;
