@@ -1019,7 +1019,7 @@ class Document : public nsINode,
 
 
   void SetHasTrackingContentBlocked(bool aHasTrackingContentBlocked,
-                                    const nsAString& aOriginBlocked) {
+                                    const nsACString& aOriginBlocked) {
     RecordContentBlockingLog(
         aOriginBlocked, nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT,
         aHasTrackingContentBlocked);
@@ -1029,7 +1029,7 @@ class Document : public nsINode,
 
 
   void SetHasAllCookiesBlocked(bool aHasAllCookiesBlocked,
-                               const nsAString& aOriginBlocked) {
+                               const nsACString& aOriginBlocked) {
     RecordContentBlockingLog(aOriginBlocked,
                              nsIWebProgressListener::STATE_COOKIES_BLOCKED_ALL,
                              aHasAllCookiesBlocked);
@@ -1039,7 +1039,7 @@ class Document : public nsINode,
 
 
   void SetHasTrackingCookiesBlocked(bool aHasTrackingCookiesBlocked,
-                                    const nsAString& aOriginBlocked) {
+                                    const nsACString& aOriginBlocked) {
     RecordContentBlockingLog(
         aOriginBlocked, nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER,
         aHasTrackingCookiesBlocked);
@@ -1049,7 +1049,7 @@ class Document : public nsINode,
 
 
   void SetHasForeignCookiesBlocked(bool aHasForeignCookiesBlocked,
-                                   const nsAString& aOriginBlocked) {
+                                   const nsACString& aOriginBlocked) {
     RecordContentBlockingLog(
         aOriginBlocked, nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN,
         aHasForeignCookiesBlocked);
@@ -1059,7 +1059,7 @@ class Document : public nsINode,
 
 
   void SetHasCookiesBlockedByPermission(bool aHasCookiesBlockedByPermission,
-                                        const nsAString& aOriginBlocked) {
+                                        const nsACString& aOriginBlocked) {
     RecordContentBlockingLog(
         aOriginBlocked,
         nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION,
@@ -1070,7 +1070,7 @@ class Document : public nsINode,
 
 
   void SetHasCookiesLoaded(bool aHasCookiesLoaded,
-                           const nsAString& aOriginLoaded) {
+                           const nsACString& aOriginLoaded) {
     RecordContentBlockingLog(aOriginLoaded,
                              nsIWebProgressListener::STATE_COOKIES_LOADED,
                              aHasCookiesLoaded);
@@ -1096,7 +1096,7 @@ class Document : public nsINode,
 
 
   void SetHasTrackingContentLoaded(bool aHasTrackingContentLoaded,
-                                   const nsAString& aOriginBlocked) {
+                                   const nsACString& aOriginBlocked) {
     RecordContentBlockingLog(
         aOriginBlocked, nsIWebProgressListener::STATE_LOADED_TRACKING_CONTENT,
         aHasTrackingContentLoaded);
@@ -3581,7 +3581,7 @@ class Document : public nsINode,
                                        bool aUpdateCSSLoader);
 
  private:
-  void RecordContentBlockingLog(const nsAString& aOrigin, uint32_t aType,
+  void RecordContentBlockingLog(const nsACString& aOrigin, uint32_t aType,
                                 bool aBlocked) {
     mContentBlockingLog.RecordLog(aOrigin, aType, aBlocked);
   }
