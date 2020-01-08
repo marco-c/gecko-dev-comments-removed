@@ -152,11 +152,12 @@ const proto = {
 
     
     
-    if (Cu) {
+    
+    if (raw && Cu) {
       raw = Cu.unwaiveXrays(raw);
     }
 
-    if (!DevToolsUtils.isSafeJSObject(raw)) {
+    if (raw && !DevToolsUtils.isSafeJSObject(raw)) {
       raw = null;
     }
 

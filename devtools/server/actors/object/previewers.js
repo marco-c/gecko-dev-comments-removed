@@ -448,15 +448,20 @@ previewers.Object = [
     }
 
     const raw = obj.unsafeDereference();
-    const global = Cu.getGlobalForObject(DebuggerServer);
-    const classProto = global[obj.class].prototype;
+
     
     
-    const safeView = Cu.cloneInto(classProto.subarray.call(raw, 0,
-      OBJECT_PREVIEW_MAX_ITEMS), global);
-    const items = grip.preview.items = [];
-    for (let i = 0; i < safeView.length; i++) {
-      items.push(safeView[i]);
+    if (raw) {
+      const global = Cu.getGlobalForObject(DebuggerServer);
+      const classProto = global[obj.class].prototype;
+      
+      
+      const safeView = Cu.cloneInto(classProto.subarray.call(raw, 0,
+        OBJECT_PREVIEW_MAX_ITEMS), global);
+      const items = grip.preview.items = [];
+      for (let i = 0; i < safeView.length; i++) {
+        items.push(safeView[i]);
+      }
     }
 
     return true;
