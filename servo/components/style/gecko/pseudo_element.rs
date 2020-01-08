@@ -163,15 +163,6 @@ impl PseudoElement {
     }
 
     
-    
-    pub fn canonical(&self) -> PseudoElement {
-        match *self {
-            PseudoElement::MozPlaceholder => PseudoElement::Placeholder,
-            _ => self.clone(),
-        }
-    }
-
-    
     #[inline]
     pub fn property_restriction(&self) -> Option<PropertyFlags> {
         match *self {

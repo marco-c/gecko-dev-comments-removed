@@ -2267,7 +2267,7 @@ impl<'le> ::selectors::Element for GeckoElement<'le> {
         
         
         match self.implemented_pseudo_element() {
-            Some(ref pseudo) => *pseudo == pseudo_element.canonical(),
+            Some(ref pseudo) => *pseudo == *pseudo_element,
             None => false,
         }
     }
