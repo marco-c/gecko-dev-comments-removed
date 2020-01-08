@@ -7,9 +7,9 @@ ChromeUtils.import("resource://gre/modules/GeckoViewContentModule.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  DeferredTask: "resource://gre/modules/DeferredTask.jsm",
   FormData: "resource://gre/modules/FormData.jsm",
   FormLikeFactory: "resource://gre/modules/FormLikeFactory.jsm",
+  GeckoViewAutoFill: "resource://gre/modules/GeckoViewAutoFill.jsm",
   PrivacyFilter: "resource://gre/modules/sessionstore/PrivacyFilter.jsm",
   ScrollPosition: "resource://gre/modules/ScrollPosition.jsm",
   Services: "resource://gre/modules/Services.jsm",
@@ -49,6 +49,9 @@ class GeckoViewContent extends GeckoViewContentModule {
     addEventListener("pageshow", this, options);
     addEventListener("focusin", this, options);
     addEventListener("focusout", this, options);
+
+    XPCOMUtils.defineLazyGetter(this, "_autoFill", () =>
+        new GeckoViewAutoFill(this.eventDispatcher));
 
     
     Services.obs.notifyObservers(this.messageManager, "tab-content-frameloader-created");
@@ -267,13 +270,13 @@ class GeckoViewContent extends GeckoViewContentModule {
         }
         break;
       case "DOMFormHasPassword":
-        this._addAutoFillElement(
+        this._autoFill.addElement(
             FormLikeFactory.createFromForm(aEvent.composedTarget));
         break;
       case "DOMInputPasswordAdded": {
         const input = aEvent.composedTarget;
         if (!input.form) {
-          this._addAutoFillElement(FormLikeFactory.createFromField(input));
+          this._autoFill.addElement(FormLikeFactory.createFromField(input));
         }
         break;
       }
@@ -315,22 +318,22 @@ class GeckoViewContent extends GeckoViewContentModule {
         break;
       case "focusin":
         if (aEvent.composedTarget instanceof content.HTMLInputElement) {
-          this._onAutoFillFocus(aEvent.composedTarget);
+          this._autoFill.onFocus(aEvent.composedTarget);
         }
         break;
       case "focusout":
         if (aEvent.composedTarget instanceof content.HTMLInputElement) {
-          this._onAutoFillFocus(null);
+          this._autoFill.onFocus(null);
         }
         break;
       case "pagehide":
         if (aEvent.target === content.document) {
-          this._clearAutoFillElements();
+          this._autoFill.clearElements();
         }
         break;
       case "pageshow":
         if (aEvent.target === content.document && aEvent.persisted) {
-          this._scanAutoFillDocument(aEvent.target);
+          this._autoFill.scanDocument(aEvent.target);
         }
         break;
     }
@@ -355,200 +358,6 @@ class GeckoViewContent extends GeckoViewContentModule {
     let webProgress = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                               .getInterface(Ci.nsIWebProgress);
     webProgress.removeProgressListener(this.progressFilter);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  _addAutoFillElement(aFormLike, aFromDeferredTask) {
-    let task = this._autoFillTasks &&
-               this._autoFillTasks.get(aFormLike.rootElement);
-    if (task && !aFromDeferredTask) {
-      
-      debug `Canceling previous auto-fill task`;
-      task.disarm();
-      task = null;
-    }
-
-    if (!task) {
-      if (aFromDeferredTask) {
-        
-        debug `Auto-fill task canceled`;
-        return;
-      }
-      
-      debug `Deferring auto-fill task`;
-      task = new DeferredTask(
-          () => this._addAutoFillElement(aFormLike, true), 100);
-      task.arm();
-      if (!this._autoFillTasks) {
-        this._autoFillTasks = new WeakMap();
-      }
-      this._autoFillTasks.set(aFormLike.rootElement, task);
-      return;
-    }
-
-    debug `Adding auto-fill ${aFormLike}`;
-
-    this._autoFillTasks.delete(aFormLike.rootElement);
-    this._autoFillId = this._autoFillId || 0;
-
-    if (!this._autoFillInfos) {
-      this._autoFillInfos = new WeakMap();
-      this._autoFillElements = new Map();
-    }
-
-    let sendFocusEvent = false;
-    const getInfo = (element, parent) => {
-      let info = this._autoFillInfos.get(element);
-      if (info) {
-        return info;
-      }
-      info = {
-        id: ++this._autoFillId,
-        parent,
-        tag: element.tagName,
-        type: element instanceof content.HTMLInputElement ? element.type : null,
-        editable: (element instanceof content.HTMLInputElement) &&
-                  ["color", "date", "datetime-local", "email", "month",
-                   "number", "password", "range", "search", "tel", "text",
-                   "time", "url", "week"].includes(element.type),
-        disabled: element instanceof content.HTMLInputElement ? element.disabled
-                                                              : null,
-        attributes: Object.assign({}, ...Array.from(element.attributes)
-            .filter(attr => attr.localName !== "value")
-            .map(attr => ({[attr.localName]: attr.value}))),
-        origin: element.ownerDocument.location.origin,
-      };
-      this._autoFillInfos.set(element, info);
-      this._autoFillElements.set(info.id, Cu.getWeakReference(element));
-      sendFocusEvent |= (element === element.ownerDocument.activeElement);
-      return info;
-    };
-
-    const rootInfo = getInfo(aFormLike.rootElement, null);
-    rootInfo.children = aFormLike.elements.map(
-        element => getInfo(element, rootInfo.id));
-
-    this.eventDispatcher.dispatch("GeckoView:AddAutoFill", rootInfo, {
-      onSuccess: responses => {
-        
-        debug `Performing auto-fill ${responses}`;
-
-        const AUTOFILL_STATE = "-moz-autofill";
-        const winUtils = content.windowUtils;
-
-        for (let id in responses) {
-          const entry = this._autoFillElements &&
-                        this._autoFillElements.get(+id);
-          const element = entry && entry.get();
-          const value = responses[id] || "";
-
-          if (element instanceof content.HTMLInputElement &&
-              !element.disabled && element.parentElement) {
-            element.value = value;
-
-            
-            element.dispatchEvent(new element.ownerGlobal.Event(
-                "input", { bubbles: true }));
-            element.dispatchEvent(new element.ownerGlobal.Event(
-                "change", { bubbles: true }));
-
-            if (winUtils && element.value === value) {
-              
-              winUtils.addManuallyManagedState(element, AUTOFILL_STATE);
-
-              
-              element.addEventListener("input", _ =>
-                  winUtils.removeManuallyManagedState(element, AUTOFILL_STATE),
-                  { mozSystemGroup: true, once: true });
-            }
-
-          } else if (element) {
-            warn `Don't know how to auto-fill ${element.tagName}`;
-          }
-        }
-      },
-      onError: error => {
-        warn `Cannot perform autofill ${error}`;
-      },
-    });
-
-    if (sendFocusEvent) {
-      
-      this._onAutoFillFocus(aFormLike.ownerDocument.activeElement);
-    }
-  }
-
-  
-
-
-
-
-  _onAutoFillFocus(aTarget) {
-    debug `Auto-fill focus on ${aTarget && aTarget.tagName}`;
-
-    let info = aTarget && this._autoFillInfos &&
-               this._autoFillInfos.get(aTarget);
-    if (!aTarget || info) {
-      this.eventDispatcher.dispatch("GeckoView:OnAutoFillFocus", info);
-    }
-  }
-
-  
-
-
-  _clearAutoFillElements() {
-    debug `Clearing auto-fill`;
-
-    this._autoFillTasks = undefined;
-    this._autoFillInfos = undefined;
-    this._autoFillElements = undefined;
-
-    this.eventDispatcher.sendRequest({
-      type: "GeckoView:ClearAutoFill",
-    });
-  }
-
-  
-
-
-
-
-
-
-  _scanAutoFillDocument(aDoc) {
-    
-    const inputs = aDoc.querySelectorAll("input[type=password]");
-    let inputAdded = false;
-    for (let i = 0; i < inputs.length; i++) {
-      if (inputs[i].form) {
-        
-        this._addAutoFillElement(
-            FormLikeFactory.createFromForm(inputs[i].form));
-      } else if (!inputAdded) {
-        
-        inputAdded = true;
-        this._addAutoFillElement(
-            FormLikeFactory.createFromField(inputs[i]));
-      }
-    }
-
-    
-    const frames = aDoc.defaultView.frames;
-    for (let i = 0; i < frames.length; i++) {
-      this._scanAutoFillDocument(frames[i].document);
-    }
   }
 }
 
