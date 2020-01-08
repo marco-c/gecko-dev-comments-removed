@@ -69,6 +69,7 @@ class WasmFrameIter {
   jit::FrameType unwoundIonFrameType_;
   Unwind unwind_;
   void** unwoundAddressOfReturnAddress_;
+  uint8_t* returnAddressToFp_;
 
   void popFrame();
 
@@ -93,6 +94,11 @@ class WasmFrameIter {
   DebugFrame* debugFrame() const;
   jit::FrameType unwoundIonFrameType() const;
   uint8_t* unwoundIonCallerFP() const { return unwoundIonCallerFP_; }
+  Frame* frame() const { return fp_; }
+
+  
+  
+  uint8_t* returnAddressToFp() const;
 };
 
 enum class SymbolicAddress;

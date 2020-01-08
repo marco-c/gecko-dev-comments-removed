@@ -247,6 +247,7 @@ template <class Operand>
 static void WasmPush(MacroAssembler& masm, const Operand& op) {
 #ifdef JS_CODEGEN_ARM64
   
+  
   masm.reserveStack(WasmPushSize);
   masm.storePtr(op, Address(masm.getStackPointer(), 0));
 #else
@@ -273,10 +274,10 @@ static void MoveSPForJitABI(MacroAssembler& masm) {
 #ifdef ENABLE_WASM_GC
 static void SuppressGC(MacroAssembler& masm, int32_t increment,
                        Register scratch) {
-  masm.loadPtr(Address(WasmTlsReg, offsetof(TlsData, cx)), scratch);
-  masm.add32(Imm32(increment),
-             Address(scratch, offsetof(JSContext, suppressGC) +
-                                  js::ThreadData<int32_t>::offsetOfValue()));
+  
+  
+  
+  
 }
 #endif
 
@@ -1780,6 +1781,25 @@ static_assert(!SupportsSimd,
 
 
 
+
+
+void wasm::GenerateTrapExitMachineState(MachineState* machine,
+                                        size_t* numWords) {
+  
+  *numWords = WasmPushSize / sizeof(void*);
+  MOZ_ASSERT(*numWords == TrapExitDummyValueOffsetFromTop + 1);
+
+  
+  for (GeneralRegisterBackwardIterator iter(RegsToPreserve.gprs()); iter.more();
+       ++iter) {
+    machine->setRegisterLocation(*iter,
+                                 reinterpret_cast<uintptr_t*>(*numWords));
+    (*numWords)++;
+  }
+}
+
+
+
 static bool GenerateTrapExit(MacroAssembler& masm, Label* throwLabel,
                              Offsets* offsets) {
   AssertExpectedSP(masm);
@@ -1794,7 +1814,7 @@ static bool GenerateTrapExit(MacroAssembler& masm, Label* throwLabel,
   
   
   
-  WasmPush(masm, ImmWord(0));
+  WasmPush(masm, ImmWord(TrapExitDummyValue));
   unsigned framePushedBeforePreserve = masm.framePushed();
   masm.PushRegsInMask(RegsToPreserve);
   unsigned offsetOfReturnWord = masm.framePushed() - framePushedBeforePreserve;

@@ -421,22 +421,26 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
 
+  
+  
   CodeOffset call(Register reg) PER_SHARED_ARCH;
   CodeOffset call(Label* label) PER_SHARED_ARCH;
+
   void call(const Address& addr) PER_SHARED_ARCH;
   void call(ImmWord imm) PER_SHARED_ARCH;
   
   void call(ImmPtr imm) PER_SHARED_ARCH;
-  void call(wasm::SymbolicAddress imm) PER_SHARED_ARCH;
-  inline void call(const wasm::CallSiteDesc& desc, wasm::SymbolicAddress imm);
+  CodeOffset call(wasm::SymbolicAddress imm) PER_SHARED_ARCH;
+  inline CodeOffset call(const wasm::CallSiteDesc& desc,
+                         wasm::SymbolicAddress imm);
 
   
   void call(JitCode* c) PER_SHARED_ARCH;
 
   inline void call(TrampolinePtr code);
 
-  inline void call(const wasm::CallSiteDesc& desc, const Register reg);
-  inline void call(const wasm::CallSiteDesc& desc, uint32_t funcDefIndex);
+  inline CodeOffset call(const wasm::CallSiteDesc& desc, const Register reg);
+  inline CodeOffset call(const wasm::CallSiteDesc& desc, uint32_t funcDefIndex);
   inline void call(const wasm::CallSiteDesc& desc, wasm::Trap trap);
 
   CodeOffset callWithPatch() PER_SHARED_ARCH;
@@ -582,8 +586,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void callWithABI(const Address& fun,
                           MoveOp::Type result = MoveOp::GENERAL);
 
-  void callWithABI(wasm::BytecodeOffset offset, wasm::SymbolicAddress fun,
-                   MoveOp::Type result = MoveOp::GENERAL);
+  CodeOffset callWithABI(wasm::BytecodeOffset offset, wasm::SymbolicAddress fun,
+                         MoveOp::Type result = MoveOp::GENERAL);
 
  private:
   
@@ -1863,19 +1867,20 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   
-  void wasmCallImport(const wasm::CallSiteDesc& desc,
-                      const wasm::CalleeDesc& callee);
+  CodeOffset wasmCallImport(const wasm::CallSiteDesc& desc,
+                            const wasm::CalleeDesc& callee);
 
   
-  void wasmCallIndirect(const wasm::CallSiteDesc& desc,
-                        const wasm::CalleeDesc& callee, bool needsBoundsCheck);
+  CodeOffset wasmCallIndirect(const wasm::CallSiteDesc& desc,
+                              const wasm::CalleeDesc& callee,
+                              bool needsBoundsCheck);
 
   
   
   
-  void wasmCallBuiltinInstanceMethod(const wasm::CallSiteDesc& desc,
-                                     const ABIArg& instanceArg,
-                                     wasm::SymbolicAddress builtin);
+  CodeOffset wasmCallBuiltinInstanceMethod(const wasm::CallSiteDesc& desc,
+                                           const ABIArg& instanceArg,
+                                           wasm::SymbolicAddress builtin);
 
   
   

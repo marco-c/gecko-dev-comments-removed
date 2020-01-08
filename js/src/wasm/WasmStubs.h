@@ -44,6 +44,23 @@ extern bool GenerateEntryStubs(jit::MacroAssembler& masm,
                                HasGcTypes gcTypesConfigured,
                                CodeRangeVector* codeRanges);
 
+extern void GenerateTrapExitMachineState(jit::MachineState* machine,
+                                         size_t* numWords);
+
+
+
+static constexpr uintptr_t TrapExitDummyValue = 1337;
+
+
+
+
+
+#ifdef JS_CODEGEN_ARM64
+static constexpr size_t TrapExitDummyValueOffsetFromTop = 1;
+#else
+static constexpr size_t TrapExitDummyValueOffsetFromTop = 0;
+#endif
+
 
 
 

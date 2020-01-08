@@ -81,6 +81,12 @@ class BaseLocalIter {
 #endif
 };
 
+#ifdef DEBUG
+
+
+bool IsValidStackMapKey(bool debugEnabled, const uint8_t* nextPC);
+#endif
+
 }  
 }  
 

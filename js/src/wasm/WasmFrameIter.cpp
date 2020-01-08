@@ -42,7 +42,8 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
       unwoundIonCallerFP_(nullptr),
       unwoundIonFrameType_(jit::FrameType(-1)),
       unwind_(Unwind::False),
-      unwoundAddressOfReturnAddress_(nullptr) {
+      unwoundAddressOfReturnAddress_(nullptr),
+      returnAddressToFp_(nullptr) {
   MOZ_ASSERT(fp_);
 
   
@@ -107,6 +108,7 @@ void WasmFrameIter::operator++() {
 void WasmFrameIter::popFrame() {
   Frame* prevFP = fp_;
   fp_ = prevFP->callerFP;
+  returnAddressToFp_ = (uint8_t*)prevFP->returnAddress;
 
   if (uintptr_t(fp_) & ExitOrJitEntryFPTag) {
     
@@ -301,6 +303,15 @@ jit::FrameType WasmFrameIter::unwoundIonFrameType() const {
   MOZ_ASSERT(unwoundIonCallerFP_);
   MOZ_ASSERT(unwoundIonFrameType_ != jit::FrameType(-1));
   return unwoundIonFrameType_;
+}
+
+uint8_t* WasmFrameIter::returnAddressToFp() const {
+  if (returnAddressToFp_) {
+    return returnAddressToFp_;
+  }
+  MOZ_ASSERT(activation_->isWasmTrapping());
+  
+  return (uint8_t*)activation_->wasmTrapData().resumePC;
 }
 
 

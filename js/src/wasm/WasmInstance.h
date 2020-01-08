@@ -84,6 +84,17 @@ class Instance {
             const ElemSegmentVector& elemSegments);
   void trace(JSTracer* trc);
 
+  
+  
+  
+  
+  
+  
+  
+  uintptr_t traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,
+                       uint8_t* nextPC,
+                       uintptr_t highestByteVisitedInPrevFrame);
+
   JS::Realm* realm() const { return realm_; }
   const Code& code() const { return *code_; }
   const CodeTier& code(Tier t) const { return code_->codeTier(t); }

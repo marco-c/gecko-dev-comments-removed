@@ -27,6 +27,7 @@
 #include "util/Text.h"
 #include "wasm/WasmBuiltins.h"
 #include "wasm/WasmModule.h"
+#include "wasm/WasmStubs.h"
 
 #include "gc/StoreBuffer-inl.h"
 #include "vm/ArrayBufferObject-inl.h"
@@ -1120,6 +1121,80 @@ void Instance::trace(JSTracer* trc) {
   
   
   TraceEdge(trc, &object_, "wasm instance object");
+}
+
+uintptr_t Instance::traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,
+                               uint8_t* nextPC,
+                               uintptr_t highestByteVisitedInPrevFrame) {
+  const StackMap* map = code().lookupStackMap(nextPC);
+  if (!map) {
+    return 0;
+  }
+
+  Frame* frame = wfi.frame();
+
+  
+  
+  
+
+  const size_t numMappedBytes = map->numMappedWords * sizeof(void*);
+  const uintptr_t scanStart = uintptr_t(frame) +
+                              (map->frameOffsetFromTop * sizeof(void*)) -
+                              numMappedBytes;
+  MOZ_ASSERT(0 == scanStart % sizeof(void*));
+
+  
+  
+  
+  MOZ_ASSERT_IF(highestByteVisitedInPrevFrame != 0,
+                highestByteVisitedInPrevFrame + 1 == scanStart);
+
+  uintptr_t* stackWords = (uintptr_t*)scanStart;
+
+  
+  
+  
+  MOZ_ASSERT_IF(
+      map->numExitStubWords > 0,
+      stackWords[map->numExitStubWords - 1 - TrapExitDummyValueOffsetFromTop] ==
+          TrapExitDummyValue);
+
+  
+  for (uint32_t i = 0; i < map->numMappedWords; i++) {
+    if (map->getBit(i) == 0) {
+      continue;
+    }
+
+    
+    
+    MOZ_ASSERT(js::gc::IsCellPointerValidOrNull((const void*)stackWords[i]));
+
+    if (stackWords[i]) {
+      TraceRoot(trc, (JSObject**)&stackWords[i],
+                "Instance::traceWasmFrame: normal word");
+    }
+  }
+
+  
+  if (map->hasRefTypedDebugFrame) {
+    DebugFrame* debugFrame = DebugFrame::from(frame);
+    char* debugFrameP = (char*)debugFrame;
+
+    char* resultRefP = debugFrameP + DebugFrame::offsetOfResults();
+    if (*(intptr_t*)resultRefP) {
+      TraceRoot(trc, (JSObject**)resultRefP,
+                "Instance::traceWasmFrame: DebugFrame::resultRef_");
+    }
+
+    if (debugFrame->hasCachedReturnJSValue()) {
+      char* cachedReturnJSValueP =
+          debugFrameP + DebugFrame::offsetOfCachedReturnJSValue();
+      TraceRoot(trc, (js::Value*)cachedReturnJSValueP,
+                "Instance::traceWasmFrame: DebugFrame::cachedReturnJSValue_");
+    }
+  }
+
+  return scanStart + numMappedBytes - 1;
 }
 
 WasmMemoryObject* Instance::memory() const { return memory_; }

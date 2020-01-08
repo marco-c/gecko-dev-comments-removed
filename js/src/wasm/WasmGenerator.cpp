@@ -619,7 +619,7 @@ static bool AppendForEach(Vec* dstVec, const Vec& srcVec, Op op) {
   return true;
 }
 
-bool ModuleGenerator::linkCompiledCode(const CompiledCode& code) {
+bool ModuleGenerator::linkCompiledCode(CompiledCode& code) {
   
   
 
@@ -681,6 +681,17 @@ bool ModuleGenerator::linkCompiledCode(const CompiledCode& code) {
     link.mode = codeLabel.linkMode();
 #endif
     if (!linkData_->internalLinks.append(link)) {
+      return false;
+    }
+  }
+
+  for (size_t i = 0; i < code.stackMaps.length(); i++) {
+    StackMaps::Maplet maplet = code.stackMaps.move(i);
+    maplet.offsetBy(offsetInModule);
+    if (!metadataTier_->stackMaps.add(maplet)) {
+      
+      
+      maplet.map->destroy();
       return false;
     }
   }
@@ -911,7 +922,21 @@ bool ModuleGenerator::finishCodegen() {
 
 bool ModuleGenerator::finishMetadataTier() {
   
+  
+  metadataTier_->stackMaps.sort();
+
 #ifdef DEBUG
+  
+  
+  uint8_t* previousNextInsnAddr = nullptr;
+  for (size_t i = 0; i < metadataTier_->stackMaps.length(); i++) {
+    const StackMaps::Maplet& maplet = metadataTier_->stackMaps.get(i);
+    MOZ_ASSERT_IF(i > 0, uintptr_t(maplet.nextInsnAddr) >
+                             uintptr_t(previousNextInsnAddr));
+    previousNextInsnAddr = maplet.nextInsnAddr;
+  }
+
+  
   uint32_t last = 0;
   for (const CodeRange& codeRange : metadataTier_->codeRanges) {
     MOZ_ASSERT(codeRange.begin() >= last);
@@ -1008,6 +1033,17 @@ UniqueCodeTier ModuleGenerator::finishCodeTier() {
   if (!segment) {
     return nullptr;
   }
+
+  metadataTier_->stackMaps.offsetBy(uintptr_t(segment->base()));
+
+#ifdef DEBUG
+  
+  for (size_t i = 0; i < metadataTier_->stackMaps.length(); i++) {
+    MOZ_ASSERT(IsValidStackMapKey(env_->debugEnabled(),
+                                  metadataTier_->stackMaps.get(i).nextInsnAddr),
+               "wasm stack map does not reference a valid insn");
+  }
+#endif
 
   return js::MakeUnique<CodeTier>(std::move(metadataTier_), std::move(segment));
 }

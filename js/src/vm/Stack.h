@@ -1884,6 +1884,10 @@ class JitFrameIter {
   JS::Realm* realm() const;
 
   
+  
+  uint8_t* returnAddressToFp() const;
+
+  
   void skipNonScriptedJSFrames();
 
   
