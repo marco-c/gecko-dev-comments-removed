@@ -380,25 +380,41 @@ const proto = {
         }
 
         const result = getter.call(this.obj);
-        if (result && !("throw" in result)) {
-          let getterValue = undefined;
-          if ("return" in result) {
-            getterValue = result.return;
-          } else if ("yield" in result) {
-            getterValue = result.yield;
+        if (!result || "throw" in result) {
+          continue;
+        }
+
+        let getterValue = undefined;
+        if ("return" in result) {
+          getterValue = result.return;
+        } else if ("yield" in result) {
+          getterValue = result.yield;
+        }
+
+        
+        
+        if (getterValue && (getterValue.class == "Promise" &&
+                            getterValue.promiseState == "rejected")) {
+          
+          
+          const raw = getterValue.unsafeDereference();
+          if (DevToolsUtils.isSafeJSObject(raw)) {
+            raw.catch(e=>e);
           }
-          
-          
-          if (getterValue !== undefined) {
-            safeGetterValues[name] = {
-              getterValue: this.hooks.createValueGrip(getterValue),
-              getterPrototypeLevel: level,
-              enumerable: desc.enumerable,
-              writable: level == 0 ? desc.writable : true,
-            };
-            if (limit && ++i == limit) {
-              break;
-            }
+          continue;
+        }
+
+        
+        
+        if (getterValue !== undefined) {
+          safeGetterValues[name] = {
+            getterValue: this.hooks.createValueGrip(getterValue),
+            getterPrototypeLevel: level,
+            enumerable: desc.enumerable,
+            writable: level == 0 ? desc.writable : true,
+          };
+          if (limit && ++i == limit) {
+            break;
           }
         }
       }
