@@ -141,6 +141,12 @@ template<class Key,
          class AllocPolicy = MallocAllocPolicy>
 class HashMap
 {
+  
+
+  
+  HashMap(const HashMap& hm) = delete;
+  HashMap& operator=(const HashMap& hm) = delete;
+
   using TableEntry = HashMapEntry<Key, Value>;
 
   struct MapHashPolicy : HashPolicy
@@ -159,9 +165,13 @@ class HashMap
   using Impl = detail::HashTable<TableEntry, MapHashPolicy, AllocPolicy>;
   Impl mImpl;
 
+  friend class Impl::Enum;
+
 public:
   using Lookup = typename HashPolicy::Lookup;
   using Entry = TableEntry;
+
+  
 
   
   
@@ -171,11 +181,58 @@ public:
   }
 
   
+  HashMap(HashMap&& aRhs)
+    : mImpl(std::move(aRhs.mImpl))
+  {
+  }
+  void operator=(HashMap&& aRhs)
+  {
+    MOZ_ASSERT(this != &aRhs, "self-move assignment is prohibited");
+    mImpl = std::move(aRhs.mImpl);
+  }
+
+  
   
   MOZ_MUST_USE bool init(uint32_t aLen = 16) { return mImpl.init(aLen); }
 
   
+
+  
   bool initialized() const { return mImpl.initialized(); }
+
+  
+  Generation generation() const { return mImpl.generation(); }
+
+  
+  bool empty() const { return mImpl.empty(); }
+
+  
+  uint32_t count() const { return mImpl.count(); }
+
+  
+  
+  size_t capacity() const { return mImpl.capacity(); }
+
+  
+  
+  
+  size_t shallowSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
+  {
+    return mImpl.shallowSizeOfExcludingThis(aMallocSizeOf);
+  }
+  size_t shallowSizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
+  {
+    return aMallocSizeOf(this) +
+           mImpl.shallowSizeOfExcludingThis(aMallocSizeOf);
+  }
+
+  
+
+  
+  bool has(const Lookup& aLookup) const
+  {
+    return mImpl.lookup(aLookup).found();
+  }
 
   
   
@@ -201,8 +258,50 @@ public:
   }
 
   
+
   
-  void remove(Ptr aPtr) { mImpl.remove(aPtr); }
+  
+  template<typename KeyInput, typename ValueInput>
+  MOZ_MUST_USE bool put(KeyInput&& aKey, ValueInput&& aValue)
+  {
+    AddPtr p = lookupForAdd(aKey);
+    if (p) {
+      p->value() = std::forward<ValueInput>(aValue);
+      return true;
+    }
+    return add(
+      p, std::forward<KeyInput>(aKey), std::forward<ValueInput>(aValue));
+  }
+
+  
+  template<typename KeyInput, typename ValueInput>
+  MOZ_MUST_USE bool putNew(KeyInput&& aKey, ValueInput&& aValue)
+  {
+    return mImpl.putNew(
+      aKey, std::forward<KeyInput>(aKey), std::forward<ValueInput>(aValue));
+  }
+
+  
+  template<typename KeyInput, typename ValueInput>
+  void putNewInfallible(KeyInput&& aKey, ValueInput&& aValue)
+  {
+    mImpl.putNewInfallible(
+      aKey, std::forward<KeyInput>(aKey), std::forward<ValueInput>(aValue));
+  }
+
+  
+  
+  Ptr lookupWithDefault(const Key& aKey, const Value& aDefaultValue)
+  {
+    AddPtr p = lookupForAdd(aKey);
+    if (p) {
+      return p;
+    }
+    bool ok = add(p, aKey, aDefaultValue);
+    MOZ_ASSERT_IF(!ok, !p); 
+    (void)ok;
+    return p;
+  }
 
   
   
@@ -270,6 +369,45 @@ public:
   }
 
   
+
+  
+  void remove(const Lookup& aLookup)
+  {
+    if (Ptr p = lookup(aLookup)) {
+      remove(p);
+    }
+  }
+
+  
+  
+  void remove(Ptr aPtr) { mImpl.remove(aPtr); }
+
+  
+
+  
+  
+  void rekeyIfMoved(const Key& aOldKey, const Key& aNewKey)
+  {
+    if (aOldKey != aNewKey) {
+      rekeyAs(aOldKey, aNewKey, aNewKey);
+    }
+  }
+
+  
+  bool rekeyAs(const Lookup& aOldLookup,
+               const Lookup& aNewLookup,
+               const Key& aNewKey)
+  {
+    if (Ptr p = lookup(aOldLookup)) {
+      mImpl.rekeyAndMaybeRehash(p, aNewLookup, aNewKey);
+      return true;
+    }
+    return false;
+  }
+
+  
+
+  
   
   
   
@@ -299,6 +437,8 @@ public:
   Range all() const { return mImpl.all(); }
 
   
+
+  
   void clear() { mImpl.clear(); }
 
   
@@ -307,6 +447,85 @@ public:
   
   
   void finish() { mImpl.finish(); }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<class T,
+         class HashPolicy = DefaultHasher<T>,
+         class AllocPolicy = MallocAllocPolicy>
+class HashSet
+{
+  
+
+  
+  HashSet(const HashSet& hs) = delete;
+  HashSet& operator=(const HashSet& hs) = delete;
+
+  struct SetHashPolicy : HashPolicy
+  {
+    using Base = HashPolicy;
+    using KeyType = T;
+
+    static const KeyType& getKey(const T& aT) { return aT; }
+
+    static void setKey(T& aT, KeyType& aKey) { HashPolicy::rekey(aT, aKey); }
+  };
+
+  using Impl = detail::HashTable<const T, SetHashPolicy, AllocPolicy>;
+  Impl mImpl;
+
+  friend class Impl::Enum;
+
+public:
+  using Lookup = typename HashPolicy::Lookup;
+  using Entry = T;
+
+  
+
+  
+  
+  explicit HashSet(AllocPolicy a = AllocPolicy())
+    : mImpl(a)
+  {
+  }
+
+  
+  HashSet(HashSet&& aRhs)
+    : mImpl(std::move(aRhs.mImpl))
+  {
+  }
+  void operator=(HashSet&& aRhs)
+  {
+    MOZ_ASSERT(this != &aRhs, "self-move assignment is prohibited");
+    mImpl = std::move(aRhs.mImpl);
+  }
+
+  
+  
+  MOZ_MUST_USE bool init(uint32_t aLen = 16) { return mImpl.init(aLen); }
+
+  
+
+  
+  bool initialized() const { return mImpl.initialized(); }
+
+  
+  Generation generation() const { return mImpl.generation(); }
 
   
   bool empty() const { return mImpl.empty(); }
@@ -332,159 +551,12 @@ public:
   }
 
   
-  Generation generation() const { return mImpl.generation(); }
-
-  
 
   
   bool has(const Lookup& aLookup) const
   {
     return mImpl.lookup(aLookup).found();
   }
-
-  
-  
-  template<typename KeyInput, typename ValueInput>
-  MOZ_MUST_USE bool put(KeyInput&& aKey, ValueInput&& aValue)
-  {
-    AddPtr p = lookupForAdd(aKey);
-    if (p) {
-      p->value() = std::forward<ValueInput>(aValue);
-      return true;
-    }
-    return add(
-      p, std::forward<KeyInput>(aKey), std::forward<ValueInput>(aValue));
-  }
-
-  
-  template<typename KeyInput, typename ValueInput>
-  MOZ_MUST_USE bool putNew(KeyInput&& aKey, ValueInput&& aValue)
-  {
-    return mImpl.putNew(
-      aKey, std::forward<KeyInput>(aKey), std::forward<ValueInput>(aValue));
-  }
-
-  
-  template<typename KeyInput, typename ValueInput>
-  void putNewInfallible(KeyInput&& aKey, ValueInput&& aValue)
-  {
-    mImpl.putNewInfallible(
-      aKey, std::forward<KeyInput>(aKey), std::forward<ValueInput>(aValue));
-  }
-
-  
-  
-  Ptr lookupWithDefault(const Key& aKey, const Value& aDefaultValue)
-  {
-    AddPtr p = lookupForAdd(aKey);
-    if (p) {
-      return p;
-    }
-    bool ok = add(p, aKey, aDefaultValue);
-    MOZ_ASSERT_IF(!ok, !p); 
-    (void)ok;
-    return p;
-  }
-
-  
-  void remove(const Lookup& aLookup)
-  {
-    if (Ptr p = lookup(aLookup)) {
-      remove(p);
-    }
-  }
-
-  
-  
-  void rekeyIfMoved(const Key& aOldKey, const Key& aNewKey)
-  {
-    if (aOldKey != aNewKey) {
-      rekeyAs(aOldKey, aNewKey, aNewKey);
-    }
-  }
-
-  
-  bool rekeyAs(const Lookup& aOldLookup,
-               const Lookup& aNewLookup,
-               const Key& aNewKey)
-  {
-    if (Ptr p = lookup(aOldLookup)) {
-      mImpl.rekeyAndMaybeRehash(p, aNewLookup, aNewKey);
-      return true;
-    }
-    return false;
-  }
-
-  
-  HashMap(HashMap&& aRhs)
-    : mImpl(std::move(aRhs.mImpl))
-  {
-  }
-  void operator=(HashMap&& aRhs)
-  {
-    MOZ_ASSERT(this != &aRhs, "self-move assignment is prohibited");
-    mImpl = std::move(aRhs.mImpl);
-  }
-
-private:
-  
-  HashMap(const HashMap& hm) = delete;
-  HashMap& operator=(const HashMap& hm) = delete;
-
-  friend class Impl::Enum;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template<class T,
-         class HashPolicy = DefaultHasher<T>,
-         class AllocPolicy = MallocAllocPolicy>
-class HashSet
-{
-  struct SetHashPolicy : HashPolicy
-  {
-    using Base = HashPolicy;
-    using KeyType = T;
-
-    static const KeyType& getKey(const T& aT) { return aT; }
-
-    static void setKey(T& aT, KeyType& aKey) { HashPolicy::rekey(aT, aKey); }
-  };
-
-  using Impl = detail::HashTable<const T, SetHashPolicy, AllocPolicy>;
-  Impl mImpl;
-
-public:
-  using Lookup = typename HashPolicy::Lookup;
-  using Entry = T;
-
-  
-  
-  explicit HashSet(AllocPolicy a = AllocPolicy())
-    : mImpl(a)
-  {
-  }
-
-  
-  
-  MOZ_MUST_USE bool init(uint32_t aLen = 16) { return mImpl.init(aLen); }
-
-  
-  bool initialized() const { return mImpl.initialized(); }
 
   
   
@@ -509,8 +581,35 @@ public:
   }
 
   
+
   
-  void remove(Ptr aPtr) { mImpl.remove(aPtr); }
+  template<typename U>
+  MOZ_MUST_USE bool put(U&& aU)
+  {
+    AddPtr p = lookupForAdd(aU);
+    return p ? true : add(p, std::forward<U>(aU));
+  }
+
+  
+  template<typename U>
+  MOZ_MUST_USE bool putNew(U&& aU)
+  {
+    return mImpl.putNew(aU, std::forward<U>(aU));
+  }
+
+  
+  template<typename U>
+  MOZ_MUST_USE bool putNew(const Lookup& aLookup, U&& aU)
+  {
+    return mImpl.putNew(aLookup, std::forward<U>(aU));
+  }
+
+  
+  template<typename U>
+  void putNewInfallible(const Lookup& aLookup, U&& aU)
+  {
+    mImpl.putNewInfallible(aLookup, std::forward<U>(aU));
+  }
 
   
   
@@ -565,106 +664,6 @@ public:
   }
 
   
-  
-  
-  
-  
-  
-  
-  typedef typename Impl::Iterator Iterator;
-  Iterator iter() const { return mImpl.iter(); }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  typedef typename Impl::ModIterator ModIterator;
-  ModIterator modIter() { return mImpl.modIter(); }
-
-  
-  
-  using Range = typename Impl::Range;
-  using Enum = typename Impl::Enum;
-  Range all() const { return mImpl.all(); }
-
-  
-  void clear() { mImpl.clear(); }
-
-  
-  void clearAndShrink() { mImpl.clearAndShrink(); }
-
-  
-  
-  void finish() { mImpl.finish(); }
-
-  
-  bool empty() const { return mImpl.empty(); }
-
-  
-  uint32_t count() const { return mImpl.count(); }
-
-  
-  
-  size_t capacity() const { return mImpl.capacity(); }
-
-  
-  
-  
-  size_t shallowSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
-  {
-    return mImpl.shallowSizeOfExcludingThis(aMallocSizeOf);
-  }
-  size_t shallowSizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
-  {
-    return aMallocSizeOf(this) +
-           mImpl.shallowSizeOfExcludingThis(aMallocSizeOf);
-  }
-
-  
-  Generation generation() const { return mImpl.generation(); }
-
-  
-
-  
-  bool has(const Lookup& aLookup) const
-  {
-    return mImpl.lookup(aLookup).found();
-  }
-
-  
-  template<typename U>
-  MOZ_MUST_USE bool put(U&& aU)
-  {
-    AddPtr p = lookupForAdd(aU);
-    return p ? true : add(p, std::forward<U>(aU));
-  }
-
-  
-  template<typename U>
-  MOZ_MUST_USE bool putNew(U&& aU)
-  {
-    return mImpl.putNew(aU, std::forward<U>(aU));
-  }
-
-  
-  template<typename U>
-  MOZ_MUST_USE bool putNew(const Lookup& aLookup, U&& aU)
-  {
-    return mImpl.putNew(aLookup, std::forward<U>(aU));
-  }
-
-  
-  template<typename U>
-  void putNewInfallible(const Lookup& aLookup, U&& aU)
-  {
-    mImpl.putNewInfallible(aLookup, std::forward<U>(aU));
-  }
 
   
   void remove(const Lookup& aLookup)
@@ -673,6 +672,12 @@ public:
       remove(p);
     }
   }
+
+  
+  
+  void remove(Ptr aPtr) { mImpl.remove(aPtr); }
+
+  
 
   
   
@@ -709,22 +714,47 @@ public:
   }
 
   
-  HashSet(HashSet&& aRhs)
-    : mImpl(std::move(aRhs.mImpl))
-  {
-  }
-  void operator=(HashSet&& aRhs)
-  {
-    MOZ_ASSERT(this != &aRhs, "self-move assignment is prohibited");
-    mImpl = std::move(aRhs.mImpl);
-  }
 
-private:
   
-  HashSet(const HashSet& hs) = delete;
-  HashSet& operator=(const HashSet& hs) = delete;
+  
+  
+  
+  
+  
+  
+  using Iterator = typename Impl::Iterator;
+  Iterator iter() const { return mImpl.iter(); }
 
-  friend class Impl::Enum;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  using ModIterator = typename Impl::ModIterator;
+  ModIterator modIter() { return mImpl.modIter(); }
+
+  
+  
+  using Range = typename Impl::Range;
+  using Enum = typename Impl::Enum;
+  Range all() const { return mImpl.all(); }
+
+  
+
+  
+  void clear() { mImpl.clear(); }
+
+  
+  void clearAndShrink() { mImpl.clearAndShrink(); }
+
+  
+  
+  void finish() { mImpl.finish(); }
 };
 
 
