@@ -656,6 +656,9 @@ void
 nsFrameItems::AddChild(nsIFrame* aChild)
 {
   MOZ_ASSERT(aChild, "nsFrameItems::AddChild");
+  MOZ_ASSERT(!aChild->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) ||
+             aChild->GetPlaceholderFrame(),
+             "An out-of-flow child without a placeholder frame?");
 
   
   
@@ -690,24 +693,11 @@ struct nsAbsoluteItems : nsFrameItems {
                  "Dangling child list.  Someone forgot to insert it?");
   }
 #endif
-
-  
-  void AddChild(nsIFrame* aChild);
 };
 
 nsAbsoluteItems::nsAbsoluteItems(nsContainerFrame* aContainingBlock)
   : containingBlock(aContainingBlock)
 {
-}
-
-
-void
-nsAbsoluteItems::AddChild(nsIFrame* aChild)
-{
-  aChild->AddStateBits(NS_FRAME_OUT_OF_FLOW);
-  NS_ASSERTION(aChild->GetPlaceholderFrame(),
-               "Child without placeholder being added to nsAbsoluteItems?");
-  nsFrameItems::AddChild(aChild);
 }
 
 
