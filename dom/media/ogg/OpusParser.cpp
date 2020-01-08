@@ -93,26 +93,8 @@ bool OpusParser::DecodeHeader(unsigned char* aData, size_t aLength)
         return false;
       }
       if (mChannelMapping == 2) {
-        
-        
-        
-        
-        
-        
-        
-        
-
-        
-        
-        double val = sqrt(mChannels);
-        if (val == 0 || val > 15) {
+        if (!IsValidMapping2ChannelsCount(mChannels)) {
           return false;
-        }
-        if (val != int32_t(val)) {
-          if (val * val + 2 != mChannels) {
-            
-            return false;
-          }
         }
       }
       if (aLength > static_cast<unsigned>(20 + mChannels)) {
@@ -213,6 +195,28 @@ bool OpusParser::DecodeTags(unsigned char* aData, size_t aLength)
   }
 #endif
   return true;
+}
+
+ bool
+OpusParser::IsValidMapping2ChannelsCount(uint8_t aChannels)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  if (aChannels < 1 || aChannels > 227) {
+    return false;
+  }
+  double val = sqrt(aChannels);
+  int32_t valInt = int32_t(val);
+  return val == valInt || valInt * valInt + 2 == aChannels;
 }
 
 } 
