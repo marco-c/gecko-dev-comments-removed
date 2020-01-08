@@ -151,7 +151,17 @@ class Animation : public DOMEventTargetHelper,
 
   virtual void Tick();
   bool NeedsTicks() const {
-    return Pending() || PlayState() == AnimationPlayState::Running;
+    return Pending() ||
+           (PlayState() == AnimationPlayState::Running &&
+            
+            
+            
+            
+            
+            
+            
+            
+            PlaybackRate() != 0.0);
   }
 
   
