@@ -2137,6 +2137,11 @@ nsDocument::Init()
 
   mScriptLoader = new dom::ScriptLoader(this);
 
+  
+  
+  mFeaturePolicy = new FeaturePolicy(this);
+  mFeaturePolicy->SetDefaultOrigin(NodePrincipal());
+
   mozilla::HoldJSObjects(this);
 
   return NS_OK;
@@ -3012,11 +3017,9 @@ nsIDocument::InitCSP(nsIChannel* aChannel)
 nsresult
 nsIDocument::InitFeaturePolicy(nsIChannel* aChannel)
 {
-  MOZ_ASSERT(!mFeaturePolicy, "we should only call init once");
+  MOZ_ASSERT(mFeaturePolicy, "we should only call init once");
 
-  
-  
-  mFeaturePolicy = new FeaturePolicy(this);
+  mFeaturePolicy->ResetDeclaredPolicy();
 
   if (!StaticPrefs::dom_security_featurePolicy_enabled()) {
     return NS_OK;
@@ -13669,6 +13672,31 @@ nsIDocument::HasStorageAccess(mozilla::ErrorResult& aRv)
     return promise.forget();
   }
 
+  if (AntiTrackingCommon::ShouldHonorContentBlockingCookieRestrictions() &&
+      StaticPrefs::network_cookie_cookieBehavior() ==
+        nsICookieService::BEHAVIOR_REJECT_TRACKER) {
+    
+    
+    
+    
+    
+    
+    if (!nsContentUtils::StorageDisabledByAntiTracking(this, nullptr)) {
+      
+      
+      
+      bool isOnAllowList = false;
+      if (NS_SUCCEEDED(AntiTrackingCommon::IsOnContentBlockingAllowList(
+                         topLevelDoc->GetDocumentURI(),
+                         AntiTrackingCommon::eStorageChecks,
+                         isOnAllowList)) &&
+          !isOnAllowList) {
+        promise->MaybeResolve(true);
+        return promise.forget();
+      }
+    }
+  }
+
   nsPIDOMWindowInner* inner = GetInnerWindow();
   nsGlobalWindowOuter* outer = nullptr;
   if (inner) {
@@ -13806,7 +13834,6 @@ nsIDocument::RequestStorageAccess(mozilla::ErrorResult& aRv)
                  promise->MaybeRejectWithUndefined();
                });
     } else {
-      outer->SetHasStorageAccess(true);
       promise->MaybeResolveWithUndefined();
     }
   }
