@@ -3,10 +3,10 @@
 
 
 
+#include "mozilla/Encoding.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "nsAutoPtr.h"
 #include "nsCookie.h"
-#include "nsUTF8ConverterService.h"
 #include <stdlib.h>
 
 
@@ -97,9 +97,8 @@ nsCookie::Create(const nsACString &aName,
 {
   
   
-  RefPtr<nsUTF8ConverterService> converter = new nsUTF8ConverterService();
   nsAutoCString aUTF8Value;
-  converter->ConvertStringToUTF8(aValue, "UTF-8", false, true, 1, aUTF8Value);
+  UTF_8_ENCODING->DecodeWithoutBOMHandling(aValue, aUTF8Value);
 
   
   const uint32_t stringLength = aName.Length() + aUTF8Value.Length() +
