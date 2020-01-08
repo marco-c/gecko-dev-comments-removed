@@ -2049,8 +2049,14 @@ nsINode::RemoveChildNode(nsIContent* aKid, bool aNotify)
 
 
 
+
+
+
+
+
+
 static
-void EnsureAllowedAsChild(nsIContent* aNewChild, nsINode* aParent,
+void EnsureAllowedAsChild(nsINode* aNewChild, nsINode* aParent,
                           bool aIsReplace, nsINode* aRefChild,
                           ErrorResult& aRv)
 {
@@ -2067,19 +2073,33 @@ void EnsureAllowedAsChild(nsIContent* aNewChild, nsINode* aParent,
   
   
   
+  
   if (aNewChild == aParent ||
       ((aNewChild->GetFirstChild() ||
         
         
         
         aNewChild->NodeInfo()->NameAtom() == nsGkAtoms::_template ||
-        aNewChild->GetShadowRoot()) &&
+        (aNewChild->IsElement() && aNewChild->AsElement()->GetShadowRoot())) &&
        nsContentUtils::ContentIsHostIncludingDescendantOf(aParent,
                                                           aNewChild))) {
     aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
     return;
   }
 
+  
+  if (aRefChild && aRefChild->GetParentNode() != aParent) {
+    aRv.Throw(NS_ERROR_DOM_NOT_FOUND_ERR);
+    return;
+  }
+
+  
+  if (!aNewChild->IsContent()) {
+    aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+    return;
+  }
+
+  
   
   switch (aNewChild->NodeType()) {
   case nsINode::COMMENT_NODE :
@@ -2226,23 +2246,26 @@ void EnsureAllowedAsChild(nsIContent* aNewChild, nsINode* aParent,
   aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
 }
 
+
 void
 nsINode::EnsurePreInsertionValidity(nsINode& aNewChild, nsINode* aRefChild,
                                     ErrorResult& aError)
 {
-  EnsurePreInsertionValidity1(aNewChild, aRefChild, aError);
+  EnsurePreInsertionValidity1(aError);
   if (aError.Failed()) {
     return;
   }
   EnsurePreInsertionValidity2(false, aNewChild, aRefChild, aError);
 }
 
+
+
+
+
 void
-nsINode::EnsurePreInsertionValidity1(nsINode& aNewChild, nsINode* aRefChild,
-                                     ErrorResult& aError)
+nsINode::EnsurePreInsertionValidity1(ErrorResult& aError)
 {
-  if ((!IsDocument() && !IsDocumentFragment() && !IsElement()) ||
-      !aNewChild.IsContent()) {
+  if (!IsDocument() && !IsDocumentFragment() && !IsElement()) {
     aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
     return;
   }
@@ -2252,8 +2275,8 @@ void
 nsINode::EnsurePreInsertionValidity2(bool aReplace, nsINode& aNewChild,
                                      nsINode* aRefChild, ErrorResult& aError)
 {
-  nsIContent* newContent = aNewChild.AsContent();
-  if (newContent->IsRootOfAnonymousSubtree()) {
+  if (aNewChild.IsContent() &&
+      aNewChild.AsContent()->IsRootOfAnonymousSubtree()) {
     
     
     
@@ -2262,7 +2285,7 @@ nsINode::EnsurePreInsertionValidity2(bool aReplace, nsINode& aNewChild,
   }
 
   
-  EnsureAllowedAsChild(newContent, this, aReplace, aRefChild, aError);
+  EnsureAllowedAsChild(&aNewChild, this, aReplace, aRefChild, aError);
 }
 
 nsINode*
@@ -2276,7 +2299,7 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
   
   MOZ_ASSERT_IF(aReplace, aRefChild);
 
-  EnsurePreInsertionValidity1(*aNewChild, aRefChild, aError);
+  EnsurePreInsertionValidity1(aError);
   if (aError.Failed()) {
     return nullptr;
   }
@@ -2317,11 +2340,6 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
     
     if (nodeType == DOCUMENT_FRAGMENT_NODE) {
       static_cast<FragmentOrElement*>(aNewChild)->FireNodeRemovedForChildren();
-    }
-    
-    if (aRefChild && aRefChild->GetParentNode() != this) {
-      aError.Throw(NS_ERROR_DOM_NOT_FOUND_ERR);
-      return nullptr;
     }
   }
 
@@ -2377,13 +2395,6 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
       
 
       
-      
-      if (nodeToInsertBefore && nodeToInsertBefore->GetParent() != this) {
-        aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
-        return nullptr;
-      }
-
-      
       if (newContent->GetParentNode()) {
         aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
         return nullptr;
@@ -2398,10 +2409,6 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
           return nullptr;
         }
       } else {
-        if (aRefChild && aRefChild->GetParent() != this) {
-          aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
-          return nullptr;
-        }
         EnsureAllowedAsChild(newContent, this, aReplace, aRefChild, aError);
         if (aError.Failed()) {
           return nullptr;
