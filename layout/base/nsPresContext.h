@@ -1017,6 +1017,7 @@ public:
   void NotifyInvalidation(TransactionId aTransactionId, const nsIntRect& aRect);
   void NotifyDidPaintForSubtree(TransactionId aTransactionId = TransactionId{0},
                                 const mozilla::TimeStamp& aTimeStamp = mozilla::TimeStamp());
+  void NotifyRevokingDidPaint(TransactionId aTransactionId);
   void FireDOMPaintEvent(nsTArray<nsRect>* aList,
                          TransactionId aTransactionId,
                          mozilla::TimeStamp aTimeStamp = mozilla::TimeStamp());
@@ -1215,6 +1216,8 @@ protected:
   void UpdateCharSet(NotNull<const Encoding*> aCharSet);
 
   static bool NotifyDidPaintSubdocumentCallback(nsIDocument* aDocument, void* aData);
+  static bool NotifyRevokingDidPaintSubdocumentCallback(nsIDocument* aDocument, void* aData);
+
 
 public:
   
@@ -1254,6 +1257,7 @@ protected:
   struct TransactionInvalidations {
     TransactionId mTransactionId;
     nsTArray<nsRect> mInvalidations;
+    bool mIsWaitingForPreviousTransaction = false;
   };
   TransactionInvalidations* GetInvalidations(TransactionId aTransactionId);
 
@@ -1504,23 +1508,6 @@ public:
 
 
 
-  void EnsureEventualDidPaintEvent(TransactionId aTransactionId);
-
-  
-
-
-
-  void CancelDidPaintTimers(TransactionId aTransactionId);
-
-  
-
-
-  void CancelAllDidPaintTimers();
-
-  
-
-
-
 
 
   void RegisterPluginForGeometryUpdates(nsIContent* aPlugin);
@@ -1607,12 +1594,6 @@ protected:
   };
 
   friend class nsPresContext;
-
-  struct NotifyDidPaintTimer {
-    TransactionId mTransactionId;
-    nsCOMPtr<nsITimer> mTimer;
-  };
-  AutoTArray<NotifyDidPaintTimer, 4> mNotifyDidPaintTimers;
 
   nsCOMPtr<nsITimer> mApplyPluginGeometryTimer;
   nsTHashtable<nsRefPtrHashKey<nsIContent> > mRegisteredPlugins;

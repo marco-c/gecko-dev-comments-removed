@@ -465,7 +465,12 @@ private:
   RefPtr<nsRefreshDriver> mRootRefresh;
 
   
-  TransactionId mPendingTransaction;
+  TransactionId mNextTransactionId;
+  
+  
+  
+  
+  TransactionId mOutstandingTransactionId;
   
   TransactionId mCompletedTransaction;
 
