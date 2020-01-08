@@ -65,6 +65,20 @@ void likeFunction(sqlite3_context *aCtx, int aArgc, sqlite3_value **aArgv);
 void levenshteinDistanceFunction(sqlite3_context *aCtx, int aArgc,
                                  sqlite3_value **aArgv);
 
+
+
+
+
+
+
+
+
+
+
+
+void utf16LengthFunction(sqlite3_context *aCtx, int aArgc,
+                         sqlite3_value **aArgv);
+
 }  
 }  
 
