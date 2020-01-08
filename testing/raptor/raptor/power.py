@@ -26,6 +26,47 @@ def init_geckoview_power_test(raptor):
         output.write(raptor.device.shell_output("dumpsys battery"))
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def finish_geckoview_power_test(raptor):
     upload_dir = os.getenv('MOZ_UPLOAD_DIR')
     if not upload_dir:
@@ -47,31 +88,69 @@ def finish_geckoview_power_test(raptor):
         batterystats = raptor.device.shell_output("dumpsys batterystats")
         output.write(batterystats)
     raptor.device._verbose = verbose
+    estimated_power = False
     uid = None
-    cpu = wifi = smearing = screen = proportional = 0
-    r_uid = re.compile(r'proc=([^:]+):"%s"' % raptor.config['binary'])
+    total = cpu = wifi = smearing = screen = proportional = 0
+    full_screen = 0
+    full_wifi = 0
+    re_uid = re.compile(r'proc=([^:]+):"%s"' % raptor.config['binary'])
+    re_estimated_power = re.compile(r'\s+Estimated power use [(]mAh[)]')
+    re_proportional = re.compile(r'proportional=([\d.]+)')
+    re_screen = re.compile(r'screen=([\d.]+)')
+    re_full_screen = re.compile(r'\s+Screen:\s+([\d.]+)')
+    re_full_wifi = re.compile(r'\s+Wifi:\s+([\d.]+)')
+    re_power = None
     batterystats = batterystats.split('\n')
     for line in batterystats:
         if uid is None:
-            match = r_uid.search(line)
+            
+            
+            match = re_uid.search(line)
             if match:
                 uid = match.group(1)
-                r_power = re.compile(
-                    r'\s+Uid %s:\s+[\d.]+ [(] cpu=([\d.]+) wifi=([\d.]+) [)] '
-                    r'Including smearing: ([\d.]+)' % uid)
-        else:
-            match = r_power.match(line)
+                re_power = re.compile(
+                    r'\s+Uid %s:\s+([\d.]+) ([(] cpu=([\d.]+) wifi=([\d.]+) [)] '
+                    r'Including smearing: ([\d.]+))?' % uid)
+                continue
+        if not estimated_power:
+            
+            
+            match = re_estimated_power.match(line)
             if match:
-                (cpu, wifi, smearing) = match.groups()
-                r_screen = re.compile(r'screen=([\d.]+)')
-                match = r_screen.search(line)
-                if match:
-                    screen = match.group(1)
-                r_proportional = re.compile(r'proportional=([\d.]+)')
-                match = r_proportional.search(line)
-                if match:
-                    proportional = match.group(1)
-                break
+                estimated_power = True
+            continue
+        if full_screen == 0:
+            match = re_full_screen.match(line)
+            if match:
+                full_screen = match.group(1)
+                continue
+        if full_wifi == 0:
+            match = re_full_wifi.match(line)
+            if match:
+                full_wifi = match.group(1)
+                continue
+        if re_power:
+            match = re_power.match(line)
+            if match:
+                (total, android8, cpu, wifi, smearing) = match.groups()
+                if android8:
+                    
+                    
+                    
+                    match = re_screen.search(line)
+                    if match:
+                        screen = match.group(1)
+                    match = re_proportional.search(line)
+                    if match:
+                        proportional = match.group(1)
+        if full_screen and full_wifi and (cpu and wifi and smearing or total):
+            
+            break
+
+    cpu = total if cpu is None else cpu
+    screen = full_screen if screen == 0 else screen
+    wifi = full_wifi if wifi is None else wifi
+
     raptor.log.info('power data for uid: %s, cpu: %s, wifi: %s, screen: %s, proportional: %s' %
                     (uid, cpu, wifi, screen, proportional))
 
