@@ -659,6 +659,8 @@ var interfaceNamesInGlobalScope =
 
     {name: "MediaStreamTrack", insecureContext: true},
 
+    {name: "MerchantValidationEvent", insecureContext: false, desktop: true, nightly: true, linux: false},
+
     {name: "MessageChannel", insecureContext: true},
 
     {name: "MessageEvent", insecureContext: true},
@@ -738,6 +740,16 @@ var interfaceNamesInGlobalScope =
     {name: "PannerNode", insecureContext: true},
 
     {name: "Path2D", insecureContext: true},
+
+    {name: "PaymentAddress", insecureContext: false, desktop: true, nightly: true, linux: false},
+
+    {name: "PaymentMethodChangeEvent", insecureContext: false, desktop: true, nightly: true, linux: false},
+
+    {name: "PaymentRequest", insecureContext: false, desktop: true, nightly: true, linux: false},
+
+    {name: "PaymentRequestUpdateEvent", insecureContext: false, desktop: true, nightly: true, linux: false},
+
+    {name: "PaymentResponse", insecureContext: false, desktop: true, nightly: true, linux: false},
 
     {name: "Performance", insecureContext: true},
 

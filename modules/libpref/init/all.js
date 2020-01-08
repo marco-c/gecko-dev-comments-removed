@@ -5848,7 +5848,6 @@ pref("dom.moduleScripts.enabled", true);
 pref("dom.timeout.max_consecutive_callbacks_ms", 4);
 
 
-pref("dom.payments.request.enabled", false);
 pref("dom.payments.loglevel", "Warn");
 pref("dom.payments.defaults.saveCreditCard", false);
 pref("dom.payments.defaults.saveAddress", true);
