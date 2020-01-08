@@ -1,10 +1,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Preferences.jsm", this);
-
-const PAGE_URL = "chrome://browser/content/aboutconfig/aboutconfig.html";
-
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -16,25 +12,22 @@ add_task(async function setup() {
 });
 
 add_task(async function test_search() {
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: PAGE_URL,
-  }, async browser => {
+  await AboutConfigTest.withNewTab(async function() {
     let prefArray = Services.prefs.getChildList("");
-    await content.document.querySelector("button").click();
+    await this.document.querySelector("button").click();
 
     
     
     
     
     
-    Assert.greater(content.document.getElementById("prefs").childElementCount,
+    Assert.greater(this.document.getElementById("prefs").childElementCount,
                    prefArray.length - 50);
 
     
     
     
-    let search = content.document.getElementById("search");
+    let search = this.document.getElementById("search");
     search.value = "wser.down   ";
     search.focus();
     EventUtils.sendKey("return");
@@ -44,7 +37,7 @@ add_task(async function test_search() {
     
     
     
-    Assert.equal(content.document.getElementById("prefs").childElementCount,
+    Assert.equal(this.document.getElementById("prefs").childElementCount,
                  filteredPrefArray.length + 1);
 
     
@@ -57,7 +50,7 @@ add_task(async function test_search() {
     
     
     
-    Assert.greater(content.document.getElementById("prefs").childElementCount,
+    Assert.greater(this.document.getElementById("prefs").childElementCount,
                    prefArray.length - 50);
 
     
@@ -66,7 +59,7 @@ add_task(async function test_search() {
     EventUtils.sendKey("return");
 
     
-    Assert.equal(content.document.getElementById("prefs").childElementCount,
+    Assert.equal(this.document.getElementById("prefs").childElementCount,
                  1);
 
     
@@ -74,7 +67,7 @@ add_task(async function test_search() {
     search.focus();
     EventUtils.sendKey("return");
 
-    Assert.equal(content.document.getElementById("prefs").childElementCount,
+    Assert.equal(this.document.getElementById("prefs").childElementCount,
                  2);
   });
 });
