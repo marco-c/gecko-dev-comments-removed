@@ -198,7 +198,16 @@ class ProfilingStackFrame
         
         JS_OSR = 1 << 3,
 
-        FLAGS_BITCOUNT = 4,
+        
+        
+        
+        
+        
+        STRING_TEMPLATE_METHOD = 1 << 4, 
+        STRING_TEMPLATE_GETTER = 1 << 5, 
+        STRING_TEMPLATE_SETTER = 1 << 6, 
+
+        FLAGS_BITCOUNT = 7,
         FLAGS_MASK = (1 << FLAGS_BITCOUNT) - 1
     };
 
@@ -290,6 +299,10 @@ class ProfilingStackFrame
             uint32_t(Flags::IS_JS_FRAME) |
             (uint32_t(Category::JS) << uint32_t(Flags::FLAGS_BITCOUNT));
         MOZ_ASSERT(isJsFrame());
+    }
+
+    uint32_t flags() const {
+        return uint32_t(flagsAndCategory_) & uint32_t(Flags::FLAGS_MASK);
     }
 
     Category category() const {

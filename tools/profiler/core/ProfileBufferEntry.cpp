@@ -937,6 +937,13 @@ private:
 
 
 
+
+
+
+
+
+
+
 #define ERROR_AND_CONTINUE(msg) \
   { \
     fprintf(stderr, "ProfileBuffer parse error: %s", msg); \
@@ -1025,8 +1032,14 @@ ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
         numFrames++;
 
         const char* label = e.Get().u.mString;
-
         e.Next();
+
+        using FrameFlags = js::ProfilingStackFrame::Flags;
+        uint32_t frameFlags = 0;
+        if (e.Has() && e.Get().IsFrameFlags()) {
+          frameFlags = uint32_t(e.Get().u.mUint64);
+          e.Next();
+        }
 
         
         
@@ -1051,7 +1064,17 @@ ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
 
         nsCString frameLabel;
         if (label[0] != '\0' && hasDynamicString) {
-          frameLabel.AppendPrintf("%s %s", label, dynStrBuf.get());
+          if (frameFlags & uint32_t(FrameFlags::STRING_TEMPLATE_METHOD)) {
+            frameLabel.AppendPrintf("%s.%s", label, dynStrBuf.get());
+          } else if (frameFlags & uint32_t(FrameFlags::STRING_TEMPLATE_GETTER)) {
+            frameLabel.AppendPrintf("get %s.%s", label, dynStrBuf.get());
+          } else if (frameFlags & uint32_t(FrameFlags::STRING_TEMPLATE_SETTER)) {
+            frameLabel.AppendPrintf("set %s.%s", label, dynStrBuf.get());
+          } else {
+            frameLabel.AppendPrintf("%s %s", label, dynStrBuf.get());
+          }
+        } else if (hasDynamicString) {
+          frameLabel.Append(dynStrBuf.get());
         } else {
           frameLabel.Append(label);
         }
