@@ -17,6 +17,7 @@ const {
 } = ChromeUtils.import("chrome://marionette/content/error.js", {});
 ChromeUtils.import("chrome://marionette/content/event.js");
 const {pprint} = ChromeUtils.import("chrome://marionette/content/format.js", {});
+const {Sleep} = ChromeUtils.import("chrome://marionette/content/sync.js", {});
 
 this.EXPORTED_SYMBOLS = ["action"];
 
@@ -1422,11 +1423,8 @@ function performOnePointerMove(inputState, targetX, targetY, win) {
 
 
 function dispatchPause(a, tickDuration) {
-  const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-  let duration = typeof a.duration == "undefined" ? tickDuration : a.duration;
-  return new Promise(resolve =>
-      timer.initWithCallback(resolve, duration, Ci.nsITimer.TYPE_ONE_SHOT)
-  );
+  let ms = typeof a.duration == "undefined" ? tickDuration : a.duration;
+  return Sleep(ms);
 }
 
 
