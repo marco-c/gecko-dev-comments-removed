@@ -194,13 +194,17 @@ async function doDependentControlChecks(dependentControls,
   checkControlStateWorker(doc, alwaysDisabledControls, false);
 
   let contentBlockingToggle = doc.getElementById("contentBlockingToggle");
-  contentBlockingToggle.click();
+  contentBlockingToggle.doCommand();
+
+  await TestUtils.topicObserved("privacy-pane-tp-ui-updated");
 
   is(Services.prefs.getBoolPref(CB_PREF), true, "Content Blocking is on");
   checkControlState(doc, dependentControls);
   checkControlStateWorker(doc, alwaysDisabledControls, false);
 
-  contentBlockingToggle.click();
+  contentBlockingToggle.doCommand();
+
+  await TestUtils.topicObserved("privacy-pane-tp-ui-updated");
 
   is(Services.prefs.getBoolPref(CB_PREF), false, "Content Blocking is off");
   checkControlState(doc, dependentControls);
@@ -212,15 +216,40 @@ async function doDependentControlChecks(dependentControls,
 
 
 add_task(async function testContentBlockingDependentControls() {
+  
+  
   SpecialPowers.pushPrefEnv({set: [
     [CB_UI_PREF, true],
     [CB_RT_UI_PREF, true],
+    [NCB_PREF, Ci.nsICookieService.BEHAVIOR_ACCEPT],
   ]});
 
   let dependentControls = [
     "#content-blocking-categories-label",
+    ".content-blocking-checkbox",
     ".content-blocking-icon",
-    ".content-blocking-category-menu",
+    ".content-blocking-category-name",
+    "#changeBlockListLink",
+    "#contentBlockingChangeCookieSettings",
+  ];
+  let alwaysDisabledControls = [
+    "#blockCookiesCB, #blockCookiesCB > radio",
+  ];
+
+  await doDependentControlChecks(dependentControls, alwaysDisabledControls);
+
+  
+  
+  SpecialPowers.pushPrefEnv({set: [
+    [CB_UI_PREF, true],
+    [CB_RT_UI_PREF, true],
+    [NCB_PREF, Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER],
+  ]});
+
+  dependentControls = [
+    "#content-blocking-categories-label",
+    ".content-blocking-checkbox",
+    ".content-blocking-icon",
     ".content-blocking-category-name",
     "#changeBlockListLink",
     "#contentBlockingChangeCookieSettings",
@@ -228,6 +257,33 @@ add_task(async function testContentBlockingDependentControls() {
   ];
 
   await doDependentControlChecks(dependentControls);
+});
+
+
+add_task(async function testContentBlockingDependentTPControls() {
+  SpecialPowers.pushPrefEnv({set: [
+    [CB_UI_PREF, true],
+    [CB_RT_UI_PREF, true],
+    [TP_PREF, false],
+    [TP_PBM_PREF, false],
+    [NCB_PREF, Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER],
+  ]});
+
+  let dependentControls = [
+    "#content-blocking-categories-label",
+    ".content-blocking-checkbox",
+    ".content-blocking-icon",
+    ".content-blocking-category-name",
+    "#changeBlockListLink",
+    "#contentBlockingChangeCookieSettings",
+    "#blockCookiesCB, #blockCookiesCB > radio",
+  ];
+  let alwaysDisabledControls = [
+    "#trackingProtectionMenu",
+    "[control=trackingProtectionMenu]",
+  ];
+
+  await doDependentControlChecks(dependentControls, alwaysDisabledControls);
 });
 
 
@@ -243,21 +299,24 @@ add_task(async function testContentBlockingDependentControlsOnSiteDataUI() {
     await SpecialPowers.pushPrefEnv({set: [
       [CB_UI_PREF, true],
       [CB_RT_UI_PREF, true],
+      [TP_PREF, false],
+      [TP_PBM_PREF, true],
       [NCB_PREF, value],
     ]});
 
     let dependentControls = [
       "#content-blocking-categories-label",
+      "#contentBlockingFastBlockCheckbox",
+      "#contentBlockingTrackingProtectionCheckbox",
       ".fastblock-icon",
       ".tracking-protection-icon",
-      "#fastBlockMenu",
       "#trackingProtectionMenu",
-      "[control=fastBlockMenu]",
       "[control=trackingProtectionMenu]",
       "#changeBlockListLink",
       "#contentBlockingChangeCookieSettings",
     ];
     let alwaysDisabledControls = [
+      ".reject-trackers-checkbox",
       ".reject-trackers-icon",
       "[control=blockCookiesCB]",
       "#blockCookiesCBDeck",
@@ -267,9 +326,37 @@ add_task(async function testContentBlockingDependentControlsOnSiteDataUI() {
     await doDependentControlChecks(dependentControls, alwaysDisabledControls);
   }
 
-  
   prefValuesToTest = [
     Ci.nsICookieService.BEHAVIOR_ACCEPT,         
+  ];
+  for (let value of prefValuesToTest) {
+    await SpecialPowers.pushPrefEnv({set: [
+      [CB_UI_PREF, true],
+      [CB_RT_UI_PREF, true],
+      [TP_PREF, false],
+      [TP_PBM_PREF, true],
+      [NCB_PREF, value],
+    ]});
+
+    let dependentControls = [
+      "#content-blocking-categories-label",
+      ".content-blocking-checkbox",
+      ".content-blocking-icon",
+      ".content-blocking-category-name",
+      "#trackingProtectionMenu",
+      "[control=trackingProtectionMenu]",
+      "#changeBlockListLink",
+      "#contentBlockingChangeCookieSettings",
+    ];
+    let alwaysDisabledControls = [
+      "#blockCookiesCB, #blockCookiesCB > radio",
+    ];
+
+    await doDependentControlChecks(dependentControls, alwaysDisabledControls);
+  }
+
+  
+  prefValuesToTest = [
     Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN, 
     Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER, 
   ];
@@ -277,14 +364,18 @@ add_task(async function testContentBlockingDependentControlsOnSiteDataUI() {
     await SpecialPowers.pushPrefEnv({set: [
       [CB_UI_PREF, true],
       [CB_RT_UI_PREF, true],
+      [TP_PREF, false],
+      [TP_PBM_PREF, true],
       [NCB_PREF, value],
     ]});
 
     let dependentControls = [
       "#content-blocking-categories-label",
+      ".content-blocking-checkbox",
       ".content-blocking-icon",
-      ".content-blocking-category-menu",
       ".content-blocking-category-name",
+      "#trackingProtectionMenu",
+      "[control=trackingProtectionMenu]",
       "#changeBlockListLink",
       "#contentBlockingChangeCookieSettings",
       "#blockCookiesCB, #blockCookiesCB > radio",
