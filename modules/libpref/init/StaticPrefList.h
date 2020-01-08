@@ -301,6 +301,13 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
+
+VARCACHE_PREF(
+  "dom.streams.enabled",
+   dom_streams_enabled,
+  RelaxedAtomicBool, false
+)
+
 #if !defined(MOZ_WIDGET_ANDROID)
 # define PREF_VALUE true
 #else
@@ -823,14 +830,6 @@ VARCACHE_PREF(
    javascript_options_mem_notify,
   bool, false
 )
-
-
-VARCACHE_PREF(
-  "javascript.options.streams",
-   javascript_options_streams,
-  RelaxedAtomicBool, false
-)
-
 
 
 
@@ -1606,6 +1605,14 @@ VARCACHE_PREF(
   "browser.contentblocking.allowlist.annotations.enabled",
    browser_contentblocking_allowlist_annotations_enabled,
   bool, true
+)
+
+
+
+VARCACHE_PREF(
+  "browser.contentblocking.originlog.length",
+   browser_contentblocking_originlog_length,
+  uint32_t, 32
 )
 
 
