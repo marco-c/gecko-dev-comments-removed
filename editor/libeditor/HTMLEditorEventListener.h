@@ -17,6 +17,8 @@ class HTMLEditorEventListener final : public EditorEventListener
 {
 public:
   HTMLEditorEventListener()
+    : EditorEventListener()
+    , mListeningToResizeEvent(false)
   {
   }
 
@@ -25,9 +27,21 @@ public:
   }
 
   
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  NS_IMETHOD HandleEvent(dom::Event *aEvent) override;
+
+  
 
 
   virtual nsresult Connect(EditorBase* aEditorBase) override;
+
+  virtual void Disconnect() override;
+
+  
+
+
+
+  nsresult ListenToWindowResizeEvent(bool aListen);
 
 protected:
   MOZ_CAN_RUN_SCRIPT
@@ -35,6 +49,8 @@ protected:
   virtual nsresult MouseUp(dom::MouseEvent* aMouseEvent) override;
   MOZ_CAN_RUN_SCRIPT
   virtual nsresult MouseClick(WidgetMouseEvent* aMouseClickEvent) override;
+
+  bool mListeningToResizeEvent;
 };
 
 } 

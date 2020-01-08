@@ -287,7 +287,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLEditor, TextEditor)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mResizingInfo)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mResizedObject)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMouseMotionListenerP)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mResizeEventListenerP)
 
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAbsolutelyPositionedObject)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mGrabber)
@@ -552,7 +551,6 @@ HTMLEditor::RemoveEventListeners()
     
     
     
-    
 
     if (mMouseMotionListenerP) {
       
@@ -562,15 +560,9 @@ HTMLEditor::RemoveEventListeners()
       target->RemoveEventListener(NS_LITERAL_STRING("mousemove"),
                                   mMouseMotionListenerP, true);
     }
-
-    if (mResizeEventListenerP) {
-      target->RemoveEventListener(NS_LITERAL_STRING("resize"),
-                                  mResizeEventListenerP, false);
-    }
   }
 
   mMouseMotionListenerP = nullptr;
-  mResizeEventListenerP = nullptr;
 
   TextEditor::RemoveEventListeners();
 }
