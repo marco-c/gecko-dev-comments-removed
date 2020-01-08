@@ -596,6 +596,8 @@ public:
   
   
   
+  
+  
   template<int N>
   void ReplaceLiteral(index_type aCutStart, size_type aCutLength,
                       const char_type (&aStr)[N])
@@ -638,6 +640,8 @@ public:
                                 size_type aLength,
                                 const fallible_t& aFallible);
 
+  
+  
   
   
   
@@ -802,6 +806,8 @@ public:
     Replace(aPos, 0, aTuple);
   }
 
+  
+  
   
   
   
