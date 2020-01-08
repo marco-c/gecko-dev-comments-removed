@@ -4,7 +4,7 @@ const TEST_URI = getRootDirectory(gTestPath).replace("chrome://mochitests/conten
 
 
 add_task(async function load_image_from_https_test() {
-  let tab = gBrowser.addTab(TEST_URI);
+  let tab = BrowserTestUtils.addTab(gBrowser, TEST_URI);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   gBrowser.selectedTab = tab;
@@ -38,7 +38,7 @@ add_task(async function load_image_from_https_test() {
 
 
 add_task(async function load_image_from_http_test() {
-  let tab = gBrowser.addTab(TEST_URI);
+  let tab = BrowserTestUtils.addTab(gBrowser, TEST_URI);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   gBrowser.selectedTab = tab;
@@ -74,7 +74,7 @@ add_task(async function load_image_from_http_test() {
 
 
 add_task(async function load_https_and_http_test() {
-  let tab = gBrowser.addTab(TEST_URI);
+  let tab = BrowserTestUtils.addTab(gBrowser, TEST_URI);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   
@@ -121,7 +121,7 @@ add_task(async function load_https_and_http_test() {
 
 
 add_task(async function block_pending_request_test() {
-  let tab = gBrowser.addTab(TEST_URI);
+  let tab = BrowserTestUtils.addTab(gBrowser, TEST_URI);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   gBrowser.selectedTab = tab;

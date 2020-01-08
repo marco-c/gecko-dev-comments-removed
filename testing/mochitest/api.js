@@ -95,7 +95,8 @@ function loadMochitest(e) {
   win.removeEventListener("mochitest-load", loadMochitest);
 
   
-  win.loadURI(url);
+  win.loadURI(url, null, null, null, null, null, null, null,
+    Services.scriptSecurityManager.getSystemPrincipal());
   if (flavor == "mochitest") {
     return;
   }

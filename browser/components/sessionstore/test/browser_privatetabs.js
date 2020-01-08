@@ -72,7 +72,7 @@ add_task(async function() {
   mm.loadFrameScript(FRAME_SCRIPT, true);
 
   
-  let tab = win.gBrowser.addTab("about:mozilla");
+  let tab = BrowserTestUtils.addTab(win.gBrowser, "about:mozilla");
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
   await TabStateFlusher.flush(browser);
@@ -86,7 +86,7 @@ add_task(async function() {
   is(ss.getClosedTabCount(win), 0, "no tabs to restore");
 
   
-  tab = win.gBrowser.addTab("about:mozilla");
+  tab = BrowserTestUtils.addTab(win.gBrowser, "about:mozilla");
   browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
   await TabStateFlusher.flush(browser);
@@ -109,7 +109,7 @@ add_task(async function() {
   let win = await promiseNewWindowLoaded({private: true});
 
   
-  let tab = win.gBrowser.addTab("about:mozilla");
+  let tab = BrowserTestUtils.addTab(win.gBrowser, "about:mozilla");
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
   await TabStateFlusher.flush(browser);
