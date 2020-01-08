@@ -25,6 +25,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.UiThread;
 import android.text.Editable;
 import android.text.InputType;
 import android.util.Log;
@@ -352,6 +353,7 @@ public final class SessionTextInput {
 
 
 
+    @UiThread
     public @Nullable View getView() {
         ThreadUtils.assertOnUiThread();
         return mInputConnection != null ? mInputConnection.getView() : null;
@@ -366,6 +368,7 @@ public final class SessionTextInput {
 
 
 
+    @UiThread
     public synchronized void setView(final @Nullable View view) {
         ThreadUtils.assertOnUiThread();
 
@@ -404,6 +407,7 @@ public final class SessionTextInput {
 
 
 
+    @UiThread
     public boolean onKeyPreIme(final int keyCode, final @NonNull KeyEvent event) {
         ThreadUtils.assertOnUiThread();
         return mEditable.onKeyPreIme(getView(), keyCode, event);
@@ -416,6 +420,7 @@ public final class SessionTextInput {
 
 
 
+    @UiThread
     public boolean onKeyDown(final int keyCode, final @NonNull KeyEvent event) {
         ThreadUtils.assertOnUiThread();
         return mEditable.onKeyDown(getView(), keyCode, event);
@@ -428,6 +433,7 @@ public final class SessionTextInput {
 
 
 
+    @UiThread
     public boolean onKeyUp(final int keyCode, final @NonNull KeyEvent event) {
         ThreadUtils.assertOnUiThread();
         return mEditable.onKeyUp(getView(), keyCode, event);
@@ -440,6 +446,7 @@ public final class SessionTextInput {
 
 
 
+    @UiThread
     public boolean onKeyLongPress(final int keyCode, final @NonNull KeyEvent event) {
         ThreadUtils.assertOnUiThread();
         return mEditable.onKeyLongPress(getView(), keyCode, event);
@@ -453,6 +460,7 @@ public final class SessionTextInput {
 
 
 
+    @UiThread
     public boolean onKeyMultiple(final int keyCode, final int repeatCount,
                                  final @NonNull KeyEvent event) {
         ThreadUtils.assertOnUiThread();
@@ -464,6 +472,7 @@ public final class SessionTextInput {
 
 
 
+    @UiThread
     public void setDelegate(@Nullable final GeckoSession.TextInputDelegate delegate) {
         ThreadUtils.assertOnUiThread();
         mDelegate = delegate;
@@ -474,6 +483,7 @@ public final class SessionTextInput {
 
 
 
+    @UiThread
     public GeckoSession.TextInputDelegate getDelegate() {
         ThreadUtils.assertOnUiThread();
         if (mDelegate == null) {
