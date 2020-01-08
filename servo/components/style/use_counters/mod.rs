@@ -23,12 +23,28 @@ pub struct NonCustomPropertyUseCounters {
 
 impl NonCustomPropertyUseCounters {
     
-    #[inline]
-    pub fn record(&self, id: NonCustomPropertyId) {
+    
+    #[inline(always)]
+    fn bucket_and_pattern(id: NonCustomPropertyId) -> (usize, usize) {
         let bit = id.bit();
         let bucket = bit / BITS_PER_ENTRY;
         let bit_in_bucket = bit % BITS_PER_ENTRY;
-        self.storage[bucket].fetch_or(1 << bit_in_bucket, Ordering::Relaxed);
+        (bucket, 1 << bit_in_bucket)
+    }
+
+    
+    #[inline]
+    pub fn record(&self, id: NonCustomPropertyId) {
+        let (bucket, pattern) = Self::bucket_and_pattern(id);
+        self.storage[bucket].fetch_or(pattern, Ordering::Relaxed);
+    }
+
+    
+    
+    #[inline]
+    pub fn recorded(&self, id: NonCustomPropertyId) -> bool {
+        let (bucket, pattern) = Self::bucket_and_pattern(id);
+        self.storage[bucket].load(Ordering::Relaxed) & pattern != 0
     }
 }
 
