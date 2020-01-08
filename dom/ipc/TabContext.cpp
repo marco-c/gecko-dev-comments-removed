@@ -8,7 +8,7 @@
 #include "mozilla/dom/PTabContext.h"
 #include "mozilla/dom/TabParent.h"
 #include "mozilla/dom/TabChild.h"
-#include "mozilla/dom/DOMPrefs.h"
+#include "mozilla/StaticPrefs.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsServiceManagerUtils.h"
 
@@ -256,7 +256,7 @@ MaybeInvalidTabContext::MaybeInvalidTabContext(const IPCTabContext& aParams)
       
       
       
-      if (!DOMPrefs::ServiceWorkersEnabled()) {
+      if (!StaticPrefs::dom_serviceWorkers_enabled()) {
         mInvalidReason = "ServiceWorkers should be enabled.";
         return;
       }

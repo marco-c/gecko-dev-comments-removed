@@ -147,8 +147,6 @@ pref("dom.select_events.textcontrols.enabled", false);
 
 pref("dom.workers.maxPerDomain", 512);
 
-pref("dom.serviceWorkers.enabled", false);
-
 
 pref("dom.serviceWorkers.idle_timeout", 30000);
 
