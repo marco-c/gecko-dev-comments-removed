@@ -228,8 +228,12 @@ class WebDriverRun(object):
 
         flag = self.result_flag.wait(timeout + 2 * extra_timeout)
         if self.result is None:
-            assert not flag
-            self.result = False, ("EXTERNAL-TIMEOUT", None)
+            if flag:
+                
+                
+                self.result = False, ("INTERNAL-ERROR", "self._run didn't set a result")
+            else:
+                self.result = False, ("EXTERNAL-TIMEOUT", None)
 
         return self.result
 
@@ -247,7 +251,7 @@ class WebDriverRun(object):
                 
                 self.result = False, ("EXTERNAL-TIMEOUT", None)
             else:
-                message = getattr(e, "message", "")
+                message = str(getattr(e, "message", ""))
                 if message:
                     message += "\n"
                 message += traceback.format_exc(e)
