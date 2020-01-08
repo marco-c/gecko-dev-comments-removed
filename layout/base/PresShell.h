@@ -866,7 +866,6 @@ private:
   
   bool mHasHandledUserInput : 1;
 
-#ifdef NIGHTLY_BUILD
   
   
   bool mForceDispatchKeyPressEventsForNonPrintableKeys : 1;
@@ -878,7 +877,6 @@ private:
   
   
   bool mInitializedWithKeyPressEventDispatchingBlacklist : 1;
-#endif 
 
   static bool sDisableNonTestMouseEvents;
 

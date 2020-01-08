@@ -822,11 +822,9 @@ PresShell::PresShell()
   , mHasReceivedPaintMessage(false)
   , mIsLastKeyDownCanceled(false)
   , mHasHandledUserInput(false)
-#ifdef NIGHTLY_BUILD
   , mForceDispatchKeyPressEventsForNonPrintableKeys(false)
   , mForceUseLegacyKeyCodeAndCharCodeValues(false)
   , mInitializedWithKeyPressEventDispatchingBlacklist(false)
-#endif 
 {
   MOZ_LOG(gLog, LogLevel::Debug, ("PresShell::PresShell this=%p", this));
 
@@ -7905,7 +7903,6 @@ PresShell::HandleEventInternal(WidgetEvent* aEvent,
   return rv;
 }
 
-#ifdef NIGHTLY_BUILD
 static already_AddRefed<nsIURI>
 GetDocumentURIToCompareWithBlacklist(PresShell& aPresShell)
 {
@@ -7930,7 +7927,6 @@ GetDocumentURIToCompareWithBlacklist(PresShell& aPresShell)
   }
   return nullptr;
 }
-#endif 
 
 nsresult
 PresShell::DispatchEventToDOM(WidgetEvent* aEvent,
@@ -7958,7 +7954,6 @@ PresShell::DispatchEventToDOM(WidgetEvent* aEvent,
   if (eventTarget) {
     if (aEvent->IsBlockedForFingerprintingResistance()) {
       aEvent->mFlags.mOnlySystemGroupDispatchInContent = true;
-#ifdef NIGHTLY_BUILD
     } else if (aEvent->mMessage == eKeyPress) {
       
       
@@ -7987,7 +7982,6 @@ PresShell::DispatchEventToDOM(WidgetEvent* aEvent,
       if (mForceUseLegacyKeyCodeAndCharCodeValues) {
         aEvent->AsKeyboardEvent()->mUseLegacyKeyCodeAndCharCodeValues = true;
       }
-#endif
     }
 
     if (aEvent->mClass == eCompositionEventClass) {

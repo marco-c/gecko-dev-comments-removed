@@ -222,6 +222,10 @@ pref("dom.keyboardevent.dispatch_during_composition", false);
 
 #ifdef NIGHTLY_BUILD
 pref("dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_in_content", true);
+#else
+pref("dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_in_content", false);
+#endif
+
 
 
 
@@ -229,18 +233,13 @@ pref("dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_i
 
 
 pref("dom.keyboardevent.keypress.hack.dispatch_non_printable_keys", "");
-#else
-pref("dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_in_content", false);
-#endif
 
-#ifdef NIGHTLY_BUILD
 
 
 
 
 
 pref("dom.keyboardevent.keypress.hack.use_legacy_keycode_and_charcode", "");
-#endif
 
 
 pref("dom.webmidi.enabled", false);
