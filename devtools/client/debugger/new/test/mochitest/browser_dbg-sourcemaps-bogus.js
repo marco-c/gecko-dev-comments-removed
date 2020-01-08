@@ -7,11 +7,7 @@ requestLongerTimeout(2);
 
 add_task(async function() {
   
-  const dbg = await initDebugger("doc-sourcemap-bogus.html");
-  const {
-    selectors: { getSourceCount },
-    getState
-  } = dbg;
+  const dbg = await initDebugger("doc-sourcemap-bogus.html", "bogus-map.js");
 
   await selectSource(dbg, "bogus-map.js");
 
@@ -24,5 +20,5 @@ add_task(async function() {
 
   
   
-  is(getSourceCount(getState()), 1, "Only 1 source exists");
+  is(dbg.selectors.getSourceCount(dbg.getState()), 1, "Only 1 source exists");
 });

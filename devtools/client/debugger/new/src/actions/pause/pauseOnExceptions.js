@@ -7,6 +7,8 @@ exports.pauseOnExceptions = pauseOnExceptions;
 
 var _promise = require("../utils/middleware/promise");
 
+var _telemetry = require("../../utils/telemetry");
+
 
 
 
@@ -21,6 +23,14 @@ function pauseOnExceptions(shouldPauseOnExceptions, shouldPauseOnCaughtException
     dispatch,
     client
   }) => {
+    
+    (0, _telemetry.recordEvent)("pause_on_exceptions", {
+      exceptions: shouldPauseOnExceptions,
+      
+      caught_exceptio: shouldPauseOnCaughtExceptions
+    });
+    
+
     return dispatch({
       type: "PAUSE_ON_EXCEPTIONS",
       shouldPauseOnExceptions,
