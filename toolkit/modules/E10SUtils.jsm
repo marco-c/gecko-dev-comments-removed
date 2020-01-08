@@ -66,9 +66,7 @@ function validatedWebRemoteType(aPreferredRemoteType, aTargetUri, aCurrentUri) {
     if (aCurrentUri) {
       try {
         
-        
-        
-        sm.checkSameOriginURI(aCurrentUri, aTargetUri, false, false);
+        sm.checkSameOriginURI(aCurrentUri, aTargetUri, false);
         return FILE_REMOTE_TYPE;
       } catch (e) {
         return WEB_REMOTE_TYPE;

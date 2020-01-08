@@ -111,10 +111,6 @@ SpecialPowers.registerConsoleListener(function onConsoleMessage(msg) {
     
     return;
   }
-  if (msg.message.includes("icon-credit-card-generic.svg")) {
-    
-    return;
-  }
   if (msg.message == "SENTINEL") {
     filterFunction = null;
   }

@@ -168,14 +168,8 @@ SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
     
     referrerIsSecure = NS_FAILED(rv) || referrerIsSecure;
 
-    bool isPrivateWin = false;
-    if (doc) {
-      isPrivateWin =
-        doc->NodePrincipal()->OriginAttributesRef().mPrivateBrowsingId > 0;
-    }
-
     bool sameOrigin =
-      NS_SUCCEEDED(sm->CheckSameOriginURI(info->referrer, aURI, false, isPrivateWin));
+      NS_SUCCEEDED(sm->CheckSameOriginURI(info->referrer, aURI, false));
 
     
     
