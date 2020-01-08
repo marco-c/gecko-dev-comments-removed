@@ -102,6 +102,37 @@ UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
   return nullptr;
 }
 
+ void UrlClassifierFeatureFactory::GetFeatureNames(
+    nsTArray<nsCString>& aArray) {
+  if (!XRE_IsParentProcess()) {
+    return;
+  }
+
+  
+  nsAutoCString name;
+  name.Assign(UrlClassifierFeatureTrackingProtection::Name());
+  if (!name.IsEmpty()) {
+    aArray.AppendElement(name);
+  }
+
+  
+  name.Assign(UrlClassifierFeatureTrackingAnnotation::Name());
+  if (!name.IsEmpty()) {
+    aArray.AppendElement(name);
+  }
+
+  
+  name.Assign(UrlClassifierFeatureLoginReputation::Name());
+  if (!name.IsEmpty()) {
+    aArray.AppendElement(name);
+  }
+
+  
+  nsTArray<nsCString> features;
+  UrlClassifierFeatureFlash::GetFeatureNames(features);
+  aArray.AppendElements(features);
+}
+
  already_AddRefed<nsIUrlClassifierFeature>
 UrlClassifierFeatureFactory::CreateFeatureWithTables(
     const nsACString& aName, const nsTArray<nsCString>& aBlacklistTables,

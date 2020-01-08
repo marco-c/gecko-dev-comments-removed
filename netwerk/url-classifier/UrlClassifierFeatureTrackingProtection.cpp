@@ -42,6 +42,10 @@ UrlClassifierFeatureTrackingProtection::UrlClassifierFeatureTrackingProtection()
           NS_LITERAL_CSTRING(TABLE_TRACKING_BLACKLIST_PREF),
           NS_LITERAL_CSTRING(TABLE_TRACKING_WHITELIST_PREF), EmptyCString()) {}
 
+ const char* UrlClassifierFeatureTrackingProtection::Name() {
+  return TRACKING_PROTECTION_FEATURE_NAME;
+}
+
  void UrlClassifierFeatureTrackingProtection::MaybeInitialize() {
   MOZ_ASSERT(XRE_IsParentProcess());
   UC_LOG(("UrlClassifierFeatureTrackingProtection: MaybeInitialize"));
