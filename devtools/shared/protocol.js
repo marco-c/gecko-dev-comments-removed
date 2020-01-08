@@ -826,10 +826,6 @@ Pool.prototype = extend(EventEmitter.prototype, {
     return this.conn.poolFor(this.actorID);
   },
 
-  poolFor: function(actorID) {
-    return this.conn.poolFor(actorID);
-  },
-
   
 
 
@@ -862,9 +858,7 @@ Pool.prototype = extend(EventEmitter.prototype, {
     }
 
     
-    
-    
-    const parent = this.poolFor(actor.actorID);
+    const parent = actor.parent();
     if (parent) {
       parent.unmanage(actor);
     }
@@ -887,19 +881,13 @@ Pool.prototype = extend(EventEmitter.prototype, {
 
   
   actor: function(actorID) {
-    if (this.__poolMap) {
-      return this._poolMap.get(actorID);
-    }
-    return null;
+    return this.__poolMap ? this._poolMap.get(actorID) : null;
   },
 
   
   
   get: function(actorID) {
-    if (this.__poolMap) {
-      return this._poolMap.get(actorID);
-    }
-    return null;
+    return this.__poolMap ? this._poolMap.get(actorID) : null;
   },
 
   

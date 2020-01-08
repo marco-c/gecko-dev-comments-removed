@@ -10,7 +10,8 @@
 
 var { Ci, Cc } = require("chrome");
 var Services = require("Services");
-var { ActorPool } = require("devtools/server/actors/common");
+var { ActorPool, RegisteredActorFactory,
+      ObservedActorFactory } = require("devtools/server/actors/common");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var { dumpn } = DevToolsUtils;
 
@@ -1180,7 +1181,7 @@ var DebuggerServer = {
 
 
 
-  addTargetScopedActor(options, name) {
+  addTargetScopedActor(actor, name) {
     if (!name) {
       throw Error("addTargetScopedActor requires the `name` argument");
     }
@@ -1190,7 +1191,8 @@ var DebuggerServer = {
     if (DebuggerServer.targetScopedActorFactories.hasOwnProperty(name)) {
       throw Error(name + " already exists");
     }
-    DebuggerServer.targetScopedActorFactories[name] = { options, name };
+    DebuggerServer.targetScopedActorFactories[name] =
+      new RegisteredActorFactory(actor, name);
   },
 
   
@@ -1213,8 +1215,8 @@ var DebuggerServer = {
       const actor = actorOrName;
       for (const factoryName in DebuggerServer.targetScopedActorFactories) {
         const handler = DebuggerServer.targetScopedActorFactories[factoryName];
-        if ((handler.options.constructorName == actor.name) ||
-            (handler.options.id == actor.id)) {
+        if ((handler.name && handler.name == actor.name) ||
+            (handler.id && handler.id == actor.id)) {
           name = factoryName;
           break;
         }
@@ -1250,7 +1252,7 @@ var DebuggerServer = {
 
 
 
-  addGlobalActor(options, name) {
+  addGlobalActor(actor, name) {
     if (!name) {
       throw Error("addGlobalActor requires the `name` argument");
     }
@@ -1260,7 +1262,7 @@ var DebuggerServer = {
     if (DebuggerServer.globalActorFactories.hasOwnProperty(name)) {
       throw Error(name + " already exists");
     }
-    DebuggerServer.globalActorFactories[name] = { options, name };
+    DebuggerServer.globalActorFactories[name] = new RegisteredActorFactory(actor, name);
   },
 
   
@@ -1283,8 +1285,8 @@ var DebuggerServer = {
       const actor = actorOrName;
       for (const factoryName in DebuggerServer.globalActorFactories) {
         const handler = DebuggerServer.globalActorFactories[factoryName];
-        if ((handler.options.constructorName == actor.name) ||
-            (handler.options.id == actor.id)) {
+        if ((handler.name && handler.name == actor.name) ||
+            (handler.id && handler.id == actor.id)) {
           name = factoryName;
           break;
         }
@@ -1524,27 +1526,30 @@ DebuggerServerConnection.prototype = {
   },
 
   _getOrCreateActor(actorID) {
-    try {
-      const actor = this.getActor(actorID);
-      if (!actor) {
-        this.transport.send({ from: actorID ? actorID : "root",
-                              error: "noSuchActor",
-                              message: "No such actor for ID: " + actorID });
-        return null;
-      }
-
-      if (typeof (actor) !== "object") {
-        
-        throw new Error("Unexpected actor constructor/function in ActorPool " +
-                        "for actorID=" + actorID + ".");
-      }
-
-      return actor;
-    } catch (error) {
-      const prefix = `Error occurred while creating actor' ${actorID}`;
-      this.transport.send(this._unknownError(actorID, prefix, error));
+    let actor = this.getActor(actorID);
+    if (!actor) {
+      this.transport.send({ from: actorID ? actorID : "root",
+                            error: "noSuchActor",
+                            message: "No such actor for ID: " + actorID });
+      return null;
     }
-    return null;
+
+    
+    if (actor instanceof ObservedActorFactory) {
+      try {
+        actor = actor.createActor();
+      } catch (error) {
+        const prefix = "Error occurred while creating actor '" + actor.name;
+        this.transport.send(this._unknownError(actorID, prefix, error));
+      }
+    } else if (typeof (actor) !== "object") {
+      
+      
+      throw new Error("Unexpected actor constructor/function in ActorPool " +
+                      "for actorID=" + actorID + ".");
+    }
+
+    return actor;
   },
 
   poolFor(actorID) {
