@@ -16,7 +16,7 @@ const {
 
 const {
   findRuntimeById,
-} = require("devtools/client/aboutdebugging-new/src/modules/runtimes-state-helper");
+} = require("../modules/runtimes-state-helper");
 
 
 const TYPE_TO_RUNTIMES_KEY = {
