@@ -826,7 +826,7 @@
            }
            return {
              value: new File.DirectoryIterator.Entry(entry, this._path),
-             done: false
+             done: false,
            };
          }
          return {value: undefined, done: true};
@@ -980,14 +980,14 @@
      
      
      const FILE_STAT_MODE = {
-       read: true
+       read: true,
      };
      const FILE_STAT_OPTIONS = {
        
        winAccess: 0,
        
        winFlags: Const.FILE_FLAG_BACKUP_SEMANTICS,
-       winDisposition: Const.OPEN_EXISTING
+       winDisposition: Const.OPEN_EXISTING,
      };
 
      
@@ -1042,13 +1042,13 @@
      
      
      const FILE_SETDATES_MODE = {
-       write: true
+       write: true,
      };
      const FILE_SETDATES_OPTIONS = {
        winAccess: Const.GENERIC_WRITE,
        
        winFlags: Const.FILE_FLAG_BACKUP_SEMANTICS,
-       winDisposition: Const.OPEN_EXISTING
+       winDisposition: Const.OPEN_EXISTING,
      };
 
      File.read = exports.OS.Shared.AbstractFile.read;
@@ -1142,7 +1142,7 @@
          },
          get() {
            return this.getCurrentDirectory();
-         }
+         },
        }
      );
 

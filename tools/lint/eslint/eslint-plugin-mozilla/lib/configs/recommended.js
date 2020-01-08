@@ -117,6 +117,9 @@ module.exports = {
     "brace-style": ["error", "1tbs", { "allowSingleLine": true }],
 
     
+    "comma-dangle": ["error", "always-multiline"],
+
+    
     "comma-spacing": ["error", {"after": true, "before": false}],
 
     
