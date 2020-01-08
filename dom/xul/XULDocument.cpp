@@ -607,7 +607,18 @@ XULDocument::AddElementToDocumentPost(Element* aElement)
 nsresult
 XULDocument::AddSubtreeToDocument(nsIContent* aContent)
 {
-    NS_ASSERTION(aContent->GetUncomposedDoc() == this, "Element not in doc!");
+    MOZ_ASSERT(aContent->GetComposedDoc() == this, "Element not in doc!");
+
+    
+    
+    
+    
+    
+    if (MOZ_UNLIKELY(!aContent->IsInUncomposedDoc())) {
+        MOZ_ASSERT(aContent->IsInShadowTree());
+        return NS_OK;
+    }
+
     
     Element* aElement = Element::FromNode(aContent);
     if (!aElement) {
