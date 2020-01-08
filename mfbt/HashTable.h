@@ -31,6 +31,46 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef mozilla_HashTable_h
 #define mozilla_HashTable_h
 
@@ -77,9 +117,8 @@ class HashTable;
 
 
 
-
-
 using Generation = Opaque<uint64_t>;
+
 
 
 
@@ -131,11 +170,13 @@ public:
   {
   }
 
+  
+  
   MOZ_MUST_USE bool init(uint32_t aLen = 16) { return mImpl.init(aLen); }
 
+  
   bool initialized() const { return mImpl.initialized(); }
 
-  
   
   
   
@@ -160,12 +201,9 @@ public:
   }
 
   
+  
   void remove(Ptr aPtr) { mImpl.remove(aPtr); }
 
-  
-  
-  
-  
   
   
   
@@ -204,6 +242,7 @@ public:
     return mImpl.lookupForAdd(aLookup);
   }
 
+  
   template<typename KeyInput, typename ValueInput>
   MOZ_MUST_USE bool add(AddPtr& aPtr, KeyInput&& aKey, ValueInput&& aValue)
   {
@@ -211,12 +250,14 @@ public:
       aPtr, std::forward<KeyInput>(aKey), std::forward<ValueInput>(aValue));
   }
 
+  
   template<typename KeyInput>
   MOZ_MUST_USE bool add(AddPtr& aPtr, KeyInput&& aKey)
   {
     return mImpl.add(aPtr, std::forward<KeyInput>(aKey), Value());
   }
 
+  
   template<typename KeyInput, typename ValueInput>
   MOZ_MUST_USE bool relookupOrAdd(AddPtr& aPtr,
                                   KeyInput&& aKey,
@@ -228,7 +269,6 @@ public:
                                std::forward<ValueInput>(aValue));
   }
 
-  
   
   
   
@@ -249,7 +289,6 @@ public:
   
   
   
-  
   using ModIterator = typename Impl::ModIterator;
   ModIterator modIter() { return mImpl.modIter(); }
 
@@ -260,10 +299,8 @@ public:
   Range all() const { return mImpl.all(); }
 
   
-  
   void clear() { mImpl.clear(); }
 
-  
   
   void clearAndShrink() { mImpl.clearAndShrink(); }
 
@@ -294,15 +331,18 @@ public:
            mImpl.shallowSizeOfExcludingThis(aMallocSizeOf);
   }
 
+  
   Generation generation() const { return mImpl.generation(); }
 
   
 
+  
   bool has(const Lookup& aLookup) const
   {
     return mImpl.lookup(aLookup).found();
   }
 
+  
   
   template<typename KeyInput, typename ValueInput>
   MOZ_MUST_USE bool put(KeyInput&& aKey, ValueInput&& aValue)
@@ -354,7 +394,6 @@ public:
     }
   }
 
-  
   
   
   void rekeyIfMoved(const Key& aOldKey, const Key& aNewKey)
@@ -411,22 +450,22 @@ private:
 
 
 
-
 template<class T,
          class HashPolicy = DefaultHasher<T>,
          class AllocPolicy = MallocAllocPolicy>
 class HashSet
 {
-  struct SetOps : HashPolicy
+  struct SetHashPolicy : HashPolicy
   {
     using Base = HashPolicy;
     using KeyType = T;
 
     static const KeyType& getKey(const T& aT) { return aT; }
+
     static void setKey(T& aT, KeyType& aKey) { HashPolicy::rekey(aT, aKey); }
   };
 
-  using Impl = detail::HashTable<const T, SetOps, AllocPolicy>;
+  using Impl = detail::HashTable<const T, SetHashPolicy, AllocPolicy>;
   Impl mImpl;
 
 public:
@@ -440,8 +479,11 @@ public:
   {
   }
 
+  
+  
   MOZ_MUST_USE bool init(uint32_t aLen = 16) { return mImpl.init(aLen); }
 
+  
   bool initialized() const { return mImpl.initialized(); }
 
   
@@ -467,10 +509,9 @@ public:
   }
 
   
+  
   void remove(Ptr aPtr) { mImpl.remove(aPtr); }
 
-  
-  
   
   
   
@@ -509,19 +550,20 @@ public:
     return mImpl.lookupForAdd(aLookup);
   }
 
+  
   template<typename U>
   MOZ_MUST_USE bool add(AddPtr& aPtr, U&& aU)
   {
     return mImpl.add(aPtr, std::forward<U>(aU));
   }
 
+  
   template<typename U>
   MOZ_MUST_USE bool relookupOrAdd(AddPtr& aPtr, const Lookup& aLookup, U&& aU)
   {
     return mImpl.relookupOrAdd(aPtr, aLookup, std::forward<U>(aU));
   }
 
-  
   
   
   
@@ -542,7 +584,6 @@ public:
   
   
   
-  
   typedef typename Impl::ModIterator ModIterator;
   ModIterator modIter() { return mImpl.modIter(); }
 
@@ -553,10 +594,8 @@ public:
   Range all() const { return mImpl.all(); }
 
   
-  
   void clear() { mImpl.clear(); }
 
-  
   
   void clearAndShrink() { mImpl.clearAndShrink(); }
 
@@ -587,10 +626,12 @@ public:
            mImpl.shallowSizeOfExcludingThis(aMallocSizeOf);
   }
 
+  
   Generation generation() const { return mImpl.generation(); }
 
   
 
+  
   bool has(const Lookup& aLookup) const
   {
     return mImpl.lookup(aLookup).found();
@@ -611,6 +652,7 @@ public:
     return mImpl.putNew(aU, std::forward<U>(aU));
   }
 
+  
   template<typename U>
   MOZ_MUST_USE bool putNew(const Lookup& aLookup, U&& aU)
   {
@@ -624,6 +666,7 @@ public:
     mImpl.putNewInfallible(aLookup, std::forward<U>(aU));
   }
 
+  
   void remove(const Lookup& aLookup)
   {
     if (Ptr p = lookup(aLookup)) {
@@ -714,6 +757,7 @@ private:
 
 
 
+
 template<typename Key>
 struct PointerHasher
 {
@@ -734,9 +778,6 @@ struct PointerHasher
 };
 
 
-
-
-
 template<class Key>
 struct DefaultHasher
 {
@@ -744,6 +785,8 @@ struct DefaultHasher
 
   static HashNumber hash(const Lookup& aLookup)
   {
+    
+    
     
     return aLookup;
   }
@@ -758,18 +801,17 @@ struct DefaultHasher
 };
 
 
-
 template<class T>
 struct DefaultHasher<T*> : PointerHasher<T*>
 {
 };
 
 
-
 template<class T, class D>
 struct DefaultHasher<UniquePtr<T, D>>
 {
-  using Lookup = UniquePtr<T, D>;
+  using Key = UniquePtr<T, D>;
+  using Lookup = Key;
   using PtrHasher = PointerHasher<T*>;
 
   static HashNumber hash(const Lookup& aLookup)
@@ -777,7 +819,7 @@ struct DefaultHasher<UniquePtr<T, D>>
     return PtrHasher::hash(aLookup.get());
   }
 
-  static bool match(const UniquePtr<T, D>& aKey, const Lookup& aLookup)
+  static bool match(const Key& aKey, const Lookup& aLookup)
   {
     return PtrHasher::match(aKey.get(), aLookup.get());
   }
@@ -792,52 +834,62 @@ struct DefaultHasher<UniquePtr<T, D>>
 template<>
 struct DefaultHasher<double>
 {
-  using Lookup = double;
+  using Key = double;
+  using Lookup = Key;
 
-  static HashNumber hash(double aVal)
+  static HashNumber hash(const Lookup& aLookup)
   {
+    
+    
     static_assert(sizeof(HashNumber) == 4,
                   "subsequent code assumes a four-byte hash");
-    uint64_t u = BitwiseCast<uint64_t>(aVal);
+    uint64_t u = BitwiseCast<uint64_t>(aLookup);
     return HashNumber(u ^ (u >> 32));
   }
 
-  static bool match(double aLhs, double aRhs)
+  static bool match(const Key& aKey, const Lookup& aLookup)
   {
-    return BitwiseCast<uint64_t>(aLhs) == BitwiseCast<uint64_t>(aRhs);
+    return BitwiseCast<uint64_t>(aKey) == BitwiseCast<uint64_t>(aLookup);
   }
 };
+
 
 template<>
 struct DefaultHasher<float>
 {
-  using Lookup = float;
+  using Key = float;
+  using Lookup = Key;
 
-  static HashNumber hash(float aVal)
+  static HashNumber hash(const Lookup& aLookup)
   {
+    
+    
     static_assert(sizeof(HashNumber) == 4,
                   "subsequent code assumes a four-byte hash");
-    return HashNumber(BitwiseCast<uint32_t>(aVal));
+    return HashNumber(BitwiseCast<uint32_t>(aLookup));
   }
 
-  static bool match(float aLhs, float aRhs)
+  static bool match(const Key& aKey, const Lookup& aLookup)
   {
-    return BitwiseCast<uint32_t>(aLhs) == BitwiseCast<uint32_t>(aRhs);
+    return BitwiseCast<uint32_t>(aKey) == BitwiseCast<uint32_t>(aLookup);
   }
 };
 
 
 struct CStringHasher
 {
+  using Key = const char*;
   using Lookup = const char*;
 
-  static HashNumber hash(Lookup aLookup) { return HashString(aLookup); }
+  static HashNumber hash(const Lookup& aLookup) { return HashString(aLookup); }
 
-  static bool match(const char* key, Lookup lookup)
+  static bool match(const Key& aKey, const Lookup& aLookup)
   {
-    return strcmp(key, lookup) == 0;
+    return strcmp(aKey, aLookup) == 0;
   }
 };
+
+
 
 
 
@@ -890,6 +942,8 @@ EnsureHash(Lookup&& aLookup)
 
 
 
+
+
 template<class Key, class Value>
 class HashMapEntry
 {
@@ -927,6 +981,9 @@ public:
   using ValueType = Value;
 
   const Key& key() const { return key_; }
+
+  
+  
   Key& mutableKey() { return key_; }
 
   const Value& value() const { return value_; }
