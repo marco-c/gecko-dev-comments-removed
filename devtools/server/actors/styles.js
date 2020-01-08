@@ -1562,13 +1562,15 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
   logDeclarationChange(change) {
     
+    const index = change.index;
+    
     
     let {
       value: prevValue,
       name: prevName,
       priority: prevPriority,
       commentOffsets,
-    } = this._declarations[change.index] || {};
+    } = this._declarations[index] || {};
     
     
     const prevDisabled = !!commentOffsets;
@@ -1590,11 +1592,15 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         
         const value = change.newName ? prevValue : newValue;
 
-        data.add = { [name]: value };
+        data.add = [{ property: name, value, index }];
         
         
         
-        data.remove = prevValue ? { [prevName]: prevValue } : null;
+        if (prevValue) {
+          data.remove = [{ property: prevName, value: prevValue, index }];
+        } else {
+          data.remove = null;
+        }
 
         
         
@@ -1609,7 +1615,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       case "remove":
         data.type = "declaration-remove";
         data.add = null;
-        data.remove = { [change.name]: prevValue };
+        data.remove = [{ property: change.name, value: prevValue, index }];
         break;
     }
 
@@ -1628,10 +1634,14 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
   logSelectorChange(oldSelector, newSelector) {
     
-    const declarations = this._declarations.reduce((acc, decl) => {
-      acc[decl.name] = decl.priority ? decl.value + " !important" : decl.value;
+    const declarations = this._declarations.reduce((acc, decl, index) => {
+      acc.push({
+        property: decl.name,
+        value: decl.priority ? decl.value + " !important" : decl.value,
+        index,
+      });
       return acc;
-    }, {});
+    }, []);
 
     
     
