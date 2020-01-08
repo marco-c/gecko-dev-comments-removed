@@ -18,6 +18,8 @@ class HTMLEditorEventListener final : public EditorEventListener
 public:
   HTMLEditorEventListener()
     : EditorEventListener()
+    , mListeningToMouseMoveEventForResizers(false)
+    , mListeningToMouseMoveEventForGrabber(false)
     , mListeningToResizeEvent(false)
   {
   }
@@ -41,6 +43,41 @@ public:
 
 
 
+  nsresult ListenToMouseMoveEventForResizers(bool aListen)
+  {
+    if (aListen == mListeningToMouseMoveEventForResizers) {
+      return NS_OK;
+    }
+    nsresult rv =
+      ListenToMouseMoveEventForResizersOrGrabber(aListen, false);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    return NS_OK;
+  }
+
+  
+
+
+
+
+  nsresult ListenToMouseMoveEventForGrabber(bool aListen)
+  {
+    if (aListen == mListeningToMouseMoveEventForGrabber) {
+      return NS_OK;
+    }
+    nsresult rv =
+      ListenToMouseMoveEventForResizersOrGrabber(aListen, true);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    return NS_OK;
+  }
+
+  
+
+
+
   nsresult ListenToWindowResizeEvent(bool aListen);
 
 protected:
@@ -50,6 +87,11 @@ protected:
   MOZ_CAN_RUN_SCRIPT
   virtual nsresult MouseClick(WidgetMouseEvent* aMouseClickEvent) override;
 
+  nsresult
+  ListenToMouseMoveEventForResizersOrGrabber(bool aListen, bool aForGrabber);
+
+  bool mListeningToMouseMoveEventForResizers;
+  bool mListeningToMouseMoveEventForGrabber;
   bool mListeningToResizeEvent;
 };
 

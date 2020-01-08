@@ -227,7 +227,7 @@ public:
 
 
 
-  nsresult OnMouseMove(dom::MouseEvent* aMouseEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult OnMouseMove(dom::MouseEvent* aMouseEvent);
 
   
 
@@ -2558,8 +2558,6 @@ protected:
   ManualNACPtr mResizingInfo;
 
   RefPtr<Element> mResizedObject;
-
-  nsCOMPtr<nsIDOMEventListener>  mMouseMotionListenerP;
 
   int32_t mOriginalX;
   int32_t mOriginalY;

@@ -43,36 +43,6 @@ using namespace dom;
 
 
 
-NS_IMPL_ISUPPORTS(ResizerMouseMotionListener, nsIDOMEventListener)
-
-ResizerMouseMotionListener::ResizerMouseMotionListener(HTMLEditor& aHTMLEditor)
-  : mHTMLEditorWeak(&aHTMLEditor)
-{
-}
-
-NS_IMETHODIMP
-ResizerMouseMotionListener::HandleEvent(Event* aMouseEvent)
-{
-  MouseEvent* mouseEvent = aMouseEvent->AsMouseEvent();
-  if (!mouseEvent) {
-    
-    return NS_OK;
-  }
-
-  
-  RefPtr<HTMLEditor> htmlEditor = mHTMLEditorWeak.get();
-  if (htmlEditor) {
-    
-    htmlEditor->OnMouseMove(mouseEvent);
-  }
-
-  return NS_OK;
-}
-
-
-
-
-
 ManualNACPtr
 HTMLEditor::CreateResizer(int16_t aLocation,
                           nsIContent& aParentContent)
@@ -529,8 +499,6 @@ HTMLEditor::HideResizersInternal()
   ManualNACPtr resizingShadow(std::move(mResizingShadow));
   ManualNACPtr resizingInfo(std::move(mResizingInfo));
   RefPtr<Element> activatedHandle(std::move(mActivatedHandle));
-  nsCOMPtr<nsIDOMEventListener> mouseMotionListener(
-                                  std::move(mMouseMotionListenerP));
   RefPtr<Element> resizedObject(std::move(mResizedObject));
 
   
@@ -573,13 +541,15 @@ HTMLEditor::HideResizersInternal()
   
   resizedObject->UnsetAttr(kNameSpaceID_None, nsGkAtoms::_moz_resizing, true);
 
-  
-  nsCOMPtr<EventTarget> target = GetDOMEventTarget();
-  NS_WARNING_ASSERTION(target, "GetDOMEventTarget() returned nullptr");
+  if (!mEventListener) {
+    return NS_OK;
+  }
 
-  if (target && mouseMotionListener) {
-    target->RemoveEventListener(NS_LITERAL_STRING("mousemove"),
-                                mouseMotionListener, true);
+  nsresult rv =
+    static_cast<HTMLEditorEventListener*>(mEventListener.get())->
+      ListenToMouseMoveEventForResizers(false);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
 
   
@@ -587,9 +557,8 @@ HTMLEditor::HideResizersInternal()
     return NS_OK;
   }
 
-  nsresult rv =
-    static_cast<HTMLEditorEventListener*>(mEventListener.get())->
-      ListenToWindowResizeEvent(false);
+  rv = static_cast<HTMLEditorEventListener*>(mEventListener.get())->
+         ListenToWindowResizeEvent(false);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -654,22 +623,16 @@ HTMLEditor::StartResizing(Element* aHandle)
                                       mResizedObjectHeight);
 
   
-  nsresult result = NS_OK;
-  if (!mMouseMotionListenerP) {
-    mMouseMotionListenerP = new ResizerMouseMotionListener(*this);
-    if (!mMouseMotionListenerP) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-
-    EventTarget* target = GetDOMEventTarget();
-    NS_ENSURE_TRUE(target, NS_ERROR_FAILURE);
-
-    result = target->AddEventListener(NS_LITERAL_STRING("mousemove"),
-                                      mMouseMotionListenerP, true);
-    NS_ASSERTION(NS_SUCCEEDED(result),
-                 "failed to register mouse motion listener");
+  if (NS_WARN_IF(!mEventListener)) {
+    return NS_ERROR_NOT_INITIALIZED;
   }
-  return result;
+  nsresult rv =
+    static_cast<HTMLEditorEventListener*>(mEventListener.get())->
+      ListenToMouseMoveEventForResizers(true);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 nsresult
