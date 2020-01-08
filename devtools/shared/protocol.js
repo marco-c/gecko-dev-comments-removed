@@ -859,16 +859,18 @@ Pool.prototype = extend(EventEmitter.prototype, {
   manage: function(actor) {
     if (!actor.actorID) {
       actor.actorID = this.conn.allocID(actor.actorPrefix || actor.typeName);
-    }
+    } else {
+      
+      
+      
 
-    
-    
-    
-    const parent = this.poolFor(actor.actorID);
-    if (parent) {
-      parent.unmanage(actor);
+      
+      
+      const parent = this.poolFor(actor.actorID);
+      if (parent) {
+        parent.unmanage(actor);
+      }
     }
-
     this._poolMap.set(actor.actorID, actor);
     return actor;
   },
