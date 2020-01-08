@@ -13,6 +13,7 @@ use tokenizer::Token;
 
 
 #[derive(PartialEq, Eq, Clone, Hash)]
+#[repr(C)]
 pub struct UnicodeRange {
     
     pub start: u32,
