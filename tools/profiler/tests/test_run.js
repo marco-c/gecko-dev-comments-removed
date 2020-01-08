@@ -24,6 +24,11 @@ function run_test() {
     var profileObj = Services.profiler.getProfileData();
     Assert.notEqual(profileObj, null);
     Assert.notEqual(profileObj.threads, null);
+    
+    
+    
+    Assert.notEqual(profileObj.counters, null);
+    Assert.notEqual(profileObj.memory, null);
     Assert.ok(profileObj.threads.length >= 1);
     Assert.notEqual(profileObj.threads[0].samples, null);
     
