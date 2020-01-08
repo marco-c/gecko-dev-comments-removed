@@ -12,7 +12,6 @@
 namespace mozilla {
 namespace dom {
 
-class AbortController;
 class AbortSignal;
 
 
@@ -43,7 +42,7 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(AbortSignal, DOMEventTargetHelper)
 
-  AbortSignal(AbortController* aController, bool aAborted);
+  AbortSignal(nsIGlobalObject* aGlobalObject, bool aAborted);
   explicit AbortSignal(bool aAborted);
 
   JSObject*
@@ -65,8 +64,6 @@ public:
 
 private:
   ~AbortSignal() = default;
-
-  RefPtr<AbortController> mController;
 
   
   nsTArray<AbortFollower*> mFollowers;
