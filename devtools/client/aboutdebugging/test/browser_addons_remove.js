@@ -74,10 +74,15 @@ add_task(async function removeWebextension() {
 });
 
 add_task(async function onlyTempInstalledAddonsCanBeRemoved() {
-  const { tab, document } = await openAboutDebugging("addons");
+  const { tab, document, window } = await openAboutDebugging("addons");
+  const { AboutDebugging } = window;
   await waitForInitialAddonList(document);
 
+  
+  
+  const onListUpdated = waitForNEvents(AboutDebugging, "addons-updated", 2);
   await installAddonWithManager(getSupportsFile("addons/bug1273184.xpi").file);
+  await onListUpdated;
   const addon = await getAddonByID("bug1273184@tests");
 
   info("Wait until addon appears in about:debugging#addons");
@@ -86,6 +91,6 @@ add_task(async function onlyTempInstalledAddonsCanBeRemoved() {
   const removeButton = getRemoveButton(document, addon.id);
   ok(!removeButton, "remove button is not shown");
 
-  await tearDownAddon(addon);
+  await tearDownAddon(AboutDebugging, addon);
   await closeAboutDebugging(tab);
 });
