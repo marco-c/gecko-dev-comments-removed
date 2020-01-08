@@ -31,21 +31,10 @@ ChromeUtils.defineModuleGetter(this, "SessionHistory",
 ChromeUtils.defineModuleGetter(this, "SessionStorage",
   "resource:///modules/sessionstore/SessionStorage.jsm");
 
-var contentRestoreInitialized = false;
-
-XPCOMUtils.defineLazyGetter(this, "gContentRestore",
-                            () => {
-                              contentRestoreInitialized = true;
-                              return new ContentRestore(this);
-                            });
-
 ChromeUtils.defineModuleGetter(this, "Utils",
   "resource://gre/modules/sessionstore/Utils.jsm");
 const ssu = Cc["@mozilla.org/browser/sessionstore/utils;1"]
               .getService(Ci.nsISessionStoreUtils);
-
-
-var gCurrentEpoch = 0;
 
 
 const DOM_STORAGE_LIMIT_PREF = "browser.sessionstore.dom_storage_limit";
@@ -60,29 +49,53 @@ const kNoIndex = Number.MAX_SAFE_INTEGER;
 const kLastIndex = Number.MAX_SAFE_INTEGER - 1;
 
 
-const global = this;
 
 
 
-
-
-function mapFrameTree(callback) {
-  let [data] = Utils.mapFrameTree(content, callback);
+function mapFrameTree(mm, callback) {
+  let [data] = Utils.mapFrameTree(mm.content, callback);
   return data;
+}
+
+class Handler {
+  constructor(store) {
+    this.store = store;
+  }
+
+  get contentRestore() {
+    return this.store.contentRestore;
+  }
+
+  get contentRestoreInitialized() {
+    return this.store.contentRestoreInitialized;
+  }
+
+  get mm() {
+    return this.store.mm;
+  }
+
+  get messageQueue() {
+    return this.store.messageQueue;
+  }
+
+  get stateChangeNotifier() {
+    return this.store.stateChangeNotifier;
+  }
 }
 
 
 
 
 
-var StateChangeNotifier = {
+class StateChangeNotifier extends Handler {
+  constructor(store) {
+    super(store);
 
-  init() {
     this._observers = new Set();
-    let ifreq = docShell.QueryInterface(Ci.nsIInterfaceRequestor);
+    let ifreq = this.mm.docShell.QueryInterface(Ci.nsIInterfaceRequestor);
     let webProgress = ifreq.getInterface(Ci.nsIWebProgress);
     webProgress.addProgressListener(this, Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT);
-  },
+  }
 
   
 
@@ -92,7 +105,7 @@ var StateChangeNotifier = {
 
   addObserver(obs) {
     this._observers.add(obs);
-  },
+  }
 
   
 
@@ -101,11 +114,11 @@ var StateChangeNotifier = {
 
   notifyObservers(method) {
     for (let obs of this._observers) {
-      if (obs.hasOwnProperty(method)) {
+      if (typeof obs[method] == "function") {
         obs[method]();
       }
     }
-  },
+  }
 
   
 
@@ -113,7 +126,7 @@ var StateChangeNotifier = {
   onStateChange(webProgress, request, stateFlags, status) {
     
     
-    if (!webProgress.isTopLevel || webProgress.DOMWindow != content) {
+    if (!webProgress.isTopLevel || webProgress.DOMWindow != this.mm.content) {
       return;
     }
 
@@ -122,7 +135,7 @@ var StateChangeNotifier = {
     
     
     
-    if (!docShell.hasLoadedNonBlankURI) {
+    if (!this.mm.docShell.hasLoadedNonBlankURI) {
       return;
     }
 
@@ -131,23 +144,26 @@ var StateChangeNotifier = {
     } else if (stateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
       this.notifyObservers("onPageLoadCompleted");
     }
-  },
-
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIWebProgressListener,
-                                          Ci.nsISupportsWeakReference])
-};
-
-
+  }
+}
+StateChangeNotifier.prototype.QueryInterface =
+  ChromeUtils.generateQI([Ci.nsIWebProgressListener,
+                          Ci.nsISupportsWeakReference]);
 
 
 
-var EventListener = {
 
-  init() {
-    ssu.addDynamicFrameFilteredListener(global, "load", this, true);
-  },
+
+class EventListener extends Handler {
+  constructor(store) {
+    super(store);
+
+    ssu.addDynamicFrameFilteredListener(this.mm, "load", this, true);
+  }
 
   handleEvent(event) {
+    let {content} = this.mm;
+
     
     if (event.target != content.document) {
       return;
@@ -165,162 +181,46 @@ var EventListener = {
       content.removeEventListener("AboutReaderContentReady", this);
     }
 
-    if (contentRestoreInitialized) {
+    if (this.contentRestoreInitialized) {
       
       
-      gContentRestore.restoreDocument();
+      this.contentRestore.restoreDocument();
     }
   }
-};
+}
 
 
 
 
-var MessageListener = {
 
-  MESSAGES: [
-    "SessionStore:restoreHistory",
-    "SessionStore:restoreTabContent",
-    "SessionStore:resetRestore",
-    "SessionStore:flush",
-    "SessionStore:becomeActiveProcess",
-  ],
 
-  init() {
-    this.MESSAGES.forEach(m => addMessageListener(m, this));
-  },
 
-  receiveMessage({name, data}) {
-    
-    
-    if (!docShell) {
-      return;
-    }
+
+
+
+
+class SessionHistoryListener extends Handler {
+  constructor(store) {
+    super(store);
+
+    this._fromIdx = kNoIndex;
+
 
     
     
     
-    
-    if (data.epoch && data.epoch != gCurrentEpoch) {
-      gCurrentEpoch = data.epoch;
-    }
-
-    switch (name) {
-      case "SessionStore:restoreHistory":
-        this.restoreHistory(data);
-        break;
-      case "SessionStore:restoreTabContent":
-        if (data.isRemotenessUpdate) {
-          let histogram = Services.telemetry.getKeyedHistogramById("FX_TAB_REMOTE_NAVIGATION_DELAY_MS");
-          histogram.add("SessionStore:restoreTabContent",
-                        Services.telemetry.msSystemNow() - data.requestTime);
-        }
-        this.restoreTabContent(data);
-        break;
-      case "SessionStore:resetRestore":
-        gContentRestore.resetRestore();
-        break;
-      case "SessionStore:flush":
-        this.flush(data);
-        break;
-      case "SessionStore:becomeActiveProcess":
-        SessionHistoryListener.collect();
-        break;
-      default:
-        debug("received unknown message '" + name + "'");
-        break;
-    }
-  },
-
-  restoreHistory({epoch, tabData, loadArguments, isRemotenessUpdate}) {
-    gContentRestore.restoreHistory(tabData, loadArguments, {
-      
-      
-      
-      
-
-      onLoadStarted() {
-        
-        sendAsyncMessage("SessionStore:restoreTabContentStarted", {epoch});
-      },
-
-      onLoadFinished() {
-        
-        
-        sendAsyncMessage("SessionStore:restoreTabContentComplete", {epoch});
-      }
-    });
-
-    if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      sendSyncMessage("SessionStore:restoreHistoryComplete", {epoch, isRemotenessUpdate});
-    } else {
-      sendAsyncMessage("SessionStore:restoreHistoryComplete", {epoch, isRemotenessUpdate});
-    }
-  },
-
-  restoreTabContent({loadArguments, isRemotenessUpdate, reason}) {
-    let epoch = gCurrentEpoch;
-
-    
-    let didStartLoad = gContentRestore.restoreTabContent(loadArguments, isRemotenessUpdate, () => {
-      
-      
-      sendAsyncMessage("SessionStore:restoreTabContentComplete", {epoch, isRemotenessUpdate});
-    });
-
-    sendAsyncMessage("SessionStore:restoreTabContentStarted", {
-      epoch, isRemotenessUpdate, reason,
-    });
-
-    if (!didStartLoad) {
-      
-      sendAsyncMessage("SessionStore:restoreTabContentComplete", {epoch, isRemotenessUpdate});
-    }
-  },
-
-  flush({id}) {
-    
-    MessageQueue.send({flushID: id});
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
-var SessionHistoryListener = {
-  init() {
-    
-    
-    
-    StateChangeNotifier.addObserver(this);
+    this.stateChangeNotifier.addObserver(this);
 
     
     
     
     
     
-    docShell.QueryInterface(Ci.nsIWebNavigation).
-      sessionHistory.legacySHistory.addSHistoryListener(this);
+    this.mm.docShell.QueryInterface(Ci.nsIWebNavigation)
+      .sessionHistory.legacySHistory.addSHistoryListener(this);
 
     
-    if (!SessionHistory.isEmpty(docShell)) {
+    if (!SessionHistory.isEmpty(this.mm.docShell)) {
       this.collect();
       
       
@@ -328,31 +228,29 @@ var SessionHistoryListener = {
       
       
       
-      MessageQueue.send();
+      this.messageQueue.send();
     }
 
     
-    addEventListener("DOMTitleChanged", this);
-  },
+    this.mm.addEventListener("DOMTitleChanged", this);
+  }
 
   uninit() {
-    let sessionHistory = docShell.QueryInterface(Ci.nsIWebNavigation).sessionHistory;
+    let sessionHistory = this.mm.docShell.QueryInterface(Ci.nsIWebNavigation).sessionHistory;
     if (sessionHistory) {
       sessionHistory.legacySHistory.removeSHistoryListener(this);
     }
-  },
+  }
 
   collect() {
     
     
     
     
-    if (docShell) {
+    if (this.mm.docShell) {
       this.collectFrom(-1);
     }
-  },
-
-  _fromIdx: kNoIndex,
+  }
 
   
   
@@ -372,79 +270,77 @@ var SessionHistoryListener = {
     }
 
     this._fromIdx = idx;
-    MessageQueue.push("historychange", () => {
+    this.messageQueue.push("historychange", () => {
       if (this._fromIdx === kNoIndex) {
         return null;
       }
 
-      let history = SessionHistory.collect(docShell, this._fromIdx);
+      let history = SessionHistory.collect(this.mm.docShell, this._fromIdx);
       this._fromIdx = kNoIndex;
       return history;
     });
-  },
+  }
 
   handleEvent(event) {
     this.collect();
-  },
+  }
 
   onPageLoadCompleted() {
     this.collect();
-  },
+  }
 
   onPageLoadStarted() {
     this.collect();
-  },
+  }
 
   OnHistoryNewEntry(newURI, oldIndex) {
     
     this.collectFrom(oldIndex);
-  },
+  }
 
   OnHistoryGoBack(backURI) {
     
     this.collectFrom(kLastIndex);
     return true;
-  },
+  }
 
   OnHistoryGoForward(forwardURI) {
     
     this.collectFrom(kLastIndex);
     return true;
-  },
+  }
 
   OnHistoryGotoIndex(index, gotoURI) {
     
     this.collectFrom(kLastIndex);
     return true;
-  },
+  }
 
   OnHistoryPurge(numEntries) {
     this.collect();
     return true;
-  },
+  }
 
   OnHistoryReload(reloadURI, reloadFlags) {
     this.collect();
     return true;
-  },
+  }
 
   OnHistoryReplaceEntry(index) {
     this.collect();
-  },
+  }
 
   OnLengthChanged(aCount) {
     
-  },
+  }
 
   OnIndexChanged(aIndex) {
     
-  },
-
-  QueryInterface: ChromeUtils.generateQI([
-    Ci.nsISHistoryListener,
-    Ci.nsISupportsWeakReference
-  ])
-};
+  }
+}
+SessionHistoryListener.prototype.QueryInterface =
+  ChromeUtils.generateQI([Ci.nsISHistoryListener,
+                          Ci.nsISupportsWeakReference]);
 
 
 
@@ -458,28 +354,30 @@ var SessionHistoryListener = {
 
 
 
-var ScrollPositionListener = {
-  init() {
-    ssu.addDynamicFrameFilteredListener(global, "scroll", this, false);
-    StateChangeNotifier.addObserver(this);
-  },
+class ScrollPositionListener extends Handler {
+  constructor(store) {
+    super(store);
+
+    ssu.addDynamicFrameFilteredListener(this.mm, "scroll", this, false);
+    this.stateChangeNotifier.addObserver(this);
+  }
 
   handleEvent() {
-    MessageQueue.push("scroll", () => this.collect());
-  },
+    this.messageQueue.push("scroll", () => this.collect());
+  }
 
   onPageLoadCompleted() {
-    MessageQueue.push("scroll", () => this.collect());
-  },
+    this.messageQueue.push("scroll", () => this.collect());
+  }
 
   onPageLoadStarted() {
-    MessageQueue.push("scroll", () => null);
-  },
+    this.messageQueue.push("scroll", () => null);
+  }
 
   collect() {
-    return mapFrameTree(ScrollPosition.collect);
+    return mapFrameTree(this.mm, ScrollPosition.collect);
   }
-};
+}
 
 
 
@@ -498,24 +396,26 @@ var ScrollPositionListener = {
 
 
 
-var FormDataListener = {
-  init() {
-    ssu.addDynamicFrameFilteredListener(global, "input", this, true);
-    StateChangeNotifier.addObserver(this);
-  },
+class FormDataListener extends Handler {
+  constructor(store) {
+    super(store);
+
+    ssu.addDynamicFrameFilteredListener(this.mm, "input", this, true);
+    this.stateChangeNotifier.addObserver(this);
+  }
 
   handleEvent() {
-    MessageQueue.push("formdata", () => this.collect());
-  },
+    this.messageQueue.push("formdata", () => this.collect());
+  }
 
   onPageLoadStarted() {
-    MessageQueue.push("formdata", () => null);
-  },
+    this.messageQueue.push("formdata", () => null);
+  }
 
   collect() {
-    return mapFrameTree(FormData.collect);
+    return mapFrameTree(this.mm, FormData.collect);
   }
-};
+}
 
 
 
@@ -526,29 +426,31 @@ var FormDataListener = {
 
 
 
-var DocShellCapabilitiesListener = {
-  
+class DocShellCapabilitiesListener extends Handler {
+  constructor(store) {
+    super(store);
+
+    
 
 
 
-  _latestCapabilities: "",
+    this._latestCapabilities = "";
 
-  init() {
-    StateChangeNotifier.addObserver(this);
-  },
+    this.stateChangeNotifier.addObserver(this);
+  }
 
   onPageLoadStarted() {
     
     
-    let caps = DocShellCapabilities.collect(docShell).join(",");
+    let caps = DocShellCapabilities.collect(this.mm.docShell).join(",");
 
     
     if (caps != this._latestCapabilities) {
       this._latestCapabilities = caps;
-      MessageQueue.push("disallow", () => caps || null);
+      this.messageQueue.push("disallow", () => caps || null);
     }
   }
-};
+}
 
 
 
@@ -559,55 +461,59 @@ var DocShellCapabilitiesListener = {
 
 
 
-var SessionStorageListener = {
-  init() {
+class SessionStorageListener extends Handler {
+  constructor(store) {
+    super(store);
+
+    
+    
+    
+    
+    
+    this._changes = undefined;
+
+    
+    this._listener = null;
+
     Services.obs.addObserver(this, "browser:purge-domain-data");
-    StateChangeNotifier.addObserver(this);
+    this.stateChangeNotifier.addObserver(this);
     this.resetEventListener();
-  },
+  }
 
   uninit() {
     Services.obs.removeObserver(this, "browser:purge-domain-data");
-  },
+  }
 
   observe() {
     
     
-    setTimeoutWithTarget(() => this.collect(), 0, tabEventTarget);
-  },
-
-  
-  
-  
-  
-  
-  _changes: undefined,
+    setTimeoutWithTarget(() => this.collect(), 0, this.mm.tabEventTarget);
+  }
 
   resetChanges() {
     this._changes = undefined;
-  },
-
-  
-  _listener: null,
+  }
 
   resetEventListener() {
     if (!this._listener) {
       this._listener =
-        ssu.addDynamicFrameFilteredListener(global, "MozSessionStorageChanged",
+        ssu.addDynamicFrameFilteredListener(this.mm, "MozSessionStorageChanged",
                                             this, true);
     }
-  },
+  }
 
   removeEventListener() {
-    ssu.removeDynamicFrameFilteredListener(global, "MozSessionStorageChanged",
+    ssu.removeDynamicFrameFilteredListener(this.mm, "MozSessionStorageChanged",
                                            this._listener, true);
     this._listener = null;
-  },
+  }
 
   handleEvent(event) {
-    if (!docShell) {
+    if (!this.mm.docShell) {
       return;
     }
+
+    let {content} = this.mm;
 
     
     let usage = content.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -617,7 +523,7 @@ var SessionStorageListener = {
     
     
     if (usage > Services.prefs.getIntPref(DOM_STORAGE_LIMIT_PREF)) {
-      MessageQueue.push("storage", () => null);
+      this.messageQueue.push("storage", () => null);
       this.removeEventListener();
       this.resetChanges();
       return;
@@ -634,7 +540,7 @@ var SessionStorageListener = {
     }
     this._changes[domain][key] = newValue;
 
-    MessageQueue.push("storagechange", () => {
+    this.messageQueue.push("storagechange", () => {
       let tmp = this._changes;
       
       
@@ -642,29 +548,31 @@ var SessionStorageListener = {
       this.resetChanges();
       return tmp;
     });
-  },
+  }
 
   collect() {
-    if (!docShell) {
+    if (!this.mm.docShell) {
       return;
     }
+
+    let {content} = this.mm;
 
     
     
     this.resetChanges();
 
-    MessageQueue.push("storage", () => SessionStorage.collect(content));
-  },
+    this.messageQueue.push("storage", () => SessionStorage.collect(content));
+  }
 
   onPageLoadCompleted() {
     this.collect();
-  },
+  }
 
   onPageLoadStarted() {
     this.resetEventListener();
     this.collect();
   }
-};
+}
 
 
 
@@ -676,76 +584,91 @@ var SessionStorageListener = {
 
 
 
-var PrivacyListener = {
-  init() {
-    docShell.addWeakPrivacyTransitionObserver(this);
+class PrivacyListener extends Handler {
+  constructor(store) {
+    super(store);
+
+    this.mm.docShell.addWeakPrivacyTransitionObserver(this);
 
     
     
-    if (docShell.QueryInterface(Ci.nsILoadContext).usePrivateBrowsing) {
-      MessageQueue.push("isPrivate", () => true);
+    if (this.mm.docShell.QueryInterface(Ci.nsILoadContext).usePrivateBrowsing) {
+      this.messageQueue.push("isPrivate", () => true);
     }
-  },
+  }
 
   
   privateModeChanged(enabled) {
-    MessageQueue.push("isPrivate", () => enabled || null);
-  },
-
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIPrivacyTransitionObserver,
-                                          Ci.nsISupportsWeakReference])
-};
-
-
+    this.messageQueue.push("isPrivate", () => enabled || null);
+  }
+}
+PrivacyListener.prototype.QueryInterface =
+  ChromeUtils.generateQI([Ci.nsIPrivacyTransitionObserver,
+                          Ci.nsISupportsWeakReference]);
 
 
 
 
 
 
-var MessageQueue = {
-  
+
+
+class MessageQueue extends Handler {
+  constructor(store) {
+    super(store);
+
+    
 
 
 
 
-  _data: new Map(),
+    this._data = new Map();
 
-  
-
-
-
-  BATCH_DELAY_MS: 1000,
-
-  
-
-
-  NEEDED_IDLE_PERIOD_MS: 5,
-
-  
+    
 
 
 
-  _timeoutWaitIdlePeriodMs: null,
+    this.BATCH_DELAY_MS = 1000;
 
-  
+    
 
 
+    this.NEEDED_IDLE_PERIOD_MS = 5;
 
-  _timeout: null,
-
-  
-
+    
 
 
 
-  _timeoutDisabled: false,
+    this._timeoutWaitIdlePeriodMs = null;
 
-  
+    
 
 
 
-  _idleScheduled: false,
+    this._timeout = null;
+
+    
+
+
+
+
+    this._timeoutDisabled = false;
+
+    
+
+
+
+    this._idleScheduled = false;
+
+
+    this.timeoutDisabled =
+      Services.prefs.getBoolPref(TIMEOUT_DISABLED_PREF);
+    this._timeoutWaitIdlePeriodMs =
+      Services.prefs.getIntPref(PREF_INTERVAL);
+
+    Services.prefs.addObserver(TIMEOUT_DISABLED_PREF, this);
+    Services.prefs.addObserver(PREF_INTERVAL, this);
+  }
 
   
 
@@ -753,7 +676,7 @@ var MessageQueue = {
 
   get timeoutDisabled() {
     return this._timeoutDisabled;
-  },
+  }
 
   
 
@@ -768,23 +691,13 @@ var MessageQueue = {
     }
 
     return val;
-  },
-
-  init() {
-    this.timeoutDisabled =
-      Services.prefs.getBoolPref(TIMEOUT_DISABLED_PREF);
-    this._timeoutWaitIdlePeriodMs =
-      Services.prefs.getIntPref(PREF_INTERVAL);
-
-    Services.prefs.addObserver(TIMEOUT_DISABLED_PREF, this);
-    Services.prefs.addObserver(PREF_INTERVAL, this);
-  },
+  }
 
   uninit() {
     Services.prefs.removeObserver(TIMEOUT_DISABLED_PREF, this);
     Services.prefs.removeObserver(PREF_INTERVAL, this);
     this.cleanupTimers();
-  },
+  }
 
   
 
@@ -795,7 +708,7 @@ var MessageQueue = {
       clearTimeout(this._timeout);
       this._timeout = null;
     }
-  },
+  }
 
   observe(subject, topic, data) {
     if (topic == "nsPref:changed") {
@@ -813,7 +726,7 @@ var MessageQueue = {
           break;
       }
     }
-  },
+  }
 
   
 
@@ -832,9 +745,9 @@ var MessageQueue = {
     if (!this._timeout && !this._timeoutDisabled) {
       
       this._timeout = setTimeoutWithTarget(
-        () => this.sendWhenIdle(), this.BATCH_DELAY_MS, tabEventTarget);
+        () => this.sendWhenIdle(), this.BATCH_DELAY_MS, this.mm.tabEventTarget);
     }
-  },
+  }
 
   
 
@@ -845,23 +758,24 @@ var MessageQueue = {
 
 
   sendWhenIdle(deadline) {
-    if (!content) {
+    if (!this.mm.content) {
       
       return;
     }
 
     if (deadline) {
-      if (deadline.didTimeout || deadline.timeRemaining() > MessageQueue.NEEDED_IDLE_PERIOD_MS) {
-        MessageQueue.send();
+      if (deadline.didTimeout || deadline.timeRemaining() > this.NEEDED_IDLE_PERIOD_MS) {
+        this.send();
         return;
       }
-    } else if (MessageQueue._idleScheduled) {
+    } else if (this._idleScheduled) {
       
       return;
     }
-    ChromeUtils.idleDispatch(MessageQueue.sendWhenIdle, {timeout: MessageQueue._timeoutWaitIdlePeriodMs});
-    MessageQueue._idleScheduled = true;
-  },
+    ChromeUtils.idleDispatch((deadline_) => this.sendWhenIdle(deadline_),
+                             {timeout: this._timeoutWaitIdlePeriodMs});
+    this._idleScheduled = true;
+  }
 
   
 
@@ -874,7 +788,7 @@ var MessageQueue = {
     
     
     
-    if (!docShell) {
+    if (!this.mm.docShell) {
       return;
     }
 
@@ -904,78 +818,227 @@ var MessageQueue = {
 
     try {
       
-      sendAsyncMessage("SessionStore:update", {
+      this.mm.sendAsyncMessage("SessionStore:update", {
         data, flushID,
         isFinal: options.isFinal || false,
-        epoch: gCurrentEpoch
+        epoch: this.store.epoch,
       });
     } catch (ex) {
       if (ex && ex.result == Cr.NS_ERROR_OUT_OF_MEMORY) {
         Services.telemetry.getHistogramById("FX_SESSION_RESTORE_SEND_UPDATE_CAUSED_OOM").add(1);
-        sendAsyncMessage("SessionStore:error");
+        this.mm.sendAsyncMessage("SessionStore:error");
       }
     }
-  },
-};
-
-StateChangeNotifier.init();
-EventListener.init();
-MessageListener.init();
-FormDataListener.init();
-SessionHistoryListener.init();
-SessionStorageListener.init();
-ScrollPositionListener.init();
-DocShellCapabilitiesListener.init();
-PrivacyListener.init();
-MessageQueue.init();
-
-function handleRevivedTab() {
-  if (!content) {
-    removeEventListener("pagehide", handleRevivedTab);
-    return;
-  }
-
-  if (content.document.documentURI.startsWith("about:tabcrashed")) {
-    if (Services.appinfo.processType != Services.appinfo.PROCESS_TYPE_DEFAULT) {
-      
-      throw new Error("We seem to be navigating away from about:tabcrashed in " +
-                      "a non-remote browser. This should really never happen.");
-    }
-
-    removeEventListener("pagehide", handleRevivedTab);
-
-    
-    sendAsyncMessage("SessionStore:crashedTabRevived");
   }
 }
 
 
 
-addEventListener("pagehide", handleRevivedTab);
 
-addEventListener("unload", () => {
-  
-  
-  MessageQueue.send({isFinal: true});
+const MESSAGES = [
+  "SessionStore:restoreHistory",
+  "SessionStore:restoreTabContent",
+  "SessionStore:resetRestore",
+  "SessionStore:flush",
+  "SessionStore:becomeActiveProcess",
+];
 
-  
-  
-  
-  
-  
-  handleRevivedTab();
+class ContentSessionStore {
+  constructor(mm) {
+    this.mm = mm;
+    this.messageQueue = new MessageQueue(this);
+    this.stateChangeNotifier = new StateChangeNotifier(this);
 
-  
-  SessionStorageListener.uninit();
-  SessionHistoryListener.uninit();
-  MessageQueue.uninit();
+    this.epoch = 0;
 
-  if (contentRestoreInitialized) {
+    this.contentRestoreInitialized = false;
+
+    XPCOMUtils.defineLazyGetter(this, "contentRestore",
+                                () => {
+                                  this.contentRestoreInitialized = true;
+                                  return new ContentRestore(mm);
+                                });
+
+    this.handlers = [
+      new EventListener(this),
+      new FormDataListener(this),
+      new SessionHistoryListener(this),
+      new SessionStorageListener(this),
+      new ScrollPositionListener(this),
+      new DocShellCapabilitiesListener(this),
+      new PrivacyListener(this),
+      this.stateChangeNotifier,
+      this.messageQueue,
+    ];
+
+    MESSAGES.forEach(m => mm.addMessageListener(m, this));
+
     
-    gContentRestore.resetRestore();
+    
+    mm.addEventListener("pagehide", this);
+    mm.addEventListener("unload", this);
   }
 
-  
-  
-  
-});
+  receiveMessage({name, data}) {
+    
+    
+    if (!this.mm.docShell) {
+      return;
+    }
+
+    
+    
+    
+    
+    if (data.epoch && data.epoch != this.epoch) {
+      this.epoch = data.epoch;
+    }
+
+    switch (name) {
+      case "SessionStore:restoreHistory":
+        this.restoreHistory(data);
+        break;
+      case "SessionStore:restoreTabContent":
+        if (data.isRemotenessUpdate) {
+          let histogram = Services.telemetry.getKeyedHistogramById("FX_TAB_REMOTE_NAVIGATION_DELAY_MS");
+          histogram.add("SessionStore:restoreTabContent",
+                        Services.telemetry.msSystemNow() - data.requestTime);
+        }
+        this.restoreTabContent(data);
+        break;
+      case "SessionStore:resetRestore":
+        this.contentRestore.resetRestore();
+        break;
+      case "SessionStore:flush":
+        this.flush(data);
+        break;
+      case "SessionStore:becomeActiveProcess":
+        SessionHistoryListener.collect();
+        break;
+      default:
+        debug("received unknown message '" + name + "'");
+        break;
+    }
+  }
+
+  restoreHistory({epoch, tabData, loadArguments, isRemotenessUpdate}) {
+    this.contentRestore.restoreHistory(tabData, loadArguments, {
+      
+      
+      
+      
+
+      onLoadStarted: () => {
+        
+        this.mm.sendAsyncMessage("SessionStore:restoreTabContentStarted", {epoch});
+      },
+
+      onLoadFinished: () => {
+        
+        
+        this.mm.sendAsyncMessage("SessionStore:restoreTabContentComplete", {epoch});
+      }
+    });
+
+    if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      this.mm.sendSyncMessage("SessionStore:restoreHistoryComplete", {epoch, isRemotenessUpdate});
+    } else {
+      this.mm.sendAsyncMessage("SessionStore:restoreHistoryComplete", {epoch, isRemotenessUpdate});
+    }
+  }
+
+  restoreTabContent({loadArguments, isRemotenessUpdate, reason}) {
+    let epoch = this.epoch;
+
+    
+    let didStartLoad = this.contentRestore.restoreTabContent(loadArguments, isRemotenessUpdate, () => {
+      
+      
+      this.mm.sendAsyncMessage("SessionStore:restoreTabContentComplete", {epoch, isRemotenessUpdate});
+    });
+
+    this.mm.sendAsyncMessage("SessionStore:restoreTabContentStarted", {
+      epoch, isRemotenessUpdate, reason,
+    });
+
+    if (!didStartLoad) {
+      
+      this.mm.sendAsyncMessage("SessionStore:restoreTabContentComplete", {epoch, isRemotenessUpdate});
+    }
+  }
+
+  flush({id}) {
+    
+    this.messageQueue.send({flushID: id});
+  }
+
+  handleEvent(event) {
+    if (event.type == "pagehide") {
+      this.handleRevivedTab();
+    } else if (event.type == "unload") {
+      this.onUnload();
+    }
+  }
+
+  onUnload() {
+    
+    
+    this.messageQueue.send({isFinal: true});
+
+    
+    
+    
+    
+    
+    this.handleRevivedTab();
+
+    for (let handler of this.handlers) {
+      if (handler.uninit) {
+        handler.uninit();
+      }
+    }
+
+    if (this.contentRestoreInitialized) {
+      
+      this.contentRestore.resetRestore();
+    }
+
+    
+    
+    
+  }
+
+  handleRevivedTab() {
+    let {content} = this.mm;
+
+    if (!content) {
+      this.mm.removeEventListener("pagehide", this);
+      return;
+    }
+
+    if (content.document.documentURI.startsWith("about:tabcrashed")) {
+      if (Services.appinfo.processType != Services.appinfo.PROCESS_TYPE_DEFAULT) {
+        
+        throw new Error("We seem to be navigating away from about:tabcrashed in " +
+                        "a non-remote browser. This should really never happen.");
+      }
+
+      this.mm.removeEventListener("pagehide", this);
+
+      
+      this.mm.sendAsyncMessage("SessionStore:crashedTabRevived");
+    }
+  }
+}
+
+void new ContentSessionStore(this);
