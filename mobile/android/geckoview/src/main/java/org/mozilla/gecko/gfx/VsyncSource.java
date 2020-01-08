@@ -7,8 +7,10 @@ package org.mozilla.gecko.gfx;
 
 import android.content.Context;
 import android.hardware.display.DisplayManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.RequiresApi;
 import android.view.Choreographer;
 import android.view.Display;
 import org.mozilla.gecko.annotation.WrapForJNI;
@@ -84,6 +86,14 @@ import org.mozilla.gecko.GeckoAppShell;
     }
 
     
+
+
+
+
+
+
+
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
     @WrapForJNI
     public float getRefreshRate() {
         DisplayManager dm = (DisplayManager)
