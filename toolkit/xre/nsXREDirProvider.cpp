@@ -979,9 +979,12 @@ nsXREDirProvider::DoStartup()
     obsSvc->NotifyObservers(nullptr, "profile-do-change", kStartup);
 
     
-    nsCOMPtr<nsIObserver> policies(do_GetService("@mozilla.org/browser/enterprisepolicies;1"));
-    if (policies) {
-      policies->Observe(nullptr, "policies-startup", nullptr);
+    
+    if (XRE_IsParentProcess()) {
+      nsCOMPtr<nsIObserver> policies(do_GetService("@mozilla.org/browser/enterprisepolicies;1"));
+      if (policies) {
+        policies->Observe(nullptr, "policies-startup", nullptr);
+      }
     }
 
     

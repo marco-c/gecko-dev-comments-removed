@@ -185,7 +185,12 @@ nsAboutProtocolHandler::NewChannel2(nsIURI* uri,
             
             
             rv = NS_ERROR_FACTORY_NOT_REGISTERED;
-        } else {
+        } else if (!path.EqualsLiteral("blank") &&
+                   !path.EqualsLiteral("neterror") &&
+                   !path.EqualsLiteral("home") &&
+                   !path.EqualsLiteral("welcome") &&
+                   !path.EqualsLiteral("newtab") &&
+                   !path.EqualsLiteral("certerror")) {
             nsCOMPtr<nsIEnterprisePolicies> policyManager =
                 do_GetService("@mozilla.org/browser/enterprisepolicies;1", &rv2);
             if (NS_SUCCEEDED(rv2)) {
