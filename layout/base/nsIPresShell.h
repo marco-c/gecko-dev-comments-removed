@@ -1856,6 +1856,17 @@ class nsIPresShell : public nsStubDocumentObserver {
   
   bool mNeedThrottledAnimationFlush : 1;
 
+  bool mFontSizeInflationForceEnabled : 1;
+  bool mFontSizeInflationDisabledInMasterProcess : 1;
+  bool mFontSizeInflationEnabled : 1;
+
+  bool mPaintingIsFrozen : 1;
+
+  
+  
+  
+  bool mIsNeverPainting : 1;
+
   uint32_t mPresShellId;
 
   static nsIContent* gKeyDownTarget;
@@ -1865,17 +1876,9 @@ class nsIPresShell : public nsStubDocumentObserver {
   uint32_t mFontSizeInflationEmPerLine;
   uint32_t mFontSizeInflationMinTwips;
   uint32_t mFontSizeInflationLineThreshold;
-  bool mFontSizeInflationForceEnabled;
-  bool mFontSizeInflationDisabledInMasterProcess;
-  bool mFontSizeInflationEnabled;
-
-  bool mPaintingIsFrozen;
 
   
   
-  
-  bool mIsNeverPainting;
-
   
   
   bool mInFlush;
