@@ -248,6 +248,11 @@ imgFrame::InitForDecoder(const nsIntSize& aImageSize,
   mImageSize = aImageSize;
   mFrameRect = aRect;
 
+  
+  
+  
+  mDirtyRect = aRect;
+
   if (aAnimParams) {
     mBlendRect = aAnimParams->mBlendRect;
     mTimeout = aAnimParams->mTimeout;

@@ -37,6 +37,8 @@ typedef struct gif_struct {
     int tpixel;                 
     int32_t disposal_method;    
     uint32_t* local_colormap;   
+    uint32_t local_colormap_buffer_size; 
+                                         
     int local_colormap_size;    
     uint32_t delay_time;        
                                 
