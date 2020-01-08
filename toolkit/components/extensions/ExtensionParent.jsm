@@ -1082,9 +1082,7 @@ class HiddenXULWindow {
     
     
     
-    this.chromeShell = this._windowlessBrowser
-                           .QueryInterface(Ci.nsIInterfaceRequestor)
-                           .getInterface(Ci.nsIDocShell)
+    this.chromeShell = this._windowlessBrowser.docShell
                            .QueryInterface(Ci.nsIWebNavigation);
 
     if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
