@@ -16,13 +16,9 @@ const ANIMATION_L10N =
   new LocalizationHelper("devtools/client/locales/animationinspector.properties");
 
 
-Services.prefs.setBoolPref("devtools.new-animationinspector.enabled", true);
-
-
 
 
 registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("devtools.new-animationinspector.enabled");
   Services.prefs.clearUserPref("devtools.toolsidebar-width.inspector");
 });
 

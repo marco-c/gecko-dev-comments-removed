@@ -11,13 +11,6 @@ const OPTOUT = Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTOUT;
 
 const TOOL_DELAY = 200;
 
-var animationPanelId;
-if (Services.prefs.getBoolPref("devtools.new-animationinspector.enabled")) {
-  animationPanelId = "newanimationinspector";
-} else {
-  animationPanelId = "animationinspector";
-}
-
 const DATA = [
   {
     timestamp: null,
@@ -27,7 +20,7 @@ const DATA = [
     value: null,
     extra: {
       oldpanel: "computedview",
-      newpanel: animationPanelId
+      newpanel: "newanimationinspector"
     }
   },
   {
@@ -37,7 +30,7 @@ const DATA = [
     object: "inspector",
     value: null,
     extra: {
-      oldpanel: animationPanelId,
+      oldpanel: "newanimationinspector",
       newpanel: "fontinspector"
     }
   },
@@ -71,7 +64,7 @@ const DATA = [
     value: null,
     extra: {
       oldpanel: "computedview",
-      newpanel: animationPanelId
+      newpanel: "newanimationinspector"
     }
   },
   {
@@ -81,7 +74,7 @@ const DATA = [
     object: "inspector",
     value: null,
     extra: {
-      oldpanel: animationPanelId,
+      oldpanel: "newanimationinspector",
       newpanel: "fontinspector"
     }
   },
@@ -137,7 +130,7 @@ function testSidebar(toolbox) {
 
   const inspector = toolbox.getCurrentPanel();
   let sidebarTools = ["computedview", "layoutview", "fontinspector",
-                      animationPanelId];
+                      "newanimationinspector"];
 
   
   sidebarTools = [...sidebarTools, ...sidebarTools];

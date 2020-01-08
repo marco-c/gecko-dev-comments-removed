@@ -60,8 +60,6 @@ pref("devtools.inspector.showAllAnonymousContent", false);
 
 pref("devtools.inspector.shapesHighlighter.enabled", true);
 
-pref("devtools.new-animationinspector.enabled", true);
-
 pref("devtools.inspector.fonteditor.enabled", true);
 
 pref("devtools.inspector.fonthighlighter.enabled", true);
