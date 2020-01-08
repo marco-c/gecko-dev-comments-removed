@@ -9,7 +9,6 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/Element.h"
-#include "mozilla/dom/ShadowRoot.h"
 #include "nsAtom.h"
 #include "nsIDocument.h"
 #include "nsThreadUtils.h"
@@ -40,10 +39,10 @@ class IDTracker {
 public:
   typedef mozilla::dom::Element Element;
 
-  IDTracker() = default;
-
-  ~IDTracker()
-  {
+  IDTracker()
+    : mReferencingImage(false)
+  {}
+  ~IDTracker() {
     Unlink();
   }
 
@@ -64,9 +63,7 @@ public:
 
 
 
-  void Reset(nsIContent* aFrom,
-             nsIURI* aURI,
-             bool aWatch = true,
+  void Reset(nsIContent* aFrom, nsIURI* aURI, bool aWatch = true,
              bool aReferenceImage = false);
 
   
@@ -78,7 +75,8 @@ public:
 
 
 
-  void ResetWithID(nsIContent* aFrom, nsAtom* aID, bool aWatch = true);
+  void ResetWithID(nsIContent* aFrom, const nsString& aID,
+                   bool aWatch = true);
 
   
 
@@ -94,8 +92,7 @@ protected:
 
 
 
-  virtual void ElementChanged(Element* aFrom, Element* aTo)
-  {
+  virtual void ElementChanged(Element* aFrom, Element* aTo) {
     mElement = aTo;
   }
 
@@ -109,9 +106,8 @@ protected:
 
 
 
-  void HaveNewDocumentOrShadowRoot(DocumentOrShadowRoot*,
-                                   bool aWatch,
-                                   const nsString& aRef);
+  void HaveNewDocument(nsIDocument* aDocument, bool aWatch,
+                       const nsString& aRef);
 
 private:
   static bool Observe(Element* aOldElement,
@@ -171,8 +167,9 @@ private:
                                    public nsIObserver
   {
   public:
-    DocumentLoadNotification(IDTracker* aTarget, const nsString& aRef)
-      : Notification(aTarget)
+    DocumentLoadNotification(IDTracker* aTarget,
+                             const nsString& aRef) :
+      Notification(aTarget)
     {
       if (!mTarget->IsPersistent()) {
         mRef = aRef;
@@ -190,24 +187,11 @@ private:
   };
   friend class DocumentLoadNotification;
 
-  DocumentOrShadowRoot* GetWatchDocOrShadowRoot() const
-  {
-    if (!mWatchDocumentOrShadowRoot) {
-      return nullptr;
-    }
-    MOZ_ASSERT(mWatchDocumentOrShadowRoot->IsDocument() ||
-               mWatchDocumentOrShadowRoot->IsShadowRoot());
-    if (ShadowRoot* shadow = ShadowRoot::FromNode(*mWatchDocumentOrShadowRoot)) {
-      return shadow;
-    }
-    return mWatchDocumentOrShadowRoot->AsDocument();
-  }
-
-  RefPtr<nsAtom> mWatchID;
-  nsCOMPtr<nsINode> mWatchDocumentOrShadowRoot; 
+  RefPtr<nsAtom>      mWatchID;
+  nsCOMPtr<nsIDocument>  mWatchDocument;
   RefPtr<Element> mElement;
   RefPtr<Notification> mPendingNotification;
-  bool mReferencingImage = false;
+  bool                   mReferencingImage;
 };
 
 inline void
