@@ -115,23 +115,30 @@ function executeSoon(func) {
 
 
 
-function PollPromise(func, {timeout = 2000, interval = 10} = {}) {
+function PollPromise(func, {timeout = null, interval = 10} = {}) {
   const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
 
   if (typeof func != "function") {
     throw new TypeError();
   }
-  if (!(typeof timeout == "number" && typeof interval == "number")) {
+  if (timeout != null && typeof timeout != "number") {
     throw new TypeError();
   }
-  if ((!Number.isInteger(timeout) || timeout < 0) ||
+  if (typeof interval != "number") {
+    throw new TypeError();
+  }
+  if ((timeout && (!Number.isInteger(timeout) || timeout < 0)) ||
       (!Number.isInteger(interval) || interval < 0)) {
     throw new RangeError();
   }
 
   return new Promise((resolve, reject) => {
-    const start = new Date().getTime();
-    const end = start + timeout;
+    let start, end;
+
+    if (Number.isInteger(timeout)) {
+      start = new Date().getTime();
+      end = start + timeout;
+    }
 
     let evalFn = () => {
       new Promise(func).then(resolve, rejected => {
@@ -141,7 +148,8 @@ function PollPromise(func, {timeout = 2000, interval = 10} = {}) {
 
         
         
-        if (start == end || new Date().getTime() >= end) {
+        if (typeof end != "undefined" &&
+            (start == end || new Date().getTime() >= end)) {
           resolve(rejected);
         }
       }).catch(reject);
