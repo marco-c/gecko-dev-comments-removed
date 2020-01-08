@@ -366,9 +366,10 @@ class ProfilingStack final
                         uint32_t line, js::ProfilingStackFrame::Category category) {
         uint32_t oldStackPointer = stackPointer;
 
-        if (MOZ_LIKELY(capacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow())) {
-            frames[oldStackPointer].initLabelFrame(label, dynamicString, sp, line, category);
+        if (MOZ_UNLIKELY(oldStackPointer >= capacity)) {
+            ensureCapacitySlow();
         }
+        frames[oldStackPointer].initLabelFrame(label, dynamicString, sp, line, category);
 
         
         
@@ -384,9 +385,10 @@ class ProfilingStack final
     void pushSpMarkerFrame(void* sp) {
         uint32_t oldStackPointer = stackPointer;
 
-        if (MOZ_LIKELY(capacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow())) {
-            frames[oldStackPointer].initSpMarkerFrame(sp);
+        if (MOZ_UNLIKELY(oldStackPointer >= capacity)) {
+            ensureCapacitySlow();
         }
+        frames[oldStackPointer].initSpMarkerFrame(sp);
 
         
         stackPointer = oldStackPointer + 1;
@@ -396,9 +398,10 @@ class ProfilingStack final
                      jsbytecode* pc) {
         uint32_t oldStackPointer = stackPointer;
 
-        if (MOZ_LIKELY(capacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow())) {
-            frames[oldStackPointer].initJsFrame(label, dynamicString, script, pc);
+        if (MOZ_UNLIKELY(oldStackPointer >= capacity)) {
+            ensureCapacitySlow();
         }
+        frames[oldStackPointer].initJsFrame(label, dynamicString, script, pc);
 
         
         stackPointer = oldStackPointer + 1;
@@ -415,13 +418,13 @@ class ProfilingStack final
         stackPointer = oldStackPointer - 1;
     }
 
-    uint32_t stackSize() const { return std::min(uint32_t(stackPointer), stackCapacity()); }
+    uint32_t stackSize() const { return stackPointer; }
     uint32_t stackCapacity() const { return capacity; }
 
   private:
     
     
-    MOZ_COLD MOZ_MUST_USE bool ensureCapacitySlow();
+    MOZ_COLD void ensureCapacitySlow();
 
     
     ProfilingStack(const ProfilingStack&) = delete;
