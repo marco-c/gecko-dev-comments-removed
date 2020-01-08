@@ -14,46 +14,18 @@
 
 namespace mozilla {
 
-class MediaEngineWebRTCMicrophoneSource;
+class AudioInputProcessing;
 
 
 
-class WebRTCAudioDataListener : public AudioDataListener
-{
-protected:
-  
-  virtual ~WebRTCAudioDataListener() {}
 
-public:
-  explicit WebRTCAudioDataListener(MediaEngineWebRTCMicrophoneSource* aAudioSource)
-    : mAudioSource(aAudioSource)
-  {}
 
-  
-  void NotifyOutputData(MediaStreamGraphImpl* aGraph,
-                        AudioDataValue* aBuffer,
-                        size_t aFrames,
-                        TrackRate aRate,
-                        uint32_t aChannels) override;
 
-  void NotifyInputData(MediaStreamGraphImpl* aGraph,
-                       const AudioDataValue* aBuffer,
-                       size_t aFrames,
-                       TrackRate aRate,
-                       uint32_t aChannels) override;
 
-  uint32_t RequestedInputChannelCount(MediaStreamGraphImpl* aGraph) override;
 
-  void DeviceChanged(MediaStreamGraphImpl* aGraph) override;
 
-  void Disconnect(MediaStreamGraphImpl* aGraph) override;
 
-private:
-  RefPtr<MediaEngineWebRTCMicrophoneSource> mAudioSource;
-};
-
-class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource,
-                                          public AudioDataListenerInterface
+class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource
 {
 public:
   MediaEngineWebRTCMicrophoneSource(RefPtr<AudioDeviceInfo> aInfo,
@@ -90,12 +62,6 @@ public:
                        const nsString& aDeviceId,
                        const char** aOutBadConstraint) override;
 
-  
-
-
-
-  void GetSettings(dom::MediaTrackSettings& aOutSettings) const override;
-
   void Pull(const RefPtr<const AllocationHandle>& aHandle,
             const RefPtr<SourceMediaStream>& aStream,
             TrackID aTrackID,
@@ -103,21 +69,10 @@ public:
             const PrincipalHandle& aPrincipalHandle) override;
 
   
-  void NotifyOutputData(MediaStreamGraphImpl* aGraph,
-                        AudioDataValue* aBuffer, size_t aFrames,
-                        TrackRate aRate, uint32_t aChannels) override;
-  void NotifyInputData(MediaStreamGraphImpl* aGraph,
-                       const AudioDataValue* aBuffer, size_t aFrames,
-                       TrackRate aRate, uint32_t aChannels) override;
 
-  void DeviceChanged(MediaStreamGraphImpl* aGraph) override;
 
-  uint32_t RequestedInputChannelCount(MediaStreamGraphImpl* aGraph) override
-  {
-    return GetRequestedInputChannelCount(aGraph);
-  }
 
-  void Disconnect(MediaStreamGraphImpl* aGraph) override;
+  void GetSettings(dom::MediaTrackSettings& aOutSettings) const override;
 
   dom::MediaSourceEnum GetMediaSource() const override
   {
@@ -136,7 +91,7 @@ public:
   void Shutdown() override;
 
 protected:
-  ~MediaEngineWebRTCMicrophoneSource() {}
+  ~MediaEngineWebRTCMicrophoneSource() = default;
 
 private:
   
@@ -164,54 +119,30 @@ private:
                               const nsString& aDeviceId,
                               const char** aOutBadConstraint);
 
-
+  
   void UpdateAECSettingsIfNeeded(bool aEnable, webrtc::EcModes aMode);
   void UpdateAGCSettingsIfNeeded(bool aEnable, webrtc::AgcModes aMode);
   void UpdateNSSettingsIfNeeded(bool aEnable, webrtc::NsModes aMode);
-
+  void UpdateAPMExtraOptions(bool aExtendedFilter, bool aDelayAgnostic);
   void ApplySettings(const MediaEnginePrefs& aPrefs,
                      RefPtr<MediaStreamGraphImpl> aGraph);
 
   bool HasEnabledTrack() const;
 
-  template<typename T>
-  void InsertInGraph(const T* aBuffer,
-                     size_t aFrames,
-                     uint32_t aChannels);
-
-  void PacketizeAndProcess(MediaStreamGraphImpl* aGraph,
-                           const AudioDataValue* aBuffer,
-                           size_t aFrames,
-                           TrackRate aRate,
-                           uint32_t aChannels);
-
-
-  
-  void SetPassThrough(bool aPassThrough);
-  
-  uint32_t GetRequestedInputChannelCount(MediaStreamGraphImpl* aGraphImpl);
-  
-  void SetRequestedInputChannelCount(uint32_t aRequestedInputChannelCount);
-  
-  
-  
-  bool PassThrough(MediaStreamGraphImpl* aGraphImpl) const;
-
-  
-  
   RefPtr<AllocationHandle> mHandle;
-  RefPtr<SourceMediaStream> mStream;
+
   TrackID mTrackID = TRACK_NONE;
   PrincipalHandle mPrincipal = PRINCIPAL_HANDLE_NONE;
   bool mEnabled = false;
 
-  
   const RefPtr<AudioDeviceInfo> mDeviceInfo;
-  
   const bool mDelayAgnostic;
   const bool mExtendedFilter;
   const nsString mDeviceName;
   const nsCString mDeviceUUID;
+
+  
+  const uint32_t mDeviceMaxChannelCount;
   
   
   
@@ -219,19 +150,87 @@ private:
   
   
   
-  
   MediaEnginePrefs mNetPrefs;
 
   
-  
-  Atomic<MediaEngineSourceState> mState;
-  
-  
-  Mutex mMutex;
+  MediaEngineSourceState mState;
+
   
   
+  RefPtr<SourceMediaStream> mStream;
+
   
-  RefPtr<WebRTCAudioDataListener> mListener;
+  RefPtr<AudioInputProcessing> mInputProcessing;
+};
+
+
+
+
+class AudioInputProcessing : public AudioDataListener
+{
+public:
+  AudioInputProcessing(uint32_t aMaxChannelCount,
+                       RefPtr<SourceMediaStream> aStream,
+                       TrackID aTrackID,
+                       const PrincipalHandle& aPrincipalHandle);
+
+  void Pull(const RefPtr<const AllocationHandle>& aHandle,
+            const RefPtr<SourceMediaStream>& aStream,
+            TrackID aTrackID,
+            StreamTime aDesiredTime,
+            const PrincipalHandle& aPrincipalHandle);
+
+  void NotifyOutputData(MediaStreamGraphImpl* aGraph,
+                        AudioDataValue* aBuffer,
+                        size_t aFrames,
+                        TrackRate aRate,
+                        uint32_t aChannels) override;
+  void NotifyInputData(MediaStreamGraphImpl* aGraph,
+                       const AudioDataValue* aBuffer,
+                       size_t aFrames,
+                       TrackRate aRate,
+                       uint32_t aChannels) override;
+
+  void Start();
+  void Stop();
+
+  void DeviceChanged(MediaStreamGraphImpl* aGraph) override;
+
+  uint32_t RequestedInputChannelCount(MediaStreamGraphImpl* aGraph) override
+  {
+    return GetRequestedInputChannelCount(aGraph);
+  }
+
+  void Disconnect(MediaStreamGraphImpl* aGraph) override;
+
+  template<typename T>
+  void InsertInGraph(const T* aBuffer, size_t aFrames, uint32_t aChannels);
+
+  void PacketizeAndProcess(MediaStreamGraphImpl* aGraph,
+                           const AudioDataValue* aBuffer,
+                           size_t aFrames,
+                           TrackRate aRate,
+                           uint32_t aChannels);
+
+  void SetPassThrough(bool aPassThrough);
+  uint32_t GetRequestedInputChannelCount(MediaStreamGraphImpl* aGraphImpl);
+  void SetRequestedInputChannelCount(uint32_t aRequestedInputChannelCount);
+  
+  
+  bool PassThrough(MediaStreamGraphImpl* aGraphImpl) const;
+
+  
+  
+  void UpdateAECSettingsIfNeeded(bool aEnable, webrtc::EcModes aMode);
+  void UpdateAGCSettingsIfNeeded(bool aEnable, webrtc::AgcModes aMode);
+  void UpdateNSSettingsIfNeeded(bool aEnable, webrtc::NsModes aMode);
+  void UpdateAPMExtraOptions(bool aExtendedFilter, bool aDelayAgnostic);
+
+private:
+  ~AudioInputProcessing() = default;
+  RefPtr<SourceMediaStream> mStream;
+  
+  
   
   
   
@@ -239,14 +238,13 @@ private:
   
   
   nsAutoPtr<AudioPacketizer<AudioDataValue, float>> mPacketizerInput;
+  
+  
   nsAutoPtr<AudioPacketizer<AudioDataValue, float>> mPacketizerOutput;
   
   
   
-  
-  
   uint32_t mRequestedInputChannelCount;
-  
   
   
   
@@ -263,18 +261,22 @@ private:
 #ifdef DEBUG
   
   
-  
-  GraphTime mLastCallbackAppendTime = 0;
+  GraphTime mLastCallbackAppendTime;
 #endif
   
   
-  
-  bool mLiveFramesAppended = false;
-
+  bool mLiveFramesAppended;
   
   
+  bool mLiveSilenceAppended;
   
-  bool mLiveSilenceAppended = false;
+  TrackID mTrackID;
+  
+  PrincipalHandle mPrincipal;
+  
+  
+  
+  bool mEnabled;
 };
 
 
@@ -320,7 +322,8 @@ public:
             TrackID aTrackID,
             StreamTime aDesiredTime,
             const PrincipalHandle& aPrincipalHandle) override
-  {}
+  {
+  }
 
   dom::MediaSourceEnum GetMediaSource() const override
   {
