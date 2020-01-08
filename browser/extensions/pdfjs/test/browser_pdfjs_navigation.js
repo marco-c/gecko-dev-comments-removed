@@ -242,9 +242,9 @@ async function runTests(browser) {
 
       
       let timeout = window.setTimeout(() => deferred.reject(), 5000);
-      window.addEventListener("pagechange", function pageChange() {
+      window.addEventListener("pagechanging", function pageChange() {
         if (pageNumber.value == test.expectedPage) {
-          window.removeEventListener("pagechange", pageChange);
+          window.removeEventListener("pagechanging", pageChange);
           window.clearTimeout(timeout);
           deferred.resolve(+pageNumber.value);
         }
