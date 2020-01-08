@@ -1127,7 +1127,7 @@ TreeNode.prototype = {
     switch (this._units) {
       case UNITS_BYTES: return formatBytes(this._amount);
       case UNITS_COUNT:
-      case UNITS_COUNT_CUMULATIVE: return formatInt(this._amount);
+      case UNITS_COUNT_CUMULATIVE: return formatNum(this._amount);
       case UNITS_PERCENTAGE: return formatPercentage(this._amount);
       default:
         throw "Invalid memory report(s): bad units in TreeNode.toString";
@@ -1506,6 +1506,33 @@ function appendProcessAboutMemoryElements(aP, aN, aProcess, aTrees,
 }
 
 
+const kMBStyle = {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
+};
+
+
+const kPercStyle = {
+  style: "percent",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
+};
+
+
+const kFracStyle = {
+  style: "percent",
+  minimumIntegerDigits: 2,
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
+};
+
+
+const kFrac1Style = {
+  style: "percent",
+  minimumIntegerDigits: 3,
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1
+};
 
 
 
@@ -1513,56 +1540,11 @@ function appendProcessAboutMemoryElements(aP, aN, aProcess, aTrees,
 
 
 
-function hasNegativeSign(aN) {
-  if (aN === 0) { 
-    return 1 / aN === -Infinity; 
-  }
-  return aN < 0;
-}
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-function formatInt(aN, aExtra) {
-  let neg = false;
-  if (hasNegativeSign(aN)) {
-    neg = true;
-    aN = -aN;
-  }
-  let s = [];
-  while (true) {
-    let k = aN % 1000;
-    aN = Math.floor(aN / 1000);
-    if (aN > 0) {
-      if (k < 10) {
-        s.unshift(",00", k);
-      } else if (k < 100) {
-        s.unshift(",0", k);
-      } else {
-        s.unshift(",", k);
-      }
-    } else {
-      s.unshift(k);
-      break;
-    }
-  }
-  if (neg) {
-    s.unshift("-");
-  }
-  if (aExtra) {
-    s.push(aExtra);
-  }
-  return s.join("");
+function formatNum(aN, aOptions) {
+  return aN.toLocaleString('en-US', aOptions);
 }
 
 
@@ -1573,18 +1555,9 @@ function formatInt(aN, aExtra) {
 
 
 function formatBytes(aBytes) {
-  let unit = gVerbose.checked ? " B" : " MB";
-
-  let s;
-  if (gVerbose.checked) {
-    s = formatInt(aBytes, unit);
-  } else {
-    let mbytes = (aBytes / (1024 * 1024)).toFixed(2);
-    let a = String(mbytes).split(".");
-    
-    s = formatInt(Number(a[0])) + "." + a[1] + unit;
-  }
-  return s;
+  return gVerbose.checked
+       ? `${formatNum(aBytes)} B`
+       : `${formatNum(aBytes / (1024 * 1024), kMBStyle)} MB`;
 }
 
 
@@ -1595,7 +1568,30 @@ function formatBytes(aBytes) {
 
 
 function formatPercentage(aPerc100x) {
-  return (aPerc100x / 100).toFixed(2) + "%";
+  
+  
+  return formatNum(aPerc100x / 10000, kPercStyle);
+}
+
+
+
+
+
+
+
+
+
+
+function formatTreeFrac(aNum, aDenom) {
+  
+  
+  
+  
+  
+  let num = aDenom === 0 ? 1 : (aNum / aDenom);
+  return (0.99995 <= num && num <= 1)
+         ? formatNum(1, kFrac1Style)
+         : formatNum(num, kFracStyle);
 }
 
 
@@ -1849,15 +1845,9 @@ function appendTreeElements(aP, aRoot, aProcess, aPadText) {
                           valueText);
 
     
-    let percText;
     if (!aT._isDegenerate) {
-      
-      let num = aRoot._amount === 0 ? 100 : (100 * aT._amount / aRoot._amount);
-      let numText = num.toFixed(2);
-      percText = numText === "100.00"
-               ? " (100.0%)"
-               : (0 <= num && num < 10 ? " (0" : " (") + numText + "%)";
-      appendElementWithText(d, "span", "mrPerc", percText);
+      let percText = formatTreeFrac(aT._amount, aRoot._amount);
+      appendElementWithText(d, "span", "mrPerc", ` (${percText})`);
     }
 
     
