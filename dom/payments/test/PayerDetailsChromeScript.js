@@ -35,7 +35,7 @@ const TestingUIService = {
   updatePayment(requestId) {
     
     const request = paymentSrv.getPaymentRequestById(requestId);
-    const { name, email, phone } = request.paymentDetails.payer;
+    const { name, email, phone } = request.paymentDetails.payerErrors;
     const { error } = request.paymentDetails;
     
     switch (error) {

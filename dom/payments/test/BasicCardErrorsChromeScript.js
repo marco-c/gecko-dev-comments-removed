@@ -99,7 +99,7 @@ const TestingUIService = {
   updatePayment(requestId) {
     
     const request = paymentSrv.getPaymentRequestById(requestId);
-    this.showPayment(requestId, request.paymentDetails.paymentMethod);
+    this.showPayment(requestId, request.paymentDetails.paymentMethodErrors);
   },
   
   completePayment(requestId) {
