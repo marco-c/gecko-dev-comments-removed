@@ -7,7 +7,6 @@ var TrackingProtection = {
   MAX_INTROS: 20,
   PREF_ENABLED_GLOBALLY: "privacy.trackingprotection.enabled",
   PREF_ENABLED_IN_PRIVATE_WINDOWS: "privacy.trackingprotection.pbmode.enabled",
-  PREF_ANIMATIONS_ENABLED: "toolkit.cosmeticAnimations.enabled",
   enabledGlobally: false,
   enabledInPrivateWindows: false,
   container: null,
@@ -34,10 +33,6 @@ var TrackingProtection = {
     this.container = $("#tracking-protection-container");
     this.content = $("#tracking-protection-content");
     this.icon = $("#tracking-protection-icon");
-    this.iconBox = $("#tracking-protection-icon-box");
-    this.animatedIcon = $("#tracking-protection-icon-animatable-image");
-    this.animatedIcon.addEventListener("animationend", () => this.iconBox.removeAttribute("animate"));
-
     this.broadcaster = $("#trackingProtectionBroadcaster");
 
     this.enableTooltip =
@@ -48,15 +43,6 @@ var TrackingProtection = {
       gNavigatorBundle.getString("trackingProtection.toggle.enable.pbmode.tooltip");
     this.disableTooltipPB =
       gNavigatorBundle.getString("trackingProtection.toggle.disable.pbmode.tooltip");
-
-    this.updateAnimationsEnabled = () => {
-      this.iconBox.toggleAttribute("animationsenabled",
-        Services.prefs.getBoolPref(this.PREF_ANIMATIONS_ENABLED, false));
-    };
-
-    this.updateAnimationsEnabled();
-
-    Services.prefs.addObserver(this.PREF_ANIMATIONS_ENABLED, this.updateAnimationsEnabled);
 
     this.updateEnabled();
     Services.prefs.addObserver(this.PREF_ENABLED_GLOBALLY, this);
@@ -74,7 +60,6 @@ var TrackingProtection = {
   uninit() {
     Services.prefs.removeObserver(this.PREF_ENABLED_GLOBALLY, this);
     Services.prefs.removeObserver(this.PREF_ENABLED_IN_PRIVATE_WINDOWS, this);
-    Services.prefs.removeObserver(this.PREF_ANIMATIONS_ENABLED, this.updateAnimationsEnabled);
   },
 
   observe() {
@@ -153,29 +138,20 @@ var TrackingProtection = {
     Services.telemetry.getHistogramById("TRACKING_PROTECTION_SHIELD").add(value);
   },
 
-  cancelAnimation() {
-    let iconAnimation = this.animatedIcon.getAnimations()[0];
-    if (iconAnimation && iconAnimation.currentTime) {
-      iconAnimation.cancel();
-    }
-    this.iconBox.removeAttribute("animate");
-  },
-
-  onSecurityChange(state, webProgress, isSimulated) {
+  onSecurityChange(state, isSimulated) {
     let baseURI = this._baseURIForChannelClassifier;
 
     
     if (!baseURI) {
-      this.cancelAnimation();
-      this.iconBox.removeAttribute("state");
       return;
     }
 
     
     
-    
-    if (webProgress.isTopLevel) {
-      this.cancelAnimation();
+    if (isSimulated) {
+      this.icon.removeAttribute("animate");
+    } else {
+      this.icon.setAttribute("animate", "true");
     }
 
     let isBlocking = state & Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT;
@@ -197,14 +173,8 @@ var TrackingProtection = {
     }
 
     if (isBlocking && this.enabled) {
-      if (isSimulated) {
-        this.cancelAnimation();
-      } else if (webProgress.isTopLevel) {
-        this.iconBox.setAttribute("animate", "true");
-      }
-
-      this.iconBox.setAttribute("tooltiptext", this.activeTooltipText);
-      this.iconBox.setAttribute("state", "blocked-tracking-content");
+      this.icon.setAttribute("tooltiptext", this.activeTooltipText);
+      this.icon.setAttribute("state", "blocked-tracking-content");
       this.content.setAttribute("state", "blocked-tracking-content");
 
       
@@ -219,28 +189,22 @@ var TrackingProtection = {
 
       this.shieldHistogramAdd(2);
     } else if (isAllowing) {
-      if (isSimulated) {
-        this.cancelAnimation();
-      } else if (webProgress.isTopLevel) {
-        this.iconBox.setAttribute("animate", "true");
-      }
-
       
       if (this.enabled) {
-        this.iconBox.setAttribute("tooltiptext", this.disabledTooltipText);
-        this.iconBox.setAttribute("state", "loaded-tracking-content");
+        this.icon.setAttribute("tooltiptext", this.disabledTooltipText);
+        this.icon.setAttribute("state", "loaded-tracking-content");
         this.shieldHistogramAdd(1);
       } else {
-        this.iconBox.removeAttribute("tooltiptext");
-        this.iconBox.removeAttribute("state");
+        this.icon.removeAttribute("tooltiptext");
+        this.icon.removeAttribute("state");
         this.shieldHistogramAdd(0);
       }
 
       
       this.content.setAttribute("state", "loaded-tracking-content");
     } else {
-      this.iconBox.removeAttribute("tooltiptext");
-      this.iconBox.removeAttribute("state");
+      this.icon.removeAttribute("tooltiptext");
+      this.icon.removeAttribute("state");
       this.content.removeAttribute("state");
 
       
