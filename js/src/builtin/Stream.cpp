@@ -355,33 +355,13 @@ ToUnwrapped(JSContext* cx, HandleValue v)
 
 
 
-
-
-
-
-
-
-
-
-
-static MOZ_MUST_USE ReadableStream*
-StreamFromReader(JSContext *maybeCx, const ReadableStreamReader* reader)
+static MOZ_MUST_USE bool
+UnwrapStreamFromReader(JSContext *cx,
+                       Handle<ReadableStreamReader*> reader,
+                       MutableHandle<ReadableStream*> unwrappedResult)
 {
     MOZ_ASSERT(ReaderHasStream(reader));
-    JSObject* streamObj = &reader->getFixedSlot(ReaderSlot_Stream).toObject();
-    if (IsProxy(streamObj)) {
-        if (JS_IsDeadWrapper(streamObj)) {
-            if (maybeCx) {
-                JS_ReportErrorNumberASCII(maybeCx, GetErrorMessage, nullptr, JSMSG_DEAD_OBJECT);
-            }
-            return nullptr;
-        }
-
-        
-        
-        streamObj = UncheckedUnwrap(streamObj);
-    }
-    return &streamObj->as<ReadableStream>();
+    return UnwrapInternalSlot(cx, reader, ReaderSlot_Stream, unwrappedResult);
 }
 
 
@@ -2220,8 +2200,8 @@ ReadableStreamReaderGenericCancel(JSContext* cx, Handle<ReadableStreamReader*> r
 {
     
     
-    Rooted<ReadableStream*> stream(cx, StreamFromReader(cx, reader));
-    if (!stream) {
+    Rooted<ReadableStream*> stream(cx);
+    if (!UnwrapStreamFromReader(cx, reader, &stream)) {
         return nullptr;
     }
 
@@ -2301,8 +2281,8 @@ static MOZ_MUST_USE bool
 ReadableStreamReaderGenericRelease(JSContext* cx, Handle<ReadableStreamReader*> reader)
 {
     
-    Rooted<ReadableStream*> stream(cx, StreamFromReader(cx, reader));
-    if (!stream) {
+    Rooted<ReadableStream*> stream(cx);
+    if (!UnwrapStreamFromReader(cx, reader, &stream)) {
         return false;
     }
 
@@ -2377,8 +2357,8 @@ ReadableStreamDefaultReader::read(JSContext* cx, Handle<ReadableStreamDefaultRea
 {
     
     
-    Rooted<ReadableStream*> stream(cx, StreamFromReader(cx, reader));
-    if (!stream) {
+    Rooted<ReadableStream*> stream(cx);
+    if (!UnwrapStreamFromReader(cx, reader, &stream)) {
         return nullptr;
     }
 
@@ -4417,8 +4397,8 @@ MOZ_MUST_USE bool
 js::ReadableStreamReaderCancel(JSContext* cx, HandleObject readerObj, HandleValue reason)
 {
     Rooted<ReadableStreamReader*> reader(cx, &readerObj->as<ReadableStreamReader>());
-    ReadableStream* stream = StreamFromReader(cx, reader);
-    if (!stream) {
+    Rooted<ReadableStream*> stream(cx);
+    if (!UnwrapStreamFromReader(cx, reader, &stream)) {
         return false;
     }
     return ReadableStreamReaderGenericCancel(cx, reader, reason);
@@ -4428,8 +4408,8 @@ MOZ_MUST_USE bool
 js::ReadableStreamReaderReleaseLock(JSContext* cx, HandleObject readerObj)
 {
     Rooted<ReadableStreamReader*> reader(cx, &readerObj->as<ReadableStreamReader>());
-    ReadableStream* stream = StreamFromReader(cx, reader);
-    if (!stream) {
+    Rooted<ReadableStream*> stream(cx);
+    if (!UnwrapStreamFromReader(cx, reader, &stream)) {
         return false;
     }
     MOZ_ASSERT(ReadableStreamGetNumReadRequests(stream) == 0);
