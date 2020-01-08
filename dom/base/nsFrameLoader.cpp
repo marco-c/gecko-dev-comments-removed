@@ -818,8 +818,7 @@ nsFrameLoader::MarginsChanged(uint32_t aMarginWidth,
 
   
   
-  RefPtr<nsPresContext> presContext;
-  mDocShell->GetPresContext(getter_AddRefs(presContext));
+  RefPtr<nsPresContext> presContext = mDocShell->GetPresContext();
   if (presContext)
     
     

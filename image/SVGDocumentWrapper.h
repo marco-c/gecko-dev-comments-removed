@@ -73,13 +73,8 @@ public:
   
 
 
-
-
-
-
-
-  inline nsresult  GetPresShell(nsIPresShell** aPresShell)
-    { return mViewer->GetPresShell(aPresShell); }
+  inline nsIPresShell* GetPresShell()
+    { return mViewer->GetPresShell(); }
 
   
 

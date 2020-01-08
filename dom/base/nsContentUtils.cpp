@@ -6628,14 +6628,11 @@ nsContentUtils::IsSubDocumentTabbable(nsIContent* aContent)
     return false;
   }
 
-  nsCOMPtr<nsIContentViewer> zombieViewer;
-  contentViewer->GetPreviousViewer(getter_AddRefs(zombieViewer));
-
   
   
   
   
-  if (zombieViewer) {
+  if (contentViewer->GetPreviousViewer()) {
     bool inOnLoad = false;
     docShell->GetIsExecutingOnLoadHandler(&inOnLoad);
     return inOnLoad;

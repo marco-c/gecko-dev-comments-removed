@@ -661,9 +661,13 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
   case ePointerDown:
     if (aEvent->mMessage == ePointerDown) {
       PointerEventHandler::ImplicitlyCapturePointer(aTargetFrame, aEvent);
-      if (mouseEvent->inputSource != MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
-        NotifyTargetUserActivation(aEvent, aTargetContent);
-      }
+#ifndef MOZ_WIDGET_ANDROID
+      
+      
+      
+      
+      NotifyTargetUserActivation(aEvent, aTargetContent);
+#endif
     }
     MOZ_FALLTHROUGH;
   case ePointerMove: {
@@ -4359,8 +4363,7 @@ EventStateManager::NotifyMouseOut(WidgetMouseEvent* aMouseEvent,
     if (subdocFrame) {
       nsIDocShell* docshell = subdocFrame->GetDocShell();
       if (docshell) {
-        RefPtr<nsPresContext> presContext;
-        docshell->GetPresContext(getter_AddRefs(presContext));
+        RefPtr<nsPresContext> presContext = docshell->GetPresContext();
 
         if (presContext) {
           EventStateManager* kidESM = presContext->EventStateManager();

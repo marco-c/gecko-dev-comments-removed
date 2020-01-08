@@ -2068,15 +2068,11 @@ nsPresContext::EnsureVisible()
     nsCOMPtr<nsIContentViewer> cv;
     docShell->GetContentViewer(getter_AddRefs(cv));
     
-    if (cv) {
-      RefPtr<nsPresContext> currentPresContext;
-      cv->GetPresContext(getter_AddRefs(currentPresContext));
-      if (currentPresContext == this) {
-        
-        nsresult result = cv->Show();
-        if (NS_SUCCEEDED(result)) {
-          return true;
-        }
+    if (cv && cv->GetPresContext() == this) {
+      
+      nsresult result = cv->Show();
+      if (NS_SUCCEEDED(result)) {
+        return true;
       }
     }
   }
