@@ -43,13 +43,18 @@ nsTArray<RefPtr<PerformanceInfoPromise>> CollectPerformanceInfo() {
 
   
   if (tabGroups) {
+    
+    
+    nsTArray<RefPtr<DocGroup>> docGroups;
     for (TabGroup* tabGroup = tabGroups->getFirst(); tabGroup;
          tabGroup =
              static_cast<LinkedListElement<TabGroup>*>(tabGroup)->getNext()) {
       for (auto iter = tabGroup->Iter(); !iter.Done(); iter.Next()) {
-        DocGroup* docGroup = iter.Get()->mDocGroup;
-        promises.AppendElement(docGroup->ReportPerformanceInfo());
+        docGroups.AppendElement(iter.Get()->mDocGroup);
       }
+    }
+    for (DocGroup* docGroup : docGroups) {
+      promises.AppendElement(docGroup->ReportPerformanceInfo());
     }
   }
   return promises;
