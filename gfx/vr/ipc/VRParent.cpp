@@ -115,6 +115,12 @@ VRParent::Init(base::ProcessId aParentPid,
                IPC::Channel* aChannel)
 {
   
+  
+  if (NS_WARN_IF(NS_FAILED(nsThreadManager::get().Init()))) {
+    return false;
+  }
+
+  
   if (NS_WARN_IF(!Open(aChannel, aParentPid, aIOLoop))) {
     return false;
   }
@@ -136,6 +142,10 @@ VRParent::Init(base::ProcessId aParentPid,
 #if defined(XP_WIN)
   DeviceManagerDx::Init();
 #endif
+  if (NS_FAILED(NS_InitMinimalXPCOM())) {
+    return false;
+  }
+
   return true;
 }
 
