@@ -304,9 +304,10 @@ SharedWorkerService::GetOrCreateWorkerManagerOnMainThread(nsIEventTarget* aBackg
   }
 
   
+  nsCOMPtr<nsIURI> resolvedScriptURL = DeserializeURI(aData.resolvedScriptURL());
   for (SharedWorkerManager* workerManager : mWorkerManagers) {
     if (workerManager->MatchOnMainThread(aData.domain(),
-                                         aData.resolvedScriptURL(),
+                                         resolvedScriptURL,
                                          aData.name(), loadingPrincipal)) {
       manager = workerManager;
       break;
