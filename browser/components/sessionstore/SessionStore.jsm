@@ -4071,7 +4071,7 @@ var SessionStoreInternal = {
        requestTime: Services.telemetry.msSystemNow()});
 
     
-    if (aTab.selected) {
+    if (aTab.selected && !window.isBlankPageURL(uri)) {
       browser.focus();
     }
   },
