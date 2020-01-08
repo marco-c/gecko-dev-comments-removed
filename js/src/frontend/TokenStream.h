@@ -1097,6 +1097,9 @@ class SourceUnits
             ptr--;
     }
 
+    
+    inline void ungetLineOrParagraphSeparator();
+
     void ungetCodeUnit() {
         MOZ_ASSERT(!atStart(), "can't unget if currently at start");
         MOZ_ASSERT(ptr);     
@@ -1145,6 +1148,33 @@ class SourceUnits
     
     const CharT* ptr;
 };
+
+template<>
+inline void
+SourceUnits<char16_t>::ungetLineOrParagraphSeparator()
+{
+#ifdef DEBUG
+    char16_t prev = previousCodeUnit();
+#endif
+    MOZ_ASSERT(prev == unicode::LINE_SEPARATOR || prev == unicode::PARA_SEPARATOR);
+
+    ungetCodeUnit();
+}
+
+template<>
+inline void
+SourceUnits<mozilla::Utf8Unit>::ungetLineOrParagraphSeparator()
+{
+    unskipCodeUnits(3);
+
+    MOZ_ASSERT(ptr[0].toUint8() == 0xE2);
+    MOZ_ASSERT(ptr[1].toUint8() == 0x80);
+
+#ifdef DEBUG
+    uint8_t last = ptr[2].toUint8();
+#endif
+    MOZ_ASSERT(last == 0xA8 || last == 0xA9);
+}
 
 class TokenStreamCharsShared
 {
@@ -1656,13 +1686,6 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
         if (codePoint == '\n')
             anyCharsAccess().undoInternalUpdateLineInfoForEOL();
     }
-
-    
-
-
-
-
-    void ungetLineTerminator();
 
     
 
