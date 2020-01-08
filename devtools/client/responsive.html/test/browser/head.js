@@ -56,12 +56,15 @@ Services.prefs.setCharPref("devtools.devices.url", TEST_URI_ROOT + "devices.json
 
 Services.prefs.setBoolPref("devtools.responsive.reloadNotification.enabled", false);
 
+Services.prefs.setBoolPref("devtools.responsive.show-setting-tooltip", false);
+
 registerCleanupFunction(async () => {
   Services.prefs.clearUserPref("devtools.devices.url");
   Services.prefs.clearUserPref("devtools.responsive.reloadNotification.enabled");
   Services.prefs.clearUserPref("devtools.responsive.html.displayedDeviceList");
   Services.prefs.clearUserPref("devtools.responsive.reloadConditions.touchSimulation");
   Services.prefs.clearUserPref("devtools.responsive.reloadConditions.userAgent");
+  Services.prefs.clearUserPref("devtools.responsive.show-setting-tooltip");
   await asyncStorage.removeItem("devtools.devices.url_cache");
   await removeLocalDevices();
 });
