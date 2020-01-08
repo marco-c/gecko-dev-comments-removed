@@ -7473,6 +7473,13 @@ GCRuntime::incrementalSlice(SliceBudget& budget, JS::gcreason::Reason reason,
             return IncrementalResult::Ok;
         }
 
+        
+        if (isIncremental && !hasValidGrayRootsBuffer()) {
+            budget.makeUnlimited();
+            isIncremental = false;
+            stats().nonincremental(AbortReason::GrayRootBufferingFailed);
+        }
+
         if (!destroyingRuntime) {
             pushZealSelectedObjects();
         }
@@ -7487,13 +7494,6 @@ GCRuntime::incrementalSlice(SliceBudget& budget, JS::gcreason::Reason reason,
 
       case State::Mark:
         AutoGCRooter::traceAllWrappers(rt->mainContextFromOwnThread(), &marker);
-
-        
-        if (isIncremental && !hasValidGrayRootsBuffer()) {
-            budget.makeUnlimited();
-            isIncremental = false;
-            stats().nonincremental(AbortReason::GrayRootBufferingFailed);
-        }
 
         if (markUntilBudgetExhaused(budget, gcstats::PhaseKind::MARK) == NotFinished) {
             break;
