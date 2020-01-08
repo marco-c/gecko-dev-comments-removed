@@ -81,13 +81,13 @@ var UI = {
 
     
     
-    const autoinstallADBHelper = Services.prefs.getBoolPref("devtools.webide.autoinstallADBHelper");
-    if (autoinstallADBHelper) {
+    const autoinstallADBExtension = Services.prefs.getBoolPref("devtools.webide.autoinstallADBExtension");
+    if (autoinstallADBExtension) {
       const addons = GetAvailableAddons();
       addons.adb.install();
     }
 
-    Services.prefs.setBoolPref("devtools.webide.autoinstallADBHelper", false);
+    Services.prefs.setBoolPref("devtools.webide.autoinstallADBExtension", false);
 
     this.setupDeck();
 
