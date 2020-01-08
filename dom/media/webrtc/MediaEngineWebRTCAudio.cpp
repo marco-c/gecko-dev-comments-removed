@@ -878,6 +878,21 @@ MediaEngineWebRTCMicrophoneSource::Pull(const RefPtr<const AllocationHandle>& aH
       
       
       delta += WEBAUDIO_BLOCK_SIZE;
+
+      
+      
+      
+      
+      
+      MOZ_ASSERT_IF(!PassThrough(aStream->GraphImpl()) && !mPacketizerInput,
+                    !mAllocations[i].mLiveFramesAppended);
+
+      if (!PassThrough(aStream->GraphImpl()) && mPacketizerInput) {
+        
+        
+        
+        delta += mPacketizerInput->PacketSize();
+      }
     }
 
     LOG_FRAMES(("Pulling %" PRId64 " frames of silence for allocation %p",
