@@ -251,7 +251,7 @@ public class GeckoResult<T> {
 
 
 
-    public @NonNull <U> GeckoResult<U> then(@NonNull final OnExceptionListener<U> exceptionListener) {
+    public @NonNull <U> GeckoResult<U> exceptionally(@NonNull final OnExceptionListener<U> exceptionListener) {
         return then(null, exceptionListener);
     }
 
