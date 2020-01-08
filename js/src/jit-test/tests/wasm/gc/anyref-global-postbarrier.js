@@ -9,6 +9,19 @@ function Baguette(calories) {
     this.calories = calories;
 }
 
+
+(function() {
+    wasmEvalText(`(module
+        (global (mut anyref) (ref.null anyref))
+        (func (export "f")
+            get_global 0
+            ref.null anyref
+            set_global 0
+            set_global 0
+        )
+    )`).exports.f();
+})();
+
 let exportsPlain = wasmEvalText(`(module
     (global i32 (i32.const 42))
     (global $g (mut anyref) (ref.null anyref))

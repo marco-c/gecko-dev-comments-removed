@@ -5669,6 +5669,10 @@ class BaseCompiler final : public BaseCompilerInterface
         Label skipBarrier;
 
         
+        
+        sync();
+
+        
         masm.branchTestPtr(Assembler::Zero, setValue, setValue, &skipBarrier);
 
         
