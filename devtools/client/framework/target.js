@@ -391,7 +391,7 @@ Target.prototype = {
 
   
   
-  getFront(typeName) {
+  async getFront(typeName) {
     let front = this.fronts.get(typeName);
     
     if (front && front.actorID || front && typeof front.then === "function") {
