@@ -1,0 +1,26 @@
+
+
+
+
+"use strict";
+
+const { PureComponent } = require("devtools/client/shared/vendor/react");
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
+
+
+
+class TabDetail extends PureComponent {
+  static get propTypes() {
+    return {
+      target: PropTypes.object.isRequired,
+    };
+  }
+
+  render() {
+    return dom.div({ className: "ellipsis-text" }, this.props.target.url);
+  }
+}
+
+module.exports = TabDetail;
