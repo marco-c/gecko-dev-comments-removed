@@ -12,9 +12,10 @@ void GC()
 
 class RAII_GC {
   public:
-    RAII_GC() {}
+    RAII_GC() { }
     ~RAII_GC() { GC(); }
 };
+
 
 
 
@@ -35,6 +36,8 @@ extern void usevar(Cell* cell);
 void f() {
     Cell* thing = nullptr; 
 
+    
+    
     {
         AutoSomething smth; 
         usevar(thing); 
