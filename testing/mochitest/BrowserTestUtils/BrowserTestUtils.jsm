@@ -1165,63 +1165,6 @@ var BrowserTestUtils = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  synthesizeTouch(target, offsetX, offsetY, event, browser) {
-    return new Promise((resolve, reject) => {
-      let mm = browser.messageManager;
-      mm.addMessageListener("Test:SynthesizeTouchDone", function touchMsg(message) {
-        mm.removeMessageListener("Test:SynthesizeTouchDone", touchMsg);
-        if (message.data.hasOwnProperty("defaultPrevented")) {
-          resolve(message.data.defaultPrevented);
-        } else {
-          reject(new Error(message.data.error));
-        }
-      });
-
-      let cpowObject = null;
-      let targetFn = null;
-      if (typeof target == "function") {
-        targetFn = target.toString();
-        target = null;
-      } else if (typeof target != "string" && !Array.isArray(target)) {
-        cpowObject = target;
-        target = null;
-      }
-
-      mm.sendAsyncMessage("Test:SynthesizeTouch",
-                          {target, targetFn, x: offsetX, y: offsetY, event},
-                          {object: cpowObject});
-    });
-  },
-
-  
-
-
-
-
-
-
-
-
-
   waitForMessage(messageManager, message, checkFn) {
     return new Promise(resolve => {
       messageManager.addMessageListener(message, function onMessage(msg) {
