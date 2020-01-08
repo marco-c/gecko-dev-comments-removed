@@ -1213,6 +1213,11 @@ public:
   virtual already_AddRefed<nsPIWindowRoot> GetTopWindowRoot() override;
 
   
+  nsIPrincipal* GetTopLevelPrincipal();
+
+  
+  
+  
   nsIPrincipal* GetTopLevelStorageAreaPrincipal();
 
 protected:

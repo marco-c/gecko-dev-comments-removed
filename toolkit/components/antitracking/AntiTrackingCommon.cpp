@@ -237,6 +237,12 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel
 
   nsIPrincipal* parentPrincipal = loadInfo->TopLevelStorageAreaPrincipal();
   if (!parentPrincipal) {
+    
+    
+    if (loadInfo->TopLevelPrincipal()) {
+      return false;
+    }
+
     parentPrincipal = loadInfo->TriggeringPrincipal();
     if (NS_WARN_IF(!parentPrincipal)) {
       
