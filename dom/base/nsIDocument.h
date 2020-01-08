@@ -3391,6 +3391,10 @@ class nsIDocument : public nsINode,
   void ReportShadowDOMUsage();
 
   
+  
+  void MaybeNotifyAutoplayBlocked();
+
+  
   void SetDocTreeHadAudibleMedia();
   void SetDocTreeHadPlayRevoked();
 
