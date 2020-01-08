@@ -594,8 +594,12 @@ var BrowserTestUtils = {
         if (url) {
           let browser = win.gBrowser.selectedBrowser;
 
+          
+          let process =
+              browser.isRemoteBrowser ? Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT
+              : Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
           if (win.gMultiProcessBrowser &&
-              !E10SUtils.canLoadURIInRemoteType(url, browser.remoteType)) {
+              !E10SUtils.canLoadURIInProcess(url, process)) {
             await this.waitForEvent(browser, "XULFrameLoaderCreated");
           }
 
@@ -639,9 +643,13 @@ var BrowserTestUtils = {
     }
 
     
+    let process = browser.isRemoteBrowser ? Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT
+                                          : Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
+
     
     
-    if (!E10SUtils.canLoadURIInRemoteType(uri, browser.remoteType)) {
+    
+    if (!E10SUtils.canLoadURIInProcess(uri, process)) {
       await this.waitForEvent(browser, "XULFrameLoaderCreated");
     }
   },

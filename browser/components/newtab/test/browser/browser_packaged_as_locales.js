@@ -4,9 +4,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "aboutNewTabService",
                                    "nsIAboutNewTabService");
 
 
-const DEFAULT_URL = SpecialPowers.getBoolPref("browser.tabs.remote.separatePrivilegedContentProcess")
-  ? "resource://activity-stream/prerendered/en-US/activity-stream-prerendered-noscripts.html"
-  : "resource://activity-stream/prerendered/en-US/activity-stream-prerendered.html";
+const DEFAULT_URL = "resource://activity-stream/prerendered/en-US/activity-stream-prerendered.html";
 
 
 

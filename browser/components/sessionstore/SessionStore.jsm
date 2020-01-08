@@ -2437,16 +2437,7 @@ var SessionStoreInternal = {
 
     
     
-    
-    let uriObj = aTab.linkedBrowser.currentURI;
-    if (!uriObj || (uriObj && !aWindow.gBrowser.isLocalAboutURI(uriObj))) {
-      newTab.setAttribute("busy", "true");
-    }
-
-    
-    
-    
-    aWindow.gBrowser.setDefaultIcon(newTab, uriObj);
+    newTab.setAttribute("busy", "true");
 
     
     let tabState = TabState.collect(aTab, TAB_CUSTOM_VALUES.get(aTab));
@@ -2783,14 +2774,7 @@ var SessionStoreInternal = {
 
     
     if ("image" in tabData) {
-      
-      
-      
-      
-      
-      if (!activePageData || (activePageData && activePageData.url != "about:blank")) {
-        win.gBrowser.setIcon(tab, tabData.image, undefined, tabData.iconLoadingPrincipal);
-      }
+      win.gBrowser.setIcon(tab, tabData.image, undefined, tabData.iconLoadingPrincipal);
       TabStateCache.update(browser, { image: null, iconLoadingPrincipal: null });
     }
   },
@@ -3030,22 +3014,9 @@ var SessionStoreInternal = {
       return;
     }
 
-    let uriObj;
-    try {
-      uriObj = Services.io.newURI(loadArguments.uri);
-    } catch (e) {}
-
     
     
-    
-    if (!uriObj || (uriObj && !window.gBrowser.isLocalAboutURI(uriObj))) {
-      tab.setAttribute("busy", "true");
-    }
-
-    
-    
-    
-    window.gBrowser.setDefaultIcon(tab, uriObj);
+    tab.setAttribute("busy", "true");
 
     
     TabStateFlusher.flush(browser).then(() => {
@@ -4071,7 +4042,7 @@ var SessionStoreInternal = {
        requestTime: Services.telemetry.msSystemNow()});
 
     
-    if (aTab.selected && !window.isBlankPageURL(uri)) {
+    if (aTab.selected) {
       browser.focus();
     }
   },

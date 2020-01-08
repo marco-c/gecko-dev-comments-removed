@@ -475,11 +475,6 @@ pref("browser.tabs.showAudioPlayingIcon", true);
 
 pref("browser.tabs.delayHidingAudioPlayingIconMS", 3000);
 
-
-#ifdef NIGHTLY_BUILD
-pref("browser.tabs.remote.separatePrivilegedContentProcess", true);
-#endif
-
 pref("browser.ctrlTab.recentlyUsedOrder", true);
 
 
