@@ -1790,15 +1790,19 @@ PeerConnectionWrapper.prototype = {
       ok(res.id == key, "Coherent stats id");
       var nowish = Date.now() + clockDriftAllowance;
       var minimum = this.whenCreated;
-      if (false) { 
-      
+      if (!twoMachines) {
         
         
         if (res.timestamp != 2085978496000) {
-          ok(res.timestamp >= minimum,
-             "Valid " + (res.isRemote? "rtcp" : "rtp") + " timestamp " +
-                 res.timestamp + " >= " + minimum + " (" +
-                 (res.timestamp - minimum) + " ms)");
+          if (false) {
+            ok(res.timestamp >= minimum,
+               "Valid " + (res.isRemote? "rtcp" : "rtp") + " timestamp " +
+                   res.timestamp + " >= " + minimum + " (" +
+                   (res.timestamp - minimum) + " ms)");
+          } else {
+            info("FIXME bug 1495446: uncomment the timestamp test case " +
+                 "above after RTCP epoch bug 1495446 is fixed.");
+          }
           ok(res.timestamp <= nowish,
              "Valid " + (res.isRemote? "rtcp" : "rtp") + " timestamp " +
                  res.timestamp + " <= " + nowish + " (" +
@@ -1843,17 +1847,17 @@ PeerConnectionWrapper.prototype = {
               ok(rem.packetsReceived !== undefined, "Rtcp packetsReceived");
               ok(rem.packetsLost !== undefined, "Rtcp packetsLost");
               ok(rem.bytesReceived >= rem.packetsReceived, "Rtcp bytesReceived");
-	       if (false) { 
-	       
-	       
-	       
-		if (res.timestamp >= rem.timestamp) {
-                 ok(rem.packetsReceived <= res.packetsSent, "No more than sent packets");
-		 } else {
+              if (!this.disableRtpCountChecking) {
+                
+                
+                
+                if (res.timestamp >= rem.timestamp) {
+                  ok(rem.packetsReceived <= res.packetsSent, "No more than sent packets");
+                } else {
                   info("REVERSED timestamps: rec:" +
-		     rem.packetsReceived + " time:" + rem.timestamp + " sent:" + res.packetsSent + " time:" + res.timestamp);
-		 }
-		
+                    rem.packetsReceived + " time:" + rem.timestamp + " sent:" + res.packetsSent + " time:" + res.timestamp);
+                }
+                
                 ok(rem.bytesReceived <= res.bytesSent, "No more than sent bytes");
               }
               ok(rem.jitter !== undefined, "Rtcp jitter");
