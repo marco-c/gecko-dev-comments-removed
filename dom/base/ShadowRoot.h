@@ -100,6 +100,10 @@ public:
 
   
   
+  void Unattach();
+
+  
+  
   nsresult Bind();
 
 private:
