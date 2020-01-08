@@ -58,7 +58,7 @@ assertThrowsInstanceOf(() => setSharedObject(() => 37), Error);
 
 
 
-if (!this.WebAssembly) {
+if (!this.WebAssembly || !wasmThreadsSupported()) {
     reportCompare(true, true);
     quit(0);
 }
