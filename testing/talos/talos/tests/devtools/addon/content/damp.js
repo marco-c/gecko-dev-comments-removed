@@ -113,7 +113,11 @@ Damp.prototype = {
 
 
 
-  runTest(label) {
+
+
+
+
+  runTest(label, record = true) {
     if (DEBUG_ALLOCATIONS) {
       if (!this.allocationTracker) {
         this.allocationTracker = this.startAllocationTracker();
@@ -131,12 +135,16 @@ Damp.prototype = {
         let end = performance.now();
         let duration = end - start;
         performance.measure(label, startLabel);
-        this._results.push({
-          name: label,
-          value: duration
-        });
+        if (record) {
+          this._results.push({
+            name: label,
+            value: duration
+          });
+        } else {
+          dump(`'${label}' took ${duration}ms.\n`);
+        }
 
-        if (DEBUG_ALLOCATIONS == "normal") {
+        if (DEBUG_ALLOCATIONS == "normal" && record) {
           this._results.push({
             name: label + ".allocations",
             value: this.allocationTracker.countAllocations()
