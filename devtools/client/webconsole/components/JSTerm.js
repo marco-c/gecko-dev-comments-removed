@@ -353,6 +353,15 @@ class JSTerm extends Component {
               return "CodeMirror.Pass";
             },
 
+            "Ctrl-Space": () => {
+              if (!this.autocompletePopup.isOpen) {
+                this.updateAutocompletion(true);
+                return null;
+              }
+
+              return "CodeMirror.Pass";
+            },
+
             "Esc": false,
             "Cmd-F": false,
             "Ctrl-F": false,
@@ -806,6 +815,7 @@ class JSTerm extends Component {
     const inputNode = this.inputNode;
     const inputValue = this.getInputValue();
     let inputUpdated = false;
+
     if (event.ctrlKey) {
       switch (event.charCode) {
         case 101:
@@ -863,6 +873,13 @@ class JSTerm extends Component {
         default:
           break;
       }
+
+      if (event.key === " " && !this.autocompletePopup.isOpen) {
+        
+        this.updateAutocompletion(true);
+        event.preventDefault();
+      }
+
       return;
     } else if (event.keyCode == KeyCodes.DOM_VK_RETURN) {
       if (!this.autocompletePopup.isOpen && (
@@ -1102,7 +1119,12 @@ class JSTerm extends Component {
            node.selectionStart == 0 && !multiline;
   }
 
-  async updateAutocompletion() {
+  
+
+
+
+
+  async updateAutocompletion(force = false) {
     const inputValue = this.getInputValue();
     const {editor, inputNode} = this;
     const frameActor = this.getFrameActor(this.SELECTED_FRAME);
@@ -1114,13 +1136,18 @@ class JSTerm extends Component {
     
     
     
-    if (
+    
+    if (!force && (
       !inputValue ||
       (inputNode && inputNode.selectionStart != inputNode.selectionEnd) ||
       (editor && editor.getSelection()) ||
-      (this.lastInputValue === inputValue && frameActor === this._lastFrameActorId) ||
+      (
+        !force &&
+        this.lastInputValue === inputValue &&
+        frameActor === this._lastFrameActorId
+      ) ||
       /^[a-zA-Z0-9_$]/.test(inputValue.substring(cursor))
-    ) {
+    )) {
       this.clearCompletion();
       this.emit("autocomplete-updated");
       return;
