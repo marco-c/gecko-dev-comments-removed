@@ -4720,6 +4720,7 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
   
   
   
+  
   if (TSFPrefs::NeedToCreateNativeCaretForLegacyATOK() &&
       TSFStaticSink::IsATOKReferringNativeCaretActive() &&
       mComposition.IsComposing() &&
@@ -4849,23 +4850,34 @@ TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart,
     
     
     
+    
+    
+    
+    
+    
+    
     case TextInputProcessorID::eATOK2011:
     case TextInputProcessorID::eATOK2012:
     case TextInputProcessorID::eATOK2013:
     case TextInputProcessorID::eATOK2014:
     case TextInputProcessorID::eATOK2015:
-    case TextInputProcessorID::eATOK2016:
-    case TextInputProcessorID::eATOKUnknown:
+      
+      
+      
+      
       if (sAlllowToStopHackingIfFine) {
         return false;
       }
       
       
       
-      if (TSFStaticSink::IsATOKReferringNativeCaretActive() &&
-          TSFPrefs::NeedToCreateNativeCaretForLegacyATOK()) {
+      if (TSFPrefs::NeedToCreateNativeCaretForLegacyATOK()) {
+        MOZ_ASSERT(TSFStaticSink::IsATOKReferringNativeCaretActive());
         return false;
       }
+      MOZ_FALLTHROUGH;
+    case TextInputProcessorID::eATOK2016:
+    case TextInputProcessorID::eATOKUnknown:
       if (!TSFPrefs::DoNotReturnNoLayoutErrorToATOKOfCompositionString()) {
         return false;
       }
