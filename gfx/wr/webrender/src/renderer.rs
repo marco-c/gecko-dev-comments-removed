@@ -1363,18 +1363,27 @@ impl VertexDataTexture {
         let existing_height = self.texture.as_ref().map_or(0, |t| t.get_dimensions().height);
 
         
-        if needed_height > existing_height {
+        
+        
+        
+        
+        
+        
+        
+        
+        if needed_height > existing_height || needed_height + 10 < existing_height {
             
             if let Some(t) = self.texture.take() {
                 device.delete_texture(t);
             }
-            let new_height = (needed_height + 127) & !127;
 
             let texture = device.create_texture(
                 TextureTarget::Default,
                 self.format,
                 width,
-                new_height,
+                
+                
+                needed_height.max(2),
                 TextureFilter::Nearest,
                 None,
                 1,
