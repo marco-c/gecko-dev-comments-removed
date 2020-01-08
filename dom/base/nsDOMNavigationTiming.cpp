@@ -25,6 +25,13 @@
 
 using namespace mozilla;
 
+namespace mozilla {
+
+LazyLogModule gPageLoadLog("PageLoad");
+#define PAGELOAD_LOG(args) MOZ_LOG(gPageLoadLog, LogLevel::Debug, args)
+
+}  
+
 nsDOMNavigationTiming::nsDOMNavigationTiming(nsDocShell* aDocShell) {
   Clear();
 
@@ -240,36 +247,6 @@ void nsDOMNavigationTiming::TTITimeoutCallback(nsITimer* aTimer,
   self->TTITimeout(aTimer);
 }
 
-
-
-
-
-
-
-
-
-
-
-static const TimeStamp& MaxWithinWindowBeginningAtMin(
-    const TimeStamp& aT1, const TimeStamp& aT2,
-    const TimeDuration& aWindowSize) {
-  if (aT2.IsNull()) {
-    return aT1;
-  } else if (aT1.IsNull()) {
-    return aT2;
-  }
-  if (aT1 > aT2) {
-    if ((aT1 - aT2) > aWindowSize) {
-      return aT2;
-    }
-    return aT1;
-  }
-  if ((aT2 - aT1) > aWindowSize) {
-    return aT1;
-  }
-  return aT2;
-}
-
 #define TTI_WINDOW_SIZE_MS (5 * 1000)
 
 void nsDOMNavigationTiming::TTITimeout(nsITimer* aTimer) {
@@ -281,17 +258,32 @@ void nsDOMNavigationTiming::TTITimeout(nsITimer* aTimer) {
   nsCOMPtr<nsIThread> mainThread = do_GetMainThread();
   TimeStamp lastLongTaskEnded;
   mainThread->GetLastLongNonIdleTaskEnd(&lastLongTaskEnded);
-  if (!lastLongTaskEnded.IsNull()) {
-    TimeDuration delta = now - lastLongTaskEnded;
-    if (delta.ToMilliseconds() < TTI_WINDOW_SIZE_MS) {
-      
-      aTimer->InitWithNamedFuncCallback(TTITimeoutCallback, this,
-                                        TTI_WINDOW_SIZE_MS,
-                                        nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
-                                        "nsDOMNavigationTiming::TTITimeout");
-      return;
-    }
+  
+  if (lastLongTaskEnded.IsNull() || lastLongTaskEnded < mContentfulPaint) {
+    PAGELOAD_LOG(
+        ("no longtask (last was %g ms before ContentfulPaint)",
+         lastLongTaskEnded.IsNull()
+             ? 0
+             : (mContentfulPaint - lastLongTaskEnded).ToMilliseconds()));
+    lastLongTaskEnded = mContentfulPaint;
   }
+  TimeDuration delta = now - lastLongTaskEnded;
+  PAGELOAD_LOG(("TTI delta: %g ms", delta.ToMilliseconds()));
+  if (delta.ToMilliseconds() < TTI_WINDOW_SIZE_MS) {
+    
+    
+    PAGELOAD_LOG(("TTI: waiting additional %g ms",
+                  (TTI_WINDOW_SIZE_MS + 100) - delta.ToMilliseconds()));
+    aTimer->InitWithNamedFuncCallback(
+        TTITimeoutCallback, this,
+        (TTI_WINDOW_SIZE_MS + 100) -
+            delta.ToMilliseconds(),  
+        nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
+        "nsDOMNavigationTiming::TTITimeout");
+    return;
+  }
+
+  
   
   
   
@@ -301,17 +293,27 @@ void nsDOMNavigationTiming::TTITimeout(nsITimer* aTimer) {
   
   
 
+  
   
   
   
 
   if (mTTFI.IsNull()) {
-    mTTFI = MaxWithinWindowBeginningAtMin(
-        lastLongTaskEnded, mDOMContentLoadedEventEnd,
-        TimeDuration::FromMilliseconds(TTI_WINDOW_SIZE_MS));
-    if (mTTFI.IsNull()) {
-      mTTFI = mContentfulPaint;
-    }
+    
+    mTTFI = (mDOMContentLoadedEventEnd.IsNull() ||
+             lastLongTaskEnded > mDOMContentLoadedEventEnd)
+                ? lastLongTaskEnded
+                : mDOMContentLoadedEventEnd;
+    PAGELOAD_LOG(
+        ("TTFI after %dms (LongTask was at %dms, DCL was %dms)",
+         int((mTTFI - mNavigationStart).ToMilliseconds()),
+         lastLongTaskEnded.IsNull()
+             ? 0
+             : int((lastLongTaskEnded - mNavigationStart).ToMilliseconds()),
+         mDOMContentLoadedEventEnd.IsNull()
+             ? 0
+             : int((mDOMContentLoadedEventEnd - mNavigationStart)
+                       .ToMilliseconds())));
   }
   
   
@@ -322,20 +324,21 @@ void nsDOMNavigationTiming::TTITimeout(nsITimer* aTimer) {
 #ifdef MOZ_GECKO_PROFILER
   if (profiler_is_active()) {
     TimeDuration elapsed = mTTFI - mNavigationStart;
+    MOZ_ASSERT(elapsed.ToMilliseconds() > 0);
     TimeDuration elapsedLongTask =
         lastLongTaskEnded.IsNull() ? 0 : lastLongTaskEnded - mNavigationStart;
     nsAutoCString spec;
     if (mLoadedURI) {
       mLoadedURI->GetSpec(spec);
     }
-    nsPrintfCString marker("TTFI after %dms (LongTask after %dms) for URL %s",
+    nsPrintfCString marker("TTFI after %dms (LongTask was at %dms) for URL %s",
                            int(elapsed.ToMilliseconds()),
                            int(elapsedLongTask.ToMilliseconds()), spec.get());
 
     DECLARE_DOCSHELL_AND_HISTORY_ID(mDocShell);
     profiler_add_marker(
-        "TTI", MakeUnique<TextMarkerPayload>(marker, mNavigationStart, mTTFI,
-                                             docShellId, docShellHistoryId));
+        "TTFI", MakeUnique<TextMarkerPayload>(marker, mNavigationStart, mTTFI,
+                                              docShellId, docShellHistoryId));
   }
 #endif
   return;
