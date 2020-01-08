@@ -107,7 +107,7 @@ TestHangReport.prototype = {
 
   get scriptBrowser() {
     return this._browser;
-  }
+  },
 };
 
 

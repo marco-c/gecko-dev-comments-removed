@@ -15,42 +15,42 @@ var PLUGINS = [{
   name: "test_plugin_0",
   version: "5",
   disabled: false,
-  blocklisted: false
+  blocklisted: false,
 },
 {
   
   name: "test_plugin_1",
   version: "5",
   disabled: false,
-  blocklisted: false
+  blocklisted: false,
 },
 {
   
   name: "test_plugin_2",
   version: "5",
   disabled: false,
-  blocklisted: false
+  blocklisted: false,
 },
 {
   
   name: "test_plugin_3",
   version: "5",
   disabled: false,
-  blocklisted: false
+  blocklisted: false,
 },
 {
   
   name: "test_plugin_4",
   version: "5",
   disabled: false,
-  blocklisted: false
+  blocklisted: false,
 },
 {
   
   name: "test_plugin_5",
   version: "5",
   disabled: false,
-  blocklisted: false
+  blocklisted: false,
 }];
 
 async function updateBlocklist(blocklistURL) {

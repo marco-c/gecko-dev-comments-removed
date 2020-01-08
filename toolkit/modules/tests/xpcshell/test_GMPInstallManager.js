@@ -734,7 +734,7 @@ xhr.prototype = {
     
     eval("this._on" + aEvent + " = aValue");
   },
-  get wrappedJSObject() { return this; }
+  get wrappedJSObject() { return this; },
 };
 
 

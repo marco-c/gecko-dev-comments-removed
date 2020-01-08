@@ -225,7 +225,7 @@ var gClickHandler = {
     event.stopPropagation();
 
     executeSoon(runNextTest);
-  }
+  },
 };
 
 

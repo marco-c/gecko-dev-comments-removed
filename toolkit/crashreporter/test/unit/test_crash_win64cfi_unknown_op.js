@@ -8,6 +8,6 @@ function run_test() {
       { symbol: "CRASH_X64CFI_UNKNOWN_OPCODE", trust: "context" },
       
       
-      { symbol: "CRASH_X64CFI_NO_MANS_LAND", trust: null }
+      { symbol: "CRASH_X64CFI_NO_MANS_LAND", trust: null },
     ]);
 }

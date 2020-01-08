@@ -9,7 +9,7 @@
 "use strict";
 
 var EXPORTED_SYMBOLS = [
-  "ObjectUtils"
+  "ObjectUtils",
 ];
 
 
@@ -70,7 +70,7 @@ var ObjectUtils = {
       return false;
     }
     return true;
-  }
+  },
 };
 
 
@@ -195,6 +195,6 @@ function _strict(obj) {
       let error = new TypeError(`No such property: "${name}"`);
       Promise.reject(error); 
       throw error;
-    }
+    },
   });
 }

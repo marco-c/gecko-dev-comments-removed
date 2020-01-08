@@ -304,7 +304,7 @@ function TimeKeeper(props) {
           
           enabled: (time >= min.valueOf() && time <= max.valueOf()) ||
             (time > maxValue && startValue <= maxValue &&
-              endValue >= maxValue && formatter(time) == formatter(maxValue))
+              endValue >= maxValue && formatter(time) == formatter(maxValue)),
         });
         time += timeStep;
       }
@@ -411,6 +411,6 @@ function TimeKeeper(props) {
       const { min, step } = this.props;
 
       return (time.valueOf() - min.valueOf()) % step != 0;
-    }
+    },
   };
 }

@@ -195,5 +195,5 @@ var Authentication = {
       
       await fxAccounts.signOut();
     }
-  }
+  },
 };

@@ -21,7 +21,7 @@
       isnot(window.speechSynthesis.getVoices().length, 0, "Voices added");
       SimpleTest.waitForFocus(() => {
         SpecialPowers.pushPrefEnv({"set":
-          [["privacy.resistFingerprinting", true]]
+          [["privacy.resistFingerprinting", true]],
         }, doGetVoicesTest);
       }, window);
     }, {once: true});

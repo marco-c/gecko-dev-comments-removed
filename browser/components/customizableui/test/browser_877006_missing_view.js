@@ -13,7 +13,7 @@ add_task(function testAddbrokenViewWidget() {
     viewId: "idontexist",
     
     onViewShowing() {
-    }
+    },
   };
 
   let noError = true;

@@ -42,7 +42,7 @@ var observer = SpecialPowers.wrapCallbackObject({
             handleDialog(doc, testNum);
         else
             startCallbackTimer(); 
-    }
+    },
 });
 
 function getDialogDoc() {

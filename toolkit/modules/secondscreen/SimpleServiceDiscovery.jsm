@@ -202,7 +202,7 @@ var SimpleServiceDiscovery = {
 
       let service = {
         location: fixedDevice.location,
-        target: fixedDevice.target
+        target: fixedDevice.target,
       };
 
       

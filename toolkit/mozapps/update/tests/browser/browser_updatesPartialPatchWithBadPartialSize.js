@@ -7,11 +7,11 @@ add_task(async function testPartialPatchWithBadPartialSize() {
       
       
       notificationId: "update-available",
-      button: "button"
+      button: "button",
     },
     {
       notificationId: "update-available",
-      button: "button"
+      button: "button",
     },
     {
       
@@ -27,7 +27,7 @@ add_task(async function testPartialPatchWithBadPartialSize() {
         is(gBrowser.selectedBrowser.currentURI.spec,
            URL_MANUAL_UPDATE, "Landed on manual update page.");
         gBrowser.removeTab(gBrowser.selectedTab);
-      }
+      },
     },
   ]);
 });

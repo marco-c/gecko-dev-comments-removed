@@ -24,7 +24,7 @@ var tests = [
     },
     onHidden(popup) {
       ok(this.testNotif.mainActionClicked, "main action has been triggered");
-    }
+    },
   },
   
   { id: "Test#2",
@@ -38,7 +38,7 @@ var tests = [
     },
     onHidden(popup) {
       ok(this.testNotif.secondaryActionClicked, "secondary action has been triggered");
-    }
+    },
   },
   
   { id: "Test#3",
@@ -70,7 +70,7 @@ var tests = [
     onHidden(popup) {
       this.notification1.remove();
       this.notification2.remove();
-    }
+    },
   },
   
   { id: "Test#4",
@@ -92,7 +92,7 @@ var tests = [
       checkPopup(popup, this.notifyObj);
       triggerMainCommand(popup);
     },
-    onHidden() { }
+    onHidden() { },
   },
   
   { id: "Test#5",
@@ -120,7 +120,7 @@ var tests = [
       await waitForWindowReadyForPopupNotifications(window);
 
       goNext();
-    }
+    },
   },
   
   { id: "Test#6",
@@ -161,7 +161,7 @@ var tests = [
       await waitForWindowReadyForPopupNotifications(window);
 
       goNext();
-    }
+    },
   },
   
   { id: "Test#8",
@@ -178,7 +178,7 @@ var tests = [
       ok(this.notifyObj.dismissalCallbackTriggered, "dismissal callback was triggered");
       ok(!this.notifyObj.removedCallbackTriggered, "removed callback wasn't triggered");
       this.notification.remove();
-    }
+    },
   },
   
   { id: "Test#9",
@@ -195,7 +195,7 @@ var tests = [
       ok(this.notifyObj.dismissalCallbackTriggered, "dismissal callback was triggered");
       ok(!this.notifyObj.removedCallbackTriggered, "removed callback wasn't triggered");
       this.notification.remove();
-    }
+    },
   },
   
   { id: "Test#10",
@@ -212,7 +212,7 @@ var tests = [
       ok(!notifyObj.shownCallbackTriggered, "the shown callback wasn't triggered");
       notification.remove();
       goNext();
-    }
+    },
   },
   
   { id: "Test#11",
@@ -226,6 +226,6 @@ var tests = [
       checkPopup(popup, this.notifyObj);
       dismissNotification(popup);
     },
-    onHidden() { }
+    onHidden() { },
   },
 ];

@@ -152,7 +152,7 @@ var HybridContentTelemetryListener = {
     
     let event = Cu.cloneInto({
       bubbles: true,
-      detail: {canUpload: aMessage.data.canUpload}
+      detail: {canUpload: aMessage.data.canUpload},
     }, content);
 
     content.document.dispatchEvent(

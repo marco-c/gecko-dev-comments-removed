@@ -236,16 +236,16 @@ function nsAsyncShutdownService() {
         let wrapped = AsyncShutdown[k]; 
         let result = wrapped ? new nsAsyncShutdownClient(wrapped) : undefined;
         Object.defineProperty(this, k, {
-          value: result
+          value: result,
         });
         return result;
-      }
+      },
     });
   }
 
   
   this.wrappedJSObject = {
-    _propertyBagConverter: PropertyBagConverter
+    _propertyBagConverter: PropertyBagConverter,
   };
 }
 nsAsyncShutdownService.prototype = {

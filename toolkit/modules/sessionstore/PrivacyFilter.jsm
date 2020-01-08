@@ -127,5 +127,5 @@ var PrivacyFilter = Object.freeze({
     
     
     
-  }
+  },
 });

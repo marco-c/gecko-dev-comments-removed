@@ -41,7 +41,7 @@ add_task(async function() {
   Assert.ok(uuidRegex.test(clientID));
 
   
-  for (let [invalidID, ] of invalidIDs) {
+  for (let [invalidID ] of invalidIDs) {
     await ClientID._reset();
     await CommonUtils.writeJSON({clientID: invalidID}, drsPath);
     clientID = await ClientID.getClientID();

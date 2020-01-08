@@ -97,7 +97,7 @@ var Observers = {
 
 
 
-  _cache: []
+  _cache: [],
 };
 
 
@@ -125,7 +125,7 @@ Observer.prototype = {
         this.callback(subject, data);
     } else 
       this.callback.observe(subject, topic, data);
-  }
+  },
 };
 
 
@@ -140,5 +140,5 @@ function Subject(object) {
 Subject.prototype = {
   QueryInterface: ChromeUtils.generateQI([]),
   getScriptableHelper() {},
-  getInterfaces() {}
+  getInterfaces() {},
 };

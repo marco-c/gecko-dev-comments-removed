@@ -92,7 +92,7 @@ add_task(async function setup() {
       
       
       ["browser.tabs.remote.force-paint", false],
-    ]
+    ],
   });
 });
 

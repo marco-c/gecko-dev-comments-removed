@@ -69,8 +69,8 @@ let setupTest = async function(tab, resistFingerprinting, reduceTimerPrecision, 
   await SpecialPowers.pushPrefEnv({"set":
     [["privacy.resistFingerprinting", resistFingerprinting],
      ["privacy.reduceTimerPrecision", reduceTimerPrecision],
-     ["privacy.resistFingerprinting.reduceTimerPrecision.microseconds", expectedPrecision * 1000]
-     ]
+     ["privacy.resistFingerprinting.reduceTimerPrecision.microseconds", expectedPrecision * 1000],
+     ],
   });
   
   
@@ -81,7 +81,7 @@ let setupTest = async function(tab, resistFingerprinting, reduceTimerPrecision, 
       list: PERFORMANCE_TIMINGS,
       precision: expectedPrecision,
       isRoundedFunc: isRounded.toString(),
-      workerCall
+      workerCall,
     },
     runTests);
 };

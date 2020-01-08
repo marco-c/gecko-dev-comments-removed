@@ -12,7 +12,7 @@ add_task(async function() {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.sessionstore.interval", 0]]
+    set: [["browser.sessionstore.interval", 0]],
   });
 
   let tab = BrowserTestUtils.addTab(gBrowser, testURL);

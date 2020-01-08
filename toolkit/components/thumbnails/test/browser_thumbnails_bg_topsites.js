@@ -7,7 +7,7 @@ const baseURL = "http://mozilla${i}.com/";
 
 function* runTests() {
   yield SpecialPowers.pushPrefEnv({
-    set: [["browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts", false]]
+    set: [["browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts", false]],
   });
   
   for (let i = 1; i <= 3; i++) {

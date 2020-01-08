@@ -52,7 +52,7 @@ MockTransfer.prototype = {
   
   init() {},
   setSha256Hash() {},
-  setSignatureInfo() {}
+  setSignatureInfo() {},
 };
 
 

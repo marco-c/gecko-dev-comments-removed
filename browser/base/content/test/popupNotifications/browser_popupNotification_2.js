@@ -27,7 +27,7 @@ var tests = [
       ok(this.notifyObj.dismissalCallbackTriggered, "dismissal callback triggered");
       this.notification.remove();
       ok(this.notifyObj.removedCallbackTriggered, "removed callback triggered");
-    }
+    },
   },
   
   { id: "Test#2",
@@ -50,7 +50,7 @@ var tests = [
       this.notification.remove();
       is(icon.boxObject.width, 0,
          "geo anchor should not be visible after removal");
-    }
+    },
   },
 
   
@@ -60,7 +60,7 @@ var tests = [
       await BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/");
       this.notifyObj = new BasicNotification(this.id);
       this.notifyObj.addOptions({
-        persistence: 2
+        persistence: 2,
       });
       this.notification = showNotification(this.notifyObj);
     },
@@ -77,7 +77,7 @@ var tests = [
       ok(this.notifyObj.removedCallbackTriggered, "removal callback triggered");
       gBrowser.removeTab(gBrowser.selectedTab);
       gBrowser.selectedTab = this.oldSelectedTab;
-    }
+    },
   },
   
   { id: "Test#4",
@@ -87,7 +87,7 @@ var tests = [
       this.notifyObj = new BasicNotification(this.id);
       
       this.notifyObj.addOptions({
-        timeout: Date.now() + 600000
+        timeout: Date.now() + 600000,
       });
       this.notification = showNotification(this.notifyObj);
     },
@@ -105,7 +105,7 @@ var tests = [
       this.notification.remove();
       gBrowser.removeTab(gBrowser.selectedTab);
       gBrowser.selectedTab = this.oldSelectedTab;
-    }
+    },
   },
   
   
@@ -115,7 +115,7 @@ var tests = [
       await BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/");
       this.notifyObj = new BasicNotification(this.id);
       this.notifyObj.addOptions({
-        persistWhileVisible: true
+        persistWhileVisible: true,
       });
       this.notification = showNotification(this.notifyObj);
     },
@@ -133,7 +133,7 @@ var tests = [
       this.notification.remove();
       gBrowser.removeTab(gBrowser.selectedTab);
       gBrowser.selectedTab = this.oldSelectedTab;
-    }
+    },
   },
 
   
@@ -167,7 +167,7 @@ var tests = [
     onHidden(popup) {
       this.notification.remove();
       this.box.remove();
-    }
+    },
   },
   
   { id: "Test#7",
@@ -181,7 +181,7 @@ var tests = [
       isnot(document.getElementById("geo-notification-icon").boxObject.width, 0,
             "geo anchor should be visible");
       goNext();
-    }
+    },
   },
   
   { id: "Test#8",
@@ -195,7 +195,7 @@ var tests = [
       isnot(document.getElementById("autoplay-media-notification-icon").boxObject.width, 0,
             "autoplay media icon should be visible");
       goNext();
-    }
+    },
   },
   
   { id: "Test#9",
@@ -213,7 +213,7 @@ var tests = [
       this.notification.remove();
       ok(this.notifyObj.removedCallbackTriggered, "removed callback triggered");
       ok(!this.notifyObj.secondaryActionClicked, "secondary action not clicked");
-    }
+    },
   },
   
   
@@ -234,7 +234,7 @@ var tests = [
       Services.prefs.clearUserPref("privacy.permissionPrompts.showCloseButton");
       this.notification.remove();
       ok(this.notifyObj.removedCallbackTriggered, "removed callback triggered");
-    }
+    },
   },
   
   { id: "Test#11",
@@ -253,6 +253,6 @@ var tests = [
       this.notification.remove();
       ok(this.notifyObj.removedCallbackTriggered, "removed callback triggered");
       window.locationbar.visible = true;
-    }
+    },
   },
 ];

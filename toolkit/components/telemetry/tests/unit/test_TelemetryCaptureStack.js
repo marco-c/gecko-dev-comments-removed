@@ -69,7 +69,7 @@ const TEST_STACK_KEYS = ["TEST-KEY1", "TEST-KEY2"];
 
 
 add_task({
-  skip_if: () => !ENABLE_TESTS
+  skip_if: () => !ENABLE_TESTS,
 }, async function test_capturedStacksAppearInPings() {
   await TelemetryController.testSetup();
   captureStacks("DOES-NOT-MATTER", false);
@@ -86,7 +86,7 @@ add_task({
 
 
 add_task({
-  skip_if: () => !ENABLE_TESTS
+  skip_if: () => !ENABLE_TESTS,
 }, function test_CaptureStacksIncreasesNumberOfCapturedStacks() {
   
   let key = TEST_STACK_KEYS[0] + "-UNIQUE-KEY-1";
@@ -114,20 +114,20 @@ add_task({
 
 
  add_task({
-   skip_if: () => !ENABLE_TESTS
+   skip_if: () => !ENABLE_TESTS,
  }, function test_CaptureStacksGroupsDuplicateStacks() {
   
   let stacks = captureStacks(TEST_STACK_KEYS[0], false);
   let original = {
     captures: stacks.captures.find(capture => capture[0] === TEST_STACK_KEYS[0]),
-    stacks: stacks.stacks
+    stacks: stacks.stacks,
   };
 
   
   stacks = captureStacks(TEST_STACK_KEYS[0]);
   let updated = {
     captures: stacks.captures.find(capture => capture[0] === TEST_STACK_KEYS[0]),
-    stacks: stacks.stacks
+    stacks: stacks.stacks,
   };
 
   
@@ -145,13 +145,13 @@ add_task({
 
 
 add_task({
-  skip_if: () => !ENABLE_TESTS
+  skip_if: () => !ENABLE_TESTS,
 }, function test_CaptureStacksSeparatesInformationByKeys() {
   
   let stacks = captureStacks(TEST_STACK_KEYS[0], false);
   let original = {
     captures: stacks.captures.find(capture => capture[0] === TEST_STACK_KEYS[0]),
-    stacks: stacks.stacks
+    stacks: stacks.stacks,
   };
 
   
@@ -172,7 +172,7 @@ add_task({
 
 
 add_task({
-  skip_if: () => !ENABLE_TESTS
+  skip_if: () => !ENABLE_TESTS,
 }, function test_CaptureStacksDoesNotAllowBadKey() {
   for (let badKey of [null, "KEY-!@\"#$%^&*()_"]) {
     let stacks = captureStacks(badKey);

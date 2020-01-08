@@ -176,6 +176,6 @@ if (kInChildProcess) {
       Services.ppmm.addMessageListener("AsyncPrefs:SetPref", this);
       Services.ppmm.addMessageListener("AsyncPrefs:ResetPref", this);
       
-    }
+    },
   };
 }

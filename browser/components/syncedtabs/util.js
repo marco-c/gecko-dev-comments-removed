@@ -5,7 +5,7 @@
 "use strict";
 
 var EXPORTED_SYMBOLS = [
-  "getChromeWindow"
+  "getChromeWindow",
 ];
 
 

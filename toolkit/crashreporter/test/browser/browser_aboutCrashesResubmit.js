@@ -138,7 +138,7 @@ function test() {
                                       "ProductName": "Test App",
                                       
                                       
-                                      "Foo": "ABC=XYZ"
+                                      "Foo": "ABC=XYZ",
                                      }));
   crashes.sort((a, b) => b.date - a.date);
 

@@ -12,7 +12,7 @@ add_task(async function duration() {
     
     
     outSerializationDuration: null,
-    outExecutionDuration: null
+    outExecutionDuration: null,
   };
   let currentDir = await OS.File.getCurrentDirectory();
   let pathSource = OS.Path.join(currentDir, "test_duration.js");
@@ -49,7 +49,7 @@ add_task(async function duration() {
   let readOptions = {
     
     
-    outExecutionDuration: null
+    outExecutionDuration: null,
   };
   let contents = await OS.File.read(pathSource, undefined, readOptions);
   testOptions(readOptions, "OS.File.read", ["outExecutionDuration"]);
@@ -58,7 +58,7 @@ add_task(async function duration() {
     
     
     outExecutionDuration: null,
-    tmpPath
+    tmpPath,
   };
   
   await OS.File.writeAtomic(pathDest, contents, writeAtomicOptions);
@@ -72,7 +72,7 @@ add_task(async function duration() {
     
     
     outSerializationDuration: ARBITRARY_BASE_DURATION,
-    outExecutionDuration: ARBITRARY_BASE_DURATION
+    outExecutionDuration: ARBITRARY_BASE_DURATION,
   };
 
   
@@ -91,7 +91,7 @@ add_task(async function duration() {
   writeAtomicOptions = {
     
     
-    outExecutionDuration: ARBITRARY_BASE_DURATION
+    outExecutionDuration: ARBITRARY_BASE_DURATION,
   };
   writeAtomicOptions.tmpPath = tmpPath;
   backupDuration = Object.assign({}, writeAtomicOptions);

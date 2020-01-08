@@ -116,7 +116,7 @@ let setupTest = async function(options, testFunction) {
   
   let observing = {
     "browser-lastwindow-close-requested": 0,
-    "browser-lastwindow-close-granted": 0
+    "browser-lastwindow-close-granted": 0,
   };
 
   

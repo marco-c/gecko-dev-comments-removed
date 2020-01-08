@@ -64,7 +64,7 @@ nsContentDispatchChooser.prototype =
 
   
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIContentDispatchChooser])
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIContentDispatchChooser]),
 };
 
 

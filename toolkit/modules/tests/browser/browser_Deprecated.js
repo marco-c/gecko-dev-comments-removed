@@ -16,7 +16,7 @@ function basicDeprecatedFunction() {
 
 function deprecationFunctionBogusCallstack() {
   Deprecated.warning("this method is deprecated.", "http://example.com", {
-    caller: {}
+    caller: {},
   });
   return true;
 }
@@ -39,7 +39,7 @@ var tests = [
     testAMessage(aMessage);
     ok(aMessage.errorMessage.indexOf("basicDeprecatedFunction") > 0,
       "Callstack is correctly logged.");
-  }
+  },
 },
 
 {
@@ -50,7 +50,7 @@ var tests = [
   expectedObservation(aMessage) {
     ok(aMessage.errorMessage.indexOf("must provide a URL") > 0,
       "Deprecation warning logged an empty URL argument.");
-  }
+  },
 },
 
 
@@ -60,14 +60,14 @@ var tests = [
     testAMessage(aMessage);
     ok(aMessage.errorMessage.indexOf("deprecationFunctionBogusCallstack") > 0,
       "Callstack is correctly logged.");
-  }
+  },
 },
 
 {
   deprecatedFunction: basicDeprecatedFunction,
   expectedObservation: null,
   
-  logWarnings: false
+  logWarnings: false,
 },
 
 {
@@ -78,7 +78,7 @@ var tests = [
       "Callstack is correctly logged.");
   },
   
-  logWarnings: true
+  logWarnings: true,
 }];
 
 
@@ -141,7 +141,7 @@ function nextTest() {
 
       Services.console.unregisterListener(consoleListener);
       executeSoon(nextTest);
-    }
+    },
   };
   Services.console.registerListener(consoleListener);
   test.deprecatedFunction();

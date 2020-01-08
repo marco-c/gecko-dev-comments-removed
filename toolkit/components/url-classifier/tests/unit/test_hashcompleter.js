@@ -46,7 +46,7 @@ var basicCompletionSet = [
     expectCompletion: true,
     table: "test",
     chunkId: 1234,
-  }
+  },
 ];
 
 
@@ -62,7 +62,7 @@ var falseCompletionSet = [
   {
     hash: "abc",
     expectCompletion: false,
-  }
+  },
 ];
 
 
@@ -90,8 +90,8 @@ var dupedCompletionSet = [
     hash: "5678",
     expectCompletion: false,
     table: "test2",
-    chunkId: 2
-  }
+    chunkId: 2,
+  },
 ];
 
 
@@ -111,9 +111,9 @@ var multipleResponsesCompletionSet = [
         hash: "123478",
         table: "test2",
         chunkId: 4,
-      }
+      },
     ],
-  }
+  },
 ];
 
 function buildCompletionRequest(aCompletionSet) {

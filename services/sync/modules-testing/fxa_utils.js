@@ -30,7 +30,7 @@ var initializeIdentityWithTokenServerResponse = function(response) {
     async get() {
       this.response = response;
       return response;
-    }
+    },
   };
   
   function MockTSC() { }

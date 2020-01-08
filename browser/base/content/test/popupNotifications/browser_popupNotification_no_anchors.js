@@ -35,7 +35,7 @@ var tests = [
       this.notification.remove();
       gBrowser.removeTab(gBrowser.selectedTab);
       gBrowser.selectedTab = this.oldSelectedTab;
-    }
+    },
   },
   
   
@@ -65,7 +65,7 @@ var tests = [
       this.notification.remove();
       gBrowser.removeTab(gBrowser.selectedTab);
       gBrowser.selectedTab = this.oldSelectedTab;
-    }
+    },
   },
   
   
@@ -100,7 +100,7 @@ var tests = [
       this.notification.remove();
       gBrowser.removeTab(gBrowser.selectedTab);
       gBrowser.selectedTab = this.oldSelectedTab;
-    }
+    },
   },
   
   
@@ -154,7 +154,7 @@ var tests = [
         await hidden;
       }
       goNext();
-    }
+    },
   },
   
   
@@ -187,7 +187,7 @@ var tests = [
       }
 
       goNext();
-    }
+    },
   },
   
   
@@ -225,6 +225,6 @@ var tests = [
       await hidden;
 
       goNext();
-    }
+    },
   },
 ];

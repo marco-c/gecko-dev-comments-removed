@@ -35,7 +35,7 @@ var CrashTestUtils = {
   
   
   MD_THREAD_LIST_STREAM:       3,
-  MD_MEMORY_INFO_LIST_STREAM:  16
+  MD_MEMORY_INFO_LIST_STREAM:  16,
 };
 
 

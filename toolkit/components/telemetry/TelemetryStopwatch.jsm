@@ -106,7 +106,7 @@ let Timers = {
     
     
     return true;
-  }
+  },
 };
 
 var TelemetryStopwatch = {
@@ -411,5 +411,5 @@ var TelemetryStopwatchImpl = {
     }
 
     return Timers.delete(histogram, object, key);
-  }
+  },
 };

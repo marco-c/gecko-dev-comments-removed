@@ -32,7 +32,7 @@ var tests = [
       ok(this.notifyObj.removedCallbackTriggered, "removed callback triggered");
       is(this.notifyObj.mainActionSource, undefined, "shouldn't have a main action source.");
       is(this.notifyObj.secondaryActionSource, "esc-press", "secondary action should be from ESC key press");
-    }
+    },
   },
   
   { id: "Test#2",
@@ -53,7 +53,7 @@ var tests = [
       is(this.notifyObj.mainActionSource, undefined, "shouldn't have a main action source.");
       is(this.notifyObj.secondaryActionSource, undefined, "shouldn't have a secondary action source.");
       this.notification.remove();
-    }
+    },
   },
   
   { id: "Test#3",
@@ -74,7 +74,7 @@ var tests = [
       is(document.activeElement, popup.children[0].closebutton);
       this.notification.remove();
     },
-    onHidden(popup) { }
+    onHidden(popup) { },
   },
   
   
@@ -174,7 +174,7 @@ var tests = [
 
       this.notification.remove();
       notification.remove();
-    }
+    },
   },
   
   { id: "Test#6",

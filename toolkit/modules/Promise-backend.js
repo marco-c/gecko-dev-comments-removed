@@ -159,7 +159,7 @@ var PendingErrors = {
       message: "" + error,
       fileName: null,
       stack: null,
-      lineNumber: null
+      lineNumber: null,
     };
     try { 
       if (error && error instanceof Ci.nsIException) {
@@ -287,7 +287,7 @@ var PendingErrors = {
 
   removeAllObservers() {
     this._observers.clear();
-  }
+  },
 };
 
 
@@ -382,7 +382,7 @@ this.Promise = function Promise(aExecutor) {
 
 
 
-    witness: undefined
+    witness: undefined,
   }});
 
   Object.seal(this);

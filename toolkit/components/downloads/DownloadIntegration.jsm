@@ -857,7 +857,7 @@ var DownloadObserver = {
         downloadsSet.delete(aDownload);
         
         this._canceledOfflineDownloads.delete(aDownload);
-      }
+      },
     };
 
     
@@ -984,7 +984,7 @@ var DownloadObserver = {
     }
   },
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver])
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
 };
 
 

@@ -18,7 +18,7 @@ var tests = [
     run() {
       this.notifyObj = new BasicNotification(this.id);
       this.notifyObj.addOptions({
-        removeOnDismissal: true
+        removeOnDismissal: true,
       });
       this.notification = showNotification(this.notifyObj);
     },
@@ -29,7 +29,7 @@ var tests = [
     onHidden(popup) {
       ok(!this.notifyObj.dismissalCallbackTriggered, "dismissal callback wasn't triggered");
       ok(this.notifyObj.removedCallbackTriggered, "removed callback triggered");
-    }
+    },
   },
   
   { id: "Test#2",
@@ -62,7 +62,7 @@ var tests = [
 
       this.notification2.remove();
       ok(this.notifyObj2.removedCallbackTriggered, "removed callback triggered");
-    }
+    },
   },
   
   { id: "Test#3",
@@ -99,7 +99,7 @@ var tests = [
 
       gBrowser.selectedTab = this.oldSelectedTab;
       this.notificationOld.remove();
-    }
+    },
   },
   
   { id: "Test#4",
@@ -123,7 +123,7 @@ var tests = [
     onHidden(popup) {
       ok(!this.notifyObj.mainActionClicked, "mainAction was not clicked because it was too soon");
       ok(this.notifyObj.dismissalCallbackTriggered, "dismissal callback was triggered");
-    }
+    },
   },
   
   { id: "Test#5",
@@ -147,7 +147,7 @@ var tests = [
       ok(this.notifyObj.mainActionClicked, "mainAction was clicked after the delay");
       ok(!this.notifyObj.dismissalCallbackTriggered, "dismissal callback was not triggered");
       PopupNotifications.buttonDelay = PREF_SECURITY_DELAY_INITIAL;
-    }
+    },
   },
   
   { id: "Test#6",
@@ -164,7 +164,7 @@ var tests = [
       executeSoon(function() {
         gBrowser.selectedBrowser.reload();
       });
-    }
+    },
   },
   
   { id: "Test#7",
@@ -189,7 +189,7 @@ var tests = [
       executeSoon(function() {
         browser.reload();
       });
-    }
+    },
   },
   
   { id: "Test#8",
@@ -224,7 +224,7 @@ var tests = [
       fgNotification.remove();
       gBrowser.removeTab(bgTab);
       goNext();
-    }
+    },
   },
   
   { id: "Test#9",
@@ -262,7 +262,7 @@ var tests = [
                         .setAttribute("src", "http://example.org/");
       });
     },
-    onHidden() {}
+    onHidden() {},
   },
   
   { id: "Test#10",
@@ -295,6 +295,6 @@ var tests = [
     onHidden() {
       this.notification1.remove();
       this.notification2.remove();
-    }
-  }
+    },
+  },
 ];

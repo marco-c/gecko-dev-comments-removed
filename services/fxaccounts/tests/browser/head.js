@@ -27,7 +27,7 @@ function waitForDocLoadComplete(aBrowser = gBrowser) {
         }
       },
       QueryInterface: ChromeUtils.generateQI([Ci.nsIWebProgressListener,
-                                              Ci.nsISupportsWeakReference])
+                                              Ci.nsISupportsWeakReference]),
     };
     aBrowser.addProgressListener(listener);
     waitForDocLoadComplete.listeners.add(listener);
@@ -40,7 +40,7 @@ function setupMockAlertsService() {
     showAlertNotification: (image, title, text, clickable, cookie, clickCallback) => {
       
       clickCallback(null, "alertclickcallback", null);
-    }
+    },
   };
   const gBrowserGlue = Cc["@mozilla.org/browser/browserglue;1"]
                      .getService(Ci.nsIObserver);

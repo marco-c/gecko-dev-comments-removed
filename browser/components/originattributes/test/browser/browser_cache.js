@@ -47,7 +47,7 @@ function cacheDataForContext(loadContextInfo) {
       onCacheEntryVisitCompleted() {
         resolve(cacheEntries);
       },
-      QueryInterface: ChromeUtils.generateQI(["nsICacheStorageVisitor"])
+      QueryInterface: ChromeUtils.generateQI(["nsICacheStorageVisitor"]),
     };
     
     
@@ -72,7 +72,7 @@ function observeChannels(onChannel) {
       onChannel(aChannel);
       
       aCallback.onProxyFilterResult(aProxy);
-    }
+    },
   };
   protocolProxyService.registerChannelFilter(proxyFilter, 0);
   

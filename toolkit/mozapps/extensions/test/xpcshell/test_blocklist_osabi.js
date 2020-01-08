@@ -21,8 +21,8 @@ const ADDONS = {
       targetApplications: [{
         id: "xpcshell@tests.mozilla.org",
         minVersion: "1",
-        maxVersion: "3"
-      }]
+        maxVersion: "3",
+      }],
     },
     
     notBlocklisted: [["1", "1.9"], [null, null]],
@@ -37,8 +37,8 @@ const ADDONS = {
       targetApplications: [{
         id: "xpcshell@tests.mozilla.org",
         minVersion: "1",
-        maxVersion: "3"
-      }]
+        maxVersion: "3",
+      }],
     },
     
     blocklisted: [["1", "1.9"], [null, null]],
@@ -53,8 +53,8 @@ const ADDONS = {
       targetApplications: [{
         id: "xpcshell@tests.mozilla.org",
         minVersion: "1",
-        maxVersion: "3"
-      }]
+        maxVersion: "3",
+      }],
     },
     
     blocklisted: [["1", "1.9"], [null, null]],
@@ -69,8 +69,8 @@ const ADDONS = {
       targetApplications: [{
         id: "xpcshell@tests.mozilla.org",
         minVersion: "1",
-        maxVersion: "3"
-      }]
+        maxVersion: "3",
+      }],
     },
     
     notBlocklisted: [["1", "1.9"]],
@@ -85,8 +85,8 @@ const ADDONS = {
       targetApplications: [{
         id: "xpcshell@tests.mozilla.org",
         minVersion: "1",
-        maxVersion: "3"
-      }]
+        maxVersion: "3",
+      }],
     },
     
     blocklisted: [["1", "1.9"], [null, null]],
@@ -102,8 +102,8 @@ const ADDONS = {
       targetApplications: [{
         id: "xpcshell@tests.mozilla.org",
         minVersion: "1",
-        maxVersion: "3"
-      }]
+        maxVersion: "3",
+      }],
     },
     
     notBlocklisted: [["2", "1.9"]],
@@ -118,8 +118,8 @@ const ADDONS = {
       targetApplications: [{
         id: "xpcshell@tests.mozilla.org",
         minVersion: "1",
-        maxVersion: "3"
-      }]
+        maxVersion: "3",
+      }],
     },
     
     blocklisted: [["2", "1.9"]],
@@ -134,8 +134,8 @@ const ADDONS = {
       targetApplications: [{
         id: "xpcshell@tests.mozilla.org",
         minVersion: "1",
-        maxVersion: "3"
-      }]
+        maxVersion: "3",
+      }],
     },
     
     blocklisted: [["2", "1.9"]],
@@ -150,8 +150,8 @@ const ADDONS = {
       targetApplications: [{
         id: "xpcshell@tests.mozilla.org",
         minVersion: "1",
-        maxVersion: "3"
-      }]
+        maxVersion: "3",
+      }],
     },
     
     notBlocklisted: [["2", "1.9"]],
@@ -166,8 +166,8 @@ const ADDONS = {
       targetApplications: [{
         id: "xpcshell@tests.mozilla.org",
         minVersion: "1",
-        maxVersion: "3"
-      }]
+        maxVersion: "3",
+      }],
     },
     
     blocklisted: [["2", "1.9"]],
@@ -182,8 +182,8 @@ const ADDONS = {
       targetApplications: [{
         id: "xpcshell@tests.mozilla.org",
         minVersion: "1",
-        maxVersion: "3"
-      }]
+        maxVersion: "3",
+      }],
     },
     
     blocklisted: [["2", "1.9"]],
@@ -198,8 +198,8 @@ const ADDONS = {
       targetApplications: [{
         id: "xpcshell@tests.mozilla.org",
         minVersion: "1",
-        maxVersion: "3"
-      }]
+        maxVersion: "3",
+      }],
     },
     
     notBlocklisted: [["2", "1.9"]],
@@ -214,8 +214,8 @@ const ADDONS = {
       targetApplications: [{
         id: "xpcshell@tests.mozilla.org",
         minVersion: "1",
-        maxVersion: "3"
-      }]
+        maxVersion: "3",
+      }],
     },
     
     notBlocklisted: [["2", "1.9"]],
@@ -230,8 +230,8 @@ const ADDONS = {
       targetApplications: [{
         id: "xpcshell@tests.mozilla.org",
         minVersion: "1",
-        maxVersion: "3"
-      }]
+        maxVersion: "3",
+      }],
     },
     
     notBlocklisted: [["2", "1.9"]],
@@ -246,8 +246,8 @@ const ADDONS = {
       targetApplications: [{
         id: "xpcshell@tests.mozilla.org",
         minVersion: "1",
-        maxVersion: "3"
-      }]
+        maxVersion: "3",
+      }],
     },
     
     blocklisted: [["2", "1.9"]],

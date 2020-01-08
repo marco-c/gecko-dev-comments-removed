@@ -59,8 +59,8 @@ add_task(async function() {
           
           
           r.w <= (gBrowser.tabs.length - 1) * Math.ceil(tabStripRect.width / gBrowser.tabs.length)
-        ))
-      }
+        )),
+      },
      });
 
   await removeAllButFirstTab();

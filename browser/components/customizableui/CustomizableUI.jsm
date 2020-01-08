@@ -48,7 +48,7 @@ const kExpectedWindowURL = AppConstants.BROWSER_CHROME_URL;
 
 const kSubviewEvents = [
   "ViewShowing",
-  "ViewHiding"
+  "ViewHiding",
 ];
 
 
@@ -1167,7 +1167,7 @@ var CustomizableUIInternal = {
 
     for (let [, areaMap] of gPendingBuildAreas) {
       let toDelete = [];
-      for (let [areaNode, ] of areaMap) {
+      for (let [areaNode ] of areaMap) {
         if (areaNode.ownerDocument == document) {
           toDelete.push(areaNode);
         }
@@ -2216,7 +2216,7 @@ var CustomizableUIInternal = {
     let evt = new aWindow.CustomEvent(aEventType, {
       bubbles: true,
       cancelable: true,
-      detail: aDetails
+      detail: aDetails,
     });
     aWindow.gNavToolbox.dispatchEvent(evt);
   },
@@ -2226,7 +2226,7 @@ var CustomizableUIInternal = {
       this._dispatchToolboxEventToWindow(aEventType, aDetails, aWindow);
       return;
     }
-    for (let [win, ] of gBuildWindows) {
+    for (let [win ] of gBuildWindows) {
       this._dispatchToolboxEventToWindow(aEventType, aDetails, win);
     }
   },
@@ -2243,7 +2243,7 @@ var CustomizableUIInternal = {
 
     
     gGroupWrapperCache.delete(widget.id);
-    for (let [win, ] of gBuildWindows) {
+    for (let [win ] of gBuildWindows) {
       let cache = gSingleWrapperCache.get(win);
       if (cache) {
         cache.delete(widget.id);
@@ -2272,7 +2272,7 @@ var CustomizableUIInternal = {
     
     let seenAreas = new Set();
     let widgetMightNeedAutoAdding = true;
-    for (let [area, ] of gPlacements) {
+    for (let [area ] of gPlacements) {
       seenAreas.add(area);
       let areaIsRegistered = gAreas.has(area);
       let index = gPlacements.get(area).indexOf(widget.id);
@@ -2521,7 +2521,7 @@ var CustomizableUIInternal = {
     let widget = gPalette.get(aWidgetId);
     if (!widget) {
       gGroupWrapperCache.delete(aWidgetId);
-      for (let [window, ] of gBuildWindows) {
+      for (let [window ] of gBuildWindows) {
         let windowCache = gSingleWrapperCache.get(window);
         if (windowCache) {
           windowCache.delete(aWidgetId);
@@ -2547,7 +2547,7 @@ var CustomizableUIInternal = {
     
     
     
-    for (let [window, ] of gBuildWindows) {
+    for (let [window ] of gBuildWindows) {
       let windowCache = gSingleWrapperCache.get(window);
       if (windowCache) {
         windowCache.delete(aWidgetId);
@@ -2649,7 +2649,7 @@ var CustomizableUIInternal = {
     
     gSavedState = null;
     
-    for (let [areaId, ] of gAreas) {
+    for (let [areaId ] of gAreas) {
       this.restoreStateForArea(areaId);
     }
   },
@@ -2758,7 +2758,7 @@ var CustomizableUIInternal = {
 
       if (!widgetNode) {
         
-        let [window, ] = [...gBuildWindows][0];
+        let [window ] = [...gBuildWindows][0];
         [, widgetNode] = this.getWidgetNode(widgetId, window);
       }
       
@@ -2995,9 +2995,9 @@ var CustomizableUI = {
 
   windows: {
     * [Symbol.iterator]() {
-      for (let [window, ] of gBuildWindows)
+      for (let [window ] of gBuildWindows)
         yield window;
-    }
+    },
   },
 
   

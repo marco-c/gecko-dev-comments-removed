@@ -69,12 +69,12 @@ add_task(async function runTests() {
 
   
   await SpecialPowers.pushPrefEnv({"set":
-    [["privacy.firstparty.isolate", true]]
+    [["privacy.firstparty.isolate", true]],
   });
 
   for (let enabled of tests) {
     await SpecialPowers.pushPrefEnv({"set":
-      [["privacy.firstparty.isolate.restrict_opener_access", enabled]]
+      [["privacy.firstparty.isolate.restrict_opener_access", enabled]],
     });
 
     await testPref(enabled);
@@ -82,12 +82,12 @@ add_task(async function runTests() {
 
   
   await SpecialPowers.pushPrefEnv({"set":
-    [["privacy.firstparty.isolate", false]]
+    [["privacy.firstparty.isolate", false]],
   });
 
   for (let enabled of tests) {
     await SpecialPowers.pushPrefEnv({"set":
-      [["privacy.firstparty.isolate.restrict_opener_access", enabled]]
+      [["privacy.firstparty.isolate.restrict_opener_access", enabled]],
     });
 
     

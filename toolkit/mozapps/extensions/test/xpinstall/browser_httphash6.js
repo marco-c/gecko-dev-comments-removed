@@ -26,7 +26,7 @@ function test() {
   
   setup_redirect({
     "X-Target-Digest": "sha1:foo",
-    "Location": "http://example.com/browser/" + RELATIVE_DIR + "amosigned.xpi"
+    "Location": "http://example.com/browser/" + RELATIVE_DIR + "amosigned.xpi",
   });
 
   var url = "https://example.com/browser/" + RELATIVE_DIR + "redirect.sjs?mode=redirect";
@@ -34,8 +34,8 @@ function test() {
   var triggers = encodeURIComponent(JSON.stringify({
     "Unsigned XPI": {
       URL: url,
-      toString() { return this.URL; }
-    }
+      toString() { return this.URL; },
+    },
   }));
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
   gBrowser.loadURI(TESTROOT + "installtrigger.html?" + triggers);
@@ -56,7 +56,7 @@ function finish_failed_download() {
   
   setup_redirect({
     "X-Target-Digest": "sha1:ee95834ad862245a9ef99ccecc2a857cadc16404",
-    "Location": "http://example.com/browser/" + RELATIVE_DIR + "amosigned.xpi"
+    "Location": "http://example.com/browser/" + RELATIVE_DIR + "amosigned.xpi",
   });
 
   

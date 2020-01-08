@@ -35,7 +35,7 @@ var tests = [
 
       this.notification.remove();
     },
-    onHidden() { }
+    onHidden() { },
   },
   
   { id: "Test#2",
@@ -60,7 +60,7 @@ var tests = [
       this.notification1.remove();
       this.notification2.remove();
     },
-    onHidden(popup) { }
+    onHidden(popup) { },
   },
   
   { id: "Test#3",
@@ -80,7 +80,7 @@ var tests = [
       await waitForWindowReadyForPopupNotifications(window);
 
       goNext();
-    }
+    },
   },
   
   
@@ -90,7 +90,7 @@ var tests = [
       await BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/");
       this.notifyObj = new BasicNotification(this.id);
       this.notifyObj.addOptions({
-        persistent: true
+        persistent: true,
       });
       this.notification = showNotification(this.notifyObj);
     },
@@ -111,7 +111,7 @@ var tests = [
       this.notification.remove();
       gBrowser.removeTab(gBrowser.selectedTab);
       gBrowser.selectedTab = this.oldSelectedTab;
-    }
+    },
   },
   
   
@@ -121,7 +121,7 @@ var tests = [
       await BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/");
       this.notifyObj = new BasicNotification(this.id);
       this.notifyObj.addOptions({
-        persistent: true
+        persistent: true,
       });
       this.notification = showNotification(this.notifyObj);
     },
@@ -142,7 +142,7 @@ var tests = [
       this.notification.remove();
       gBrowser.removeTab(gBrowser.selectedTab);
       gBrowser.selectedTab = this.oldSelectedTab;
-    }
+    },
   },
   
   
@@ -160,7 +160,7 @@ var tests = [
       ok(true, "Should have hidden the notification after tab switch");
       gBrowser.removeTab(gBrowser.selectedTab);
       gBrowser.selectedTab = this.oldSelectedTab;
-    }
+    },
   },
   
   
@@ -172,7 +172,7 @@ var tests = [
       gNotification.remove();
       gNotification = null;
       goNext();
-    }
+    },
   },
   
   
@@ -227,7 +227,7 @@ var tests = [
       gBrowser.selectedTab = this.oldSelectedTab;
 
       goNext();
-    }
+    },
   },
   
   { id: "Test#8",
@@ -251,7 +251,7 @@ var tests = [
       this.notification1.remove();
       this.notification2.remove();
     },
-    onHidden(popup) { }
+    onHidden(popup) { },
   },
   
   { id: "Test#9",
@@ -287,7 +287,7 @@ var tests = [
       this.notification2.remove();
       this.notification3.remove();
     },
-    onHidden(popup) { }
+    onHidden(popup) { },
   },
   
   
@@ -332,7 +332,7 @@ var tests = [
       this.notification1.remove();
       this.notification2.remove();
       this.notification3.remove();
-    }
+    },
   },
   
   
@@ -404,6 +404,6 @@ var tests = [
       notification1.remove();
       notification2.remove();
       goNext();
-    }
+    },
   },
 ];

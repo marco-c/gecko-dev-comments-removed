@@ -20,8 +20,8 @@ add_task(async function() {
       "set": [
         ["security.mixed_content.block_active_content", true],
         ["security.mixed_content.block_display_content", false],
-        ["security.mixed_content.upgrade_display_content", false]
-      ]
+        ["security.mixed_content.upgrade_display_content", false],
+      ],
     });
     
     

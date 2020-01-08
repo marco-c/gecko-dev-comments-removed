@@ -218,6 +218,6 @@ var FxAccountsConfig = {
   
   getSignedInUser() {
     return fxAccounts.getSignedInUser();
-  }
+  },
 
 };

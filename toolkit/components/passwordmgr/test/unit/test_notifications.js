@@ -45,7 +45,7 @@ var TestObserver = {
 
     expectedNotification = null; 
     expectedData = null;
-  }
+  },
 };
 
 add_task(function test_notifications()

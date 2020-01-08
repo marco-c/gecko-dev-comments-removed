@@ -26,8 +26,8 @@ var gTests = [
 
     
     await closeStream();
-  }
-}
+  },
+},
 
 ];
 

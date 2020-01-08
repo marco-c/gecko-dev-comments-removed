@@ -406,5 +406,5 @@ TokenServerClient.prototype = {
   
   newRESTRequest(url) {
     return new RESTRequest(url);
-  }
+  },
 };

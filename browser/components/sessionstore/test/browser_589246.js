@@ -21,9 +21,9 @@ var afterTestCallback;
 
 var testState = {
   windows: [
-    { tabs: [{ entries: [{ url: "http://example.org" }] }] }
+    { tabs: [{ entries: [{ url: "http://example.org" }] }] },
   ],
-  _closedWindows: []
+  _closedWindows: [],
 };
 
 
@@ -60,7 +60,7 @@ tests.push({
   checkWinLin: checkNoWindowsGenerator(1),
   checkOSX(aPreviousState, aCurState) {
     is(aCurState, aPreviousState, "test #1: closed window state is unchanged");
-  }
+  },
 });
 
 
@@ -69,7 +69,7 @@ tests.push({
   extra: false,
   close: false,
   checkWinLin: checkNoWindowsGenerator(2),
-  checkOSX: checkNoWindowsGenerator(2)
+  checkOSX: checkNoWindowsGenerator(2),
 });
 
 
@@ -78,7 +78,7 @@ tests.push({
   extra: true,
   close: false,
   checkWinLin: checkNoWindowsGenerator(3),
-  checkOSX: checkOSX34Generator(3)
+  checkOSX: checkOSX34Generator(3),
 });
 
 
@@ -87,7 +87,7 @@ tests.push({
   extra: true,
   close: "one",
   checkWinLin: checkNoWindowsGenerator(4),
-  checkOSX: checkOSX34Generator(4)
+  checkOSX: checkOSX34Generator(4),
 });
 
 
@@ -96,7 +96,7 @@ tests.push({
   extra: true,
   close: "both",
   checkWinLin: checkNoWindowsGenerator(5),
-  checkOSX: checkNoWindowsGenerator(5)
+  checkOSX: checkNoWindowsGenerator(5),
 });
 
 

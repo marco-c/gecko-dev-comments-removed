@@ -43,8 +43,8 @@ const COMPAT_RESPONSE = {
               max_version: "2",
             },
           ],
-        }
-      ]
+        },
+      ],
     },
     {
       addon_guid: "addon4@tests.mozilla.org",
@@ -144,7 +144,7 @@ const COMPAT_RESPONSE = {
               guid: "unknown-app@tests.mozilla.org",
               min_version: "0.1",
               max_version: "9",
-            }
+            },
           ],
         },
         {
@@ -200,8 +200,8 @@ var addon1 = {
   targetApplications: [{
     id: "xpcshell@tests.mozilla.org",
     minVersion: "1",
-    maxVersion: "1"
-  }]
+    maxVersion: "1",
+  }],
 };
 
 
@@ -213,8 +213,8 @@ var addon2 = {
   targetApplications: [{
     id: "xpcshell@tests.mozilla.org",
     minVersion: "1",
-    maxVersion: "1"
-  }]
+    maxVersion: "1",
+  }],
 };
 
 
@@ -226,8 +226,8 @@ var addon3 = {
   targetApplications: [{
     id: "xpcshell@tests.mozilla.org",
     minVersion: "1",
-    maxVersion: "1"
-  }]
+    maxVersion: "1",
+  }],
 };
 
 
@@ -239,8 +239,8 @@ var addon4 = {
   targetApplications: [{
     id: "xpcshell@tests.mozilla.org",
     minVersion: "0.1",
-    maxVersion: "0.2"
-  }]
+    maxVersion: "0.2",
+  }],
 };
 
 
@@ -252,8 +252,8 @@ var addon5 = {
   targetApplications: [{
     id: "xpcshell@tests.mozilla.org",
     minVersion: "1",
-    maxVersion: "1"
-  }]
+    maxVersion: "1",
+  }],
 };
 
 
@@ -265,8 +265,8 @@ var addon6 = {
   targetApplications: [{
     id: "xpcshell@tests.mozilla.org",
     minVersion: "1",
-    maxVersion: "1"
-  }]
+    maxVersion: "1",
+  }],
 };
 
 
@@ -278,8 +278,8 @@ var addon7 = {
   targetApplications: [{
     id: "xpcshell@tests.mozilla.org",
     minVersion: "1",
-    maxVersion: "1"
-  }]
+    maxVersion: "1",
+  }],
 };
 
 
@@ -291,8 +291,8 @@ var addon8 = {
   targetApplications: [{
     id: "xpcshell@tests.mozilla.org",
     minVersion: "1",
-    maxVersion: "1"
-  }]
+    maxVersion: "1",
+  }],
 };
 
 
@@ -304,8 +304,8 @@ var addon9 = {
   targetApplications: [{
     id: "xpcshell@tests.mozilla.org",
     minVersion: "1",
-    maxVersion: "1"
-  }]
+    maxVersion: "1",
+  }],
 };
 
 const profileDir = gProfD.clone();

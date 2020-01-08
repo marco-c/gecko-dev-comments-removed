@@ -251,7 +251,7 @@ var listener = {
     
     
     removeCrashReportAnnotation();
-  }
+  },
 };
 
 function SanityTest() {}

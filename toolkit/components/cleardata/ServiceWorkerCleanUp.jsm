@@ -17,7 +17,7 @@ function unregisterServiceWorker(aSW) {
     let unregisterCallback = {
       unregisterSucceeded: resolve,
       unregisterFailed: resolve, 
-      QueryInterface: ChromeUtils.generateQI([Ci.nsIServiceWorkerUnregisterCallback])
+      QueryInterface: ChromeUtils.generateQI([Ci.nsIServiceWorkerUnregisterCallback]),
     };
     serviceWorkerManager.propagateUnregister(aSW.principal, unregisterCallback, aSW.scope);
   });

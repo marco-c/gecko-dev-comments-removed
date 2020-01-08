@@ -17,8 +17,8 @@
   window.onload = () => {
     SpecialPowers.pushPrefEnv({"set":
       [
-        ["privacy.resistFingerprinting", true]
-      ]
+        ["privacy.resistFingerprinting", true],
+      ],
     }, doTestForSystemEventGroup);
   };
 

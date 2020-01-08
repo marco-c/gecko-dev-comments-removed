@@ -342,7 +342,7 @@ var DownloadUtils = {
     
     if (aDate >= today) {
       let dts = new Services.intl.DateTimeFormat(undefined, {
-        timeStyle: "short"
+        timeStyle: "short",
       });
       dateTimeCompact = dts.format(aDate);
     } else if (today - aDate < (MS_PER_DAY)) {
@@ -355,7 +355,7 @@ var DownloadUtils = {
       
       dateTimeCompact = aDate.toLocaleString(undefined, {
                           month: "long",
-                          day: "numeric"
+                          day: "numeric",
       });
     }
 

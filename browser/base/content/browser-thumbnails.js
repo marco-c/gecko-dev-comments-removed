@@ -144,7 +144,7 @@ var gBrowserThumbnails = {
     
     let timeoutId = setTimeout(() => {
       let idleCallbackId = requestIdleCallback(idleCallback, {
-        timeout: this._captureDelayMS * 30
+        timeout: this._captureDelayMS * 30,
       });
       this._timeouts.set(aBrowser, { isTimeout: false, id: idleCallbackId });
     }, this._captureDelayMS);
@@ -179,7 +179,7 @@ var gBrowserThumbnails = {
       
       window.cancelIdleCallback(timeoutData.id);
     }
-  }
+  },
 };
 
 async function getTopSiteURLs() {

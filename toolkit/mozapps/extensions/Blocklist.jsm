@@ -1356,7 +1356,7 @@ var Blocklist = {
 
     var args = {
       restart: false,
-      list: addonList
+      list: addonList,
     };
     
     args.wrappedJSObject = args;
@@ -1567,7 +1567,7 @@ BlocklistItemData.prototype = {
     let maxVersion = versionRangeElement.getAttribute("maxVersion");
 
     return { minVersion, maxVersion };
-  }
+  },
 };
 
 Blocklist._init();

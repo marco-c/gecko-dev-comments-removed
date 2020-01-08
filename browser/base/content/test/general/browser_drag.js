@@ -16,7 +16,7 @@ function test() {
     { type: "text/plain",
       data: value },
     { type: "text/html",
-      data: htmlString }
+      data: htmlString },
   ] ];
   
   var oldstate = gURLBar.getAttribute("pageproxystate");

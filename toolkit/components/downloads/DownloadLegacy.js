@@ -246,7 +246,7 @@ DownloadLegacyTransfer.prototype = {
       saver: "legacy",
       launchWhenSucceeded,
       contentType,
-      launcherPath
+      launcherPath,
     }).then(aDownload => {
       
       if (aTempFile) {

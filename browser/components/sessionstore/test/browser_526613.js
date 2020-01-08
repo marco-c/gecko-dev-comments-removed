@@ -34,7 +34,7 @@ function test() {
     ],
     
     
-    selectedWindow: 1
+    selectedWindow: 1,
   };
 
   let pass = 1;

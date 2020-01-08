@@ -21,7 +21,7 @@ function testFillDb() {
 
   var assertions = {
     "tableData": "test-phish-simple;a:1",
-    "urlsExist": add1Urls
+    "urlsExist": add1Urls,
   };
 
   doTest([update], assertions, false);
@@ -52,7 +52,7 @@ function testSimpleForward() {
 
   var assertions = {
     "tableData": "test-phish-simple;a:1-3",
-    "urlsExist": add1Urls.concat(add2Urls).concat(add3Urls)
+    "urlsExist": add1Urls.concat(add2Urls).concat(add3Urls),
   };
 
   doTest([update], assertions, false);
@@ -84,7 +84,7 @@ function testNestedForward() {
 
   var assertions = {
     "tableData": "",
-    "urlsDontExist": add1Urls.concat(add2Urls)
+    "urlsDontExist": add1Urls.concat(add2Urls),
   };
 
   doTest([update], assertions, true);
@@ -102,7 +102,7 @@ function testInvalidUrlForward() {
   
   var assertions = {
     "tableData": "test-phish-simple;a:1",
-    "urlsExist": add1Urls
+    "urlsExist": add1Urls,
   };
 
   doTest([update], assertions, true);
@@ -120,7 +120,7 @@ function testErrorUrlForward() {
   
   var assertions = {
     "tableData": "test-phish-simple;a:1",
-    "urlsExist": add1Urls
+    "urlsExist": add1Urls,
   };
 
   doTest([update], assertions, true);
@@ -170,7 +170,7 @@ function testMultipleTables() {
     "urlsExist": add1Urls.concat(add2Urls),
     "malwareUrlsExist": add3Urls,
     "unwantedUrlsExist": add4Urls,
-    "blockedUrlsExist": add6Urls
+    "blockedUrlsExist": add6Urls,
   };
 
   doTest([update], assertions, false);
@@ -202,7 +202,7 @@ function testUrlInMultipleTables() {
   var assertions = {
     "tableData": "test-malware-simple;a:2\ntest-phish-simple;a:1\ntest-unwanted-simple;a:3",
     "urlExistInMultipleTables": { url: add1Urls,
-                                   tables: "test-malware-simple,test-phish-simple,test-unwanted-simple" }
+                                   tables: "test-malware-simple,test-phish-simple,test-unwanted-simple" },
   };
 
   doTest([update], assertions, false);
@@ -214,7 +214,7 @@ function Observer(callback) {
 
 Observer.prototype =
 {
-QueryInterface: ChromeUtils.generateQI(["nsIObserver"])
+QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
 };
 
 
@@ -226,7 +226,7 @@ function testReset() {
   var mozUpdate = buildMozPhishingUpdate(
     [
       { "chunkNum": 1,
-        "urls": mozAddUrls
+        "urls": mozAddUrls,
       }]);
 
   var dataUpdate = "data:," + encodeURIComponent(mozUpdate);
@@ -238,7 +238,7 @@ function testReset() {
   var update1 = buildPhishingUpdate(
     [
       { "chunkNum": 1,
-        "urls": addUrls1
+        "urls": addUrls1,
       }]);
 
   var update2 = "n:1000\nr:pleasereset\n";
@@ -247,7 +247,7 @@ function testReset() {
   var update3 = buildPhishingUpdate(
     [
       { "chunkNum": 3,
-        "urls": addUrls3
+        "urls": addUrls3,
       }]);
 
   var assertions = {
@@ -255,7 +255,7 @@ function testReset() {
     "mozPhishingUrlsExist": mozAddUrls,                         
                                                                  
     "urlsExist": addUrls3,                                      
-    "urlsDontExist": addUrls1                                   
+    "urlsDontExist": addUrls1,                                   
   };
 
   
@@ -272,7 +272,7 @@ function run_test() {
     testErrorUrlForward,
     testMultipleTables,
     testUrlInMultipleTables,
-    testReset
+    testReset,
   ]);
 }
 

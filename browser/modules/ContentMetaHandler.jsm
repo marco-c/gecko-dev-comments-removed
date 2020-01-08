@@ -17,7 +17,7 @@ const ACCEPTED_PROTOCOLS = ["http:", "https:"];
 const DESCRIPTION_RULES = [
   "twitter:description",
   "description",
-  "og:description"
+  "og:description",
 ];
 
 
@@ -26,7 +26,7 @@ const PREVIEW_IMAGE_RULES = [
   "twitter:image",
   "og:image",
   "og:image:url",
-  "og:image:secure_url"
+  "og:image:secure_url",
 ];
 
 
@@ -109,7 +109,7 @@ var ContentMetaHandler = {
     const entry = metaTags.get(url) || {
       description: {value: null, currMaxScore: -1},
       image: {value: null, currMaxScore: -1},
-      timeout: null
+      timeout: null,
     };
 
     
@@ -156,7 +156,7 @@ var ContentMetaHandler = {
         chromeGlobal.sendAsyncMessage("Meta:SetPageInfo", {
           url,
           description: entry.description.value,
-          previewImageURL: entry.image.value
+          previewImageURL: entry.image.value,
         });
 
         
@@ -166,5 +166,5 @@ var ContentMetaHandler = {
         metaTags.delete(url);
       }, TIMEOUT_DELAY, Ci.nsITimer.TYPE_ONE_SHOT);
     }
-  }
+  },
 };

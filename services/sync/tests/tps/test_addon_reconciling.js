@@ -12,7 +12,7 @@ var phases = {
   "phase03": "profile1",
   "phase04": "profile2",
   "phase05": "profile1",
-  "phase06": "profile2"
+  "phase06": "profile2",
 };
 
 const id = "restartless-xpi@tests.mozilla.org";
@@ -22,12 +22,12 @@ Phase("phase01", [
   [Addons.verifyNot, [id]],
   [Addons.install, [id]],
   [Addons.verify, [id], STATE_ENABLED],
-  [Sync]
+  [Sync],
 ]);
 Phase("phase02", [
   [Addons.verifyNot, [id]],
   [Sync],
-  [Addons.verify, [id], STATE_ENABLED]
+  [Addons.verify, [id], STATE_ENABLED],
 ]);
 
 
@@ -36,19 +36,19 @@ Phase("phase03", [
   [Addons.setEnabled, [id], STATE_DISABLED],
   
   
-  [Addons.skipValidation]
+  [Addons.skipValidation],
 ]);
 Phase("phase04", [
   [EnsureTracking],
   [Addons.uninstall, [id]],
-  [Sync]
+  [Sync],
 ]);
 
 
 Phase("phase05", [
-  [Sync]
+  [Sync],
 ]);
 Phase("phase06", [
   [Sync],
-  [Addons.verifyNot, [id]]
+  [Addons.verifyNot, [id]],
 ]);

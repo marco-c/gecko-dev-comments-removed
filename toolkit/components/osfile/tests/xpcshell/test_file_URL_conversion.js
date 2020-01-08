@@ -44,7 +44,7 @@ function run_test() {
     "C:\\char.",
     "C:\\char+",
     "C:\\char~",
-    "C:\\char_"
+    "C:\\char_",
   ] : [
     "/",
     "/test",
@@ -55,7 +55,7 @@ function run_test() {
     "/test?action=index/",
     "/test\ test",
     '/punctuation/;,/?:@&=+$-_.!~*\'()[]"#',
-    "/CasePreserving"
+    "/CasePreserving",
   ];
 
   
@@ -69,7 +69,7 @@ function run_test() {
     "file:///C:/%3c%3C", 
     "file:///C:/%78", 
     "file:///C:/test#frag", 
-    "file:///C:/test?action=index" 
+    "file:///C:/test?action=index", 
   ] : [
     "file:///test/",
     "file://localhost/test",
@@ -80,7 +80,7 @@ function run_test() {
     "file:///%3c%3C", 
     "file:///%78", 
     "file:///test#frag", 
-    "file:///test?action=index" 
+    "file:///test?action=index", 
   ];
 
   for (let path of paths) {

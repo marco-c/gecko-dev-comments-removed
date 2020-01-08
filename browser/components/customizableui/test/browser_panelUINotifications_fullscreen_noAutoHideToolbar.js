@@ -23,7 +23,7 @@ function waitForFullscreen() {
     
     
     
-    (Services.appinfo.OS === "Darwin") ? waitForDocshellActivated() : Promise.resolve()
+    (Services.appinfo.OS === "Darwin") ? waitForDocshellActivated() : Promise.resolve(),
   ]);
 }
 
@@ -38,7 +38,7 @@ add_task(async function testFullscreen() {
   is(PanelUI.notificationPanel.state, "closed", "update-manual doorhanger is closed.");
   let mainActionCalled = false;
   let mainAction = {
-    callback: () => { mainActionCalled = true; }
+    callback: () => { mainActionCalled = true; },
   };
   AppMenuNotifications.showNotification("update-manual", mainAction);
   await BrowserTestUtils.waitForEvent(PanelUI.notificationPanel, "popupshown");

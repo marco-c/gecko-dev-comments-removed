@@ -24,55 +24,55 @@ var ADDONS = [{
   id: "test_bug455906_1@tests.mozilla.org",
   name: "Bug 455906 Addon Test 1",
   version: "5",
-  appVersion: "3"
+  appVersion: "3",
 }, {
   
   id: "test_bug455906_2@tests.mozilla.org",
   name: "Bug 455906 Addon Test 2",
   version: "5",
-  appVersion: "3"
+  appVersion: "3",
 }, {
   
   id: "test_bug455906_3@tests.mozilla.org",
   name: "Bug 455906 Addon Test 3",
   version: "5",
-  appVersion: "3"
+  appVersion: "3",
 }, {
   
   id: "test_bug455906_4@tests.mozilla.org",
   name: "Bug 455906 Addon Test 4",
   version: "5",
-  appVersion: "3"
+  appVersion: "3",
 }, {
   
   id: "test_bug455906_5@tests.mozilla.org",
   name: "Bug 455906 Addon Test 5",
   version: "5",
-  appVersion: "3"
+  appVersion: "3",
 }, {
   
   id: "test_bug455906_6@tests.mozilla.org",
   name: "Bug 455906 Addon Test 6",
   version: "5",
-  appVersion: "3"
+  appVersion: "3",
 }, {
   
   id: "test_bug455906_7@tests.mozilla.org",
   name: "Bug 455906 Addon Test 7",
   version: "5",
-  appVersion: "2"
+  appVersion: "2",
 }, {
   
   id: "dummy_bug455906_1@tests.mozilla.org",
   name: "Dummy Addon 1",
   version: "5",
-  appVersion: "3"
+  appVersion: "3",
 }, {
   
   id: "dummy_bug455906_2@tests.mozilla.org",
   name: "Dummy Addon 2",
   version: "5",
-  appVersion: "3"
+  appVersion: "3",
 }];
 
 
@@ -93,7 +93,7 @@ var PLUGINS = [
   
   new MockPluginTag({name: "test_bug455906_5", version: "5"}, Ci.nsIPluginTag.STATE_ENABLED),
   
-  new MockPluginTag({name: "test_bug455906_6", version: "5"}, Ci.nsIPluginTag.STATE_ENABLED)
+  new MockPluginTag({name: "test_bug455906_6", version: "5"}, Ci.nsIPluginTag.STATE_ENABLED),
 ];
 
 var gNotificationCheck = null;

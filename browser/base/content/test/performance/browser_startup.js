@@ -40,7 +40,7 @@ const startupPhases = {
       "resource://gre/modules/ExtensionUtils.jsm",
       "resource://gre/modules/XPCOMUtils.jsm",
       "resource://gre/modules/Services.jsm",
-    ])
+    ]),
   }},
 
   
@@ -48,7 +48,7 @@ const startupPhases = {
   
   "before opening first browser window": {blacklist: {
     modules: new Set([
-    ])
+    ]),
   }},
 
   
@@ -74,7 +74,7 @@ const startupPhases = {
     ]),
     services: new Set([
       "@mozilla.org/browser/search-service;1",
-    ])
+    ]),
   }},
 
   
@@ -102,7 +102,7 @@ const startupPhases = {
     services: new Set([
       "@mozilla.org/browser/annotation-service;1",
       "@mozilla.org/browser/nav-bookmarks-service;1",
-    ])
+    ]),
   }},
 
   

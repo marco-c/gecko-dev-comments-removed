@@ -20,7 +20,7 @@ add_task(async function test_show_form() {
     
     let pref = TabCrashHandler.prefs.root + "sendReport";
     await SpecialPowers.pushPrefEnv({
-      set: [[pref, true]]
+      set: [[pref, true]],
     });
 
     

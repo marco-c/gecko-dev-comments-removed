@@ -935,7 +935,7 @@ class ContentSessionStore {
         
         
         this.mm.sendAsyncMessage("SessionStore:restoreTabContentComplete", {epoch});
-      }
+      },
     });
 
     if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT) {

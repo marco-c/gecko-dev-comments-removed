@@ -12,7 +12,7 @@ add_task(async function setup() {
 
   
   await SpecialPowers.pushPrefEnv({"set": [
-    ["privacy.userContext.enabled", true]
+    ["privacy.userContext.enabled", true],
   ]});
 });
 

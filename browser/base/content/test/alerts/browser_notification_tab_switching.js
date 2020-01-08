@@ -15,7 +15,7 @@ add_task(async function test_notificationPreventDefaultAndSwitchTabs() {
   let originalTab = gBrowser.selectedTab;
   await BrowserTestUtils.withNewTab({
     gBrowser,
-    url: notificationURL
+    url: notificationURL,
   }, async function dummyTabTask(aBrowser) {
     
     await BrowserTestUtils.switchTab(gBrowser, originalTab);

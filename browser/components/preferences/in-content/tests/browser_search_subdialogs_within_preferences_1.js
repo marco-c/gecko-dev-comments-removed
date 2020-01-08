@@ -16,7 +16,7 @@ add_task(async function() {
   
   await SpecialPowers.pushPrefEnv({"set": [
     ["browser.startup.homepage", "about:robots"],
-    ["browser.startup.page", 1]
+    ["browser.startup.page", 1],
   ]});
 
   

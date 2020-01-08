@@ -145,7 +145,7 @@ Resource.prototype = {
       headers,
       method,
       signal,
-      mozErrors: true 
+      mozErrors: true, 
                       
     };
 
@@ -273,5 +273,5 @@ Resource.prototype = {
 
   delete() {
     return this._doRequest("DELETE");
-  }
+  },
 };

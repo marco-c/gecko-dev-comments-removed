@@ -85,7 +85,7 @@ var ContentPrefServiceParent = {
           
           
           
-          _names: new Set()
+          _names: new Set(),
         };
 
         this._observers.set(msg.target, observer);
@@ -138,8 +138,8 @@ var ContentPrefServiceParent = {
                                       contentPref: {
                                         domain: pref.domain,
                                         name: pref.name,
-                                        value: pref.value
-                                      }
+                                        value: pref.value,
+                                      },
                                     });
       },
 
@@ -152,7 +152,7 @@ var ContentPrefServiceParent = {
         msg.target.sendAsyncMessage("ContentPrefs:HandleCompletion",
                                     { requestId,
                                       reason });
-      }
+      },
     };
 
     
@@ -166,7 +166,7 @@ var ContentPrefServiceParent = {
 
     
     this._cps2[data.call](...args);
-  }
+  },
 };
 
 XPCOMUtils.defineLazyServiceGetter(ContentPrefServiceParent, "_cps2",

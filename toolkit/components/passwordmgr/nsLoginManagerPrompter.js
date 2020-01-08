@@ -161,7 +161,7 @@ LoginManagerPromptFactory.prototype = {
           } catch (e) {  }
         }
         self._doAsyncPrompt();
-      }
+      },
     };
 
     var cancelDialogLimit = Services.prefs.getIntPref("prompts.authentication_dialog_abuse_limit");
@@ -687,7 +687,7 @@ LoginManagerPrompter.prototype = {
         authInfo: aAuthInfo,
         level: aLevel,
         inProgress: false,
-        prompter: this
+        prompter: this,
       };
 
       this._factory._asyncPrompts[hashKey] = asyncPrompt;
@@ -957,7 +957,7 @@ LoginManagerPrompter.prototype = {
         persistData();
         Services.obs.notifyObservers(null, "weave:telemetry:histogram", histogramName);
         browser.focus();
-      }
+      },
     };
 
     let secondaryActions = [{
@@ -967,7 +967,7 @@ LoginManagerPrompter.prototype = {
         histogram.add(PROMPT_NOTNOW);
         Services.obs.notifyObservers(null, "weave:telemetry:histogram", histogramName);
         browser.focus();
-      }
+      },
     }];
     
     if (type == "password-save") {
@@ -979,7 +979,7 @@ LoginManagerPrompter.prototype = {
           Services.obs.notifyObservers(null, "weave:telemetry:histogram", histogramName);
           Services.logins.setLoginSavingEnabled(login.hostname, false);
           browser.focus();
-        }
+        },
       });
     }
 
@@ -1092,7 +1092,7 @@ LoginManagerPrompter.prototype = {
           popup:     null,
           callback(aNotifyObj, aButton) {
             Services.logins.addLogin(aLogin);
-          }
+          },
         },
 
         
@@ -1102,7 +1102,7 @@ LoginManagerPrompter.prototype = {
           popup:     null,
           callback(aNotifyObj, aButton) {
             Services.logins.setLoginSavingEnabled(aLogin.hostname, false);
-          }
+          },
         },
 
         
@@ -1110,8 +1110,8 @@ LoginManagerPrompter.prototype = {
           label:     notNowButtonText,
           accessKey: notNowButtonAccessKey,
           popup:     null,
-          callback() {  }
-        }
+          callback() {  },
+        },
       ];
 
       this._showLoginNotification(aNotifyObj, "password-save",
@@ -1269,7 +1269,7 @@ LoginManagerPrompter.prototype = {
           popup:     null,
           callback(aNotifyObj, aButton) {
             Services.logins._updateLogin(aOldLogin, aNewLogin);
-          }
+          },
         },
 
         
@@ -1279,8 +1279,8 @@ LoginManagerPrompter.prototype = {
           popup:     null,
           callback(aNotifyObj, aButton) {
             
-          }
-        }
+          },
+        },
       ];
 
       this._showLoginNotification(aNotifyObj, "password-change",
@@ -1672,7 +1672,7 @@ LoginManagerPrompter.prototype = {
         this.callback.onAuthCancelled(this.context, false);
         this.callback = null;
         this.context = null;
-      }
+      },
     };
   },
 

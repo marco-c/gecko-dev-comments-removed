@@ -41,7 +41,7 @@ var pktPanelMessaging = (function() {
    
    var messagePayload = {
      panelId,
-     data: (payload || {})
+     data: (payload || {}),
    };
 
     
@@ -73,6 +73,6 @@ var pktPanelMessaging = (function() {
       panelIdFromURL,
         addMessageListener,
         removeMessageListener,
-        sendMessage
+        sendMessage,
     };
 }());

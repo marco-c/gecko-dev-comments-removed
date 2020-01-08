@@ -370,7 +370,7 @@ const kTestPairs = [
 
 
 
-  ["az", "AZERBAIJANI", kTeststr_version]   
+  ["az", "AZERBAIJANI", kTeststr_version],   
 ];
 
 ChromeUtils.import("resource://gre/modules/Timer.jsm");

@@ -309,5 +309,5 @@ var gConnectionsDialog = {
     let uriString = input.value.trim();
     
     return uriString.length ? uriString : undefined;
-  }
+  },
 };

@@ -65,12 +65,12 @@ add_task(async function test_install_and_set_default() {
         "Add": [
           {
             "Name": "MozSearch",
-            "URLTemplate": "http://example.com/?q={searchTerms}"
-          }
+            "URLTemplate": "http://example.com/?q={searchTerms}",
+          },
         ],
-        "Default": "MozSearch"
-      }
-    }
+        "Default": "MozSearch",
+      },
+    },
   });
 
   
@@ -97,13 +97,13 @@ add_task(async function test_install_and_set_default_prevent_installs() {
         "Add": [
           {
             "Name": "MozSearch",
-            "URLTemplate": "http://example.com/?q={searchTerms}"
-          }
+            "URLTemplate": "http://example.com/?q={searchTerms}",
+          },
         ],
         "Default": "MozSearch",
-        "PreventInstalls": true
-      }
-    }
+        "PreventInstalls": true,
+      },
+    },
   });
 
   is(Services.search.currentEngine.name, "MozSearch",
@@ -118,7 +118,7 @@ add_task(async function test_opensearch_works() {
   
   await setupPolicyEngineWithJson({
     "policies": {
-    }
+    },
   });
   
   
@@ -129,9 +129,9 @@ add_task(async function setup_prevent_installs() {
   await setupPolicyEngineWithJson({
     "policies": {
       "SearchEngines": {
-        "PreventInstalls": true
-      }
-    }
+        "PreventInstalls": true,
+      },
+    },
   });
 });
 
@@ -206,11 +206,11 @@ add_task(async function test_install_and_remove() {
           {
             "Name": "Foo",
             "URLTemplate": "http://example.com/?q={searchTerms}",
-            "IconURL": iconURL
-          }
-        ]
-      }
-    }
+            "IconURL": iconURL,
+          },
+        ],
+      },
+    },
   });
 
   
@@ -225,9 +225,9 @@ add_task(async function test_install_and_remove() {
   await setupPolicyEngineWithJson({
   "policies": {
       "SearchEngines": {
-        "Remove": ["Foo"]
-      }
-    }
+        "Remove": ["Foo"],
+      },
+    },
   });
 
   

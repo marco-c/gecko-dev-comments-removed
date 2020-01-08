@@ -81,5 +81,5 @@ Color.prototype = {
     
     
     return this.contrastRatio(otherColor) > 3;
-  }
+  },
 };

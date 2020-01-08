@@ -489,7 +489,7 @@ function dumpGCLogAndCCLog(aVerbose) {
                                { onDump: displayInfo,
                                  onFinish() {
                                    inProgress.remove();
-                                 }
+                                 },
                                });
 }
 
@@ -648,13 +648,13 @@ function loadMemoryReportsFromFile(aFilename, aTitleNote, aFn) {
         } catch (ex) {
           handleException(ex);
         }
-      }
+      },
     }, null);
 
     let file = new nsFile(aFilename);
     let fileChan = NetUtil.newChannel({
                      uri: Services.io.newFileURI(file),
-                     loadUsingSystemPrincipal: true
+                     loadUsingSystemPrincipal: true,
                    });
     fileChan.asyncOpen2(converter);
 
@@ -754,9 +754,9 @@ DReport.prototype = {
       units:       this._units,
       amount:      aAmount,
       description: this._description,
-      _presence:   this._presence
+      _presence:   this._presence,
     };
-  }
+  },
 };
 
 
@@ -912,7 +912,7 @@ function diffJSONObjects(aJson1, aJson2) {
     hasMozMallocUsableSize: simpleProp("hasMozMallocUsableSize"),
 
     reports: makeJSONReports(diffDReportMaps(makeDReportMap(aJson1.reports),
-                                             makeDReportMap(aJson2.reports)))
+                                             makeDReportMap(aJson2.reports))),
   };
 }
 
@@ -1139,7 +1139,7 @@ TreeNode.prototype = {
       default:
         throw "Invalid memory report(s): bad units in TreeNode.toString";
     }
-  }
+  },
 };
 
 
@@ -1428,6 +1428,14 @@ function appendProcessAboutMemoryElements(aP, aN, aProcess, aTrees,
     link.id = aHere + aN;
     link.title = "Go to the " + aThere + " of " + aProcess;
     link.style = "text-decoration: none";
+
+    
+    
+    link.addEventListener("click", function(event) {
+      document.documentElement.scrollTop =
+        document.querySelector(event.target.href).offsetTop;
+      event.preventDefault();
+    });
 
     
     appendElementWithText(aP, "span", "", "\n");

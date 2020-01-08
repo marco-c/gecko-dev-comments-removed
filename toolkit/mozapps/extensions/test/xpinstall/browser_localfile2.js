@@ -14,7 +14,7 @@ add_task(async function test() {
   }
 
   var triggers = encodeURIComponent(JSON.stringify({
-    "Unsigned XPI": xpipath
+    "Unsigned XPI": xpipath,
   }));
 
   

@@ -55,6 +55,6 @@ add_task(async function() {
       
       (r.x1 >= dropmarkerRect.left - 1 && r.x2 <= dropmarkerRect.right + 1 &&
        r.y1 >= dropmarkerRect.top && r.y2 <= dropmarkerRect.bottom)
-    ))
+    )),
   }}, win);
 });

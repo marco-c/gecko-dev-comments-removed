@@ -4,9 +4,9 @@ const testState = {
   windows: [{
     tabs: [
       { entries: [{ url: "about:blank", triggeringPrincipal_base64 }] },
-      { entries: [{ url: "about:rights", triggeringPrincipal_base64 }] }
-    ]
-  }]
+      { entries: [{ url: "about:rights", triggeringPrincipal_base64 }] },
+    ],
+  }],
 };
 
 

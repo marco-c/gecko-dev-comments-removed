@@ -75,7 +75,7 @@ function createLoginsFragment(url, content, elementQuery) {
   
   document.createXULElement = document.createElement.bind(document);
   let browser = {
-    ownerDocument: document
+    ownerDocument: document,
   };
 
   let URI = Services.io.newURI(url);

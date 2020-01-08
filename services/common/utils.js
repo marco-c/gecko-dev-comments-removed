@@ -165,7 +165,7 @@ var CommonUtils = {
         
         timer.clear();
         callback.call(thisObj, timer);
-      }
+      },
     }, wait, timer.TYPE_ONE_SHOT);
 
     return thisObj[name] = timer;
