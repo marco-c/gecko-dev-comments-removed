@@ -96,11 +96,8 @@ public:
 
 
   const nsString GetKeyAtIndex(uint32_t aIndex) const;
-  
-  
-  
-  
-  JS::Value GetValueAtIndex(uint32_t aIndex) const;
+  bool GetValueAtIndex(JSContext* aCx, uint32_t aIndex,
+                       JS::MutableHandle<JS::Value> aResult) const;
 
 
   
