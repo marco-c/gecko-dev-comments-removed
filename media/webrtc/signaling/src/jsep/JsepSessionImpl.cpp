@@ -2084,50 +2084,33 @@ JsepSessionImpl::SetupDefaultCodecs()
       "109",
       "opus",
       48000,
-      2,
-      960,
-      
-      40000
-      ));
+      2));
 
   mSupportedCodecs.emplace_back(new JsepAudioCodecDescription(
       "9",
       "G722",
       8000,
-      1,
-      320,
-      64000));
+      1));
 
-  
-  
   mSupportedCodecs.emplace_back(
       new JsepAudioCodecDescription("0",
                                     "PCMU",
                                     8000,
-                                    1,
-                                    8000 / 50,   
-                                    8 * 8000 * 1 
+                                    1
                                     ));
 
   mSupportedCodecs.emplace_back(
       new JsepAudioCodecDescription("8",
                                     "PCMA",
                                     8000,
-                                    1,
-                                    8000 / 50,   
-                                    8 * 8000 * 1 
+                                    1
                                     ));
 
-  
-  
-  
   mSupportedCodecs.emplace_back(
       new JsepAudioCodecDescription("101",
                                     "telephone-event",
                                     8000,
-                                    1,
-                                    0, 
-                                    0  
+                                    1
                                     ));
 
   
