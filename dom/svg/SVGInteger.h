@@ -21,9 +21,8 @@ namespace mozilla {
 namespace dom {
 class SVGAnimationElement;
 }  
-}  
 
-class nsSVGInteger {
+class SVGInteger {
  public:
   typedef mozilla::dom::SVGElement SVGElement;
 
@@ -63,11 +62,11 @@ class nsSVGInteger {
 
  public:
   struct DOMAnimatedInteger final : public mozilla::dom::SVGAnimatedInteger {
-    DOMAnimatedInteger(nsSVGInteger* aVal, SVGElement* aSVGElement)
+    DOMAnimatedInteger(SVGInteger* aVal, SVGElement* aSVGElement)
         : mozilla::dom::SVGAnimatedInteger(aSVGElement), mVal(aVal) {}
     virtual ~DOMAnimatedInteger();
 
-    nsSVGInteger* mVal;  
+    SVGInteger* mVal;  
 
     virtual int32_t BaseVal() override { return mVal->GetBaseValue(); }
     virtual void SetBaseVal(int32_t aValue) override {
@@ -84,13 +83,13 @@ class nsSVGInteger {
 
   struct SMILInteger : public nsISMILAttr {
    public:
-    SMILInteger(nsSVGInteger* aVal, SVGElement* aSVGElement)
+    SMILInteger(SVGInteger* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}
 
     
     
     
-    nsSVGInteger* mVal;
+    SVGInteger* mVal;
     SVGElement* mSVGElement;
 
     
@@ -103,5 +102,7 @@ class nsSVGInteger {
     virtual nsresult SetAnimValue(const nsSMILValue& aValue) override;
   };
 };
+
+}  
 
 #endif  

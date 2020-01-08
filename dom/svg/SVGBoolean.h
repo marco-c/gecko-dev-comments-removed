@@ -22,9 +22,8 @@ class SVGAnimationElement;
 class SVGAnimatedBoolean;
 class SVGElement;
 }  
-}  
 
-class nsSVGBoolean {
+class SVGBoolean {
  public:
   typedef mozilla::dom::SVGElement SVGElement;
 
@@ -56,13 +55,13 @@ class nsSVGBoolean {
  public:
   struct SMILBool : public nsISMILAttr {
    public:
-    SMILBool(nsSVGBoolean* aVal, SVGElement* aSVGElement)
+    SMILBool(SVGBoolean* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}
 
     
     
     
-    nsSVGBoolean* mVal;
+    SVGBoolean* mVal;
     SVGElement* mSVGElement;
 
     
@@ -75,4 +74,7 @@ class nsSVGBoolean {
     virtual nsresult SetAnimValue(const nsSMILValue& aValue) override;
   };
 };
+
+}  
+
 #endif  
