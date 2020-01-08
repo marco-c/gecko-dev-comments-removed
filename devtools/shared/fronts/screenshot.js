@@ -20,19 +20,4 @@ const ScreenshotFront = protocol.FrontClassWithSpec(screenshotSpec, {
   }
 });
 
-
-const knownFronts = new WeakMap();
-
-
-
-
-function getScreenshotFront(target) {
-  let front = knownFronts.get(target.client);
-  if (front == null && target.form.screenshotActor != null) {
-    front = new ScreenshotFront(target.client, target.form);
-    knownFronts.set(target.client, front);
-  }
-  return front;
-}
-
-exports.getScreenshotFront = getScreenshotFront;
+exports.ScreenshotFront = ScreenshotFront;
