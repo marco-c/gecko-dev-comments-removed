@@ -344,10 +344,6 @@ function setEmptyPrefWatchlist() {
   });
 }
 
-function histogramValueCount(histogramSnapshot) {
-  return histogramSnapshot.counts.reduce((a, b) => a + b);
-}
-
 if (runningInParent) {
   
   Services.prefs.setCharPref("toolkit.telemetry.log.level", "Trace");

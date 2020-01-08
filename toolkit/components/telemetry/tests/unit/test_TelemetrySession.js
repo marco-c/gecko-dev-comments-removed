@@ -330,7 +330,7 @@ function checkPayload(payload, reason, successfulPings) {
     sum: 0,
   };
   let flag = payload.histograms[TELEMETRY_TEST_FLAG];
-  Assert.equal(uneval(flag), uneval(expected_flag));
+  Assert.deepEqual(flag, expected_flag);
 
   
   const expected_count = {
@@ -341,7 +341,7 @@ function checkPayload(payload, reason, successfulPings) {
     sum: 1,
   };
   let count = payload.histograms[TELEMETRY_TEST_COUNT];
-  Assert.equal(uneval(count), uneval(expected_count));
+  Assert.deepEqual(count, expected_count);
 
   
   if (successfulPings > 0) {
@@ -353,7 +353,7 @@ function checkPayload(payload, reason, successfulPings) {
       sum: successfulPings,
     };
     let tc = payload.histograms[TELEMETRY_SUCCESS];
-    Assert.equal(uneval(tc), uneval(expected_tc));
+    Assert.deepEqual(tc, expected_tc);
   }
 
   
