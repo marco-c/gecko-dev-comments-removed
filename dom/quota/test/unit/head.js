@@ -32,8 +32,29 @@ if (!this.runTest) {
 
     Cu.importGlobalProperties(["indexedDB", "File", "Blob", "FileReader"]);
 
-    do_test_pending();
-    testGenerator.next();
+    
+    
+    
+    Assert.ok(typeof testSteps === "function",
+              "There should be a testSteps function");
+    if (testSteps.constructor.name === "AsyncFunction") {
+      
+      
+      registerCleanupFunction(resetTesting);
+
+      add_task(testSteps);
+
+      
+      
+      run_next_test();
+    } else {
+      Assert.ok(testSteps.constructor.name === "GeneratorFunction",
+                "Unsupported function type");
+
+      do_test_pending();
+
+      testGenerator.next();
+    }
   }
 }
 
@@ -293,13 +314,16 @@ function getSimpleDatabase(principal)
   return connection;
 }
 
-function* requestFinished(request) {
-  request.callback = continueToNextStepSync;
-  yield undefined;
-  if (request.resultCode == NS_OK) {
-    return request.result;
-  }
-  throw request.resultCode;
+function requestFinished(request) {
+  return new Promise(function(resolve, reject) {
+    request.callback = function(request) {
+      if (request.resultCode == Cr.NS_OK) {
+        resolve(request.result);
+      } else {
+        reject(request.resultCode);
+      }
+    }
+  });
 }
 
 var SpecialPowers = {
