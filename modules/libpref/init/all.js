@@ -125,8 +125,6 @@ pref("dom.indexedDB.logging.details", true);
 
 pref("dom.indexedDB.logging.profiler-marks", false);
 
-pref("dom.indexedDB.storageOption.enabled", false);
-
 
 pref("dom.fileHandle.enabled", true);
 
@@ -146,8 +144,6 @@ pref("dom.select_events.textcontrols.enabled", false);
 
 
 pref("dom.workers.maxPerDomain", 512);
-
-pref("dom.serviceWorkers.enabled", false);
 
 
 pref("dom.serviceWorkers.idle_timeout", 30000);
@@ -172,9 +168,6 @@ pref("dom.enable_resource_timing", true);
 pref("dom.enable_performance_navigation_timing", true);
 
 
-pref("dom.performance.enable_user_timing_logging", false);
-
-
 pref("dom.performance.enable_notify_performance_timing", false);
 
 
@@ -188,9 +181,6 @@ pref("dom.performance.time_to_non_blank_paint.enabled", false);
 
 
 pref("dom.performance.time_to_dom_content_flushed.enabled", false);
-
-
-pref("dom.enable_performance_observer", true);
 
 
 pref("dom.requestIdleCallback.enabled", true);
@@ -969,9 +959,6 @@ pref("canvas.path.enabled", true);
 pref("canvas.capturestream.enabled", true);
 
 
-pref("canvas.imagebitmap_extensions.enabled", false);
-
-
 
 
 
@@ -1071,13 +1058,6 @@ pref("toolkit.asyncshutdown.crash_timeout", 180000);
 #endif // MOZ_ASAN
 
 pref("toolkit.asyncshutdown.log", false);
-
-#ifdef MOZILLA_OFFICIAL
-
-pref("browser.dom.window.dump.enabled", false, sticky);
-#else
-pref("browser.dom.window.dump.enabled", true, sticky);
-#endif
 
 
 pref("toolkit.dump.emit", false);
@@ -1370,8 +1350,6 @@ pref("privacy.firstparty.isolate",                        false);
 
 
 pref("privacy.firstparty.isolate.restrict_opener_access", true);
-
-pref("privacy.resistFingerprinting", false);
 
 
 
@@ -4799,8 +4777,6 @@ pref("webgl.dxgl.needs-finish", false);
 
 pref("dom.webgpu.enable", false);
 
-pref("gfx.offscreencanvas.enabled", false);
-
 
 
 
@@ -5059,14 +5035,7 @@ pref("network.buffer.cache.count", 24);
 pref("network.buffer.cache.size",  32768);
 
 
-pref("dom.webnotifications.enabled", true);
-pref("dom.webnotifications.serviceworker.enabled", true);
 pref("dom.webnotifications.requireinteraction.count", 3);
-#ifdef NIGHTLY_BUILD
-pref("dom.webnotifications.requireinteraction.enabled", true);
-#else
-pref("dom.webnotifications.requireinteraction.enabled", false);
-#endif
 
 
 pref("alerts.showFavicons", false);
@@ -5116,11 +5085,7 @@ pref("dom.vibrator.max_vibrate_list_len", 128);
 pref("dom.battery.enabled", true);
 
 
-pref("dom.streams.enabled", false);
 
-
-
-pref("dom.push.enabled", false);
 pref("dom.push.alwaysConnect", false);
 
 pref("dom.push.loglevel", "Error");
@@ -5187,11 +5152,6 @@ pref("dom.w3c_pointer_events.dispatch_by_pointer_messages", false);
 pref("dom.w3c_pointer_events.implicit_capture", false);
 
 
-
-
-pref("dom.promise_rejection_events.enabled", false);
-
-
 pref("dom.imagecapture.enabled", false);
 
 
@@ -5206,13 +5166,6 @@ pref("media.ondevicechange.fakeDeviceChangeEvent.enabled", false);
 
 
 pref("layout.css.touch_action.enabled", true);
-
-#if defined(MOZ_WIDGET_ANDROID)
-
-pref("dom.netinfo.enabled", true);
-#else
-pref("dom.netinfo.enabled", false);
-#endif
 
 
 
@@ -5618,9 +5571,6 @@ pref("identity.fxaccounts.auth.uri", "https://api.accounts.firefox.com/v1");
 pref("beacon.enabled", true);
 
 
-pref("dom.caches.enabled", true);
-
-
 pref("dom.udpsocket.enabled", false);
 
 
@@ -5816,7 +5766,6 @@ pref("osfile.reset_worker_delay", 30000);
 #endif
 
 #if !defined(MOZ_WIDGET_ANDROID)
-pref("dom.webkitBlink.dirPicker.enabled", true);
 pref("dom.webkitBlink.filesystem.enabled", true);
 #endif
 
@@ -5837,12 +5786,6 @@ pref("security.data_uri.block_toplevel_data_uri_navigations", true);
 
 pref("security.block_ftp_subresources", true);
 
-
-#if !defined(MOZ_WIDGET_ANDROID)
-pref("dom.storageManager.enabled", true);
-#else
-pref("dom.storageManager.enabled", false);
-#endif
 pref("dom.storageManager.prompt.testing", false);
 pref("dom.storageManager.prompt.testing.allow", false);
 
