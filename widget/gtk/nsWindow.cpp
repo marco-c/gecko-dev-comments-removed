@@ -33,6 +33,8 @@
 #include "nsIWidgetListener.h"
 #include "nsIScreenManager.h"
 #include "SystemTimeConverter.h"
+#include "nsIPresShell.h"
+#include "nsViewManager.h"
 
 #include "nsGtkKeyUtils.h"
 #include "nsGtkCursors.h"
@@ -3090,8 +3092,6 @@ void nsWindow::OnWindowStateEvent(GtkWidget *aWidget,
 
   
   
-  
-  
   if (mDrawInTitlebar && (aEvent->changed_mask & GDK_WINDOW_STATE_FOCUSED)) {
     
     
@@ -3099,6 +3099,7 @@ void nsWindow::OnWindowStateEvent(GtkWidget *aWidget,
     mTitlebarBackdropState =
         !(aEvent->new_window_state & GDK_WINDOW_STATE_FOCUSED);
 
+    ForceTitlebarRedraw();
     return;
   }
 
@@ -6732,4 +6733,44 @@ bool nsWindow::GetTopLevelWindowActiveState(nsIFrame *aFrame) {
   }
 
   return !window->mTitlebarBackdropState;
+}
+
+static nsIFrame *FindTitlebarFrame(nsIFrame *aFrame) {
+  for (nsIFrame *childFrame : aFrame->PrincipalChildList()) {
+    const nsStyleDisplay *frameDisp = childFrame->StyleDisplay();
+    if (frameDisp->mAppearance == StyleAppearance::MozWindowTitlebar ||
+        frameDisp->mAppearance == StyleAppearance::MozWindowTitlebarMaximized) {
+      return childFrame;
+    }
+
+    if (nsIFrame *foundFrame = FindTitlebarFrame(childFrame)) {
+      return foundFrame;
+    }
+  }
+  return nullptr;
+}
+
+void nsWindow::ForceTitlebarRedraw(void) {
+  MOZ_ASSERT(mDrawInTitlebar, "We should not redraw invisible titlebar.");
+
+  nsIPresShell *shell =
+      mWidgetListener ? mWidgetListener->GetPresShell() : nullptr;
+  if (!shell) {
+    return;
+  }
+  nsView *view = nsView::GetViewFor(this);
+  if (!view) {
+    return;
+  }
+  nsIFrame *frame = view->GetFrame();
+  if (!frame) {
+    return;
+  }
+
+  frame = FindTitlebarFrame(frame);
+  if (frame) {
+    nsLayoutUtils::PostRestyleEvent(frame->GetContent()->AsElement(),
+                                    nsRestyleHint(0),
+                                    nsChangeHint_RepaintFrame);
+  }
 }

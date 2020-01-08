@@ -625,6 +625,8 @@ class nsWindow final : public nsBaseWidget {
 
   virtual int32_t RoundsWidgetCoordinatesTo() override;
 
+  void ForceTitlebarRedraw();
+
   
 
 
