@@ -6,7 +6,6 @@
 
 
 
-use {Atom, LocalName, Namespace, Prefix};
 use app_units::Au;
 use cssparser::{self, Color, RGBA};
 use euclid::num::Zero;
@@ -17,10 +16,11 @@ use servo_arc::Arc;
 use servo_url::ServoUrl;
 use shared_lock::Locked;
 use std::str::FromStr;
+use str::str_join;
 use str::{read_exponent, read_fraction, HTML_SPACE_CHARACTERS};
 use str::{read_numbers, split_commas, split_html_space_chars};
-use str::str_join;
 use values::specified::Length;
+use {Atom, LocalName, Namespace, Prefix};
 
 
 const UNSIGNED_LONG_MAX: u32 = 2147483647;

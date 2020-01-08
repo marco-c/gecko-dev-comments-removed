@@ -6,12 +6,12 @@
 
 #![deny(missing_docs)]
 
-use Atom;
 use app_units::Au;
 use context::SharedStyleContext;
 use logical_geometry::WritingMode;
 use media_queries::Device;
 use properties::style_structs::Font;
+use Atom;
 
 
 

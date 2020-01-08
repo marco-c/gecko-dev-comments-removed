@@ -2,7 +2,6 @@
 
 
 
-use {Namespace, Prefix};
 use context::QuirksMode;
 use cssparser::{Parser, ParserInput, RuleListParser};
 use error_reporting::{ContextualParseError, ParseErrorReporter};
@@ -15,16 +14,19 @@ use media_queries::{Device, MediaList};
 use parking_lot::RwLock;
 use parser::ParserContext;
 use servo_arc::Arc;
-use shared_lock::{DeepCloneParams, DeepCloneWithLock, Locked, SharedRwLock, SharedRwLockReadGuard};
+use shared_lock::{
+    DeepCloneParams, DeepCloneWithLock, Locked, SharedRwLock, SharedRwLockReadGuard,
+};
 use std::mem;
 use std::sync::atomic::{AtomicBool, Ordering};
 use style_traits::ParsingMode;
-use stylesheets::{CssRule, CssRules, Origin, UrlExtraData};
 use stylesheets::loader::StylesheetLoader;
 use stylesheets::rule_parser::{State, TopLevelRuleParser};
 use stylesheets::rules_iterator::{EffectiveRules, EffectiveRulesIterator};
 use stylesheets::rules_iterator::{NestedRuleIterationCondition, RulesIterator};
+use stylesheets::{CssRule, CssRules, Origin, UrlExtraData};
 use use_counters::UseCounters;
+use {Namespace, Prefix};
 
 
 pub struct UserAgentStylesheets {

@@ -2,7 +2,7 @@
 
 
 
-use animate::{AnimationInputAttrs, AnimationVariantAttrs, AnimationFieldAttrs};
+use animate::{AnimationFieldAttrs, AnimationInputAttrs, AnimationVariantAttrs};
 use cg;
 use quote::Tokens;
 use syn::{DeriveInput, Path};

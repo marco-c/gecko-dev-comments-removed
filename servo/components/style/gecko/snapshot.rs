@@ -5,7 +5,6 @@
 
 
 
-use WeakAtom;
 use dom::TElement;
 use element_state::ElementState;
 use gecko::snapshot_helpers;
@@ -18,6 +17,7 @@ use invalidation::element::element_wrapper::ElementSnapshot;
 use selectors::attr::{AttrSelectorOperation, AttrSelectorOperator};
 use selectors::attr::{CaseSensitivity, NamespaceConstraint};
 use string_cache::{Atom, Namespace};
+use WeakAtom;
 
 
 pub type GeckoElementSnapshot = ServoElementSnapshot;

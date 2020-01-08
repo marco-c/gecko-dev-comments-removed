@@ -6,12 +6,12 @@
 
 
 
+use super::{Device, MediaFeatureExpression};
 use context::QuirksMode;
 use cssparser::{Parser, Token};
 use parser::ParserContext;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
-use super::{Device, MediaFeatureExpression};
 
 
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToCss)]

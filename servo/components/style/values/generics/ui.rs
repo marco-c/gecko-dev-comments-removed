@@ -5,8 +5,8 @@
 
 
 use std::fmt::{self, Write};
-use style_traits::{CssWriter, ToCss};
 use style_traits::cursor::CursorKind;
+use style_traits::{CssWriter, ToCss};
 
 
 
@@ -71,8 +71,20 @@ impl<ImageUrl: ToCss, Number: ToCss> ToCss for CursorImage<ImageUrl, Number> {
 
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq,
-         SpecifiedValueInfo, ToAnimatedValue, ToAnimatedZero, ToComputedValue, ToCss)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+)]
 pub enum ScrollbarColor<Color> {
     
     Auto,
@@ -82,7 +94,7 @@ pub enum ScrollbarColor<Color> {
         thumb: Color,
         
         track: Color,
-    }
+    },
 }
 
 impl<Color> Default for ScrollbarColor<Color> {

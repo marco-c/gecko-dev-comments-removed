@@ -5,13 +5,13 @@
 
 
 use num_traits::Zero;
-use std::{f32, f64};
 use std::f64::consts::PI;
 use std::fmt::{self, Write};
 use std::ops::Add;
+use std::{f32, f64};
 use style_traits::{CssWriter, ToCss};
-use values::CSSFloat;
 use values::distance::{ComputeSquaredDistance, SquaredDistance};
+use values::CSSFloat;
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
@@ -92,6 +92,7 @@ impl ComputeSquaredDistance for Angle {
     fn compute_squared_distance(&self, other: &Self) -> Result<SquaredDistance, ()> {
         
         
-        self.radians64().compute_squared_distance(&other.radians64())
+        self.radians64()
+            .compute_squared_distance(&other.radians64())
     }
 }

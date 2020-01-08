@@ -4,13 +4,13 @@
 
 
 
-use Atom;
-use gecko_bindings::{structs, bindings};
 use gecko_bindings::sugar::ownership::HasArcFFI;
+use gecko_bindings::{bindings, structs};
 use servo_arc::Arc;
-use std::{fmt, mem, ptr};
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
+use std::{fmt, mem, ptr};
+use Atom;
 
 
 
@@ -217,7 +217,9 @@ impl<T> structs::RefPtr<T> {
     where
         U: HasArcFFI<FFIType = T>,
     {
-        unsafe { U::release_opt(self.mRawPtr.as_ref()); }
+        unsafe {
+            U::release_opt(self.mRawPtr.as_ref());
+        }
         self.set_arc_leaky(other);
     }
 

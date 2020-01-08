@@ -6,7 +6,6 @@
 
 
 
-use Atom;
 use cssparser::{AtRuleParser, AtRuleType, BasicParseErrorKind, CowRcStr};
 use cssparser::{DeclarationListParser, DeclarationParser, Parser};
 use cssparser::{QualifiedRuleParser, RuleListParser, SourceLocation, Token};
@@ -23,6 +22,7 @@ use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
 use stylesheets::CssRuleType;
 use values::computed::font::FamilyName;
 use values::serialize_atom_identifier;
+use Atom;
 
 
 

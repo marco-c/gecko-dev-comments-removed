@@ -4,11 +4,11 @@
 
 
 
-use CaseSensitivityExt;
 use gecko_bindings::bindings;
 use gecko_bindings::structs::{self, nsAtom};
 use selectors::attr::CaseSensitivity;
 use string_cache::{Atom, WeakAtom};
+use CaseSensitivityExt;
 
 
 

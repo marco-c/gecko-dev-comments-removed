@@ -6,12 +6,12 @@
 
 
 
+use super::{Device, MediaQuery, Qualifier};
 use context::QuirksMode;
 use cssparser::{Delimiter, Parser};
 use cssparser::{ParserInput, Token};
 use error_reporting::ContextualParseError;
 use parser::ParserContext;
-use super::{Device, MediaQuery, Qualifier};
 
 
 #[css(comma, derive_debug)]

@@ -4,7 +4,6 @@
 
 
 
-use {Atom, LocalName, Namespace};
 use context::QuirksMode;
 use element_state::{DocumentState, ElementState};
 use fallible::FallibleVec;
@@ -16,6 +15,7 @@ use selectors::parser::{Combinator, Component};
 use selectors::parser::{Selector, SelectorIter, Visit};
 use selectors::visitor::SelectorVisitor;
 use smallvec::SmallVec;
+use {Atom, LocalName, Namespace};
 
 
 

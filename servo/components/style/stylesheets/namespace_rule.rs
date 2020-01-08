@@ -4,11 +4,11 @@
 
 
 
-use {Namespace, Prefix};
 use cssparser::SourceLocation;
 use shared_lock::{SharedRwLockReadGuard, ToCssWithGuard};
 use std::fmt::{self, Write};
 use str::CssStringWriter;
+use {Namespace, Prefix};
 
 
 #[derive(Clone, Debug, PartialEq)]

@@ -6,7 +6,6 @@
 
 
 
-use Atom;
 use cssparser::{Delimiter, Parser, ParserInput, SourcePosition, Token, TokenSerializationType};
 use hash::map::Entry;
 use precomputed_hash::PrecomputedHash;
@@ -20,6 +19,7 @@ use std::cmp;
 use std::fmt::{self, Write};
 use std::hash::Hash;
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
+use Atom;
 
 
 
@@ -631,11 +631,8 @@ impl<'a> CustomPropertiesBuilder<'a> {
                 
                 
                 let value = if !has_references && unparsed_value.references_environment {
-                    let result = substitute_references_in_value(
-                        unparsed_value,
-                        &map,
-                        &self.environment,
-                    );
+                    let result =
+                        substitute_references_in_value(unparsed_value, &map, &self.environment);
                     match result {
                         Ok(new_value) => Arc::new(new_value),
                         Err(..) => {
@@ -886,11 +883,7 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
         
         
         
-        let result = substitute_references_in_value(
-            &value,
-            &context.map,
-            &context.environment,
-        );
+        let result = substitute_references_in_value(&value, &context.map, &context.environment);
 
         match result {
             Ok(computed_value) => {
