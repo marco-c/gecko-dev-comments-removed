@@ -272,25 +272,10 @@ TabTarget.prototype = {
   },
 
   
-  
   get root() {
-    if (!this._root) {
-      this._root = this._getRoot();
-    }
-    return this._root;
+    return this.client.mainRoot.rootForm;
   },
 
-  _getRoot: function() {
-    return new Promise((resolve, reject) => {
-      this.client.mainRoot.getRoot(response => {
-        if (response.error) {
-          reject(new Error(response.error + ": " + response.message));
-          return;
-        }
-
-        resolve(response);
-      });
-    });
   },
 
   get client() {

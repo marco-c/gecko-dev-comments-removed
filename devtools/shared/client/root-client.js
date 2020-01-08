@@ -32,6 +32,16 @@ function RootClient(client, greeting) {
   this.actor = greeting.from;
   this.applicationType = greeting.applicationType;
   this.traits = greeting.traits;
+
+  
+  Object.defineProperty(this, "rootForm", {
+    get() {
+      delete this.rootForm;
+      this.rootForm = this._getRoot();
+      return this.rootForm;
+    },
+    configurable: true
+  });
 }
 exports.RootClient = RootClient;
 
@@ -43,7 +53,7 @@ RootClient.prototype = {
 
 
 
-  getRoot: DebuggerClient.requester({ type: "getRoot" }),
+  _getRoot: DebuggerClient.requester({ type: "getRoot" }),
 
    
 
