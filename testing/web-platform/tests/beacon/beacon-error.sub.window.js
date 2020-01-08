@@ -7,7 +7,7 @@ test(function() {
     
     var exceedPayload = Array(maxPayloadSize + 1).fill('z').join("");
 
-    var success = navigator.sendBeacon("http://doesnotmatter", exceedPayload);
+    var success = navigator.sendBeacon("http://{{hosts[][nonexistent]}}", exceedPayload);
     assert_false(success, "calling 'navigator.sendBeacon()' with payload size exceeding the maximum size must fail");
 }, "Verify calling 'navigator.sendBeacon()' with a large payload returns 'false'.");
 
