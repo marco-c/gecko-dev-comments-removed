@@ -202,6 +202,11 @@ add_task(async function test_initial_state() {
   let testWindow = await BrowserTestUtils.openNewBrowserWindow();
   await SimpleTest.promiseFocus(testWindow);
 
+  
+  
+  testWindow.gBrowser.selectedTab.focus();
+  await TestUtils.waitForCondition(() => !testWindow.gURLBar.focused);
+
   let overridePromise = expectCommandUpdate(isMac, testWindow);
 
   testWindow.gURLBar.focus();

@@ -25,6 +25,9 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://testing-common/TestUtils.jsm");
 ChromeUtils.import("resource://testing-common/ContentTask.jsm");
 
+ChromeUtils.defineModuleGetter(this, "BrowserWindowTracker",
+  "resource:///modules/BrowserWindowTracker.jsm");
+
 Services
   .mm
   .loadFrameScript(
@@ -708,54 +711,12 @@ var BrowserTestUtils = {
 
 
 
-
-
-
-
-
-
   async openNewBrowserWindow(options = {}) {
-    let argString = Cc["@mozilla.org/supports-string;1"].
-                    createInstance(Ci.nsISupportsString);
-    argString.data = "";
-    let features = "chrome,dialog=no,all";
-    let opener = null;
-
-    if (options.opener) {
-      opener = options.opener;
+    let currentWin = BrowserWindowTracker.getTopWindow({private: false});
+    if (!currentWin) {
+      throw new Error("Can't open a new browser window from this helper if no non-private window is open.");
     }
-
-    if (options.private) {
-      features += ",private";
-    }
-
-    if (options.width) {
-      features += ",width=" + options.width;
-    }
-    if (options.height) {
-      features += ",height=" + options.height;
-    }
-
-    if (options.left) {
-      features += ",left=" + options.left;
-    }
-
-    if (options.top) {
-      features += ",top=" + options.top;
-    }
-
-    if (options.hasOwnProperty("remote")) {
-      let remoteState = options.remote ? "remote" : "non-remote";
-      features += `,${remoteState}`;
-    }
-
-    if (options.url) {
-      argString.data = options.url;
-    }
-
-    let win = Services.ww.openWindow(
-      opener, AppConstants.BROWSER_CHROME_URL, "_blank",
-      features, argString);
+    let win = currentWin.OpenBrowserWindow(options);
 
     
     

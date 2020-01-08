@@ -48,7 +48,7 @@ add_task(async function sidebar_windows() {
 
   
   
-  let win = await BrowserTestUtils.openNewBrowserWindow({opener: window});
+  let win = await BrowserTestUtils.openNewBrowserWindow();
 
   await secondSidebar;
   ok(!win.document.getElementById("sidebar-box").hidden, "sidebar box is visible in second window");
