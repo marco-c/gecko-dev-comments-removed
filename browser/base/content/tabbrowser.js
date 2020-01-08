@@ -5345,11 +5345,8 @@ var TabContextMenu = {
 
     
     
-    let bookmarkAllTabs = document.getElementById("context_bookmarkAllTabs");
-    bookmarkAllTabs.hidden = this.contextTab.pinned || multiselectionContext;
-    if (!bookmarkAllTabs.hidden) {
-      PlacesCommandHook.updateBookmarkAllTabsCommand();
-    }
+    let bookmarkTab = document.getElementById("context_bookmarkTab");
+    bookmarkTab.hidden = multiselectionContext;
 
     
     let bookmarkMultiSelectedTabs = document.getElementById("context_bookmarkSelectedTabs");
