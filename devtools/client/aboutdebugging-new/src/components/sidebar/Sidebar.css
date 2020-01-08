@@ -2,11 +2,6 @@
 
 
 
-.sidebar {
-  padding-block-start: 70px;
-  padding-inline-start: 24px;
-}
-
 .sidebar__devices__no-devices-message {
   color: var(--grey-40);
   display: inline-block;

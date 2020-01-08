@@ -6,8 +6,6 @@
 @import "resource://devtools/client/themes/variables.css";
 @import "resource://devtools/client/aboutdebugging-new/src/components/App.css";
 @import "resource://devtools/client/aboutdebugging-new/src/components/RuntimeInfo.css";
-@import "resource://devtools/client/aboutdebugging-new/src/components/connect/ConnectPage.css";
-@import "resource://devtools/client/aboutdebugging-new/src/components/connect/ConnectSection.css";
 @import "resource://devtools/client/aboutdebugging-new/src/components/connect/ConnectSteps.css";
 @import "resource://devtools/client/aboutdebugging-new/src/components/connect/NetworkLocationsForm.css";
 @import "resource://devtools/client/aboutdebugging-new/src/components/connect/NetworkLocationsList.css";
@@ -23,6 +21,20 @@
 :root {
   
   --text-color: var(--in-content-page-color);
+
+  
+  
+  
+
+  
+  --page-width: 664px;
+  --base-distance: 4px;
+
+  
+  --base-font-size: 15px; 
+  --base-line-height: 1.8;
+  --button-form-width: 150px;
+  --input-hpadding: 5px;
 }
 
 html, body {
@@ -47,6 +59,28 @@ ul {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.separator {
+  margin: calc(var(--base-distance) * 4) 0;
+}
+
+.std-button {
+  box-sizing: border-box;
+  margin: 0;
+  min-width: var(--button-form-width);
+}
+
+.std-input,
+
+
+
+.std-input[type=text] {
+  box-sizing: border-box;
+  line-height: unset;
+  padding: 0 var(--input-hpadding);
+  height: 100%;
+}
+
 
 .aboutdebugging-button {
   height: 36px;
