@@ -16,6 +16,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   OS: "resource://gre/modules/osfile.jsm",
 });
 
+XPCOMUtils.defineLazyServiceGetter(this, "quotaManagerService",
+                                   "@mozilla.org/dom/quota-manager-service;1",
+                                   "nsIQuotaManagerService");
+
 
 
 
@@ -355,7 +359,7 @@ async function migrateJSONFileData(extension, storagePrincipal) {
   }
 
   try {
-    idbConn = await ExtensionStorageLocalIDB.openForPrincipal(storagePrincipal);
+    idbConn = await ExtensionStorageIDB.open(storagePrincipal, extension.hasPermission("unlimitedStorage"));
     hasEmptyIDB = await idbConn.isEmpty();
 
     if (!hasEmptyIDB) {
@@ -615,6 +619,19 @@ this.ExtensionStorageIDB = {
     return this.selectedBackendPromises.get(extension);
   },
 
+  persist(storagePrincipal) {
+    return new Promise((resolve, reject) => {
+      const request = quotaManagerService.persist(storagePrincipal);
+      request.callback = () => {
+        if (request.resultCode === Cr.NS_OK) {
+          resolve();
+        } else {
+          reject(new Error(`Failed to persist storage for principal: ${storagePrincipal.originNoSuffix}`));
+        }
+      };
+    });
+  },
+
   
 
 
@@ -626,8 +643,14 @@ this.ExtensionStorageIDB = {
 
 
 
-  open(storagePrincipal) {
-    return ExtensionStorageLocalIDB.openForPrincipal(storagePrincipal);
+
+
+  open(storagePrincipal, persisted) {
+    if (!storagePrincipal) {
+      return Promise.reject(new Error("Unexpected empty principal"));
+    }
+    let setPersistentMode = persisted ? this.persist(storagePrincipal) : Promise.resolve();
+    return setPersistentMode.then(() => ExtensionStorageLocalIDB.openForPrincipal(storagePrincipal));
   },
 
   addOnChangedListener(extensionId, listener) {

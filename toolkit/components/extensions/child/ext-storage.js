@@ -57,7 +57,8 @@ this.storage = class extends ExtensionAPI {
         return dbPromise;
       }
 
-      dbPromise = ExtensionStorageIDB.open(storagePrincipal).catch(err => {
+      const persisted = context.extension.hasPermission("unlimitedStorage");
+      dbPromise = ExtensionStorageIDB.open(storagePrincipal, persisted).catch(err => {
         
         
         dbPromise = null;
