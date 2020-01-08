@@ -483,6 +483,7 @@ public:
   
   
   
+  
   template<int N>
   void AssignLiteral(const char_type (&aStr)[N])
   {
