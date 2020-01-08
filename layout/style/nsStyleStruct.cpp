@@ -1320,30 +1320,18 @@ nsStyleSVGReset::FinishStyle(nsPresContext* aPresContext, const nsStyleSVGReset*
   NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT(i, mMask) {
     nsStyleImage& image = mMask.mLayers[i].mImage;
     if (image.GetType() == eStyleImageType_Image) {
-      URLValueData* url = image.GetURLValue();
-      
-      
-      if (url->IsLocalRef()) {
-        continue;
-      }
-#if 0
       
       
       
-      nsIURI* docURI = aPresContext->Document()->GetDocumentURI();
-      if (url->EqualsExceptRef(docURI)) {
-        continue;
-      }
-#endif
+      
+      if (!image.GetURLValue()->HasRef()) {
+        const nsStyleImage* oldImage =
+          (aOldStyle && aOldStyle->mMask.mLayers.Length() > i)
+          ? &aOldStyle->mMask.mLayers[i].mImage
+          : nullptr;
 
-      
-      
-      const nsStyleImage* oldImage =
-        (aOldStyle && aOldStyle->mMask.mLayers.Length() > i)
-        ? &aOldStyle->mMask.mLayers[i].mImage
-        : nullptr;
-
-      image.ResolveImage(aPresContext, oldImage);
+        image.ResolveImage(aPresContext, oldImage);
+      }
     }
   }
 }
