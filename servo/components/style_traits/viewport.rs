@@ -28,10 +28,7 @@ define_css_keyword_enum! {
 
 
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(
-    feature = "servo",
-    derive(Deserialize, Serialize, MallocSizeOf)
-)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize, MallocSizeOf))]
 pub struct ViewportConstraints {
     
     

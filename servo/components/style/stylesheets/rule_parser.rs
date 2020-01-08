@@ -107,9 +107,10 @@ impl<'b> TopLevelRuleParser<'b> {
         
         
         
-        if new_state == State::Namespaces && ctx.rule_list[ctx.index..]
-            .iter()
-            .any(|r| !matches!(*r, CssRule::Namespace(..)))
+        if new_state == State::Namespaces &&
+            ctx.rule_list[ctx.index..]
+                .iter()
+                .any(|r| !matches!(*r, CssRule::Namespace(..)))
         {
             self.dom_error = Some(RulesMutateError::InvalidState);
             return false;

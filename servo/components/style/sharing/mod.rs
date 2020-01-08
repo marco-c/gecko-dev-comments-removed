@@ -64,7 +64,6 @@
 
 
 
-use atomic_refcell::{AtomicRefCell, AtomicRefMut};
 use crate::applicable_declarations::ApplicableDeclarationBlock;
 use crate::bloom::StyleBloom;
 use crate::context::{SelectorFlagsMap, SharedStyleContext, StyleContext};
@@ -75,6 +74,7 @@ use crate::rule_tree::StrongRuleNode;
 use crate::style_resolver::{PrimaryStyle, ResolvedElementStyles};
 use crate::stylist::Stylist;
 use crate::Atom;
+use atomic_refcell::{AtomicRefCell, AtomicRefMut};
 use owning_ref::OwningHandle;
 use selectors::matching::{ElementSelectorFlags, VisitedHandlingMode};
 use selectors::NthIndexCache;

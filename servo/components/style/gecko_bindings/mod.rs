@@ -4,12 +4,7 @@
 
 
 
-#[allow(
-    dead_code,
-    improper_ctypes,
-    non_camel_case_types,
-    missing_docs
-)]
+#[allow(dead_code, improper_ctypes, non_camel_case_types, missing_docs)]
 pub mod bindings {
     include!(concat!(env!("OUT_DIR"), "/gecko/bindings.rs"));
 }

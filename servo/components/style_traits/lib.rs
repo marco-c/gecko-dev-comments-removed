@@ -48,10 +48,7 @@ pub enum DevicePixel {}
 
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(
-    feature = "servo",
-    derive(Deserialize, Serialize, MallocSizeOf)
-)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize, MallocSizeOf))]
 pub struct PinchZoomFactor(f32);
 
 impl PinchZoomFactor {

@@ -336,9 +336,10 @@ impl<'a> FontFace<'a> {
                         
                         
                         
-                        hints.is_empty() || hints
-                            .iter()
-                            .any(|hint| hint == "truetype" || hint == "opentype" || hint == "woff")
+                        hints.is_empty() ||
+                            hints.iter().any(|hint| {
+                                hint == "truetype" || hint == "opentype" || hint == "woff"
+                            })
                     } else {
                         true
                     }

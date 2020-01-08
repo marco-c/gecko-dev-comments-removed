@@ -74,21 +74,22 @@ impl MediaList {
     pub fn evaluate(&self, device: &Device, quirks_mode: QuirksMode) -> bool {
         
         
-        self.media_queries.is_empty() || self.media_queries.iter().any(|mq| {
-            let media_match = mq.media_type.matches(device.media_type());
+        self.media_queries.is_empty() ||
+            self.media_queries.iter().any(|mq| {
+                let media_match = mq.media_type.matches(device.media_type());
 
-            
-            let query_match = media_match && mq
-                .condition
-                .as_ref()
-                .map_or(true, |c| c.matches(device, quirks_mode));
+                
+                let query_match = media_match &&
+                    mq.condition
+                        .as_ref()
+                        .map_or(true, |c| c.matches(device, quirks_mode));
 
-            
-            match mq.qualifier {
-                Some(Qualifier::Not) => !query_match,
-                _ => query_match,
-            }
-        })
+                
+                match mq.qualifier {
+                    Some(Qualifier::Not) => !query_match,
+                    _ => query_match,
+                }
+            })
     }
 
     
