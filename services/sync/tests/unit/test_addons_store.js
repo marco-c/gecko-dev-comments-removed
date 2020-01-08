@@ -17,6 +17,9 @@ const HTTP_PORT = 8888;
 const prefs = new Preferences();
 
 prefs.set("extensions.getAddons.get.url", "http://localhost:8888/search/guid:%IDS%");
+
+
+prefs.set("extensions.getAddons.compatOverides.url", "http://localhost:8888/compat-override/guid:%IDS%");
 prefs.set("extensions.install.requireSecureOrigin", false);
 
 const SYSTEM_ADDON_ID = "system1@tests.mozilla.org";
@@ -609,8 +612,56 @@ add_task(async function test_wipe_and_install() {
   let fetched = await AddonManager.getAddonByID(record.addonID);
   Assert.ok(!!fetched);
 
+  
+  await store.wipe();
+
   await promiseStopServer(server);
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function test_incoming_reconciled_but_not_cached() {
+  _("Ensure we handle incoming records our reconciler has but the addon cache does not");
+
+  let addonid = "bootstrap1@tests.mozilla.org";
+  
+  let addon = await AddonManager.getAddonByID(addonid);
+  Assert.equal(null, addon);
+
+  Services.prefs.setBoolPref("extensions.getAddons.cache.enabled", false);
+
+  addon = await installAddon(XPIS.test_bootstrap1_1, reconciler);
+  Assert.notEqual((await AddonManager.getAddonByID(addonid)), null);
+  await uninstallAddon(addon, reconciler);
+
+  Services.prefs.setBoolPref("extensions.getAddons.cache.enabled", true);
+
+  
+  let server = createAndStartHTTPServer(HTTP_PORT);
+  let guid = Utils.makeGUID();
+  let record = createRecordForThisApp(guid, addonid, true, false);
+
+  let failed = await store.applyIncomingBatch([record]);
+  Assert.equal(0, failed.length);
+
+  Assert.notEqual((await AddonManager.getAddonByID(addonid)), null);
+
+  await promiseStopServer(server);
+});
+
+
+
+
 
 add_task(async function cleanup() {
   

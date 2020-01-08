@@ -291,8 +291,14 @@ AddonsStore.prototype = {
 
     
     
+    
+    
+    
+    
+    
+    
     let existingMeta = this.reconciler.addons[record.addonID];
-    if (existingMeta && !(await this.isAddonSyncable(existingMeta))) {
+    if (existingMeta && !(await this.isAddonSyncable(existingMeta,  true))) {
       this._log.info("Ignoring incoming record for an existing but non-syncable addon", record.addonID);
       return;
     }
