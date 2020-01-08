@@ -110,6 +110,19 @@ public:
                                                   const mozilla::ScreenIntSize& aDisplaySize,
                                                   const mozilla::CSSSize& aViewportSize) const;
 
+  
+
+
+  mozilla::ScreenIntSize
+  GetCompositionSize(const mozilla::ScreenIntSize& aDisplaySize) const;
+
+  
+
+
+
+  void ShrinkToDisplaySizeIfNeeded(nsViewportInfo& aViewportInfo,
+                                   const mozilla::ScreenIntSize& aDisplaySize);
+
   nsCOMPtr<nsIDocument> mDocument;
   nsIPresShell* MOZ_NON_OWNING_REF mPresShell; 
   nsCOMPtr<mozilla::dom::EventTarget> mEventTarget;
