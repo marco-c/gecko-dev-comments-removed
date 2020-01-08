@@ -26,6 +26,7 @@
 #include "util/Text.h"
 #include "vm/Printer.h"
 
+class JSAutoByteString;
 class JSDependentString;
 class JSExtensibleString;
 class JSExternalString;
@@ -1677,23 +1678,23 @@ SubstringKernel(JSContext* cx, HandleString str, int32_t beginInt, int32_t lengt
 UniqueChars
 EncodeLatin1(JSContext* cx, JSString* str);
 
-enum class IdToPrintableBehavior : bool {
-    
-
-
-    IdIsIdentifier,
-
-    
-
-
-    IdIsPropertyKey
-};
 
 
 
 
-extern UniqueChars
-IdToPrintableUTF8(JSContext* cx, HandleId id, IdToPrintableBehavior behavior);
+
+
+
+
+extern const char*
+ValueToPrintableLatin1(JSContext* cx, const Value&, JSAutoByteString* bytes,
+                       bool asSource = false);
+
+
+
+
+extern const char*
+ValueToPrintableUTF8(JSContext* cx, const Value&, JSAutoByteString* bytes, bool asSource = false);
 
 
 

@@ -72,9 +72,6 @@ IcuLocale(const char* locale)
     return locale;
 }
 
-extern UniqueChars
-EncodeLocale(JSContext* cx, JSString* locale);
-
 
 static_assert(mozilla::IsSame<UChar, char16_t>::value,
               "SpiderMonkey doesn't support redefining UChar to a different type");

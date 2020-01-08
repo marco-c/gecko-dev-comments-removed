@@ -1642,7 +1642,7 @@ CycleCollectedJSRuntime::ErrorInterceptor::interceptError(JSContext* cx, const J
   
   nsContentUtils::ExtractErrorValues(cx, value, details.mFilename, &details.mLine, &details.mColumn, details.mMessage);
 
-  JS::UniqueChars buf = JS::FormatStackDump(cx,  false,  false,  false);
+  JS::UniqueChars buf = JS::FormatStackDump(cx, nullptr,  false,  false,  false);
   CopyUTF8toUTF16(mozilla::MakeStringSpan(buf.get()), details.mStack);
 
   mThrownError.emplace(std::move(details));

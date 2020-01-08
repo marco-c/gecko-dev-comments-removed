@@ -331,41 +331,4 @@ StringIsASCII(const char* s);
 inline void JS_free(JS::Latin1CharsZ& ptr) { js_free((void*)ptr.get()); }
 inline void JS_free(JS::UTF8CharsZ& ptr) { js_free((void*)ptr.get()); }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(JS::UniqueChars)
-JS_EncodeStringToLatin1(JSContext* cx, JSString* str);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(JS::UniqueChars)
-JS_EncodeStringToUTF8(JSContext* cx, JS::Handle<JSString*> str);
-
 #endif 

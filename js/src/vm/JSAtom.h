@@ -11,8 +11,9 @@
 
 #include "gc/Rooting.h"
 #include "js/TypeDecls.h"
-#include "js/Utility.h"
 #include "vm/CommonPropertyNames.h"
+
+class JSAutoByteString;
 
 namespace js {
 
@@ -20,8 +21,8 @@ namespace js {
 
 
 
-extern UniqueChars
-AtomToPrintableString(JSContext* cx, JSAtom* atom);
+extern const char*
+AtomToPrintableString(JSContext* cx, JSAtom* atom, JSAutoByteString* bytes);
 
 class PropertyName;
 

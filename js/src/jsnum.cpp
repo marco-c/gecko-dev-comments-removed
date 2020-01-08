@@ -27,7 +27,6 @@
 
 #include "builtin/String.h"
 #include "double-conversion/double-conversion.h"
-#include "js/CharacterEncoding.h"
 #include "js/Conversions.h"
 #if !EXPOSE_INTL_API
 #include "js/LocaleSensitive.h"
@@ -797,10 +796,10 @@ num_toLocaleString_impl(JSContext* cx, const CallArgs& args)
 
 
 
-    UniqueChars numBytes = JS_EncodeStringToLatin1(cx, str);
+    JSAutoByteString numBytes(cx, str);
     if (!numBytes)
         return false;
-    const char* num = numBytes.get();
+    const char* num = numBytes.ptr();
     if (!num)
         return false;
 

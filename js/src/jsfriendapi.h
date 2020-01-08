@@ -15,6 +15,7 @@
 
 #include "jspubtd.h"
 
+#include "js/AutoByteString.h"
 #include "js/CallArgs.h"
 #include "js/CallNonGenericMethod.h"
 #include "js/CharacterEncoding.h"
@@ -301,7 +302,8 @@ namespace JS {
 
 
 extern JS_FRIEND_API(JS::UniqueChars)
-FormatStackDump(JSContext* cx, bool showArgs, bool showLocals, bool showThisProps);
+FormatStackDump(JSContext* cx, JS::UniqueChars&& buf, bool showArgs, bool showLocals,
+                bool showThisProps);
 
 
 
@@ -1462,13 +1464,13 @@ struct MOZ_STACK_CLASS JS_FRIEND_API(ErrorReport)
     JS::RootedObject exnObject;
 
     
-    JS::UniqueChars filename;
+    JSAutoByteString filename;
 
     
     
     
     JS::ConstUTF8CharsZ toStringResult_;
-    JS::UniqueChars toStringResultBytesStorage;
+    JSAutoByteString toStringResultBytesStorage;
 };
 
 
