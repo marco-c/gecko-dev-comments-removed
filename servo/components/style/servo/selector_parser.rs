@@ -285,7 +285,7 @@ impl PseudoElement {
 }
 
 
-pub type PseudoClassStringArg = Box<str>;
+pub type Lang = Box<str>;
 
 
 
@@ -302,7 +302,7 @@ pub enum NonTSPseudoClass {
     Fullscreen,
     Hover,
     Indeterminate,
-    Lang(PseudoClassStringArg),
+    Lang(Lang),
     Link,
     PlaceholderShown,
     ReadWrite,

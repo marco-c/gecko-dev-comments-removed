@@ -27,19 +27,10 @@
 
 
 
-
-
-
-
-
-
-
-
-
 macro_rules! apply_non_ts_list {
     ($apply_macro:ident) => {
         $apply_macro! {
-            bare: [
+            [
                 ("-moz-table-border-nonzero", MozTableBorderNonzero, mozTableBorderNonzero, _, PSEUDO_CLASS_ENABLED_IN_UA_SHEETS),
                 ("-moz-browser-frame", MozBrowserFrame, mozBrowserFrame, _, PSEUDO_CLASS_ENABLED_IN_UA_SHEETS_AND_CHROME),
                 ("link", Link, link, IN_UNVISITED_STATE, _),
@@ -111,9 +102,6 @@ macro_rules! apply_non_ts_list {
                 ("-moz-lwtheme-brighttext", MozLWThemeBrightText, mozLWThemeBrightText, _, _),
                 ("-moz-lwtheme-darktext", MozLWThemeDarkText, mozLWThemeDarkText, _, _),
                 ("-moz-window-inactive", MozWindowInactive, mozWindowInactive, _, _),
-            ],
-            string: [
-                ("lang", Lang, lang, _, _),
             ]
         }
     }
