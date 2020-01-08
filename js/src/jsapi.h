@@ -3459,7 +3459,6 @@ GetPromiseUserInputEventHandlingState(JS::HandleObject promise);
 
 
 
-
 extern JS_PUBLIC_API(bool)
 SetPromiseUserInputEventHandlingState(JS::HandleObject promise,
                                       JS::PromiseUserInputEventHandlingState state);

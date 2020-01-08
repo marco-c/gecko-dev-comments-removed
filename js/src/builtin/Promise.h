@@ -79,7 +79,6 @@ enum PromiseSlots {
 
 
 
-
 #define PROMISE_FLAG_HAD_USER_INTERACTION_UPON_CREATION 0x40
 
 class AutoSetNewObjectMetadata;
