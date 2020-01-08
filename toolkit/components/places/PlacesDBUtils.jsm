@@ -114,7 +114,7 @@ var PlacesDBUtils = {
         logs.push(`The ${dbName} database is sane`);
       } catch (ex) {
         PlacesDBUtils.clearPendingTasks();
-        if (ex.status == Cr.NS_ERROR_FILE_CORRUPTED) {
+        if (ex.result == Cr.NS_ERROR_FILE_CORRUPTED) {
           logs.push(`The ${dbName} database is corrupt`);
           Services.prefs.setCharPref("places.database.replaceDatabaseOnStartup", dbName);
           throw new Error(`Unable to fix corruption, ${dbName} will be replaced on next startup`);
@@ -1190,16 +1190,14 @@ async function integrity(dbName) {
     try {
       await db.execute("REINDEX");
     } catch (ex) {
-      let error = new Error("Impossible to reindex database");
-      error.status = Cr.NS_ERROR_FILE_CORRUPTED;
-      throw error;
+      throw new Components.Exception("Impossible to reindex database",
+                                     Cr.NS_ERROR_FILE_CORRUPTED);
     }
 
     
     if (!await check(db)) {
-      let error = new Error("The database is still corrupt");
-      error.status = Cr.NS_ERROR_FILE_CORRUPTED;
-      throw error;
+      throw new Components.Exception("The database is still corrupt",
+                                     Cr.NS_ERROR_FILE_CORRUPTED);
     }
   } finally {
     await db.close();
