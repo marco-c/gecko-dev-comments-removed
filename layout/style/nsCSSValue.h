@@ -208,9 +208,6 @@ struct URLValue final : public URLValueData
 
 struct ImageValue final : public URLValueData
 {
-  static already_AddRefed<ImageValue>
-    CreateFromURLValue(URLValue*, nsIDocument*, CORSMode);
-
   
   
   
