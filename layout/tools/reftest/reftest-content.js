@@ -693,9 +693,7 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements) {
             };
             os.addObserver(flushWaiter, "apz-repaints-flushed");
 
-            var willSnapshot = (gCurrentTestType != TYPE_SCRIPT) &&
-                               (gCurrentTestType != TYPE_LOAD) &&
-                               (gCurrentTestType != TYPE_PRINT);
+            var willSnapshot = IsSnapshottableTestType();
             var noFlush =
                 !(contentRootElement &&
                   contentRootElement.classList.contains("reftest-no-flush"));
@@ -754,6 +752,17 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements) {
               }
               CheckLayerAssertions(contentRootElement);
             }
+
+            if (!IsSnapshottableTestType()) {
+              
+              
+              
+              
+              LogInfo("MakeProgress: Doing sync flush to compositor");
+              gFailureReason = "timed out while waiting for sync compositor flush"
+              windowUtils().syncFlushCompositor();
+            }
+
             LogInfo("MakeProgress: Completed");
             state = STATE_COMPLETED;
             gFailureReason = "timed out while taking snapshot (bug in harness?)";
@@ -1094,14 +1103,19 @@ function LogInfo(str)
     }
 }
 
+function IsSnapshottableTestType()
+{
+    
+    return !(gCurrentTestType == TYPE_SCRIPT ||
+             gCurrentTestType == TYPE_LOAD ||
+             gCurrentTestType == TYPE_PRINT);
+}
+
 const SYNC_DEFAULT = 0x0;
 const SYNC_ALLOW_DISABLE = 0x1;
 function SynchronizeForSnapshot(flags)
 {
-    if (gCurrentTestType == TYPE_SCRIPT ||
-        gCurrentTestType == TYPE_LOAD ||
-        gCurrentTestType == TYPE_PRINT) {
-        
+    if (!IsSnapshottableTestType()) {
         return;
     }
 
