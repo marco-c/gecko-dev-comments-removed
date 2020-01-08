@@ -3845,6 +3845,21 @@ pref("intl.tsf.associate_imc_only_when_imm_ime_is_active", false);
 
 
 
+
+
+
+
+
+
+
+
+#ifdef EARLY_BETA_OR_EARLIER
+pref("intl.tsf.hack.allow_to_stop_hacking_on_build_17643_or_later", true);
+#else
+pref("intl.tsf.hack.allow_to_stop_hacking_on_build_17643_or_later", false);
+#endif
+
+
 pref("intl.tsf.hack.atok.create_native_caret", true);
 
 
