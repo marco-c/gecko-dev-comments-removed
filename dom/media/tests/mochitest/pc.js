@@ -1793,24 +1793,19 @@ PeerConnectionWrapper.prototype = {
       if (!twoMachines) {
         
         
-        if (res.timestamp != 2085978496000) {
-          if (false) {
-            ok(res.timestamp >= minimum,
-               "Valid " + (res.isRemote? "rtcp" : "rtp") + " timestamp " +
-                   res.timestamp + " >= " + minimum + " (" +
-                   (res.timestamp - minimum) + " ms)");
-          } else {
-            info("FIXME bug 1495446: uncomment the timestamp test case " +
-                 "above after RTCP epoch bug 1495446 is fixed.");
-          }
-          ok(res.timestamp <= nowish,
+        if (false) {
+          ok(res.timestamp >= minimum,
              "Valid " + (res.isRemote? "rtcp" : "rtp") + " timestamp " +
-                 res.timestamp + " <= " + nowish + " (" +
-                 (res.timestamp - nowish) + " ms)");
+                 res.timestamp + " >= " + minimum + " (" +
+                 (res.timestamp - minimum) + " ms)");
         } else {
-          info("Bug 1225729: Uninitialized timestamp (" + res.timestamp +
-                "), should be >=" + minimum + " and <= " + nowish);
+          info("FIXME bug 1495446: uncomment the timestamp test case " +
+               "above after RTCP epoch bug 1495446 is fixed.");
         }
+        ok(res.timestamp <= nowish,
+           "Valid " + (res.isRemote? "rtcp" : "rtp") + " timestamp " +
+               res.timestamp + " <= " + nowish + " (" +
+               (res.timestamp - nowish) + " ms)");
       }
       if (res.isRemote) {
         continue;
