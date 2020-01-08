@@ -164,17 +164,13 @@ PerformanceCounter()
 
   
   
-  if (true || !sHasStableTSC) {
-    
-    AutoCriticalSection lock(&sTimeStampLock);
+  AutoCriticalSection lock(&sTimeStampLock);
 
-    static decltype(LARGE_INTEGER::QuadPart) last;
-    if (last > pc.QuadPart) {
-      return last * 1000ULL;
-    }
-    last = pc.QuadPart;
+  static decltype(LARGE_INTEGER::QuadPart) last;
+  if (last > pc.QuadPart) {
+    return last * 1000ULL;
   }
-
+  last = pc.QuadPart;
   return pc.QuadPart * 1000ULL;
 }
 
