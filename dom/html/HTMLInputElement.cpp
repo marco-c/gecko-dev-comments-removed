@@ -5828,7 +5828,7 @@ HTMLInputElement::SaveState() {
       
       if ((GetValueMode() == VALUE_MODE_DEFAULT &&
            mType != NS_FORM_INPUT_HIDDEN) ||
-          mType == NS_FORM_INPUT_PASSWORD || !mValueChanged) {
+          mHasBeenTypePassword || !mValueChanged) {
         break;
       }
 
