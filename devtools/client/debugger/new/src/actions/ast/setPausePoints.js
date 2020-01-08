@@ -2,14 +2,16 @@
 
 
 
+
+
 import { getSourceFromId } from "../../selectors";
 import * as parser from "../../workers/parser";
 import { isGenerated } from "../../utils/source";
 import { mapPausePoints } from "../../utils/pause/pausePoints";
 import { features } from "../../utils/prefs";
 
-import type { SourceId } from "../types";
-import type { ThunkArgs, Action } from "./types";
+import type { SourceId } from "../../types";
+import type { ThunkArgs, Action } from "../types";
 
 function compressPausePoints(pausePoints) {
   const compressed = {};
