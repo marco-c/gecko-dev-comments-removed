@@ -6381,45 +6381,6 @@ nsHttpChannel::BeginConnect()
              this, static_cast<uint32_t>(rv)));
     }
 
-    return BeginConnectContinue();
-}
-
-void
-nsHttpChannel::HandleBeginConnectContinue()
-{
-    MOZ_ASSERT(!mCallOnResume, "How did that happen?");
-    nsresult rv;
-
-    if (mSuspendCount) {
-        LOG(("Waiting until resume BeginConnect [this=%p]\n", this));
-        mCallOnResume = &nsHttpChannel::HandleBeginConnectContinue;
-        return;
-    }
-
-    LOG(("nsHttpChannel::HandleBeginConnectContinue [this=%p]\n", this));
-    rv = BeginConnectContinue();
-    if (NS_FAILED(rv)) {
-        CloseCacheEntry(false);
-        Unused << AsyncAbort(rv);
-    }
-}
-
-nsresult
-nsHttpChannel::BeginConnectContinue()
-{
-    nsresult rv;
-
-    
-    if (mCanceled) {
-        return mStatus;
-    }
-
-    
-    
-    if (mAPIRedirectToURI) {
-        return AsyncCall(&nsHttpChannel::HandleAsyncAPIRedirect);
-    }
-
     
     
     if (!mTimingEnabled)
