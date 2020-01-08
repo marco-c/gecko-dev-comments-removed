@@ -1685,15 +1685,14 @@ EncodeLatin1(JSContext* cx, JSString* str);
 
 
 
-extern const char*
-ValueToPrintableLatin1(JSContext* cx, const Value&, UniqueChars* bytes,
-                       bool asSource = false);
+extern UniqueChars
+ValueToPrintableLatin1(JSContext* cx, const Value&, bool asSource = false);
 
 
 
 
-extern const char*
-ValueToPrintableUTF8(JSContext* cx, const Value&, UniqueChars* bytes, bool asSource = false);
+extern UniqueChars
+ValueToPrintableUTF8(JSContext* cx, const Value&, bool asSource = false);
 
 
 
