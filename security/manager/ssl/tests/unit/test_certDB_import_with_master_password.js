@@ -32,10 +32,6 @@ const gCertificateDialogs = {
     
     ok(false, "getPKCS12FilePassword() should not have been called");
   },
-  viewCert: (ctx, cert) => {
-    
-    ok(false, "viewCert() should not have been called");
-  },
 
   QueryInterface: ChromeUtils.generateQI([Ci.nsICertificateDialogs])
 };
