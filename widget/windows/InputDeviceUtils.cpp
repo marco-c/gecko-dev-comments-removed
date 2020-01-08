@@ -23,7 +23,8 @@ InputDeviceUtils::RegisterNotification(HWND aHwnd)
   filter.dbcc_size = sizeof(DEV_BROADCAST_DEVICEINTERFACE);
   filter.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
   
-  filter.dbcc_classguid = GUID_DEVINTERFACE_MOUSE;
+  
+  filter.dbcc_classguid = GUID_DEVINTERFACE_HID;
   return RegisterDeviceNotification(aHwnd,
                                     &filter,
                                     DEVICE_NOTIFY_WINDOW_HANDLE);
