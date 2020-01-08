@@ -6,11 +6,17 @@
 
 package org.mozilla.geckoview;
 
+import android.app.ActivityManager;
+import android.content.ComponentName;
+import android.content.pm.PackageManager;
+import android.content.pm.ServiceInfo;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.content.Context;
+import android.os.Process;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.text.TextUtils;
 import android.util.Log;
 
 import org.mozilla.gecko.EventDispatcher;
@@ -21,6 +27,7 @@ import org.mozilla.gecko.PrefsHelper;
 import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
+import org.mozilla.gecko.util.StringUtils;
 import org.mozilla.gecko.util.ThreadUtils;
 
 import java.io.File;
@@ -28,6 +35,53 @@ import java.io.File;
 public final class GeckoRuntime implements Parcelable {
     private static final String LOGTAG = "GeckoRuntime";
     private static final boolean DEBUG = false;
+
+    
+
+
+
+    public static final String ACTION_CRASHED = "org.mozilla.gecko.ACTION_CRASHED";
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    public static final String EXTRA_MINIDUMP_PATH = "minidumpPath";
+
+    
+
+
+
+
+
+
+
+    public static final String EXTRA_EXTRAS_PATH = "extrasPath";
+
+    
+
+
+
+
+
+    public static final String EXTRA_MINIDUMP_SUCCESS = "minidumpSuccess";
+
+    
+
+
+
+
+
+
+    public static final String EXTRA_CRASH_FATAL = "fatal";
 
     private static GeckoRuntime sDefaultRuntime;
 
@@ -85,6 +139,17 @@ public final class GeckoRuntime implements Parcelable {
         }
     };
 
+    private static final String getProcessName(Context context) {
+        final ActivityManager manager = (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
+        for (final ActivityManager.RunningAppProcessInfo info : manager.getRunningAppProcesses()) {
+            if (info.pid == Process.myPid()) {
+                return info.processName;
+            }
+        }
+
+        return null;
+    }
+
      boolean init(final @NonNull Context context, final @NonNull GeckoRuntimeSettings settings) {
         if (DEBUG) {
             Log.d(LOGTAG, "init");
@@ -98,9 +163,28 @@ public final class GeckoRuntime implements Parcelable {
             flags |= GeckoThread.FLAG_DEBUGGING;
         }
 
+        final Class<?> crashHandler = settings.getCrashHandler();
+        if (crashHandler != null) {
+            try {
+                final ServiceInfo info = context.getPackageManager().getServiceInfo(new ComponentName(context, crashHandler), 0);
+                if (info.processName.equals(getProcessName(context))) {
+                    throw new IllegalArgumentException("Crash handler service must run in a separate process");
+                }
+
+                flags |= GeckoThread.FLAG_ENABLE_NATIVE_CRASHREPORTER;
+            } catch (PackageManager.NameNotFoundException e) {
+                throw new IllegalArgumentException("Crash handler must be registered as a service");
+            }
+        }
+
+        if (GeckoAppShell.isFennec()) {
+            flags |= GeckoThread.FLAG_ENABLE_JAVA_CRASHREPORTER;
+        }
+
         GeckoAppShell.setDisplayDensityOverride(settings.getDisplayDensityOverride());
         GeckoAppShell.setDisplayDpiOverride(settings.getDisplayDpiOverride());
         GeckoAppShell.setScreenSizeOverride(settings.getScreenSizeOverride());
+        GeckoAppShell.setCrashHandlerService(settings.getCrashHandler());
 
         if (!GeckoThread.initMainProcess( null, settings.getArguments(),
                                          settings.getExtras(), flags)) {

@@ -9,6 +9,7 @@ package org.mozilla.geckoview;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
+import android.app.Service;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Parcel;
@@ -252,6 +253,44 @@ public final class GeckoRuntimeSettings implements Parcelable {
             mSettings.mScreenHeightOverride = height;
             return this;
         }
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        public @NonNull Builder crashHandler(final Class<? extends Service> handler) {
+            mSettings.mCrashHandler = handler;
+            return this;
+        }
     }
 
      GeckoRuntime runtime;
@@ -320,6 +359,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
      int mDisplayDpiOverride;
      int mScreenWidthOverride;
      int mScreenHeightOverride;
+     Class<? extends Service> mCrashHandler;
 
     private final Pref<?>[] mPrefs = new Pref<?>[] {
         mCookieBehavior, mCookieLifetime, mConsoleOutput,
@@ -361,6 +401,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
         mDisplayDpiOverride = settings.mDisplayDpiOverride;
         mScreenWidthOverride = settings.mScreenWidthOverride;
         mScreenHeightOverride = settings.mScreenHeightOverride;
+        mCrashHandler = settings.mCrashHandler;
     }
 
      void flush() {
@@ -485,6 +526,10 @@ public final class GeckoRuntimeSettings implements Parcelable {
             return mDisplayDpiOverride;
         }
         return null;
+    }
+
+    public Class<? extends Service> getCrashHandler() {
+        return mCrashHandler;
     }
 
     
@@ -707,6 +752,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
         out.writeInt(mDisplayDpiOverride);
         out.writeInt(mScreenWidthOverride);
         out.writeInt(mScreenHeightOverride);
+        out.writeString(mCrashHandler != null ? mCrashHandler.getName() : null);
     }
 
     
@@ -727,6 +773,18 @@ public final class GeckoRuntimeSettings implements Parcelable {
         mDisplayDpiOverride = source.readInt();
         mScreenWidthOverride = source.readInt();
         mScreenHeightOverride = source.readInt();
+
+        final String crashHandlerName = source.readString();
+        if (crashHandlerName != null) {
+            try {
+                @SuppressWarnings("unchecked")
+                final Class<? extends Service> handler =
+                        (Class<? extends Service>) Class.forName(crashHandlerName);
+
+                mCrashHandler = handler;
+            } catch (ClassNotFoundException e) {
+            }
+        }
     }
 
     public static final Parcelable.Creator<GeckoRuntimeSettings> CREATOR
