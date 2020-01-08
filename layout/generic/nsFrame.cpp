@@ -7539,8 +7539,8 @@ nsresult nsFrame::GetNextPrevLineFromeBlockFrame(nsPresContext* aPresContext,
   nsIFrame* resultFrame = nullptr;
   nsIFrame* farStoppingFrame = nullptr;  
                                          
-  nsIFrame* nearStoppingFrame =
-      nullptr;  
+  nsIFrame* nearStoppingFrame = nullptr;  
+                                          
   nsIFrame* firstFrame;
   nsIFrame* lastFrame;
   nsRect rect;
@@ -9541,9 +9541,6 @@ nsFrame::RefreshSizeCache(nsBoxLayoutState& aState) {
   
   
 
-  
-  
-  
   
   
   

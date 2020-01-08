@@ -320,9 +320,7 @@ static void AssertAnonymousFlexOrGridItemParent(const nsIFrame* aChild,
   }
 }
 #else
-#define AssertAnonymousFlexOrGridItemParent(x, y) \
-  do { /* nothing */                              \
-  } while (0)
+#define AssertAnonymousFlexOrGridItemParent(x, y) PR_BEGIN_MACRO PR_END_MACRO
 #endif
 
 static inline nsContainerFrame* GetFieldSetBlockFrame(
@@ -2580,10 +2578,8 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
 
 
 
-
   
 
-  
   
   
   
@@ -4182,6 +4178,8 @@ void nsCSSFrameConstructor::FinishBuildingScrollFrame(
   nsFrameList scrolled(aScrolledFrame, aScrolledFrame);
   aScrollFrame->AppendFrames(kPrincipalList, scrolled);
 }
+
+
 
 
 
@@ -8692,29 +8690,29 @@ void nsCSSFrameConstructor::ShouldHaveSpecialBlockStyle(
 
 const nsCSSFrameConstructor::PseudoParentData
     nsCSSFrameConstructor::sPseudoParentData[eParentTypeCount] = {
-        {
-         FULL_CTOR_FCDATA(FCDATA_IS_TABLE_PART | FCDATA_SKIP_FRAMESET |
+        
+        {FULL_CTOR_FCDATA(FCDATA_IS_TABLE_PART | FCDATA_SKIP_FRAMESET |
                               FCDATA_USE_CHILD_ITEMS |
                               FCDATA_IS_WRAPPER_ANON_BOX |
                               FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeRow),
                           &nsCSSFrameConstructor::ConstructTableCell),
          nsCSSAnonBoxes::tableCell()},
-        {
-         FULL_CTOR_FCDATA(FCDATA_IS_TABLE_PART | FCDATA_SKIP_FRAMESET |
+        
+        {FULL_CTOR_FCDATA(FCDATA_IS_TABLE_PART | FCDATA_SKIP_FRAMESET |
                               FCDATA_USE_CHILD_ITEMS |
                               FCDATA_IS_WRAPPER_ANON_BOX |
                               FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeRowGroup),
                           &nsCSSFrameConstructor::ConstructTableRowOrRowGroup),
          nsCSSAnonBoxes::tableRow()},
-        {
-         FULL_CTOR_FCDATA(FCDATA_IS_TABLE_PART | FCDATA_SKIP_FRAMESET |
+        
+        {FULL_CTOR_FCDATA(FCDATA_IS_TABLE_PART | FCDATA_SKIP_FRAMESET |
                               FCDATA_USE_CHILD_ITEMS |
                               FCDATA_IS_WRAPPER_ANON_BOX |
                               FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeTable),
                           &nsCSSFrameConstructor::ConstructTableRowOrRowGroup),
          nsCSSAnonBoxes::tableRowGroup()},
-        {
-         FCDATA_DECL(
+        
+        {FCDATA_DECL(
              FCDATA_IS_TABLE_PART | FCDATA_SKIP_FRAMESET |
                  FCDATA_DISALLOW_OUT_OF_FLOW | FCDATA_USE_CHILD_ITEMS |
                  FCDATA_SKIP_ABSPOS_PUSH |
@@ -8723,41 +8721,41 @@ const nsCSSFrameConstructor::PseudoParentData
                  FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeTable),
              NS_NewTableColGroupFrame),
          nsCSSAnonBoxes::tableColGroup()},
-        {
-         FULL_CTOR_FCDATA(FCDATA_SKIP_FRAMESET | FCDATA_USE_CHILD_ITEMS |
+        
+        {FULL_CTOR_FCDATA(FCDATA_SKIP_FRAMESET | FCDATA_USE_CHILD_ITEMS |
                               FCDATA_IS_WRAPPER_ANON_BOX,
                           &nsCSSFrameConstructor::ConstructTable),
          nsCSSAnonBoxes::table()},
-        {
-         FCDATA_DECL(FCDATA_IS_LINE_PARTICIPANT | FCDATA_USE_CHILD_ITEMS |
+        
+        {FCDATA_DECL(FCDATA_IS_LINE_PARTICIPANT | FCDATA_USE_CHILD_ITEMS |
                          FCDATA_IS_WRAPPER_ANON_BOX | FCDATA_SKIP_FRAMESET,
                      NS_NewRubyFrame),
          nsCSSAnonBoxes::ruby()},
-        {
-         FCDATA_DECL(
+        
+        {FCDATA_DECL(
              FCDATA_USE_CHILD_ITEMS | FCDATA_IS_LINE_PARTICIPANT |
                  FCDATA_IS_WRAPPER_ANON_BOX |
                  FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeRubyBaseContainer) |
                  FCDATA_SKIP_FRAMESET,
              NS_NewRubyBaseFrame),
          nsCSSAnonBoxes::rubyBase()},
-        {
-         FCDATA_DECL(FCDATA_USE_CHILD_ITEMS | FCDATA_IS_LINE_PARTICIPANT |
+        
+        {FCDATA_DECL(FCDATA_USE_CHILD_ITEMS | FCDATA_IS_LINE_PARTICIPANT |
                          FCDATA_IS_WRAPPER_ANON_BOX |
                          FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeRuby) |
                          FCDATA_SKIP_FRAMESET,
                      NS_NewRubyBaseContainerFrame),
          nsCSSAnonBoxes::rubyBaseContainer()},
-        {
-         FCDATA_DECL(
+        
+        {FCDATA_DECL(
              FCDATA_USE_CHILD_ITEMS | FCDATA_IS_LINE_PARTICIPANT |
                  FCDATA_IS_WRAPPER_ANON_BOX |
                  FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeRubyTextContainer) |
                  FCDATA_SKIP_FRAMESET,
              NS_NewRubyTextFrame),
          nsCSSAnonBoxes::rubyText()},
-        {
-         FCDATA_DECL(FCDATA_USE_CHILD_ITEMS | FCDATA_IS_WRAPPER_ANON_BOX |
+        
+        {FCDATA_DECL(FCDATA_USE_CHILD_ITEMS | FCDATA_IS_WRAPPER_ANON_BOX |
                          FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeRuby) |
                          FCDATA_SKIP_FRAMESET,
                      NS_NewRubyTextContainerFrame),
@@ -10923,10 +10921,9 @@ nsIFrame* nsCSSFrameConstructor::ConstructInline(
   
   InitAndRestoreFrame(aState, content, aParentFrame, newFrame);
 
-  nsFrameConstructorSaveState
-      absoluteSaveState;  
-                          
-                          
+  
+  
+  nsFrameConstructorSaveState absoluteSaveState;
 
   bool isAbsPosCB = newFrame->IsAbsPosContainingBlock();
   newFrame->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);

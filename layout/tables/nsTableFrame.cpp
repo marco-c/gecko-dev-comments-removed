@@ -1893,6 +1893,10 @@ void nsTableFrame::RequestSpecialBSizeReflow(const ReflowInput& aReflowInput) {
 
 
 
+
+
+
+
 void nsTableFrame::Reflow(nsPresContext* aPresContext,
                           ReflowOutput& aDesiredSize,
                           const ReflowInput& aReflowInput,
@@ -5541,6 +5545,15 @@ BCCellBorder BCMapCellInfo::GetBStartInternalBorder() {
   return CompareBorders(nullptr, nullptr, nullptr, rg, mStartRow, mCell,
                         mTableWM, eLogicalSideBStart, !ADJACENT);
 }
+
+
+
+
+
+
+
+
+
 
 
 

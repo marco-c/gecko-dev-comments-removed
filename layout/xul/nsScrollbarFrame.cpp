@@ -284,6 +284,7 @@ int32_t nsScrollbarFrame::MoveToNewPosition() {
 nsresult nsScrollbarFrame::CreateAnonymousContent(
     nsTArray<ContentInfo>& aElements) {
   
+
   
   
   
@@ -292,9 +293,7 @@ nsresult nsScrollbarFrame::CreateAnonymousContent(
   
   
   
-  
-  
-  
+
   
 
   nsNodeInfoManager* nodeInfoManager = mContent->NodeInfo()->NodeInfoManager();

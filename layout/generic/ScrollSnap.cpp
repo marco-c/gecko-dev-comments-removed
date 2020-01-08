@@ -57,8 +57,8 @@ class CalcSnapPoints : public SnappingEdgeCallback {
 
  protected:
   nsIScrollableFrame::ScrollUnit mUnit;
-  nsPoint
-      mDestination;   
+  nsPoint mDestination;  
+                         
   nsPoint mStartPos;  
   nsIntPoint mScrollingDirection;  
   nsPoint mBestEdge;  

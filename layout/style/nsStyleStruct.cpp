@@ -121,8 +121,7 @@ nsStyleFont::nsStyleFont(const nsPresContext* aContext)
       mScriptLevel(0),
       mMathVariant(NS_MATHML_MATHVARIANT_NONE),
       mMathDisplay(NS_MATHML_DISPLAYSTYLE_INLINE),
-      mMinFontSizeRatio(100)  
-      ,
+      mMinFontSizeRatio(100),  
       mExplicitLanguage(false),
       mAllowZoom(true),
       mScriptUnconstrainedSize(mSize),
@@ -653,8 +652,7 @@ nsChangeHint nsStyleColumn::CalcDifference(
 
 
 nsStyleSVG::nsStyleSVG(const nsPresContext* aContext)
-    : mFill(eStyleSVGPaintType_Color)  
-      ,
+    : mFill(eStyleSVGPaintType_Color),  
       mStroke(eStyleSVGPaintType_None),
       mStrokeDashoffset(0, nsStyleCoord::CoordConstructor),
       mStrokeWidth(nsPresContext::CSSPixelsToAppUnits(1),

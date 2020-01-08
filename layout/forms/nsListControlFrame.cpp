@@ -39,8 +39,7 @@ using namespace mozilla;
 using namespace mozilla::dom;
 
 
-const uint32_t kMaxDropDownRows =
-    20;  
+const uint32_t kMaxDropDownRows = 20;  
 const int32_t kNothingSelected = -1;
 
 

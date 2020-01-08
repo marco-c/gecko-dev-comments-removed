@@ -2207,12 +2207,11 @@ static void ConstrainToCoordValues(gfxFloat& aStart, gfxFloat& aSize) {
 
 nsRect nsLayoutUtils::RoundGfxRectToAppRect(const Rect& aRect, float aFactor) {
   
-
+  
   Rect scaledRect = aRect;
   scaledRect.ScaleRoundOut(aFactor);
 
   
-
   ConstrainToCoordValues(scaledRect.x, scaledRect.width);
   ConstrainToCoordValues(scaledRect.y, scaledRect.height);
 
@@ -2228,12 +2227,11 @@ nsRect nsLayoutUtils::RoundGfxRectToAppRect(const Rect& aRect, float aFactor) {
 nsRect nsLayoutUtils::RoundGfxRectToAppRect(const gfxRect& aRect,
                                             float aFactor) {
   
-
+  
   gfxRect scaledRect = aRect;
   scaledRect.ScaleRoundOut(aFactor);
 
   
-
   ConstrainToCoordValues(scaledRect.x, scaledRect.width);
   ConstrainToCoordValues(scaledRect.y, scaledRect.height);
 
@@ -6665,10 +6663,10 @@ static ImgDrawResult DrawImageInternal(
 }
 
  void nsLayoutUtils::ComputeSizeForDrawing(
-    imgIContainer* aImage, CSSIntSize& aImageSize, 
-    nsSize& aIntrinsicRatio,                       
-    bool& aGotWidth,                               
-    bool& aGotHeight ) {
+    imgIContainer* aImage,  CSSIntSize& aImageSize,
+     nsSize& aIntrinsicRatio,
+     bool& aGotWidth,
+     bool& aGotHeight) {
   aGotWidth = NS_SUCCEEDED(aImage->GetWidth(&aImageSize.width));
   aGotHeight = NS_SUCCEEDED(aImage->GetHeight(&aImageSize.height));
   bool gotRatio = NS_SUCCEEDED(aImage->GetIntrinsicRatio(&aIntrinsicRatio));

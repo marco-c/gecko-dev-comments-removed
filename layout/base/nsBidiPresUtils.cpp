@@ -51,8 +51,8 @@ static const char16_t kLRI = 0x2066;
 static const char16_t kRLI = 0x2067;
 static const char16_t kFSI = 0x2068;
 static const char16_t kPDI = 0x2069;
+
 static const char16_t kSeparators[] = {
-    
     char16_t('\t'), char16_t('\r'),   char16_t('\n'), char16_t(0xb),
     char16_t(0x1c), char16_t(0x1d),   char16_t(0x1e), char16_t(0x1f),
     char16_t(0x85), char16_t(0x2029), char16_t(0)};

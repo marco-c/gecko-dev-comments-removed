@@ -637,9 +637,8 @@ nsresult nsFrameSelection::MoveCaret(nsDirection aDirection,
   nsPresContext* context = mShell->GetPresContext();
   if (!context) return NS_ERROR_FAILURE;
 
-  nsPoint desiredPos(
-      0,
-      0);  
+  
+  nsPoint desiredPos(0, 0);
 
   int8_t index = GetIndexFromSelectionType(SelectionType::eNormal);
   RefPtr<Selection> sel = mDomSelections[index];
@@ -984,6 +983,7 @@ nsresult nsFrameSelection::MaintainSelection(nsSelectionAmount aAmount) {
 
 
 
+
 void nsFrameSelection::BidiLevelFromMove(nsIPresShell* aPresShell,
                                          nsIContent* aNode,
                                          uint32_t aContentOffset,
@@ -1245,8 +1245,8 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* aNewFocus,
       mBatching = batching;
       mChangesDuringBatching = changes;
     } else {
-      bool oldDesiredPosSet =
-          mDesiredPosSet;  
+      bool oldDesiredPosSet = mDesiredPosSet;  
+                                               
       mDomSelections[index]->Collapse(aNewFocus, aContentOffset);
       mDesiredPosSet = oldDesiredPosSet;  
       mBatching = batching;

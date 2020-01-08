@@ -169,10 +169,10 @@ void nsImageBoxFrame::DestroyFrom(nsIFrame* aDestructRoot,
     mImageRequest->CancelAndForgetObserver(NS_ERROR_FAILURE);
   }
 
-  if (mListener)
-    reinterpret_cast<nsImageBoxListener*>(mListener.get())
-        ->ClearFrame();  
-                         
+  if (mListener) {
+    
+    reinterpret_cast<nsImageBoxListener*>(mListener.get())->ClearFrame();
+  }
 
   nsLeafBoxFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }

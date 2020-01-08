@@ -636,8 +636,8 @@ static void ListMathMLTree(nsIFrame* atLeast) {
   for (; f; f = f->GetParent()) {
     nsIContent* c = f->GetContent();
     if (!c || c->IsMathMLElement(nsGkAtoms::math) ||
-        c->NodeInfo()->NameAtom(
-            nsGkAtoms::body))  
+        
+        c->NodeInfo()->NameAtom(nsGkAtoms::body))
       break;
   }
   if (!f) f = atLeast;

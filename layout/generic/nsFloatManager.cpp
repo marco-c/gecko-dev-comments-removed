@@ -880,14 +880,13 @@ nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
                    "Our distance field most extreme indices should be "
                    "in-bounds.");
 
-        df[index] = std::min<dfType>(
-            df[index - 1] + 5,
-            std::min<dfType>(
-                df[index - iSize] + 5,
-                std::min<dfType>(
-                    df[index - iSize - 1] + 7,
+        
+        df[index] = std::min<dfType>(df[index - 1] + 5,
+                    std::min<dfType>(df[index - iSize] + 5,
+                    std::min<dfType>(df[index - iSize - 1] + 7,
                     std::min<dfType>(df[index - iSize - 2] + 11,
-                                     df[index - (iSize * 2) - 1] + 11))));
+                    df[index - (iSize * 2) - 1] + 11))));
+        
 
         
         
@@ -1426,22 +1425,17 @@ nsFloatManager::PolygonShapeInfo::PolygonShapeInfo(
                    "Our distance field most extreme indices should be "
                    "in-bounds.");
 
-        df[index] = std::min<dfType>(
-            MAX_MARGIN_5X,
-            std::min<dfType>(
-                df[index - (iSize * 2) - 1] + 11,
-                std::min<dfType>(
-                    df[index - (iSize * 2) + 1] + 11,
-                    std::min<dfType>(
-                        df[index - iSize - 2] + 11,
-                        std::min<dfType>(
-                            df[index - iSize - 1] + 7,
-                            std::min<dfType>(
-                                df[index - iSize] + 5,
-                                std::min<dfType>(
-                                    df[index - iSize + 1] + 7,
-                                    std::min<dfType>(df[index - iSize + 2] + 11,
-                                                     df[index - 1] + 5))))))));
+        
+        df[index] = std::min<dfType>(MAX_MARGIN_5X,
+                    std::min<dfType>(df[index - (iSize * 2) - 1] + 11,
+                    std::min<dfType>(df[index - (iSize * 2) + 1] + 11,
+                    std::min<dfType>(df[index - iSize - 2] + 11,
+                    std::min<dfType>(df[index - iSize - 1] + 7,
+                    std::min<dfType>(df[index - iSize] + 5,
+                    std::min<dfType>(df[index - iSize + 1] + 7,
+                    std::min<dfType>(df[index - iSize + 2] + 11,
+                                     df[index - 1] + 5))))))));
+        
       }
     }
   }
@@ -1499,22 +1493,17 @@ nsFloatManager::PolygonShapeInfo::PolygonShapeInfo(
                    "Our distance field most extreme indices should be "
                    "in-bounds.");
 
-        df[index] = std::min<dfType>(
-            df[index],
-            std::min<dfType>(
-                df[index + (iSize * 2) + 1] + 11,
-                std::min<dfType>(
-                    df[index + (iSize * 2) - 1] + 11,
-                    std::min<dfType>(
-                        df[index + iSize + 2] + 11,
-                        std::min<dfType>(
-                            df[index + iSize + 1] + 7,
-                            std::min<dfType>(
-                                df[index + iSize] + 5,
-                                std::min<dfType>(
-                                    df[index + iSize - 1] + 7,
-                                    std::min<dfType>(df[index + iSize - 2] + 11,
-                                                     df[index + 1] + 5))))))));
+        
+        df[index] = std::min<dfType>(df[index],
+                    std::min<dfType>(df[index + (iSize * 2) + 1] + 11,
+                    std::min<dfType>(df[index + (iSize * 2) - 1] + 11,
+                    std::min<dfType>(df[index + iSize + 2] + 11,
+                    std::min<dfType>(df[index + iSize + 1] + 7,
+                    std::min<dfType>(df[index + iSize] + 5,
+                    std::min<dfType>(df[index + iSize - 1] + 7,
+                    std::min<dfType>(df[index + iSize - 2] + 11,
+                                     df[index + 1] + 5))))))));
+        
       }
 
       
@@ -1981,23 +1970,17 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
                        "Our distance field most extreme indices should be "
                        "in-bounds.");
 
-            df[index] = std::min<dfType>(
-                MAX_MARGIN_5X,
-                std::min<dfType>(
-                    df[index - wEx - 2] + 11,
-                    std::min<dfType>(
-                        df[index + wEx - 2] + 11,
-                        std::min<dfType>(
-                            df[index - (wEx * 2) - 1] + 11,
-                            std::min<dfType>(
-                                df[index - wEx - 1] + 7,
-                                std::min<dfType>(
-                                    df[index - 1] + 5,
-                                    std::min<dfType>(
-                                        df[index + wEx - 1] + 7,
-                                        std::min<dfType>(
-                                            df[index + (wEx * 2) - 1] + 11,
-                                            df[index - wEx] + 5))))))));
+            
+            df[index] = std::min<dfType>(MAX_MARGIN_5X,
+                        std::min<dfType>(df[index - wEx - 2] + 11,
+                        std::min<dfType>(df[index + wEx - 2] + 11,
+                        std::min<dfType>(df[index - (wEx * 2) - 1] + 11,
+                        std::min<dfType>(df[index - wEx - 1] + 7,
+                        std::min<dfType>(df[index - 1] + 5,
+                        std::min<dfType>(df[index + wEx - 1] + 7,
+                        std::min<dfType>(df[index + (wEx * 2) - 1] + 11,
+                                         df[index - wEx] + 5))))))));
+            
           } else {
             
             
@@ -2019,23 +2002,17 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
                        "Our distance field most extreme indices should be "
                        "in-bounds.");
 
-            df[index] = std::min<dfType>(
-                MAX_MARGIN_5X,
-                std::min<dfType>(
-                    df[index - (wEx * 2) - 1] + 11,
-                    std::min<dfType>(
-                        df[index - (wEx * 2) + 1] + 11,
-                        std::min<dfType>(
-                            df[index - wEx - 2] + 11,
-                            std::min<dfType>(
-                                df[index - wEx - 1] + 7,
-                                std::min<dfType>(
-                                    df[index - wEx] + 5,
-                                    std::min<dfType>(
-                                        df[index - wEx + 1] + 7,
-                                        std::min<dfType>(
-                                            df[index - wEx + 2] + 11,
-                                            df[index - 1] + 5))))))));
+            
+            df[index] = std::min<dfType>(MAX_MARGIN_5X,
+                        std::min<dfType>(df[index - (wEx * 2) - 1] + 11,
+                        std::min<dfType>(df[index - (wEx * 2) + 1] + 11,
+                        std::min<dfType>(df[index - wEx - 2] + 11,
+                        std::min<dfType>(df[index - wEx - 1] + 7,
+                        std::min<dfType>(df[index - wEx] + 5,
+                        std::min<dfType>(df[index - wEx + 1] + 7,
+                        std::min<dfType>(df[index - wEx + 2] + 11,
+                                         df[index - 1] + 5))))))));
+            
           }
         }
       }
@@ -2108,23 +2085,17 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
                        "Our distance field most extreme indices should be "
                        "in-bounds.");
 
-            df[index] = std::min<dfType>(
-                df[index],
-                std::min<dfType>(
-                    df[index + wEx + 2] + 11,
-                    std::min<dfType>(
-                        df[index - wEx + 2] + 11,
-                        std::min<dfType>(
-                            df[index + (wEx * 2) + 1] + 11,
-                            std::min<dfType>(
-                                df[index + wEx + 1] + 7,
-                                std::min<dfType>(
-                                    df[index + 1] + 5,
-                                    std::min<dfType>(
-                                        df[index - wEx + 1] + 7,
-                                        std::min<dfType>(
-                                            df[index - (wEx * 2) + 1] + 11,
-                                            df[index + wEx] + 5))))))));
+            
+            df[index] = std::min<dfType>(df[index],
+                        std::min<dfType>(df[index + wEx + 2] + 11,
+                        std::min<dfType>(df[index - wEx + 2] + 11,
+                        std::min<dfType>(df[index + (wEx * 2) + 1] + 11,
+                        std::min<dfType>(df[index + wEx + 1] + 7,
+                        std::min<dfType>(df[index + 1] + 5,
+                        std::min<dfType>(df[index - wEx + 1] + 7,
+                        std::min<dfType>(df[index - (wEx * 2) + 1] + 11,
+                                         df[index + wEx] + 5))))))));
+            
           } else {
             
             
@@ -2146,23 +2117,17 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
                        "Our distance field most extreme indices should be "
                        "in-bounds.");
 
-            df[index] = std::min<dfType>(
-                df[index],
-                std::min<dfType>(
-                    df[index + (wEx * 2) + 1] + 11,
-                    std::min<dfType>(
-                        df[index + (wEx * 2) - 1] + 11,
-                        std::min<dfType>(
-                            df[index + wEx + 2] + 11,
-                            std::min<dfType>(
-                                df[index + wEx + 1] + 7,
-                                std::min<dfType>(
-                                    df[index + wEx] + 5,
-                                    std::min<dfType>(
-                                        df[index + wEx - 1] + 7,
-                                        std::min<dfType>(
-                                            df[index + wEx - 2] + 11,
-                                            df[index + 1] + 5))))))));
+            
+            df[index] = std::min<dfType>(df[index],
+                        std::min<dfType>(df[index + (wEx * 2) + 1] + 11,
+                        std::min<dfType>(df[index + (wEx * 2) - 1] + 11,
+                        std::min<dfType>(df[index + wEx + 2] + 11,
+                        std::min<dfType>(df[index + wEx + 1] + 7,
+                        std::min<dfType>(df[index + wEx] + 5,
+                        std::min<dfType>(df[index + wEx - 1] + 7,
+                        std::min<dfType>(df[index + wEx - 2] + 11,
+                                         df[index + 1] + 5))))))));
+            
           }
         }
 

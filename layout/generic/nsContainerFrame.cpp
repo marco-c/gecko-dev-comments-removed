@@ -1737,8 +1737,8 @@ bool nsContainerFrame::RenumberList() {
 
 
 
-#define MAX_DEPTH_FOR_LIST_RENUMBERING \
-  200  // 200 open displayable tags is pretty unrealistic
+
+#define MAX_DEPTH_FOR_LIST_RENUMBERING 200
 
 bool nsContainerFrame::RenumberFrameAndDescendants(int32_t* aOrdinal,
                                                    int32_t aDepth,

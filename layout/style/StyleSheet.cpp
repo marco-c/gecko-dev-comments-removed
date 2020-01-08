@@ -53,14 +53,12 @@ StyleSheet::StyleSheet(const StyleSheet& aCopy, StyleSheet* aParentToUse,
       mOwningNode(aOwningNodeToUse),
       mOwnerRule(aOwnerRuleToUse),
       mParsingMode(aCopy.mParsingMode),
-      mState(aCopy.mState)
+      mState(aCopy.mState),
       
       
-      ,
       mAssociationMode(NotOwnedByDocumentOrShadowRoot),
-      mInner(
-          aCopy.mInner)  
-{
+      
+      mInner(aCopy.mInner) {
   MOZ_ASSERT(mInner, "Should only copy StyleSheets with an mInner.");
   mInner->AddSheet(this);
 
@@ -851,6 +849,7 @@ already_AddRefed<StyleSheet> StyleSheet::CreateEmptyChildSheet(
   child->mMedia = aMediaList;
   return child.forget();
 }
+
 
 
 

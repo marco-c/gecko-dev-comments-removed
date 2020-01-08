@@ -297,10 +297,6 @@ void MobileViewportManager::UpdateResolution(
       
       
       
-      
-      
-      
-      
       if (aDisplayWidthChangeRatio) {
         newZoom = Some(
             ScaleZoomWithDisplayWidth(zoom, aDisplayWidthChangeRatio.value(),

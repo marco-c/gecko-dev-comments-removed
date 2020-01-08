@@ -2138,8 +2138,8 @@ nsDocumentViewer::Show(void) {
     if (base_win) {
       base_win->GetParentWidget(&mParentWidget);
       if (mParentWidget) {
-        mParentWidget
-            ->Release();  
+        
+        mParentWidget->Release();
       }
     }
 

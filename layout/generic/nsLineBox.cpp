@@ -36,9 +36,8 @@ nsLineBox::nsLineBox(nsIFrame* aFrame, int32_t aCount, bool aIsBlock)
     : mFirstChild(aFrame),
       mWritingMode(),
       mContainerSize(-1, -1),
-      mBounds(WritingMode())  
-                              
-      ,
+      mBounds(WritingMode()),  
+                               
       mFrames(),
       mAscent(),
       mAllFlags(0),

@@ -226,10 +226,9 @@ struct MOZ_STACK_CLASS ScrollReflowInput {
   bool mShowVScrollbar;
 
   ScrollReflowInput(nsIScrollableFrame* aFrame, const ReflowInput& aReflowInput)
-      : mReflowInput(aReflowInput)
+      : mReflowInput(aReflowInput),
         
         
-        ,
         mBoxState(aReflowInput.mFrame->PresContext(),
                   aReflowInput.mRenderingContext) {
     ScrollStyles styles = aFrame->GetScrollStyles();
@@ -1869,8 +1868,9 @@ ComputeBezierAnimationSettingsForOrigin(nsAtom* aOrigin) {
   
   
   
-  static const double kDefaultDurationToIntervalRatio =
-      2;  
+  
+  
+  static const double kDefaultDurationToIntervalRatio = 2;
   intervalRatio =
       Preferences::GetInt("general.smoothScroll.durationToIntervalRatio",
                           kDefaultDurationToIntervalRatio * 100) /

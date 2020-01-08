@@ -640,9 +640,8 @@ nsresult FontFaceSet::StartLoad(gfxUserFontEntry* aUserFontEntry,
   if (NS_SUCCEEDED(rv)) {
     mLoaders.PutEntry(fontLoader);
     fontLoader->StartedLoading(streamLoader);
-    aUserFontEntry->SetLoader(
-        fontLoader);  
-                      
+    
+    aUserFontEntry->SetLoader(fontLoader);
   }
 
   return rv;

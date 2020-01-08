@@ -49,6 +49,7 @@ nsMathMLmpaddedFrame::InheritAutomaticData(nsIFrame* aParent) {
 
 void nsMathMLmpaddedFrame::ProcessAttributes() {
   
+  
 
 
 
@@ -57,7 +58,7 @@ void nsMathMLmpaddedFrame::ProcessAttributes() {
 
 
 
-
+  
 
   nsAutoString value;
 

@@ -1182,7 +1182,6 @@ void nsPluginFrame::PrintPlugin(gfxContext& aRenderingContext,
 
 
   
-
   nsSize contentSize = GetContentRectRelativeToSelf().Size();
   window.x = 0;
   window.y = 0;
@@ -1192,7 +1191,6 @@ void nsPluginFrame::PrintPlugin(gfxContext& aRenderingContext,
   aRenderingContext.Save();
 
   
-
   aRenderingContext.NewPath();
   gfxRect r(window.x, window.y, window.width, window.height);
   aRenderingContext.Rectangle(r);

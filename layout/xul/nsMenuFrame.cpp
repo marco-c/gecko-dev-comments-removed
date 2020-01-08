@@ -880,7 +880,6 @@ void nsMenuFrame::UpdateMenuSpecialState() {
         sib->GetContent()->AsElement()->UnsetAttr(kNameSpaceID_None,
                                                   nsGkAtoms::checked, true);
         
-
         return;
       }
     }

@@ -2001,8 +2001,7 @@ FlexItem::FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize,
       mHadMeasuringReflow(false),
       mIsStretched(false),
       mIsStrut(true),  
-      mIsInlineAxisMainAxis(
-          true),  
+      mIsInlineAxisMainAxis(true),  
       mNeedsMinSizeAutoResolution(false),
       mHasAnyAutoMargin(false),
       mAlignSelf(NS_STYLE_ALIGN_FLEX_START) {
@@ -2867,8 +2866,8 @@ MainAxisPositionTracker::MainAxisPositionTracker(
     uint8_t aJustifyContent, nscoord aContentBoxMainSize)
     : PositionTracker(aAxisTracker.GetMainAxis(),
                       aAxisTracker.IsMainAxisReversed()),
-      mPackingSpaceRemaining(
-          aContentBoxMainSize),  
+      
+      mPackingSpaceRemaining(aContentBoxMainSize),
       mNumAutoMarginsInMainAxis(0),
       mNumPackingSpacesRemaining(0),
       mJustifyContent(aJustifyContent) {
@@ -3849,8 +3848,8 @@ void nsFlexContainerFrame::GenerateFlexLines(
     
     
     
-    if (wrapThreshold !=
-            NS_UNCONSTRAINEDSIZE &&  
+    if (wrapThreshold != NS_UNCONSTRAINEDSIZE &&  
+                                                  
         !curLine->IsEmpty()) {  
       
       

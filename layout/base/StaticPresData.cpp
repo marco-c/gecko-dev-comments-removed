@@ -37,9 +37,17 @@ StaticPresData::StaticPresData() {
   _pref.Assign(_s0);                        \
   _pref.Append(_s1);
 
+
 static const char* const kGenericFont[] = {
-    ".variable.",  ".fixed.",   ".serif.",  ".sans-serif.",
-    ".monospace.", ".cursive.", ".fantasy."};
+  ".variable.",
+  ".fixed.",
+  ".serif.",
+  ".sans-serif.",
+  ".monospace.",
+  ".cursive.",
+  ".fantasy."
+};
+
 
 
 enum {
@@ -69,6 +77,18 @@ void LangGroupFontPrefs::Initialize(nsAtom* aLangGroupAtom) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
   nsAutoCString langGroup;
   aLangGroupAtom->ToUTF8String(langGroup);
 
@@ -84,10 +104,17 @@ void LangGroupFontPrefs::Initialize(nsAtom* aLangGroupAtom) {
   int32_t size = Preferences::GetInt(pref.get());
   mMinimumFontSize = nsPresContext::CSSPixelsToAppUnits(size);
 
-  nsFont* fontTypes[] = {&mDefaultVariableFont,  &mDefaultFixedFont,
-                         &mDefaultSerifFont,     &mDefaultSansSerifFont,
-                         &mDefaultMonospaceFont, &mDefaultCursiveFont,
-                         &mDefaultFantasyFont};
+  
+  nsFont* fontTypes[] = {
+    &mDefaultVariableFont,
+    &mDefaultFixedFont,
+    &mDefaultSerifFont,
+    &mDefaultSansSerifFont,
+    &mDefaultMonospaceFont,
+    &mDefaultCursiveFont,
+    &mDefaultFantasyFont
+  };
+  
   static_assert(MOZ_ARRAY_LENGTH(fontTypes) == eDefaultFont_COUNT,
                 "FontTypes array count is not correct");
 
