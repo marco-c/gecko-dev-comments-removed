@@ -32,7 +32,6 @@
 #include "XULDocument.h"
 
 #include "nsIDOMXULButtonElement.h"
-#include "nsIDOMXULLabelElement.h"
 #include "nsIDOMXULSelectCntrlEl.h"
 #include "nsIDOMXULSelectCntrlItemEl.h"
 #include "nsINodeList.h"
@@ -823,17 +822,15 @@ Accessible::XULElmName(DocAccessible* aDocument,
 
   
   if (aName.IsEmpty()) {
-    Accessible* labelAcc = nullptr;
+    Accessible* label = nullptr;
     XULLabelIterator iter(aDocument, aElm);
-    while ((labelAcc = iter.Next())) {
-      nsCOMPtr<nsIDOMXULLabelElement> xulLabel =
-        do_QueryInterface(labelAcc->GetContent());
+    while ((label = iter.Next())) {
       
-      if (xulLabel && NS_SUCCEEDED(xulLabel->GetValue(aName)) && aName.IsEmpty()) {
+      label->Elm()->GetAttr(kNameSpaceID_None, nsGkAtoms::value, aName);
+      if (aName.IsEmpty()) {
         
         
-        nsTextEquivUtils::
-          AppendTextEquivFromContent(labelAcc, labelAcc->GetContent(), &aName);
+        nsTextEquivUtils::AppendTextEquivFromContent(label, label->Elm(), &aName);
       }
     }
   }
