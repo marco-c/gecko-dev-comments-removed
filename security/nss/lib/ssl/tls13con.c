@@ -4727,8 +4727,7 @@ tls13_HandleNewSessionTicket(sslSocket *ss, PRUint8 *b, PRUint32 length)
 
         
 
-        if (ss->sec.ci.sid->cached == in_client_cache ||
-            ss->sec.ci.sid->cached == in_external_cache) {
+        if (ss->sec.ci.sid->cached == in_client_cache) {
             
             sslSessionID *sid = ssl3_NewSessionID(ss, PR_FALSE);
             if (!sid) {

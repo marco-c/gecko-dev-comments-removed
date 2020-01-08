@@ -1093,12 +1093,10 @@ ssl_CacheExternalToken(sslSocket *ss)
     PRINT_BUF(40, (ss, "SSL: encoded resumption token",
                    SSL_BUFFER_BASE(&encodedToken),
                    SSL_BUFFER_LEN(&encodedToken)));
-    SECStatus rv = ss->resumptionTokenCallback(
-        ss->fd, SSL_BUFFER_BASE(&encodedToken), SSL_BUFFER_LEN(&encodedToken),
-        ss->resumptionTokenContext);
-    if (rv == SECSuccess) {
-        sid->cached = in_external_cache;
-    }
+    ss->resumptionTokenCallback(ss->fd, SSL_BUFFER_BASE(&encodedToken),
+                                SSL_BUFFER_LEN(&encodedToken),
+                                ss->resumptionTokenContext);
+
     sslBuffer_Clear(&encodedToken);
 }
 
@@ -1208,17 +1206,11 @@ ssl3_SetSIDSessionTicket(sslSessionID *sid,
 
 
     if (sid->u.ssl3.lock) {
-        PORT_Assert(sid->cached == in_client_cache);
         PR_RWLock_Wlock(sid->u.ssl3.lock);
-    }
-    
-
-
-    if (sid->u.ssl3.locked.sessionTicket.ticket.data) {
-        PORT_Assert(sid->cached == in_client_cache ||
-                    sid->version >= SSL_LIBRARY_VERSION_TLS_1_3);
-        SECITEM_FreeItem(&sid->u.ssl3.locked.sessionTicket.ticket,
-                         PR_FALSE);
+        if (sid->u.ssl3.locked.sessionTicket.ticket.data) {
+            SECITEM_FreeItem(&sid->u.ssl3.locked.sessionTicket.ticket,
+                             PR_FALSE);
+        }
     }
 
     PORT_Assert(!sid->u.ssl3.locked.sessionTicket.ticket.data);
