@@ -2952,7 +2952,9 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
   
   
   if (!mCurrentTarget && aEvent->mMessage != eMouseUp &&
-      aEvent->mMessage != eMouseDown) {
+      aEvent->mMessage != eMouseDown &&
+      aEvent->mMessage != eDragEnter &&
+      aEvent->mMessage != eDragOver) {
     return NS_OK;
   }
 
