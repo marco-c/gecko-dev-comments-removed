@@ -49,6 +49,7 @@
 #include "nsWebShellWindow.h" 
 #include "nsGlobalWindow.h"
 #include "XULDocument.h"
+#include "nsXULTooltipListener.h"
 
 #include "prenv.h"
 #include "mozilla/AutoRestore.h"
@@ -516,6 +517,8 @@ NS_IMETHODIMP nsXULWindow::Destroy()
     }
   }
 #endif
+
+  RemoveTooltipSupport();
 
   mDOMWindow = nullptr;
   if (mDocShell) {
@@ -1127,12 +1130,57 @@ void nsXULWindow::OnChromeLoaded()
       if (mShowAfterLoad) {
         SetVisibility(true);
       }
+      AddTooltipSupport();
     }
     
     
     
   }
   mPersistentAttributesMask |= PAD_POSITION | PAD_SIZE | PAD_MISC;
+}
+
+bool
+nsXULWindow::NeedsTooltipListener()
+{
+  nsCOMPtr<dom::Element> docShellElement = GetWindowDOMElement();
+  if (!docShellElement || docShellElement->IsXULElement()) {
+    
+    return false;
+  }
+  
+  return true;
+}
+
+void
+nsXULWindow::AddTooltipSupport()
+{
+  if (!NeedsTooltipListener()) {
+    return;
+  }
+  nsXULTooltipListener* listener = nsXULTooltipListener::GetInstance();
+  if (!listener) {
+    return;
+  }
+
+  nsCOMPtr<dom::Element> docShellElement = GetWindowDOMElement();
+  MOZ_ASSERT(docShellElement);
+  listener->AddTooltipSupport(docShellElement);
+}
+
+void
+nsXULWindow::RemoveTooltipSupport()
+{
+  if (!NeedsTooltipListener()) {
+    return;
+  }
+  nsXULTooltipListener* listener = nsXULTooltipListener::GetInstance();
+  if (!listener) {
+    return;
+  }
+
+  nsCOMPtr<dom::Element> docShellElement = GetWindowDOMElement();
+  MOZ_ASSERT(docShellElement);
+  listener->RemoveTooltipSupport(docShellElement);
 }
 
 

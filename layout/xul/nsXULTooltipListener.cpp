@@ -400,7 +400,7 @@ nsXULTooltipListener::ShowTooltip()
 
   
   if (tooltipNode->GetComposedDoc() &&
-      tooltipNode->GetComposedDoc()->IsXULDocument()) {
+      nsContentUtils::IsChromeDoc(tooltipNode->GetComposedDoc())) {
     
     
     if (sourceNode->IsInComposedDoc()) {
@@ -576,6 +576,18 @@ nsXULTooltipListener::FindTooltip(nsIContent* aTarget, nsIContent** aTooltip)
 
   if (window->Closed()) {
     return NS_OK;
+  }
+
+  
+  if (!document->IsXULDocument()) {
+    nsIPopupContainer* popupContainer =
+      nsIPopupContainer::GetPopupContainer(document->GetShell());
+    NS_ENSURE_STATE(popupContainer);
+    if (RefPtr<Element> tooltip = popupContainer->GetDefaultTooltip()) {
+      tooltip.forget(aTooltip);
+      return NS_OK;
+    }
+    return NS_ERROR_FAILURE;
   }
 
   nsAutoString tooltipText;
