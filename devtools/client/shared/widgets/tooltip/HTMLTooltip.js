@@ -696,7 +696,7 @@ HTMLTooltip.prototype = {
 
 
 
-  async hide() {
+  async hide({ fromMouseup = false } = {}) {
     this.doc.defaultView.clearTimeout(this.attachEventsTimer);
     if (!this.isVisible()) {
       this.emit("hidden");
@@ -704,7 +704,10 @@ HTMLTooltip.prototype = {
     }
 
     
-    await new Promise(resolve => this.topWindow.setTimeout(resolve, 0));
+    
+    if (fromMouseup) {
+      await new Promise(resolve => this.topWindow.setTimeout(resolve, 0));
+    }
 
     this.removeEventListeners();
 
@@ -801,7 +804,7 @@ HTMLTooltip.prototype = {
       return;
     }
 
-    this.hide();
+    this.hide({ fromMouseup: true });
   },
 
   _isInTooltipContainer: function(node) {
