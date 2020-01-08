@@ -95,7 +95,6 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/ProcessHangMonitor.h"
 #include "mozilla/ProcessHangMonitorIPC.h"
-#include "mozilla/RDDProcessManager.h"
 #include "mozilla/recordreplay/ParentIPC.h"
 #include "mozilla/Scheduler.h"
 #include "mozilla/ScopeExit.h"
@@ -2655,23 +2654,6 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority)
                               namespaces);
 
   gpm->AddListener(this);
-
-  if (StaticPrefs::MediaRddProcessEnabled()) {
-    RDDProcessManager* rdd = RDDProcessManager::Get();
-
-    Endpoint<PRemoteDecoderManagerChild> remoteManager;
-    bool rddOpened = rdd->CreateContentBridge(OtherPid(),
-                                              &remoteManager);
-    MOZ_ASSERT(rddOpened);
-
-    if (rddOpened) {
-      
-      
-      
-      
-      Unused << SendInitRemoteDecoder(remoteManager);
-    }
-  }
 
   nsStyleSheetService *sheetService = nsStyleSheetService::GetInstance();
   if (sheetService) {

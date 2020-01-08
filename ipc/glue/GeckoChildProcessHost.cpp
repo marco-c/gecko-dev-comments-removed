@@ -143,10 +143,8 @@ auto
 GeckoChildProcessHost::GetPathToBinary(FilePath& exePath, GeckoProcessType processType) -> BinaryPathType
 {
   if (sRunSelfAsContentProc &&
-      (processType == GeckoProcessType_Content ||
-       processType == GeckoProcessType_GPU ||
-       processType == GeckoProcessType_VR ||
-       processType == GeckoProcessType_RDD)) {
+      (processType == GeckoProcessType_Content || processType == GeckoProcessType_GPU ||
+       processType == GeckoProcessType_VR)) {
 #if defined(OS_WIN)
     wchar_t exePathBuf[MAXPATHLEN];
     if (!::GetModuleFileNameW(nullptr, exePathBuf, MAXPATHLEN)) {
@@ -749,10 +747,7 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts)
 
   
   
-  
-  if (mProcessType == GeckoProcessType_GPU ||
-      mProcessType == GeckoProcessType_RDD ||
-      mProcessType == GeckoProcessType_VR) {
+  if (mProcessType == GeckoProcessType_GPU || mProcessType == GeckoProcessType_VR) {
     nsCOMPtr<nsIFile> file;
     CrashReporter::GetChildProcessTmpDir(getter_AddRefs(file));
     nsAutoCString path;
@@ -994,11 +989,6 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts)
         
       }
       break;
-    case GeckoProcessType_RDD:
-      if (mSandboxLevel > 0 && !PR_GetEnv("MOZ_DISABLE_RDD_SANDBOX")) {
-        
-      }
-      break;
     case GeckoProcessType_Default:
     default:
       MOZ_CRASH("Bad process type in GeckoChildProcessHost");
@@ -1026,9 +1016,7 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts)
 
   
   
-  
-  if (mProcessType == GeckoProcessType_GPU ||
-      mProcessType == GeckoProcessType_RDD) {
+  if (mProcessType == GeckoProcessType_GPU) {
     nsCOMPtr<nsIFile> file;
     CrashReporter::GetChildProcessTmpDir(getter_AddRefs(file));
     nsString path;
@@ -1083,7 +1071,6 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts)
     
     if (mProcessType == GeckoProcessType_Content ||
         mProcessType == GeckoProcessType_GPU ||
-        mProcessType == GeckoProcessType_RDD ||
         mProcessType == GeckoProcessType_VR ||
         mProcessType == GeckoProcessType_GMPlugin) {
       if (!mSandboxBroker.AddTargetPeer(process)) {

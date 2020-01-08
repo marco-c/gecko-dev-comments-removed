@@ -33,9 +33,11 @@ namespace layers {
 class ImageContainer;
 } 
 
-class GpuDecoderModule;
-class MediaDataDecoder;
+namespace dom {
 class RemoteDecoderModule;
+}
+
+class MediaDataDecoder;
 class TaskQueue;
 class CDMProxy;
 
@@ -212,9 +214,8 @@ protected:
 
   friend class MediaChangeMonitor;
   friend class PDMFactory;
-  friend class GpuDecoderModule;
+  friend class dom::RemoteDecoderModule;
   friend class EMEDecoderModule;
-  friend class RemoteDecoderModule;
 
   
   

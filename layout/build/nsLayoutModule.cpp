@@ -226,8 +226,7 @@ nsLayoutModuleInitialize()
     return;
   }
 
-  if (XRE_GetProcessType() == GeckoProcessType_GPU ||
-      XRE_GetProcessType() == GeckoProcessType_RDD) {
+  if (XRE_GetProcessType() == GeckoProcessType_GPU) {
     
     
     
@@ -677,8 +676,7 @@ static void
 LayoutModuleDtor()
 {
   if (XRE_GetProcessType() == GeckoProcessType_GPU ||
-      XRE_GetProcessType() == GeckoProcessType_VR ||
-      XRE_GetProcessType() == GeckoProcessType_RDD) {
+      XRE_GetProcessType() == GeckoProcessType_VR) {
     return;
   }
 

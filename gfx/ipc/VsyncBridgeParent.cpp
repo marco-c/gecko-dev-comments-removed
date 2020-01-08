@@ -4,11 +4,7 @@
 
 
 #include "VsyncBridgeParent.h"
-#include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorThread.h"
-
-using mozilla::layers::CompositorBridgeParent;
-using mozilla::layers::CompositorThreadHolder;
 
 namespace mozilla {
 namespace gfx {
