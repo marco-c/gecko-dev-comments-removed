@@ -25,6 +25,7 @@
 
 #include "TelemetryCommon.h"
 #include "TelemetryHistogram.h"
+#include "TelemetryHistogramNameMap.h"
 #include "TelemetryScalar.h"
 #include "ipc/TelemetryIPCAccumulator.h"
 
@@ -45,6 +46,7 @@ using mozilla::Telemetry::KeyedHistogramAccumulation;
 using mozilla::Telemetry::HistogramID;
 using mozilla::Telemetry::ProcessID;
 using mozilla::Telemetry::HistogramCount;
+using mozilla::Telemetry::HistogramIDByNameLookup;
 using mozilla::Telemetry::Common::LogToBrowserConsole;
 using mozilla::Telemetry::Common::RecordedProcessType;
 using mozilla::Telemetry::Common::AutoHashtable;
@@ -237,9 +239,6 @@ Histogram** gHistogramStorage;
 KeyedHistogram** gKeyedHistogramStorage;
 
 
-StringToHistogramIdMap gNameToHistogramIDMap(HistogramCount);
-
-
 Histogram* gExpiredHistogram = nullptr;
 
 
@@ -253,7 +252,6 @@ bool gHistogramRecordingDisabled[HistogramCount] = {};
 #include "TelemetryHistogramData.inc"
 
 } 
-
 
 
 
@@ -418,12 +416,18 @@ internal_GetHistogramIdByName(const StaticMutexAutoLock& aLock,
                               const nsACString& name,
                               HistogramID* id)
 {
-  const bool found = gNameToHistogramIDMap.Get(name, id);
-  if (!found) {
-    return NS_ERROR_ILLEGAL_VALUE;
+  const uint32_t idx = HistogramIDByNameLookup(name);
+  MOZ_ASSERT(idx < HistogramCount, "Intermediate lookup should always give a valid index.");
+
+  
+  
+  
+  if (name.Equals(gHistogramInfos[idx].name())) {
+    *id = HistogramID(idx);
+    return NS_OK;
   }
 
-  return NS_OK;
+  return NS_ERROR_ILLEGAL_VALUE;
 }
 
 
@@ -1994,29 +1998,6 @@ void TelemetryHistogram::InitializeGlobalState(bool canRecordBase,
       new KeyedHistogram*[HistogramCount * size_t(ProcessID::Count)] {};
   }
 
-  
-  
-
-  
-  
-  
-  for (uint32_t i = 0; i < HistogramCount; i++) {
-    auto name = gHistogramInfos[i].name();
-
-    
-    MOZ_DIAGNOSTIC_ASSERT(name >= gHistogramStringTable);
-    MOZ_DIAGNOSTIC_ASSERT(
-        uintptr_t(name) < (uintptr_t(gHistogramStringTable) + sizeof(gHistogramStringTable)));
-
-    nsCString wrappedName;
-    wrappedName.AssignLiteral(name, strlen(name));
-    gNameToHistogramIDMap.Put(wrappedName, HistogramID(i));
-  }
-
-#ifdef DEBUG
-  gNameToHistogramIDMap.MarkImmutable();
-#endif
-
     
     
     
@@ -2046,7 +2027,6 @@ void TelemetryHistogram::DeInitializeGlobalState()
   StaticMutexAutoLock locker(gTelemetryHistogramMutex);
   gCanRecordBase = false;
   gCanRecordExtended = false;
-  gNameToHistogramIDMap.Clear();
   gInitDone = false;
 
   
@@ -2581,8 +2561,7 @@ size_t
 TelemetryHistogram::GetMapShallowSizesOfExcludingThis(mozilla::MallocSizeOf
                                                       aMallocSizeOf)
 {
-  StaticMutexAutoLock locker(gTelemetryHistogramMutex);
-  return gNameToHistogramIDMap.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  return 0;
 }
 
 size_t
