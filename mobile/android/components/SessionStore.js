@@ -99,7 +99,7 @@ SessionStore.prototype = {
   
   _keepAsZombieTabId: INVALID_TAB_ID,
 
-  init: function ss_init() {
+  init() {
     loggingEnabled = Services.prefs.getBoolPref("browser.sessionstore.debug_logging");
 
     
@@ -131,14 +131,14 @@ SessionStore.prototype = {
       Services.prefs.getIntPref(PREFS_MAX_CRASH_RESUMES));
   },
 
-  _updateMaxTabsUndo: function ss_updateMaxTabsUndo() {
+  _updateMaxTabsUndo() {
     this._maxTabsUndo = Services.prefs.getIntPref(PREFS_MAX_TABS_UNDO);
     if (this._maxTabsUndo == 0) {
       this._forgetClosedTabs();
     }
   },
 
-  _purgeHistory: function ss_purgeHistory(topic) {
+  _purgeHistory(topic) {
     log(topic);
     this._clearDisk();
 
@@ -177,7 +177,7 @@ SessionStore.prototype = {
     }
   },
 
-  _clearDisk: function ss_clearDisk() {
+  _clearDisk() {
     this._sessionDataIsGood = false;
     this._lastBackupTime = 0;
 
@@ -194,7 +194,7 @@ SessionStore.prototype = {
     }
   },
 
-  _forgetClosedTabs: function ss_forgetClosedTabs() {
+  _forgetClosedTabs() {
     for (let win of Object.values(this._windows)) {
       win.closedTabs = [];
     }
@@ -202,7 +202,7 @@ SessionStore.prototype = {
     this._lastClosedTabIndex = INVALID_TAB_INDEX;
   },
 
-  onEvent: function ss_onEvent(event, data, callback) {
+  onEvent(event, data, callback) {
     switch (event) {
       case "ClosedTabs:StartNotifications":
         this._notifyClosedTabs = true;
@@ -289,7 +289,7 @@ SessionStore.prototype = {
     }
   },
 
-  observe: function ss_observe(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic, aData) {
     let observerService = Services.obs;
     switch (aTopic) {
       case "app-startup":
@@ -428,7 +428,7 @@ SessionStore.prototype = {
     }
   },
 
-  handleEvent: function ss_handleEvent(aEvent) {
+  handleEvent(aEvent) {
     let window = aEvent.currentTarget.ownerGlobal;
     switch (aEvent.type) {
       case "TabOpen": {
@@ -565,7 +565,7 @@ SessionStore.prototype = {
     }
   },
 
-  onWindowOpen: function ss_onWindowOpen(aWindow) {
+  onWindowOpen(aWindow) {
     
     if (aWindow && aWindow.__SSID && this._windows[aWindow.__SSID]) {
       return;
@@ -601,7 +601,7 @@ SessionStore.prototype = {
     browsers.addEventListener("TabPostZombify", this, true);
   },
 
-  onWindowClose: function ss_onWindowClose(aWindow) {
+  onWindowClose(aWindow) {
     
     if (!aWindow.__SSID || !this._windows[aWindow.__SSID]) {
       return;
@@ -633,7 +633,7 @@ SessionStore.prototype = {
     delete aWindow.__SSID;
   },
 
-  onTabAdd: function ss_onTabAdd(aWindow, aBrowser, aNoNotification) {
+  onTabAdd(aWindow, aBrowser, aNoNotification) {
     
     aBrowser.addEventListener("DOMTitleChanged", this, true);
 
@@ -668,7 +668,7 @@ SessionStore.prototype = {
     this._updateCrashReportURL(aWindow);
   },
 
-  onTabRemove: function ss_onTabRemove(aWindow, aBrowser, aNoNotification) {
+  onTabRemove(aWindow, aBrowser, aNoNotification) {
     
     aBrowser.removeEventListener("DOMTitleChanged", this, true);
     aBrowser.removeEventListener("load", this, true);
@@ -694,7 +694,7 @@ SessionStore.prototype = {
     }
   },
 
-  onTabClose: function ss_onTabClose(aWindow, aBrowser, aTabIndex) {
+  onTabClose(aWindow, aBrowser, aTabIndex) {
     
     if (this._formdataSavePending) {
       this.onTabInput(aWindow, aBrowser);
@@ -732,7 +732,7 @@ SessionStore.prototype = {
     }
   },
 
-  _sessionDataIsEmpty: function ss_sessionDataIsEmpty(aData) {
+  _sessionDataIsEmpty(aData) {
     if (!aData || !aData.entries || aData.entries.length == 0) {
       return true;
     }
@@ -743,7 +743,7 @@ SessionStore.prototype = {
             (entries[0].url == "about:home" || entries[0].url == "about:privatebrowsing"));
   },
 
-  onTabLoad: function ss_onTabLoad(aWindow, aBrowser) {
+  onTabLoad(aWindow, aBrowser) {
     
     
     if (aBrowser.__SS_restore || !this._startupRestoreFinished || aBrowser.__SS_restoreReloadPending) {
@@ -813,7 +813,7 @@ SessionStore.prototype = {
     this._updateCrashReportURL(aWindow);
   },
 
-  onTabSelect: function ss_onTabSelect(aWindow, aBrowser) {
+  onTabSelect(aWindow, aBrowser) {
     if (this._loadState != STATE_RUNNING) {
       return;
     }
@@ -844,7 +844,7 @@ SessionStore.prototype = {
     }
   },
 
-  restoreZombieTab: function ss_restoreZombieTab(aTab) {
+  restoreZombieTab(aTab) {
     if (!aTab.browser.__SS_restore) {
       return;
     }
@@ -858,7 +858,7 @@ SessionStore.prototype = {
     log("restoring zombie tab " + aTab.id);
   },
 
-  onTabMove: function ss_onTabMove() {
+  onTabMove() {
     if (this._loadState != STATE_RUNNING) {
       return;
     }
@@ -869,7 +869,7 @@ SessionStore.prototype = {
     this.saveStateDelayed();
   },
 
-  onTabInput: function ss_onTabInput(aWindow, aBrowser) {
+  onTabInput(aWindow, aBrowser) {
     
     if (this._formdataSavePending) {
       aWindow.clearTimeout(this._formdataSavePending);
@@ -905,7 +905,7 @@ SessionStore.prototype = {
     sendEvent(aBrowser, "SSTabInputCaptured");
   },
 
-  onTabScroll: function ss_onTabScroll(aWindow, aBrowser) {
+  onTabScroll(aWindow, aBrowser) {
     
     if (this._scrollSavePending) {
       aWindow.clearTimeout(this._scrollSavePending);
@@ -954,7 +954,7 @@ SessionStore.prototype = {
     this.saveStateDelayed();
   },
 
-  _getContentViewerSize: function ss_getContentViewerSize(aWindow) {
+  _getContentViewerSize(aWindow) {
     let displaySize = {};
     let width = {}, height = {};
     aWindow.windowUtils.getContentViewerSize(width, height);
@@ -965,7 +965,7 @@ SessionStore.prototype = {
     return displaySize;
   },
 
-  saveStateDelayed: function ss_saveStateDelayed(aPrivateTabsOnly = false) {
+  saveStateDelayed(aPrivateTabsOnly = false) {
     this._pendingWrite++;
     if (aPrivateTabsOnly) {
       this._pendingWritePrivateOnly++;
@@ -998,7 +998,7 @@ SessionStore.prototype = {
     }
   },
 
-  saveState: function ss_saveState(aPrivateTabsOnly = false) {
+  saveState(aPrivateTabsOnly = false) {
     this._pendingWrite++;
     if (aPrivateTabsOnly) {
       this._pendingWritePrivateOnly++;
@@ -1013,7 +1013,7 @@ SessionStore.prototype = {
 
 
 
-  flushPendingState: function ss_flushPendingState() {
+  flushPendingState() {
     log("flushPendingState(), _pendingWrite = " + this._pendingWrite);
     if (this._pendingWrite) {
       this._saveState(false);
@@ -1022,14 +1022,14 @@ SessionStore.prototype = {
     return false;
   },
 
-  _createTimer: function ss_createTimer(aDelay) {
+  _createTimer(aDelay) {
     this._lastQueuedSaveTime = Date.now();
     this._saveTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
     this._saveTimer.init(this, aDelay, Ci.nsITimer.TYPE_ONE_SHOT);
     log("saveTimer delay = " + aDelay);
   },
 
-  _killTimer: function ss_killTimer() {
+  _killTimer() {
     if (this._saveTimer) {
       this._saveTimer.cancel();
       this._saveTimer = null;
@@ -1037,7 +1037,7 @@ SessionStore.prototype = {
     }
   },
 
-  _saveState: function ss_saveState(aAsync) {
+  _saveState(aAsync) {
     log("_saveState(aAsync = " + aAsync + ")");
     
     this._killTimer();
@@ -1119,7 +1119,7 @@ SessionStore.prototype = {
     this._lastSaveTime = Date.now();
   },
 
-  _getCurrentState: function ss_getCurrentState() {
+  _getCurrentState() {
     this._forEachBrowserWindow((aWindow) => {
       this._collectWindowData(aWindow);
     });
@@ -1132,7 +1132,7 @@ SessionStore.prototype = {
     return data;
   },
 
-  _collectTabData: function ss__collectTabData(aWindow, aBrowser, aHistory) {
+  _collectTabData(aWindow, aBrowser, aHistory) {
     
     if (aBrowser.__SS_restore) {
       return;
@@ -1151,7 +1151,7 @@ SessionStore.prototype = {
     aBrowser.__SS_data = tabData;
   },
 
-  _collectWindowData: function ss__collectWindowData(aWindow) {
+  _collectWindowData(aWindow) {
     
     if (!aWindow.__SSID || !this._windows[aWindow.__SSID]) {
       return;
@@ -1179,7 +1179,7 @@ SessionStore.prototype = {
     }
   },
 
-  _forEachBrowserWindow: function ss_forEachBrowserWindow(aFunc) {
+  _forEachBrowserWindow(aFunc) {
     for (let window of Services.wm.getEnumerator("navigator:browser")) {
       if (window.__SSID && !window.closed) {
         aFunc.call(this, window);
@@ -1195,7 +1195,7 @@ SessionStore.prototype = {
 
 
 
-  _writeFile: function ss_writeFile(aFile, aFileTemp, aData, aAsync) {
+  _writeFile(aFile, aFileTemp, aData, aAsync) {
     TelemetryStopwatch.start("FX_SESSION_RESTORE_SERIALIZE_DATA_MS");
     let state = JSON.stringify(aData);
     TelemetryStopwatch.finish("FX_SESSION_RESTORE_SERIALIZE_DATA_MS");
@@ -1241,7 +1241,7 @@ SessionStore.prototype = {
 
 
 
-  _write: function ss_write(aFile, aFileTemp, aBuffer, aAsync) {
+  _write(aFile, aFileTemp, aBuffer, aAsync) {
     
     if (aAsync) {
       log("_write() writing asynchronously");
@@ -1263,7 +1263,7 @@ SessionStore.prototype = {
     return Promise.resolve();
   },
 
-  _updateCrashReportURL: function ss_updateCrashReportURL(aWindow) {
+  _updateCrashReportURL(aWindow) {
     if (!AppConstants.MOZ_CRASHREPORTER) {
       return;
     }
@@ -1291,7 +1291,7 @@ SessionStore.prototype = {
   },
 
   
-  _openTabs: function ss_openTabs(aData) {
+  _openTabs(aData) {
     let window = Services.wm.getMostRecentWindow("navigator:browser");
     for (let i = 0; i < aData.urls.length; i++) {
       let url = aData.urls[i];
@@ -1308,7 +1308,7 @@ SessionStore.prototype = {
   },
 
   
-  _restoreTabs: function ss_restoreTabs(aData) {
+  _restoreTabs(aData) {
     let window = Services.wm.getMostRecentWindow("navigator:browser");
     for (let i = 0; i < aData.tabs.length; i++) {
       let tabData = JSON.parse(aData.tabs[i]);
@@ -1339,7 +1339,7 @@ SessionStore.prototype = {
 
 
 
-  _restoreTab: function ss_restoreTab(aTabData, aBrowser) {
+  _restoreTab(aTabData, aBrowser) {
     
     
     if (!aTabData || aTabData.entries.length == 0) {
@@ -1366,7 +1366,7 @@ SessionStore.prototype = {
 
 
 
-  _restoreHistory: function ss_restoreHistory(aDocShell, aTabData) {
+  _restoreHistory(aDocShell, aTabData) {
     let history = SessionHistory.restore(aDocShell, aTabData);
 
     
@@ -1381,7 +1381,7 @@ SessionStore.prototype = {
   
 
 
-  _restoreTextData: function ss_restoreTextData(aFormData, aBrowser) {
+  _restoreTextData(aFormData, aBrowser) {
     if (aFormData) {
       log("_restoreTextData()");
       Utils.restoreFrameTreeData(aBrowser.contentWindow, aFormData, (frame, data) => {
@@ -1397,7 +1397,7 @@ SessionStore.prototype = {
 
 
 
-  _restoreZoom: function ss_restoreZoom(aScrollData, aBrowser) {
+  _restoreZoom(aScrollData, aBrowser) {
     if (aScrollData && aScrollData.zoom && aScrollData.zoom.displaySize) {
       log("_restoreZoom(), resolution: " + aScrollData.zoom.resolution +
           ", old displayWidth: " + aScrollData.zoom.displaySize.width);
@@ -1413,7 +1413,7 @@ SessionStore.prototype = {
   
 
 
-  _restoreScrollPosition: function ss_restoreScrollPosition(aScrollData, aBrowser) {
+  _restoreScrollPosition(aScrollData, aBrowser) {
     if (aScrollData) {
       log("_restoreScrollPosition()");
       Utils.restoreFrameTreeData(aBrowser.contentWindow, aScrollData, (frame, data) => {
@@ -1424,11 +1424,11 @@ SessionStore.prototype = {
     }
   },
 
-  getBrowserState: function ss_getBrowserState() {
+  getBrowserState() {
     return this._getCurrentState();
   },
 
-  _restoreWindow: function ss_restoreWindow(aData) {
+  _restoreWindow(aData) {
     let state;
     try {
       state = JSON.parse(aData);
@@ -1492,7 +1492,7 @@ SessionStore.prototype = {
     }
   },
 
-  getClosedTabCount: function ss_getClosedTabCount(aWindow) {
+  getClosedTabCount(aWindow) {
     if (!aWindow || !aWindow.__SSID || !this._windows[aWindow.__SSID]) {
       return 0; 
     }
@@ -1500,7 +1500,7 @@ SessionStore.prototype = {
     return this._windows[aWindow.__SSID].closedTabs.length;
   },
 
-  getClosedTabs: function ss_getClosedTabs(aWindow) {
+  getClosedTabs(aWindow) {
     if (!aWindow.__SSID) {
       throw (Components.returnCode = Cr.NS_ERROR_INVALID_ARG);
     }
@@ -1508,7 +1508,7 @@ SessionStore.prototype = {
     return this._windows[aWindow.__SSID].closedTabs;
   },
 
-  undoCloseTab: function ss_undoCloseTab(aWindow, aCloseTabData) {
+  undoCloseTab(aWindow, aCloseTabData) {
     if (!aWindow.__SSID) {
       throw (Components.returnCode = Cr.NS_ERROR_INVALID_ARG);
     }
@@ -1577,7 +1577,7 @@ SessionStore.prototype = {
     return this._lastClosedTabIndex > INVALID_TAB_INDEX;
   },
 
-  _sendClosedTabsToJava: function ss_sendClosedTabsToJava(aWindow) {
+  _sendClosedTabsToJava(aWindow) {
 
     
     if (this._loadState <= STATE_QUITTING) {
@@ -1610,13 +1610,13 @@ SessionStore.prototype = {
     });
   },
 
-  getTabValue: function ss_getTabValue(aTab, aKey) {
+  getTabValue(aTab, aKey) {
     let browser = aTab.browser;
     let data = browser.__SS_extdata || {};
     return data[aKey] || "";
   },
 
-  setTabValue: function ss_setTabValue(aTab, aKey, aStringValue) {
+  setTabValue(aTab, aKey, aStringValue) {
     let browser = aTab.browser;
     if (!browser.__SS_extdata) {
       browser.__SS_extdata = {};
@@ -1625,7 +1625,7 @@ SessionStore.prototype = {
     this.saveStateDelayed();
   },
 
-  deleteTabValue: function ss_deleteTabValue(aTab, aKey) {
+  deleteTabValue(aTab, aKey) {
     let browser = aTab.browser;
     if (browser.__SS_extdata && aKey in browser.__SS_extdata) {
       delete browser.__SS_extdata[aKey];
@@ -1646,7 +1646,7 @@ SessionStore.prototype = {
     Services.obs.notifyObservers(null, "sessionstore-windows-restored", notifyMessage);
   },
 
-  removeWindow: function ss_removeWindow(aWindow) {
+  removeWindow(aWindow) {
     if (!aWindow || !aWindow.__SSID || !this._windows[aWindow.__SSID]) {
       return;
     }
@@ -1662,7 +1662,7 @@ SessionStore.prototype = {
     }
   },
 
-  setLoadState: function ss_setLoadState(aState) {
+  setLoadState(aState) {
     this.flushPendingState();
     this._loadState = aState;
   },
