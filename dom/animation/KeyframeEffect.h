@@ -402,7 +402,9 @@ class KeyframeEffect : public AnimationEffect {
   
   
   
-  nsRefPtrHashtable<nsUint32HashKey, RawServoAnimationValue> mBaseValues;
+  using BaseValuesHashmap =
+      nsRefPtrHashtable<nsUint32HashKey, RawServoAnimationValue>;
+  BaseValuesHashmap mBaseValues;
 
   
   
