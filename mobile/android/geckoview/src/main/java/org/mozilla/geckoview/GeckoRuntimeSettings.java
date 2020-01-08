@@ -134,38 +134,6 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
-
-        public @NonNull Builder nativeCrashReportingEnabled(final boolean enabled) {
-            mSettings.mNativeCrashReporting = enabled;
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-        public @NonNull Builder javaCrashReportingEnabled(final boolean enabled) {
-            mSettings.mJavaCrashReporting = enabled;
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
-
         public @NonNull Builder crashReportingJobId(final int id) {
             mSettings.mCrashReportingJobId = id;
             return this;
@@ -366,8 +334,6 @@ public final class GeckoRuntimeSettings implements Parcelable {
      Pref<Boolean> mSafebrowsingPhishing = new Pref<Boolean>(
         "browser.safebrowsing.phishing.enabled", true);
 
-     boolean mNativeCrashReporting;
-     boolean mJavaCrashReporting;
      int mCrashReportingJobId;
      boolean mDebugPause;
      float mDisplayDensityOverride = -1.0f;
@@ -410,8 +376,6 @@ public final class GeckoRuntimeSettings implements Parcelable {
             uncheckedPref.set(settings.mPrefs[i].get());
         }
 
-        mNativeCrashReporting = settings.mNativeCrashReporting;
-        mJavaCrashReporting = settings.mJavaCrashReporting;
         mCrashReportingJobId = settings.mCrashReportingJobId;
         mDebugPause = settings.mDebugPause;
         mDisplayDensityOverride = settings.mDisplayDensityOverride;
@@ -514,26 +478,6 @@ public final class GeckoRuntimeSettings implements Parcelable {
     }
 
     
-
-
-
-
-    public boolean getNativeCrashReportingEnabled() {
-        return mNativeCrashReporting;
-    }
-
-    
-
-
-
-
-    public boolean getJavaCrashReportingEnabled() {
-        return mJavaCrashReporting;
-    }
-
-    
-
-
 
 
     public int getCrashReportingServiceJobId() {
@@ -786,8 +730,6 @@ public final class GeckoRuntimeSettings implements Parcelable {
             out.writeValue(pref.get());
         }
 
-        ParcelableUtils.writeBoolean(out, mNativeCrashReporting);
-        ParcelableUtils.writeBoolean(out, mJavaCrashReporting);
         out.writeInt(mCrashReportingJobId);
         ParcelableUtils.writeBoolean(out, mDebugPause);
         out.writeFloat(mDisplayDensityOverride);
@@ -809,8 +751,6 @@ public final class GeckoRuntimeSettings implements Parcelable {
             uncheckedPref.set(source.readValue(getClass().getClassLoader()));
         }
 
-        mNativeCrashReporting = ParcelableUtils.readBoolean(source);
-        mJavaCrashReporting = ParcelableUtils.readBoolean(source);
         mCrashReportingJobId = source.readInt();
         mDebugPause = ParcelableUtils.readBoolean(source);
         mDisplayDensityOverride = source.readFloat();
