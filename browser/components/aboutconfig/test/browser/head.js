@@ -70,4 +70,15 @@ class AboutConfigTest {
   getRow(name) {
     return this.rows.find(row => row.name == name);
   }
+
+  
+
+
+
+  search(value = "") {
+    let search = this.document.getElementById("search");
+    search.value = value;
+    search.focus();
+    EventUtils.sendKey("return");
+  }
 }

@@ -26,10 +26,7 @@ add_task(async function test_search() {
     
     
     
-    let search = this.document.getElementById("search");
-    search.value = "wser.down   ";
-    search.focus();
-    EventUtils.sendKey("return");
+    this.search("wser.down   ");
 
     let filteredPrefArray =
         prefArray.filter(pref => pref.includes("wser.down"));
@@ -39,9 +36,7 @@ add_task(async function test_search() {
     Assert.equal(this.rows.length, filteredPrefArray.length + 1);
 
     
-    search.value = "";
-    search.focus();
-    EventUtils.sendKey("return");
+    this.search();
 
     
     
@@ -51,18 +46,12 @@ add_task(async function test_search() {
     Assert.greater(this.rows.length, prefArray.length - 50);
 
     
-    search.value = "aJunkValueasdf";
-    search.focus();
-    EventUtils.sendKey("return");
-
     
+    this.search("aJunkValueasdf");
     Assert.equal(this.rows.length, 1);
 
     
-    search.value = "test.aboutconfig.a";
-    search.focus();
-    EventUtils.sendKey("return");
-
+    this.search("test.aboutconfig.a");
     Assert.equal(this.rows.length, 2);
   });
 });
