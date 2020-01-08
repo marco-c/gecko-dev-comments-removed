@@ -6,7 +6,6 @@ ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm");
 
 var {
   ExtensionError,
-  getUniqueId,
 } = ExtensionUtils;
 
 
@@ -19,7 +18,7 @@ var {
 
 class UserScriptParent {
   constructor(details) {
-    this.scriptId = getUniqueId();
+    this.scriptId = details.scriptId;
     this.options = this._convertOptions(details);
   }
 
@@ -69,17 +68,23 @@ this.userScripts = class extends ExtensionAPI {
     
     const registeredScriptIds = new Set();
 
-    function unregisterContentScripts(scriptIds) {
-      for (let scriptId of registeredScriptIds) {
+    const unregisterContentScripts = (scriptIds) => {
+      if (scriptIds.length === 0) {
+        return Promise.resolve();
+      }
+
+      for (let scriptId of scriptIds) {
+        registeredScriptIds.delete(scriptId);
         extension.registeredContentScripts.delete(scriptId);
         this.userScriptsMap.delete(scriptId);
       }
+      extension.updateContentScripts();
 
       return context.extension.broadcast("Extension:UnregisterContentScripts", {
         id: context.extension.id,
         scriptIds,
       });
-    }
+    };
 
     
     
@@ -112,6 +117,7 @@ this.userScripts = class extends ExtensionAPI {
           });
 
           extension.registeredContentScripts.set(scriptId, scriptOptions);
+          extension.updateContentScripts();
 
           return scriptId;
         },

@@ -7,6 +7,7 @@ Cu.importGlobalProperties(["crypto", "TextEncoder"]);
 var {
   DefaultMap,
   ExtensionError,
+  getUniqueId,
 } = ExtensionUtils;
 
 
@@ -65,30 +66,33 @@ this.userScripts = class extends ExtensionAPI {
     
     const userScriptsByBlobURL = new DefaultMap(() => new Set());
 
-    function trackBlobURLs(scriptId, options) {
-      for (let url of options.js) {
-        if (userScriptsByBlobURL.has(url)) {
-          userScriptsByBlobURL.get(url).add(scriptId);
-        }
-      }
-    }
-
     function revokeBlobURLs(scriptId, options) {
+      let revokedUrls = new Set();
+
       for (let url of options.js) {
         if (userScriptsByBlobURL.has(url)) {
           let scriptIds = userScriptsByBlobURL.get(url);
           scriptIds.delete(scriptId);
+
           if (scriptIds.size === 0) {
+            revokedUrls.add(url);
             userScriptsByBlobURL.delete(url);
             context.cloneScope.URL.revokeObjectURL(url);
           }
         }
       }
+
+      
+      for (let [hash, url] of blobURLsByHash) {
+        if (revokedUrls.has(url)) {
+          blobURLsByHash.delete(hash);
+        }
+      }
     }
 
     
     
-    const getBlobURL = async (text) => {
+    const getBlobURL = async (text, scriptId) => {
       
       
       const buffer = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(text));
@@ -97,6 +101,7 @@ this.userScripts = class extends ExtensionAPI {
       let blobURL = blobURLsByHash.get(hash);
 
       if (blobURL) {
+        userScriptsByBlobURL.get(blobURL).add(scriptId);
         return blobURL;
       }
 
@@ -104,7 +109,7 @@ this.userScripts = class extends ExtensionAPI {
       blobURL = context.cloneScope.URL.createObjectURL(blob);
 
       
-      userScriptsByBlobURL.get(blobURL);
+      userScriptsByBlobURL.get(blobURL).add(scriptId);
 
       blobURLsByHash.set(hash, blobURL);
 
@@ -116,7 +121,6 @@ this.userScripts = class extends ExtensionAPI {
         context, scriptId,
         onScriptUnregister: () => revokeBlobURLs(scriptId, options),
       });
-      trackBlobURLs(scriptId, options);
 
       const scriptAPI = Cu.cloneInto(registeredScript.api(), context.cloneScope,
                                      {cloneFunctions: true});
@@ -139,13 +143,14 @@ this.userScripts = class extends ExtensionAPI {
     return {
       userScripts: {
         register(options) {
+          let scriptId = getUniqueId();
           return context.cloneScope.Promise.resolve().then(async () => {
+            options.scriptId = scriptId;
             options.js = await Promise.all(options.js.map(js => {
-              return js.file || getBlobURL(js.code);
+              return js.file || getBlobURL(js.code, scriptId);
             }));
 
-            const scriptId = await context.childManager.callParentAsyncFunction(
-              "userScripts.register", [options]);
+            await context.childManager.callParentAsyncFunction("userScripts.register", [options]);
 
             return convertToAPIObject(scriptId, options);
           });
