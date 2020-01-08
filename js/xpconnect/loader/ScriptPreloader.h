@@ -473,7 +473,10 @@ class ScriptPreloader : public nsIObserver,
   nsCString mContentStartupFinishedTopic;
 
   nsCOMPtr<nsIFile> mProfD;
-  nsCOMPtr<nsIThread> mSaveThread;
+  
+  
+  
+  RefPtr<nsIThread> mSaveThread;
   nsCOMPtr<nsITimer> mSaveTimer;
 
   
