@@ -94,7 +94,29 @@ RemoteServiceWorkerContainerImpl::GetRegistration(const ClientInfo& aClientInfo,
                                                   ServiceWorkerRegistrationCallback&& aSuccessCB,
                                                   ServiceWorkerFailureCallback&& aFailureCB) const
 {
-  
+  if (!mActor) {
+    aFailureCB(CopyableErrorResult(NS_ERROR_DOM_INVALID_STATE_ERR));
+    return;
+  }
+
+  mActor->SendGetRegistration(aClientInfo.ToIPC(), nsCString(aURL),
+    [successCB = std::move(aSuccessCB), aFailureCB]
+    (const IPCServiceWorkerRegistrationDescriptorOrCopyableErrorResult& aResult) {
+      if (aResult.type() == IPCServiceWorkerRegistrationDescriptorOrCopyableErrorResult::TCopyableErrorResult) {
+        auto& rv = aResult.get_CopyableErrorResult();
+        
+        
+        
+        aFailureCB(CopyableErrorResult(rv));
+        return;
+      }
+      
+      auto& ipcDesc = aResult.get_IPCServiceWorkerRegistrationDescriptor();
+      successCB(ServiceWorkerRegistrationDescriptor(ipcDesc));
+    }, [aFailureCB] (ResponseRejectReason aReason) {
+      
+      aFailureCB(CopyableErrorResult(NS_ERROR_DOM_INVALID_STATE_ERR));
+    });
 }
 
 void
