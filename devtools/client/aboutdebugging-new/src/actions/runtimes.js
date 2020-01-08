@@ -10,7 +10,6 @@ const { DebuggerServer } = require("devtools/server/main");
 const Actions = require("./index");
 
 const {
-  getCurrentClient,
   findRuntimeById,
 } = require("devtools/client/aboutdebugging-new/src/modules/runtimes-state-helper");
 
@@ -100,18 +99,20 @@ function disconnectRuntime(id) {
   };
 }
 
-function watchRuntime() {
+function watchRuntime(id) {
   return async (dispatch, getState) => {
     dispatch({ type: WATCH_RUNTIME_START });
 
     try {
-      
-      
-      await dispatch(connectRuntime(RUNTIMES.THIS_FIREFOX));
+      if (id === RUNTIMES.THIS_FIREFOX) {
+        
+        await dispatch(connectRuntime(RUNTIMES.THIS_FIREFOX));
+      }
 
-      const runtime = findRuntimeById(RUNTIMES.THIS_FIREFOX, getState().runtimes);
+      
+      const runtime = findRuntimeById(id, getState().runtimes);
+      await dispatch({ type: WATCH_RUNTIME_SUCCESS, runtime });
 
-      dispatch({ type: WATCH_RUNTIME_SUCCESS, client: runtime.client });
       dispatch(Actions.requestExtensions());
       dispatch(Actions.requestTabs());
       dispatch(Actions.requestWorkers());
@@ -121,18 +122,17 @@ function watchRuntime() {
   };
 }
 
-function unwatchRuntime() {
+function unwatchRuntime(id) {
   return async (dispatch, getState) => {
-    
-    const runtime = findRuntimeById(RUNTIMES.THIS_FIREFOX, getState().runtimes);
-    const client = runtime.client;
+    const runtime = findRuntimeById(id, getState().runtimes);
 
-    dispatch({ type: UNWATCH_RUNTIME_START, client });
+    dispatch({ type: UNWATCH_RUNTIME_START, runtime });
 
     try {
-      
-      
-      await dispatch(disconnectRuntime(RUNTIMES.THIS_FIREFOX));
+      if (id === RUNTIMES.THIS_FIREFOX) {
+        
+        await dispatch(disconnectRuntime(RUNTIMES.THIS_FIREFOX));
+      }
 
       dispatch({ type: UNWATCH_RUNTIME_SUCCESS });
     } catch (e) {

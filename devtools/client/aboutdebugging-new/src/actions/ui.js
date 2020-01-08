@@ -15,18 +15,29 @@ const NetworkLocationsModule = require("../modules/network-locations");
 
 const Actions = require("./index");
 
-function selectPage(page) {
+
+
+function _isRuntimePage(page) {
+  return page && page !== PAGES.CONNECT;
+}
+
+function selectPage(page, runtimeId) {
   return async (dispatch, getState) => {
     const currentPage = getState().ui.selectedPage;
+    
     if (page === currentPage) {
-      
       return;
     }
 
-    if (page === PAGES.THIS_FIREFOX) {
-      await dispatch(Actions.watchRuntime());
-    } else {
-      await dispatch(Actions.unwatchRuntime());
+    
+    if (_isRuntimePage(currentPage)) {
+      const currentRuntimeId = getState().runtimes.selectedRuntimeId;
+      await dispatch(Actions.unwatchRuntime(currentRuntimeId));
+    }
+
+    
+    if (_isRuntimePage(page)) {
+      await dispatch(Actions.watchRuntime(runtimeId));
     }
 
     dispatch({ type: PAGE_SELECTED, page });
