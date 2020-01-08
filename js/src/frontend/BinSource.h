@@ -229,7 +229,7 @@ class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEPa
 
     
     
-    void forceStrictIfNecessary(FunctionBox* funbox, ListNode* directives);
+    void forceStrictIfNecessary(SharedContext* sc, ListNode* directives);
 
   private: 
     const JS::ReadOnlyCompileOptions& options_;
