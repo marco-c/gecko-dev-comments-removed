@@ -701,6 +701,30 @@ ThreadClient.prototype = {
   
 
 
+
+
+
+
+  setXHRBreakpoint: DebuggerClient.requester({
+    type: "setXHRBreakpoint",
+    path: arg(0),
+    method: arg(1)
+  }),
+
+  
+
+
+
+
+  removeXHRBreakpoint: DebuggerClient.requester({
+    type: "removeXHRBreakpoint",
+    path: arg(0),
+    method: arg(1)
+  }),
+
+  
+
+
   environment: function(form) {
     return new EnvironmentClient(this.client, form);
   },
