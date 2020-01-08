@@ -71,8 +71,16 @@ void vp8_build_intra_predictors_mbuv_s(
     unsigned char *uleft, unsigned char *vleft, int left_stride,
     unsigned char *upred_ptr, unsigned char *vpred_ptr, int pred_stride) {
   MB_PREDICTION_MODE uvmode = x->mode_info_context->mbmi.uv_mode;
+#if HAVE_VSX
+  
+
+
+  unsigned char uleft_col[16];
+  unsigned char vleft_col[16];
+#else
   unsigned char uleft_col[8];
   unsigned char vleft_col[8];
+#endif
   int i;
   intra_pred_fn fn;
 

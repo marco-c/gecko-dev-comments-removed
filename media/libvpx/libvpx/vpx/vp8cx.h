@@ -341,6 +341,7 @@ enum vp8e_enc_control_id {
 
 
 
+
   VP9E_SET_TILE_COLUMNS,
 
   
@@ -440,6 +441,7 @@ enum vp8e_enc_control_id {
   VP9E_SET_SVC_LAYER_ID,
 
   
+
 
 
 
@@ -551,6 +553,14 @@ enum vp8e_enc_control_id {
 
 
 
+
+
+  VP9E_SET_ROW_MT,
+
+  
+
+
+
   VP9E_GET_LEVEL,
 
   
@@ -577,6 +587,15 @@ enum vp8e_enc_control_id {
 
 
   VP8E_SET_GF_CBR_BOOST_PCT,
+
+  
+
+
+
+
+
+
+  VP9E_ENABLE_MOTION_VECTOR_UNIT_TEST,
 };
 
 
@@ -678,6 +697,7 @@ typedef enum {
 typedef enum {
   VP9E_CONTENT_DEFAULT,
   VP9E_CONTENT_SCREEN,
+  VP9E_CONTENT_FILM,
   VP9E_CONTENT_INVALID
 } vp9e_tune_content;
 
@@ -838,8 +858,14 @@ VPX_CTRL_USE_TYPE(VP9E_SET_RENDER_SIZE, int *)
 VPX_CTRL_USE_TYPE(VP9E_SET_TARGET_LEVEL, unsigned int)
 #define VPX_CTRL_VP9E_SET_TARGET_LEVEL
 
+VPX_CTRL_USE_TYPE(VP9E_SET_ROW_MT, unsigned int)
+#define VPX_CTRL_VP9E_SET_ROW_MT
+
 VPX_CTRL_USE_TYPE(VP9E_GET_LEVEL, int *)
 #define VPX_CTRL_VP9E_GET_LEVEL
+
+VPX_CTRL_USE_TYPE(VP9E_ENABLE_MOTION_VECTOR_UNIT_TEST, unsigned int)
+#define VPX_CTRL_VP9E_ENABLE_MOTION_VECTOR_UNIT_TEST
 
 
 

@@ -7,6 +7,8 @@
 
 #include "mkvparser/mkvreader.h"
 
+#include <sys/types.h>
+
 #include <cassert>
 
 namespace mkvparser {

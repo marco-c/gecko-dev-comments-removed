@@ -40,10 +40,7 @@ extern "C" {
 
 
 
-
-
-
-#define FRAME_BUFFERS (REF_FRAMES + 7)
+#define FRAME_BUFFERS (REF_FRAMES + 4)
 
 #define FRAME_CONTEXTS_LOG2 2
 #define FRAME_CONTEXTS (1 << FRAME_CONTEXTS_LOG2)
@@ -72,30 +69,12 @@ typedef struct {
   MV_REF *mvs;
   int mi_rows;
   int mi_cols;
+  uint8_t released;
   vpx_codec_frame_buffer_t raw_frame_buffer;
   YV12_BUFFER_CONFIG buf;
-
-  
-
-  
-  
-  VPxWorker *frame_worker_owner;
-
-  
-  
-  
-  int row;
-  int col;
 } RefCntBuffer;
 
 typedef struct BufferPool {
-
-
-
-#if CONFIG_MULTITHREAD
-  pthread_mutex_t pool_mutex;
-#endif
-
   
   void *cb_priv;
 
@@ -236,10 +215,6 @@ typedef struct VP9Common {
   struct segmentation seg;
 
   
-  
-  int frame_parallel_decode;  
-
-  
   MV_REFERENCE_FRAME comp_fixed_ref;
   MV_REFERENCE_FRAME comp_var_ref[2];
   REFERENCE_MODE reference_mode;
@@ -283,11 +258,6 @@ typedef struct VP9Common {
   int above_context_alloc_cols;
 } VP9_COMMON;
 
-
-
-void lock_buffer_pool(BufferPool *const pool);
-void unlock_buffer_pool(BufferPool *const pool);
-
 static INLINE YV12_BUFFER_CONFIG *get_ref_frame(VP9_COMMON *cm, int index) {
   if (index < 0 || index >= REF_FRAMES) return NULL;
   if (cm->ref_frame_map[index] < 0) return NULL;
@@ -303,7 +273,6 @@ static INLINE int get_free_fb(VP9_COMMON *cm) {
   RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
   int i;
 
-  lock_buffer_pool(cm->buffer_pool);
   for (i = 0; i < FRAME_BUFFERS; ++i)
     if (frame_bufs[i].ref_count == 0) break;
 
@@ -314,7 +283,6 @@ static INLINE int get_free_fb(VP9_COMMON *cm) {
     i = INVALID_IDX;
   }
 
-  unlock_buffer_pool(cm->buffer_pool);
   return i;
 }
 
@@ -342,7 +310,7 @@ static INLINE void set_partition_probs(const VP9_COMMON *const cm,
   xd->partition_probs =
       frame_is_intra_only(cm)
           ? &vp9_kf_partition_probs[0]
-          : (const vpx_prob(*)[PARTITION_TYPES - 1])cm->fc->partition_prob;
+          : (const vpx_prob(*)[PARTITION_TYPES - 1]) cm->fc->partition_prob;
 }
 
 static INLINE void vp9_init_macroblockd(VP9_COMMON *cm, MACROBLOCKD *xd,

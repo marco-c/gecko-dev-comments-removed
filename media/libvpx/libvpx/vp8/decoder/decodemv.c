@@ -8,6 +8,7 @@
 
 
 
+#include "decodemv.h"
 #include "treereader.h"
 #include "vp8/common/entropymv.h"
 #include "vp8/common/entropymode.h"
@@ -64,8 +65,7 @@ static int read_mvcomponent(vp8_reader *r, const MV_CONTEXT *mvc) {
   const vp8_prob *const p = (const vp8_prob *)mvc;
   int x = 0;
 
-  if (vp8_read(r, p[mvpis_short])) 
-  {
+  if (vp8_read(r, p[mvpis_short])) { 
     int i = 0;
 
     do {
@@ -284,8 +284,7 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi,
                              MB_MODE_INFO *mbmi) {
   vp8_reader *const bc = &pbi->mbc[8];
   mbmi->ref_frame = (MV_REFERENCE_FRAME)vp8_read(bc, pbi->prob_intra);
-  if (mbmi->ref_frame) 
-  {
+  if (mbmi->ref_frame) { 
     enum { CNT_INTRA, CNT_NEAREST, CNT_NEAR, CNT_SPLITMV };
     int cnt[4];
     int *cntx = cnt;

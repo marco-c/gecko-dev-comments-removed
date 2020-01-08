@@ -127,26 +127,16 @@ int vp9_cyclic_refresh_rc_bits_per_mb(const VP9_COMP *cpi, int i,
   const VP9_COMMON *const cm = &cpi->common;
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   int bits_per_mb;
-  int num8x8bl = cm->MBs << 2;
+  int deltaq = 0;
+  if (cpi->oxcf.speed < 8)
+    deltaq = compute_deltaq(cpi, i, cr->rate_ratio_qdelta);
+  else
+    deltaq = -(cr->max_qdelta_perc * i) / 200;
   
-  int deltaq = compute_deltaq(cpi, i, cr->rate_ratio_qdelta);
-  
-  
-  
-  int target_refresh = cr->percent_refresh * cm->mi_rows * cm->mi_cols / 100;
-  double weight_segment_target = (double)(target_refresh) / num8x8bl;
-  double weight_segment =
-      (double)((target_refresh + cr->actual_num_seg1_blocks +
-                cr->actual_num_seg2_blocks) >>
-               1) /
-      num8x8bl;
-  if (weight_segment_target < 7 * weight_segment / 8)
-    weight_segment = weight_segment_target;
-  
-  bits_per_mb = (int)((1.0 - weight_segment) *
+  bits_per_mb = (int)((1.0 - cr->weight_segment) *
                           vp9_rc_bits_per_mb(cm->frame_type, i,
                                              correction_factor, cm->bit_depth) +
-                      weight_segment *
+                      cr->weight_segment *
                           vp9_rc_bits_per_mb(cm->frame_type, i + deltaq,
                                              correction_factor, cm->bit_depth));
   return bits_per_mb;
@@ -251,23 +241,65 @@ void vp9_cyclic_refresh_update_sb_postencode(VP9_COMP *const cpi,
 }
 
 
+
+
+
 void vp9_cyclic_refresh_postencode(VP9_COMP *const cpi) {
   VP9_COMMON *const cm = &cpi->common;
+  MODE_INFO **mi = cm->mi_grid_visible;
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+  RATE_CONTROL *const rc = &cpi->rc;
   unsigned char *const seg_map = cpi->segmentation_map;
+  double fraction_low = 0.0;
+  int force_gf_refresh = 0;
+  int low_content_frame = 0;
   int mi_row, mi_col;
   cr->actual_num_seg1_blocks = 0;
   cr->actual_num_seg2_blocks = 0;
-  for (mi_row = 0; mi_row < cm->mi_rows; mi_row++)
+  for (mi_row = 0; mi_row < cm->mi_rows; mi_row++) {
     for (mi_col = 0; mi_col < cm->mi_cols; mi_col++) {
-      if (cyclic_refresh_segment_id(seg_map[mi_row * cm->mi_cols + mi_col]) ==
-          CR_SEGMENT_ID_BOOST1)
+      MV mv = mi[0]->mv[0].as_mv;
+      int map_index = mi_row * cm->mi_cols + mi_col;
+      if (cyclic_refresh_segment_id(seg_map[map_index]) == CR_SEGMENT_ID_BOOST1)
         cr->actual_num_seg1_blocks++;
-      else if (cyclic_refresh_segment_id(
-                   seg_map[mi_row * cm->mi_cols + mi_col]) ==
+      else if (cyclic_refresh_segment_id(seg_map[map_index]) ==
                CR_SEGMENT_ID_BOOST2)
         cr->actual_num_seg2_blocks++;
+      
+      if (is_inter_block(mi[0]) && abs(mv.row) < 16 && abs(mv.col) < 16)
+        low_content_frame++;
+      mi++;
     }
+    mi += 8;
+  }
+  
+  if (!cpi->use_svc && cpi->ext_refresh_frame_flags_pending == 0 &&
+      !cpi->oxcf.gf_cbr_boost_pct) {
+    
+    
+    if (cpi->resize_pending != 0) {
+      vp9_cyclic_refresh_set_golden_update(cpi);
+      rc->frames_till_gf_update_due = rc->baseline_gf_interval;
+      if (rc->frames_till_gf_update_due > rc->frames_to_key)
+        rc->frames_till_gf_update_due = rc->frames_to_key;
+      cpi->refresh_golden_frame = 1;
+      force_gf_refresh = 1;
+    }
+    
+    fraction_low = (double)low_content_frame / (cm->mi_rows * cm->mi_cols);
+    cr->low_content_avg = (fraction_low + 3 * cr->low_content_avg) / 4;
+    if (!force_gf_refresh && cpi->refresh_golden_frame == 1 &&
+        rc->frames_since_key > rc->frames_since_golden + 1) {
+      
+      
+      
+      if (fraction_low < 0.65 || cr->low_content_avg < 0.6) {
+        cpi->refresh_golden_frame = 0;
+      }
+      
+      cr->low_content_avg = fraction_low;
+    }
+  }
 }
 
 
@@ -282,72 +314,8 @@ void vp9_cyclic_refresh_set_golden_update(VP9_COMP *const cpi) {
   else
     rc->baseline_gf_interval = 40;
   if (cpi->oxcf.rc_mode == VPX_VBR) rc->baseline_gf_interval = 20;
-}
-
-
-
-
-
-void vp9_cyclic_refresh_check_golden_update(VP9_COMP *const cpi) {
-  VP9_COMMON *const cm = &cpi->common;
-  CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
-  int mi_row, mi_col;
-  double fraction_low = 0.0;
-  int low_content_frame = 0;
-  MODE_INFO **mi = cm->mi_grid_visible;
-  RATE_CONTROL *const rc = &cpi->rc;
-  const int rows = cm->mi_rows, cols = cm->mi_cols;
-  int cnt1 = 0, cnt2 = 0;
-  int force_gf_refresh = 0;
-  int flag_force_gf_high_motion = 0;
-  for (mi_row = 0; mi_row < rows; mi_row++) {
-    for (mi_col = 0; mi_col < cols; mi_col++) {
-      if (flag_force_gf_high_motion == 1) {
-        int16_t abs_mvr = mi[0]->mv[0].as_mv.row >= 0
-                              ? mi[0]->mv[0].as_mv.row
-                              : -1 * mi[0]->mv[0].as_mv.row;
-        int16_t abs_mvc = mi[0]->mv[0].as_mv.col >= 0
-                              ? mi[0]->mv[0].as_mv.col
-                              : -1 * mi[0]->mv[0].as_mv.col;
-        
-        if (abs_mvr <= 16 && abs_mvc <= 16) {
-          cnt1++;
-          if (abs_mvr == 0 && abs_mvc == 0) cnt2++;
-        }
-      }
-      mi++;
-      
-      if (cr->map[mi_row * cols + mi_col] < 1) low_content_frame++;
-    }
-    mi += 8;
-  }
-  
-  
-  
-  
-  
-  if (cpi->resize_pending != 0 ||
-      (cnt1 * 100 > (70 * rows * cols) && cnt2 * 20 < cnt1)) {
-    vp9_cyclic_refresh_set_golden_update(cpi);
-    rc->frames_till_gf_update_due = rc->baseline_gf_interval;
-
-    if (rc->frames_till_gf_update_due > rc->frames_to_key)
-      rc->frames_till_gf_update_due = rc->frames_to_key;
-    cpi->refresh_golden_frame = 1;
-    force_gf_refresh = 1;
-  }
-  fraction_low = (double)low_content_frame / (rows * cols);
-  
-  cr->low_content_avg = (fraction_low + 3 * cr->low_content_avg) / 4;
-  if (!force_gf_refresh && cpi->refresh_golden_frame == 1) {
-    
-    
-    
-    if (fraction_low < 0.8 || cr->low_content_avg < 0.7)
-      cpi->refresh_golden_frame = 0;
-    
-    cr->low_content_avg = fraction_low;
-  }
+  if (rc->avg_frame_low_motion < 50 && rc->frames_since_key > 40)
+    rc->baseline_gf_interval = 10;
 }
 
 
@@ -410,7 +378,7 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
         VPXMIN(cm->mi_rows - mi_row, num_8x8_blocks_high_lookup[BLOCK_64X64]);
     if (cpi->noise_estimate.enabled && cpi->noise_estimate.level >= kMedium &&
         (xmis <= 2 || ymis <= 2))
-      consec_zero_mv_thresh_block = 10;
+      consec_zero_mv_thresh_block = 4;
     for (y = 0; y < ymis; y++) {
       for (x = 0; x < xmis; x++) {
         const int bl_index2 = bl_index + y * cm->mi_cols + x;
@@ -453,9 +421,21 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
   const RATE_CONTROL *const rc = &cpi->rc;
   const VP9_COMMON *const cm = &cpi->common;
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+  int num8x8bl = cm->MBs << 2;
+  int target_refresh = 0;
+  double weight_segment_target = 0;
+  double weight_segment = 0;
+  int thresh_low_motion = (cm->width < 720) ? 55 : 20;
+  cr->apply_cyclic_refresh = 1;
+  if (cm->frame_type == KEY_FRAME || cpi->svc.temporal_layer_id > 0 ||
+      (!cpi->use_svc && rc->avg_frame_low_motion < thresh_low_motion &&
+       rc->frames_since_key > 40)) {
+    cr->apply_cyclic_refresh = 0;
+    return;
+  }
   cr->percent_refresh = 10;
   if (cr->reduce_refresh) cr->percent_refresh = 5;
-  cr->max_qdelta_perc = 50;
+  cr->max_qdelta_perc = 60;
   cr->time_for_refresh = 0;
   cr->motion_thresh = 32;
   cr->rate_boost_fac = 15;
@@ -475,9 +455,14 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
     }
   }
   
-  if (cm->width <= 352 && cm->height <= 288 && rc->avg_frame_bandwidth < 3400) {
-    cr->motion_thresh = 16;
-    cr->rate_boost_fac = 13;
+  if (cm->width <= 352 && cm->height <= 288) {
+    if (rc->avg_frame_bandwidth < 3000) {
+      cr->motion_thresh = 16;
+      cr->rate_boost_fac = 13;
+    } else {
+      cr->max_qdelta_perc = 70;
+      cr->rate_ratio_qdelta = VPXMAX(cr->rate_ratio_qdelta, 2.5);
+    }
   }
   if (cpi->svc.spatial_layer_id > 0) {
     cr->motion_thresh = 4;
@@ -495,6 +480,19 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
       cr->rate_ratio_qdelta = 1.0;
     }
   }
+  
+  
+  
+  
+  target_refresh = cr->percent_refresh * cm->mi_rows * cm->mi_cols / 100;
+  weight_segment_target = (double)(target_refresh) / num8x8bl;
+  weight_segment = (double)((target_refresh + cr->actual_num_seg1_blocks +
+                             cr->actual_num_seg2_blocks) >>
+                            1) /
+                   num8x8bl;
+  if (weight_segment_target < 7 * weight_segment / 8)
+    weight_segment = weight_segment_target;
+  cr->weight_segment = weight_segment;
 }
 
 
@@ -503,14 +501,8 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
   const RATE_CONTROL *const rc = &cpi->rc;
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   struct segmentation *const seg = &cm->seg;
-  
-  
-  
-  const int apply_cyclic_refresh = 1;
   if (cm->current_video_frame == 0) cr->low_content_avg = 0.0;
-  
-  if (!apply_cyclic_refresh || (cm->frame_type == KEY_FRAME) ||
-      (cpi->force_update_segmentation) || (cpi->svc.temporal_layer_id > 0)) {
+  if (!cr->apply_cyclic_refresh || (cpi->force_update_segmentation)) {
     
     unsigned char *const seg_map = cpi->segmentation_map;
     memset(seg_map, 0, cm->mi_rows * cm->mi_cols);
@@ -519,6 +511,7 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
       memset(cr->last_coded_q_map, MAXQ,
              cm->mi_rows * cm->mi_cols * sizeof(*cr->last_coded_q_map));
       cr->sb_index = 0;
+      cr->reduce_refresh = 0;
     }
     return;
   } else {

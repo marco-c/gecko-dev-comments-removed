@@ -455,12 +455,6 @@ static void dec_find_best_ref_mvs(int allow_hp, int_mv *mvlist, int_mv *best_mv,
   }
 }
 
-static void fpm_sync(void *const data, int mi_row) {
-  VP9Decoder *const pbi = (VP9Decoder *)data;
-  vp9_frameworker_wait(pbi->frame_worker_owner, pbi->common.prev_frame,
-                       mi_row << MI_BLOCK_SIZE_LOG2);
-}
-
 
 
 
@@ -500,8 +494,7 @@ static int dec_find_mv_refs(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                             PREDICTION_MODE mode, MV_REFERENCE_FRAME ref_frame,
                             const POSITION *const mv_ref_search,
                             int_mv *mv_ref_list, int mi_row, int mi_col,
-                            int block, int is_sub8x8, find_mv_refs_sync sync,
-                            void *const data) {
+                            int block, int is_sub8x8) {
   const int *ref_sign_bias = cm->ref_frame_sign_bias;
   int i, refmv_count = 0;
   int different_ref_found = 0;
@@ -557,23 +550,8 @@ static int dec_find_mv_refs(const VP9_COMMON *cm, const MACROBLOCKD *xd,
     }
   }
 
-
-
-
-
-#if defined(_WIN32) && !HAVE_PTHREAD_H
-  if (cm->frame_parallel_decode && sync != NULL) {
-    sync(data, mi_row);
-  }
-#endif
-
   
   if (prev_frame_mvs) {
-    
-    if (cm->frame_parallel_decode && sync != NULL) {
-      sync(data, mi_row);
-    }
-
     if (prev_frame_mvs->ref_frame[0] == ref_frame) {
       ADD_MV_REF_LIST_EB(prev_frame_mvs->mv[0], refmv_count, mv_ref_list, Done);
     } else if (prev_frame_mvs->ref_frame[1] == ref_frame) {
@@ -652,7 +630,7 @@ static void append_sub8x8_mvs_for_idx(VP9_COMMON *cm, MACROBLOCKD *xd,
 
   refmv_count =
       dec_find_mv_refs(cm, xd, b_mode, mi->ref_frame[ref], mv_ref_search,
-                       mv_list, mi_row, mi_col, block, 1, NULL, NULL);
+                       mv_list, mi_row, mi_col, block, 1);
 
   switch (block) {
     case 0: best_sub8x8->as_int = mv_list[refmv_count - 1].as_int; break;
@@ -750,9 +728,8 @@ static void read_inter_block_mode_info(VP9Decoder *const pbi,
         const MV_REFERENCE_FRAME frame = mi->ref_frame[ref];
         int refmv_count;
 
-        refmv_count =
-            dec_find_mv_refs(cm, xd, mi->mode, frame, mv_ref_search, tmp_mvs,
-                             mi_row, mi_col, -1, 0, fpm_sync, (void *)pbi);
+        refmv_count = dec_find_mv_refs(cm, xd, mi->mode, frame, mv_ref_search,
+                                       tmp_mvs, mi_row, mi_col, -1, 0);
 
         dec_find_best_ref_mvs(allow_hp, tmp_mvs, &best_ref_mvs[ref],
                               refmv_count);

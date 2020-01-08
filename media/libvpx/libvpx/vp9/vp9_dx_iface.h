@@ -15,19 +15,12 @@
 
 typedef vpx_codec_stream_info_t vp9_stream_info_t;
 
-
-
-#define FRAME_CACHE_SIZE 6  // Cache maximum 6 decoded frames.
-
-typedef struct cache_frame {
-  int fb_idx;
-  vpx_image_t img;
-} cache_frame;
-
 struct vpx_codec_alg_priv {
   vpx_codec_priv_t base;
   vpx_codec_dec_cfg_t cfg;
   vp9_stream_info_t si;
+  VP9Decoder *pbi;
+  void *user_priv;
   int postproc_cfg_set;
   vp8_postproc_cfg_t postproc_cfg;
   vpx_decrypt_cb decrypt_cb;
@@ -40,18 +33,6 @@ struct vpx_codec_alg_priv {
   int byte_alignment;
   int skip_loop_filter;
 
-  
-  int frame_parallel_decode;  
-  VPxWorker *frame_workers;
-  int num_frame_workers;
-  int next_submit_worker_id;
-  int last_submit_worker_id;
-  int next_output_worker_id;
-  int available_threads;
-  cache_frame frame_cache[FRAME_CACHE_SIZE];
-  int frame_cache_write;
-  int frame_cache_read;
-  int num_cache_frames;
   int need_resync;  
   
   BufferPool *buffer_pool;

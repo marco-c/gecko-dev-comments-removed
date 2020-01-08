@@ -14,9 +14,11 @@
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
+#include "./vp9_rtcd.h"
 #include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"
 #include "test/acm_random.h"
+#include "test/buffer.h"
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
 #include "test/util.h"
@@ -24,11 +26,12 @@
 #include "vp9/common/vp9_scan.h"
 #include "vpx/vpx_codec.h"
 #include "vpx/vpx_integer.h"
+#include "vpx_ports/vpx_timer.h"
 
 using libvpx_test::ACMRandom;
+using libvpx_test::Buffer;
 
 namespace {
-#if CONFIG_VP9_HIGHBITDEPTH
 const int number_of_iterations = 100;
 
 typedef void (*QuantizeFunc)(const tran_low_t *coeff, intptr_t count,
@@ -38,307 +41,494 @@ typedef void (*QuantizeFunc)(const tran_low_t *coeff, intptr_t count,
                              tran_low_t *dqcoeff, const int16_t *dequant,
                              uint16_t *eob, const int16_t *scan,
                              const int16_t *iscan);
-typedef std::tr1::tuple<QuantizeFunc, QuantizeFunc, vpx_bit_depth_t>
+typedef std::tr1::tuple<QuantizeFunc, QuantizeFunc, vpx_bit_depth_t,
+                        int , bool >
     QuantizeParam;
 
-class VP9QuantizeTest : public ::testing::TestWithParam<QuantizeParam> {
+
+typedef void (*QuantizeFPFunc)(const tran_low_t *coeff, intptr_t count,
+                               int skip_block, const int16_t *round,
+                               const int16_t *quant, tran_low_t *qcoeff,
+                               tran_low_t *dqcoeff, const int16_t *dequant,
+                               uint16_t *eob, const int16_t *scan,
+                               const int16_t *iscan);
+
+template <QuantizeFPFunc fn>
+void QuantFPWrapper(const tran_low_t *coeff, intptr_t count, int skip_block,
+                    const int16_t *zbin, const int16_t *round,
+                    const int16_t *quant, const int16_t *quant_shift,
+                    tran_low_t *qcoeff, tran_low_t *dqcoeff,
+                    const int16_t *dequant, uint16_t *eob, const int16_t *scan,
+                    const int16_t *iscan) {
+  (void)zbin;
+  (void)quant_shift;
+
+  fn(coeff, count, skip_block, round, quant, qcoeff, dqcoeff, dequant, eob,
+     scan, iscan);
+}
+
+class VP9QuantizeBase {
  public:
-  virtual ~VP9QuantizeTest() {}
-  virtual void SetUp() {
-    quantize_op_ = GET_PARAM(0);
-    ref_quantize_op_ = GET_PARAM(1);
-    bit_depth_ = GET_PARAM(2);
-    mask_ = (1 << bit_depth_) - 1;
+  VP9QuantizeBase(vpx_bit_depth_t bit_depth, int max_size, bool is_fp)
+      : bit_depth_(bit_depth), max_size_(max_size), is_fp_(is_fp) {
+    max_value_ = (1 << bit_depth_) - 1;
+    zbin_ptr_ =
+        reinterpret_cast<int16_t *>(vpx_memalign(16, 8 * sizeof(*zbin_ptr_)));
+    round_fp_ptr_ = reinterpret_cast<int16_t *>(
+        vpx_memalign(16, 8 * sizeof(*round_fp_ptr_)));
+    quant_fp_ptr_ = reinterpret_cast<int16_t *>(
+        vpx_memalign(16, 8 * sizeof(*quant_fp_ptr_)));
+    round_ptr_ =
+        reinterpret_cast<int16_t *>(vpx_memalign(16, 8 * sizeof(*round_ptr_)));
+    quant_ptr_ =
+        reinterpret_cast<int16_t *>(vpx_memalign(16, 8 * sizeof(*quant_ptr_)));
+    quant_shift_ptr_ = reinterpret_cast<int16_t *>(
+        vpx_memalign(16, 8 * sizeof(*quant_shift_ptr_)));
+    dequant_ptr_ = reinterpret_cast<int16_t *>(
+        vpx_memalign(16, 8 * sizeof(*dequant_ptr_)));
   }
 
-  virtual void TearDown() { libvpx_test::ClearSystemState(); }
-
- protected:
-  vpx_bit_depth_t bit_depth_;
-  int mask_;
-  QuantizeFunc quantize_op_;
-  QuantizeFunc ref_quantize_op_;
-};
-
-class VP9Quantize32Test : public ::testing::TestWithParam<QuantizeParam> {
- public:
-  virtual ~VP9Quantize32Test() {}
-  virtual void SetUp() {
-    quantize_op_ = GET_PARAM(0);
-    ref_quantize_op_ = GET_PARAM(1);
-    bit_depth_ = GET_PARAM(2);
-    mask_ = (1 << bit_depth_) - 1;
+  ~VP9QuantizeBase() {
+    vpx_free(zbin_ptr_);
+    vpx_free(round_fp_ptr_);
+    vpx_free(quant_fp_ptr_);
+    vpx_free(round_ptr_);
+    vpx_free(quant_ptr_);
+    vpx_free(quant_shift_ptr_);
+    vpx_free(dequant_ptr_);
+    zbin_ptr_ = NULL;
+    round_fp_ptr_ = NULL;
+    quant_fp_ptr_ = NULL;
+    round_ptr_ = NULL;
+    quant_ptr_ = NULL;
+    quant_shift_ptr_ = NULL;
+    dequant_ptr_ = NULL;
+    libvpx_test::ClearSystemState();
   }
 
-  virtual void TearDown() { libvpx_test::ClearSystemState(); }
+ protected:
+  int16_t *zbin_ptr_;
+  int16_t *round_fp_ptr_;
+  int16_t *quant_fp_ptr_;
+  int16_t *round_ptr_;
+  int16_t *quant_ptr_;
+  int16_t *quant_shift_ptr_;
+  int16_t *dequant_ptr_;
+  const vpx_bit_depth_t bit_depth_;
+  int max_value_;
+  const int max_size_;
+  const bool is_fp_;
+};
+
+class VP9QuantizeTest : public VP9QuantizeBase,
+                        public ::testing::TestWithParam<QuantizeParam> {
+ public:
+  VP9QuantizeTest()
+      : VP9QuantizeBase(GET_PARAM(2), GET_PARAM(3), GET_PARAM(4)),
+        quantize_op_(GET_PARAM(0)), ref_quantize_op_(GET_PARAM(1)) {}
 
  protected:
-  vpx_bit_depth_t bit_depth_;
-  int mask_;
-  QuantizeFunc quantize_op_;
-  QuantizeFunc ref_quantize_op_;
+  const QuantizeFunc quantize_op_;
+  const QuantizeFunc ref_quantize_op_;
 };
+
+
+
+
+void quantize_fp_nz_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
+                      int skip_block, const int16_t *round_ptr,
+                      const int16_t *quant_ptr, tran_low_t *qcoeff_ptr,
+                      tran_low_t *dqcoeff_ptr, const int16_t *dequant_ptr,
+                      uint16_t *eob_ptr, const int16_t *scan,
+                      const int16_t *iscan) {
+  int i, eob = -1;
+  const int thr = dequant_ptr[1] >> 1;
+  (void)iscan;
+  (void)skip_block;
+  assert(!skip_block);
+
+  
+  
+  for (i = 0; i < n_coeffs; i += 16) {
+    int y;
+    int nzflag_cnt = 0;
+    int abs_coeff[16];
+    int coeff_sign[16];
+
+    
+    for (y = 0; y < 16; ++y) {
+      const int rc = i + y;
+      const int coeff = coeff_ptr[rc];
+      coeff_sign[y] = (coeff >> 31);
+      abs_coeff[y] = (coeff ^ coeff_sign[y]) - coeff_sign[y];
+      
+      if (i >= 16 && (abs_coeff[y] <= thr)) {
+        nzflag_cnt++;
+      }
+    }
+
+    for (y = 0; y < 16; ++y) {
+      const int rc = i + y;
+      
+      
+      if (nzflag_cnt < 16) {
+        int tmp =
+            clamp(abs_coeff[y] + round_ptr[rc != 0], INT16_MIN, INT16_MAX);
+        tmp = (tmp * quant_ptr[rc != 0]) >> 16;
+        qcoeff_ptr[rc] = (tmp ^ coeff_sign[y]) - coeff_sign[y];
+        dqcoeff_ptr[rc] = qcoeff_ptr[rc] * dequant_ptr[rc != 0];
+      } else {
+        qcoeff_ptr[rc] = 0;
+        dqcoeff_ptr[rc] = 0;
+      }
+    }
+  }
+
+  
+  for (i = 0; i < n_coeffs; i++) {
+    
+    const int rc = scan[i];
+    if (qcoeff_ptr[rc]) {
+      eob = i;
+    }
+  }
+  *eob_ptr = eob + 1;
+}
+
+void GenerateHelperArrays(ACMRandom *rnd, int16_t *zbin, int16_t *round,
+                          int16_t *quant, int16_t *quant_shift,
+                          int16_t *dequant, int16_t *round_fp,
+                          int16_t *quant_fp) {
+  
+  const int max_qrounding_factor_fp = 64;
+
+  for (int j = 0; j < 2; j++) {
+    
+    const int qlookup = rnd->RandRange(1825) + 4;
+    round_fp[j] = (max_qrounding_factor_fp * qlookup) >> 7;
+    quant_fp[j] = (1 << 16) / qlookup;
+
+    
+    
+    
+    
+    zbin[j] = rnd->RandRange(1200);
+
+    
+    round[j] = rnd->RandRange(914);
+    
+    quant[j] = static_cast<int>(rnd->RandRange(32704)) - 32703;
+    
+    quant_shift[j] = rnd->RandRange(16384);
+    
+    dequant[j] = rnd->RandRange(1828);
+  }
+  for (int j = 2; j < 8; j++) {
+    zbin[j] = zbin[1];
+    round_fp[j] = round_fp[1];
+    quant_fp[j] = quant_fp[1];
+    round[j] = round[1];
+    quant[j] = quant[1];
+    quant_shift[j] = quant_shift[1];
+    dequant[j] = dequant[1];
+  }
+}
 
 TEST_P(VP9QuantizeTest, OperationCheck) {
   ACMRandom rnd(ACMRandom::DeterministicSeed());
-  DECLARE_ALIGNED(16, tran_low_t, coeff_ptr[256]);
-  DECLARE_ALIGNED(16, int16_t, zbin_ptr[2]);
-  DECLARE_ALIGNED(16, int16_t, round_ptr[2]);
-  DECLARE_ALIGNED(16, int16_t, quant_ptr[2]);
-  DECLARE_ALIGNED(16, int16_t, quant_shift_ptr[2]);
-  DECLARE_ALIGNED(16, tran_low_t, qcoeff_ptr[256]);
-  DECLARE_ALIGNED(16, tran_low_t, dqcoeff_ptr[256]);
-  DECLARE_ALIGNED(16, tran_low_t, ref_qcoeff_ptr[256]);
-  DECLARE_ALIGNED(16, tran_low_t, ref_dqcoeff_ptr[256]);
-  DECLARE_ALIGNED(16, int16_t, dequant_ptr[2]);
-  DECLARE_ALIGNED(16, uint16_t, eob_ptr[1]);
-  DECLARE_ALIGNED(16, uint16_t, ref_eob_ptr[1]);
-  int err_count_total = 0;
-  int first_failure = -1;
-  for (int i = 0; i < number_of_iterations; ++i) {
-    const int skip_block = i == 0;
-    const TX_SIZE sz = (TX_SIZE)(i % 3);  
-    const TX_TYPE tx_type = (TX_TYPE)((i >> 2) % 3);
-    const scan_order *scan_order = &vp9_scan_orders[sz][tx_type];
-    const int count = (4 << sz) * (4 << sz);  
-    int err_count = 0;
-    *eob_ptr = rnd.Rand16();
-    *ref_eob_ptr = *eob_ptr;
-    for (int j = 0; j < count; j++) {
-      coeff_ptr[j] = rnd.Rand16() & mask_;
-    }
-    for (int j = 0; j < 2; j++) {
-      zbin_ptr[j] = rnd.Rand16() & mask_;
-      round_ptr[j] = rnd.Rand16();
-      quant_ptr[j] = rnd.Rand16();
-      quant_shift_ptr[j] = rnd.Rand16();
-      dequant_ptr[j] = rnd.Rand16();
-    }
-    ref_quantize_op_(coeff_ptr, count, skip_block, zbin_ptr, round_ptr,
-                     quant_ptr, quant_shift_ptr, ref_qcoeff_ptr,
-                     ref_dqcoeff_ptr, dequant_ptr, ref_eob_ptr,
-                     scan_order->scan, scan_order->iscan);
-    ASM_REGISTER_STATE_CHECK(quantize_op_(
-        coeff_ptr, count, skip_block, zbin_ptr, round_ptr, quant_ptr,
-        quant_shift_ptr, qcoeff_ptr, dqcoeff_ptr, dequant_ptr, eob_ptr,
-        scan_order->scan, scan_order->iscan));
-    for (int j = 0; j < sz; ++j) {
-      err_count += (ref_qcoeff_ptr[j] != qcoeff_ptr[j]) |
-                   (ref_dqcoeff_ptr[j] != dqcoeff_ptr[j]);
-    }
-    err_count += (*ref_eob_ptr != *eob_ptr);
-    if (err_count && !err_count_total) {
-      first_failure = i;
-    }
-    err_count_total += err_count;
-  }
-  EXPECT_EQ(0, err_count_total)
-      << "Error: Quantization Test, C output doesn't match SSE2 output. "
-      << "First failed at test case " << first_failure;
-}
+  Buffer<tran_low_t> coeff = Buffer<tran_low_t>(max_size_, max_size_, 0, 16);
+  ASSERT_TRUE(coeff.Init());
+  Buffer<tran_low_t> qcoeff = Buffer<tran_low_t>(max_size_, max_size_, 0, 32);
+  ASSERT_TRUE(qcoeff.Init());
+  Buffer<tran_low_t> dqcoeff = Buffer<tran_low_t>(max_size_, max_size_, 0, 32);
+  ASSERT_TRUE(dqcoeff.Init());
+  Buffer<tran_low_t> ref_qcoeff =
+      Buffer<tran_low_t>(max_size_, max_size_, 0, 32);
+  ASSERT_TRUE(ref_qcoeff.Init());
+  Buffer<tran_low_t> ref_dqcoeff =
+      Buffer<tran_low_t>(max_size_, max_size_, 0, 32);
+  ASSERT_TRUE(ref_dqcoeff.Init());
+  uint16_t eob, ref_eob;
 
-TEST_P(VP9Quantize32Test, OperationCheck) {
-  ACMRandom rnd(ACMRandom::DeterministicSeed());
-  DECLARE_ALIGNED(16, tran_low_t, coeff_ptr[1024]);
-  DECLARE_ALIGNED(16, int16_t, zbin_ptr[2]);
-  DECLARE_ALIGNED(16, int16_t, round_ptr[2]);
-  DECLARE_ALIGNED(16, int16_t, quant_ptr[2]);
-  DECLARE_ALIGNED(16, int16_t, quant_shift_ptr[2]);
-  DECLARE_ALIGNED(16, tran_low_t, qcoeff_ptr[1024]);
-  DECLARE_ALIGNED(16, tran_low_t, dqcoeff_ptr[1024]);
-  DECLARE_ALIGNED(16, tran_low_t, ref_qcoeff_ptr[1024]);
-  DECLARE_ALIGNED(16, tran_low_t, ref_dqcoeff_ptr[1024]);
-  DECLARE_ALIGNED(16, int16_t, dequant_ptr[2]);
-  DECLARE_ALIGNED(16, uint16_t, eob_ptr[1]);
-  DECLARE_ALIGNED(16, uint16_t, ref_eob_ptr[1]);
-  int err_count_total = 0;
-  int first_failure = -1;
   for (int i = 0; i < number_of_iterations; ++i) {
-    const int skip_block = i == 0;
-    const TX_SIZE sz = TX_32X32;
-    const TX_TYPE tx_type = (TX_TYPE)(i % 4);
+    
+    
+    const int skip_block = 0;
+    TX_SIZE sz;
+    if (max_size_ == 16) {
+      sz = static_cast<TX_SIZE>(i % 3);  
+    } else {
+      sz = TX_32X32;
+    }
+    const TX_TYPE tx_type = static_cast<TX_TYPE>((i >> 2) % 3);
     const scan_order *scan_order = &vp9_scan_orders[sz][tx_type];
-    const int count = (4 << sz) * (4 << sz);  
-    int err_count = 0;
-    *eob_ptr = rnd.Rand16();
-    *ref_eob_ptr = *eob_ptr;
-    for (int j = 0; j < count; j++) {
-      coeff_ptr[j] = rnd.Rand16() & mask_;
-    }
-    for (int j = 0; j < 2; j++) {
-      zbin_ptr[j] = rnd.Rand16() & mask_;
-      round_ptr[j] = rnd.Rand16();
-      quant_ptr[j] = rnd.Rand16();
-      quant_shift_ptr[j] = rnd.Rand16();
-      dequant_ptr[j] = rnd.Rand16();
-    }
-    ref_quantize_op_(coeff_ptr, count, skip_block, zbin_ptr, round_ptr,
-                     quant_ptr, quant_shift_ptr, ref_qcoeff_ptr,
-                     ref_dqcoeff_ptr, dequant_ptr, ref_eob_ptr,
+    const int count = (4 << sz) * (4 << sz);
+    coeff.Set(&rnd, -max_value_, max_value_);
+    GenerateHelperArrays(&rnd, zbin_ptr_, round_ptr_, quant_ptr_,
+                         quant_shift_ptr_, dequant_ptr_, round_fp_ptr_,
+                         quant_fp_ptr_);
+    int16_t *r_ptr = (is_fp_) ? round_fp_ptr_ : round_ptr_;
+    int16_t *q_ptr = (is_fp_) ? quant_fp_ptr_ : quant_ptr_;
+    ref_quantize_op_(coeff.TopLeftPixel(), count, skip_block, zbin_ptr_, r_ptr,
+                     q_ptr, quant_shift_ptr_, ref_qcoeff.TopLeftPixel(),
+                     ref_dqcoeff.TopLeftPixel(), dequant_ptr_, &ref_eob,
                      scan_order->scan, scan_order->iscan);
+
     ASM_REGISTER_STATE_CHECK(quantize_op_(
-        coeff_ptr, count, skip_block, zbin_ptr, round_ptr, quant_ptr,
-        quant_shift_ptr, qcoeff_ptr, dqcoeff_ptr, dequant_ptr, eob_ptr,
-        scan_order->scan, scan_order->iscan));
-    for (int j = 0; j < sz; ++j) {
-      err_count += (ref_qcoeff_ptr[j] != qcoeff_ptr[j]) |
-                   (ref_dqcoeff_ptr[j] != dqcoeff_ptr[j]);
+        coeff.TopLeftPixel(), count, skip_block, zbin_ptr_, r_ptr, q_ptr,
+        quant_shift_ptr_, qcoeff.TopLeftPixel(), dqcoeff.TopLeftPixel(),
+        dequant_ptr_, &eob, scan_order->scan, scan_order->iscan));
+
+    EXPECT_TRUE(qcoeff.CheckValues(ref_qcoeff));
+    EXPECT_TRUE(dqcoeff.CheckValues(ref_dqcoeff));
+
+    EXPECT_EQ(eob, ref_eob);
+
+    if (HasFailure()) {
+      printf("Failure on iteration %d.\n", i);
+      qcoeff.PrintDifference(ref_qcoeff);
+      dqcoeff.PrintDifference(ref_dqcoeff);
+      return;
     }
-    err_count += (*ref_eob_ptr != *eob_ptr);
-    if (err_count && !err_count_total) {
-      first_failure = i;
-    }
-    err_count_total += err_count;
   }
-  EXPECT_EQ(0, err_count_total)
-      << "Error: Quantization Test, C output doesn't match SSE2 output. "
-      << "First failed at test case " << first_failure;
 }
 
 TEST_P(VP9QuantizeTest, EOBCheck) {
   ACMRandom rnd(ACMRandom::DeterministicSeed());
-  DECLARE_ALIGNED(16, tran_low_t, coeff_ptr[256]);
-  DECLARE_ALIGNED(16, int16_t, zbin_ptr[2]);
-  DECLARE_ALIGNED(16, int16_t, round_ptr[2]);
-  DECLARE_ALIGNED(16, int16_t, quant_ptr[2]);
-  DECLARE_ALIGNED(16, int16_t, quant_shift_ptr[2]);
-  DECLARE_ALIGNED(16, tran_low_t, qcoeff_ptr[256]);
-  DECLARE_ALIGNED(16, tran_low_t, dqcoeff_ptr[256]);
-  DECLARE_ALIGNED(16, tran_low_t, ref_qcoeff_ptr[256]);
-  DECLARE_ALIGNED(16, tran_low_t, ref_dqcoeff_ptr[256]);
-  DECLARE_ALIGNED(16, int16_t, dequant_ptr[2]);
-  DECLARE_ALIGNED(16, uint16_t, eob_ptr[1]);
-  DECLARE_ALIGNED(16, uint16_t, ref_eob_ptr[1]);
-  int err_count_total = 0;
-  int first_failure = -1;
+  Buffer<tran_low_t> coeff = Buffer<tran_low_t>(max_size_, max_size_, 0, 16);
+  ASSERT_TRUE(coeff.Init());
+  Buffer<tran_low_t> qcoeff = Buffer<tran_low_t>(max_size_, max_size_, 0, 32);
+  ASSERT_TRUE(qcoeff.Init());
+  Buffer<tran_low_t> dqcoeff = Buffer<tran_low_t>(max_size_, max_size_, 0, 32);
+  ASSERT_TRUE(dqcoeff.Init());
+  Buffer<tran_low_t> ref_qcoeff =
+      Buffer<tran_low_t>(max_size_, max_size_, 0, 32);
+  ASSERT_TRUE(ref_qcoeff.Init());
+  Buffer<tran_low_t> ref_dqcoeff =
+      Buffer<tran_low_t>(max_size_, max_size_, 0, 32);
+  ASSERT_TRUE(ref_dqcoeff.Init());
+  uint16_t eob, ref_eob;
+
   for (int i = 0; i < number_of_iterations; ++i) {
-    int skip_block = i == 0;
-    TX_SIZE sz = (TX_SIZE)(i % 3);  
-    TX_TYPE tx_type = (TX_TYPE)((i >> 2) % 3);
+    const int skip_block = 0;
+    TX_SIZE sz;
+    if (max_size_ == 16) {
+      sz = static_cast<TX_SIZE>(i % 3);  
+    } else {
+      sz = TX_32X32;
+    }
+    const TX_TYPE tx_type = static_cast<TX_TYPE>((i >> 2) % 3);
     const scan_order *scan_order = &vp9_scan_orders[sz][tx_type];
-    int count = (4 << sz) * (4 << sz);  
-    int err_count = 0;
-    *eob_ptr = rnd.Rand16();
-    *ref_eob_ptr = *eob_ptr;
+    int count = (4 << sz) * (4 << sz);
     
-    for (int j = 0; j < count; j++) {
-      coeff_ptr[j] = 0;
-    }
-    coeff_ptr[rnd(count)] = rnd.Rand16() & mask_;
-    coeff_ptr[rnd(count)] = rnd.Rand16() & mask_;
-    for (int j = 0; j < 2; j++) {
-      zbin_ptr[j] = rnd.Rand16() & mask_;
-      round_ptr[j] = rnd.Rand16();
-      quant_ptr[j] = rnd.Rand16();
-      quant_shift_ptr[j] = rnd.Rand16();
-      dequant_ptr[j] = rnd.Rand16();
-    }
-
-    ref_quantize_op_(coeff_ptr, count, skip_block, zbin_ptr, round_ptr,
-                     quant_ptr, quant_shift_ptr, ref_qcoeff_ptr,
-                     ref_dqcoeff_ptr, dequant_ptr, ref_eob_ptr,
+    coeff.Set(0);
+    coeff.TopLeftPixel()[rnd(count)] =
+        static_cast<int>(rnd.RandRange(max_value_ * 2)) - max_value_;
+    coeff.TopLeftPixel()[rnd(count)] =
+        static_cast<int>(rnd.RandRange(max_value_ * 2)) - max_value_;
+    GenerateHelperArrays(&rnd, zbin_ptr_, round_ptr_, quant_ptr_,
+                         quant_shift_ptr_, dequant_ptr_, round_fp_ptr_,
+                         quant_fp_ptr_);
+    int16_t *r_ptr = (is_fp_) ? round_fp_ptr_ : round_ptr_;
+    int16_t *q_ptr = (is_fp_) ? quant_fp_ptr_ : quant_ptr_;
+    ref_quantize_op_(coeff.TopLeftPixel(), count, skip_block, zbin_ptr_, r_ptr,
+                     q_ptr, quant_shift_ptr_, ref_qcoeff.TopLeftPixel(),
+                     ref_dqcoeff.TopLeftPixel(), dequant_ptr_, &ref_eob,
                      scan_order->scan, scan_order->iscan);
-    ASM_REGISTER_STATE_CHECK(quantize_op_(
-        coeff_ptr, count, skip_block, zbin_ptr, round_ptr, quant_ptr,
-        quant_shift_ptr, qcoeff_ptr, dqcoeff_ptr, dequant_ptr, eob_ptr,
-        scan_order->scan, scan_order->iscan));
 
-    for (int j = 0; j < sz; ++j) {
-      err_count += (ref_qcoeff_ptr[j] != qcoeff_ptr[j]) |
-                   (ref_dqcoeff_ptr[j] != dqcoeff_ptr[j]);
+    ASM_REGISTER_STATE_CHECK(quantize_op_(
+        coeff.TopLeftPixel(), count, skip_block, zbin_ptr_, r_ptr, q_ptr,
+        quant_shift_ptr_, qcoeff.TopLeftPixel(), dqcoeff.TopLeftPixel(),
+        dequant_ptr_, &eob, scan_order->scan, scan_order->iscan));
+
+    EXPECT_TRUE(qcoeff.CheckValues(ref_qcoeff));
+    EXPECT_TRUE(dqcoeff.CheckValues(ref_dqcoeff));
+
+    EXPECT_EQ(eob, ref_eob);
+
+    if (HasFailure()) {
+      printf("Failure on iteration %d.\n", i);
+      qcoeff.PrintDifference(ref_qcoeff);
+      dqcoeff.PrintDifference(ref_dqcoeff);
+      return;
     }
-    err_count += (*ref_eob_ptr != *eob_ptr);
-    if (err_count && !err_count_total) {
-      first_failure = i;
-    }
-    err_count_total += err_count;
   }
-  EXPECT_EQ(0, err_count_total)
-      << "Error: Quantization Test, C output doesn't match SSE2 output. "
-      << "First failed at test case " << first_failure;
 }
 
-TEST_P(VP9Quantize32Test, EOBCheck) {
+TEST_P(VP9QuantizeTest, DISABLED_Speed) {
   ACMRandom rnd(ACMRandom::DeterministicSeed());
-  DECLARE_ALIGNED(16, tran_low_t, coeff_ptr[1024]);
-  DECLARE_ALIGNED(16, int16_t, zbin_ptr[2]);
-  DECLARE_ALIGNED(16, int16_t, round_ptr[2]);
-  DECLARE_ALIGNED(16, int16_t, quant_ptr[2]);
-  DECLARE_ALIGNED(16, int16_t, quant_shift_ptr[2]);
-  DECLARE_ALIGNED(16, tran_low_t, qcoeff_ptr[1024]);
-  DECLARE_ALIGNED(16, tran_low_t, dqcoeff_ptr[1024]);
-  DECLARE_ALIGNED(16, tran_low_t, ref_qcoeff_ptr[1024]);
-  DECLARE_ALIGNED(16, tran_low_t, ref_dqcoeff_ptr[1024]);
-  DECLARE_ALIGNED(16, int16_t, dequant_ptr[2]);
-  DECLARE_ALIGNED(16, uint16_t, eob_ptr[1]);
-  DECLARE_ALIGNED(16, uint16_t, ref_eob_ptr[1]);
-  int err_count_total = 0;
-  int first_failure = -1;
-  for (int i = 0; i < number_of_iterations; ++i) {
-    int skip_block = i == 0;
-    TX_SIZE sz = TX_32X32;
-    TX_TYPE tx_type = (TX_TYPE)(i % 4);
-    const scan_order *scan_order = &vp9_scan_orders[sz][tx_type];
-    int count = (4 << sz) * (4 << sz);  
-    int err_count = 0;
-    *eob_ptr = rnd.Rand16();
-    *ref_eob_ptr = *eob_ptr;
-    for (int j = 0; j < count; j++) {
-      coeff_ptr[j] = 0;
-    }
-    
-    coeff_ptr[rnd(count)] = rnd.Rand16() & mask_;
-    coeff_ptr[rnd(count)] = rnd.Rand16() & mask_;
-    for (int j = 0; j < 2; j++) {
-      zbin_ptr[j] = rnd.Rand16() & mask_;
-      round_ptr[j] = rnd.Rand16();
-      quant_ptr[j] = rnd.Rand16();
-      quant_shift_ptr[j] = rnd.Rand16();
-      dequant_ptr[j] = rnd.Rand16();
-    }
+  Buffer<tran_low_t> coeff = Buffer<tran_low_t>(max_size_, max_size_, 0, 16);
+  ASSERT_TRUE(coeff.Init());
+  Buffer<tran_low_t> qcoeff = Buffer<tran_low_t>(max_size_, max_size_, 0, 32);
+  ASSERT_TRUE(qcoeff.Init());
+  Buffer<tran_low_t> dqcoeff = Buffer<tran_low_t>(max_size_, max_size_, 0, 32);
+  ASSERT_TRUE(dqcoeff.Init());
+  uint16_t eob;
+  TX_SIZE starting_sz, ending_sz;
 
-    ref_quantize_op_(coeff_ptr, count, skip_block, zbin_ptr, round_ptr,
-                     quant_ptr, quant_shift_ptr, ref_qcoeff_ptr,
-                     ref_dqcoeff_ptr, dequant_ptr, ref_eob_ptr,
-                     scan_order->scan, scan_order->iscan);
-    ASM_REGISTER_STATE_CHECK(quantize_op_(
-        coeff_ptr, count, skip_block, zbin_ptr, round_ptr, quant_ptr,
-        quant_shift_ptr, qcoeff_ptr, dqcoeff_ptr, dequant_ptr, eob_ptr,
-        scan_order->scan, scan_order->iscan));
-
-    for (int j = 0; j < sz; ++j) {
-      err_count += (ref_qcoeff_ptr[j] != qcoeff_ptr[j]) |
-                   (ref_dqcoeff_ptr[j] != dqcoeff_ptr[j]);
-    }
-    err_count += (*ref_eob_ptr != *eob_ptr);
-    if (err_count && !err_count_total) {
-      first_failure = i;
-    }
-    err_count_total += err_count;
+  if (max_size_ == 16) {
+    starting_sz = TX_4X4;
+    ending_sz = TX_16X16;
+  } else {
+    starting_sz = TX_32X32;
+    ending_sz = TX_32X32;
   }
-  EXPECT_EQ(0, err_count_total)
-      << "Error: Quantization Test, C output doesn't match SSE2 output. "
-      << "First failed at test case " << first_failure;
+
+  for (TX_SIZE sz = starting_sz; sz <= ending_sz; ++sz) {
+    
+    for (int i = 0; i < 2; ++i) {
+      const int skip_block = 0;
+      
+      
+      const TX_TYPE tx_type = DCT_DCT;
+      const scan_order *scan_order = &vp9_scan_orders[sz][tx_type];
+      const int count = (4 << sz) * (4 << sz);
+
+      GenerateHelperArrays(&rnd, zbin_ptr_, round_ptr_, quant_ptr_,
+                           quant_shift_ptr_, dequant_ptr_, round_fp_ptr_,
+                           quant_fp_ptr_);
+      int16_t *r_ptr = (is_fp_) ? round_fp_ptr_ : round_ptr_;
+      int16_t *q_ptr = (is_fp_) ? quant_fp_ptr_ : quant_ptr_;
+
+      if (i == 0) {
+        
+        int threshold = 100;
+        if (max_size_ == 32) {
+          
+          
+          threshold = 200;
+        }
+        for (int j = 0; j < 8; ++j) zbin_ptr_[j] = threshold;
+        coeff.Set(&rnd, -99, 99);
+      } else if (i == 1) {
+        for (int j = 0; j < 8; ++j) zbin_ptr_[j] = 50;
+        coeff.Set(&rnd, -500, 500);
+      }
+
+      vpx_usec_timer timer;
+      vpx_usec_timer_start(&timer);
+      for (int j = 0; j < 100000000 / count; ++j) {
+        quantize_op_(coeff.TopLeftPixel(), count, skip_block, zbin_ptr_, r_ptr,
+                     q_ptr, quant_shift_ptr_, qcoeff.TopLeftPixel(),
+                     dqcoeff.TopLeftPixel(), dequant_ptr_, &eob,
+                     scan_order->scan, scan_order->iscan);
+      }
+      vpx_usec_timer_mark(&timer);
+      const int elapsed_time = static_cast<int>(vpx_usec_timer_elapsed(&timer));
+      if (i == 0) printf("Bypass calculations.\n");
+      if (i == 1) printf("Full calculations.\n");
+      printf("Quantize %dx%d time: %5d ms\n", 4 << sz, 4 << sz,
+             elapsed_time / 1000);
+    }
+    printf("\n");
+  }
 }
+
 using std::tr1::make_tuple;
 
 #if HAVE_SSE2
+#if CONFIG_VP9_HIGHBITDEPTH
+
+
 INSTANTIATE_TEST_CASE_P(
     SSE2, VP9QuantizeTest,
-    ::testing::Values(make_tuple(&vpx_highbd_quantize_b_sse2,
-                                 &vpx_highbd_quantize_b_c, VPX_BITS_8),
-                      make_tuple(&vpx_highbd_quantize_b_sse2,
-                                 &vpx_highbd_quantize_b_c, VPX_BITS_10),
-                      make_tuple(&vpx_highbd_quantize_b_sse2,
-                                 &vpx_highbd_quantize_b_c, VPX_BITS_12)));
+    ::testing::Values(
+        make_tuple(&vpx_highbd_quantize_b_sse2, &vpx_highbd_quantize_b_c,
+                   VPX_BITS_8, 16, false),
+        make_tuple(&vpx_highbd_quantize_b_sse2, &vpx_highbd_quantize_b_c,
+                   VPX_BITS_10, 16, false),
+        make_tuple(&vpx_highbd_quantize_b_sse2, &vpx_highbd_quantize_b_c,
+                   VPX_BITS_12, 16, false),
+        make_tuple(&vpx_highbd_quantize_b_32x32_sse2,
+                   &vpx_highbd_quantize_b_32x32_c, VPX_BITS_8, 32, false),
+        make_tuple(&vpx_highbd_quantize_b_32x32_sse2,
+                   &vpx_highbd_quantize_b_32x32_c, VPX_BITS_10, 32, false),
+        make_tuple(&vpx_highbd_quantize_b_32x32_sse2,
+                   &vpx_highbd_quantize_b_32x32_c, VPX_BITS_12, 32, false)));
+
+#else
 INSTANTIATE_TEST_CASE_P(
-    SSE2, VP9Quantize32Test,
-    ::testing::Values(make_tuple(&vpx_highbd_quantize_b_32x32_sse2,
-                                 &vpx_highbd_quantize_b_32x32_c, VPX_BITS_8),
-                      make_tuple(&vpx_highbd_quantize_b_32x32_sse2,
-                                 &vpx_highbd_quantize_b_32x32_c, VPX_BITS_10),
-                      make_tuple(&vpx_highbd_quantize_b_32x32_sse2,
-                                 &vpx_highbd_quantize_b_32x32_c, VPX_BITS_12)));
+    SSE2, VP9QuantizeTest,
+    ::testing::Values(make_tuple(&vpx_quantize_b_sse2, &vpx_quantize_b_c,
+                                 VPX_BITS_8, 16, false),
+                      make_tuple(&QuantFPWrapper<vp9_quantize_fp_sse2>,
+                                 &QuantFPWrapper<quantize_fp_nz_c>, VPX_BITS_8,
+                                 16, true)));
 #endif  
 #endif  
+
+#if HAVE_SSSE3 && !CONFIG_VP9_HIGHBITDEPTH
+#if ARCH_X86_64
+INSTANTIATE_TEST_CASE_P(
+    SSSE3, VP9QuantizeTest,
+    ::testing::Values(make_tuple(&vpx_quantize_b_ssse3, &vpx_quantize_b_c,
+                                 VPX_BITS_8, 16, false),
+                      make_tuple(&QuantFPWrapper<vp9_quantize_fp_ssse3>,
+                                 &QuantFPWrapper<quantize_fp_nz_c>, VPX_BITS_8,
+                                 16, true)));
+#else
+INSTANTIATE_TEST_CASE_P(SSSE3, VP9QuantizeTest,
+                        ::testing::Values(make_tuple(&vpx_quantize_b_ssse3,
+                                                     &vpx_quantize_b_c,
+                                                     VPX_BITS_8, 16, false)));
+#endif
+
+#if ARCH_X86_64
+
+INSTANTIATE_TEST_CASE_P(
+    DISABLED_SSSE3, VP9QuantizeTest,
+    ::testing::Values(make_tuple(&vpx_quantize_b_32x32_ssse3,
+                                 &vpx_quantize_b_32x32_c, VPX_BITS_8, 32,
+                                 false),
+                      make_tuple(&QuantFPWrapper<vp9_quantize_fp_32x32_ssse3>,
+                                 &QuantFPWrapper<vp9_quantize_fp_32x32_c>,
+                                 VPX_BITS_8, 32, true)));
+#endif  
+#endif  
+
+
+
+#if HAVE_AVX && !CONFIG_VP9_HIGHBITDEPTH
+INSTANTIATE_TEST_CASE_P(
+    AVX, VP9QuantizeTest,
+    ::testing::Values(make_tuple(&vpx_quantize_b_avx, &vpx_quantize_b_c,
+                                 VPX_BITS_8, 16, false),
+                      
+                      
+                      make_tuple(&vpx_quantize_b_32x32_avx,
+                                 &vpx_quantize_b_32x32_ssse3, VPX_BITS_8, 32,
+                                 false)));
+#endif  
+
+
+#if HAVE_NEON && !CONFIG_VP9_HIGHBITDEPTH
+INSTANTIATE_TEST_CASE_P(
+    NEON, VP9QuantizeTest,
+    ::testing::Values(make_tuple(&vpx_quantize_b_neon, &vpx_quantize_b_c,
+                                 VPX_BITS_8, 16, false),
+                      make_tuple(&vpx_quantize_b_32x32_neon,
+                                 &vpx_quantize_b_32x32_c, VPX_BITS_8, 32,
+                                 false),
+                      make_tuple(&QuantFPWrapper<vp9_quantize_fp_neon>,
+                                 &QuantFPWrapper<vp9_quantize_fp_c>, VPX_BITS_8,
+                                 16, true),
+                      make_tuple(&QuantFPWrapper<vp9_quantize_fp_32x32_neon>,
+                                 &QuantFPWrapper<vp9_quantize_fp_32x32_c>,
+                                 VPX_BITS_8, 32, true)));
+#endif  
+
+
+INSTANTIATE_TEST_CASE_P(
+    DISABLED_C, VP9QuantizeTest,
+    ::testing::Values(
+        make_tuple(&vpx_quantize_b_c, &vpx_quantize_b_c, VPX_BITS_8, 16, false),
+        make_tuple(&vpx_quantize_b_32x32_c, &vpx_quantize_b_32x32_c, VPX_BITS_8,
+                   32, false),
+        make_tuple(&QuantFPWrapper<vp9_quantize_fp_c>,
+                   &QuantFPWrapper<vp9_quantize_fp_c>, VPX_BITS_8, 16, true),
+        make_tuple(&QuantFPWrapper<quantize_fp_nz_c>,
+                   &QuantFPWrapper<quantize_fp_nz_c>, VPX_BITS_8, 16, true),
+        make_tuple(&QuantFPWrapper<vp9_quantize_fp_32x32_c>,
+                   &QuantFPWrapper<vp9_quantize_fp_32x32_c>, VPX_BITS_8, 32,
+                   true)));
 }  

@@ -8,13 +8,17 @@
 
 
 
+#include <assert.h>
 #include <math.h>
 #include <limits.h>
 
 #include "vp9/common/vp9_alloccommon.h"
+#include "vp9/common/vp9_common.h"
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/vp9_reconinter.h"
+#include "vp9/encoder/vp9_encodeframe.h"
+#include "vp9/encoder/vp9_ethread.h"
 #include "vp9/encoder/vp9_extend.h"
 #include "vp9/encoder/vp9_firstpass.h"
 #include "vp9/encoder/vp9_mcomp.h"
@@ -51,16 +55,19 @@ static void temporal_filter_predictors_mb_c(
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-    vp9_highbd_build_inter_predictor(y_mb_ptr, stride, &pred[0], 16, &mv, scale,
-                                     16, 16, which_mv, kernel, MV_PRECISION_Q3,
-                                     x, y, xd->bd);
+    vp9_highbd_build_inter_predictor(CONVERT_TO_SHORTPTR(y_mb_ptr), stride,
+                                     CONVERT_TO_SHORTPTR(&pred[0]), 16, &mv,
+                                     scale, 16, 16, which_mv, kernel,
+                                     MV_PRECISION_Q3, x, y, xd->bd);
 
-    vp9_highbd_build_inter_predictor(u_mb_ptr, uv_stride, &pred[256],
+    vp9_highbd_build_inter_predictor(CONVERT_TO_SHORTPTR(u_mb_ptr), uv_stride,
+                                     CONVERT_TO_SHORTPTR(&pred[256]),
                                      uv_block_width, &mv, scale, uv_block_width,
                                      uv_block_height, which_mv, kernel,
                                      mv_precision_uv, x, y, xd->bd);
 
-    vp9_highbd_build_inter_predictor(v_mb_ptr, uv_stride, &pred[512],
+    vp9_highbd_build_inter_predictor(CONVERT_TO_SHORTPTR(v_mb_ptr), uv_stride,
+                                     CONVERT_TO_SHORTPTR(&pred[512]),
                                      uv_block_width, &mv, scale, uv_block_width,
                                      uv_block_height, which_mv, kernel,
                                      mv_precision_uv, x, y, xd->bd);
@@ -87,15 +94,22 @@ void vp9_temporal_filter_init(void) {
   for (i = 1; i < 512; ++i) fixed_divide[i] = 0x80000 / i;
 }
 
-void vp9_temporal_filter_apply_c(uint8_t *frame1, unsigned int stride,
-                                 uint8_t *frame2, unsigned int block_width,
+void vp9_temporal_filter_apply_c(const uint8_t *frame1, unsigned int stride,
+                                 const uint8_t *frame2,
+                                 unsigned int block_width,
                                  unsigned int block_height, int strength,
-                                 int filter_weight, unsigned int *accumulator,
+                                 int filter_weight, uint32_t *accumulator,
                                  uint16_t *count) {
   unsigned int i, j, k;
   int modifier;
   int byte = 0;
   const int rounding = strength > 0 ? 1 << (strength - 1) : 0;
+
+  assert(strength >= 0);
+  assert(strength <= 6);
+
+  assert(filter_weight >= 0);
+  assert(filter_weight <= 2);
 
   for (i = 0, k = 0; i < block_height; i++) {
     for (j = 0; j < block_width; j++, k++) {
@@ -150,11 +164,11 @@ void vp9_temporal_filter_apply_c(uint8_t *frame1, unsigned int stride,
 
 #if CONFIG_VP9_HIGHBITDEPTH
 void vp9_highbd_temporal_filter_apply_c(
-    uint8_t *frame1_8, unsigned int stride, uint8_t *frame2_8,
+    const uint8_t *frame1_8, unsigned int stride, const uint8_t *frame2_8,
     unsigned int block_width, unsigned int block_height, int strength,
-    int filter_weight, unsigned int *accumulator, uint16_t *count) {
-  uint16_t *frame1 = CONVERT_TO_SHORTPTR(frame1_8);
-  uint16_t *frame2 = CONVERT_TO_SHORTPTR(frame2_8);
+    int filter_weight, uint32_t *accumulator, uint16_t *count) {
+  const uint16_t *frame1 = CONVERT_TO_SHORTPTR(frame1_8);
+  const uint16_t *frame2 = CONVERT_TO_SHORTPTR(frame2_8);
   unsigned int i, j, k;
   int modifier;
   int byte = 0;
@@ -209,23 +223,24 @@ void vp9_highbd_temporal_filter_apply_c(
 #endif  
 
 static uint32_t temporal_filter_find_matching_mb_c(VP9_COMP *cpi,
+                                                   ThreadData *td,
                                                    uint8_t *arf_frame_buf,
                                                    uint8_t *frame_ptr_buf,
-                                                   int stride) {
-  MACROBLOCK *const x = &cpi->td.mb;
+                                                   int stride, MV *ref_mv) {
+  MACROBLOCK *const x = &td->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
   MV_SPEED_FEATURES *const mv_sf = &cpi->sf.mv;
-  const SEARCH_METHODS old_search_method = mv_sf->search_method;
+  const SEARCH_METHODS search_method = HEX;
   int step_param;
   int sadpb = x->sadperbit16;
   uint32_t bestsme = UINT_MAX;
   uint32_t distortion;
   uint32_t sse;
   int cost_list[5];
+  const MvLimits tmp_mv_limits = x->mv_limits;
 
   MV best_ref_mv1 = { 0, 0 };
   MV best_ref_mv1_full; 
-  MV *ref_mv = &x->e_mbd.mi[0]->bmi[0].as_mv[0].as_mv;
 
   
   struct buf_2d src = x->plane[0].src;
@@ -243,11 +258,14 @@ static uint32_t temporal_filter_find_matching_mb_c(VP9_COMP *cpi,
   step_param = mv_sf->reduce_first_step_size;
   step_param = VPXMIN(step_param, MAX_MVSEARCH_STEPS - 2);
 
-  mv_sf->search_method = HEX;
+  vp9_set_mv_search_range(&x->mv_limits, &best_ref_mv1);
+
   vp9_full_pixel_search(cpi, x, BLOCK_16X16, &best_ref_mv1_full, step_param,
-                        sadpb, cond_cost_list(cpi, cost_list), &best_ref_mv1,
-                        ref_mv, 0, 0);
-  mv_sf->search_method = old_search_method;
+                        search_method, sadpb, cond_cost_list(cpi, cost_list),
+                        &best_ref_mv1, ref_mv, 0, 0);
+
+  
+  x->mv_limits = tmp_mv_limits;
 
   
   bestsme = cpi->find_fractional_mv_step(
@@ -263,22 +281,24 @@ static uint32_t temporal_filter_find_matching_mb_c(VP9_COMP *cpi,
   return bestsme;
 }
 
-static void temporal_filter_iterate_c(VP9_COMP *cpi,
-                                      YV12_BUFFER_CONFIG **frames,
-                                      int frame_count, int alt_ref_index,
-                                      int strength,
-                                      struct scale_factors *scale) {
+void vp9_temporal_filter_iterate_row_c(VP9_COMP *cpi, ThreadData *td,
+                                       int mb_row, int mb_col_start,
+                                       int mb_col_end) {
+  ARNRFilterData *arnr_filter_data = &cpi->arnr_filter_data;
+  YV12_BUFFER_CONFIG **frames = arnr_filter_data->frames;
+  int frame_count = arnr_filter_data->frame_count;
+  int alt_ref_index = arnr_filter_data->alt_ref_index;
+  int strength = arnr_filter_data->strength;
+  struct scale_factors *scale = &arnr_filter_data->sf;
   int byte;
   int frame;
-  int mb_col, mb_row;
+  int mb_col;
   unsigned int filter_weight;
   int mb_cols = (frames[alt_ref_index]->y_crop_width + 15) >> 4;
   int mb_rows = (frames[alt_ref_index]->y_crop_height + 15) >> 4;
-  int mb_y_offset = 0;
-  int mb_uv_offset = 0;
-  DECLARE_ALIGNED(16, unsigned int, accumulator[16 * 16 * 3]);
+  DECLARE_ALIGNED(16, uint32_t, accumulator[16 * 16 * 3]);
   DECLARE_ALIGNED(16, uint16_t, count[16 * 16 * 3]);
-  MACROBLOCKD *mbd = &cpi->td.mb.e_mbd;
+  MACROBLOCKD *mbd = &td->mb.e_mbd;
   YV12_BUFFER_CONFIG *f = frames[alt_ref_index];
   uint8_t *dst1, *dst2;
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -290,10 +310,11 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
 #endif
   const int mb_uv_height = 16 >> mbd->plane[1].subsampling_y;
   const int mb_uv_width = 16 >> mbd->plane[1].subsampling_x;
-
   
-  uint8_t *input_buffer[MAX_MB_PLANE];
-  int i;
+  int mb_y_offset = mb_row * 16 * (f->y_stride) + 16 * mb_col_start;
+  int mb_uv_offset =
+      mb_row * mb_uv_height * f->uv_stride + mb_uv_width * mb_col_start;
+
 #if CONFIG_VP9_HIGHBITDEPTH
   if (mbd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     predictor = CONVERT_TO_BYTEPTR(predictor16);
@@ -302,215 +323,186 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
   }
 #endif
 
-  for (i = 0; i < MAX_MB_PLANE; i++) input_buffer[i] = mbd->plane[i].pre[0].buf;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  td->mb.mv_limits.row_min = -((mb_row * 16) + (17 - 2 * VP9_INTERP_EXTEND));
+  td->mb.mv_limits.row_max =
+      ((mb_rows - 1 - mb_row) * 16) + (17 - 2 * VP9_INTERP_EXTEND);
 
-  for (mb_row = 0; mb_row < mb_rows; mb_row++) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    cpi->td.mb.mv_limits.row_min =
-        -((mb_row * 16) + (17 - 2 * VP9_INTERP_EXTEND));
-    cpi->td.mb.mv_limits.row_max =
-        ((mb_rows - 1 - mb_row) * 16) + (17 - 2 * VP9_INTERP_EXTEND);
+  for (mb_col = mb_col_start; mb_col < mb_col_end; mb_col++) {
+    int i, j, k;
+    int stride;
+    MV ref_mv;
 
-    for (mb_col = 0; mb_col < mb_cols; mb_col++) {
-      int i, j, k;
-      int stride;
+    vp9_zero_array(accumulator, 16 * 16 * 3);
+    vp9_zero_array(count, 16 * 16 * 3);
 
-      memset(accumulator, 0, 16 * 16 * 3 * sizeof(accumulator[0]));
-      memset(count, 0, 16 * 16 * 3 * sizeof(count[0]));
+    td->mb.mv_limits.col_min = -((mb_col * 16) + (17 - 2 * VP9_INTERP_EXTEND));
+    td->mb.mv_limits.col_max =
+        ((mb_cols - 1 - mb_col) * 16) + (17 - 2 * VP9_INTERP_EXTEND);
 
-      cpi->td.mb.mv_limits.col_min =
-          -((mb_col * 16) + (17 - 2 * VP9_INTERP_EXTEND));
-      cpi->td.mb.mv_limits.col_max =
-          ((mb_cols - 1 - mb_col) * 16) + (17 - 2 * VP9_INTERP_EXTEND);
+    if (cpi->oxcf.content == VP9E_CONTENT_FILM) {
+      unsigned int src_variance;
+      struct buf_2d src;
 
-      for (frame = 0; frame < frame_count; frame++) {
-        const uint32_t thresh_low = 10000;
-        const uint32_t thresh_high = 20000;
-
-        if (frames[frame] == NULL) continue;
-
-        mbd->mi[0]->bmi[0].as_mv[0].as_mv.row = 0;
-        mbd->mi[0]->bmi[0].as_mv[0].as_mv.col = 0;
-
-        if (frame == alt_ref_index) {
-          filter_weight = 2;
-        } else {
-          
-          uint32_t err = temporal_filter_find_matching_mb_c(
-              cpi, frames[alt_ref_index]->y_buffer + mb_y_offset,
-              frames[frame]->y_buffer + mb_y_offset, frames[frame]->y_stride);
-
-          
-          
-          
-          filter_weight = err < thresh_low ? 2 : err < thresh_high ? 1 : 0;
-        }
-
-        if (filter_weight != 0) {
-          
-          temporal_filter_predictors_mb_c(
-              mbd, frames[frame]->y_buffer + mb_y_offset,
-              frames[frame]->u_buffer + mb_uv_offset,
-              frames[frame]->v_buffer + mb_uv_offset, frames[frame]->y_stride,
-              mb_uv_width, mb_uv_height, mbd->mi[0]->bmi[0].as_mv[0].as_mv.row,
-              mbd->mi[0]->bmi[0].as_mv[0].as_mv.col, predictor, scale,
-              mb_col * 16, mb_row * 16);
-
-#if CONFIG_VP9_HIGHBITDEPTH
-          if (mbd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-            int adj_strength = strength + 2 * (mbd->bd - 8);
-            
-            vp9_highbd_temporal_filter_apply_c(
-                f->y_buffer + mb_y_offset, f->y_stride, predictor, 16, 16,
-                adj_strength, filter_weight, accumulator, count);
-            vp9_highbd_temporal_filter_apply_c(
-                f->u_buffer + mb_uv_offset, f->uv_stride, predictor + 256,
-                mb_uv_width, mb_uv_height, adj_strength, filter_weight,
-                accumulator + 256, count + 256);
-            vp9_highbd_temporal_filter_apply_c(
-                f->v_buffer + mb_uv_offset, f->uv_stride, predictor + 512,
-                mb_uv_width, mb_uv_height, adj_strength, filter_weight,
-                accumulator + 512, count + 512);
-          } else {
-            
-            vp9_temporal_filter_apply_c(f->y_buffer + mb_y_offset, f->y_stride,
-                                        predictor, 16, 16, strength,
-                                        filter_weight, accumulator, count);
-            vp9_temporal_filter_apply_c(
-                f->u_buffer + mb_uv_offset, f->uv_stride, predictor + 256,
-                mb_uv_width, mb_uv_height, strength, filter_weight,
-                accumulator + 256, count + 256);
-            vp9_temporal_filter_apply_c(
-                f->v_buffer + mb_uv_offset, f->uv_stride, predictor + 512,
-                mb_uv_width, mb_uv_height, strength, filter_weight,
-                accumulator + 512, count + 512);
-          }
-#else
-          
-          
-          vp9_temporal_filter_apply_c(f->y_buffer + mb_y_offset, f->y_stride,
-                                      predictor, 16, 16, strength,
-                                      filter_weight, accumulator, count);
-          vp9_temporal_filter_apply_c(f->u_buffer + mb_uv_offset, f->uv_stride,
-                                      predictor + 256, mb_uv_width,
-                                      mb_uv_height, strength, filter_weight,
-                                      accumulator + 256, count + 256);
-          vp9_temporal_filter_apply_c(f->v_buffer + mb_uv_offset, f->uv_stride,
-                                      predictor + 512, mb_uv_width,
-                                      mb_uv_height, strength, filter_weight,
-                                      accumulator + 512, count + 512);
-#endif  
-        }
-      }
+      src.buf = f->y_buffer + mb_y_offset;
+      src.stride = f->y_stride;
 
 #if CONFIG_VP9_HIGHBITDEPTH
       if (mbd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-        uint16_t *dst1_16;
-        uint16_t *dst2_16;
-        
-        dst1 = cpi->alt_ref_buffer.y_buffer;
-        dst1_16 = CONVERT_TO_SHORTPTR(dst1);
-        stride = cpi->alt_ref_buffer.y_stride;
-        byte = mb_y_offset;
-        for (i = 0, k = 0; i < 16; i++) {
-          for (j = 0; j < 16; j++, k++) {
-            unsigned int pval = accumulator[k] + (count[k] >> 1);
-            pval *= fixed_divide[count[k]];
-            pval >>= 19;
-
-            dst1_16[byte] = (uint16_t)pval;
-
-            
-            byte++;
-          }
-
-          byte += stride - 16;
-        }
-
-        dst1 = cpi->alt_ref_buffer.u_buffer;
-        dst2 = cpi->alt_ref_buffer.v_buffer;
-        dst1_16 = CONVERT_TO_SHORTPTR(dst1);
-        dst2_16 = CONVERT_TO_SHORTPTR(dst2);
-        stride = cpi->alt_ref_buffer.uv_stride;
-        byte = mb_uv_offset;
-        for (i = 0, k = 256; i < mb_uv_height; i++) {
-          for (j = 0; j < mb_uv_width; j++, k++) {
-            int m = k + 256;
-
-            
-            unsigned int pval = accumulator[k] + (count[k] >> 1);
-            pval *= fixed_divide[count[k]];
-            pval >>= 19;
-            dst1_16[byte] = (uint16_t)pval;
-
-            
-            pval = accumulator[m] + (count[m] >> 1);
-            pval *= fixed_divide[count[m]];
-            pval >>= 19;
-            dst2_16[byte] = (uint16_t)pval;
-
-            
-            byte++;
-          }
-
-          byte += stride - mb_uv_width;
-        }
+        src_variance =
+            vp9_high_get_sby_perpixel_variance(cpi, &src, BLOCK_16X16, mbd->bd);
       } else {
-        
-        dst1 = cpi->alt_ref_buffer.y_buffer;
-        stride = cpi->alt_ref_buffer.y_stride;
-        byte = mb_y_offset;
-        for (i = 0, k = 0; i < 16; i++) {
-          for (j = 0; j < 16; j++, k++) {
-            unsigned int pval = accumulator[k] + (count[k] >> 1);
-            pval *= fixed_divide[count[k]];
-            pval >>= 19;
-
-            dst1[byte] = (uint8_t)pval;
-
-            
-            byte++;
-          }
-          byte += stride - 16;
-        }
-
-        dst1 = cpi->alt_ref_buffer.u_buffer;
-        dst2 = cpi->alt_ref_buffer.v_buffer;
-        stride = cpi->alt_ref_buffer.uv_stride;
-        byte = mb_uv_offset;
-        for (i = 0, k = 256; i < mb_uv_height; i++) {
-          for (j = 0; j < mb_uv_width; j++, k++) {
-            int m = k + 256;
-
-            
-            unsigned int pval = accumulator[k] + (count[k] >> 1);
-            pval *= fixed_divide[count[k]];
-            pval >>= 19;
-            dst1[byte] = (uint8_t)pval;
-
-            
-            pval = accumulator[m] + (count[m] >> 1);
-            pval *= fixed_divide[count[m]];
-            pval >>= 19;
-            dst2[byte] = (uint8_t)pval;
-
-            
-            byte++;
-          }
-          byte += stride - mb_uv_width;
-        }
+        src_variance = vp9_get_sby_perpixel_variance(cpi, &src, BLOCK_16X16);
       }
 #else
+      src_variance = vp9_get_sby_perpixel_variance(cpi, &src, BLOCK_16X16);
+#endif  
+
+      if (src_variance <= 2) strength = VPXMAX(0, (int)strength - 2);
+    }
+
+    for (frame = 0; frame < frame_count; frame++) {
+      const uint32_t thresh_low = 10000;
+      const uint32_t thresh_high = 20000;
+
+      if (frames[frame] == NULL) continue;
+
+      ref_mv.row = 0;
+      ref_mv.col = 0;
+
+      if (frame == alt_ref_index) {
+        filter_weight = 2;
+      } else {
+        
+        uint32_t err = temporal_filter_find_matching_mb_c(
+            cpi, td, frames[alt_ref_index]->y_buffer + mb_y_offset,
+            frames[frame]->y_buffer + mb_y_offset, frames[frame]->y_stride,
+            &ref_mv);
+
+        
+        
+        
+        filter_weight = err < thresh_low ? 2 : err < thresh_high ? 1 : 0;
+      }
+
+      if (filter_weight != 0) {
+        
+        temporal_filter_predictors_mb_c(
+            mbd, frames[frame]->y_buffer + mb_y_offset,
+            frames[frame]->u_buffer + mb_uv_offset,
+            frames[frame]->v_buffer + mb_uv_offset, frames[frame]->y_stride,
+            mb_uv_width, mb_uv_height, ref_mv.row, ref_mv.col, predictor, scale,
+            mb_col * 16, mb_row * 16);
+
+#if CONFIG_VP9_HIGHBITDEPTH
+        if (mbd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+          int adj_strength = strength + 2 * (mbd->bd - 8);
+          
+          vp9_highbd_temporal_filter_apply(
+              f->y_buffer + mb_y_offset, f->y_stride, predictor, 16, 16,
+              adj_strength, filter_weight, accumulator, count);
+          vp9_highbd_temporal_filter_apply(
+              f->u_buffer + mb_uv_offset, f->uv_stride, predictor + 256,
+              mb_uv_width, mb_uv_height, adj_strength, filter_weight,
+              accumulator + 256, count + 256);
+          vp9_highbd_temporal_filter_apply(
+              f->v_buffer + mb_uv_offset, f->uv_stride, predictor + 512,
+              mb_uv_width, mb_uv_height, adj_strength, filter_weight,
+              accumulator + 512, count + 512);
+        } else {
+          
+          vp9_temporal_filter_apply(f->y_buffer + mb_y_offset, f->y_stride,
+                                    predictor, 16, 16, strength, filter_weight,
+                                    accumulator, count);
+          vp9_temporal_filter_apply(f->u_buffer + mb_uv_offset, f->uv_stride,
+                                    predictor + 256, mb_uv_width, mb_uv_height,
+                                    strength, filter_weight, accumulator + 256,
+                                    count + 256);
+          vp9_temporal_filter_apply(f->v_buffer + mb_uv_offset, f->uv_stride,
+                                    predictor + 512, mb_uv_width, mb_uv_height,
+                                    strength, filter_weight, accumulator + 512,
+                                    count + 512);
+        }
+#else
+        
+        vp9_temporal_filter_apply(f->y_buffer + mb_y_offset, f->y_stride,
+                                  predictor, 16, 16, strength, filter_weight,
+                                  accumulator, count);
+        vp9_temporal_filter_apply(f->u_buffer + mb_uv_offset, f->uv_stride,
+                                  predictor + 256, mb_uv_width, mb_uv_height,
+                                  strength, filter_weight, accumulator + 256,
+                                  count + 256);
+        vp9_temporal_filter_apply(f->v_buffer + mb_uv_offset, f->uv_stride,
+                                  predictor + 512, mb_uv_width, mb_uv_height,
+                                  strength, filter_weight, accumulator + 512,
+                                  count + 512);
+#endif  
+      }
+    }
+
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (mbd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      uint16_t *dst1_16;
+      uint16_t *dst2_16;
+      
+      dst1 = cpi->alt_ref_buffer.y_buffer;
+      dst1_16 = CONVERT_TO_SHORTPTR(dst1);
+      stride = cpi->alt_ref_buffer.y_stride;
+      byte = mb_y_offset;
+      for (i = 0, k = 0; i < 16; i++) {
+        for (j = 0; j < 16; j++, k++) {
+          unsigned int pval = accumulator[k] + (count[k] >> 1);
+          pval *= fixed_divide[count[k]];
+          pval >>= 19;
+
+          dst1_16[byte] = (uint16_t)pval;
+
+          
+          byte++;
+        }
+
+        byte += stride - 16;
+      }
+
+      dst1 = cpi->alt_ref_buffer.u_buffer;
+      dst2 = cpi->alt_ref_buffer.v_buffer;
+      dst1_16 = CONVERT_TO_SHORTPTR(dst1);
+      dst2_16 = CONVERT_TO_SHORTPTR(dst2);
+      stride = cpi->alt_ref_buffer.uv_stride;
+      byte = mb_uv_offset;
+      for (i = 0, k = 256; i < mb_uv_height; i++) {
+        for (j = 0; j < mb_uv_width; j++, k++) {
+          int m = k + 256;
+
+          
+          unsigned int pval = accumulator[k] + (count[k] >> 1);
+          pval *= fixed_divide[count[k]];
+          pval >>= 19;
+          dst1_16[byte] = (uint16_t)pval;
+
+          
+          pval = accumulator[m] + (count[m] >> 1);
+          pval *= fixed_divide[count[m]];
+          pval >>= 19;
+          dst2_16[byte] = (uint16_t)pval;
+
+          
+          byte++;
+        }
+
+        byte += stride - mb_uv_width;
+      }
+    } else {
       
       dst1 = cpi->alt_ref_buffer.y_buffer;
       stride = cpi->alt_ref_buffer.y_stride;
@@ -554,12 +546,93 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
         }
         byte += stride - mb_uv_width;
       }
-#endif  
-      mb_y_offset += 16;
-      mb_uv_offset += mb_uv_width;
     }
-    mb_y_offset += 16 * (f->y_stride - mb_cols);
-    mb_uv_offset += mb_uv_height * f->uv_stride - mb_uv_width * mb_cols;
+#else
+    
+    dst1 = cpi->alt_ref_buffer.y_buffer;
+    stride = cpi->alt_ref_buffer.y_stride;
+    byte = mb_y_offset;
+    for (i = 0, k = 0; i < 16; i++) {
+      for (j = 0; j < 16; j++, k++) {
+        unsigned int pval = accumulator[k] + (count[k] >> 1);
+        pval *= fixed_divide[count[k]];
+        pval >>= 19;
+
+        dst1[byte] = (uint8_t)pval;
+
+        
+        byte++;
+      }
+      byte += stride - 16;
+    }
+
+    dst1 = cpi->alt_ref_buffer.u_buffer;
+    dst2 = cpi->alt_ref_buffer.v_buffer;
+    stride = cpi->alt_ref_buffer.uv_stride;
+    byte = mb_uv_offset;
+    for (i = 0, k = 256; i < mb_uv_height; i++) {
+      for (j = 0; j < mb_uv_width; j++, k++) {
+        int m = k + 256;
+
+        
+        unsigned int pval = accumulator[k] + (count[k] >> 1);
+        pval *= fixed_divide[count[k]];
+        pval >>= 19;
+        dst1[byte] = (uint8_t)pval;
+
+        
+        pval = accumulator[m] + (count[m] >> 1);
+        pval *= fixed_divide[count[m]];
+        pval >>= 19;
+        dst2[byte] = (uint8_t)pval;
+
+        
+        byte++;
+      }
+      byte += stride - mb_uv_width;
+    }
+#endif  
+    mb_y_offset += 16;
+    mb_uv_offset += mb_uv_width;
+  }
+}
+
+static void temporal_filter_iterate_tile_c(VP9_COMP *cpi, int tile_row,
+                                           int tile_col) {
+  VP9_COMMON *const cm = &cpi->common;
+  const int tile_cols = 1 << cm->log2_tile_cols;
+  TileInfo *tile_info =
+      &cpi->tile_data[tile_row * tile_cols + tile_col].tile_info;
+  const int mb_row_start = (tile_info->mi_row_start) >> 1;
+  const int mb_row_end = (tile_info->mi_row_end + 1) >> 1;
+  const int mb_col_start = (tile_info->mi_col_start) >> 1;
+  const int mb_col_end = (tile_info->mi_col_end + 1) >> 1;
+  int mb_row;
+
+  for (mb_row = mb_row_start; mb_row < mb_row_end; mb_row++) {
+    vp9_temporal_filter_iterate_row_c(cpi, &cpi->td, mb_row, mb_col_start,
+                                      mb_col_end);
+  }
+}
+
+static void temporal_filter_iterate_c(VP9_COMP *cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  const int tile_cols = 1 << cm->log2_tile_cols;
+  const int tile_rows = 1 << cm->log2_tile_rows;
+  int tile_row, tile_col;
+  MACROBLOCKD *mbd = &cpi->td.mb.e_mbd;
+  
+  uint8_t *input_buffer[MAX_MB_PLANE];
+  int i;
+
+  for (i = 0; i < MAX_MB_PLANE; i++) input_buffer[i] = mbd->plane[i].pre[0].buf;
+
+  vp9_init_tile_data(cpi);
+
+  for (tile_row = 0; tile_row < tile_rows; ++tile_row) {
+    for (tile_col = 0; tile_col < tile_cols; ++tile_col) {
+      temporal_filter_iterate_tile_c(cpi, tile_row, tile_col);
+    }
   }
 
   
@@ -638,20 +711,26 @@ void vp9_temporal_filter(VP9_COMP *cpi, int distance) {
   VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
   MACROBLOCKD *const xd = &cpi->td.mb.e_mbd;
+  ARNRFilterData *arnr_filter_data = &cpi->arnr_filter_data;
   int frame;
   int frames_to_blur;
   int start_frame;
   int strength;
   int frames_to_blur_backward;
   int frames_to_blur_forward;
-  struct scale_factors sf;
-  YV12_BUFFER_CONFIG *frames[MAX_LAG_BUFFERS] = { NULL };
+  struct scale_factors *sf = &arnr_filter_data->sf;
+  YV12_BUFFER_CONFIG **frames = arnr_filter_data->frames;
+  int rdmult;
 
   
   adjust_arnr_filter(cpi, distance, rc->gfu_boost, &frames_to_blur, &strength);
   frames_to_blur_backward = (frames_to_blur / 2);
   frames_to_blur_forward = ((frames_to_blur - 1) / 2);
   start_frame = distance + frames_to_blur_forward;
+
+  arnr_filter_data->strength = strength;
+  arnr_filter_data->frame_count = frames_to_blur;
+  arnr_filter_data->alt_ref_index = frames_to_blur_backward;
 
   
   for (frame = 0; frame < frames_to_blur; ++frame) {
@@ -670,13 +749,13 @@ void vp9_temporal_filter(VP9_COMP *cpi, int distance) {
       int frame_used = 0;
 #if CONFIG_VP9_HIGHBITDEPTH
       vp9_setup_scale_factors_for_frame(
-          &sf, get_frame_new_buffer(cm)->y_crop_width,
+          sf, get_frame_new_buffer(cm)->y_crop_width,
           get_frame_new_buffer(cm)->y_crop_height,
           get_frame_new_buffer(cm)->y_crop_width,
           get_frame_new_buffer(cm)->y_crop_height, cm->use_highbitdepth);
 #else
       vp9_setup_scale_factors_for_frame(
-          &sf, get_frame_new_buffer(cm)->y_crop_width,
+          sf, get_frame_new_buffer(cm)->y_crop_width,
           get_frame_new_buffer(cm)->y_crop_height,
           get_frame_new_buffer(cm)->y_crop_width,
           get_frame_new_buffer(cm)->y_crop_height);
@@ -697,7 +776,8 @@ void vp9_temporal_filter(VP9_COMP *cpi, int distance) {
                                "Failed to reallocate alt_ref_buffer");
           }
           frames[frame] = vp9_scale_if_required(
-              cm, frames[frame], &cpi->svc.scaled_frames[frame_used], 0);
+              cm, frames[frame], &cpi->svc.scaled_frames[frame_used], 0,
+              EIGHTTAP, 0);
           ++frame_used;
         }
       }
@@ -708,17 +788,25 @@ void vp9_temporal_filter(VP9_COMP *cpi, int distance) {
 
 #if CONFIG_VP9_HIGHBITDEPTH
       vp9_setup_scale_factors_for_frame(
-          &sf, frames[0]->y_crop_width, frames[0]->y_crop_height,
+          sf, frames[0]->y_crop_width, frames[0]->y_crop_height,
           frames[0]->y_crop_width, frames[0]->y_crop_height,
           cm->use_highbitdepth);
 #else
       vp9_setup_scale_factors_for_frame(
-          &sf, frames[0]->y_crop_width, frames[0]->y_crop_height,
+          sf, frames[0]->y_crop_width, frames[0]->y_crop_height,
           frames[0]->y_crop_width, frames[0]->y_crop_height);
 #endif  
     }
   }
 
-  temporal_filter_iterate_c(cpi, frames, frames_to_blur,
-                            frames_to_blur_backward, strength, &sf);
+  
+  rdmult = (int)vp9_compute_rd_mult_based_on_qindex(cpi, ARNR_FILT_QINDEX);
+  if (rdmult < 1) rdmult = 1;
+  set_error_per_bit(&cpi->td.mb, rdmult);
+  vp9_initialize_me_consts(cpi, &cpi->td.mb, ARNR_FILT_QINDEX);
+
+  if (!cpi->row_mt)
+    temporal_filter_iterate_c(cpi);
+  else
+    vp9_temporal_filter_row_mt(cpi);
 }

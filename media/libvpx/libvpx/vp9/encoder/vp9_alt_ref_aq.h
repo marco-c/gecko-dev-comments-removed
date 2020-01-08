@@ -54,7 +54,7 @@ struct ALT_REF_AQ;
 
 
 
-struct ALT_REF_AQ *vp9_alt_ref_aq_create();
+struct ALT_REF_AQ *vp9_alt_ref_aq_create(void);
 
 
 

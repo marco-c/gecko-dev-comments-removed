@@ -170,6 +170,11 @@ typedef struct {
   FRAME_TYPE frame_type;
   int is_frame_dropped;
   
+  
+  
+  
+  int is_frame_dropped_overshoot_maxqp;
+  
   double low_res_framerate;
   
   unsigned int low_res_ref_frames[MAX_REF_FRAMES];

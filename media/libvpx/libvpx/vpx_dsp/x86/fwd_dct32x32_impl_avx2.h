@@ -51,7 +51,7 @@ void FDCT32x32_2D_AVX2(const int16_t *input, int16_t *output_org, int stride) {
   
   
   
-  const __m256i k__cospi_p16_p16 = _mm256_set1_epi16((int16_t)cospi_16_64);
+  const __m256i k__cospi_p16_p16 = _mm256_set1_epi16(cospi_16_64);
   const __m256i k__cospi_p16_m16 =
       pair256_set_epi16(+cospi_16_64, -cospi_16_64);
   const __m256i k__cospi_m08_p24 = pair256_set_epi16(-cospi_8_64, cospi_24_64);

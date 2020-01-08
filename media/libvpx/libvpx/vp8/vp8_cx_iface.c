@@ -1225,6 +1225,7 @@ static vpx_codec_enc_cfg_map_t vp8e_usage_cfg_map[] = {
         50,  
         0,   
         400, 
+        0,   
 
         
         VPX_KF_AUTO, 

@@ -26,10 +26,20 @@
 
 #define fseeko _fseeki64
 #define ftello _ftelli64
+typedef int64_t FileOffset;
 #elif defined(_WIN32)
 
 #define fseeko fseeko64
 #define ftello ftello64
+typedef off64_t FileOffset;
+#elif CONFIG_OS_SUPPORT
+typedef off_t FileOffset;
+
+
+#else
+#define fseeko fseek
+#define ftello ftell
+typedef long FileOffset; 
 #endif 
 
 #if CONFIG_OS_SUPPORT
@@ -41,13 +51,6 @@
 #include <unistd.h> 
 #endif              
 #endif              
-
-
-
-#if !CONFIG_OS_SUPPORT
-#define fseeko fseek
-#define ftello ftell
-#endif 
 
 #define LITERALU64(hi, lo) ((((uint64_t)hi) << 32) | lo)
 

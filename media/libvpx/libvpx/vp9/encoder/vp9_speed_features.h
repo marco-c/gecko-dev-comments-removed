@@ -193,6 +193,11 @@ typedef struct MV_SPEED_FEATURES {
   int fullpel_search_step_param;
 } MV_SPEED_FEATURES;
 
+typedef struct PARTITION_SEARCH_BREAKOUT_THR {
+  int64_t dist;
+  int rate;
+} PARTITION_SEARCH_BREAKOUT_THR;
+
 #define MAX_MESH_STEP 4
 
 typedef struct MESH_PATTERN {
@@ -226,7 +231,12 @@ typedef struct SPEED_FEATURES {
 
   
   
+  
   int adaptive_rd_thresh;
+
+  
+  
+  int adaptive_rd_thresh_row_mt;
 
   
   
@@ -318,13 +328,7 @@ typedef struct SPEED_FEATURES {
   int adaptive_motion_search;
 
   
-  int allow_exhaustive_searches;
-
-  
   int exhaustive_searches_thresh;
-
-  
-  int max_exaustive_pct;
 
   
   MESH_PATTERN mesh_patterns[MAX_MESH_STEP];
@@ -442,8 +446,10 @@ typedef struct SPEED_FEATURES {
   INTERP_FILTER_MASK interp_filter_search_mask;
 
   
-  int64_t partition_search_breakout_dist_thr;
-  int partition_search_breakout_rate_thr;
+  PARTITION_SEARCH_BREAKOUT_THR partition_search_breakout_thr;
+
+  
+  int ml_partition_search_early_termination;
 
   
   int allow_partition_search_skip;
@@ -455,6 +461,7 @@ typedef struct SPEED_FEATURES {
   
   int short_circuit_flat_blocks;
 
+  
   
   
   
@@ -477,6 +484,30 @@ typedef struct SPEED_FEATURES {
 
   
   int copy_partition_flag;
+
+  
+  
+  int use_source_sad;
+
+  int use_simple_block_yrd;
+
+  
+  
+  
+  int adapt_partition_source_sad;
+  int adapt_partition_thresh;
+
+  
+  int use_altref_onepass;
+
+  
+  int use_compound_nonrd_pickmode;
+
+  
+  int nonrd_keyframe;
+
+  
+  int svc_use_lowres_part;
 } SPEED_FEATURES;
 
 struct VP9_COMP;

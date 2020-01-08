@@ -42,38 +42,39 @@
 extern "C" {
 #endif
 
-#include "./vpx_integer.h"
 #include "./vpx_image.h"
+#include "./vpx_integer.h"
 
 
-#ifndef DEPRECATED
+#ifndef VPX_DEPRECATED
 #if defined(__GNUC__) && __GNUC__
-#define DEPRECATED __attribute__((deprecated))
+#define VPX_DEPRECATED __attribute__((deprecated))
 #elif defined(_MSC_VER)
-#define DEPRECATED
+#define VPX_DEPRECATED
 #else
-#define DEPRECATED
+#define VPX_DEPRECATED
 #endif
 #endif 
 
-#ifndef DECLSPEC_DEPRECATED
+#ifndef VPX_DECLSPEC_DEPRECATED
 #if defined(__GNUC__) && __GNUC__
-#define DECLSPEC_DEPRECATED
+#define VPX_DECLSPEC_DEPRECATED
 #elif defined(_MSC_VER)
 
-#define DECLSPEC_DEPRECATED __declspec(deprecated)
+#define VPX_DECLSPEC_DEPRECATED __declspec(deprecated)
 #else
-#define DECLSPEC_DEPRECATED
+#define VPX_DECLSPEC_DEPRECATED
 #endif
 #endif 
 
 
-#ifdef UNUSED
-#elif defined(__GNUC__) || defined(__clang__)
-#define UNUSED __attribute__((unused))
+#ifndef VPX_UNUSED
+#if defined(__GNUC__) || defined(__clang__)
+#define VPX_UNUSED __attribute__((unused))
 #else
-#define UNUSED
+#define VPX_UNUSED
 #endif
+#endif 
 
 
 
@@ -83,7 +84,7 @@ extern "C" {
 
 
 
-#define VPX_CODEC_ABI_VERSION (3 + VPX_IMAGE_ABI_VERSION) /**<\hideinitializer*/
+#define VPX_CODEC_ABI_VERSION (4 + VPX_IMAGE_ABI_VERSION) /**<\hideinitializer*/
 
 
 typedef enum {
@@ -151,6 +152,10 @@ typedef enum {
 typedef long vpx_codec_caps_t;
 #define VPX_CODEC_CAP_DECODER 0x1 /**< Is a decoder */
 #define VPX_CODEC_CAP_ENCODER 0x2 /**< Is an encoder */
+
+
+
+#define VPX_CODEC_CAP_HIGHBITDEPTH 0x4
 
 
 
@@ -409,7 +414,7 @@ vpx_codec_err_t vpx_codec_control_(vpx_codec_ctx_t *ctx, int ctrl_id, ...);
 
 #define VPX_CTRL_USE_TYPE(id, typ)                                           \
   static vpx_codec_err_t vpx_codec_control_##id(vpx_codec_ctx_t *, int, typ) \
-      UNUSED;                                                                \
+      VPX_UNUSED;                                                            \
                                                                              \
   static vpx_codec_err_t vpx_codec_control_##id(vpx_codec_ctx_t *ctx,        \
                                                 int ctrl_id, typ data) {     \
@@ -426,13 +431,13 @@ vpx_codec_err_t vpx_codec_control_(vpx_codec_ctx_t *ctx, int ctrl_id, ...);
 
 
 
-#define VPX_CTRL_USE_TYPE_DEPRECATED(id, typ)                        \
-  DECLSPEC_DEPRECATED static vpx_codec_err_t vpx_codec_control_##id( \
-      vpx_codec_ctx_t *, int, typ) DEPRECATED UNUSED;                \
-                                                                     \
-  DECLSPEC_DEPRECATED static vpx_codec_err_t vpx_codec_control_##id( \
-      vpx_codec_ctx_t *ctx, int ctrl_id, typ data) {                 \
-    return vpx_codec_control_(ctx, ctrl_id, data);                   \
+#define VPX_CTRL_USE_TYPE_DEPRECATED(id, typ)                            \
+  VPX_DECLSPEC_DEPRECATED static vpx_codec_err_t vpx_codec_control_##id( \
+      vpx_codec_ctx_t *, int, typ) VPX_DEPRECATED VPX_UNUSED;            \
+                                                                         \
+  VPX_DECLSPEC_DEPRECATED static vpx_codec_err_t vpx_codec_control_##id( \
+      vpx_codec_ctx_t *ctx, int ctrl_id, typ data) {                     \
+    return vpx_codec_control_(ctx, ctrl_id, data);                       \
   } /**<\hideinitializer*/
 
 
@@ -447,7 +452,7 @@ vpx_codec_err_t vpx_codec_control_(vpx_codec_ctx_t *ctx, int ctrl_id, ...);
 
 #define VPX_CTRL_VOID(id)                                               \
   static vpx_codec_err_t vpx_codec_control_##id(vpx_codec_ctx_t *, int) \
-      UNUSED;                                                           \
+      VPX_UNUSED;                                                       \
                                                                         \
   static vpx_codec_err_t vpx_codec_control_##id(vpx_codec_ctx_t *ctx,   \
                                                 int ctrl_id) {          \

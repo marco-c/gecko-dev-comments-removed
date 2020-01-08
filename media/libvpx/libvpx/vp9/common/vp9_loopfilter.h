@@ -152,7 +152,7 @@ void vp9_loop_filter_data_reset(
     struct VP9Common *cm, const struct macroblockd_plane planes[MAX_MB_PLANE]);
 
 
-int vp9_loop_filter_worker(LFWorkerData *const lf_data, void *unused);
+int vp9_loop_filter_worker(void *arg1, void *unused);
 #ifdef __cplusplus
 }  
 #endif

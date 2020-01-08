@@ -179,29 +179,29 @@ static const vpx_prob default_if_uv_probs[INTRA_MODES][INTRA_MODES - 1] = {
   { 101, 21, 107, 181, 192, 103, 19, 67, 125 }  
 };
 
-const vpx_prob vp9_kf_partition_probs[PARTITION_CONTEXTS]
-                                     [PARTITION_TYPES - 1] = {
-                                       
-                                       { 158, 97, 94 },  
-                                       { 93, 24, 99 },   
-                                       { 85, 119, 44 },  
-                                       { 62, 59, 67 },   
-                                       
-                                       { 149, 53, 53 },  
-                                       { 94, 20, 48 },   
-                                       { 83, 53, 24 },   
-                                       { 52, 18, 18 },   
-                                       
-                                       { 150, 40, 39 },  
-                                       { 78, 12, 26 },   
-                                       { 67, 33, 11 },   
-                                       { 24, 7, 5 },     
-                                       
-                                       { 174, 35, 49 },  
-                                       { 68, 11, 27 },   
-                                       { 57, 15, 9 },    
-                                       { 12, 3, 3 },     
-                                     };
+const vpx_prob vp9_kf_partition_probs[PARTITION_CONTEXTS][PARTITION_TYPES - 1] =
+    {
+      
+      { 158, 97, 94 },  
+      { 93, 24, 99 },   
+      { 85, 119, 44 },  
+      { 62, 59, 67 },   
+      
+      { 149, 53, 53 },  
+      { 94, 20, 48 },   
+      { 83, 53, 24 },   
+      { 52, 18, 18 },   
+      
+      { 150, 40, 39 },  
+      { 78, 12, 26 },   
+      { 67, 33, 11 },   
+      { 24, 7, 5 },     
+      
+      { 174, 35, 49 },  
+      { 68, 11, 27 },   
+      { 57, 15, 9 },    
+      { 12, 3, 3 },     
+    };
 
 static const vpx_prob
     default_partition_probs[PARTITION_CONTEXTS][PARTITION_TYPES - 1] = {
@@ -428,7 +428,7 @@ void vp9_setup_past_independence(VP9_COMMON *cm) {
   vp9_clearall_segfeatures(&cm->seg);
   cm->seg.abs_delta = SEGMENT_DELTADATA;
 
-  if (cm->last_frame_seg_map && !cm->frame_parallel_decode)
+  if (cm->last_frame_seg_map)
     memset(cm->last_frame_seg_map, 0, (cm->mi_rows * cm->mi_cols));
 
   if (cm->current_frame_seg_map)
@@ -457,7 +457,7 @@ void vp9_setup_past_independence(VP9_COMMON *cm) {
   }
 
   
-  if (frame_is_intra_only(cm) && cm->prev_mip && !cm->frame_parallel_decode)
+  if (frame_is_intra_only(cm) && cm->prev_mip)
     memset(cm->prev_mip, 0,
            cm->mi_stride * (cm->mi_rows + 1) * sizeof(*cm->prev_mip));
 

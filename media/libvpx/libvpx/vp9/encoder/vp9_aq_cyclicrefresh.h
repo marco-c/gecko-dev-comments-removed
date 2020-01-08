@@ -66,6 +66,8 @@ struct CYCLIC_REFRESH {
   double low_content_avg;
   int qindex_delta[3];
   int reduce_refresh;
+  double weight_segment;
+  int apply_cyclic_refresh;
 };
 
 struct VP9_COMP;
@@ -105,13 +107,13 @@ void vp9_cyclic_refresh_update_sb_postencode(struct VP9_COMP *const cpi,
 void vp9_cyclic_refresh_update__map(struct VP9_COMP *const cpi);
 
 
+
+
+
 void vp9_cyclic_refresh_postencode(struct VP9_COMP *const cpi);
 
 
 void vp9_cyclic_refresh_set_golden_update(struct VP9_COMP *const cpi);
-
-
-void vp9_cyclic_refresh_check_golden_update(struct VP9_COMP *const cpi);
 
 
 void vp9_cyclic_refresh_update_parameters(struct VP9_COMP *const cpi);

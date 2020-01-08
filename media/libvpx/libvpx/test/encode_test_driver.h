@@ -139,6 +139,13 @@ class Encoder {
   }
 #endif
 
+#if CONFIG_VP8_ENCODER
+  void Control(int ctrl_id, vpx_roi_map_t *arg) {
+    const vpx_codec_err_t res = vpx_codec_control_(&encoder_, ctrl_id, arg);
+    ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
+  }
+#endif
+
   void Config(const vpx_codec_enc_cfg_t *cfg) {
     const vpx_codec_err_t res = vpx_codec_enc_config_set(&encoder_, cfg);
     ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
@@ -212,11 +219,16 @@ class EncoderTest {
   virtual void PreEncodeFrameHook(VideoSource * ,
                                   Encoder * ) {}
 
+  virtual void PostEncodeFrameHook(Encoder * ) {}
+
   
   virtual void FramePktHook(const vpx_codec_cx_pkt_t * ) {}
 
   
   virtual void PSNRPktHook(const vpx_codec_cx_pkt_t * ) {}
+
+  
+  virtual void StatsPktHook(const vpx_codec_cx_pkt_t * ) {}
 
   
   virtual bool Continue() const {

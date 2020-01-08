@@ -59,10 +59,10 @@ filter8_1dfunction vpx_filter_block1d4_h2_avg_sse2;
 
 
 
-FUN_CONV_1D(horiz, x_step_q4, filter_x, h, src, , sse2);
-FUN_CONV_1D(vert, y_step_q4, filter_y, v, src - src_stride * 3, , sse2);
-FUN_CONV_1D(avg_horiz, x_step_q4, filter_x, h, src, avg_, sse2);
-FUN_CONV_1D(avg_vert, y_step_q4, filter_y, v, src - src_stride * 3, avg_, sse2);
+FUN_CONV_1D(horiz, x0_q4, x_step_q4, h, src, , sse2);
+FUN_CONV_1D(vert, y0_q4, y_step_q4, v, src - src_stride * 3, , sse2);
+FUN_CONV_1D(avg_horiz, x0_q4, x_step_q4, h, src, avg_, sse2);
+FUN_CONV_1D(avg_vert, y0_q4, y_step_q4, v, src - src_stride * 3, avg_, sse2);
 
 
 
@@ -140,10 +140,10 @@ highbd_filter8_1dfunction vpx_highbd_filter_block1d4_h2_avg_sse2;
 
 
 
-HIGH_FUN_CONV_1D(horiz, x_step_q4, filter_x, h, src, , sse2);
-HIGH_FUN_CONV_1D(vert, y_step_q4, filter_y, v, src - src_stride * 3, , sse2);
-HIGH_FUN_CONV_1D(avg_horiz, x_step_q4, filter_x, h, src, avg_, sse2);
-HIGH_FUN_CONV_1D(avg_vert, y_step_q4, filter_y, v, src - src_stride * 3, avg_,
+HIGH_FUN_CONV_1D(horiz, x0_q4, x_step_q4, h, src, , sse2);
+HIGH_FUN_CONV_1D(vert, y0_q4, y_step_q4, v, src - src_stride * 3, , sse2);
+HIGH_FUN_CONV_1D(avg_horiz, x0_q4, x_step_q4, h, src, avg_, sse2);
+HIGH_FUN_CONV_1D(avg_vert, y0_q4, y_step_q4, v, src - src_stride * 3, avg_,
                  sse2);
 
 

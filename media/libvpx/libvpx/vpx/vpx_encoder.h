@@ -63,7 +63,7 @@ extern "C" {
 
 
 #define VPX_ENCODER_ABI_VERSION \
-  (5 + VPX_CODEC_ABI_VERSION) /**<\hideinitializer*/
+  (6 + VPX_CODEC_ABI_VERSION) /**<\hideinitializer*/
 
 
 
@@ -82,10 +82,6 @@ extern "C" {
 
 
 #define VPX_CODEC_CAP_OUTPUT_PARTITION 0x20000
-
-
-
-#define VPX_CODEC_CAP_HIGHBITDEPTH 0x40000
 
 
 
@@ -159,8 +155,7 @@ enum vpx_codec_cx_pkt_kind {
   VPX_CODEC_FPMB_STATS_PKT, 
   VPX_CODEC_PSNR_PKT,       
 
-
-#if VPX_ENCODER_ABI_VERSION > (5 + VPX_CODEC_ABI_VERSION)
+#if defined(VPX_TEST_SPATIAL_SVC)
   VPX_CODEC_SPATIAL_SVC_LAYER_SIZES, 
   VPX_CODEC_SPATIAL_SVC_LAYER_PSNR,  
 #endif
@@ -197,8 +192,7 @@ typedef struct vpx_codec_cx_pkt {
     } psnr;                    
     vpx_fixed_buf_t raw;       
 
-
-#if VPX_ENCODER_ABI_VERSION > (5 + VPX_CODEC_ABI_VERSION)
+#if defined(VPX_TEST_SPATIAL_SVC)
     size_t layer_sizes[VPX_SS_MAX_LAYERS];
     struct vpx_psnr_pkt layer_psnr[VPX_SS_MAX_LAYERS];
 #endif
@@ -520,9 +514,15 @@ typedef struct vpx_codec_enc_cfg {
 
 
 
+
+
+
   unsigned int rc_undershoot_pct;
 
   
+
+
+
 
 
 
@@ -594,6 +594,13 @@ typedef struct vpx_codec_enc_cfg {
 
 
   unsigned int rc_2pass_vbr_maxsection_pct;
+
+  
+
+
+
+
+  unsigned int rc_2pass_vbr_corpus_complexity;
 
   
 

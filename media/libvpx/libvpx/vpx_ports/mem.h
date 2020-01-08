@@ -23,16 +23,6 @@
 #define DECLARE_ALIGNED(n, typ, val) typ val
 #endif
 
-
-
-
-
-#if defined(__GNUC__) && __GNUC__
-#define UNINITIALIZED_IS_SAFE(x) x = x
-#else
-#define UNINITIALIZED_IS_SAFE(x) x
-#endif
-
 #if HAVE_NEON && defined(_MSC_VER)
 #define __builtin_prefetch(x)
 #endif
@@ -45,8 +35,10 @@
   (((value) + ((1 << (n)) - 1)) & ~((1 << (n)) - 1))
 
 #define CONVERT_TO_SHORTPTR(x) ((uint16_t *)(((uintptr_t)(x)) << 1))
+#define CAST_TO_SHORTPTR(x) ((uint16_t *)((uintptr_t)(x)))
 #if CONFIG_VP9_HIGHBITDEPTH
 #define CONVERT_TO_BYTEPTR(x) ((uint8_t *)(((uintptr_t)(x)) >> 1))
+#define CAST_TO_BYTEPTR(x) ((uint8_t *)((uintptr_t)(x)))
 #endif  
 
 #if !defined(__has_feature)

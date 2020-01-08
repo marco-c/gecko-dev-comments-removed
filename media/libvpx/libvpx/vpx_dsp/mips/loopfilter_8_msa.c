@@ -8,6 +8,7 @@
 
 
 
+#include "./vpx_dsp_rtcd.h"
 #include "vpx_dsp/mips/loopfilter_msa.h"
 
 void vpx_lpf_horizontal_8_msa(uint8_t *src, int32_t pitch,
