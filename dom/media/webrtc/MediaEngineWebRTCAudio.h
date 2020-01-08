@@ -137,9 +137,6 @@ private:
   MediaEngineSourceState mState;
 
   
-  MediaEnginePrefs mCurrentPrefs;
-
-  
   
   RefPtr<SourceMediaStream> mStream;
 
