@@ -408,8 +408,7 @@ class DOMLocalization extends Localization {
 
 
 
-
-  constructor(windowElement, resourceIds, generateMessages) {
+  constructor(resourceIds, generateMessages) {
     super(resourceIds, generateMessages);
 
     
@@ -418,10 +417,8 @@ class DOMLocalization extends Localization {
     this.pendingrAF = null;
     
     this.pendingElements = new Set();
-    this.windowElement = windowElement;
-    this.mutationObserver = new windowElement.MutationObserver(
-      mutations => this.translateMutations(mutations)
-    );
+    this.windowElement = null;
+    this.mutationObserver = null;
 
     this.observerConfig = {
       attribute: true,
@@ -519,6 +516,18 @@ class DOMLocalization extends Localization {
       }
     }
 
+    if (this.windowElement) {
+      if (this.windowElement !== newRoot.ownerGlobal) {
+        throw new Error(`Cannot connect a root:
+          DOMLocalization already has a root from a different window`);
+      }
+    } else {
+      this.windowElement = newRoot.ownerGlobal;
+      this.mutationObserver = new this.windowElement.MutationObserver(
+        mutations => this.translateMutations(mutations)
+      );
+    }
+
     this.roots.add(newRoot);
     this.mutationObserver.observe(newRoot, this.observerConfig);
   }
@@ -539,9 +548,18 @@ class DOMLocalization extends Localization {
     this.roots.delete(root);
     
     this.pauseObserving();
-    this.resumeObserving();
 
-    return this.roots.size === 0;
+    if (this.roots.size === 0) {
+      this.mutationObserver = null;
+      this.windowElement = null;
+      this.pendingrAF = null;
+      this.pendingElements.clear();
+      return true;
+    }
+
+    
+    this.resumeObserving();
+    return false;
   }
 
   
@@ -562,6 +580,10 @@ class DOMLocalization extends Localization {
 
 
   pauseObserving() {
+    if (!this.mutationObserver) {
+      return;
+    }
+
     this.translateMutations(this.mutationObserver.takeRecords());
     this.mutationObserver.disconnect();
   }
@@ -572,6 +594,10 @@ class DOMLocalization extends Localization {
 
 
   resumeObserving() {
+    if (!this.mutationObserver) {
+      return;
+    }
+
     for (const root of this.roots) {
       this.mutationObserver.observe(root, this.observerConfig);
     }

@@ -109,7 +109,7 @@ class Localization {
 
 
 
-  constructor(resourceIds, generateMessages = defaultGenerateMessages) {
+  constructor(resourceIds = [], generateMessages = defaultGenerateMessages) {
     this.resourceIds = resourceIds;
     this.generateMessages = generateMessages;
     this.ctxs =
@@ -119,11 +119,13 @@ class Localization {
   addResourceIds(resourceIds) {
     this.resourceIds.push(...resourceIds);
     this.onChange();
+    return this.resourceIds.length;
   }
 
   removeResourceIds(resourceIds) {
     this.resourceIds = this.resourceIds.filter(r => !resourceIds.includes(r));
     this.onChange();
+    return this.resourceIds.length;
   }
 
   
@@ -277,6 +279,7 @@ class Localization {
   onChange() {
     this.ctxs =
       new CachedAsyncIterable(this.generateMessages(this.resourceIds));
+    this.ctxs.touchNext(2);
   }
 }
 

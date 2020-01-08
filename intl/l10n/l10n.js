@@ -44,7 +44,7 @@
 
   const resourceIds = getResourceLinks(document.head || document);
 
-  document.l10n = new DOMLocalization(window, resourceIds);
+  document.l10n = new DOMLocalization(resourceIds);
 
   
   document.l10n.ctxs.touchNext(2);

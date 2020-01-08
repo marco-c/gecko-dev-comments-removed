@@ -1674,6 +1674,22 @@ function resolve(ctx, args, message, errors = []) {
 
 
 
+class FluentResource extends Map {
+  constructor(entries, errors = []) {
+    super(entries);
+    this.errors = errors;
+  }
+
+  static fromString(source) {
+    const [entries, errors] = parse(source);
+    return new FluentResource(Object.entries(entries), errors);
+  }
+}
+
+
+
+
+
 
 
 
@@ -1716,7 +1732,13 @@ class MessageContext {
 
 
 
-  constructor(locales, { functions = {}, useIsolating = true, transform = v => v } = {}) {
+
+
+  constructor(locales, {
+    functions = {},
+    useIsolating = true,
+    transform = v => v
+  } = {}) {
     this.locales = Array.isArray(locales) ? locales : [locales];
 
     this._terms = new Map();
@@ -1778,8 +1800,31 @@ class MessageContext {
 
 
   addMessages(source) {
-    const [entries, errors] = parse(source);
-    for (const id in entries) {
+    const res = FluentResource.fromString(source);
+    return this.addResource(res);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  addResource(res) {
+    const errors = res.errors.slice();
+    for (const [id, value] of res) {
       if (id.startsWith("-")) {
         
         
@@ -1787,13 +1832,13 @@ class MessageContext {
           errors.push(`Attempt to override an existing term: "${id}"`);
           continue;
         }
-        this._terms.set(id, entries[id]);
+        this._terms.set(id, value);
       } else {
         if (this._messages.has(id)) {
           errors.push(`Attempt to override an existing message: "${id}"`);
           continue;
         }
-        this._messages.set(id, entries[id]);
+        this._messages.set(id, value);
       }
     }
 
