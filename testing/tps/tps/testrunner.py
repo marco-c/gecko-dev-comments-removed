@@ -235,7 +235,7 @@ class TPSTestRunner(object):
 
             
             if not profilename in profiles:
-                profiles[profilename] = Profile(preferences = self.preferences,
+                profiles[profilename] = Profile(preferences = self.preferences.copy(),
                                                 addons = self.extensions)
 
             
@@ -262,6 +262,7 @@ class TPSTestRunner(object):
                 break;
 
         for profilename in profiles:
+            print "### Cleanup Profile ", profilename
             cleanup_phase = TPSTestPhase(
                 'cleanup-' + profilename,
                 profiles[profilename], testname,
