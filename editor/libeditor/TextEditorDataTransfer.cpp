@@ -93,9 +93,6 @@ TextEditor::PrepareToInsertContent(const EditorDOMPoint& aPointToInsert,
     return error.StealNSResult();
   }
 
-  
-  
-
   return NS_OK;
 }
 
@@ -297,15 +294,44 @@ TextEditor::OnDrop(DragEvent* aDropEvent)
   
   SelectionBatcher selectionBatcher(SelectionRefPtr());
 
-  for (uint32_t i = 0; i < numItems; ++i) {
-    InsertFromDataTransfer(dataTransfer, i, srcdoc, droppedAt, deleteSelection);
-    if (NS_WARN_IF(Destroyed())) {
-      return NS_ERROR_EDITOR_DESTROYED;
+  
+  
+  
+  
+  if (deleteSelection && !SelectionRefPtr()->IsCollapsed()) {
+    nsresult rv = PrepareToInsertContent(droppedAt, true);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
     
     
     
-    deleteSelection = false;
+    if (NS_WARN_IF(!SelectionRefPtr()->IsCollapsed()) ||
+        NS_WARN_IF(!SelectionRefPtr()->RangeCount())) {
+      return NS_ERROR_FAILURE;
+    }
+    droppedAt = SelectionRefPtr()->FocusRef();
+    if (NS_WARN_IF(!droppedAt.IsSet())) {
+      return NS_ERROR_FAILURE;
+    }
+
+    
+    if (mDispatchInputEvent) {
+      FireInputEvent();
+      if (NS_WARN_IF(Destroyed())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+    }
+
+    
+    
+  }
+
+  for (uint32_t i = 0; i < numItems; ++i) {
+    InsertFromDataTransfer(dataTransfer, i, srcdoc, droppedAt, false);
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
   }
 
   ScrollSelectionIntoView(false);

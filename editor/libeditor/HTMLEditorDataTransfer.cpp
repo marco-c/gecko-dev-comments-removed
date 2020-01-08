@@ -1411,9 +1411,6 @@ HTMLEditor::InsertFromDataTransfer(DataTransfer* aDataTransfer,
     "and there should've already been placeholder transaction");
   MOZ_ASSERT(aDroppedAt.IsSet());
 
-  
-  
-
   ErrorResult rv;
   RefPtr<DOMStringList> types =
     aDataTransfer->MozTypesAt(aIndex, CallerType::System, rv);
