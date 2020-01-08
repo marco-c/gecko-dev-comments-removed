@@ -2189,11 +2189,15 @@ impl PicturePrimitive {
                 match tile_cache.dirty_region {
                     Some(ref dirty_region) => {
                         
+                        
+                        
+                        
+                        
                         let descriptor = ImageDescriptor::new(
                             TILE_SIZE_DP,
                             TILE_SIZE_DP,
                             ImageFormat::BGRA8,
-                            false,          
+                            true,
                             false,
                         );
 
