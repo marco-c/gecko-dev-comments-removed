@@ -46,16 +46,12 @@ namespace {
 
 
 
-
-
   static
-  MOZ_ALWAYS_INLINE const_char_iterator
-  nextSearchCandidate(const_char_iterator aStart,
-                      const_char_iterator aEnd,
-                      uint32_t aSearchFor)
+  MOZ_ALWAYS_INLINE void
+  goToNextSearchCandidate(const_char_iterator& aStart,
+                          const const_char_iterator& aEnd,
+                          uint32_t aSearchFor)
   {
-    const_char_iterator cur = aStart;
-
     
     
     
@@ -82,18 +78,15 @@ namespace {
         special = (target == 'i' ? 0xc4 : 0xe2);
       }
 
-      while (cur < aEnd && (unsigned char)(*cur | 0x20) != target &&
-          (unsigned char)*cur != special) {
-        cur++;
+      while (aStart < aEnd && (unsigned char)(*aStart | 0x20) != target &&
+          (unsigned char)*aStart != special) {
+        aStart++;
       }
     } else {
-      const_char_iterator cur = aStart;
-      while (cur < aEnd && (unsigned char)(*cur) < 128) {
-        cur++;
+      while (aStart < aEnd && (unsigned char)(*aStart) < 128) {
+        aStart++;
       }
     }
-
-    return cur;
   }
 
   
@@ -210,7 +203,7 @@ namespace {
 
     for (;;) {
       
-      sourceCur = nextSearchCandidate(sourceCur, sourceEnd, tokenFirstChar);
+      goToNextSearchCandidate(sourceCur, sourceEnd, tokenFirstChar);
       if (sourceCur == sourceEnd) {
         break;
       }
