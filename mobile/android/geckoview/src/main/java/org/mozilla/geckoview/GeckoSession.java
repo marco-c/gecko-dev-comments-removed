@@ -1615,6 +1615,13 @@ public final class GeckoSession extends LayerSession
 
 
     public void setSelectionActionDelegate(@Nullable SelectionActionDelegate delegate) {
+        if (getSelectionActionDelegate() != null) {
+            
+            
+            
+            getSelectionActionDelegate().onHideAction(
+                    this, GeckoSession.SelectionActionDelegate.HIDE_REASON_NO_SELECTION);
+        }
         mSelectionActionDelegate.setDelegate(delegate, this);
     }
 

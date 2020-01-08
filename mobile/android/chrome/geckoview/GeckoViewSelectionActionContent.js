@@ -101,12 +101,14 @@ class GeckoViewSelectionActionContent extends GeckoViewContentModule {
     debug `onEnable`;
     addEventListener("mozcaretstatechanged", this, { mozSystemGroup: true });
     addEventListener("pagehide", this, { capture: true, mozSystemGroup: true });
+    addEventListener("deactivate", this, { mozSystemGroup: true });
   }
 
   onDisable() {
     debug `onDisable`;
     removeEventListener("mozcaretstatechanged", this, { mozSystemGroup: true });
     removeEventListener("pagehide", this, { capture: true, mozSystemGroup: true });
+    removeEventListener("deactivate", this, { mozSystemGroup: true });
   }
 
   
@@ -114,7 +116,7 @@ class GeckoViewSelectionActionContent extends GeckoViewContentModule {
 
 
   handleEvent(aEvent) {
-    if (aEvent.type === "pagehide") {
+    if (aEvent.type === "pagehide" || aEvent.type === "deactivate") {
       
       aEvent = {
         reason: "visibilitychange",
