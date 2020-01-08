@@ -270,7 +270,7 @@ void ClientMultiTiledLayerBuffer::Update(const nsIntRegion& newValidRegion,
 
       
       if (gfxPrefs::TileEdgePaddingEnabled() && mResolution == 1) {
-        drawTarget->PadEdges(newValidRegion);
+        drawTarget->PadEdges(newValidRegion.MovedBy(-mTilingOrigin));
       }
 
       
