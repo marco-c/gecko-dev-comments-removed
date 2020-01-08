@@ -1024,6 +1024,9 @@ CodeGeneratorARM64::generateInvalidateEpilogue()
     masm.bind(&invalidate_);
 
     
+    masm.push(lr);
+
+    
     invalidateEpilogueData_ = masm.pushWithPatch(ImmWord(uintptr_t(-1)));
 
     TrampolinePtr thunk = gen->jitRuntime()->getInvalidationThunk();

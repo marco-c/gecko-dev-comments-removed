@@ -24,14 +24,6 @@ using namespace js::jit;
 
 
 
-static const LiveRegisterSet AllRegs =
-    LiveRegisterSet(GeneralRegisterSet(Registers::AllMask & ~(1 << 31 | 1 << 30 | 1 << 29| 1 << 28)),
-                    FloatRegisterSet(FloatRegisters::AllMask));
-
-
-
-
-
 
 void
 JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm)
@@ -279,14 +271,47 @@ JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm)
     masm.SetStackPointer64(PseudoStackPointer64);
 }
 
+static void
+PushRegisterDump(MacroAssembler& masm)
+{
+    const LiveRegisterSet First28GeneralRegisters =
+        LiveRegisterSet(GeneralRegisterSet(
+                            Registers::AllMask & ~(1 << 31 | 1 << 30 | 1 << 29 | 1 << 28)),
+                        FloatRegisterSet(FloatRegisters::NoneMask));
+
+    const LiveRegisterSet AllFloatRegisters =
+        LiveRegisterSet(GeneralRegisterSet(Registers::NoneMask),
+                        FloatRegisterSet(FloatRegisters::AllMask));
+
+    
+    
+    
+    
+    
+    
+
+    
+    
+    masm.asVIXL().Push(xzr, x30, x29, xzr);
+
+    
+    masm.PushRegsInMask(First28GeneralRegisters);
+
+    
+    masm.PushRegsInMask(AllFloatRegisters);
+}
+
 void
 JitRuntime::generateInvalidator(MacroAssembler& masm, Label* bailoutTail)
 {
     invalidatorOffset_ = startTrampolineCode(masm);
 
-    masm.push(r0, r1, r2, r3);
-
-    masm.PushRegsInMask(AllRegs);
+    
+    
+    
+    
+    
+    PushRegisterDump(masm);
     masm.moveStackPtrTo(r0);
 
     masm.Sub(x1, masm.GetStackPointer64(), Operand(sizeof(size_t)));
@@ -419,38 +444,12 @@ JitRuntime::generateArgumentsRectifier(MacroAssembler& masm)
 static void
 PushBailoutFrame(MacroAssembler& masm, Register spArg)
 {
-    const LiveRegisterSet First28GeneralRegisters =
-        LiveRegisterSet(GeneralRegisterSet(
-                            Registers::AllMask & ~(1 << 31 | 1 << 30 | 1 << 29 | 1 << 28)),
-                        FloatRegisterSet(FloatRegisters::NoneMask));
-
-    const LiveRegisterSet AllFloatRegisters =
-        LiveRegisterSet(GeneralRegisterSet(Registers::NoneMask),
-                        FloatRegisterSet(FloatRegisters::AllMask));
-
     
     
     
     
     
-    
-    
-
-    
-    
-    masm.asVIXL().Push(xzr, x30, x29, xzr);
-
-    
-    masm.PushRegsInMask(First28GeneralRegisters);
-
-    
-    masm.PushRegsInMask(AllFloatRegisters);
-
-    
-    
-    
-    
-    
+    PushRegisterDump(masm);
     masm.moveStackPtrTo(spArg);
 }
 
