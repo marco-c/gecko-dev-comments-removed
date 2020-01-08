@@ -66,12 +66,9 @@ struct CGTryNoteList {
     Vector<JSTryNote> list;
     explicit CGTryNoteList(JSContext* cx) : list(cx) {}
 
-    
-    
-
     MOZ_MUST_USE bool append(JSTryNoteKind kind, uint32_t stackDepth, size_t start, size_t end);
     size_t length() const { return list.length(); }
-    void finish(mozilla::Span<JSTryNote> array, uint32_t prologueLength);
+    void finish(mozilla::Span<JSTryNote> array);
 };
 
 struct CGScopeNote : public ScopeNote
@@ -434,10 +431,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter
 #ifdef DEBUG
     MOZ_MUST_USE bool checkStrictOrSloppy(JSOp op);
 #endif
-
-    
-    
-    MOZ_MUST_USE bool addTryNote(JSTryNoteKind kind, uint32_t stackDepth, size_t start, size_t end);
 
     
     

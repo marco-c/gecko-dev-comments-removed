@@ -684,9 +684,7 @@ NonLocalExitControl::leaveScope(EmitterScope* es)
     }
     if (!bce_->scopeNoteList.append(enclosingScopeIndex, bce_->offset(), bce_->inPrologue(),
                                     openScopeNoteIndex_))
-    {
         return false;
-    }
     openScopeNoteIndex_ = bce_->scopeNoteList.length() - 1;
 
     return true;
@@ -2940,7 +2938,7 @@ BytecodeEmitter::wrapWithDestructuringIteratorCloseTryNote(int32_t iterDepth, In
     }
     ptrdiff_t end = offset();
     if (start != end) {
-        return addTryNote(JSTRY_DESTRUCTURING_ITERCLOSE, iterDepth, start, end);
+        return tryNoteList.append(JSTRY_DESTRUCTURING_ITERCLOSE, iterDepth, start, end);
     }
     return true;
 }
@@ -4864,8 +4862,8 @@ BytecodeEmitter::emitSpread(bool allowSelfHosted)
     MOZ_ASSERT(loopInfo.breaks.offset == -1);
     MOZ_ASSERT(loopInfo.continues.offset == -1);
 
-    if (!addTryNote(JSTRY_FOR_OF, stackDepth, loopInfo.headOffset(),
-                    loopInfo.breakTargetOffset()))
+    if (!tryNoteList.append(JSTRY_FOR_OF, stackDepth, loopInfo.headOffset(),
+                            loopInfo.breakTargetOffset()))
     {
         return false;
     }
@@ -8925,16 +8923,6 @@ AllocSrcNote(JSContext* cx, SrcNotesVector& notes, unsigned* index)
 }
 
 bool
-BytecodeEmitter::addTryNote(JSTryNoteKind kind, uint32_t stackDepth, size_t start, size_t end)
-{
-    
-    
-    
-    MOZ_ASSERT(!inPrologue());
-    return tryNoteList.append(kind, stackDepth, start, end);
-}
-
-bool
 BytecodeEmitter::newSrcNote(SrcNoteType type, unsigned* indexp)
 {
     SrcNotesVector& notes = this->notes();
@@ -9201,9 +9189,6 @@ CGTryNoteList::append(JSTryNoteKind kind, uint32_t stackDepth, size_t start, siz
     MOZ_ASSERT(size_t(uint32_t(start)) == start);
     MOZ_ASSERT(size_t(uint32_t(end)) == end);
 
-    
-    
-
     JSTryNote note;
     note.kind = kind;
     note.stackDepth = stackDepth;
@@ -9214,12 +9199,11 @@ CGTryNoteList::append(JSTryNoteKind kind, uint32_t stackDepth, size_t start, siz
 }
 
 void
-CGTryNoteList::finish(mozilla::Span<JSTryNote> array, uint32_t prologueLength)
+CGTryNoteList::finish(mozilla::Span<JSTryNote> array)
 {
     MOZ_ASSERT(length() == array.size());
 
     for (unsigned i = 0; i < length(); i++) {
-        list[i].start += prologueLength;
         array[i] = list[i];
     }
 }
@@ -9230,9 +9214,6 @@ CGScopeNoteList::append(uint32_t scopeIndex, uint32_t offset, bool inPrologue,
 {
     CGScopeNote note;
     mozilla::PodZero(&note);
-
-    
-    
 
     note.index = scopeIndex;
     note.start = offset;
