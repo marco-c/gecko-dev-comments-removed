@@ -34,8 +34,8 @@ const OVERLAY_DISPLAY = {
 };
 
 class PluginChild extends ActorChild {
-  constructor(mm) {
-    super(mm);
+  constructor(dispatcher) {
+    super(dispatcher);
 
     
     this.pluginData = new Map();

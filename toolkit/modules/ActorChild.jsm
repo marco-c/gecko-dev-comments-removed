@@ -12,16 +12,29 @@ var EXPORTED_SYMBOLS = ["ActorChild"];
 
 
 
+
+
+
+
 class ActorChild {
-  constructor(mm) {
-    this.mm = mm;
+  constructor(dispatcher) {
+    this._dispatcher = dispatcher;
+    this.mm = dispatcher.mm;
   }
 
   get content() {
-    return this.mm.content;
+    return this._dispatcher.window || this.mm.content;
   }
 
   get docShell() {
     return this.mm.docShell;
+  }
+
+  addEventListener(event, listener, options) {
+    this._dispatcher.addEventListener(event, listener, options);
+  }
+
+  cleanup() {
+    this._dispatcher = null;
   }
 }

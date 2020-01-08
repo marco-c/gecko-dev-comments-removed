@@ -92,6 +92,7 @@
 
 
 
+
 var EXPORTED_SYMBOLS = ["ActorManagerParent"];
 
 ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm");
@@ -366,8 +367,8 @@ var ActorManagerParent = {
       let {child} = actor;
       {
         let actorSet;
-        if (child.matches) {
-          actorSet = this.singletons.get({matches: child.matches,
+        if (child.matches || child.allFrames) {
+          actorSet = this.singletons.get({matches: child.matches || ["<all_urls>"],
                                           allFrames: child.allFrames,
                                           matchAboutBlank: child.matchAboutBlank});
         } else {

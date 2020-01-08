@@ -15,8 +15,19 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 class LightweightThemeChild extends ActorChild {
-  constructor(mm) {
-    super(mm);
+  constructor(dispatcher) {
+    if (dispatcher.mm) {
+      
+      super(dispatcher);
+    } else {
+      
+      let fakeDispatcher = {
+        mm: dispatcher,
+        window: dispatcher.content,
+        addEventListener: dispatcher.content.addEventListener,
+      };
+      super(fakeDispatcher);
+    }
 
     this.init();
   }
@@ -42,6 +53,8 @@ class LightweightThemeChild extends ActorChild {
 
 
   cleanup() {
+    super.cleanup();
+
     Services.cpmm.sharedData.removeEventListener("change", this);
   }
 
