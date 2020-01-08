@@ -1999,13 +1999,9 @@ HTMLEditRules::InsertBRElement(const EditorDOMPoint& aPointToBreak)
     }
     
     
-    nsCOMPtr<nsINode> linkDOMNode;
-    if (HTMLEditorRef().IsInLink(pointToBreak.GetContainer(),
-                                 address_of(linkDOMNode))) {
-      nsCOMPtr<Element> linkNode = do_QueryInterface(linkDOMNode);
-      if (NS_WARN_IF(!linkNode)) {
-        return NS_ERROR_FAILURE;
-      }
+    RefPtr<Element> linkNode =
+      HTMLEditor::GetLinkElement(pointToBreak.GetContainer());
+    if (linkNode) {
       SplitNodeResult splitLinkNodeResult =
         HTMLEditorRef().SplitNodeDeepWithTransaction(
                           *linkNode, pointToBreak,

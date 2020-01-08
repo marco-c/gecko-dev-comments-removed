@@ -737,7 +737,7 @@ protected:
                                   const nsAString* aValue,
                                   nsAString* outValue = nullptr);
 
-  bool IsInLink(nsINode* aNode, nsCOMPtr<nsINode>* outLink = nullptr);
+  static dom::Element* GetLinkElement(nsINode* aNode);
 
   
 

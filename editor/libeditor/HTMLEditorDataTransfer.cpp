@@ -360,7 +360,7 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
     }
 
     
-    bool bStartedInLink = IsInLink(pointToInsert.GetContainer());
+    bool bStartedInLink = !!GetLinkElement(pointToInsert.GetContainer());
 
     
     if (pointToInsert.IsInTextNode()) {
@@ -659,15 +659,13 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
       selection->Collapse(selNode, selOffset);
 
       
-      nsCOMPtr<nsINode> link;
+      nsCOMPtr<nsIContent> linkContent;
       if (!bStartedInLink &&
-          IsInLink(selNode, address_of(link))) {
+          (linkContent = GetLinkElement(selNode))) {
         
         
         
         
-        nsCOMPtr<nsIContent> linkContent = do_QueryInterface(link);
-        NS_ENSURE_STATE(linkContent || !link);
         SplitNodeResult splitLinkResult =
           SplitNodeDeepWithTransaction(
             *linkContent, EditorRawDOMPoint(selNode, selOffset),
@@ -687,25 +685,21 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
   return rules->DidDoAction(selection, subActionInfo, rv);
 }
 
-bool
-HTMLEditor::IsInLink(nsINode* aNode,
-                     nsCOMPtr<nsINode>* outLink)
+
+Element*
+HTMLEditor::GetLinkElement(nsINode* aNode)
 {
-  NS_ENSURE_TRUE(aNode, false);
-  if (outLink) {
-    *outLink = nullptr;
+  if (NS_WARN_IF(!aNode)) {
+    return nullptr;
   }
   nsINode* node = aNode;
   while (node) {
     if (HTMLEditUtils::IsLink(node)) {
-      if (outLink) {
-        *outLink = node;
-      }
-      return true;
+      return node->AsElement();
     }
     node = node->GetParentNode();
   }
-  return false;
+  return nullptr;
 }
 
 nsresult
