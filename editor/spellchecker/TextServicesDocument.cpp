@@ -345,24 +345,20 @@ nsresult
 TextServicesDocument::SetFilterType(uint32_t aFilterType)
 {
   
-  const char* contractID = nullptr;
   switch (aFilterType) {
   case nsIEditorSpellCheck::FILTERTYPE_NORMAL:
-    contractID = "@mozilla.org/editor/txtsrvfilter;1";
+    mTxtSvcFilter = nsComposeTxtSrvFilter::CreateNormalFilter();
     break;
   case nsIEditorSpellCheck::FILTERTYPE_MAIL:
-    contractID = "@mozilla.org/editor/txtsrvfiltermail;1";
+    mTxtSvcFilter = nsComposeTxtSrvFilter::CreateMailFilter();
     break;
   default:
     
     mTxtSvcFilter = nullptr;
-    return NS_OK;
+    break;
   }
-  nsresult rv;
-  nsCOMPtr<nsISupports> supports = do_CreateInstance(contractID, &rv);
-  mTxtSvcFilter = reinterpret_cast<nsComposeTxtSrvFilter*>(supports.get());
 
-  return rv;
+  return NS_OK;
 }
 
 nsresult
