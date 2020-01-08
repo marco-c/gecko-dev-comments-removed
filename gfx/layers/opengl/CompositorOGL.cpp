@@ -989,6 +989,7 @@ CompositorOGL::GetShaderConfigFor(Effect *aEffect,
     
     
     config.SetColorMultiplier(pow(2, paddingBits));
+    config.SetTextureTarget(effectYCbCr->mTexture->AsSourceOGL()->GetTextureTarget());
     break;
   }
   case EffectTypes::NV12:
