@@ -790,9 +790,8 @@ impl AlphaBatchBuilder {
             PrimitiveInstanceKind::LineDecoration { data_handle, ref cache_handle, .. } => {
                 
                 
-
-                let prim_data = &ctx.resources.prim_data_store[data_handle];
-                let prim_cache_address = gpu_cache.get_address(&prim_data.gpu_cache_handle);
+                let common_data = &ctx.resources.line_decoration_data_store[data_handle].common;
+                let prim_cache_address = gpu_cache.get_address(&common_data.gpu_cache_handle);
 
                 let (batch_kind, textures, prim_user_data, segment_user_data) = match cache_handle {
                     Some(cache_handle) => {
@@ -827,7 +826,7 @@ impl AlphaBatchBuilder {
                 
                 
                 
-                let blend_mode = if !prim_data.opacity.is_opaque ||
+                let blend_mode = if !common_data.opacity.is_opaque ||
                     prim_instance.clip_task_index != ClipTaskIndex::INVALID ||
                     transform_kind == TransformedRectKind::Complex
                 {
