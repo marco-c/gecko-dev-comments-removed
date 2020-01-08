@@ -38,12 +38,15 @@ TextDecoder::InitWithEncoding(NotNull<const Encoding*> aEncoding,
 {
   aEncoding->Name(mEncoding);
   
-  
-  
   mFatal = aOptions.mFatal;
+  mIgnoreBOM = aOptions.mIgnoreBOM;
 
   
-  mDecoder = aEncoding->NewDecoderWithBOMRemoval();
+  if (mIgnoreBOM) {
+    mDecoder = aEncoding->NewDecoderWithoutBOMHandling();
+  } else {
+    mDecoder = aEncoding->NewDecoderWithBOMRemoval();
+  }
 }
 
 void
