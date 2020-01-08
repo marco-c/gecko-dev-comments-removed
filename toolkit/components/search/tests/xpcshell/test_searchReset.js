@@ -46,7 +46,7 @@ add_task(async function test_no_prompt_when_valid_loadPathHash() {
 
   
   
-  Services.search.currentEngine = engine;
+  Services.search.defaultEngine = engine;
   await promiseAfterCache();
   metadata = await promiseEngineMetadata();
   Assert.ok("loadPathHash" in metadata[kTestEngineShortName]);
@@ -56,7 +56,7 @@ add_task(async function test_no_prompt_when_valid_loadPathHash() {
 
   
   let submission =
-    Services.search.currentEngine.getSubmission("foo", null, "searchbar");
+    Services.search.defaultEngine.getSubmission("foo", null, "searchbar");
   Assert.equal(submission.uri.spec,
                "http://www.google.com/search?q=foo");
 });
@@ -65,7 +65,7 @@ add_task(async function test_pending() {
   let checkWithPrefValue = (value, expectPrompt = false) => {
     Services.prefs.setCharPref(BROWSER_SEARCH_PREF + "reset.status", value);
     let submission =
-      Services.search.currentEngine.getSubmission("foo", null, "searchbar");
+      Services.search.defaultEngine.getSubmission("foo", null, "searchbar");
     Assert.equal(submission.uri.spec,
                  expectPrompt ? "about:searchreset?data=foo&purpose=searchbar" :
                    "http://www.google.com/search?q=foo");
@@ -83,7 +83,7 @@ add_task(async function test_promptURLs() {
   await removeLoadPathHash();
 
   
-  let currentEngine = Services.search.currentEngine;
+  let currentEngine = Services.search.defaultEngine;
   Assert.equal(currentEngine.name, kTestEngineName);
   
   let url = (data, purpose) =>
@@ -98,7 +98,7 @@ add_task(async function test_promptURLs() {
   
   
   
-  Services.search.currentEngine = Services.search.currentEngine;
+  Services.search.defaultEngine = Services.search.defaultEngine;
   Assert.equal(url("foo", "searchbar"),
                "http://www.google.com/search?q=foo");
 
@@ -115,7 +115,7 @@ add_task(async function test_whitelist() {
   await removeLoadPathHash();
 
   
-  let currentEngine = Services.search.currentEngine;
+  let currentEngine = Services.search.defaultEngine;
   Assert.equal(currentEngine.name, kTestEngineName);
   let expectPrompt = shouldPrompt => {
     let expectedURL =

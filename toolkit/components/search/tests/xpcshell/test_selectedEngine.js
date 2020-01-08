@@ -10,7 +10,7 @@ add_task(async function test_defaultEngine() {
   await asyncInit();
   await installTestEngine();
 
-  Assert.equal(Services.search.currentEngine.name, getDefaultEngineName());
+  Assert.equal(Services.search.defaultEngine.name, getDefaultEngineName());
 });
 
 
@@ -20,7 +20,7 @@ add_task(async function test_selectedEngine() {
   Services.prefs.setCharPref(kSelectedEnginePref, kTestEngineName);
 
   await asyncReInit();
-  Assert.equal(Services.search.currentEngine.name, defaultEngineName);
+  Assert.equal(Services.search.defaultEngine.name, defaultEngineName);
 
   Services.prefs.clearUserPref(kSelectedEnginePref);
 
@@ -28,7 +28,7 @@ add_task(async function test_selectedEngine() {
   Services.prefs.setCharPref(kDefaultenginenamePref, kTestEngineName);
 
   await asyncReInit();
-  Assert.equal(Services.search.currentEngine.name, defaultEngineName);
+  Assert.equal(Services.search.defaultEngine.name, defaultEngineName);
 
   Services.prefs.clearUserPref(kDefaultenginenamePref);
 });
@@ -36,8 +36,8 @@ add_task(async function test_selectedEngine() {
 
 add_task(async function test_persistAcrossRestarts() {
   
-  Services.search.currentEngine = Services.search.getEngineByName(kTestEngineName);
-  Assert.equal(Services.search.currentEngine.name, kTestEngineName);
+  Services.search.defaultEngine = Services.search.getEngineByName(kTestEngineName);
+  Assert.equal(Services.search.defaultEngine.name, kTestEngineName);
   await promiseAfterCache();
 
   
@@ -46,18 +46,18 @@ add_task(async function test_persistAcrossRestarts() {
 
   
   await asyncReInit();
-  Assert.equal(Services.search.currentEngine.name, kTestEngineName);
+  Assert.equal(Services.search.defaultEngine.name, kTestEngineName);
 
   
   Services.search.resetToOriginalDefaultEngine();
-  Assert.equal(Services.search.currentEngine.name, getDefaultEngineName());
+  Assert.equal(Services.search.defaultEngine.name, getDefaultEngineName());
 });
 
 
 add_task(async function test_ignoreInvalidHash() {
   
-  Services.search.currentEngine = Services.search.getEngineByName(kTestEngineName);
-  Assert.equal(Services.search.currentEngine.name, kTestEngineName);
+  Services.search.defaultEngine = Services.search.getEngineByName(kTestEngineName);
+  Assert.equal(Services.search.defaultEngine.name, kTestEngineName);
   await promiseAfterCache();
 
   
@@ -67,14 +67,14 @@ add_task(async function test_ignoreInvalidHash() {
 
   
   await asyncReInit();
-  Assert.equal(Services.search.currentEngine.name, getDefaultEngineName());
+  Assert.equal(Services.search.defaultEngine.name, getDefaultEngineName());
 });
 
 
 add_task(async function test_settingToDefault() {
   
-  Services.search.currentEngine = Services.search.getEngineByName(kTestEngineName);
-  Assert.equal(Services.search.currentEngine.name, kTestEngineName);
+  Services.search.defaultEngine = Services.search.getEngineByName(kTestEngineName);
+  Assert.equal(Services.search.defaultEngine.name, kTestEngineName);
   await promiseAfterCache();
 
   
@@ -82,7 +82,7 @@ add_task(async function test_settingToDefault() {
   Assert.equal(metadata.current, kTestEngineName);
 
   
-  Services.search.currentEngine =
+  Services.search.defaultEngine =
     Services.search.getEngineByName(getDefaultEngineName());
   await promiseAfterCache();
 
@@ -93,15 +93,15 @@ add_task(async function test_settingToDefault() {
 
 add_task(async function test_resetToOriginalDefaultEngine() {
   let defaultName = getDefaultEngineName();
-  Assert.equal(Services.search.currentEngine.name, defaultName);
+  Assert.equal(Services.search.defaultEngine.name, defaultName);
 
-  Services.search.currentEngine =
+  Services.search.defaultEngine =
     Services.search.getEngineByName(kTestEngineName);
-  Assert.equal(Services.search.currentEngine.name, kTestEngineName);
+  Assert.equal(Services.search.defaultEngine.name, kTestEngineName);
   await promiseAfterCache();
 
   Services.search.resetToOriginalDefaultEngine();
-  Assert.equal(Services.search.currentEngine.name, defaultName);
+  Assert.equal(Services.search.defaultEngine.name, defaultName);
   await promiseAfterCache();
 });
 
@@ -116,8 +116,8 @@ add_task(async function test_fallback_kept_after_restart() {
       break;
     }
   }
-  Services.search.currentEngine = nonDefaultBuiltInEngine;
-  Assert.equal(Services.search.currentEngine.name, nonDefaultBuiltInEngine.name);
+  Services.search.defaultEngine = nonDefaultBuiltInEngine;
+  Assert.equal(Services.search.defaultEngine.name, nonDefaultBuiltInEngine.name);
   await promiseAfterCache();
 
   
@@ -128,18 +128,18 @@ add_task(async function test_fallback_kept_after_restart() {
 
   
   
-  Assert.equal(Services.search.currentEngine.name, defaultName);
+  Assert.equal(Services.search.defaultEngine.name, defaultName);
 
   
   
   Services.search.restoreDefaultEngines();
   Assert.ok(!nonDefaultBuiltInEngine.hidden);
-  Assert.equal(Services.search.currentEngine.name, defaultName);
+  Assert.equal(Services.search.defaultEngine.name, defaultName);
   await promiseAfterCache();
 
   
   await asyncReInit();
-  Assert.equal(Services.search.currentEngine.name, defaultName);
+  Assert.equal(Services.search.defaultEngine.name, defaultName);
 });
 
 

@@ -20,8 +20,8 @@ add_task(async function setup() {
 
   
   let engineDefault = Services.search.getEngineByName("MozSearch");
-  let originalEngine = Services.search.currentEngine;
-  Services.search.currentEngine = engineDefault;
+  let originalEngine = Services.search.defaultEngine;
+  Services.search.defaultEngine = engineDefault;
 
   
   let engineOneOff = Services.search.getEngineByName("MozSearch2");
@@ -36,7 +36,7 @@ add_task(async function setup() {
 
   
   registerCleanupFunction(async function() {
-    Services.search.currentEngine = originalEngine;
+    Services.search.defaultEngine = originalEngine;
     Services.search.removeEngine(engineDefault);
     Services.search.removeEngine(engineOneOff);
     await PlacesUtils.history.clear();
