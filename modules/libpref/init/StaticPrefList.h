@@ -1723,4 +1723,14 @@ VARCACHE_PREF(
 
 
 
+VARCACHE_PREF(
+  "dom.security.featurePolicy.enabled",
+   dom_security_featurePolicy_enabled,
+  bool, false
+)
+
+
+
+
+
 

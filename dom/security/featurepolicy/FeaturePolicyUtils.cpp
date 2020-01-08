@@ -5,23 +5,144 @@
 
 
 #include "FeaturePolicyUtils.h"
+#include "mozilla/dom/FeaturePolicy.h"
+#include "mozilla/StaticPrefs.h"
+#include "nsIDocument.h"
 
 using namespace mozilla::dom;
 
-static const char* sSupportedFeatures[] = {
-  "camera",
-  "geolocation",
-  "microphone",
+struct FeatureMap {
+  const char* mFeatureName;
+
+  enum {
+    eAll,
+    eSelf,
+  } mDefaultAllowList;
+};
+
+
+
+
+
+static FeatureMap sSupportedFeatures[] = {
+  
+  { "accelerometer", FeatureMap::eSelf },
+  
+  { "ambient-light-sensor", FeatureMap::eSelf },
+  
+  { "autoplay", FeatureMap::eSelf },
+  
+  { "camera", FeatureMap::eSelf  },
+  
+  { "encrypted-media", FeatureMap::eSelf  },
+  
+  { "fullscreen", FeatureMap::eSelf  },
+  
+  { "geolocation", FeatureMap::eSelf  },
+  
+  { "gyroscope", FeatureMap::eSelf  },
+  
+  { "magnetometer", FeatureMap::eSelf  },
+  
+  { "microphone", FeatureMap::eSelf  },
+  
+  { "midi", FeatureMap::eSelf  },
+  
+  { "payment", FeatureMap::eSelf  },
+  
+  { "picture-in-picture", FeatureMap::eAll  },
+  
+  { "speaker", FeatureMap::eSelf  },
+  
+  { "usb", FeatureMap::eSelf  },
+  
+  { "vr", FeatureMap::eSelf  },
 };
 
  bool
 FeaturePolicyUtils::IsSupportedFeature(const nsAString& aFeatureName)
 {
   uint32_t numFeatures = (sizeof(sSupportedFeatures) / sizeof(sSupportedFeatures[0]));
-  for (uint32_t i = 0; i < numFeatures; i++) {
-    if (aFeatureName.LowerCaseEqualsASCII(sSupportedFeatures[i])) {
+  for (uint32_t i = 0; i < numFeatures; ++i) {
+    if (aFeatureName.LowerCaseEqualsASCII(sSupportedFeatures[i].mFeatureName)) {
       return true;
     }
   }
   return false;
+}
+
+ void
+FeaturePolicyUtils::ForEachFeature(const std::function<void(const char*)>& aCallback)
+{
+  uint32_t numFeatures = (sizeof(sSupportedFeatures) / sizeof(sSupportedFeatures[0]));
+  for (uint32_t i = 0; i < numFeatures; ++i) {
+    aCallback(sSupportedFeatures[i].mFeatureName);
+  }
+}
+
+ void
+FeaturePolicyUtils::DefaultAllowListFeature(const nsAString& aFeatureName,
+                                            const nsAString& aDefaultOrigin,
+                                            nsAString& aDefaultAllowList)
+{
+  uint32_t numFeatures = (sizeof(sSupportedFeatures) / sizeof(sSupportedFeatures[0]));
+  for (uint32_t i = 0; i < numFeatures; ++i) {
+    if (aFeatureName.LowerCaseEqualsASCII(sSupportedFeatures[i].mFeatureName)) {
+      switch (sSupportedFeatures[i].mDefaultAllowList) {
+        case FeatureMap::eAll:
+          aDefaultAllowList.AppendASCII("*");
+          return;
+
+        case FeatureMap::eSelf:
+          aDefaultAllowList = aDefaultOrigin;
+          return;
+
+        default:
+          MOZ_CRASH("Unknown default value");
+      }
+    }
+  }
+}
+
+ bool
+FeaturePolicyUtils::AllowDefaultFeature(const nsAString& aFeatureName,
+                                        const nsAString& aDefaultOrigin,
+                                        const nsAString& aOrigin)
+{
+  uint32_t numFeatures = (sizeof(sSupportedFeatures) / sizeof(sSupportedFeatures[0]));
+  for (uint32_t i = 0; i < numFeatures; ++i) {
+    if (aFeatureName.LowerCaseEqualsASCII(sSupportedFeatures[i].mFeatureName)) {
+      switch (sSupportedFeatures[i].mDefaultAllowList) {
+        case FeatureMap::eAll:
+          return true;
+        case FeatureMap::eSelf:
+          return aDefaultOrigin == aOrigin;
+        default:
+          MOZ_CRASH("Unknown default value");
+      }
+      return true;
+    }
+  }
+
+  return false;
+}
+
+ bool
+FeaturePolicyUtils::IsFeatureAllowed(nsIDocument* aDocument,
+                                     const nsAString& aFeatureName)
+{
+  MOZ_ASSERT(aDocument);
+
+  if (!StaticPrefs::dom_security_featurePolicy_enabled()) {
+    return true;
+  }
+
+  if (!aDocument->IsHTMLDocument()) {
+    return true;
+  }
+
+  FeaturePolicy* policy = aDocument->Policy();
+  MOZ_ASSERT(policy);
+
+  return policy->AllowsFeatureInternal(aFeatureName, policy->DefaultOrigin());
 }

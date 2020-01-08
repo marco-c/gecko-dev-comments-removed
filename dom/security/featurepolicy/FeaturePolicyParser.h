@@ -20,10 +20,14 @@ class Feature;
 class FeaturePolicyParser final
 {
 public:
+  
+  
   static bool
   ParseString(const nsAString& aPolicy,
               nsIDocument* aDocument,
-              nsIURI* aSelfURI,
+              const nsAString& aSelfOrigin,
+              const nsAString& aSrcOrigin,
+              bool aSrcEnabled,
               nsTArray<Feature>& aParsedFeatures);
 };
 
