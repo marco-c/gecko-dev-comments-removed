@@ -982,6 +982,14 @@ public:
   
 
 
+  mozilla::dom::ContentBlockingLog* GetContentBlockingLog()
+  {
+    return &mContentBlockingLog;
+  }
+
+  
+
+
   bool GetHasTrackingContentBlocked()
   {
     return mHasTrackingContentBlocked;
