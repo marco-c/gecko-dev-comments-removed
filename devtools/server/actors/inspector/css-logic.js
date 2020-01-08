@@ -677,6 +677,16 @@ CssLogic.getComputedStyle = function(node) {
   }
 
   const {bindingElement, pseudo} = CssLogic.getBindingElementAndPseudo(node);
+
+  
+  
+  
+  
+  
+  if (!bindingElement) {
+    return null;
+  }
+
   return node.ownerGlobal.getComputedStyle(bindingElement, pseudo);
 };
 
