@@ -11,7 +11,6 @@ ChromeUtils.import("resource://gre/modules/Messaging.jsm");
 ChromeUtils.import("resource://gre/modules/osfile.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/Sqlite.jsm");
-ChromeUtils.import("resource://gre/modules/Task.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 
@@ -207,33 +206,29 @@ var gDatabaseEnsured = false;
 
 
 function createDatabase(db) {
-  return Task.spawn(function* create_database_task() {
-    yield db.execute(SQL.createItemsTable);
-  });
+  return db.execute(SQL.createItemsTable);
 }
 
 
 
 
-function upgradeDatabase(db, oldVersion, newVersion) {
-  return Task.spawn(function* upgrade_database_task() {
-    switch (oldVersion) {
-      case 1:
-        
-        
-        
-        yield db.execute(SQL.dropItemsTable);
-        yield db.execute(SQL.createItemsTable);
-        break;
+async function upgradeDatabase(db, oldVersion, newVersion) {
+  switch (oldVersion) {
+    case 1:
+      
+      
+      
+      await db.execute(SQL.dropItemsTable);
+      await db.execute(SQL.createItemsTable);
+      break;
 
-      case 2:
-        
-        
-        yield db.execute(SQL.addColumnBackgroundColor);
-        yield db.execute(SQL.addColumnBackgroundUrl);
-        break;
-    }
-  });
+    case 2:
+      
+      
+      await db.execute(SQL.addColumnBackgroundColor);
+      await db.execute(SQL.addColumnBackgroundUrl);
+      break;
+  }
 }
 
 
@@ -244,35 +239,33 @@ function upgradeDatabase(db, oldVersion, newVersion) {
 
 
 
-function getDatabaseConnection() {
-  return Task.spawn(function* get_database_connection_task() {
-    let db = yield Sqlite.openConnection({ path: DB_PATH });
-    if (gDatabaseEnsured) {
-      return db;
-    }
-
-    try {
-      
-      let dbVersion = parseInt(yield db.getSchemaVersion());
-
-      
-      
-      if (dbVersion === 0) {
-        yield createDatabase(db);
-      } else if (dbVersion < SCHEMA_VERSION) {
-        yield upgradeDatabase(db, dbVersion, SCHEMA_VERSION);
-      }
-
-      yield db.setSchemaVersion(SCHEMA_VERSION);
-    } catch (e) {
-      
-      yield db.close();
-      throw e;
-    }
-
-    gDatabaseEnsured = true;
+async function getDatabaseConnection() {
+  let db = await Sqlite.openConnection({ path: DB_PATH });
+  if (gDatabaseEnsured) {
     return db;
-  });
+  }
+
+  try {
+    
+    let dbVersion = parseInt(await db.getSchemaVersion());
+
+    
+    
+    if (dbVersion === 0) {
+      await createDatabase(db);
+    } else if (dbVersion < SCHEMA_VERSION) {
+      await upgradeDatabase(db, dbVersion, SCHEMA_VERSION);
+    }
+
+    await db.setSchemaVersion(SCHEMA_VERSION);
+  } catch (e) {
+    
+    await db.close();
+    throw e;
+  }
+
+  gDatabaseEnsured = true;
+  return db;
 }
 
 
@@ -338,45 +331,43 @@ HomeStorage.prototype = {
 
 
 
-  save: function(data, options) {
+  async save(data, options) {
     if (data && data.length > MAX_SAVE_COUNT) {
       throw "save failed for dataset = " + this.datasetId +
         ": you cannot save more than " + MAX_SAVE_COUNT + " items at once";
     }
 
-    return Task.spawn(function* save_task() {
-      let db = yield getDatabaseConnection();
-      try {
-        yield db.executeTransaction(function* save_transaction() {
-          if (options && options.replace) {
-            yield db.executeCached(SQL.deleteFromDataset, { dataset_id: this.datasetId });
-          }
+    let db = await getDatabaseConnection();
+    try {
+      await db.executeTransaction(async function save_transaction() {
+        if (options && options.replace) {
+          await db.executeCached(SQL.deleteFromDataset, { dataset_id: this.datasetId });
+        }
+
+        
+        for (let item of data) {
+          validateItem(this.datasetId, item);
 
           
-          for (let item of data) {
-            validateItem(this.datasetId, item);
+          let params = {
+            dataset_id: this.datasetId,
+            url: item.url,
+            title: item.title,
+            description: item.description,
+            image_url: item.image_url,
+            background_color: item.background_color,
+            background_url: item.background_url,
+            filter: item.filter,
+            created: Date.now(),
+          };
+          await db.executeCached(SQL.insertItem, params);
+        }
+      }.bind(this));
+    } finally {
+      await db.close();
+    }
 
-            
-            let params = {
-              dataset_id: this.datasetId,
-              url: item.url,
-              title: item.title,
-              description: item.description,
-              image_url: item.image_url,
-              background_color: item.background_color,
-              background_url: item.background_url,
-              filter: item.filter,
-              created: Date.now(),
-            };
-            yield db.executeCached(SQL.insertItem, params);
-          }
-        }.bind(this));
-      } finally {
-        yield db.close();
-      }
-
-      refreshDataset(this.datasetId);
-    }.bind(this));
+    refreshDataset(this.datasetId);
   },
 
   
@@ -385,17 +376,15 @@ HomeStorage.prototype = {
 
 
 
-  deleteAll: function() {
-    return Task.spawn(function* delete_all_task() {
-      let db = yield getDatabaseConnection();
-      try {
-        let params = { dataset_id: this.datasetId };
-        yield db.executeCached(SQL.deleteFromDataset, params);
-      } finally {
-        yield db.close();
-      }
+  async deleteAll() {
+    let db = await getDatabaseConnection();
+    try {
+      let params = { dataset_id: this.datasetId };
+      await db.executeCached(SQL.deleteFromDataset, params);
+    } finally {
+      await db.close();
+    }
 
-      refreshDataset(this.datasetId);
-    }.bind(this));
+    refreshDataset(this.datasetId);
   },
 };

@@ -26,7 +26,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   RuntimePermissions: "resource://gre/modules/RuntimePermissions.jsm",
   Services: "resource://gre/modules/Services.jsm",
   Snackbars: "resource://gre/modules/Snackbars.jsm",
-  Task: "resource://gre/modules/Task.jsm",
 });
 
 
@@ -136,16 +135,16 @@ HelperAppLauncherDialog.prototype = {
     }
 
     if (this._shouldForwardToAndroidDownloadManager(aLauncher)) {
-      Task.spawn(function* () {
+      (async () => {
         try {
-          let hasPermission = yield RuntimePermissions.waitForPermissions(RuntimePermissions.WRITE_EXTERNAL_STORAGE);
+          let hasPermission = await RuntimePermissions.waitForPermissions(RuntimePermissions.WRITE_EXTERNAL_STORAGE);
           if (hasPermission) {
             this._downloadWithAndroidDownloadManager(aLauncher);
           }
         } finally {
           aLauncher.cancel(Cr.NS_BINDING_ABORTED);
         }
-      }.bind(this)).catch(Cu.reportError);
+      })().catch(Cu.reportError);
       return;
     }
 
@@ -305,15 +304,15 @@ HelperAppLauncherDialog.prototype = {
 
   promptForSaveToFileAsync: function(aLauncher, aContext, aDefaultFile,
                                       aSuggestedFileExt, aForcePrompt) {
-    Task.spawn(function* () {
+    (async () => {
       let file = null;
       try {
-        let hasPermission = yield RuntimePermissions.waitForPermissions(RuntimePermissions.WRITE_EXTERNAL_STORAGE);
+        let hasPermission = await RuntimePermissions.waitForPermissions(RuntimePermissions.WRITE_EXTERNAL_STORAGE);
         if (hasPermission) {
           
           
           
-          let preferredDir = yield Downloads.getPreferredDownloadsDirectory();
+          let preferredDir = await Downloads.getPreferredDownloadsDirectory();
           file = this.validateLeafName(new FileUtils.File(preferredDir),
                                        aDefaultFile, aSuggestedFileExt);
         }
@@ -321,7 +320,7 @@ HelperAppLauncherDialog.prototype = {
         
         aLauncher.saveDestinationAvailable(file);
       }
-    }.bind(this)).catch(Cu.reportError);
+    })().catch(Cu.reportError);
   },
 
   validateLeafName: function hald_validateLeafName(aLocalFile, aLeafName, aFileExt) {

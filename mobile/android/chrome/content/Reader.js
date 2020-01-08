@@ -223,16 +223,16 @@ var Reader = {
 
 
 
-  _getArticle: Task.async(function* (url) {
+  async _getArticle(url) {
     
-    let article = yield ReaderMode.getArticleFromCache(url);
+    let article = await ReaderMode.getArticleFromCache(url);
     if (article) {
       return article;
     }
 
     
     
-    return yield ReaderMode.downloadAndParseDocument(url).catch(e => {
+    return ReaderMode.downloadAndParseDocument(url).catch(e => {
       if (e && e.newURL) {
         
         throw e;
@@ -240,7 +240,7 @@ var Reader = {
       Cu.reportError("Error downloading and parsing document: " + e);
       return null;
     });
-  }),
+  },
 
   _getArticleData: function(browser) {
     return new Promise((resolve, reject) => {
@@ -262,8 +262,8 @@ var Reader = {
   
 
 
-  migrateCache: Task.async(function* () {
-    let cacheDB = yield new Promise((resolve, reject) => {
+  async migrateCache() {
+    let cacheDB = await new Promise((resolve, reject) => {
       let request = window.indexedDB.open("about:reader", 1);
       request.onsuccess = event => resolve(event.target.result);
       request.onerror = event => reject(request.error);
@@ -276,7 +276,7 @@ var Reader = {
       return;
     }
 
-    let articles = yield new Promise((resolve, reject) => {
+    let articles = await new Promise((resolve, reject) => {
       let articles = [];
 
       let transaction = cacheDB.transaction(cacheDB.objectStoreNames);
@@ -296,10 +296,10 @@ var Reader = {
     });
 
     for (let article of articles) {
-      yield ReaderMode.storeArticleInCache(article);
+      await ReaderMode.storeArticleInCache(article);
     }
 
     
     window.indexedDB.deleteDatabase("about:reader");
-  }),
+  },
 };
