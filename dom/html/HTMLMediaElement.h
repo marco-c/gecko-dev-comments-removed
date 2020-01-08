@@ -869,6 +869,8 @@ protected:
     bool mCapturingDecoder;
     bool mCapturingMediaStream;
 
+    RefPtr<CaptureStreamTrackSourceGetter> mTrackSourceGetter;
+
     
     
     

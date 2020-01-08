@@ -78,13 +78,30 @@ class MediaStreamTrackSourceGetter : public nsISupports {
   NS_DECL_CYCLE_COLLECTION_CLASS(MediaStreamTrackSourceGetter)
 
  public:
-  MediaStreamTrackSourceGetter() {}
+  explicit MediaStreamTrackSourceGetter(bool aFinishedOnInactive = true)
+      : mFinishedOnInactive(aFinishedOnInactive) {}
 
   virtual already_AddRefed<dom::MediaStreamTrackSource>
   GetMediaStreamTrackSource(TrackID aInputTrackID) = 0;
 
+  bool FinishedOnInactive() { return mFinishedOnInactive; }
+
+  
+
+
+
+
+
+
+
+
+  void FinishOnNextInactive(RefPtr<DOMMediaStream>& aStream);
+
  protected:
   virtual ~MediaStreamTrackSourceGetter() {}
+
+ private:
+  bool mFinishedOnInactive;
 };
 
 
@@ -201,6 +218,7 @@ class DOMMediaStream
       public dom::PrincipalChangeObserver<dom::MediaStreamTrack>,
       public RelativeTimeline {
   friend class dom::MediaStreamTrack;
+  friend class MediaStreamTrackSourceGetter;
   typedef dom::MediaStreamTrack MediaStreamTrack;
   typedef dom::AudioStreamTrack AudioStreamTrack;
   typedef dom::VideoStreamTrack VideoStreamTrack;
@@ -435,11 +453,6 @@ class DOMMediaStream
 
   bool IsFinished() const;
 
-  
-
-
-  void SetInactiveOnFinish();
-
   TrackRate GraphRate();
 
   
@@ -594,9 +607,6 @@ class DOMMediaStream
   void NotifyTracksCreated();
 
   
-  void NotifyFinished();
-
-  
   void NotifyActive();
 
   
@@ -707,11 +717,6 @@ class DOMMediaStream
 
   
   bool mActive;
-
-  
-  
-  
-  bool mSetInactiveOnFinish;
 
  private:
   void NotifyPrincipalChanged();

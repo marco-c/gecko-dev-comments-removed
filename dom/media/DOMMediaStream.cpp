@@ -57,6 +57,18 @@ static bool ContainsLiveTracks(
   return false;
 }
 
+void MediaStreamTrackSourceGetter::FinishOnNextInactive(
+    RefPtr<DOMMediaStream>& aStream) {
+  if (mFinishedOnInactive) {
+    return;
+  }
+
+  mFinishedOnInactive = true;
+
+  
+  aStream->NotifyTrackRemoved(nullptr);
+}
+
 DOMMediaStream::TrackPort::TrackPort(MediaInputPort* aInputPort,
                                      MediaStreamTrack* aTrack,
                                      const InputPortOwnership aOwnership)
@@ -249,33 +261,12 @@ class DOMMediaStream::PlaybackStreamListener : public MediaStreamListener {
                           &DOMMediaStream::NotifyTracksCreated));
   }
 
-  void DoNotifyFinished() {
-    MOZ_ASSERT(NS_IsMainThread());
-
-    if (!mStream) {
-      return;
-    }
-
-    mStream->GetPlaybackStream()->Graph()->AbstractMainThread()->Dispatch(
-        NewRunnableMethod("DOMMediaStream::NotifyFinished", mStream,
-                          &DOMMediaStream::NotifyFinished));
-  }
-
   
 
   void NotifyFinishedTrackCreation(MediaStreamGraph* aGraph) override {
     aGraph->DispatchToMainThreadAfterStreamStateUpdate(NewRunnableMethod(
         "DOMMediaStream::PlaybackStreamListener::DoNotifyFinishedTrackCreation",
         this, &PlaybackStreamListener::DoNotifyFinishedTrackCreation));
-  }
-
-  void NotifyEvent(MediaStreamGraph* aGraph,
-                   MediaStreamGraphEvent event) override {
-    if (event == MediaStreamGraphEvent::EVENT_FINISHED) {
-      aGraph->DispatchToMainThreadAfterStreamStateUpdate(NewRunnableMethod(
-          "DOMMediaStream::PlaybackStreamListener::DoNotifyFinished", this,
-          &PlaybackStreamListener::DoNotifyFinished));
-    }
   }
 
  private:
@@ -372,7 +363,6 @@ DOMMediaStream::DOMMediaStream(nsPIDOMWindowInner* aWindow,
       mTracksCreated(false),
       mNotifiedOfMediaStreamGraphShutdown(false),
       mActive(false),
-      mSetInactiveOnFinish(false),
       mCORSMode(CORS_NONE) {
   nsresult rv;
   nsCOMPtr<nsIUUIDGenerator> uuidgen =
@@ -836,8 +826,6 @@ TrackRate DOMMediaStream::GraphRate() {
   return 0;
 }
 
-void DOMMediaStream::SetInactiveOnFinish() { mSetInactiveOnFinish = true; }
-
 void DOMMediaStream::InitSourceStream(MediaStreamGraph* aGraph) {
   InitInputStreamCommon(aGraph->CreateSourceStream(), aGraph);
   InitOwnedStreamCommon(aGraph);
@@ -1190,21 +1178,6 @@ void DOMMediaStream::NotifyTracksCreated() {
   CheckTracksAvailable();
 }
 
-void DOMMediaStream::NotifyFinished() {
-  if (!mSetInactiveOnFinish) {
-    return;
-  }
-
-  if (!mActive) {
-    
-    return;
-  }
-
-  MOZ_ASSERT(!ContainsLiveTracks(mTracks));
-  mActive = false;
-  NotifyInactive();
-}
-
 void DOMMediaStream::NotifyActive() {
   LOG(LogLevel::Info, ("DOMMediaStream %p NotifyActive(). ", this));
 
@@ -1297,23 +1270,31 @@ void DOMMediaStream::NotifyTrackRemoved(
     const RefPtr<MediaStreamTrack>& aTrack) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  aTrack->RemoveConsumer(mPlaybackTrackListener);
-  aTrack->RemovePrincipalChangeObserver(this);
+  if (aTrack) {
+    
+    
+    
+    
 
-  for (int32_t i = mTrackListeners.Length() - 1; i >= 0; --i) {
-    mTrackListeners[i]->NotifyTrackRemoved(aTrack);
+    aTrack->RemoveConsumer(mPlaybackTrackListener);
+    aTrack->RemovePrincipalChangeObserver(this);
+
+    for (int32_t i = mTrackListeners.Length() - 1; i >= 0; --i) {
+      mTrackListeners[i]->NotifyTrackRemoved(aTrack);
+    }
+
+    
+    
+    
+    
+
+    if (!mActive) {
+      NS_ASSERTION(false, "Shouldn't remove a live track if already inactive");
+      return;
+    }
   }
 
-  
-  
-  
-
-  if (!mActive) {
-    NS_ASSERTION(false, "Shouldn't remove a live track if already inactive");
-    return;
-  }
-
-  if (mSetInactiveOnFinish) {
+  if (mTrackSourceGetter && !mTrackSourceGetter->FinishedOnInactive()) {
     
     
     return;
