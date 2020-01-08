@@ -19,40 +19,6 @@ let baseDate = new Date("2000-01-01");
 
 
 
-function waitForAnnotations(sourceUriSpec) {
-  let sourceUri = Services.io.newURI(sourceUriSpec);
-  let destinationFileUriSet = false;
-  let metaDataSet = false;
-  return new Promise(resolve => {
-    PlacesUtils.annotations.addObserver({
-      onPageAnnotationSet(page, name) {
-        if (!page.equals(sourceUri)) {
-          return;
-        }
-        switch (name) {
-          case "downloads/destinationFileURI":
-            destinationFileUriSet = true;
-            break;
-          case "downloads/metaData":
-            metaDataSet = true;
-            break;
-        }
-        if (destinationFileUriSet && metaDataSet) {
-          PlacesUtils.annotations.removeObserver(this);
-          resolve();
-        }
-      },
-      onItemAnnotationSet() {},
-      onPageAnnotationRemoved() {},
-      onItemAnnotationRemoved() {},
-    });
-  });
-}
-
-
-
-
-
 function areEqual(a, b) {
   if (a === b) {
     Assert.equal(a, b);
@@ -184,7 +150,8 @@ add_task(async function test_DownloadHistory() {
 
     
     
-    let promiseAnnotations = waitForAnnotations(properties.source.url);
+    let promiseFileAnnotation = waitForAnnotation(properties.source.url, "downloads/destinationFileURI");
+    let promiseMetaAnnotation = waitForAnnotation(properties.source.url, "downloads/metaData");
     let promiseVisit = promiseWaitForVisit(properties.source.url);
     gDownloadHistory.addDownload(Services.io.newURI(properties.source.url),
                                  null,
@@ -192,7 +159,7 @@ add_task(async function test_DownloadHistory() {
                                  NetUtil.newURI(targetFile));
     await promiseVisit;
     DownloadHistory.updateMetaData(download);
-    await promiseAnnotations;
+    await Promise.all([promiseFileAnnotation, promiseMetaAnnotation]);
   }
 
   

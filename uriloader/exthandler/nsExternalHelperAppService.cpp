@@ -83,7 +83,6 @@
 
 #include "nsIWindowWatcher.h"
 
-#include "nsIDownloadHistory.h" 
 #include "nsDocShellCID.h"
 
 #include "nsCRT.h"
@@ -2159,17 +2158,6 @@ nsresult nsExternalAppHandler::CreateTransfer()
                        mMimeInfo, mTimeDownloadStarted, mTempFile, this,
                        channel && NS_UsePrivateBrowsing(channel));
   NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  nsCOMPtr<nsIDownloadHistory> dh(do_GetService(NS_DOWNLOADHISTORY_CONTRACTID));
-  if (dh) {
-    if (channel && !NS_UsePrivateBrowsing(channel)) {
-      nsCOMPtr<nsIURI> referrer;
-      NS_GetReferrerFromChannel(channel, getter_AddRefs(referrer));
-
-      dh->AddDownload(mSourceUrl, referrer, mTimeDownloadStarted, target);
-    }
-  }
 
   
   

@@ -2366,13 +2366,7 @@ this.DownloadLegacySaver.prototype = {
 
 
 
-
-
-
-
-
-
-  onTransferStarted(aRequest, aAlreadyAddedToHistory) {
+  onTransferStarted(aRequest) {
     
     
     this.request = aRequest;
@@ -2396,9 +2390,7 @@ this.DownloadLegacySaver.prototype = {
       this.download.source.referrer = aRequest.referrer.spec;
     }
 
-    if (!aAlreadyAddedToHistory) {
-      this.addToHistory();
-    }
+    this.addToHistory();
   },
 
   

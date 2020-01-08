@@ -584,6 +584,28 @@ function isValidDate(aDate) {
 
 
 
+function waitForAnnotation(sourceUriSpec, annotationName) {
+  let sourceUri = Services.io.newURI(sourceUriSpec);
+  return new Promise(resolve => {
+    PlacesUtils.annotations.addObserver({
+      onPageAnnotationSet(page, name) {
+        if (!page.equals(sourceUri) || name != annotationName) {
+          return;
+        }
+        PlacesUtils.annotations.removeObserver(this);
+        resolve();
+      },
+      onItemAnnotationSet() {},
+      onPageAnnotationRemoved() {},
+      onItemAnnotationRemoved() {},
+    });
+  });
+}
+
+
+
+
+
 var gMostRecentFirstBytePos;
 
 

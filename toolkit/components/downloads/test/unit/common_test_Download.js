@@ -18,6 +18,9 @@
 
 const kDeleteTempFileOnExit = "browser.helperApps.deleteTempFileOnExit";
 
+ChromeUtils.defineModuleGetter(this, "FileUtils",
+                               "resource://gre/modules/FileUtils.jsm");
+
 
 
 
@@ -2391,17 +2394,29 @@ add_task(async function test_toSerializable_startTime() {
 add_task(async function test_history() {
   mustInterruptResponses();
 
-  
-  await PlacesUtils.history.clear();
-  let promiseVisit = promiseWaitForVisit(httpUrl("interruptible.txt"));
+  let sourceUrl = httpUrl("interruptible.txt");
 
   
-  let download = await promiseStartDownload(httpUrl("interruptible.txt"));
+  await PlacesUtils.history.clear();
+  let promiseVisit = promiseWaitForVisit(sourceUrl);
+  let promiseAnnotation = waitForAnnotation(sourceUrl, "downloads/destinationFileURI");
+
+  
+  let download = await promiseStartDownload(sourceUrl);
 
   
   let [time, transitionType] = await promiseVisit;
+  await promiseAnnotation;
+
   Assert.equal(time, download.startTime.getTime());
   Assert.equal(transitionType, Ci.nsINavHistoryService.TRANSITION_DOWNLOAD);
+
+  let expectedFileURI = Services.io.newFileURI(new FileUtils.File(download.target.path));
+  let destFileURI = PlacesUtils.annotations.getPageAnnotation(
+    Services.io.newURI(sourceUrl),
+    "downloads/destinationFileURI");
+  Assert.equal(destFileURI, expectedFileURI.spec,
+    "Should have saved the correct download target annotation.");
 
   
   await PlacesUtils.history.clear();
@@ -2410,7 +2425,7 @@ add_task(async function test_history() {
   await download.start();
 
   
-  Assert.equal(false, await PlacesUtils.history.hasVisits(httpUrl("interruptible.txt")));
+  Assert.equal(false, await PlacesUtils.history.hasVisits(sourceUrl));
 });
 
 
