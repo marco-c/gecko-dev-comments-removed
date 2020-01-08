@@ -1,8 +1,5 @@
 <!doctype html>
 
-
-
-
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -37,7 +34,6 @@
 
     var parsedOffer = new RTCSessionDescription({ type: 'offer',
                                                   sdp: offerSdp });
-    // These functions use the legacy interface extensions to RTCPeerConnection.
     gSecondConnection.setRemoteDescription(parsedOffer).then(
       function() {
         gSecondConnection.createAnswer().then(onAnswerCreated,
