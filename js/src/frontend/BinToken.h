@@ -287,9 +287,6 @@ const size_t BINKIND_LIMIT = 200;
 
 
 
-
-
-
 #define FOR_EACH_BIN_FIELD(F) \
     F(Alternate, "alternate") \
     F(Arguments, "arguments") \
@@ -369,6 +366,21 @@ enum class BinField {
 
 
 const size_t BINFIELD_LIMIT = 69;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
