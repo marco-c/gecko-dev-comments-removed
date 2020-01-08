@@ -16,31 +16,16 @@
 #include "mozilla/mozalloc.h"
 #endif
 
-
-#if defined(_WIN32_WINNT)
-#undef _WIN32_WINNT
-#define _WIN32_WINNT _WIN32_WINNT_WIN8
-#endif 
-#if defined(NTDDI_VERSION)
-#undef NTDDI_VERSION
-#define NTDDI_VERSION NTDDI_WIN8
-#endif 
-
 #include "Authenticode.h"
 
 #include "mozilla/ArrayUtils.h"
-#include "mozilla/Assertions.h"
-#include "mozilla/DynamicallyLinkedFunctionPtr.h"
 #include "mozilla/TypeTraits.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/WindowsVersion.h"
-#include "nsWindowsHelpers.h"
 
 #include <windows.h>
 #include <softpub.h>
 #include <wincrypt.h>
 #include <wintrust.h>
-#include <mscat.h>
 
 namespace {
 
@@ -70,33 +55,13 @@ struct CertContextDeleter
   }
 };
 
-struct CATAdminContextDeleter
-{
-  typedef HCATADMIN pointer;
-  void operator()(pointer aCtx)
-  {
-    static const mozilla::DynamicallyLinkedFunctionPtr<
-      decltype(&::CryptCATAdminReleaseContext)>
-        pCryptCATAdminReleaseContext(L"wintrust.dll",
-                                     "CryptCATAdminReleaseContext");
-
-    MOZ_ASSERT(!!pCryptCATAdminReleaseContext);
-    if (!pCryptCATAdminReleaseContext) {
-      return;
-    }
-
-    pCryptCATAdminReleaseContext(aCtx, 0);
-  }
-};
-
 typedef mozilla::UniquePtr<HCERTSTORE, CertStoreDeleter> CertStoreUniquePtr;
 typedef mozilla::UniquePtr<HCRYPTMSG, CryptMsgDeleter> CryptMsgUniquePtr;
 typedef mozilla::UniquePtr<const CERT_CONTEXT, CertContextDeleter> CertContextUniquePtr;
-typedef mozilla::UniquePtr<HCATADMIN, CATAdminContextDeleter> CATAdminContextUniquePtr;
 
 static const DWORD kEncodingTypes = X509_ASN_ENCODING | PKCS_7_ASN_ENCODING;
 
-class SignedBinary final
+class SignedBinary
 {
 public:
   explicit SignedBinary(const wchar_t* aFilePath);
@@ -115,30 +80,33 @@ public:
 
 private:
   bool VerifySignature(const wchar_t* aFilePath);
-  bool QueryObject(const wchar_t* aFilePath);
-  static bool VerifySignatureInternal(WINTRUST_DATA& aTrustData);
 
 private:
-  enum class TrustSource
-  {
-    eNone,
-    eEmbedded,
-    eCatalog
-  };
-
-private:
-  TrustSource           mTrustSource;
   CertStoreUniquePtr    mCertStore;
   CryptMsgUniquePtr     mCryptMsg;
   CertContextUniquePtr  mCertCtx;
 };
 
 SignedBinary::SignedBinary(const wchar_t* aFilePath)
-  : mTrustSource(TrustSource::eNone)
 {
   if (!VerifySignature(aFilePath)) {
     return;
   }
+
+  DWORD encodingType, contentType, formatType;
+  HCERTSTORE rawCertStore;
+  HCRYPTMSG rawCryptMsg;
+  BOOL result = CryptQueryObject(CERT_QUERY_OBJECT_FILE, aFilePath,
+                                 CERT_QUERY_CONTENT_FLAG_PKCS7_SIGNED_EMBED,
+                                 CERT_QUERY_FORMAT_FLAG_BINARY, 0,
+                                 &encodingType, &contentType, &formatType,
+                                 &rawCertStore, &rawCryptMsg, nullptr);
+  if (!result) {
+    return;
+  }
+
+  mCertStore.reset(rawCertStore);
+  mCryptMsg.reset(rawCryptMsg);
 
   DWORD certInfoLen = 0;
   BOOL ok = CryptMsgGetParam(mCryptMsg.get(), CMSG_SIGNER_CERT_INFO_PARAM, 0,
@@ -169,208 +137,27 @@ SignedBinary::SignedBinary(const wchar_t* aFilePath)
 }
 
 bool
-SignedBinary::QueryObject(const wchar_t* aFilePath)
-{
-  DWORD encodingType, contentType, formatType;
-  HCERTSTORE rawCertStore;
-  HCRYPTMSG rawCryptMsg;
-  BOOL result = ::CryptQueryObject(CERT_QUERY_OBJECT_FILE, aFilePath,
-                                   CERT_QUERY_CONTENT_FLAG_PKCS7_SIGNED_EMBED,
-                                   CERT_QUERY_FORMAT_FLAG_BINARY, 0,
-                                   &encodingType, &contentType, &formatType,
-                                   &rawCertStore, &rawCryptMsg, nullptr);
-  if (!result) {
-    return false;
-  }
-
-  mCertStore.reset(rawCertStore);
-  mCryptMsg.reset(rawCryptMsg);
-
-  return true;
-}
-
-
-
-
-
-
-
- bool
-SignedBinary::VerifySignatureInternal(WINTRUST_DATA& aTrustData)
-{
-  aTrustData.dwUIChoice = WTD_UI_NONE;
-  aTrustData.fdwRevocationChecks = WTD_REVOKE_NONE;
-  aTrustData.dwStateAction = WTD_STATEACTION_VERIFY;
-  aTrustData.dwProvFlags = WTD_CACHE_ONLY_URL_RETRIEVAL;
-
-  const HWND hwnd = (HWND) INVALID_HANDLE_VALUE;
-  GUID policyGUID = WINTRUST_ACTION_GENERIC_VERIFY_V2;
-  LONG result = ::WinVerifyTrust(hwnd, &policyGUID, &aTrustData);
-
-  aTrustData.dwStateAction = WTD_STATEACTION_CLOSE;
-  ::WinVerifyTrust(hwnd, &policyGUID, &aTrustData);
-
-  return result == ERROR_SUCCESS;
-}
-
-bool
 SignedBinary::VerifySignature(const wchar_t* aFilePath)
 {
-  
   WINTRUST_FILE_INFO fileInfo = {sizeof(fileInfo)};
   fileInfo.pcwszFilePath = aFilePath;
 
   WINTRUST_DATA trustData = {sizeof(trustData)};
+  trustData.dwUIChoice = WTD_UI_NONE;
+  trustData.fdwRevocationChecks = WTD_REVOKE_NONE;
   trustData.dwUnionChoice = WTD_CHOICE_FILE;
   trustData.pFile = &fileInfo;
+  trustData.dwStateAction = WTD_STATEACTION_VERIFY;
+  trustData.dwProvFlags = WTD_CACHE_ONLY_URL_RETRIEVAL;
 
-  if (VerifySignatureInternal(trustData)) {
-    mTrustSource = TrustSource::eEmbedded;
-    return QueryObject(aFilePath);
-  }
+  const HWND hwnd = (HWND) INVALID_HANDLE_VALUE;
+  GUID policyGUID = WINTRUST_ACTION_GENERIC_VERIFY_V2;
+  LONG result = WinVerifyTrust(hwnd, &policyGUID, &trustData);
 
-  
+  trustData.dwStateAction = WTD_STATEACTION_CLOSE;
+  WinVerifyTrust(hwnd, &policyGUID, &trustData);
 
-  
-  HCATADMIN rawCatAdmin;
-
-  
-  
-  if (mozilla::IsWin8OrLater()) {
-    static const mozilla::DynamicallyLinkedFunctionPtr<decltype(&::CryptCATAdminAcquireContext2)>
-      pCryptCATAdminAcquireContext2(L"wintrust.dll", "CryptCATAdminAcquireContext2");
-    if (!pCryptCATAdminAcquireContext2) {
-      return false;
-    }
-
-    CERT_STRONG_SIGN_PARA policy = CERT_STRONG_SIGN_PARA_OS_CURRENT;
-    if (!pCryptCATAdminAcquireContext2(&rawCatAdmin, nullptr,
-                                       BCRYPT_SHA256_ALGORITHM, &policy, 0)) {
-      return false;
-    }
-  } else {
-    static const mozilla::DynamicallyLinkedFunctionPtr<decltype(&::CryptCATAdminAcquireContext)>
-      pCryptCATAdminAcquireContext(L"wintrust.dll", "CryptCATAdminAcquireContext");
-
-    if (!pCryptCATAdminAcquireContext ||
-        !pCryptCATAdminAcquireContext(&rawCatAdmin, nullptr, 0)) {
-      return false;
-    }
-  }
-
-  CATAdminContextUniquePtr catAdmin(rawCatAdmin);
-
-  
-  
-  HANDLE rawFile = ::CreateFileW(aFilePath, GENERIC_READ, FILE_SHARE_READ,
-                                 nullptr, OPEN_EXISTING,
-                                 FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
-  if (rawFile == INVALID_HANDLE_VALUE) {
-    return false;
-  }
-
-  nsAutoHandle file(rawFile);
-  DWORD hashLen = 0;
-  mozilla::UniquePtr<BYTE[]> hashBuf;
-
-  static const mozilla::DynamicallyLinkedFunctionPtr<decltype(&::CryptCATAdminCalcHashFromFileHandle2)>
-    pCryptCATAdminCalcHashFromFileHandle2(L"wintrust.dll", "CryptCATAdminCalcHashFromFileHandle2");
-  if (pCryptCATAdminCalcHashFromFileHandle2) {
-    if (!pCryptCATAdminCalcHashFromFileHandle2(rawCatAdmin, rawFile, &hashLen,
-                                               nullptr, 0) &&
-        ::GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
-      return false;
-    }
-
-    hashBuf = mozilla::MakeUnique<BYTE[]>(hashLen);
-
-    if (!pCryptCATAdminCalcHashFromFileHandle2(rawCatAdmin, rawFile, &hashLen,
-                                               hashBuf.get(), 0)) {
-      return false;
-    }
-  } else {
-    static const mozilla::DynamicallyLinkedFunctionPtr<decltype(&::CryptCATAdminCalcHashFromFileHandle)>
-      pCryptCATAdminCalcHashFromFileHandle(L"wintrust.dll", "CryptCATAdminCalcHashFromFileHandle");
-
-    if (!pCryptCATAdminCalcHashFromFileHandle) {
-      return false;
-    }
-
-    if (!pCryptCATAdminCalcHashFromFileHandle(rawFile, &hashLen, nullptr, 0) &&
-        ::GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
-      return false;
-    }
-
-    hashBuf = mozilla::MakeUnique<BYTE[]>(hashLen);
-
-    if (!pCryptCATAdminCalcHashFromFileHandle(rawFile, &hashLen, hashBuf.get(), 0)) {
-      return false;
-    }
-  }
-
-  
-  
-
-  static const mozilla::DynamicallyLinkedFunctionPtr<decltype(&::CryptCATAdminEnumCatalogFromHash)>
-    pCryptCATAdminEnumCatalogFromHash(L"wintrust.dll", "CryptCATAdminEnumCatalogFromHash");
-  if (!pCryptCATAdminEnumCatalogFromHash) {
-    return false;
-  }
-
-  HCATINFO catInfoHdl = pCryptCATAdminEnumCatalogFromHash(rawCatAdmin,
-                                                          hashBuf.get(), hashLen,
-                                                          0, nullptr);
-  if (!catInfoHdl) {
-    return false;
-  }
-
-  
-
-  static const mozilla::DynamicallyLinkedFunctionPtr<decltype(&::CryptCATCatalogInfoFromContext)>
-    pCryptCATCatalogInfoFromContext(L"wintrust.dll", "CryptCATCatalogInfoFromContext");
-  if (!pCryptCATCatalogInfoFromContext) {
-    return false;
-  }
-
-  CATALOG_INFO_ catInfo = {sizeof(catInfo)};
-  if (!pCryptCATCatalogInfoFromContext(catInfoHdl, &catInfo, 0)) {
-    return false;
-  }
-
-  
-  
-
-  DWORD strHashBufLen = (hashLen * 2) + 1;
-  auto strHashBuf = mozilla::MakeUnique<wchar_t[]>(strHashBufLen);
-  if (!::CryptBinaryToStringW(hashBuf.get(), hashLen,
-                              CRYPT_STRING_HEXRAW | CRYPT_STRING_NOCRLF,
-                              strHashBuf.get(), &strHashBufLen)) {
-    return false;
-  }
-
-  
-  
-  
-  
-
-  WINTRUST_CATALOG_INFO wtCatInfo = {sizeof(wtCatInfo)};
-  wtCatInfo.pcwszCatalogFilePath = catInfo.wszCatalogFile;
-  wtCatInfo.pcwszMemberTag = strHashBuf.get();
-  wtCatInfo.pcwszMemberFilePath = aFilePath;
-  wtCatInfo.hMemberFile = rawFile;
-  if (mozilla::IsWin8OrLater()) {
-    wtCatInfo.hCatAdmin = rawCatAdmin;
-  }
-
-  trustData.dwUnionChoice = WTD_CHOICE_CATALOG;
-  trustData.pCatalog = &wtCatInfo;
-
-  if (VerifySignatureInternal(trustData)) {
-    mTrustSource = TrustSource::eCatalog;
-    return QueryObject(catInfo.wszCatalogFile);
-  }
-
-  return false;
+  return result == ERROR_SUCCESS;
 }
 
 mozilla::UniquePtr<wchar_t[]>
