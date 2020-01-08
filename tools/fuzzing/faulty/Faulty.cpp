@@ -352,6 +352,14 @@ Faulty::MutationFactor()
 }
 
 
+Faulty&
+Faulty::instance()
+{
+  static Faulty faulty;
+  return faulty;
+}
+
+
 
 
 
