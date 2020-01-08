@@ -140,28 +140,18 @@ class WebGLFramebuffer final
     , public SupportsWeakPtr<WebGLFramebuffer>
     , public CacheInvalidator
 {
-    friend class WebGLContext;
-
 public:
     MOZ_DECLARE_WEAKREFERENCE_TYPENAME(WebGLFramebuffer)
 
     const GLuint mGLName;
+    bool mHasBeenBound = false;
 
 private:
     mutable uint64_t mNumFBStatusInvals = 0;
 
+    
+
 protected:
-#ifdef ANDROID
-    
-    
-    
-    
-    
-    bool mIsFB = false;
-#endif
-
-    
-
     WebGLFBAttachPoint mDepthAttachment;
     WebGLFBAttachPoint mStencilAttachment;
     WebGLFBAttachPoint mDepthStencilAttachment;

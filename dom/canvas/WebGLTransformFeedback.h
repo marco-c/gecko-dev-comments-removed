@@ -30,6 +30,7 @@ class WebGLTransformFeedback final
 
 public:
     const GLuint mGLName;
+    bool mHasBeenBound = false;
 private:
     
     
