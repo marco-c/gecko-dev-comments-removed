@@ -458,9 +458,10 @@ ReadableStreamError(JSContext* cx, HandleObject stream, HandleValue error);
 
 
 
+
+
 extern JS_PUBLIC_API bool
 ReadableStreamReaderCancel(JSContext* cx, HandleObject reader, HandleValue reason);
-
 
 
 

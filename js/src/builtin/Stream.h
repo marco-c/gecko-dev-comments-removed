@@ -115,6 +115,13 @@ class ReadableStream : public NativeObject
     static const Class protoClass_;
 };
 
+
+
+
+
+
+enum class ForAuthorCodeBool { No, Yes };
+
 class ReadableStreamReader : public NativeObject
 {
   public:
@@ -143,6 +150,7 @@ class ReadableStreamReader : public NativeObject
         Slot_Stream,
         Slot_Requests,
         Slot_ClosedPromise,
+        Slot_ForAuthorCode,
         SlotCount,
     };
 
@@ -150,6 +158,28 @@ class ReadableStreamReader : public NativeObject
     void setStream(JSObject* stream) { setFixedSlot(Slot_Stream, ObjectValue(*stream)); }
     void clearStream() { setFixedSlot(Slot_Stream, UndefinedValue()); }
     bool isClosed() { return !hasStream(); }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    ForAuthorCodeBool forAuthorCode() const {
+        return getFixedSlot(Slot_ForAuthorCode).toBoolean()
+               ? ForAuthorCodeBool::Yes
+               : ForAuthorCodeBool::No;
+    }
+    void setForAuthorCode(ForAuthorCodeBool value) {
+        setFixedSlot(Slot_ForAuthorCode, BooleanValue(value == ForAuthorCodeBool::Yes));
+    }
 
     NativeObject* requests() const {
         return &getFixedSlot(Slot_Requests).toObject().as<NativeObject>();
