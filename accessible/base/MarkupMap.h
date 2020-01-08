@@ -358,7 +358,10 @@ MARKUPMAP(
        
        
        
-       if (!aContext->IsHTMLTableRow()) {
+       
+       if (!aContext->IsHTMLTableRow() ||
+           (aElement->GetPrimaryFrame() &&
+            aElement->GetPrimaryFrame()->AccessibleType() != eHTMLTableCellType)) {
          return new ARIAGridCellAccessibleWrap(aElement, aContext->Document());
        }
        if (aElement->HasAttr(kNameSpaceID_None, nsGkAtoms::scope)) {

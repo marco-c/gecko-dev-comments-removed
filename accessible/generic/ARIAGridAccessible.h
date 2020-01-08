@@ -55,16 +55,6 @@ protected:
   
 
 
-  Accessible* GetRowAt(int32_t aRow);
-
-  
-
-
-  Accessible* GetCellInRowAt(Accessible* aRow, int32_t aColumn);
-
-  
-
-
 
 
 

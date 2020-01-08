@@ -127,6 +127,13 @@
       ];
       testTableIndexes("tableinsane6", idxes);
 
+      // ////////////////////////////////////////////////////////////////////////
+      // Table with a cell that has display: block; style
+      idxes = [
+        [0, 1]
+      ];
+      testTableIndexes("tablewithcelldisplayblock", idxes);
+
       SimpleTest.finish();
     }
 
@@ -403,6 +410,13 @@
         <td>12</td>
       </tr>
     </tbody>
+  </table>
+
+  <table id="tablewithcelldisplayblock">
+    <tr>
+      <th>a</th>
+      <td style="display: block;">b</td>
+    </tr>
   </table>
 
 </body>

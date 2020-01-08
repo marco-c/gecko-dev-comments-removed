@@ -179,6 +179,18 @@ public:
 
 
   virtual Accessible* AsAccessible() = 0;
+
+protected:
+
+  
+
+
+  Accessible* RowAt(int32_t aRow);
+
+  
+
+
+  Accessible* CellInRowAt(Accessible* aRow, int32_t aColumn);
 };
 
 } 

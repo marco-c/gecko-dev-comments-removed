@@ -621,6 +621,14 @@ HTMLTableAccessible::CellAt(uint32_t aRowIdx, uint32_t aColIdx)
 
   
   
+  
+  if (cell && cell->IsTableRow()) {
+    Accessible* row = RowAt(aRowIdx);
+    return CellInRowAt(row, aColIdx);
+  }
+
+  
+  
   return cell == this ? nullptr : cell;
 }
 
@@ -761,6 +769,9 @@ HTMLTableAccessible::UnselectCol(uint32_t aColIdx)
 {
   RemoveRowsOrColumnsFromSelection(aColIdx, TableSelection::Column, false);
 }
+
+
+
 
 nsresult
 HTMLTableAccessible::AddRowOrColumnToSelection(int32_t aIndex, TableSelection aTarget)
