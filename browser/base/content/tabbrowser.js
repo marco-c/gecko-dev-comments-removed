@@ -3793,11 +3793,6 @@ window._gBrowser = {
     this._clearMultiSelectionLocked = true;
   },
 
-  unlockClearMultiSelection() {
-    this._clearMultiSelectionLockedOnce = false;
-    this._clearMultiSelectionLocked = false;
-  },
-
   
 
 
