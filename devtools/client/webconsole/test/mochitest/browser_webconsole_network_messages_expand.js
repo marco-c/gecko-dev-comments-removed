@@ -4,7 +4,7 @@
 "use strict";
 
 const TEST_FILE = "test-network-request.html";
-const TEST_PATH = "http://example.com/browser/devtools/client/webconsole/" +
+const TEST_PATH = "https://example.com/browser/devtools/client/webconsole/" +
                   "test/mochitest/";
 const TEST_URI = TEST_PATH + TEST_FILE;
 
@@ -44,6 +44,10 @@ const tabs = [{
   id: "stack-trace",
   testEmpty: testEmptyStackTrace,
   testContent: testStackTrace,
+}, {
+  id: "security",
+  testEmpty: testEmptySecurity,
+  testContent: testSecurity,
 }];
 
 
@@ -130,12 +134,17 @@ async function openRequestBeforeUpdates(target, hud, tab) {
   urlNode.click();
 
   
-  const currentTab = messageNode.querySelector(`#${tab.id}-tab`);
-  is(currentTab.getAttribute("aria-selected"), "true",
-    "The correct tab is selected");
-
   
-  tab.testEmpty(messageNode);
+  
+  if (tab.id != "security") {
+    
+    const currentTab = messageNode.querySelector(`#${tab.id}-tab`);
+    is(currentTab.getAttribute("aria-selected"), "true",
+      "The correct tab is selected");
+
+    
+    tab.testEmpty(messageNode);
+  }
 
   
   await updates;
@@ -158,6 +167,7 @@ async function testNetworkMessage(toolbox, messageNode) {
   await testResponse(messageNode);
   await testTimings(messageNode);
   await testStackTrace(messageNode);
+  await testSecurity(messageNode);
   await waitForLazyRequests(toolbox);
 }
 
@@ -286,6 +296,24 @@ async function testStackTrace(messageNode) {
   stackTraceTab.click();
   await waitUntil(() => {
     return !!messageNode.querySelector("#stack-trace-panel .frame-link");
+  });
+}
+
+
+
+function testEmptySecurity(messageNode) {
+  const panel = messageNode.querySelector("#security-panel .tab-panel");
+  is(panel.textContent, "", "Security tab is empty");
+}
+
+async function testSecurity(messageNode) {
+  const securityTab = messageNode.querySelector("#security-tab");
+  ok(securityTab, "Security tab is available");
+
+  
+  securityTab.click();
+  await waitUntil(() => {
+    return !!messageNode.querySelector("#security-panel .treeTable .treeRow");
   });
 }
 

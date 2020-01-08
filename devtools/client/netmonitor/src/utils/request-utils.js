@@ -491,9 +491,9 @@ async function updateFormDataSections(props) {
 
 
 
-function processNetworkUpdates(request = {}) {
+function processNetworkUpdates(update, request) {
   const result = {};
-  for (const [key, value] of Object.entries(request)) {
+  for (const [key, value] of Object.entries(update)) {
     if (UPDATE_PROPS.includes(key)) {
       result[key] = value;
 
@@ -501,8 +501,11 @@ function processNetworkUpdates(request = {}) {
         case "securityInfo":
           result.securityState = value.state;
           break;
+        case "securityState":
+          result.securityState = update.securityState || request.securityState;
+          break;
         case "totalTime":
-          result.totalTime = request.totalTime;
+          result.totalTime = update.totalTime;
           break;
         case "requestPostData":
           result.requestHeadersFromUploadStream = value.uploadHeaders;
