@@ -522,6 +522,14 @@ bool ChannelWrapper::Matches(
   }
 
   if (aExtension) {
+    
+    if (!aExtension->PrivateBrowsingAllowed()) {
+      nsCOMPtr<nsILoadInfo> loadInfo = GetLoadInfo();
+      if (loadInfo && loadInfo->GetOriginAttributes().mPrivateBrowsingId > 0) {
+        return false;
+      }
+    }
+
     bool isProxy =
         aOptions.mIsProxy && aExtension->HasPermission(nsGkAtoms::proxy);
     
