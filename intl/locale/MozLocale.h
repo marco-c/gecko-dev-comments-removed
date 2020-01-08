@@ -76,8 +76,8 @@ class Locale {
 
 
 
-    bool IsValid() const {
-      return mIsValid;
+    bool IsWellFormed() const {
+      return mIsWellFormed;
     }
 
     
@@ -129,7 +129,7 @@ class Locale {
 
 
     void Invalidate() {
-      mIsValid = false;
+      mIsWellFormed = false;
     }
 
     
@@ -138,8 +138,9 @@ class Locale {
     bool operator== (const Locale& aOther) {
       
       
-      return IsValid() &&
-             aOther.IsValid() &&
+      
+      return IsWellFormed() &&
+             aOther.IsWellFormed() &&
              mLanguage.Equals(aOther.mLanguage) &&
              mScript.Equals(aOther.mScript) &&
              mRegion.Equals(aOther.mRegion) &&
@@ -153,7 +154,7 @@ class Locale {
     nsAutoCStringN<2> mRegion;
     nsTArray<nsCString> mVariants;
     nsTArray<nsCString> mPrivateUse;
-    bool mIsValid = true;
+    bool mIsWellFormed = true;
 };
 
 } 
