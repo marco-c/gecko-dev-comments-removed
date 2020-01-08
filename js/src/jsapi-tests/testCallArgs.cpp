@@ -2,6 +2,7 @@
 
 
 
+#include "js/CompilationAndEvaluation.h"
 #include "jsapi-tests/tests.h"
 
 static bool

@@ -3,6 +3,7 @@
 
 
 #include "builtin/TestingFunctions.h"
+#include "js/CompilationAndEvaluation.h"
 #include "js/UbiNode.h"
 #include "js/UbiNodeDominatorTree.h"
 #include "js/UbiNodePostOrder.h"

@@ -13,6 +13,7 @@
 #include "jsfriendapi.h"
 #include "jspubtd.h" 
 
+#include "js/CompilationAndEvaluation.h" 
 #include "js/CompileOptions.h" 
 #include "js/RootingAPI.h" 
 #include "js/TypeDecls.h" 

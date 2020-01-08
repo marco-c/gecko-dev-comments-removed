@@ -5,6 +5,7 @@
 
 
 
+#include "js/CompilationAndEvaluation.h"
 #include "js/SourceBufferHolder.h"
 #include "jsapi-tests/tests.h"
 

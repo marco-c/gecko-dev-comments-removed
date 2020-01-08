@@ -3,6 +3,7 @@
 
 #include "jit/JitOptions.h" 
 #include "js/CallArgs.h" 
+#include "js/CompilationAndEvaluation.h" 
 #include "js/CompileOptions.h" 
 #include "js/RootingAPI.h" 
 #include "js/Value.h" 
