@@ -31,7 +31,6 @@
 
 
 
-
 #include <stdio.h>
 
 #include "gtest/gtest.h"
@@ -44,9 +43,7 @@ using ::testing::TestEventListeners;
 using ::testing::TestInfo;
 using ::testing::TestPartResult;
 using ::testing::UnitTest;
-
 namespace {
-
 
 
 class TersePrinter : public EmptyTestEventListener {
@@ -102,7 +99,6 @@ TEST(CustomOutputTest, Fails) {
   EXPECT_EQ(1, 2)
       << "This test fails in order to demonstrate alternative failure messages";
 }
-
 }  
 
 int main(int argc, char **argv) {

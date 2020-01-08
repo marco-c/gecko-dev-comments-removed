@@ -30,8 +30,6 @@
 
 
 
-
-
 #include "gtest/gtest.h"
 
 class PropertyOne : public testing::Test {

@@ -33,11 +33,10 @@
 
 
 
-
 #include "prime_tables.h"
 
 #include "gtest/gtest.h"
-
+namespace {
 #if GTEST_HAS_COMBINE
 
 
@@ -171,3 +170,4 @@ INSTANTIATE_TEST_CASE_P(MeaningfulTestParameters,
 TEST(DummyTest, CombineIsNotSupportedOnThisPlatform) {}
 
 #endif  
+}  

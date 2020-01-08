@@ -30,17 +30,8 @@
 
 
 
-
 #include "gtest/gtest-test-part.h"
-
-
-
-
-
-
-#define GTEST_IMPLEMENTATION_ 1
 #include "src/gtest-internal-inl.h"
-#undef GTEST_IMPLEMENTATION_
 
 namespace testing {
 

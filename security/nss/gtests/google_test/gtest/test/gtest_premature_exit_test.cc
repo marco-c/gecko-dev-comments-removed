@@ -31,7 +31,6 @@
 
 
 
-
 #include <stdio.h>
 
 #include "gtest/gtest.h"
@@ -43,10 +42,6 @@ using ::testing::internal::posix::Stat;
 using ::testing::internal::posix::StatStruct;
 
 namespace {
-
-
-
-const bool kTestPrematureExitFileEnvVarShouldBeSet = false;
 
 class PrematureExitTest : public Test {
  public:
@@ -95,18 +90,6 @@ TEST_F(PrematureExitDeathTest, FileExistsDuringExecutionOfDeathTest) {
         exit(1);
       }
     }, "");
-}
-
-
-
-TEST_F(PrematureExitTest, TestPrematureExitFileEnvVarIsSet) {
-  GTEST_INTENTIONAL_CONST_COND_PUSH_()
-  if (kTestPrematureExitFileEnvVarShouldBeSet) {
-  GTEST_INTENTIONAL_CONST_COND_POP_()
-    const char* const filepath = GetEnv("TEST_PREMATURE_EXIT_FILE");
-    ASSERT_TRUE(filepath != NULL);
-    ASSERT_NE(*filepath, '\0');
-  }
 }
 
 

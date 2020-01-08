@@ -29,15 +29,13 @@
 
 
 
-"""Tests the --help flag of Google C++ Testing Framework.
+"""Tests the --help flag of Google C++ Testing and Mocking Framework.
 
 SYNOPSIS
        gtest_help_test.py --build_dir=BUILD/DIR
          # where BUILD/DIR contains the built gtest_help_test_ file.
        gtest_help_test.py
 """
-
-__author__ = 'wan@google.com (Zhanyong Wan)'
 
 import os
 import re

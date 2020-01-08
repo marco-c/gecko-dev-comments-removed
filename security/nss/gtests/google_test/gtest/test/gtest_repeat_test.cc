@@ -30,19 +30,10 @@
 
 
 
-
 #include <stdlib.h>
 #include <iostream>
 #include "gtest/gtest.h"
-
-
-
-
-
-
-#define GTEST_IMPLEMENTATION_ 1
 #include "src/gtest-internal-inl.h"
-#undef GTEST_IMPLEMENTATION_
 
 namespace testing {
 
@@ -119,7 +110,6 @@ TEST(BarDeathTest, ThreadSafeAndFast) {
   EXPECT_DEATH_IF_SUPPORTED(::testing::internal::posix::Abort(), "");
 }
 
-#if GTEST_HAS_PARAM_TEST
 int g_param_test_count = 0;
 
 const int kNumberOfParamTests = 10;
@@ -128,14 +118,12 @@ class MyParamTest : public testing::TestWithParam<int> {};
 
 TEST_P(MyParamTest, ShouldPass) {
   
-  
   GTEST_CHECK_INT_EQ_(g_param_test_count % kNumberOfParamTests, GetParam());
   g_param_test_count++;
 }
 INSTANTIATE_TEST_CASE_P(MyParamSequence,
                         MyParamTest,
                         testing::Range(0, kNumberOfParamTests));
-#endif  
 
 
 void ResetCounts() {
@@ -144,9 +132,7 @@ void ResetCounts() {
   g_should_fail_count = 0;
   g_should_pass_count = 0;
   g_death_test_count = 0;
-#if GTEST_HAS_PARAM_TEST
   g_param_test_count = 0;
-#endif  
 }
 
 
@@ -156,9 +142,7 @@ void CheckCounts(int expected) {
   GTEST_CHECK_INT_EQ_(expected, g_should_fail_count);
   GTEST_CHECK_INT_EQ_(expected, g_should_pass_count);
   GTEST_CHECK_INT_EQ_(expected, g_death_test_count);
-#if GTEST_HAS_PARAM_TEST
   GTEST_CHECK_INT_EQ_(expected * kNumberOfParamTests, g_param_test_count);
-#endif  
 }
 
 
@@ -201,9 +185,7 @@ void TestRepeatWithFilterForSuccessfulTests(int repeat) {
   GTEST_CHECK_INT_EQ_(0, g_should_fail_count);
   GTEST_CHECK_INT_EQ_(repeat, g_should_pass_count);
   GTEST_CHECK_INT_EQ_(repeat, g_death_test_count);
-#if GTEST_HAS_PARAM_TEST
   GTEST_CHECK_INT_EQ_(repeat * kNumberOfParamTests, g_param_test_count);
-#endif  
 }
 
 
@@ -219,15 +201,14 @@ void TestRepeatWithFilterForFailedTests(int repeat) {
   GTEST_CHECK_INT_EQ_(repeat, g_should_fail_count);
   GTEST_CHECK_INT_EQ_(0, g_should_pass_count);
   GTEST_CHECK_INT_EQ_(0, g_death_test_count);
-#if GTEST_HAS_PARAM_TEST
   GTEST_CHECK_INT_EQ_(0, g_param_test_count);
-#endif  
 }
 
 }  
 
 int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
+
   testing::AddGlobalTestEnvironment(new MyEnvironment);
 
   TestRepeatUnspecified();

@@ -32,15 +32,14 @@
 
 
 
+
+
 #ifndef GTEST_INCLUDE_GTEST_GTEST_PRED_IMPL_H_
 #define GTEST_INCLUDE_GTEST_GTEST_PRED_IMPL_H_
 
+#include "gtest/gtest.h"
 
-#ifndef GTEST_INCLUDE_GTEST_GTEST_H_
-# error Do not include gtest_pred_impl.h directly.  Include gtest.h instead.
-#endif  
-
-
+namespace testing {
 
 
 
@@ -354,5 +353,7 @@ AssertionResult AssertPred5Helper(const char* pred_text,
   GTEST_PRED5_(pred, v1, v2, v3, v4, v5, GTEST_FATAL_FAILURE_)
 
 
+
+}  
 
 #endif  

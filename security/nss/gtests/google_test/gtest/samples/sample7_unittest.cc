@@ -35,12 +35,10 @@
 
 
 
-
 #include "prime_tables.h"
 
 #include "gtest/gtest.h"
-
-#if GTEST_HAS_PARAM_TEST
+namespace {
 
 using ::testing::TestWithParam;
 using ::testing::Values;
@@ -65,9 +63,9 @@ PrimeTable* CreatePreCalculatedPrimeTable() {
 
 
 
-class PrimeTableTest : public TestWithParam<CreatePrimeTableFunc*> {
+class PrimeTableTestSmpl7 : public TestWithParam<CreatePrimeTableFunc*> {
  public:
-  virtual ~PrimeTableTest() { delete table_; }
+  virtual ~PrimeTableTestSmpl7() { delete table_; }
   virtual void SetUp() { table_ = (*GetParam())(); }
   virtual void TearDown() {
     delete table_;
@@ -78,7 +76,7 @@ class PrimeTableTest : public TestWithParam<CreatePrimeTableFunc*> {
   PrimeTable* table_;
 };
 
-TEST_P(PrimeTableTest, ReturnsFalseForNonPrimes) {
+TEST_P(PrimeTableTestSmpl7, ReturnsFalseForNonPrimes) {
   EXPECT_FALSE(table_->IsPrime(-5));
   EXPECT_FALSE(table_->IsPrime(0));
   EXPECT_FALSE(table_->IsPrime(1));
@@ -87,7 +85,7 @@ TEST_P(PrimeTableTest, ReturnsFalseForNonPrimes) {
   EXPECT_FALSE(table_->IsPrime(100));
 }
 
-TEST_P(PrimeTableTest, ReturnsTrueForPrimes) {
+TEST_P(PrimeTableTestSmpl7, ReturnsTrueForPrimes) {
   EXPECT_TRUE(table_->IsPrime(2));
   EXPECT_TRUE(table_->IsPrime(3));
   EXPECT_TRUE(table_->IsPrime(5));
@@ -96,7 +94,7 @@ TEST_P(PrimeTableTest, ReturnsTrueForPrimes) {
   EXPECT_TRUE(table_->IsPrime(131));
 }
 
-TEST_P(PrimeTableTest, CanGetNextPrime) {
+TEST_P(PrimeTableTestSmpl7, CanGetNextPrime) {
   EXPECT_EQ(2, table_->GetNextPrime(0));
   EXPECT_EQ(3, table_->GetNextPrime(2));
   EXPECT_EQ(5, table_->GetNextPrime(3));
@@ -112,19 +110,8 @@ TEST_P(PrimeTableTest, CanGetNextPrime) {
 
 
 
-INSTANTIATE_TEST_CASE_P(
-    OnTheFlyAndPreCalculated,
-    PrimeTableTest,
-    Values(&CreateOnTheFlyPrimeTable, &CreatePreCalculatedPrimeTable<1000>));
+INSTANTIATE_TEST_CASE_P(OnTheFlyAndPreCalculated, PrimeTableTestSmpl7,
+                        Values(&CreateOnTheFlyPrimeTable,
+                               &CreatePreCalculatedPrimeTable<1000>));
 
-#else
-
-
-
-
-
-
-
-TEST(DummyTest, ValueParameterizedTestsAreNotSupportedOnThisPlatform) {}
-
-#endif  
+}  

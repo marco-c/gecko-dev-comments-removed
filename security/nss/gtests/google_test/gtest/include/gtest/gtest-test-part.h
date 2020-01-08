@@ -29,7 +29,6 @@
 
 
 
-
 #ifndef GTEST_INCLUDE_GTEST_GTEST_TEST_PART_H_
 #define GTEST_INCLUDE_GTEST_GTEST_TEST_PART_H_
 
@@ -37,6 +36,9 @@
 #include <vector>
 #include "gtest/internal/gtest-internal.h"
 #include "gtest/internal/gtest-string.h"
+
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
+)
 
 namespace testing {
 
@@ -143,7 +145,7 @@ class GTEST_API_ TestPartResultArray {
 };
 
 
-class TestPartResultReporterInterface {
+class GTEST_API_ TestPartResultReporterInterface {
  public:
   virtual ~TestPartResultReporterInterface() {}
 
@@ -175,5 +177,7 @@ class GTEST_API_ HasNewFatalFailureHelper
 }  
 
 }  
+
+GTEST_DISABLE_MSC_WARNINGS_POP_()  
 
 #endif  

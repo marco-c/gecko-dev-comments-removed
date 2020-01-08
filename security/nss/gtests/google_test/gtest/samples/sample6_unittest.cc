@@ -32,11 +32,10 @@
 
 
 
-
 #include "prime_tables.h"
 
 #include "gtest/gtest.h"
-
+namespace {
 
 
 
@@ -222,3 +221,4 @@ INSTANTIATE_TYPED_TEST_CASE_P(OnTheFlyAndPreCalculated,
                               PrimeTableImplementations);  
 
 #endif  
+}  

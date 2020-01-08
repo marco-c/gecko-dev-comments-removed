@@ -242,7 +242,7 @@ class AbstractRpcServer(object):
     The authentication process works as follows:
      1) We get a username and password from the user
      2) We use ClientLogin to obtain an AUTH token for the user
-        (see http://code.google.com/apis/accounts/AuthForInstalledApps.html).
+        (see https://developers.google.com/identity/protocols/AuthForInstalledApps).
      3) We pass the auth token to /_ah/login on the server to obtain an
         authentication cookie. If login was successful, it tries to redirect
         us to the URL we provided.
@@ -506,7 +506,7 @@ def EncodeMultipartFormData(fields, files):
     (content_type, body) ready for httplib.HTTP instance.
 
   Source:
-    http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/146306
+    https://web.archive.org/web/20160116052001/code.activestate.com/recipes/146306
   """
   BOUNDARY = '-M-A-G-I-C---B-O-U-N-D-A-R-Y-'
   CRLF = '\r\n'

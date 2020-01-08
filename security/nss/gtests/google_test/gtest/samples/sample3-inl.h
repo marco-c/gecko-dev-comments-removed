@@ -29,8 +29,6 @@
 
 
 
-
-
 #ifndef GTEST_SAMPLES_SAMPLE3_INL_H_
 #define GTEST_SAMPLES_SAMPLE3_INL_H_
 

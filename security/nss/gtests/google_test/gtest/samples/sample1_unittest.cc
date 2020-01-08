@@ -40,13 +40,10 @@
 
 
 
-
-
-
 #include <limits.h>
 #include "sample1.h"
 #include "gtest/gtest.h"
-
+namespace {
 
 
 
@@ -139,6 +136,7 @@ TEST(IsPrimeTest, Positive) {
   EXPECT_FALSE(IsPrime(6));
   EXPECT_TRUE(IsPrime(23));
 }
+}  
 
 
 

@@ -30,23 +30,19 @@
 
 
 
-
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "gtest/gtest.h"
-
 using ::testing::EmptyTestEventListener;
 using ::testing::InitGoogleTest;
 using ::testing::Test;
-using ::testing::TestCase;
 using ::testing::TestEventListeners;
 using ::testing::TestInfo;
 using ::testing::TestPartResult;
 using ::testing::UnitTest;
 
 namespace {
-
 
 class Water {
  public:
@@ -106,7 +102,6 @@ TEST(ListenersTest, LeaksWater) {
   Water* water = new Water;
   EXPECT_TRUE(water != NULL);
 }
-
 }  
 
 int main(int argc, char **argv) {

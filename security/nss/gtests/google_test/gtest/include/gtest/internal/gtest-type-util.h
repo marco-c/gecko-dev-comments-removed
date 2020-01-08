@@ -41,6 +41,7 @@
 
 
 
+
 #ifndef GTEST_INCLUDE_GTEST_INTERNAL_GTEST_TYPE_UTIL_H_
 #define GTEST_INCLUDE_GTEST_INTERNAL_GTEST_TYPE_UTIL_H_
 
@@ -60,6 +61,22 @@ namespace internal {
 
 
 
+
+inline std::string CanonicalizeForStdLibVersioning(std::string s) {
+  static const char prefix[] = "std::__";
+  if (s.compare(0, strlen(prefix), prefix) == 0) {
+    std::string::size_type end = s.find("::", strlen(prefix));
+    if (end != s.npos) {
+      
+      s.erase(strlen("std"), end - strlen("std"));
+    }
+  }
+  return s;
+}
+
+
+
+
 template <typename T>
 std::string GetTypeName() {
 # if GTEST_HAS_RTTI
@@ -75,7 +92,7 @@ std::string GetTypeName() {
   char* const readable_name = __cxa_demangle(name, 0, 0, &status);
   const std::string name_str(status == 0 ? readable_name : name);
   free(readable_name);
-  return name_str;
+  return CanonicalizeForStdLibVersioning(name_str);
 #  else
   return name;
 #  endif  

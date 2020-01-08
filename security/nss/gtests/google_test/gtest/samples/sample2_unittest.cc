@@ -37,12 +37,9 @@
 
 
 
-
-
-
 #include "sample2.h"
 #include "gtest/gtest.h"
-
+namespace {
 
 
 
@@ -107,3 +104,4 @@ TEST(MyString, Set) {
   s.Set(NULL);
   EXPECT_STREQ(NULL, s.c_string());
 }
+}  

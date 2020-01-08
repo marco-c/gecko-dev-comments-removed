@@ -33,7 +33,6 @@
 
 
 
-
 #ifndef GTEST_SAMPLES_PRIME_TABLES_H_
 #define GTEST_SAMPLES_PRIME_TABLES_H_
 
@@ -103,11 +102,15 @@ class PreCalculatedPrimeTable : public PrimeTable {
     ::std::fill(is_prime_, is_prime_ + is_prime_size_, true);
     is_prime_[0] = is_prime_[1] = false;
 
-    for (int i = 2; i <= max; i++) {
+    
+    
+    for (int i = 2; i*i <= max; i += i%2+1) {
       if (!is_prime_[i]) continue;
 
       
-      for (int j = 2*i; j <= max; j += i) {
+      
+      
+      for (int j = i*i; j <= max; j += i) {
         is_prime_[j] = false;
       }
     }

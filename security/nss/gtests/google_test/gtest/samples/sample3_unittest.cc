@@ -60,14 +60,11 @@
 
 
 
-
-
-
 #include "sample3-inl.h"
 #include "gtest/gtest.h"
+namespace {
 
-
-class QueueTest : public testing::Test {
+class QueueTestSmpl3 : public testing::Test {
  protected:  
              
 
@@ -120,13 +117,13 @@ class QueueTest : public testing::Test {
 
 
 
-TEST_F(QueueTest, DefaultConstructor) {
+TEST_F(QueueTestSmpl3, DefaultConstructor) {
   
   EXPECT_EQ(0u, q0_.Size());
 }
 
 
-TEST_F(QueueTest, Dequeue) {
+TEST_F(QueueTestSmpl3, Dequeue) {
   int * n = q0_.Dequeue();
   EXPECT_TRUE(n == NULL);
 
@@ -144,8 +141,9 @@ TEST_F(QueueTest, Dequeue) {
 }
 
 
-TEST_F(QueueTest, Map) {
+TEST_F(QueueTestSmpl3, Map) {
   MapTester(&q0_);
   MapTester(&q1_);
   MapTester(&q2_);
 }
+}  

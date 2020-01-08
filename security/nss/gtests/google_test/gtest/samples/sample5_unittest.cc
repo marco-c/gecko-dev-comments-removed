@@ -43,13 +43,12 @@
 
 
 
-
 #include <limits.h>
 #include <time.h>
-#include "sample3-inl.h"
 #include "gtest/gtest.h"
 #include "sample1.h"
-
+#include "sample3-inl.h"
+namespace {
 
 
 
@@ -191,7 +190,7 @@ TEST_F(QueueTest, Dequeue) {
   EXPECT_EQ(1u, q2_.Size());
   delete n;
 }
-
+}  
 
 
 

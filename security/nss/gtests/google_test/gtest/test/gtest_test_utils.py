@@ -27,21 +27,20 @@
 
 
 
+"""Unit test utilities for Google C++ Testing and Mocking Framework."""
 
 
-"""Unit test utilities for Google C++ Testing Framework."""
 
-__author__ = 'wan@google.com (Zhanyong Wan)'
+import os
+import sys
+
+IS_WINDOWS = os.name == 'nt'
+IS_CYGWIN = os.name == 'posix' and 'CYGWIN' in os.uname()[0]
 
 import atexit
-import os
 import shutil
-import sys
 import tempfile
-import unittest
-_test_module = unittest
-
-
+import unittest as _test_module
 
 try:
   import subprocess
@@ -52,9 +51,6 @@ except:
 
 
 GTEST_OUTPUT_VAR_NAME = 'GTEST_OUTPUT'
-
-IS_WINDOWS = os.name == 'nt'
-IS_CYGWIN = os.name == 'posix' and 'CYGWIN' in os.uname()[0]
 
 
 PREMATURE_EXIT_FILE_ENV_VAR = 'TEST_PREMATURE_EXIT_FILE'
@@ -145,8 +141,6 @@ atexit.register(_RemoveTempDir)
 
 
 def GetTempDir():
-  """Returns a directory for temporary files."""
-
   global _temp_dir
   if not _temp_dir:
     _temp_dir = tempfile.mkdtemp()
