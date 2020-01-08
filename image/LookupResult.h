@@ -111,6 +111,9 @@ private:
 
   
   
+  
+  
+  
   gfx::IntSize mSuggestedSize;
 };
 

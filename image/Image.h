@@ -337,6 +337,24 @@ protected:
   bool                          mAnimating:1;   
   bool                          mError:1;       
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   virtual Tuple<ImgDrawResult, gfx::IntSize, RefPtr<gfx::SourceSurface>>
     GetFrameInternal(const gfx::IntSize& aSize,
                      const Maybe<SVGImageContext>& aSVGContext,
