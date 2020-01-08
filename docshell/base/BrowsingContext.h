@@ -10,6 +10,7 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/dom/BindingDeclarations.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIDocShell.h"
@@ -22,12 +23,20 @@ class nsOuterWindowProxy;
 
 namespace mozilla {
 
+class ErrorResult;
 class LogModule;
+class OOMReporter;
 
 namespace dom {
 
 class BrowsingContext;
 class ContentParent;
+template <typename>
+struct Nullable;
+template <typename T>
+class Sequence;
+struct WindowPostMessageOptions;
+class WindowProxyHolder;
 
 
 class BrowsingContextGroup : public nsTArray<WeakPtr<BrowsingContext>> {
@@ -109,7 +118,7 @@ class BrowsingContext : public nsWrapperCache,
   
   
   void SetName(const nsAString& aName) { mName = aName; }
-  void GetName(nsAString& aName) { aName = mName; }
+  const nsString& Name() const { return mName; }
   bool NameEquals(const nsAString& aName) { return mName.Equals(aName); }
 
   bool IsContent() const { return mType == Type::Content; }
@@ -120,7 +129,7 @@ class BrowsingContext : public nsWrapperCache,
 
   void GetChildren(nsTArray<RefPtr<BrowsingContext>>& aChildren);
 
-  BrowsingContext* GetOpener() { return mOpener; }
+  BrowsingContext* GetOpener() const { return mOpener; }
 
   void SetOpener(BrowsingContext* aOpener);
 
@@ -143,6 +152,34 @@ class BrowsingContext : public nsWrapperCache,
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(BrowsingContext)
 
   using Children = nsTArray<RefPtr<BrowsingContext>>;
+  const Children& GetChildren() { return mChildren; }
+
+  
+  BrowsingContext* Window() { return Self(); }
+  BrowsingContext* Self() { return this; }
+  void Location(JSContext* aCx, JS::MutableHandle<JSObject*> aLocation,
+                OOMReporter& aError);
+  void Close(CallerType aCallerType, ErrorResult& aError);
+  bool GetClosed(ErrorResult&) { return mClosed; }
+  void Focus(ErrorResult& aError);
+  void Blur(ErrorResult& aError);
+  BrowsingContext* GetFrames(ErrorResult& aError) { return Self(); }
+  int32_t Length() const { return mChildren.Length(); }
+  Nullable<WindowProxyHolder> GetTop(ErrorResult& aError);
+  void GetOpener(JSContext* aCx, JS::MutableHandle<JS::Value> aOpener,
+                 ErrorResult& aError) const;
+  Nullable<WindowProxyHolder> GetParent(ErrorResult& aError) const;
+  void PostMessageMoz(JSContext* aCx, JS::Handle<JS::Value> aMessage,
+                      const nsAString& aTargetOrigin,
+                      const Sequence<JSObject*>& aTransfer,
+                      nsIPrincipal& aSubjectPrincipal, ErrorResult& aError);
+  void PostMessageMoz(JSContext* aCx, JS::Handle<JS::Value> aMessage,
+                      const WindowPostMessageOptions& aOptions,
+                      nsIPrincipal& aSubjectPrincipal, ErrorResult& aError);
+
+  already_AddRefed<BrowsingContext> FindChildWithName(const nsAString& aName);
+
+  JSObject* WrapObject(JSContext* aCx);
 
  protected:
   virtual ~BrowsingContext();
@@ -184,7 +221,20 @@ class BrowsingContext : public nsWrapperCache,
   
   
   JS::Heap<JSObject*> mWindowProxy;
+  bool mClosed;
 };
+
+
+
+
+
+
+
+
+
+
+extern bool GetRemoteOuterWindowProxy(JSContext* aCx, BrowsingContext* aContext,
+                                      JS::MutableHandle<JSObject*> aRetVal);
 
 }  
 }  

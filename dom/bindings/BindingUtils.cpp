@@ -2808,6 +2808,18 @@ namespace binding_detail {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 struct NormalThisPolicy {
   
   static MOZ_ALWAYS_INLINE bool HasValidThisValue(const JS::CallArgs& aArgs) {
@@ -2828,6 +2840,14 @@ struct NormalThisPolicy {
 
   static MOZ_ALWAYS_INLINE JSObject* MaybeUnwrapThisObject(JSObject* aObj) {
     return aObj;
+  }
+
+  static MOZ_ALWAYS_INLINE nsresult
+  UnwrapThisObject(JS::MutableHandle<JSObject*> aObj, void*& aSelf,
+                   prototypes::ID aProtoID, uint32_t aProtoDepth) {
+    binding_detail::MutableObjectHandleWrapper wrapper(aObj);
+    return binding_detail::UnwrapObjectInternal<void, true>(
+        wrapper, aSelf, aProtoID, aProtoDepth);
   }
 
   static bool HandleInvalidThis(JSContext* aCx, JS::CallArgs& aArgs,
@@ -2892,6 +2912,45 @@ struct CrossOriginThisPolicy : public MaybeGlobalThisPolicy {
   }
 
   
+  
+  
+  
+  static MOZ_ALWAYS_INLINE nsresult
+  UnwrapThisObject(JS::MutableHandle<JSObject*> aObj, void*& aSelf,
+                   prototypes::ID aProtoID, uint32_t aProtoDepth) {
+    binding_detail::MutableObjectHandleWrapper wrapper(aObj);
+    
+    
+    
+    nsresult rv = binding_detail::UnwrapObjectInternal<void, false>(
+        wrapper, aSelf, aProtoID, aProtoDepth);
+    if (NS_SUCCEEDED(rv)) {
+      return rv;
+    }
+
+    if (js::IsWrapper(wrapper)) {
+      JSObject* unwrappedObj =
+          js::CheckedUnwrap(wrapper,  false);
+      if (!unwrappedObj) {
+        return NS_ERROR_XPC_SECURITY_MANAGER_VETO;
+      }
+
+      
+      
+      wrapper = unwrappedObj;
+
+      return binding_detail::UnwrapObjectInternal<void, false>(
+          wrapper, aSelf, aProtoID, aProtoDepth);
+    }
+
+    if (!IsRemoteObjectProxy(wrapper, aProtoID)) {
+      return NS_ERROR_XPC_BAD_CONVERT_JS;
+    }
+    aSelf = RemoteObjectProxyBase::GetNative(wrapper);
+    return NS_OK;
+  }
+
+  
 };
 
 
@@ -2946,9 +3005,8 @@ bool GenericGetter(JSContext* cx, unsigned argc, JS::Value* vp) {
   JS::Rooted<JSObject*> rootSelf(cx, ThisPolicy::MaybeUnwrapThisObject(obj));
   void* self;
   {
-    binding_detail::MutableObjectHandleWrapper wrapper(&rootSelf);
-    nsresult rv = binding_detail::UnwrapObjectInternal<void, true>(
-        wrapper, self, protoID, info->depth);
+    nsresult rv =
+        ThisPolicy::UnwrapThisObject(&rootSelf, self, protoID, info->depth);
     if (NS_FAILED(rv)) {
       bool ok = ThisPolicy::HandleInvalidThis(
           cx, args, rv == NS_ERROR_XPC_SECURITY_MANAGER_VETO, protoID);
@@ -3003,9 +3061,8 @@ bool GenericSetter(JSContext* cx, unsigned argc, JS::Value* vp) {
   JS::Rooted<JSObject*> rootSelf(cx, ThisPolicy::MaybeUnwrapThisObject(obj));
   void* self;
   {
-    binding_detail::MutableObjectHandleWrapper wrapper(&rootSelf);
-    nsresult rv = binding_detail::UnwrapObjectInternal<void, true>(
-        wrapper, self, protoID, info->depth);
+    nsresult rv =
+        ThisPolicy::UnwrapThisObject(&rootSelf, self, protoID, info->depth);
     if (NS_FAILED(rv)) {
       return ThisPolicy::HandleInvalidThis(
           cx, args, rv == NS_ERROR_XPC_SECURITY_MANAGER_VETO, protoID);
@@ -3053,9 +3110,8 @@ bool GenericMethod(JSContext* cx, unsigned argc, JS::Value* vp) {
   JS::Rooted<JSObject*> rootSelf(cx, ThisPolicy::MaybeUnwrapThisObject(obj));
   void* self;
   {
-    binding_detail::MutableObjectHandleWrapper wrapper(&rootSelf);
-    nsresult rv = binding_detail::UnwrapObjectInternal<void, true>(
-        wrapper, self, protoID, info->depth);
+    nsresult rv =
+        ThisPolicy::UnwrapThisObject(&rootSelf, self, protoID, info->depth);
     if (NS_FAILED(rv)) {
       bool ok = ThisPolicy::HandleInvalidThis(
           cx, args, rv == NS_ERROR_XPC_SECURITY_MANAGER_VETO, protoID);
@@ -3230,6 +3286,12 @@ nsresult UnwrapArgImpl(JSContext* cx, JS::Handle<JSObject*> src,
 
 nsresult UnwrapWindowProxyArg(JSContext* cx, JS::Handle<JSObject*> src,
                               WindowProxyHolder& ppArg) {
+  if (IsRemoteObjectProxy(src, prototypes::id::Window)) {
+    ppArg =
+        static_cast<BrowsingContext*>(RemoteObjectProxyBase::GetNative(src));
+    return NS_OK;
+  }
+
   nsCOMPtr<nsPIDOMWindowInner> inner;
   nsresult rv = UnwrapArg<nsPIDOMWindowInner>(cx, src, getter_AddRefs(inner));
   NS_ENSURE_SUCCESS(rv, rv);
