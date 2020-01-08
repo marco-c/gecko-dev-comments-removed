@@ -97,8 +97,10 @@ add_task(async function test_plainQuery() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
-  let resultMethodHist = getAndClearHistogram("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
-  let search_hist = getAndClearKeyedHistogram("SEARCH_COUNTS");
+  let resultMethodHist =
+    TelemetryTestUtils.getAndClearHistogram("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
+  let search_hist =
+    TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
 
@@ -109,18 +111,21 @@ add_task(async function test_plainQuery() {
   await p;
 
   
-  const scalars = getParentProcessScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, true, false);
-  checkKeyedScalar(scalars, SCALAR_SEARCHBAR, "search_enter", 1);
+  const scalars = TelemetryTestUtils.getParentProcessScalars(
+    Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, true, false);
+  TelemetryTestUtils.assertKeyedScalar(scalars, SCALAR_SEARCHBAR, "search_enter", 1);
   Assert.equal(Object.keys(scalars[SCALAR_SEARCHBAR]).length, 1,
                "This search must only increment one entry in the scalar.");
 
   
-  checkKeyedHistogram(search_hist, "other-MozSearch.searchbar", 1);
+  TelemetryTestUtils.assertKeyedHistogramSum(search_hist, "other-MozSearch.searchbar", 1);
 
   
   let events = Services.telemetry.snapshotEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
   events = (events.parent || []).filter(e => e[1] == "navigation" && e[2] == "search");
-  checkEvents(events, [["navigation", "search", "searchbar", "enter", {engine: "other-MozSearch"}]]);
+  TelemetryTestUtils.assertEvents(events, [
+    ["navigation", "search", "searchbar", "enter", {engine: "other-MozSearch"}],
+  ]);
 
   
   let resultMethods = resultMethodHist.snapshot();
@@ -137,8 +142,10 @@ add_task(async function test_oneOff_enter() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
-  let resultMethodHist = getAndClearHistogram("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
-  let search_hist = getAndClearKeyedHistogram("SEARCH_COUNTS");
+  let resultMethodHist =
+    TelemetryTestUtils.getAndClearHistogram("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
+  let search_hist =
+    TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
 
@@ -152,18 +159,21 @@ add_task(async function test_oneOff_enter() {
   await p;
 
   
-  const scalars = getParentProcessScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, true, false);
-  checkKeyedScalar(scalars, SCALAR_SEARCHBAR, "search_oneoff", 1);
+  const scalars = TelemetryTestUtils.getParentProcessScalars(
+    Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, true, false);
+  TelemetryTestUtils.assertKeyedScalar(scalars, SCALAR_SEARCHBAR, "search_oneoff", 1);
   Assert.equal(Object.keys(scalars[SCALAR_SEARCHBAR]).length, 1,
                "This search must only increment one entry in the scalar.");
 
   
-  checkKeyedHistogram(search_hist, "other-MozSearch2.searchbar", 1);
+  TelemetryTestUtils.assertKeyedHistogramSum(search_hist, "other-MozSearch2.searchbar", 1);
 
   
   let events = Services.telemetry.snapshotEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
   events = (events.parent || []).filter(e => e[1] == "navigation" && e[2] == "search");
-  checkEvents(events, [["navigation", "search", "searchbar", "oneoff", {engine: "other-MozSearch2"}]]);
+  TelemetryTestUtils.assertEvents(events, [
+    ["navigation", "search", "searchbar", "oneoff", {engine: "other-MozSearch2"}],
+  ]);
 
   
   let resultMethods = resultMethodHist.snapshot();
@@ -180,7 +190,8 @@ add_task(async function test_oneOff_enter() {
 add_task(async function test_oneOff_enterSelection() {
   
   Services.telemetry.clearScalars();
-  let resultMethodHist = getAndClearHistogram("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
+  let resultMethodHist =
+    TelemetryTestUtils.getAndClearHistogram("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
 
   
   
@@ -223,7 +234,8 @@ add_task(async function test_oneOff_enterSelection() {
 add_task(async function test_oneOff_click() {
   
   Services.telemetry.clearScalars();
-  let resultMethodHist = getAndClearHistogram("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
+  let resultMethodHist =
+    TelemetryTestUtils.getAndClearHistogram("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
 
@@ -247,8 +259,10 @@ add_task(async function test_suggestion_click() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
-  let resultMethodHist = getAndClearHistogram("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
-  let search_hist = getAndClearKeyedHistogram("SEARCH_COUNTS");
+  let resultMethodHist =
+    TelemetryTestUtils.getAndClearHistogram("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
+  let search_hist =
+    TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
 
   
   
@@ -273,19 +287,22 @@ add_task(async function test_suggestion_click() {
   await p;
 
   
-  const scalars = getParentProcessScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, true, false);
-  checkKeyedScalar(scalars, SCALAR_SEARCHBAR, "search_suggestion", 1);
+  const scalars = TelemetryTestUtils.getParentProcessScalars(
+    Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, true, false);
+  TelemetryTestUtils.assertKeyedScalar(scalars, SCALAR_SEARCHBAR, "search_suggestion", 1);
   Assert.equal(Object.keys(scalars[SCALAR_SEARCHBAR]).length, 1,
                "This search must only increment one entry in the scalar.");
 
   
   let searchEngineId = "other-" + suggestionEngine.name;
-  checkKeyedHistogram(search_hist, searchEngineId + ".searchbar", 1);
+  TelemetryTestUtils.assertKeyedHistogramSum(search_hist, searchEngineId + ".searchbar", 1);
 
   
   let events = Services.telemetry.snapshotEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
   events = (events.parent || []).filter(e => e[1] == "navigation" && e[2] == "search");
-  checkEvents(events, [["navigation", "search", "searchbar", "suggestion", {engine: searchEngineId}]]);
+  TelemetryTestUtils.assertEvents(events, [
+    ["navigation", "search", "searchbar", "suggestion", {engine: searchEngineId}],
+  ]);
 
   
   let resultMethods = resultMethodHist.snapshot();
@@ -305,7 +322,8 @@ add_task(async function test_suggestion_click() {
 add_task(async function test_suggestion_enterSelection() {
   
   Services.telemetry.clearScalars();
-  let resultMethodHist = getAndClearHistogram("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
+  let resultMethodHist =
+    TelemetryTestUtils.getAndClearHistogram("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
 
   
   

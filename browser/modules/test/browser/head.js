@@ -1,6 +1,8 @@
 
 ChromeUtils.defineModuleGetter(this, "PlacesTestUtils",
                                "resource://testing-common/PlacesTestUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "TelemetryTestUtils",
+                               "resource://testing-common/TelemetryTestUtils.jsm");
 
 const SINGLE_TRY_TIMEOUT = 100;
 const NUMBER_OF_TRIES = 30;
@@ -45,49 +47,6 @@ function waitForCondition(condition, nextTest, errorMsg) {
 
 
 
-
-
-
-function checkKeyedScalar(scalars, scalarName, key, expectedValue) {
-  Assert.ok(scalarName in scalars,
-            scalarName + " must be recorded.");
-  Assert.ok(key in scalars[scalarName],
-            scalarName + " must contain the '" + key + "' key.");
-  Assert.equal(scalars[scalarName][key], expectedValue,
-            scalarName + "['" + key + "'] must contain the expected value");
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-let checkScalar = (scalars, scalarName, value, msg) => {
-  if (value > 0) {
-    is(scalars[scalarName], value, msg);
-    return;
-  }
-  ok(!(scalarName in scalars), scalarName + " must not be reported.");
-};
-
-
-
-
-
-
-
-
-
-
-
 let typeInSearchField = async function(browser, text, fieldName) {
   await ContentTask.spawn(browser, [fieldName, text], async function([contentFieldName, contentText]) {
     
@@ -96,74 +55,6 @@ let typeInSearchField = async function(browser, text, fieldName) {
     searchInput.value = contentText;
   });
 };
-
-
-
-
-
-
-
-function getAndClearHistogram(name) {
-  let histogram = Services.telemetry.getHistogramById(name);
-  histogram.clear();
-  return histogram;
-}
-
-
-
-
-
-
-
-function getAndClearKeyedHistogram(name) {
-  let histogram = Services.telemetry.getKeyedHistogramById(name);
-  histogram.clear();
-  return histogram;
-}
-
-
-
-
-
-function checkKeyedHistogram(h, key, expectedValue) {
-  const snapshot = h.snapshot();
-  if (expectedValue === undefined) {
-    Assert.ok(!(key in snapshot), `The histogram must not contain ${key}.`);
-    return;
-  }
-  Assert.ok(key in snapshot, `The histogram must contain ${key}.`);
-  Assert.equal(snapshot[key].sum, expectedValue, `The key ${key} must contain ${expectedValue}.`);
-}
-
-
-
-
-function getParentProcessScalars(aChannel, aKeyed = false, aClear = false) {
-  const extended = aChannel == Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN;
-  const currentExtended = Services.telemetry.canRecordExtended;
-  Services.telemetry.canRecordExtended = extended;
-  const scalars = aKeyed ?
-    Services.telemetry.getSnapshotForKeyedScalars("main", aClear).parent :
-    Services.telemetry.getSnapshotForScalars("main", aClear).parent;
-  Services.telemetry.canRecordExtended = currentExtended;
-  return scalars || {};
-}
-
-function checkEvents(events, expectedEvents) {
-  if (!Services.telemetry.canRecordExtended) {
-    
-    return;
-  }
-
-  Assert.equal(events.length, expectedEvents.length, "Should have matching amount of events.");
-
-  
-  events = events.map(e => e.slice(1));
-
-  for (let i = 0; i < events.length; ++i) {
-    Assert.deepEqual(events[i], expectedEvents[i], "Events should match.");
-  }
-}
 
 
 

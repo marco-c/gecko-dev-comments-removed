@@ -49,7 +49,7 @@ add_task(async function test_abouthome_activitystream_simpleQuery() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
-  let search_hist = getAndClearKeyedHistogram("SEARCH_COUNTS");
+  let search_hist = TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
 
@@ -69,18 +69,21 @@ add_task(async function test_abouthome_activitystream_simpleQuery() {
   await p;
 
   
-  const scalars = getParentProcessScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, true, false);
-  checkKeyedScalar(scalars, SCALAR_ABOUT_HOME, "search_enter", 1);
+  const scalars = TelemetryTestUtils.getParentProcessScalars(
+    Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, true, false);
+  TelemetryTestUtils.assertKeyedScalar(scalars, SCALAR_ABOUT_HOME, "search_enter", 1);
   Assert.equal(Object.keys(scalars[SCALAR_ABOUT_HOME]).length, 1,
     "This search must only increment one entry in the scalar.");
 
   
-  checkKeyedHistogram(search_hist, "other-MozSearch.abouthome", 1);
+  TelemetryTestUtils.assertKeyedHistogramSum(search_hist, "other-MozSearch.abouthome", 1);
 
   
   let events = Services.telemetry.snapshotEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
   events = (events.parent || []).filter(e => e[1] == "navigation" && e[2] == "search");
-  checkEvents(events, [["navigation", "search", "about_home", "enter", {engine: "other-MozSearch"}]]);
+  TelemetryTestUtils.assertEvents(events, [
+    ["navigation", "search", "about_home", "enter", {engine: "other-MozSearch"}],
+  ]);
 
   BrowserTestUtils.removeTab(tab);
 });
