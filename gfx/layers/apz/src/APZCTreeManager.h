@@ -729,8 +729,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
       const HitTestingTreeNode* aNode) const;
 
   
-  already_AddRefed<GeckoContentController> GetContentController(
-      LayersId aLayersId) const;
+  static already_AddRefed<GeckoContentController> GetContentController(
+      LayersId aLayersId);
 
  protected:
   
