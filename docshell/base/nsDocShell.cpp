@@ -58,6 +58,7 @@
 #include "mozilla/dom/TabGroup.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/ChildSHistory.h"
+#include "mozilla/dom/LoadURIOptionsBinding.h"
 
 #include "mozilla/net/ReferrerPolicy.h"
 
@@ -3802,33 +3803,18 @@ nsDocShell::GotoIndex(int32_t aIndex) {
   return rootSH->LegacySHistory()->GotoIndex(aIndex);
 }
 
-NS_IMETHODIMP
-nsDocShell::LoadURI(const nsAString& aURI, uint32_t aLoadFlags,
-                    nsIURI* aReferringURI, nsIInputStream* aPostStream,
-                    nsIInputStream* aHeaderStream,
-                    nsIPrincipal* aTriggeringPrincipal) {
-  if (mUseStrictSecurityChecks && !aTriggeringPrincipal) {
-    return NS_ERROR_FAILURE;
-  }
-  return LoadURIWithOptions(aURI, aLoadFlags, aReferringURI, RP_Unset,
-                            aPostStream, aHeaderStream, nullptr,
-                            aTriggeringPrincipal);
-}
+nsresult nsDocShell::LoadURI(const nsAString& aURI,
+                             const LoadURIOptions& aLoadURIOptions) {
+  uint32_t loadFlags = aLoadURIOptions.mLoadFlags;
 
-NS_IMETHODIMP
-nsDocShell::LoadURIWithOptions(const nsAString& aURI, uint32_t aLoadFlags,
-                               nsIURI* aReferringURI, uint32_t aReferrerPolicy,
-                               nsIInputStream* aPostStream,
-                               nsIInputStream* aHeaderStream, nsIURI* aBaseURI,
-                               nsIPrincipal* aTriggeringPrincipal) {
-  NS_ASSERTION((aLoadFlags & INTERNAL_LOAD_FLAGS_LOADURI_SETUP_FLAGS) == 0,
+  NS_ASSERTION((loadFlags & INTERNAL_LOAD_FLAGS_LOADURI_SETUP_FLAGS) == 0,
                "Unexpected flags");
 
   if (!IsNavigationAllowed()) {
     return NS_OK;  
   }
   nsCOMPtr<nsIURI> uri;
-  nsCOMPtr<nsIInputStream> postStream(aPostStream);
+  nsCOMPtr<nsIInputStream> postData(aLoadURIOptions.mPostData);
   nsresult rv = NS_OK;
 
   
@@ -3842,13 +3828,13 @@ nsDocShell::LoadURIWithOptions(const nsAString& aURI, uint32_t aLoadFlags,
   uriString.StripCRLF();
   NS_ENSURE_TRUE(!uriString.IsEmpty(), NS_ERROR_FAILURE);
 
-  if (mUseStrictSecurityChecks && !aTriggeringPrincipal) {
+  if (mUseStrictSecurityChecks && !aLoadURIOptions.mTriggeringPrincipal) {
     return NS_ERROR_FAILURE;
   }
 
   rv = NS_NewURI(getter_AddRefs(uri), uriString);
   if (uri) {
-    aLoadFlags &= ~LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
+    loadFlags &= ~LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
   }
 
   nsCOMPtr<nsIURIFixupInfo> fixupInfo;
@@ -3858,10 +3844,10 @@ nsDocShell::LoadURIWithOptions(const nsAString& aURI, uint32_t aLoadFlags,
     
     
     uint32_t fixupFlags = 0;
-    if (aLoadFlags & LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP) {
+    if (loadFlags & LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP) {
       fixupFlags |= nsIURIFixup::FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
     }
-    if (aLoadFlags & LOAD_FLAGS_FIXUP_SCHEME_TYPOS) {
+    if (loadFlags & LOAD_FLAGS_FIXUP_SCHEME_TYPOS) {
       fixupFlags |= nsIURIFixup::FIXUP_FLAG_FIX_SCHEME_TYPOS;
     }
     nsCOMPtr<nsIInputStream> fixupStream;
@@ -3878,10 +3864,10 @@ nsDocShell::LoadURIWithOptions(const nsAString& aURI, uint32_t aLoadFlags,
       
       
       
-      postStream = fixupStream;
+      postData = fixupStream;
     }
 
-    if (aLoadFlags & LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP) {
+    if (loadFlags & LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP) {
       nsCOMPtr<nsIObserverService> serv = services::GetObserverService();
       if (serv) {
         serv->NotifyObservers(fixupInfo, "keyword-uri-fixup",
@@ -3894,7 +3880,7 @@ nsDocShell::LoadURIWithOptions(const nsAString& aURI, uint32_t aLoadFlags,
 
   if (NS_ERROR_MALFORMED_URI == rv) {
     if (DisplayLoadError(rv, uri, PromiseFlatString(aURI).get(), nullptr) &&
-        (aLoadFlags & LOAD_FLAGS_ERROR_LOAD_CHANGES_RV) != 0) {
+        (loadFlags & LOAD_FLAGS_ERROR_LOAD_CHANGES_RV) != 0) {
       return NS_ERROR_LOAD_SHOWED_ERRORPAGE;
     }
   }
@@ -3904,21 +3890,21 @@ nsDocShell::LoadURIWithOptions(const nsAString& aURI, uint32_t aLoadFlags,
   }
 
   PopupBlocker::PopupControlState popupState;
-  if (aLoadFlags & LOAD_FLAGS_ALLOW_POPUPS) {
+  if (loadFlags & LOAD_FLAGS_ALLOW_POPUPS) {
     popupState = PopupBlocker::openAllowed;
-    aLoadFlags &= ~LOAD_FLAGS_ALLOW_POPUPS;
+    loadFlags &= ~LOAD_FLAGS_ALLOW_POPUPS;
   } else {
     popupState = PopupBlocker::openOverridden;
   }
   nsAutoPopupStatePusher statePusher(popupState);
 
-  bool forceAllowDataURI = aLoadFlags & LOAD_FLAGS_FORCE_ALLOW_DATA_URI;
+  bool forceAllowDataURI = loadFlags & LOAD_FLAGS_FORCE_ALLOW_DATA_URI;
 
   
   
   
-  uint32_t extraFlags = (aLoadFlags & EXTRA_LOAD_FLAGS);
-  aLoadFlags &= ~EXTRA_LOAD_FLAGS;
+  uint32_t extraFlags = (loadFlags & EXTRA_LOAD_FLAGS);
+  loadFlags &= ~EXTRA_LOAD_FLAGS;
 
   RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(uri);
 
@@ -3926,21 +3912,22 @@ nsDocShell::LoadURIWithOptions(const nsAString& aURI, uint32_t aLoadFlags,
 
 
 
-  if (aLoadFlags & LOAD_FLAGS_ALLOW_MIXED_CONTENT) {
+  if (loadFlags & LOAD_FLAGS_ALLOW_MIXED_CONTENT) {
     loadState->SetLoadType(
-        MAKE_LOAD_TYPE(LOAD_NORMAL_ALLOW_MIXED_CONTENT, aLoadFlags));
+        MAKE_LOAD_TYPE(LOAD_NORMAL_ALLOW_MIXED_CONTENT, loadFlags));
   } else {
-    loadState->SetLoadType(MAKE_LOAD_TYPE(LOAD_NORMAL, aLoadFlags));
+    loadState->SetLoadType(MAKE_LOAD_TYPE(LOAD_NORMAL, loadFlags));
   }
 
   loadState->SetLoadFlags(extraFlags);
   loadState->SetFirstParty(true);
-  loadState->SetPostDataStream(postStream);
-  loadState->SetReferrer(aReferringURI);
-  loadState->SetReferrerPolicy((mozilla::net::ReferrerPolicy)aReferrerPolicy);
-  loadState->SetHeadersStream(aHeaderStream);
-  loadState->SetBaseURI(aBaseURI);
-  loadState->SetTriggeringPrincipal(aTriggeringPrincipal);
+  loadState->SetPostDataStream(postData);
+  loadState->SetReferrer(aLoadURIOptions.mReferrerURI);
+  loadState->SetReferrerPolicy(
+      (mozilla::net::ReferrerPolicy)aLoadURIOptions.mReferrerPolicy);
+  loadState->SetHeadersStream(aLoadURIOptions.mHeaders);
+  loadState->SetBaseURI(aLoadURIOptions.mBaseURI);
+  loadState->SetTriggeringPrincipal(aLoadURIOptions.mTriggeringPrincipal);
   loadState->SetForceAllowDataURI(forceAllowDataURI);
 
   if (fixupInfo) {
@@ -3957,6 +3944,18 @@ nsDocShell::LoadURIWithOptions(const nsAString& aURI, uint32_t aLoadFlags,
   mOriginalUriString = uriString;
 
   return rv;
+}
+
+NS_IMETHODIMP
+nsDocShell::LoadURIFromScript(const nsAString& aURI,
+                              JS::Handle<JS::Value> aLoadURIOptions,
+                              JSContext* aCx) {
+  
+  LoadURIOptions loadURIOptions;
+  if (!loadURIOptions.Init(aCx, aLoadURIOptions)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  return LoadURI(aURI, loadURIOptions);
 }
 
 NS_IMETHODIMP
@@ -6910,12 +6909,11 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
           MOZ_ASSERT(loadInfo, "loadInfo is required on all channels");
           nsCOMPtr<nsIPrincipal> triggeringPrincipal =
               loadInfo->TriggeringPrincipal();
-          return LoadURI(newSpecW,              
-                         LOAD_FLAGS_NONE,       
-                         nullptr,               
-                         newPostData,           
-                         nullptr,               
-                         triggeringPrincipal);  
+
+          LoadURIOptions loadURIOptions;
+          loadURIOptions.mTriggeringPrincipal = triggeringPrincipal;
+          loadURIOptions.mPostData = newPostData;
+          return LoadURI(newSpecW, loadURIOptions);
         }
       }
     }

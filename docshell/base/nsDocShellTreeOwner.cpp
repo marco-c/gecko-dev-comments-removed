@@ -56,6 +56,7 @@
 #include "mozilla/dom/Event.h"     
 #include "mozilla/dom/File.h"      
 #include "mozilla/dom/FileList.h"  
+#include "mozilla/dom/LoadURIOptionsBinding.h"
 #include "mozilla/TextEvents.h"
 
 using namespace mozilla;
@@ -896,8 +897,9 @@ nsDocShellTreeOwner::HandleEvent(Event* aEvent) {
                          "nsDocShellTreeOwner::HandleEvent: Need a valid "
                          "triggeringPrincipal");
 #endif
-              webnav->LoadURI(url, 0, nullptr, nullptr, nullptr,
-                              triggeringPrincipal);
+              LoadURIOptions loadURIOptions;
+              loadURIOptions.mTriggeringPrincipal = triggeringPrincipal;
+              webnav->LoadURI(url, loadURIOptions);
             }
           }
 
