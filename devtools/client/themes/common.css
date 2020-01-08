@@ -38,6 +38,22 @@
   --monospace-font-family: monospace;
 }
 
+
+
+
+:root.theme-dark {
+  scrollbar-color: var(--theme-body-color-inactive) var(--theme-splitter-color);
+}
+
+
+
+
+
+
+:root[platform="linux"].theme-light {
+  scrollbar-color: var(--theme-body-color-inactive) var(--grey-20);
+}
+
 .devtools-monospace {
   font-family: var(--monospace-font-family);
   font-size: var(--theme-code-font-size);

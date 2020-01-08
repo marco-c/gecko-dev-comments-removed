@@ -27,13 +27,6 @@ body {
   color: var(--theme-selection-color);
 }
 
-:root[platform="win"],
-:root[platform="mac"] {
-  
-  
-  scrollbar-color: var(--theme-body-color-inactive) var(--theme-splitter-color);
-}
-
 .theme-selected,
 .CodeMirror-hint-active {
   background-color: var(--theme-selection-background);
