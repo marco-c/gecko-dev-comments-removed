@@ -600,7 +600,7 @@ class MochitestArguments(ArgumentContainer):
     defaults = {
         
         
-        'ignoreMissingLeaks': ["geckomediaplugin"],
+        'ignoreMissingLeaks': ["gmplugin"],
         'extensionsToExclude': ['specialpowers'],
         
         'webServer': '127.0.0.1',
@@ -825,7 +825,7 @@ class MochitestArguments(ArgumentContainer):
             "default": options.defaultLeakThreshold,
             "tab": options.defaultLeakThreshold,
             
-            "geckomediaplugin": 20000,
+            "gmplugin": 20000,
             "rdd": 400,
         }
 
