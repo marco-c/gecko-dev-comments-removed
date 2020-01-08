@@ -1919,10 +1919,7 @@ CustomizeMode.prototype = {
         
         this.visiblePalette.insertBefore(draggedItem, aTargetNode.parentNode);
       }
-      if (aOriginArea.id !== kPaletteId) {
-        
-        this._onDragEnd(aEvent);
-      }
+      this._onDragEnd(aEvent);
       return;
     }
 
@@ -2024,6 +2021,8 @@ CustomizeMode.prototype = {
   },
 
   
+
+
 
 
   _onDragEnd(aEvent) {
