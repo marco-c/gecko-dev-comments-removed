@@ -97,7 +97,7 @@ const AboutDebugging = {
     
     
     removeNetworkLocationsObserver(this.onNetworkLocationsUpdated);
-    await this.actions.disconnectRuntime();
+    await this.actions.unwatchRuntime();
     setDebugTargetCollapsibilities(this.store.getState().ui.debugTargetCollapsibilities);
     unmountComponentAtNode(this.mount);
   },
