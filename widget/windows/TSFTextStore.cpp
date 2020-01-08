@@ -4470,7 +4470,8 @@ TSFTextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd,
        "mContentForTSF={ MinOffsetOfLayoutChanged()=%u, "
        "LatestCompositionStartOffset()=%d, LatestCompositionEndOffset()=%d }, "
        "mComposition= { IsComposing()=%s, mStart=%d, EndOffset()=%d }, "
-       "mDeferNotifyingTSF=%s, mWaitingQueryLayout=%s",
+       "mDeferNotifyingTSF=%s, mWaitingQueryLayout=%s, "
+       "IMEHandler::IsA11yHandlingNativeCaret()=%s",
        this, vcView, acpStart, acpEnd, prc, pfClipped,
        GetBoolName(IsHandlingComposition()),
        mContentForTSF.MinOffsetOfLayoutChanged(),
@@ -4482,7 +4483,8 @@ TSFTextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd,
            : -1,
        GetBoolName(mComposition.IsComposing()), mComposition.mStart,
        mComposition.EndOffset(), GetBoolName(mDeferNotifyingTSF),
-       GetBoolName(mWaitingQueryLayout)));
+       GetBoolName(mWaitingQueryLayout),
+       GetBoolName(IMEHandler::IsA11yHandlingNativeCaret())));
 
   if (!IsReadLocked()) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
@@ -4652,7 +4654,9 @@ TSFTextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd,
   
   
   
-  if (TSFPrefs::NeedToCreateNativeCaretForLegacyATOK() &&
+  
+  if (!IMEHandler::IsA11yHandlingNativeCaret() &&
+      TSFPrefs::NeedToCreateNativeCaretForLegacyATOK() &&
       TSFStaticSink::IsATOKReferringNativeCaretActive() &&
       mComposition.IsComposing() && mComposition.mStart <= acpStart &&
       mComposition.EndOffset() >= acpStart && mComposition.mStart <= acpEnd &&
@@ -6444,6 +6448,8 @@ nsresult TSFTextStore::OnMouseButtonEventInternal(
 }
 
 void TSFTextStore::CreateNativeCaret() {
+  MOZ_ASSERT(!IMEHandler::IsA11yHandlingNativeCaret());
+
   MaybeDestroyNativeCaret();
 
   

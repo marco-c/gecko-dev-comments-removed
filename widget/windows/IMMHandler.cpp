@@ -9,6 +9,7 @@
 #include "IMMHandler.h"
 #include "nsWindow.h"
 #include "nsWindowDefs.h"
+#include "WinIMEHandler.h"
 #include "WinUtils.h"
 #include "KeyboardLayout.h"
 #include <algorithm>
@@ -2106,37 +2107,44 @@ bool IMMHandler::GetCaretRect(nsWindow* aWindow,
 
 bool IMMHandler::SetIMERelatedWindowsPos(nsWindow* aWindow,
                                          const IMEContext& aContext) {
-  LayoutDeviceIntRect r;
   
   
   WritingMode writingMode;
-  bool ret = GetCharacterRectOfSelectedTextAt(aWindow, 0, r, &writingMode);
+  LayoutDeviceIntRect firstSelectedCharRectRelativeToWindow;
+  bool ret = GetCharacterRectOfSelectedTextAt(
+      aWindow, 0, firstSelectedCharRectRelativeToWindow, &writingMode);
   NS_ENSURE_TRUE(ret, false);
   nsWindow* toplevelWindow = aWindow->GetTopLevelWindow(false);
   LayoutDeviceIntRect firstSelectedCharRect;
-  ResolveIMECaretPos(toplevelWindow, r, aWindow, firstSelectedCharRect);
+  ResolveIMECaretPos(toplevelWindow, firstSelectedCharRectRelativeToWindow,
+                     aWindow, firstSelectedCharRect);
 
   
   
   
-  LayoutDeviceIntRect caretRect(firstSelectedCharRect);
-  if (GetCaretRect(aWindow, r)) {
-    ResolveIMECaretPos(toplevelWindow, r, aWindow, caretRect);
-  } else {
-    NS_WARNING("failed to get caret rect");
-    caretRect.SetWidth(1);
+  
+  if (!IMEHandler::IsA11yHandlingNativeCaret()) {
+    LayoutDeviceIntRect caretRect(firstSelectedCharRect),
+        caretRectRelativeToWindow;
+    if (GetCaretRect(aWindow, caretRectRelativeToWindow)) {
+      ResolveIMECaretPos(toplevelWindow, caretRectRelativeToWindow, aWindow,
+                         caretRect);
+    } else {
+      NS_WARNING("failed to get caret rect");
+      caretRect.SetWidth(1);
+    }
+    if (!mNativeCaretIsCreated) {
+      mNativeCaretIsCreated =
+          ::CreateCaret(aWindow->GetWindowHandle(), nullptr, caretRect.Width(),
+                        caretRect.Height());
+      MOZ_LOG(gIMMLog, LogLevel::Info,
+              ("SetIMERelatedWindowsPos, mNativeCaretIsCreated=%s, "
+               "width=%ld, height=%ld",
+               GetBoolName(mNativeCaretIsCreated), caretRect.Width(),
+               caretRect.Height()));
+    }
+    ::SetCaretPos(caretRect.X(), caretRect.Y());
   }
-  if (!mNativeCaretIsCreated) {
-    mNativeCaretIsCreated =
-        ::CreateCaret(aWindow->GetWindowHandle(), nullptr, caretRect.Width(),
-                      caretRect.Height());
-    MOZ_LOG(gIMMLog, LogLevel::Info,
-            ("SetIMERelatedWindowsPos, mNativeCaretIsCreated=%s, "
-             "width=%ld, height=%ld",
-             GetBoolName(mNativeCaretIsCreated), caretRect.Width(),
-             caretRect.Height()));
-  }
-  ::SetCaretPos(caretRect.X(), caretRect.Y());
 
   if (ShouldDrawCompositionStringOurselves()) {
     MOZ_LOG(gIMMLog, LogLevel::Info,
@@ -2290,10 +2298,13 @@ void IMMHandler::SetIMERelatedWindowsPosOnPlugin(nsWindow* aWindow,
   if (mNativeCaretIsCreated) {
     ::DestroyCaret();
   }
-  mNativeCaretIsCreated =
-      ::CreateCaret(aWindow->GetWindowHandle(), nullptr,
-                    clippedPluginRect.Width(), clippedPluginRect.Height());
-  ::SetCaretPos(clippedPluginRect.X(), clippedPluginRect.Y());
+  
+  if (!IMEHandler::IsA11yHandlingNativeCaret()) {
+    mNativeCaretIsCreated =
+        ::CreateCaret(aWindow->GetWindowHandle(), nullptr,
+                      clippedPluginRect.Width(), clippedPluginRect.Height());
+    ::SetCaretPos(clippedPluginRect.X(), clippedPluginRect.Y());
+  }
 
   
   
@@ -2594,6 +2605,9 @@ void IMMHandler::SetCandidateWindow(nsWindow* aWindow, CANDIDATEFORM* aForm) {
     if (sNativeCaretIsCreatedForPlugin) {
       ::DestroyCaret();
     }
+    
+    
+    
     sNativeCaretIsCreatedForPlugin =
         ::CreateCaret(aWindow->GetWindowHandle(), nullptr, 0, kCaretHeight);
     if (sNativeCaretIsCreatedForPlugin) {

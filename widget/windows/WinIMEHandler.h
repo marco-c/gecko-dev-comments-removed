@@ -63,6 +63,12 @@ class IMEHandler final {
   
 
 
+
+  static bool IsA11yHandlingNativeCaret();
+
+  
+
+
   static bool IsComposing();
 
   
