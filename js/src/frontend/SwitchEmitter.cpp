@@ -224,17 +224,17 @@ SwitchEmitter::emitCaseOrDefaultJump(uint32_t caseIndex, bool isDefault)
 {
     MOZ_ASSERT(kind_ == Kind::Cond);
 
+    if (isDefault) {
+        if (!bce_->emitJump(JSOP_DEFAULT, &condSwitchDefaultOffset_))
+            return false;
+        return true;
+    }
+
     if (state_ == State::Case) {
         
         
         if (!bce_->setSrcNoteOffset(caseNoteIndex_, 0, bce_->offset() - lastCaseOffset_))
             return false;
-    }
-
-    if (isDefault) {
-        if (!bce_->emitJump(JSOP_DEFAULT, &condSwitchDefaultOffset_))
-            return false;
-        return true;
     }
 
     if (!bce_->newSrcNote2(SRC_NEXTCASE, 0, &caseNoteIndex_))
