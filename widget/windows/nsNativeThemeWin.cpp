@@ -1965,19 +1965,13 @@ RENDER_AGAIN:
 static nscolor
 GetScrollbarFaceColorForAuto(ComputedStyle* aStyle)
 {
-  
-  DWORD sysColor = ::GetSysColor(COLOR_SCROLLBAR);
-  return NS_RGB(GetRValue(sysColor),
-                GetGValue(sysColor),
-                GetBValue(sysColor));
+  return NS_RGB(205, 205, 205);
 }
 
 static nscolor
 GetScrollbarTrackColorForAuto(ComputedStyle* aStyle)
 {
-  
-  
-  return aStyle->StyleBackground()->BackgroundColor(aStyle);
+  return NS_RGB(240, 240, 240);
 }
 
 nscolor
