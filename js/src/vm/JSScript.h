@@ -1646,18 +1646,6 @@ class JSScript : public js::gc::TenuredCell
     
     uint16_t nTypeSets_ = 0;
 
-    
-
-  public:
-    
-    enum ArrayKind {
-        CONSTS,
-        OBJECTS,
-        TRYNOTES,
-        SCOPENOTES,
-        ARRAY_KIND_BITS
-    };
-
   private:
     struct BitFields
     {
@@ -1792,7 +1780,9 @@ class JSScript : public js::gc::TenuredCell
 
         
         bool hideScriptFromDebugger_ : 1;
-    } bitFields_;
+    };
+
+    BitFields bitFields_ = {}; 
 
     
     
