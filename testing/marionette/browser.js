@@ -71,11 +71,11 @@ this.Context = Context;
 
 browser.getBrowserForTab = function(tab) {
   
-  if ("browser" in tab) {
+  if (tab && "browser" in tab) {
     return tab.browser;
 
   
-  } else if ("linkedBrowser" in tab) {
+  } else if (tab && "linkedBrowser" in tab) {
     return tab.linkedBrowser;
   }
 
@@ -305,6 +305,50 @@ browser.Context = class {
 
 
 
+  async openBrowserWindow(focus = false) {
+    switch (this.driver.appName) {
+      case "firefox":
+        
+        
+        
+        let win = this.window.OpenBrowserWindow();
+
+        
+        
+        
+        win.setTimeout(() => win.focus(), 0);
+
+        let activated = waitForEvent(win, "activate");
+        let focused = waitForEvent(win, "focus", {capture: true});
+        let startup = waitForObserverTopic("browser-delayed-startup-finished",
+            subject => subject == win);
+        await Promise.all([activated, focused, startup]);
+
+        if (!focus) {
+          
+          
+          activated = waitForEvent(this.window, "activate");
+          focused = waitForEvent(this.window, "focus", {capture: true});
+
+          this.window.focus();
+
+          await Promise.all([activated, focused]);
+        }
+
+        return win;
+
+      default:
+        throw new UnsupportedOperationError(
+            `openWindow() not supported in ${this.driver.appName}`);
+    }
+  }
+
+  
+
+
+
+
+
 
 
 
@@ -325,19 +369,21 @@ browser.Context = class {
 
     let tabClosed;
 
-    if (this.tabBrowser.closeTab) {
-      
-      tabClosed = waitForEvent(this.tabBrowser.deck, "TabClose");
-      this.tabBrowser.closeTab(this.tab);
+    switch (this.driver.appName) {
+      case "fennec":
+        
+        tabClosed = waitForEvent(this.tabBrowser.deck, "TabClose");
+        this.tabBrowser.closeTab(this.tab);
+        break;
 
-    } else if (this.tabBrowser.removeTab) {
-      
-      tabClosed = waitForEvent(this.tab, "TabClose");
-      this.tabBrowser.removeTab(this.tab);
+      case "firefox":
+        tabClosed = waitForEvent(this.tab, "TabClose");
+        this.tabBrowser.removeTab(this.tab);
+        break;
 
-    } else {
-      throw new UnsupportedOperationError(
-        `closeTab() not supported in ${this.driver.appName}`);
+      default:
+        throw new UnsupportedOperationError(
+          `closeTab() not supported in ${this.driver.appName}`);
     }
 
     return Promise.all([disconnected, tabClosed]);
@@ -346,11 +392,35 @@ browser.Context = class {
   
 
 
+  async openTab(focus = false) {
+    let tab = null;
+    let tabOpened = waitForEvent(this.window, "TabOpen");
 
+    switch (this.driver.appName) {
+      case "fennec":
+        tab = this.tabBrowser.addTab(null, {selected: focus});
+        break;
 
+      case "firefox":
+        this.window.BrowserOpenTab();
+        tab = this.tabBrowser.selectedTab;
 
-  addTab(uri) {
-    return this.tabBrowser.addTab(uri, true);
+        
+        
+        if (!focus) {
+          this.tabBrowser.selectedTab = this.tab;
+        }
+
+        break;
+
+      default:
+        throw new UnsupportedOperationError(
+          `openTab() not supported in ${this.driver.appName}`);
+    }
+
+    await tabOpened;
+
+    return tab;
   }
 
   
@@ -384,16 +454,18 @@ browser.Context = class {
       this.tab = this.tabBrowser.tabs[index];
 
       if (focus) {
-        if (this.tabBrowser.selectTab) {
-          
-          this.tabBrowser.selectTab(this.tab);
+        switch (this.driver.appName) {
+          case "fennec":
+            this.tabBrowser.selectTab(this.tab);
+            break;
 
-        } else if ("selectedTab" in this.tabBrowser) {
-          
-          this.tabBrowser.selectedTab = this.tab;
+          case "firefox":
+            this.tabBrowser.selectedTab = this.tab;
+            break;
 
-        } else {
-          throw new UnsupportedOperationError("switchToTab() not supported");
+          default:
+            throw new UnsupportedOperationError(
+              `switchToTab() not supported in ${this.driver.appName}`);
         }
       }
     }
