@@ -353,6 +353,7 @@ IMContextWrapper::IMContextWrapper(nsWindow* aOwnerWindow)
     , mIsIMFocused(false)
     , mFallbackToKeyEvent(false)
     , mKeyboardEventWasDispatched(false)
+    , mKeyboardEventWasConsumed(false)
     , mIsDeletingSurrounding(false)
     , mLayoutChanged(false)
     , mSetCursorPositionOnKeyEvent(true)
@@ -812,7 +813,7 @@ IMContextWrapper::OnBlurWindow(nsWindow* aWindow)
     Blur();
 }
 
-bool
+KeyHandlingState
 IMContextWrapper::OnKeyEvent(nsWindow* aCaller,
                              GdkEventKey* aEvent,
                              bool aKeyboardEventWasDispatched )
@@ -821,7 +822,7 @@ IMContextWrapper::OnKeyEvent(nsWindow* aCaller,
 
     if (!mInputContext.mIMEState.MaybeEditable() ||
         MOZ_UNLIKELY(IsDestroyed())) {
-        return false;
+        return KeyHandlingState::eNotHandled;
     }
 
     MOZ_LOG(gGtkIMLog, LogLevel::Info,
@@ -849,7 +850,7 @@ IMContextWrapper::OnKeyEvent(nsWindow* aCaller,
             ("0x%p   OnKeyEvent(), FAILED, the caller isn't focused "
              "window, mLastFocusedWindow=0x%p",
              this, mLastFocusedWindow));
-        return false;
+        return KeyHandlingState::eNotHandled;
     }
 
     
@@ -859,7 +860,7 @@ IMContextWrapper::OnKeyEvent(nsWindow* aCaller,
         MOZ_LOG(gGtkIMLog, LogLevel::Error,
             ("0x%p   OnKeyEvent(), FAILED, there are no context",
              this));
-        return false;
+        return KeyHandlingState::eNotHandled;
     }
 
     if (mSetCursorPositionOnKeyEvent) {
@@ -881,29 +882,39 @@ IMContextWrapper::OnKeyEvent(nsWindow* aCaller,
 
     
     
+    bool isUnexpectedAsyncEvent = false;
+
+    
+    
     
     
     
     if (maybeHandledAsynchronously) {
         switch (mIMContextID) {
-            case IMContextID::eIBus:
+            case IMContextID::eIBus: {
+                
+                static const guint IBUS_IGNORED_MASK = 1 << 25;
+                
+                
+                
+                bool isHandlingAsyncEvent =
+                    !!(aEvent->state & IBUS_IGNORED_MASK);
+
                 
                 if (mMaybeInDeadKeySequence && aEvent->type == GDK_KEY_PRESS) {
                     maybeHandledAsynchronously = false;
+                    isUnexpectedAsyncEvent = isHandlingAsyncEvent;
                     break;
                 }
                 
                 
                 if (mInputContext.mIMEState.mEnabled == IMEState::PASSWORD) {
                     maybeHandledAsynchronously = false;
+                    isUnexpectedAsyncEvent = isHandlingAsyncEvent;
                     break;
                 }
-                
-                static const guint IBUS_IGNORED_MASK = 1 << 25;
-                
-                
-                
-                if (aEvent->state & IBUS_IGNORED_MASK) {
+
+                if (isHandlingAsyncEvent) {
                     MOZ_LOG(gGtkIMLog, LogLevel::Info,
                         ("0x%p   OnKeyEvent(), aEvent->state has "
                          "IBUS_IGNORED_MASK, so, it won't be handled "
@@ -915,22 +926,27 @@ IMContextWrapper::OnKeyEvent(nsWindow* aCaller,
                     break;
                 }
                 break;
-            case IMContextID::eFcitx:
+            }
+            case IMContextID::eFcitx: {
+                
+                static const guint FcitxKeyState_IgnoredMask = 1 << 25;
+                
+                
+                
+                bool isHandlingAsyncEvent =
+                    !!(aEvent->state & FcitxKeyState_IgnoredMask);
+
                 
                 if (mMaybeInDeadKeySequence && aEvent->type == GDK_KEY_PRESS) {
                     maybeHandledAsynchronously = false;
+                    isUnexpectedAsyncEvent = isHandlingAsyncEvent;
                     break;
                 }
 
                 
                 
 
-                
-                static const guint FcitxKeyState_IgnoredMask = 1 << 25;
-                
-                
-                
-                if (aEvent->state & FcitxKeyState_IgnoredMask) {
+                if (isHandlingAsyncEvent) {
                     MOZ_LOG(gGtkIMLog, LogLevel::Info,
                         ("0x%p   OnKeyEvent(), aEvent->state has "
                          "FcitxKeyState_IgnoredMask, so, it won't be handled "
@@ -942,6 +958,7 @@ IMContextWrapper::OnKeyEvent(nsWindow* aCaller,
                     break;
                 }
                 break;
+            }
             default:
                 MOZ_ASSERT_UNREACHABLE("IME may handle key event "
                     "asyncrhonously, but not yet confirmed if it comes agian "
@@ -949,7 +966,17 @@ IMContextWrapper::OnKeyEvent(nsWindow* aCaller,
         }
     }
 
-    mKeyboardEventWasDispatched = aKeyboardEventWasDispatched;
+    if (!isUnexpectedAsyncEvent) {
+        mKeyboardEventWasDispatched = aKeyboardEventWasDispatched;
+        mKeyboardEventWasConsumed = false;
+    } else {
+        
+        
+        mKeyboardEventWasDispatched = true;
+        
+        
+        
+    }
     mFallbackToKeyEvent = false;
     mProcessingKeyEvent = aEvent;
     gboolean isFiltered =
@@ -1020,7 +1047,22 @@ IMContextWrapper::OnKeyEvent(nsWindow* aCaller,
          ToChar(mFallbackToKeyEvent), ToChar(maybeHandledAsynchronously),
          GetCompositionStateName(), ToChar(mMaybeInDeadKeySequence)));
 
-    return filterThisEvent;
+    if (filterThisEvent) {
+        return KeyHandlingState::eHandled;
+    }
+    
+    
+    
+    
+    if (aKeyboardEventWasDispatched) {
+        return KeyHandlingState::eNotHandledButEventDispatched;
+    }
+    if (!mKeyboardEventWasDispatched) {
+        return KeyHandlingState::eNotHandled;
+    }
+    return mKeyboardEventWasConsumed ?
+         KeyHandlingState::eNotHandledButEventConsumed :
+         KeyHandlingState::eNotHandledButEventDispatched;
 }
 
 void
@@ -1830,6 +1872,7 @@ IMContextWrapper::OnCommitCompositionNative(GtkIMContext* aContext,
                 dispatcher->DispatchKeyboardEvent(eKeyDown, keyDownEvent,
                                                   status, mProcessingKeyEvent);
             if (!dispatched || status == nsEventStatus_eConsumeNoDefault) {
+                mKeyboardEventWasConsumed = true;
                 MOZ_LOG(gGtkIMLog, LogLevel::Info,
                     ("0x%p   OnCommitCompositionNative(), "
                      "doesn't dispatch eKeyPress event because the preceding "
@@ -1952,10 +1995,10 @@ IMContextWrapper::MaybeDispatchKeyEventAsProcessedByIME(
         
         
         
-        bool isCancelled;
-        lastFocusedWindow->DispatchKeyDownOrKeyUpEvent(sourceEvent,
-                                                       !mMaybeInDeadKeySequence,
-                                                       &isCancelled);
+        lastFocusedWindow->DispatchKeyDownOrKeyUpEvent(
+                               sourceEvent,
+                               !mMaybeInDeadKeySequence,
+                               &mKeyboardEventWasConsumed);
         MOZ_LOG(gGtkIMLog, LogLevel::Info,
             ("0x%p   MaybeDispatchKeyEventAsProcessedByIME(), keydown or keyup "
              "event is dispatched",
@@ -2021,9 +2064,9 @@ IMContextWrapper::MaybeDispatchKeyEventAsProcessedByIME(
                  "aFollowingEvent=%s), dispatch fake eKeyDown event",
                  this, ToChar(aFollowingEvent)));
 
-            bool isCancelled;
-            lastFocusedWindow->DispatchKeyDownOrKeyUpEvent(fakeKeyDownEvent,
-                                                           &isCancelled);
+            lastFocusedWindow->DispatchKeyDownOrKeyUpEvent(
+                                   fakeKeyDownEvent,
+                                   &mKeyboardEventWasConsumed);
             MOZ_LOG(gGtkIMLog, LogLevel::Info,
                 ("0x%p   MaybeDispatchKeyEventAsProcessedByIME(), "
                  "fake keydown event is dispatched",

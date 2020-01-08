@@ -25,6 +25,22 @@ class nsWindow;
 namespace mozilla {
 namespace widget {
 
+
+
+
+enum class KeyHandlingState {
+    
+    eNotHandled,
+    
+    eHandled,
+    
+    
+    eNotHandledButEventDispatched,
+    
+    
+    eNotHandledButEventConsumed,
+};
+
 class IMContextWrapper final : public TextEventDispatcherListener
 {
 public:
@@ -88,8 +104,8 @@ public:
 
 
 
-    bool OnKeyEvent(nsWindow* aWindow, GdkEventKey* aEvent,
-                    bool aKeyboardEventWasDispatched = false);
+    KeyHandlingState OnKeyEvent(nsWindow* aWindow, GdkEventKey* aEvent,
+                                bool aKeyboardEventWasDispatched = false);
 
     
     nsresult EndIMEComposition(nsWindow* aCaller);
@@ -431,6 +447,9 @@ protected:
     
     
     bool mKeyboardEventWasDispatched;
+    
+    
+    bool mKeyboardEventWasConsumed;
     
     
     bool mIsDeletingSurrounding;
