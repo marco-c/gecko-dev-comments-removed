@@ -107,7 +107,7 @@
       }
     }
 
-    waitUntilApzStable().then(runTests);
+    waitUntilApzStable().then(forceLayerTreeToCompositor).then(runTests);
   </script>
 </head>
 <body style="height: 500px; overflow: scroll">
