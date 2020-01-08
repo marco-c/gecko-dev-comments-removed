@@ -16,7 +16,7 @@
 using namespace js;
 using namespace js::jit;
 
-bool FrameInfo::init(TempAllocator& alloc) {
+bool CompilerFrameInfo::init(TempAllocator& alloc) {
   
   
   
@@ -30,7 +30,7 @@ bool FrameInfo::init(TempAllocator& alloc) {
   return true;
 }
 
-void FrameInfo::sync(StackValue* val) {
+void CompilerFrameInfo::sync(StackValue* val) {
   switch (val->kind()) {
     case StackValue::Stack:
       break;
@@ -60,7 +60,7 @@ void FrameInfo::sync(StackValue* val) {
   val->setStack();
 }
 
-void FrameInfo::syncStack(uint32_t uses) {
+void CompilerFrameInfo::syncStack(uint32_t uses) {
   MOZ_ASSERT(uses <= stackDepth());
 
   uint32_t depth = stackDepth() - uses;
@@ -71,7 +71,7 @@ void FrameInfo::syncStack(uint32_t uses) {
   }
 }
 
-uint32_t FrameInfo::numUnsyncedSlots() {
+uint32_t CompilerFrameInfo::numUnsyncedSlots() {
   
   uint32_t i = 0;
   for (; i < stackDepth(); i++) {
@@ -82,7 +82,7 @@ uint32_t FrameInfo::numUnsyncedSlots() {
   return i;
 }
 
-void FrameInfo::popValue(ValueOperand dest) {
+void CompilerFrameInfo::popValue(ValueOperand dest) {
   StackValue* val = peek(-1);
 
   switch (val->kind()) {
@@ -115,7 +115,7 @@ void FrameInfo::popValue(ValueOperand dest) {
   pop(DontAdjustStack);
 }
 
-void FrameInfo::popRegsAndSync(uint32_t uses) {
+void CompilerFrameInfo::popRegsAndSync(uint32_t uses) {
   
   
   
@@ -146,8 +146,23 @@ void FrameInfo::popRegsAndSync(uint32_t uses) {
   }
 }
 
-void FrameInfo::storeStackValue(int32_t depth, const Address& dest,
-                                const ValueOperand& scratch) {
+void InterpreterFrameInfo::popRegsAndSync(uint32_t uses) {
+  switch (uses) {
+    case 1:
+      popValue(R0);
+      break;
+    case 2: {
+      popValue(R1);
+      popValue(R0);
+      break;
+    }
+    default:
+      MOZ_CRASH("Invalid uses");
+  }
+}
+
+void CompilerFrameInfo::storeStackValue(int32_t depth, const Address& dest,
+                                        const ValueOperand& scratch) {
   const StackValue* source = peek(depth);
   switch (source->kind()) {
     case StackValue::Constant:
@@ -183,7 +198,7 @@ void FrameInfo::storeStackValue(int32_t depth, const Address& dest,
 }
 
 #ifdef DEBUG
-void FrameInfo::assertValidState(const BytecodeInfo& info) {
+void CompilerFrameInfo::assertValidState(const BytecodeInfo& info) {
   
   MOZ_ASSERT(stackDepth() == info.stackDepth);
 
@@ -222,7 +237,7 @@ void FrameInfo::assertValidState(const BytecodeInfo& info) {
 }
 #endif
 
-PCMappingSlotInfo::SlotLocation FrameInfo::stackValueSlotLocation(
+PCMappingSlotInfo::SlotLocation CompilerFrameInfo::stackValueSlotLocation(
     int32_t depth) {
   const StackValue* stackVal = peek(depth);
 
