@@ -12,4 +12,4 @@ Services.scriptloader.loadSubScript(
 
 
 
-loadScripts({ name: "common.js", dir: MOCHITESTS_DIR }, "events.js", "layout.js");
+loadScripts({ name: "common.js", dir: MOCHITESTS_DIR }, "events.js");
