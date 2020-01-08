@@ -20,7 +20,13 @@ namespace js {
 
 namespace jit {
 
-struct NativeToTrackedOptimizations;
+struct NativeToTrackedOptimizations
+{
+    
+    CodeOffset startOffset;
+    CodeOffset endOffset;
+    const TrackedOptimizations* optimizations;
+};
 
 class OptimizationAttempt
 {
