@@ -715,6 +715,11 @@ private:
   bool mSeamlessLoopingAllowed;
 
   
+  
+  void AdjustByLooping(media::TimeUnit& aTime) const;
+  Maybe<media::TimeUnit> mAudioDecodedDuration;
+
+  
   int64_t mPlaybackOffset = 0;
 
 private:

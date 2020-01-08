@@ -401,7 +401,7 @@ public:
     
     auto t = mMaster->mMediaSink->IsStarted()
       ? mMaster->GetClock() : mMaster->GetMediaTime();
-    Reader()->AdjustByLooping(t);
+    mMaster->AdjustByLooping(t);
     mPendingSeek.mTarget.emplace(t, SeekTarget::Accurate);
     
     
@@ -874,6 +874,10 @@ public:
     
     
     mAudioLoopingOffset = mMaster->mDecodedAudioEndTime;
+
+    if (mMaster->mAudioDecodedDuration.isNothing()) {
+      mMaster->mAudioDecodedDuration.emplace(mMaster->mDecodedAudioEndTime);
+    }
 
     SLOG("received EOS when seamless looping, starts seeking");
     Reader()->ResetDecode(TrackInfo::kAudioTrack);
@@ -2079,7 +2083,7 @@ public:
       auto clockTime =
         std::max(mMaster->AudioEndTime(), mMaster->VideoEndTime());
       
-      Reader()->AdjustByLooping(clockTime);
+      mMaster->AdjustByLooping(clockTime);
       if (mMaster->mDuration.Ref()->IsInfinite()) {
         
         mMaster->mDuration = Some(clockTime);
@@ -3696,7 +3700,7 @@ MediaDecoderStateMachine::UpdatePlaybackPositionPeriodically()
 
     
     
-    mReader->AdjustByLooping(clockTime);
+    AdjustByLooping(clockTime);
     bool loopback = clockTime < GetMediaTime() && mLooping;
 
     
@@ -4199,6 +4203,15 @@ MediaDecoderStateMachine::CancelSuspendTimer()
     mOnPlaybackEvent.Notify(MediaPlaybackEvent::CancelVideoSuspendTimer);
   }
   mVideoDecodeSuspendTimer.Reset();
+}
+
+void
+MediaDecoderStateMachine::AdjustByLooping(media::TimeUnit& aTime) const
+{
+  MOZ_ASSERT(OnTaskQueue());
+  if (mAudioDecodedDuration.isSome() && mAudioDecodedDuration.ref().IsPositive()) {
+    aTime = aTime % mAudioDecodedDuration.ref().ToMicroseconds();
+  }
 }
 
 } 

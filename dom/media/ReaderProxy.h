@@ -84,10 +84,6 @@ public:
   void SetCanonicalDuration(
     AbstractCanonical<media::NullableTimeUnit>* aCanonical);
 
-  void SetSeamlessLoopingEnabled(bool aEnabled);
-
-  void AdjustByLooping(media::TimeUnit& aTime);
-
 private:
   ~ReaderProxy();
   RefPtr<MetadataPromise> OnMetadataRead(MetadataHolder&& aMetadata);
@@ -111,18 +107,6 @@ private:
 
   
   Mirror<media::NullableTimeUnit> mDuration;
-
-  
-  media::TimeUnit mLoopingOffset = media::TimeUnit::Zero();
-  
-  media::TimeUnit mLastAudioEndTime = media::TimeUnit::Zero();
-  
-  media::TimeUnit mAudioDuration = media::TimeUnit::Invalid();
-
-  
-  bool mSeamlessLoopingBlocked;
-  
-  bool mSeamlessLoopingEnabled;
 };
 
 } 
