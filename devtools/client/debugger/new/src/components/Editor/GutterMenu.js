@@ -6,6 +6,7 @@ import { Component } from "react";
 import { showMenu } from "devtools-contextmenu";
 import { connect } from "../../utils/connect";
 import { lineAtHeight } from "../../utils/editor";
+import { features } from "../../utils/prefs";
 import {
   getContextMenu,
   getEmptyLines,
@@ -151,8 +152,10 @@ class GutterContextMenuComponent extends Component {
       bp => bp.location.line === line && bp.location.column === column
     );
 
-    if (props.emptyLines && props.emptyLines.includes(line)) {
-      return;
+    
+    
+    if (features.columnBreakpoints && !breakpoint && column === 0) {
+      column = undefined;
     }
 
     gutterMenu({ event, sourceId, line, column, breakpoint, ...props });
