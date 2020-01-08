@@ -230,30 +230,4 @@ TEST_F(CTSerializationTest, FailsDecodingInvalidSignedCertificateTimestamp)
     DecodeSignedCertificateTimestamp(invalidLengthSctReader, sct));
 }
 
-TEST_F(CTSerializationTest, EncodesValidSignedTreeHead)
-{
-  SignedTreeHead signedTreeHead;
-  GetSampleSignedTreeHead(signedTreeHead);
-
-  Buffer encoded;
-  ASSERT_EQ(Success,
-    EncodeTreeHeadSignature(signedTreeHead, encoded));
-  
-  
-  
-  
-  
-  ASSERT_EQ(50u, encoded.size());
-  Buffer expectedBuffer = {
-    0x00, 
-    0x01, 
-    0x00, 0x00, 0x01, 0x45, 0x3c, 0x5f, 0xb8, 0x35, 
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x15  
-    
-  };
-  Buffer hash = GetSampleSTHSHA256RootHash();
-  expectedBuffer.insert(expectedBuffer.end(), hash.begin(),
-                        hash.begin() + hash.size());
-  EXPECT_EQ(expectedBuffer, encoded);
-}
 } } 

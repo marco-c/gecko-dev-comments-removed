@@ -12,7 +12,6 @@
 #include "mozpkix/Input.h"
 #include "mozpkix/Result.h"
 #include "SignedCertificateTimestamp.h"
-#include "SignedTreeHead.h"
 
 
 
@@ -41,12 +40,6 @@ pkix::Result EncodeV1SCTSignedData(uint64_t timestamp,
                                    pkix::Input serializedLogEntry,
                                    pkix::Input extensions,
                                    Buffer& output);
-
-
-
-
-pkix::Result EncodeTreeHeadSignature(const SignedTreeHead& signedTreeHead,
-                                     Buffer& output);
 
 
 

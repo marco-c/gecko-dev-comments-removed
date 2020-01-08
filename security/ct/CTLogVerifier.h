@@ -12,7 +12,6 @@
 #include "CTLog.h"
 #include "CTUtils.h"
 #include "SignedCertificateTimestamp.h"
-#include "SignedTreeHead.h"
 #include "mozpkix/Input.h"
 #include "mozpkix/Result.h"
 #include "mozpkix/pkix.h"
@@ -57,10 +56,6 @@ public:
   
   pkix::Result Verify(const LogEntry& entry,
                       const SignedCertificateTimestamp& sct);
-
-  
-  
-  pkix::Result VerifySignedTreeHead(const SignedTreeHead& sth);
 
   
   
