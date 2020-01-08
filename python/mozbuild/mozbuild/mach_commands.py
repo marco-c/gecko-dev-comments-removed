@@ -46,6 +46,8 @@ from mozbuild.backend import (
     backends,
 )
 
+import taskgraph
+
 
 BUILD_WHAT_HELP = '''
 What to build. Can be a top-level make target or a relative directory. If
@@ -1257,6 +1259,7 @@ class PackageFrontend(MachCommandBase):
         help='Skip all local caches to force re-fetching remote artifacts.',
         default=False)
     def artifact_install(self, source=None, skip_cache=False, tree=None, job=None, verbose=False):
+        taskgraph.set_root_url_env()
         self._set_log_level(verbose)
         artifacts = self._make_artifacts(tree=tree, job=job, skip_cache=skip_cache)
 
@@ -3074,7 +3077,7 @@ class Repackage(MachCommandBase):
     @CommandArgument('--locale', type=str, required=True,
         help='The locale of the installer')
     @CommandArgument('--arch', type=str, required=True,
-        help='The archtecture you are building.')
+        help='The archtecture you are building x64 or x32')
     @CommandArgument('--setupexe', type=str, required=True,
         help='setup.exe installer')
     @CommandArgument('--candle', type=str, required=False,
@@ -3108,11 +3111,9 @@ class Repackage(MachCommandBase):
     @CommandArgument('--format', type=str, default='lzma',
         choices=('lzma', 'bz2'),
         help='Mar format')
-    @CommandArgument('--arch', type=str, required=True,
-        help='The archtecture you are building.')
-    def repackage_mar(self, input, mar, output, format, arch):
+    def repackage_mar(self, input, mar, output, format):
         from mozbuild.repackaging.mar import repackage_mar
-        repackage_mar(self.topsrcdir, input, mar, output, format, arch=arch)
+        repackage_mar(self.topsrcdir, input, mar, output, format)
 
 @CommandProvider
 class Analyze(MachCommandBase):
