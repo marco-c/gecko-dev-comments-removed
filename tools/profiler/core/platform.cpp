@@ -264,12 +264,6 @@ public:
       aProfSize += registeredThread->SizeOfIncludingThis(aMallocSizeOf);
     }
 
-    for (auto& registeredPage : sInstance->mRegisteredPages) {
-      aProfSize += registeredPage->SizeOfIncludingThis(aMallocSizeOf);
-    }
-
-    
-    
     
     
     
@@ -319,38 +313,6 @@ public:
     }
   }
 
-  static void AppendRegisteredPage(
-    PSLockRef,
-    RefPtr<PageInformation>&& aRegisteredPage)
-  {
-#ifdef DEBUG
-    struct RegisteredPageComparator
-    {
-      bool Equals(PageInformation* aA,
-                  PageInformation* aB) const
-      {
-        return aA->Equals(aB);
-      }
-    };
-    MOZ_ASSERT(!sInstance->mRegisteredPages.Contains(
-      aRegisteredPage, RegisteredPageComparator()));
-#endif
-    sInstance->mRegisteredPages.AppendElement(
-      std::move(aRegisteredPage));
-  }
-
-  static void RemoveRegisteredPages(PSLockRef,
-                                    const nsID& aRegisteredDocShellId)
-  {
-    
-    sInstance->mRegisteredPages.RemoveElementsBy(
-      [&](RefPtr<PageInformation>& rd) {
-        return rd->DocShellId().Equals(aRegisteredDocShellId);
-      });
-  }
-
-  PS_GET(nsTArray<RefPtr<PageInformation>>&, RegisteredPages)
-
 #ifdef USE_LUL_STACKWALK
   static lul::LUL* Lul(PSLockRef) { return sInstance->mLul.get(); }
   static void SetLul(PSLockRef, UniquePtr<lul::LUL> aLul)
@@ -372,10 +334,6 @@ private:
 
   
   nsTArray<BaseProfilerCount*> mCounters;
-
-  
-  
-  nsTArray<RefPtr<PageInformation>> mRegisteredPages;
 
 #ifdef USE_LUL_STACKWALK
   
@@ -648,20 +606,6 @@ public:
     return array;
   }
 
-  static nsTArray<RefPtr<PageInformation>> ProfiledPages(PSLockRef aLock)
-  {
-    nsTArray<RefPtr<PageInformation>> array;
-    for (auto& d : CorePS::RegisteredPages(aLock)) {
-      array.AppendElement(d);
-    }
-    for (auto& d : sInstance->mDeadProfiledPages) {
-      array.AppendElement(d);
-    }
-    
-    
-    return array;
-  }
-
   
   
   static ProfiledThreadData* GetProfiledThreadData(PSLockRef,
@@ -725,35 +669,6 @@ public:
       });
   }
 
-  static void UnregisterPages(PSLockRef aLock,
-                              const nsID& aRegisteredDocShellId)
-  {
-    auto& registeredPages = CorePS::RegisteredPages(aLock);
-    for (size_t i = 0; i < registeredPages.Length(); i++) {
-      RefPtr<PageInformation>& page = registeredPages[i];
-      if (page->DocShellId().Equals(aRegisteredDocShellId)) {
-        page->NotifyUnregistered(sInstance->mBuffer->mRangeEnd);
-        sInstance->mDeadProfiledPages.AppendElement(std::move(page));
-        registeredPages.RemoveElementAt(i--);
-      }
-    }
-  }
-
-  static void DiscardExpiredPages(PSLockRef)
-  {
-    uint64_t bufferRangeStart = sInstance->mBuffer->mRangeStart;
-    
-    
-    sInstance->mDeadProfiledPages.RemoveElementsBy(
-      [bufferRangeStart](RefPtr<PageInformation>& aProfiledPage) {
-        Maybe<uint64_t> bufferPosition =
-          aProfiledPage->BufferPositionWhenUnregistered();
-        MOZ_RELEASE_ASSERT(bufferPosition,
-                           "should have unregistered this page");
-        return *bufferPosition < bufferRangeStart;
-      });
-  }
-
 private:
   
   static ActivePS* sInstance;
@@ -801,12 +716,6 @@ private:
   
   nsTArray<LiveProfiledThreadData> mLiveProfiledThreads;
   nsTArray<UniquePtr<ProfiledThreadData>> mDeadProfiledThreads;
-
-  
-  
-  
-  
-  nsTArray<RefPtr<PageInformation>> mDeadProfiledPages;
 
   
   
@@ -1890,16 +1799,6 @@ StreamMetaJSCustomObject(PSLockRef aLock, SpliceableJSONWriter& aWriter,
   }
 }
 
-static void
-StreamPages(PSLockRef aLock, SpliceableJSONWriter& aWriter)
-{
-  MOZ_RELEASE_ASSERT(CorePS::Exists());
-  ActivePS::DiscardExpiredPages(aLock);
-  for (const auto& page : ActivePS::ProfiledPages(aLock)) {
-    page->StreamJSON(aWriter);
-  }
-}
-
 #if defined(GP_OS_android)
 static UniquePtr<ProfileBuffer>
 CollectJavaThreadProfileData()
@@ -1978,13 +1877,6 @@ locked_profiler_stream_json_for_this_process(PSLockRef aLock,
 
   buffer.StreamCountersToJSON(aWriter, CorePS::ProcessStartTime(), aSinceTime);
   buffer.StreamMemoryToJSON(aWriter, CorePS::ProcessStartTime(), aSinceTime);
-
-  
-  aWriter.StartArrayProperty("pages");
-  {
-    StreamPages(aLock, aWriter);
-  }
-  aWriter.EndArray();
 
   
   if (ActivePS::FeatureTaskTracer(aLock)) {
@@ -3552,60 +3444,6 @@ profiler_unregister_thread()
 }
 
 void
-profiler_register_page(const nsID& aDocShellId,
-                           uint32_t aHistoryId,
-                           const nsCString& aUrl,
-                           bool aIsSubFrame)
-{
-  DEBUG_LOG("profiler_register_page(%s, %u, %s, %d)",
-            aDocShellId.ToString(),
-            aHistoryId,
-            aUrl.get(),
-            aIsSubFrame);
-
-  MOZ_RELEASE_ASSERT(CorePS::Exists());
-
-  PSAutoLock lock(gPSMutex);
-
-  
-  
-  if (!ActivePS::Exists(lock)) {
-    CorePS::RemoveRegisteredPages(lock, aDocShellId);
-  }
-
-  RefPtr<PageInformation> pageInfo =
-    new PageInformation(aDocShellId, aHistoryId, aUrl, aIsSubFrame);
-  CorePS::AppendRegisteredPage(lock, std::move(pageInfo));
-
-  
-  
-  if (ActivePS::Exists(lock)) {
-    ActivePS::DiscardExpiredPages(lock);
-  }
-}
-
-void
-profiler_unregister_pages(const nsID& aRegisteredDocShellId)
-{
-  if (!CorePS::Exists()) {
-    
-    return;
-  }
-
-  PSAutoLock lock(gPSMutex);
-
-  
-  
-  
-  
-  if (ActivePS::Exists(lock)) {
-    ActivePS::UnregisterPages(lock, aRegisteredDocShellId);
-  } else {
-    CorePS::RemoveRegisteredPages(lock, aRegisteredDocShellId);
-  }
-}
-
-void
 profiler_thread_sleep()
 {
   
@@ -3842,11 +3680,8 @@ profiler_add_marker_for_thread(int aThreadId,
 }
 
 void
-profiler_tracing(const char* aCategory,
-                 const char* aMarkerName,
-                 TracingKind aKind,
-                 const Maybe<nsID>& aDocShellId,
-                 const Maybe<uint32_t>& aDocShellHistoryId)
+profiler_tracing(const char* aCategory, const char* aMarkerName,
+                 TracingKind aKind)
 {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
@@ -3857,18 +3692,13 @@ profiler_tracing(const char* aCategory,
     return;
   }
 
-  auto payload = MakeUnique<TracingMarkerPayload>(
-    aCategory, aKind, aDocShellId, aDocShellHistoryId);
+  auto payload = MakeUnique<TracingMarkerPayload>(aCategory, aKind);
   racy_profiler_add_marker(aMarkerName, std::move(payload));
 }
 
 void
-profiler_tracing(const char* aCategory,
-                 const char* aMarkerName,
-                 TracingKind aKind,
-                 UniqueProfilerBacktrace aCause,
-                 const Maybe<nsID>& aDocShellId,
-                 const Maybe<uint32_t>& aDocShellHistoryId)
+profiler_tracing(const char* aCategory, const char* aMarkerName,
+                 TracingKind aKind, UniqueProfilerBacktrace aCause)
 {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
@@ -3879,8 +3709,8 @@ profiler_tracing(const char* aCategory,
     return;
   }
 
-  auto payload = MakeUnique<TracingMarkerPayload>(
-    aCategory, aKind, aDocShellId, aDocShellHistoryId, std::move(aCause));
+  auto payload =
+    MakeUnique<TracingMarkerPayload>(aCategory, aKind, std::move(aCause));
   racy_profiler_add_marker(aMarkerName, std::move(payload));
 }
 
