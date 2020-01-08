@@ -9,11 +9,16 @@
 
 
 
-#if !defined(_entcode_H)
-#define _entcode_H (1)
+#ifndef AOM_DSP_ENTCODE_H_
+#define AOM_DSP_ENTCODE_H_
+
 #include <limits.h>
 #include <stddef.h>
 #include "av1/common/odintrin.h"
+#include "aom_dsp/prob.h"
+
+#define EC_PROB_SHIFT 6
+#define EC_MIN_PROB 4  // must be <= (1<<EC_PROB_SHIFT)/16
 
 
 
@@ -22,21 +27,14 @@ typedef uint32_t od_ec_window;
 #define OD_EC_WINDOW_SIZE ((int)sizeof(od_ec_window) * CHAR_BIT)
 
 
-#define OD_EC_UINT_BITS (4)
-
-
 
 #define OD_BITRES (3)
 
-
-
-
-
-#define OD_ICDF(x) (32768U - (x))
+#define OD_ICDF AOM_ICDF
 
 
 
 OD_WARN_UNUSED_RESULT uint32_t od_ec_tell_frac(uint32_t nbits_total,
                                                uint32_t rng);
 
-#endif
+#endif  

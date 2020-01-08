@@ -35,10 +35,7 @@ TEST(AV1, TestAccounting) {
   }
   aom_stop_encode(&bw);
   aom_reader br;
-#if CONFIG_ANS && ANS_MAX_SYMBOLS
-  br.window_size = 1 << 16;
-#endif
-  aom_reader_init(&br, bw_buffer, bw.pos, NULL, NULL);
+  aom_reader_init(&br, bw_buffer, bw.pos);
 
   Accounting accounting;
   aom_accounting_init(&accounting);
@@ -54,7 +51,7 @@ TEST(AV1, TestAccounting) {
   GTEST_ASSERT_EQ(accounting.syms.num_syms, 0);
 
   
-  aom_reader_init(&br, bw_buffer, bw.pos, NULL, NULL);
+  aom_reader_init(&br, bw_buffer, bw.pos);
   br.accounting = &accounting;
   for (int i = 0; i < kSymbols; i++) {
     aom_read(&br, 32, "A");

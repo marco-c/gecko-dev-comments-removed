@@ -17,7 +17,8 @@ extern "C" {
 #endif
 
 #include <assert.h>
-#include "./aom_config.h"
+#include "config/aom_config.h"
+
 #include "aom/aom_integer.h"
 #include "aom_dsp/bitwriter.h"
 #include "aom_dsp/bitwriter_buffer.h"
@@ -32,12 +33,6 @@ void aom_write_primitive_symmetric(aom_writer *w, int16_t v,
 
 
 void aom_write_primitive_quniform(aom_writer *w, uint16_t n, uint16_t v);
-
-
-
-
-void aom_write_primitive_refbilevel(aom_writer *w, uint16_t n, uint16_t p,
-                                    uint16_t ref, uint16_t v);
 
 
 void aom_write_primitive_subexpfin(aom_writer *w, uint16_t n, uint16_t k,
@@ -61,13 +56,12 @@ void aom_wb_write_signed_primitive_refsubexpfin(struct aom_write_bit_buffer *wb,
 
 int aom_count_primitive_symmetric(int16_t v, unsigned int mag_bits);
 int aom_count_primitive_quniform(uint16_t n, uint16_t v);
-int aom_count_primitive_refbilevel(uint16_t n, uint16_t p, uint16_t ref,
-                                   uint16_t v);
 int aom_count_primitive_subexpfin(uint16_t n, uint16_t k, uint16_t v);
 int aom_count_primitive_refsubexpfin(uint16_t n, uint16_t k, uint16_t ref,
                                      uint16_t v);
 int aom_count_signed_primitive_refsubexpfin(uint16_t n, uint16_t k, int16_t ref,
                                             int16_t v);
+void aom_wb_write_uvlc(struct aom_write_bit_buffer *wb, uint32_t v);
 #ifdef __cplusplus
 }  
 #endif

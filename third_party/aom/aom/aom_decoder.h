@@ -30,8 +30,8 @@
 extern "C" {
 #endif
 
-#include "./aom_codec.h"
-#include "./aom_frame_buffer.h"
+#include "aom/aom_codec.h"
+#include "aom/aom_frame_buffer.h"
 
 
 
@@ -75,17 +75,18 @@ extern "C" {
 
 #define AOM_CODEC_USE_INPUT_FRAGMENTS 0x40000
 
-#define AOM_CODEC_USE_FRAME_THREADING 0x80000
-
 
 
 
 
 
 typedef struct aom_codec_stream_info {
-  unsigned int w;     
-  unsigned int h;     
-  unsigned int is_kf; 
+  unsigned int w;                      
+  unsigned int h;                      
+  unsigned int is_kf;                  
+  unsigned int number_spatial_layers;  
+  unsigned int number_temporal_layers; 
+  unsigned int is_annexb;              
 } aom_codec_stream_info_t;
 
 
@@ -104,6 +105,7 @@ typedef struct aom_codec_dec_cfg {
   unsigned int w;       
   unsigned int h;       
   unsigned int allow_lowbitdepth; 
+  cfg_options_t cfg;              
 } aom_codec_dec_cfg_t;            
 
 
@@ -159,9 +161,10 @@ aom_codec_err_t aom_codec_dec_init_ver(aom_codec_ctx_t *ctx,
 
 
 
+
+
 aom_codec_err_t aom_codec_peek_stream_info(aom_codec_iface_t *iface,
-                                           const uint8_t *data,
-                                           unsigned int data_sz,
+                                           const uint8_t *data, size_t data_sz,
                                            aom_codec_stream_info_t *si);
 
 
@@ -209,11 +212,8 @@ aom_codec_err_t aom_codec_get_stream_info(aom_codec_ctx_t *ctx,
 
 
 
-
-
 aom_codec_err_t aom_codec_decode(aom_codec_ctx_t *ctx, const uint8_t *data,
-                                 unsigned int data_sz, void *user_priv,
-                                 long deadline);
+                                 size_t data_sz, void *user_priv);
 
 
 

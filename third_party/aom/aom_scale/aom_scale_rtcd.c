@@ -8,9 +8,11 @@
 
 
 
-#include "./aom_config.h"
+#include "config/aom_config.h"
+
 #define RTCD_C
-#include "./aom_scale_rtcd.h"
+#include "config/aom_scale_rtcd.h"
+
 #include "aom_ports/aom_once.h"
 
 void aom_scale_rtcd() { once(setup_rtcd_internal); }

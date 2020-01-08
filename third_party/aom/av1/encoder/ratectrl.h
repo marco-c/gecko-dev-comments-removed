@@ -28,7 +28,6 @@ extern "C" {
 #define MAX_GF_INTERVAL 16
 #define FIXED_GF_INTERVAL 8  // Used in some testing modes only
 
-#if CONFIG_EXT_REFS
 typedef enum {
   INTER_NORMAL = 0,
   INTER_LOW = 1,
@@ -38,23 +37,20 @@ typedef enum {
   KF_STD = 5,
   RATE_FACTOR_LEVELS = 6
 } RATE_FACTOR_LEVEL;
-#else
-typedef enum {
-  INTER_NORMAL = 0,
-  INTER_HIGH = 1,
-  GF_ARF_LOW = 2,
-  GF_ARF_STD = 3,
-  KF_STD = 4,
-  RATE_FACTOR_LEVELS = 5
-} RATE_FACTOR_LEVEL;
-#endif  
+
+static const double rate_factor_deltas[RATE_FACTOR_LEVELS] = {
+  1.00,  
+  0.80,  
+  1.50,  
+  1.25,  
+  2.00,  
+  2.00,  
+};
 
 typedef struct {
   int resize_width;
   int resize_height;
-#if CONFIG_FRAME_SUPERRES
   uint8_t superres_denom;
-#endif  
 } size_params_type;
 
 typedef struct {
@@ -88,8 +84,8 @@ typedef struct {
   int source_alt_ref_pending;
   int source_alt_ref_active;
   int is_src_frame_alt_ref;
+  int sframe_due;
 
-#if CONFIG_EXT_REFS
   
   int bipred_group_interval;
 
@@ -99,7 +95,6 @@ typedef struct {
   int is_last_bipred_frame;
   int is_bipred_frame;
   int is_src_frame_ext_arf;
-#endif  
 
   int avg_frame_bandwidth;  
   int min_frame_bandwidth;  

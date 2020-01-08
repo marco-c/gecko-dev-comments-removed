@@ -9,7 +9,9 @@
 
 
 
-#include "./aom_dsp_rtcd.h"
+#include "config/aom_dsp_rtcd.h"
+#include "config/av1_rtcd.h"
+
 #include "av1/common/filter.h"
 #include "av1/common/scale.h"
 #include "aom_dsp/aom_filter.h"
@@ -46,12 +48,9 @@ static int get_fixed_point_scale_factor(int other_size, int this_size) {
   return ((other_size << REF_SCALE_SHIFT) + this_size / 2) / this_size;
 }
 
-static int get_coarse_point_scale_factor(int other_size, int this_size) {
-  
-  
-  
-  
-  return ((other_size << SCALE_SUBPEL_BITS) + this_size / 2) / this_size;
+
+static int fixed_point_scale_to_coarse_point_scale(int scale_fp) {
+  return ROUND_POWER_OF_TWO(scale_fp, REF_SCALE_SHIFT - SCALE_SUBPEL_BITS);
 }
 
 
@@ -64,14 +63,8 @@ MV32 av1_scale_mv(const MV *mvq4, int x, int y,
   return res;
 }
 
-#if CONFIG_HIGHBITDEPTH
-void av1_setup_scale_factors_for_frame(struct scale_factors *sf, int other_w,
-                                       int other_h, int this_w, int this_h,
-                                       int use_highbd) {
-#else
 void av1_setup_scale_factors_for_frame(struct scale_factors *sf, int other_w,
                                        int other_h, int this_w, int this_h) {
-#endif
   if (!valid_ref_frame_size(other_w, other_h, this_w, this_h)) {
     sf->x_scale_fp = REF_INVALID_SCALE;
     sf->y_scale_fp = REF_INVALID_SCALE;
@@ -81,8 +74,8 @@ void av1_setup_scale_factors_for_frame(struct scale_factors *sf, int other_w,
   sf->x_scale_fp = get_fixed_point_scale_factor(other_w, this_w);
   sf->y_scale_fp = get_fixed_point_scale_factor(other_h, this_h);
 
-  sf->x_step_q4 = get_coarse_point_scale_factor(other_w, this_w);
-  sf->y_step_q4 = get_coarse_point_scale_factor(other_h, this_h);
+  sf->x_step_q4 = fixed_point_scale_to_coarse_point_scale(sf->x_scale_fp);
+  sf->y_step_q4 = fixed_point_scale_to_coarse_point_scale(sf->y_scale_fp);
 
   if (av1_is_scaled(sf)) {
     sf->scale_value_x = scaled_x;
@@ -96,91 +89,38 @@ void av1_setup_scale_factors_for_frame(struct scale_factors *sf, int other_w,
   
   
   
+  sf->convolve[0][0][0] = av1_convolve_2d_copy_sr;
+  
+  sf->convolve[0][1][0] = av1_convolve_y_sr;
+  
+  sf->convolve[1][0][0] = av1_convolve_x_sr;
+  
+  sf->convolve[1][1][0] = av1_convolve_2d_sr;
+  
+  sf->convolve[0][0][1] = av1_jnt_convolve_2d_copy;
+  
+  sf->convolve[0][1][1] = av1_jnt_convolve_y;
+  
+  sf->convolve[1][0][1] = av1_jnt_convolve_x;
+  
+  sf->convolve[1][1][1] = av1_jnt_convolve_2d;
   
   
-  if (sf->x_step_q4 == SCALE_SUBPEL_SHIFTS) {
-    if (sf->y_step_q4 == SCALE_SUBPEL_SHIFTS) {
-      
-      sf->predict[0][0][0] = aom_convolve_copy;
-      sf->predict[0][0][1] = aom_convolve_avg;
-      sf->predict[0][1][0] = aom_convolve8_vert;
-      sf->predict[0][1][1] = aom_convolve8_avg_vert;
-      sf->predict[1][0][0] = aom_convolve8_horiz;
-      sf->predict[1][0][1] = aom_convolve8_avg_horiz;
-    } else {
-      
-      sf->predict[0][0][0] = aom_convolve8_vert;
-      sf->predict[0][0][1] = aom_convolve8_avg_vert;
-      sf->predict[0][1][0] = aom_convolve8_vert;
-      sf->predict[0][1][1] = aom_convolve8_avg_vert;
-      sf->predict[1][0][0] = aom_convolve8;
-      sf->predict[1][0][1] = aom_convolve8_avg;
-    }
-  } else {
-    if (sf->y_step_q4 == SCALE_SUBPEL_SHIFTS) {
-      
-      sf->predict[0][0][0] = aom_convolve8_horiz;
-      sf->predict[0][0][1] = aom_convolve8_avg_horiz;
-      sf->predict[0][1][0] = aom_convolve8;
-      sf->predict[0][1][1] = aom_convolve8_avg;
-      sf->predict[1][0][0] = aom_convolve8_horiz;
-      sf->predict[1][0][1] = aom_convolve8_avg_horiz;
-    } else {
-      
-      sf->predict[0][0][0] = aom_convolve8;
-      sf->predict[0][0][1] = aom_convolve8_avg;
-      sf->predict[0][1][0] = aom_convolve8;
-      sf->predict[0][1][1] = aom_convolve8_avg;
-      sf->predict[1][0][0] = aom_convolve8;
-      sf->predict[1][0][1] = aom_convolve8_avg;
-    }
-  }
   
-  sf->predict[1][1][0] = aom_convolve8;
-  sf->predict[1][1][1] = aom_convolve8_avg;
-
-#if CONFIG_HIGHBITDEPTH
-  if (use_highbd) {
-    if (sf->x_step_q4 == SCALE_SUBPEL_SHIFTS) {
-      if (sf->y_step_q4 == SCALE_SUBPEL_SHIFTS) {
-        
-        sf->highbd_predict[0][0][0] = aom_highbd_convolve_copy;
-        sf->highbd_predict[0][0][1] = aom_highbd_convolve_avg;
-        sf->highbd_predict[0][1][0] = aom_highbd_convolve8_vert;
-        sf->highbd_predict[0][1][1] = aom_highbd_convolve8_avg_vert;
-        sf->highbd_predict[1][0][0] = aom_highbd_convolve8_horiz;
-        sf->highbd_predict[1][0][1] = aom_highbd_convolve8_avg_horiz;
-      } else {
-        
-        sf->highbd_predict[0][0][0] = aom_highbd_convolve8_vert;
-        sf->highbd_predict[0][0][1] = aom_highbd_convolve8_avg_vert;
-        sf->highbd_predict[0][1][0] = aom_highbd_convolve8_vert;
-        sf->highbd_predict[0][1][1] = aom_highbd_convolve8_avg_vert;
-        sf->highbd_predict[1][0][0] = aom_highbd_convolve8;
-        sf->highbd_predict[1][0][1] = aom_highbd_convolve8_avg;
-      }
-    } else {
-      if (sf->y_step_q4 == SCALE_SUBPEL_SHIFTS) {
-        
-        sf->highbd_predict[0][0][0] = aom_highbd_convolve8_horiz;
-        sf->highbd_predict[0][0][1] = aom_highbd_convolve8_avg_horiz;
-        sf->highbd_predict[0][1][0] = aom_highbd_convolve8;
-        sf->highbd_predict[0][1][1] = aom_highbd_convolve8_avg;
-        sf->highbd_predict[1][0][0] = aom_highbd_convolve8_horiz;
-        sf->highbd_predict[1][0][1] = aom_highbd_convolve8_avg_horiz;
-      } else {
-        
-        sf->highbd_predict[0][0][0] = aom_highbd_convolve8;
-        sf->highbd_predict[0][0][1] = aom_highbd_convolve8_avg;
-        sf->highbd_predict[0][1][0] = aom_highbd_convolve8;
-        sf->highbd_predict[0][1][1] = aom_highbd_convolve8_avg;
-        sf->highbd_predict[1][0][0] = aom_highbd_convolve8;
-        sf->highbd_predict[1][0][1] = aom_highbd_convolve8_avg;
-      }
-    }
-    
-    sf->highbd_predict[1][1][0] = aom_highbd_convolve8;
-    sf->highbd_predict[1][1][1] = aom_highbd_convolve8_avg;
-  }
-#endif  
+  
+  sf->highbd_convolve[0][0][0] = av1_highbd_convolve_2d_copy_sr;
+  
+  sf->highbd_convolve[0][1][0] = av1_highbd_convolve_y_sr;
+  
+  sf->highbd_convolve[1][0][0] = av1_highbd_convolve_x_sr;
+  
+  sf->highbd_convolve[1][1][0] = av1_highbd_convolve_2d_sr;
+  
+  sf->highbd_convolve[0][0][1] = av1_highbd_jnt_convolve_2d_copy;
+  
+  sf->highbd_convolve[0][1][1] = av1_highbd_jnt_convolve_y;
+  
+  sf->highbd_convolve[1][0][1] = av1_highbd_jnt_convolve_x;
+  
+  sf->highbd_convolve[1][1][1] = av1_highbd_jnt_convolve_2d;
 }

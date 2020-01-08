@@ -12,7 +12,8 @@
 #ifndef AV1_COMMON_ENUMS_H_
 #define AV1_COMMON_ENUMS_H_
 
-#include "./aom_config.h"
+#include "config/aom_config.h"
+
 #include "aom/aom_codec.h"
 #include "aom/aom_integer.h"
 
@@ -22,22 +23,8 @@ extern "C" {
 
 #undef MAX_SB_SIZE
 
-#if CONFIG_NCOBMC_ADAPT_WEIGHT
-#define TWO_MODE
-#endif
 
-#if CONFIG_NCOBMC || CONFIG_NCOBMC_ADAPT_WEIGHT
-#define NC_MODE_INFO 1
-#else
-#define NC_MODE_INFO 0
-#endif
-
-
-#if CONFIG_EXT_PARTITION
 #define MAX_SB_SIZE_LOG2 7
-#else
-#define MAX_SB_SIZE_LOG2 6
-#endif  
 #define MAX_SB_SIZE (1 << MAX_SB_SIZE_LOG2)
 #define MAX_SB_SQUARE (MAX_SB_SIZE * MAX_SB_SIZE)
 
@@ -45,11 +32,7 @@ extern "C" {
 #define MIN_SB_SIZE_LOG2 6
 
 
-#if CONFIG_CB4X4
 #define MI_SIZE_LOG2 2
-#else
-#define MI_SIZE_LOG2 3
-#endif
 #define MI_SIZE (1 << MI_SIZE_LOG2)
 
 
@@ -63,50 +46,49 @@ extern "C" {
 #define MAX_MIB_MASK (MAX_MIB_SIZE - 1)
 
 
-#if CONFIG_EXT_TILE
-#define MAX_TILE_ROWS 1024
-#define MAX_TILE_COLS 1024
-#else
-#if CONFIG_MAX_TILE
 #define MAX_TILE_ROWS 64
 #define MAX_TILE_COLS 64
-#else
-#define MAX_TILE_ROWS 4
-#define MAX_TILE_COLS 64
-#endif
-#endif  
 
-#if CONFIG_VAR_TX
 #define MAX_VARTX_DEPTH 2
-#define SQR_VARTX_DEPTH_INIT 0
-#define RECT_VARTX_DEPTH_INIT 0
-#endif
 
 #define MI_SIZE_64X64 (64 >> MI_SIZE_LOG2)
+#define MI_SIZE_128X128 (128 >> MI_SIZE_LOG2)
 
-#if CONFIG_LOOPFILTER_LEVEL
+#define MAX_PALETTE_SQUARE (64 * 64)
+
+#define PALETTE_MAX_SIZE 8
+
+#define PALETTE_MIN_SIZE 2
+
+#define FRAME_OFFSET_BITS 5
+#define MAX_FRAME_DISTANCE ((1 << FRAME_OFFSET_BITS) - 1)
+
+#define REF_FRAMES_LOG2 3
+#define REF_FRAMES (1 << REF_FRAMES_LOG2)
+
+
+
+
+
+
+
+#define FRAME_BUFFERS (REF_FRAMES + 7)
+
 
 
 #define FRAME_LF_COUNT 4
 #define DEFAULT_DELTA_LF_MULTI 0
-#endif  
+#define MAX_MODE_LF_DELTAS 2
 
-#if CONFIG_LPF_SB
-#define LPF_DELTA_BITS 3
-#define LPF_STEP 2
-#define DELTA_RANGE (1 << LPF_DELTA_BITS)
-#define MAX_LPF_OFFSET (LPF_STEP * ((1 << LPF_DELTA_BITS) - 1))
-
-#define LPF_REUSE_CONTEXT 2
-#define LPF_DELTA_CONTEXT DELTA_RANGE
-#define LPF_SIGN_CONTEXT 2
+#define DIST_PRECISION_BITS 4
+#define DIST_PRECISION (1 << DIST_PRECISION_BITS)  // 16
 
 
-#define FILT_BOUNDARY_OFFSET 8
-#define FILT_BOUNDARY_MI_OFFSET (FILT_BOUNDARY_OFFSET >> MI_SIZE_LOG2)
-#endif  
 
 
+#define LOOP_FILTER_BITMASK 0
+
+#define PROFILE_BITS 3
 
 
 
@@ -117,19 +99,25 @@ typedef enum BITSTREAM_PROFILE {
   PROFILE_0,
   PROFILE_1,
   PROFILE_2,
-  PROFILE_3,
-  MAX_PROFILES
+  MAX_PROFILES,
 } BITSTREAM_PROFILE;
+
+#define LEVEL_MAJOR_BITS 3
+#define LEVEL_MINOR_BITS 2
+#define LEVEL_BITS (LEVEL_MAJOR_BITS + LEVEL_MINOR_BITS)
+
+#define LEVEL_MAJOR_MIN 2
+#define LEVEL_MAJOR_MAX ((1 << LEVEL_MAJOR_BITS) - 1 + LEVEL_MAJOR_MIN)
+#define LEVEL_MINOR_MIN 0
+#define LEVEL_MINOR_MAX ((1 << LEVEL_MINOR_BITS) - 1)
+
+#define OP_POINTS_CNT_MINUS_1_BITS 5
+#define OP_POINTS_IDC_BITS 12
 
 
 
 
 typedef enum ATTRIBUTE_PACKED {
-#if CONFIG_CHROMA_2X2 || CONFIG_CHROMA_SUB8X8
-  BLOCK_2X2,
-  BLOCK_2X4,
-  BLOCK_4X2,
-#endif
   BLOCK_4X4,
   BLOCK_4X8,
   BLOCK_8X4,
@@ -143,33 +131,29 @@ typedef enum ATTRIBUTE_PACKED {
   BLOCK_32X64,
   BLOCK_64X32,
   BLOCK_64X64,
-#if CONFIG_EXT_PARTITION
   BLOCK_64X128,
   BLOCK_128X64,
   BLOCK_128X128,
-#endif  
   BLOCK_4X16,
   BLOCK_16X4,
   BLOCK_8X32,
   BLOCK_32X8,
   BLOCK_16X64,
   BLOCK_64X16,
-#if CONFIG_EXT_PARTITION
-  BLOCK_32X128,
-  BLOCK_128X32,
-#endif  
   BLOCK_SIZES_ALL,
   BLOCK_SIZES = BLOCK_4X16,
   BLOCK_INVALID = 255,
   BLOCK_LARGEST = (BLOCK_SIZES - 1)
 } BLOCK_SIZE;
 
-typedef enum {
+
+#define SQR_BLOCK_SIZES 6
+
+typedef enum ATTRIBUTE_PACKED {
   PARTITION_NONE,
   PARTITION_HORZ,
   PARTITION_VERT,
   PARTITION_SPLIT,
-#if CONFIG_EXT_PARTITION_TYPES
   PARTITION_HORZ_A,  
   PARTITION_HORZ_B,  
   PARTITION_VERT_A,  
@@ -177,134 +161,104 @@ typedef enum {
   PARTITION_HORZ_4,  
   PARTITION_VERT_4,  
   EXT_PARTITION_TYPES,
-#endif  
   PARTITION_TYPES = PARTITION_SPLIT + 1,
   PARTITION_INVALID = 255
 } PARTITION_TYPE;
 
 typedef char PARTITION_CONTEXT;
 #define PARTITION_PLOFFSET 4  // number of probability models per block size
-#define PARTITION_BLOCK_SIZES (4 + CONFIG_EXT_PARTITION)
-#define PARTITION_CONTEXTS_PRIMARY (PARTITION_BLOCK_SIZES * PARTITION_PLOFFSET)
-#if CONFIG_UNPOISON_PARTITION_CTX
-#define INVALID_PARTITION_CTX (-1)
-#define PARTITION_CONTEXTS \
-  (PARTITION_CONTEXTS_PRIMARY + 2 * PARTITION_BLOCK_SIZES)
+#define PARTITION_BLOCK_SIZES 5
+#define PARTITION_CONTEXTS (PARTITION_BLOCK_SIZES * PARTITION_PLOFFSET)
+
+
+#if defined(_MSC_VER)
+typedef uint8_t TX_SIZE;
+enum ATTRIBUTE_PACKED {
 #else
-#define PARTITION_CONTEXTS PARTITION_CONTEXTS_PRIMARY
-#endif
-
-
 typedef enum ATTRIBUTE_PACKED {
-#if CONFIG_CHROMA_2X2
-  TX_2X2,  
 #endif
-  TX_4X4,    
-  TX_8X8,    
-  TX_16X16,  
-  TX_32X32,  
-#if CONFIG_TX64X64
-  TX_64X64,  
-#endif       
-  TX_4X8,    
-  TX_8X4,    
-  TX_8X16,   
-  TX_16X8,   
-  TX_16X32,  
-  TX_32X16,  
-#if CONFIG_TX64X64
+  TX_4X4,             
+  TX_8X8,             
+  TX_16X16,           
+  TX_32X32,           
+  TX_64X64,           
+  TX_4X8,             
+  TX_8X4,             
+  TX_8X16,            
+  TX_16X8,            
+  TX_16X32,           
+  TX_32X16,           
   TX_32X64,           
   TX_64X32,           
-#endif                
   TX_4X16,            
   TX_16X4,            
   TX_8X32,            
   TX_32X8,            
+  TX_16X64,           
+  TX_64X16,           
   TX_SIZES_ALL,       
   TX_SIZES = TX_4X8,  
-  TX_INVALID = 255    
+  TX_SIZES_LARGEST = TX_64X64,
+  TX_INVALID = 255  
+#if defined(_MSC_VER)
+};
+#else
 } TX_SIZE;
+#endif
 
 #define TX_SIZE_LUMA_MIN (TX_4X4)
 
 
 #define TX_SIZE_CTX_MIN (TX_SIZE_LUMA_MIN + 1)
 
-#define MAX_TX_DEPTH (TX_SIZES - TX_SIZE_CTX_MIN)
 
-#if CONFIG_CTX1D
-#define MAX_HVTX_SIZE (1 << 5)
-#endif  
+#define MAX_TX_CATS (TX_SIZES - TX_SIZE_CTX_MIN)
+#define MAX_TX_DEPTH 2
 
-#define MAX_TX_SIZE_LOG2 (5 + CONFIG_TX64X64)
+#define MAX_TX_SIZE_LOG2 (6)
 #define MAX_TX_SIZE (1 << MAX_TX_SIZE_LOG2)
 #define MIN_TX_SIZE_LOG2 2
 #define MIN_TX_SIZE (1 << MIN_TX_SIZE_LOG2)
 #define MAX_TX_SQUARE (MAX_TX_SIZE * MAX_TX_SIZE)
 
 
+#define TX_PAD_HOR_LOG2 2
+#define TX_PAD_HOR 4
+
+
+#define TX_PAD_TOP 2
+#define TX_PAD_BOTTOM 4
+#define TX_PAD_VER (TX_PAD_TOP + TX_PAD_BOTTOM)
+
+#define TX_PAD_END 16
+#define TX_PAD_2D ((32 + TX_PAD_HOR) * (32 + TX_PAD_VER) + TX_PAD_END)
+
+
 #define MAX_TX_BLOCKS_IN_MAX_SB_LOG2 ((MAX_SB_SIZE_LOG2 - MAX_TX_SIZE_LOG2) * 2)
 #define MAX_TX_BLOCKS_IN_MAX_SB (1 << MAX_TX_BLOCKS_IN_MAX_SB_LOG2)
 
-#if CONFIG_NCOBMC_ADAPT_WEIGHT
+
 typedef enum ATTRIBUTE_PACKED {
-  NCOBMC_MODE_0,
-  NCOBMC_MODE_1,
-  NCOBMC_MODE_2,
-  NCOBMC_MODE_3,
-  NCOBMC_MODE_4,
-  NCOBMC_MODE_5,
-  NCOBMC_MODE_6,
-  NCOBMC_MODE_7,
-  ALL_NCOBMC_MODES,
-#ifdef TWO_MODE
-  MAX_NCOBMC_MODES = NCOBMC_MODE_1 + 1,
-#else
-  MAX_NCOBMC_MODES = ALL_NCOBMC_MODES,
-#endif
-  NO_OVERLAP = MAX_NCOBMC_MODES + 1
-} NCOBMC_MODE;
-
-typedef enum {
-  ADAPT_OVERLAP_BLOCK_8X8,
-  ADAPT_OVERLAP_BLOCK_16X16,
-  ADAPT_OVERLAP_BLOCK_32X32,
-  ADAPT_OVERLAP_BLOCK_64X64,
-  ADAPT_OVERLAP_BLOCKS,
-  ADAPT_OVERLAP_BLOCK_INVALID = 255
-} ADAPT_OVERLAP_BLOCK;
-#endif  
-
-
-typedef enum {
-  ONLY_4X4,     
-  ALLOW_8X8,    
-  ALLOW_16X16,  
-  ALLOW_32X32,  
-#if CONFIG_TX64X64
-  ALLOW_64X64,  
-#endif
-  TX_MODE_SELECT,  
+  ONLY_4X4,         
+  TX_MODE_LARGEST,  
+  TX_MODE_SELECT,   
   TX_MODES,
 } TX_MODE;
 
 
-typedef enum {
+typedef enum ATTRIBUTE_PACKED {
   DCT_1D,
   ADST_1D,
   FLIPADST_1D,
   IDTX_1D,
-  
-  
   TX_TYPES_1D,
 } TX_TYPE_1D;
 
-typedef enum {
+typedef enum ATTRIBUTE_PACKED {
   DCT_DCT,    
   ADST_DCT,   
   DCT_ADST,   
   ADST_ADST,  
-#if CONFIG_EXT_TX
   FLIPADST_DCT,
   DCT_FLIPADST,
   FLIPADST_FLIPADST,
@@ -317,25 +271,26 @@ typedef enum {
   H_ADST,
   V_FLIPADST,
   H_FLIPADST,
-#endif  
-#if CONFIG_MRC_TX
-  MRC_DCT,  
-#endif      
   TX_TYPES,
 } TX_TYPE;
 
-#if CONFIG_EXT_TX
 typedef enum {
+  REG_REG,
+  REG_SMOOTH,
+  REG_SHARP,
+  SMOOTH_REG,
+  SMOOTH_SMOOTH,
+  SMOOTH_SHARP,
+  SHARP_REG,
+  SHARP_SMOOTH,
+  SHARP_SHARP,
+} DUAL_FILTER_TYPE;
+
+typedef enum ATTRIBUTE_PACKED {
   
   EXT_TX_SET_DCTONLY,
   
   EXT_TX_SET_DCT_IDTX,
-#if CONFIG_MRC_TX
-  
-  EXT_TX_SET_MRC_DCT,
-  
-  EXT_TX_SET_MRC_DCT_IDTX,
-#endif  
   
   EXT_TX_SET_DTT4_IDTX,
   
@@ -348,45 +303,13 @@ typedef enum {
 } TxSetType;
 
 #define IS_2D_TRANSFORM(tx_type) (tx_type < IDTX)
-#else
-#define IS_2D_TRANSFORM(tx_type) 1
-#endif
 
-typedef enum {
-  TILE_LEFT_BOUNDARY = 1,
-  TILE_RIGHT_BOUNDARY = 2,
-  TILE_ABOVE_BOUNDARY = 4,
-  TILE_BOTTOM_BOUNDARY = 8,
-  FRAME_LEFT_BOUNDARY = 16,
-  FRAME_RIGHT_BOUNDARY = 32,
-  FRAME_ABOVE_BOUNDARY = 64,
-  FRAME_BOTTOM_BOUNDARY = 128,
-} BOUNDARY_TYPE;
-
-#if CONFIG_EXT_TX
-#if CONFIG_CHROMA_2X2
-#define EXT_TX_SIZES 5  // number of sizes that use extended transforms
-#else
-#define EXT_TX_SIZES 4  // number of sizes that use extended transforms
-#endif                  
-#if CONFIG_MRC_TX
-#define EXT_TX_SETS_INTER 5  // Sets of transform selections for INTER
-#define EXT_TX_SETS_INTRA 4  // Sets of transform selections for INTRA
-#else                        
+#define EXT_TX_SIZES 4       // number of sizes that use extended transforms
 #define EXT_TX_SETS_INTER 4  // Sets of transform selections for INTER
 #define EXT_TX_SETS_INTRA 3  // Sets of transform selections for INTRA
-#endif                       
-#else
-#if CONFIG_CHROMA_2X2
-#define EXT_TX_SIZES 4  // number of sizes that use extended transforms
-#else
-#define EXT_TX_SIZES 3  // number of sizes that use extended transforms
-#endif
-#endif  
 
-typedef enum {
+typedef enum ATTRIBUTE_PACKED {
   AOM_LAST_FLAG = 1 << 0,
-#if CONFIG_EXT_REFS
   AOM_LAST2_FLAG = 1 << 1,
   AOM_LAST3_FLAG = 1 << 2,
   AOM_GOLD_FLAG = 1 << 3,
@@ -394,42 +317,44 @@ typedef enum {
   AOM_ALT2_FLAG = 1 << 5,
   AOM_ALT_FLAG = 1 << 6,
   AOM_REFFRAME_ALL = (1 << 7) - 1
-#else   
-  AOM_GOLD_FLAG = 1 << 1,
-  AOM_ALT_FLAG = 1 << 2,
-  AOM_REFFRAME_ALL = (1 << 3) - 1
-#endif  
 } AOM_REFFRAME;
 
-#if CONFIG_EXT_COMP_REFS
-#define USE_UNI_COMP_REFS 1
-
-typedef enum {
+typedef enum ATTRIBUTE_PACKED {
   UNIDIR_COMP_REFERENCE,
   BIDIR_COMP_REFERENCE,
   COMP_REFERENCE_TYPES,
 } COMP_REFERENCE_TYPE;
-#else  
-#define USE_UNI_COMP_REFS 0
-#endif  
 
-typedef enum { PLANE_TYPE_Y, PLANE_TYPE_UV, PLANE_TYPES } PLANE_TYPE;
+typedef enum ATTRIBUTE_PACKED {
+  PLANE_TYPE_Y,
+  PLANE_TYPE_UV,
+  PLANE_TYPES
+} PLANE_TYPE;
 
-#if CONFIG_CFL
 #define CFL_ALPHABET_SIZE_LOG2 4
 #define CFL_ALPHABET_SIZE (1 << CFL_ALPHABET_SIZE_LOG2)
 #define CFL_MAGS_SIZE ((2 << CFL_ALPHABET_SIZE_LOG2) + 1)
 #define CFL_IDX_U(idx) (idx >> CFL_ALPHABET_SIZE_LOG2)
 #define CFL_IDX_V(idx) (idx & (CFL_ALPHABET_SIZE - 1))
 
-typedef enum { CFL_PRED_U, CFL_PRED_V, CFL_PRED_PLANES } CFL_PRED_TYPE;
+typedef enum ATTRIBUTE_PACKED {
+  CFL_PRED_U,
+  CFL_PRED_V,
+  CFL_PRED_PLANES
+} CFL_PRED_TYPE;
 
-typedef enum {
+typedef enum ATTRIBUTE_PACKED {
   CFL_SIGN_ZERO,
   CFL_SIGN_NEG,
   CFL_SIGN_POS,
   CFL_SIGNS
 } CFL_SIGN_TYPE;
+
+typedef enum ATTRIBUTE_PACKED {
+  CFL_DISALLOWED,
+  CFL_ALLOWED,
+  CFL_ALLOWED_TYPES
+} CFL_ALLOWED_TYPE;
 
 
 #define CFL_JOINT_SIGNS (CFL_SIGNS * CFL_SIGNS - 1)
@@ -445,17 +370,13 @@ typedef enum {
 
 #define CFL_CONTEXT_V(js) \
   (CFL_SIGN_V(js) * CFL_SIGNS + CFL_SIGN_U(js) - CFL_SIGNS)
-#endif
 
-typedef enum {
+typedef enum ATTRIBUTE_PACKED {
   PALETTE_MAP,
-#if CONFIG_MRC_TX
-  MRC_MAP,
-#endif  
   COLOR_MAP_TYPES,
 } COLOR_MAP_TYPE;
 
-typedef enum {
+typedef enum ATTRIBUTE_PACKED {
   TWO_COLORS,
   THREE_COLORS,
   FOUR_COLORS,
@@ -466,7 +387,7 @@ typedef enum {
   PALETTE_SIZES
 } PALETTE_SIZE;
 
-typedef enum {
+typedef enum ATTRIBUTE_PACKED {
   PALETTE_COLOR_ONE,
   PALETTE_COLOR_TWO,
   PALETTE_COLOR_THREE,
@@ -481,33 +402,23 @@ typedef enum {
 
 
 typedef enum ATTRIBUTE_PACKED {
-  DC_PRED,      
-  V_PRED,       
-  H_PRED,       
-  D45_PRED,     
-  D135_PRED,    
-  D117_PRED,    
-  D153_PRED,    
-  D207_PRED,    
-  D63_PRED,     
-  SMOOTH_PRED,  
-#if CONFIG_SMOOTH_HV
+  DC_PRED,        
+  V_PRED,         
+  H_PRED,         
+  D45_PRED,       
+  D135_PRED,      
+  D113_PRED,      
+  D157_PRED,      
+  D203_PRED,      
+  D67_PRED,       
+  SMOOTH_PRED,    
   SMOOTH_V_PRED,  
   SMOOTH_H_PRED,  
-#endif            
-  TM_PRED,        
+  PAETH_PRED,     
   NEARESTMV,
   NEARMV,
-  ZEROMV,
+  GLOBALMV,
   NEWMV,
-#if CONFIG_COMPOUND_SINGLEREF
-  
-  SR_NEAREST_NEARMV,
-  
-  SR_NEAR_NEWMV,
-  SR_ZERO_NEWMV,
-  SR_NEW_NEWMV,
-#endif  
   
   NEAREST_NEARESTMV,
   NEAR_NEARMV,
@@ -515,175 +426,131 @@ typedef enum ATTRIBUTE_PACKED {
   NEW_NEARESTMV,
   NEAR_NEWMV,
   NEW_NEARMV,
-  ZERO_ZEROMV,
+  GLOBAL_GLOBALMV,
   NEW_NEWMV,
   MB_MODE_COUNT,
-  INTRA_MODES = TM_PRED + 1,     
+  INTRA_MODE_START = DC_PRED,
+  INTRA_MODE_END = NEARESTMV,
+  INTRA_MODE_NUM = INTRA_MODE_END - INTRA_MODE_START,
+  SINGLE_INTER_MODE_START = NEARESTMV,
+  SINGLE_INTER_MODE_END = NEAREST_NEARESTMV,
+  SINGLE_INTER_MODE_NUM = SINGLE_INTER_MODE_END - SINGLE_INTER_MODE_START,
+  COMP_INTER_MODE_START = NEAREST_NEARESTMV,
+  COMP_INTER_MODE_END = MB_MODE_COUNT,
+  COMP_INTER_MODE_NUM = COMP_INTER_MODE_END - COMP_INTER_MODE_START,
+  INTRA_MODES = PAETH_PRED + 1,  
   INTRA_INVALID = MB_MODE_COUNT  
 } PREDICTION_MODE;
 
-#if CONFIG_CFL
 
 
 typedef enum ATTRIBUTE_PACKED {
-  UV_DC_PRED,      
-  UV_V_PRED,       
-  UV_H_PRED,       
-  UV_D45_PRED,     
-  UV_D135_PRED,    
-  UV_D117_PRED,    
-  UV_D153_PRED,    
-  UV_D207_PRED,    
-  UV_D63_PRED,     
-  UV_SMOOTH_PRED,  
-#if CONFIG_SMOOTH_HV
+  UV_DC_PRED,        
+  UV_V_PRED,         
+  UV_H_PRED,         
+  UV_D45_PRED,       
+  UV_D135_PRED,      
+  UV_D113_PRED,      
+  UV_D157_PRED,      
+  UV_D203_PRED,      
+  UV_D67_PRED,       
+  UV_SMOOTH_PRED,    
   UV_SMOOTH_V_PRED,  
   UV_SMOOTH_H_PRED,  
-#endif               
-  UV_TM_PRED,        
+  UV_PAETH_PRED,     
   UV_CFL_PRED,       
   UV_INTRA_MODES,
   UV_MODE_INVALID,  
 } UV_PREDICTION_MODE;
-#else
-#define UV_INTRA_MODES (INTRA_MODES)
-#define UV_PREDICTION_MODE PREDICTION_MODE
-#define UV_DC_PRED (DC_PRED)
-#define UV_MODE_INVALID (INTRA_INVALID)
-#endif  
 
-typedef enum {
+typedef enum ATTRIBUTE_PACKED {
   SIMPLE_TRANSLATION,
-#if CONFIG_MOTION_VAR
-  OBMC_CAUSAL,  
-#if CONFIG_NCOBMC_ADAPT_WEIGHT
-  NCOBMC_ADAPT_WEIGHT,
-#endif  
-#endif  
-#if CONFIG_WARPED_MOTION
+  OBMC_CAUSAL,    
   WARPED_CAUSAL,  
-#endif            
   MOTION_MODES
-#if CONFIG_NCOBMC_ADAPT_WEIGHT && CONFIG_WARPED_MOTION
-  ,
-  OBMC_FAMILY_MODES = NCOBMC_ADAPT_WEIGHT + 1
-#endif
 } MOTION_MODE;
 
-#if CONFIG_INTERINTRA
-typedef enum {
+typedef enum ATTRIBUTE_PACKED {
   II_DC_PRED,
   II_V_PRED,
   II_H_PRED,
   II_SMOOTH_PRED,
   INTERINTRA_MODES
 } INTERINTRA_MODE;
-#endif
 
 typedef enum {
   COMPOUND_AVERAGE,
-#if CONFIG_WEDGE
   COMPOUND_WEDGE,
-#endif  
-#if CONFIG_COMPOUND_SEGMENT
-  COMPOUND_SEG,
-#endif  
+  COMPOUND_DIFFWTD,
   COMPOUND_TYPES,
 } COMPOUND_TYPE;
 
-
-#if CONFIG_FILTER_INTRA
-typedef enum {
+typedef enum ATTRIBUTE_PACKED {
   FILTER_DC_PRED,
   FILTER_V_PRED,
   FILTER_H_PRED,
-  FILTER_D45_PRED,
-  FILTER_D135_PRED,
-  FILTER_D117_PRED,
-  FILTER_D153_PRED,
-  FILTER_D207_PRED,
-  FILTER_D63_PRED,
-  FILTER_TM_PRED,
+  FILTER_D157_PRED,
+  FILTER_PAETH_PRED,
   FILTER_INTRA_MODES,
 } FILTER_INTRA_MODE;
-#endif  
 
-#if CONFIG_EXT_INTRA
 #define DIRECTIONAL_MODES 8
-#endif  
+#define MAX_ANGLE_DELTA 3
+#define ANGLE_STEP 3
 
 #define INTER_MODES (1 + NEWMV - NEARESTMV)
-
-#if CONFIG_COMPOUND_SINGLEREF
-#define INTER_SINGLEREF_COMP_MODES (1 + SR_NEW_NEWMV - SR_NEAREST_NEARMV)
-#endif  
 
 #define INTER_COMPOUND_MODES (1 + NEW_NEWMV - NEAREST_NEARESTMV)
 
 #define SKIP_CONTEXTS 3
+#define SKIP_MODE_CONTEXTS 3
+
+#define COMP_INDEX_CONTEXTS 6
+#define COMP_GROUP_IDX_CONTEXTS 6
 
 #define NMV_CONTEXTS 3
 
-#define NEWMV_MODE_CONTEXTS 7
-#define ZEROMV_MODE_CONTEXTS 2
-#define REFMV_MODE_CONTEXTS 9
-#define DRL_MODE_CONTEXTS 5
+#define NEWMV_MODE_CONTEXTS 6
+#define GLOBALMV_MODE_CONTEXTS 2
+#define REFMV_MODE_CONTEXTS 6
+#define DRL_MODE_CONTEXTS 3
 
-#define ZEROMV_OFFSET 3
+#define GLOBALMV_OFFSET 3
 #define REFMV_OFFSET 4
 
-#define NEWMV_CTX_MASK ((1 << ZEROMV_OFFSET) - 1)
-#define ZEROMV_CTX_MASK ((1 << (REFMV_OFFSET - ZEROMV_OFFSET)) - 1)
+#define NEWMV_CTX_MASK ((1 << GLOBALMV_OFFSET) - 1)
+#define GLOBALMV_CTX_MASK ((1 << (REFMV_OFFSET - GLOBALMV_OFFSET)) - 1)
 #define REFMV_CTX_MASK ((1 << (8 - REFMV_OFFSET)) - 1)
 
-#define ALL_ZERO_FLAG_OFFSET 8
-#define SKIP_NEARESTMV_OFFSET 9
-#define SKIP_NEARMV_OFFSET 10
-#define SKIP_NEARESTMV_SUB8X8_OFFSET 11
+#define COMP_NEWMV_CTXS 5
+#define INTER_MODE_CONTEXTS 8
 
-#define INTER_MODE_CONTEXTS 7
 #define DELTA_Q_SMALL 3
 #define DELTA_Q_PROBS (DELTA_Q_SMALL)
 #define DEFAULT_DELTA_Q_RES 4
-#if CONFIG_EXT_DELTA_Q
 #define DELTA_LF_SMALL 3
 #define DELTA_LF_PROBS (DELTA_LF_SMALL)
 #define DEFAULT_DELTA_LF_RES 2
-#endif
 
 
 #define MAX_MV_REF_CANDIDATES 2
 
-#define MAX_REF_MV_STACK_SIZE 16
-#if CONFIG_EXT_PARTITION
+#define MAX_REF_MV_STACK_SIZE 8
 #define REF_CAT_LEVEL 640
-#else
-#define REF_CAT_LEVEL 255
-#endif  
 
 #define INTRA_INTER_CONTEXTS 4
 #define COMP_INTER_CONTEXTS 5
-#define REF_CONTEXTS 5
+#define REF_CONTEXTS 3
 
-#if CONFIG_EXT_COMP_REFS
 #define COMP_REF_TYPE_CONTEXTS 5
 #define UNI_COMP_REF_CONTEXTS 3
-#endif  
 
-#if CONFIG_COMPOUND_SINGLEREF
-#define COMP_INTER_MODE_CONTEXTS 4
-#endif  
-
-#if CONFIG_VAR_TX
-#define TXFM_PARTITION_CONTEXTS ((TX_SIZES - TX_8X8) * 6 - 2)
+#define TXFM_PARTITION_CONTEXTS ((TX_SIZES - TX_8X8) * 6 - 3)
 typedef uint8_t TXFM_CONTEXT;
-#endif
 
 #define NONE_FRAME -1
 #define INTRA_FRAME 0
 #define LAST_FRAME 1
-
-#if CONFIG_EXT_REFS
 #define LAST2_FRAME 2
 #define LAST3_FRAME 3
 #define GOLDEN_FRAME 4
@@ -691,94 +558,55 @@ typedef uint8_t TXFM_CONTEXT;
 #define ALTREF2_FRAME 6
 #define ALTREF_FRAME 7
 #define LAST_REF_FRAMES (LAST3_FRAME - LAST_FRAME + 1)
-#else  
-#define GOLDEN_FRAME 2
-#define ALTREF_FRAME 3
-#endif  
 
 #define INTER_REFS_PER_FRAME (ALTREF_FRAME - LAST_FRAME + 1)
-#define TOTAL_REFS_PER_FRAME (ALTREF_FRAME - INTRA_FRAME + 1)
 
 #define FWD_REFS (GOLDEN_FRAME - LAST_FRAME + 1)
 #define FWD_RF_OFFSET(ref) (ref - LAST_FRAME)
-#if CONFIG_EXT_REFS
 #define BWD_REFS (ALTREF_FRAME - BWDREF_FRAME + 1)
 #define BWD_RF_OFFSET(ref) (ref - BWDREF_FRAME)
-#else
-#define BWD_REFS 1
-#define BWD_RF_OFFSET(ref) (ref - ALTREF_FRAME)
-#endif  
 
 #define SINGLE_REFS (FWD_REFS + BWD_REFS)
-#if CONFIG_EXT_COMP_REFS
-typedef enum {
-  LAST_LAST2_FRAMES,     
-  LAST_LAST3_FRAMES,     
-  LAST_GOLDEN_FRAMES,    
-  BWDREF_ALTREF_FRAMES,  
-  UNIDIR_COMP_REFS
+
+typedef enum ATTRIBUTE_PACKED {
+  LAST_LAST2_FRAMES,      
+  LAST_LAST3_FRAMES,      
+  LAST_GOLDEN_FRAMES,     
+  BWDREF_ALTREF_FRAMES,   
+  LAST2_LAST3_FRAMES,     
+  LAST2_GOLDEN_FRAMES,    
+  LAST3_GOLDEN_FRAMES,    
+  BWDREF_ALTREF2_FRAMES,  
+  ALTREF2_ALTREF_FRAMES,  
+  TOTAL_UNIDIR_COMP_REFS,
+  
+  
+  UNIDIR_COMP_REFS = BWDREF_ALTREF_FRAMES + 1,
 } UNIDIR_COMP_REF;
+
+#define TOTAL_COMP_REFS (FWD_REFS * BWD_REFS + TOTAL_UNIDIR_COMP_REFS)
+
 #define COMP_REFS (FWD_REFS * BWD_REFS + UNIDIR_COMP_REFS)
-#else  
-#define COMP_REFS (FWD_REFS * BWD_REFS)
-#endif  
 
-#define MODE_CTX_REF_FRAMES (TOTAL_REFS_PER_FRAME + COMP_REFS)
 
-#if CONFIG_SUPERTX
-#define PARTITION_SUPERTX_CONTEXTS 2
-#define MAX_SUPERTX_BLOCK_SIZE BLOCK_32X32
-#endif  
 
-#if CONFIG_LOOP_RESTORATION
-typedef enum {
+
+#define MODE_CTX_REF_FRAMES (REF_FRAMES + TOTAL_COMP_REFS)
+
+typedef enum ATTRIBUTE_PACKED {
   RESTORE_NONE,
   RESTORE_WIENER,
   RESTORE_SGRPROJ,
   RESTORE_SWITCHABLE,
   RESTORE_SWITCHABLE_TYPES = RESTORE_SWITCHABLE,
-  RESTORE_TYPES,
+  RESTORE_TYPES = 4,
 } RestorationType;
-#endif  
 
-#if CONFIG_FRAME_SUPERRES
 #define SUPERRES_SCALE_BITS 3
-#define SUPERRES_SCALE_DENOMINATOR_MIN 8
-#endif  
+#define SUPERRES_SCALE_DENOMINATOR_MIN (SCALE_NUMERATOR + 1)
 
-#if CONFIG_LPF_DIRECT
-typedef enum {
-  VERT_HORZ,
-  DEGREE_30,
-  DEGREE_45,
-  DEGREE_60,
-  DEGREE_120,
-  DEGREE_135,
-  DEGREE_150,
-  FILTER_DEGREES,
-} FILTER_DEGREE;
-#endif  
 
-#if CONFIG_OBU
-
-typedef enum {
-  OBU_SEQUENCE_HEADER = 1,
-  OBU_TD = 2,
-  OBU_FRAME_HEADER = 3,
-  OBU_TILE_GROUP = 4,
-  OBU_METADATA = 5,
-  OBU_PADDING = 15,
-} OBU_TYPE;
-#endif
-
-#if CONFIG_LGT_FROM_PRED
-#define LGT_SIZES 2
-
-#define LGT_FROM_PRED_INTRA 1
-#define LGT_FROM_PRED_INTER 1
-
-#define LGT_SL_INTRA 0
-#endif  
+#define MAX_EXTERNAL_REFERENCES 128
 
 #ifdef __cplusplus
 }  

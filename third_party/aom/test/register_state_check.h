@@ -13,7 +13,9 @@
 #define TEST_REGISTER_STATE_CHECK_H_
 
 #include "third_party/googletest/src/googletest/include/gtest/gtest.h"
-#include "./aom_config.h"
+
+#include "config/aom_config.h"
+
 #include "aom/aom_integer.h"
 
 
@@ -29,7 +31,7 @@
 
 
 
-#if defined(_WIN64)
+#if defined(_WIN64) && ARCH_X86_64
 
 #undef NOMINMAX
 #define NOMINMAX
@@ -78,53 +80,6 @@ class RegisterStateCheck {
 
   bool initialized_;
   CONTEXT pre_context_;
-};
-
-#define ASM_REGISTER_STATE_CHECK(statement)    \
-  do {                                         \
-    libaom_test::RegisterStateCheck reg_check; \
-    statement;                                 \
-  } while (false)
-
-}  
-
-#elif defined(CONFIG_SHARED) && defined(HAVE_NEON_ASM) && !CONFIG_SHARED && \
-    HAVE_NEON_ASM && CONFIG_AV1
-
-extern "C" {
-
-void aom_push_neon(int64_t *store);
-}
-
-namespace libaom_test {
-
-
-
-
-class RegisterStateCheck {
- public:
-  RegisterStateCheck() { initialized_ = StoreRegisters(pre_store_); }
-  ~RegisterStateCheck() { Check(); }
-
- private:
-  static bool StoreRegisters(int64_t store[8]) {
-    aom_push_neon(store);
-    return true;
-  }
-
-  
-  void Check() const {
-    ASSERT_TRUE(initialized_);
-    int64_t post_store[8];
-    aom_push_neon(post_store);
-    for (int i = 0; i < 8; ++i) {
-      EXPECT_EQ(pre_store_[i], post_store[i])
-          << "d" << i + 8 << " has been modified";
-    }
-  }
-
-  bool initialized_;
-  int64_t pre_store_[8];
 };
 
 #define ASM_REGISTER_STATE_CHECK(statement)    \

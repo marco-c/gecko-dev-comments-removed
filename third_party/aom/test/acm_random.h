@@ -36,6 +36,19 @@ class ACMRandom {
     return (value >> 15) & 0xffff;
   }
 
+  int16_t Rand15Signed(void) {
+    const uint32_t value =
+        random_.Generate(testing::internal::Random::kMaxRange);
+    return (value >> 17) & 0xffff;
+  }
+
+  uint16_t Rand12(void) {
+    const uint32_t value =
+        random_.Generate(testing::internal::Random::kMaxRange);
+    
+    return (value >> 19) & 0xfff;
+  }
+
   int16_t Rand9Signed(void) {
     
     const uint32_t value = random_.Generate(512);

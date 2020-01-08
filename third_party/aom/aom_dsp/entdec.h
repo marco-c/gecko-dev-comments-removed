@@ -33,12 +33,6 @@ struct od_ec_dec {
   
   const unsigned char *buf;
   
-  const unsigned char *eptr;
-  
-  od_ec_window end_window;
-  
-  int nend_bits;
-  
 
 
 
