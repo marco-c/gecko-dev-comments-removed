@@ -315,6 +315,8 @@ class GlobalHelperThreadState
     template <typename T>
     bool checkTaskThreadLimit(size_t maxThreads, bool isMaster = false) const;
 
+    void triggerFreeUnusedMemory();
+
   private:
     
 
@@ -362,6 +364,12 @@ struct HelperThread
 
 
     bool terminate;
+
+    
+
+
+
+    bool shouldFreeUnusedMemory;
 
     
     mozilla::Maybe<HelperTaskUnion> currentTask;
@@ -451,6 +459,8 @@ struct HelperThread
 
         return nullptr;
     }
+
+    void maybeFreeUnusedMemory(JSContext* cx);
 
     void handleWasmWorkload(AutoLockHelperThreadState& locked, wasm::CompileMode mode);
 
