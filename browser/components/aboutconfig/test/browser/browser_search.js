@@ -24,19 +24,26 @@ add_task(async function test_search() {
 
     
     await ContentTask.spawn(browser, prefArray, aPrefArray => {
-      Assert.equal(content.document.getElementById("prefs").childElementCount,
-                   aPrefArray.length);
+      
+      
+      
+      
+      
+      Assert.greater(content.document.getElementById("prefs").childElementCount,
+                     aPrefArray.length - 50);
 
       
+      
+      
       let search = content.document.getElementById("search");
-      search.value = "button   ";
+      search.value = "wser.down   ";
       search.focus();
     });
 
     EventUtils.sendKey("return");
     await ContentTask.spawn(browser, prefArray, aPrefArray => {
       let filteredPrefArray =
-          aPrefArray.filter(pref => pref.includes("button"));
+          aPrefArray.filter(pref => pref.includes("wser.down"));
       
       
       
@@ -51,8 +58,13 @@ add_task(async function test_search() {
 
     EventUtils.sendKey("return");
     await ContentTask.spawn(browser, prefArray, aPrefArray => {
-      Assert.equal(content.document.getElementById("prefs").childElementCount,
-                   aPrefArray.length);
+      
+      
+      
+      
+      
+      Assert.greater(content.document.getElementById("prefs").childElementCount,
+                     aPrefArray.length - 50);
 
       
       let search = content.document.getElementById("search");
