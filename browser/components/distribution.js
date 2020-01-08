@@ -165,15 +165,17 @@ DistributionCustomizer.prototype = {
         break;
 
       case "livemark":
-        if (itemIndex < defaultIndex)
-          index = prependIndex++;
-
         
-        let parentId = await PlacesUtils.promiseItemId(parentGuid);
-        await PlacesUtils.livemarks.addLivemark({
-          feedURI: Services.io.newURI(item.feedLink),
-          siteURI: Services.io.newURI(item.siteLink),
-          parentId, index, title: item.title,
+        
+        if (!item.siteLink) {
+          break;
+        }
+        if (itemIndex < defaultIndex) {
+          index = prependIndex++;
+        }
+
+        await PlacesUtils.bookmarks.insert({
+          parentGuid, index, title: item.title, url: item.siteLink,
         });
         break;
 
