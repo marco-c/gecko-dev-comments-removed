@@ -705,7 +705,7 @@ const gCSSProperties = {
   'hyphens': {
     
     types: [
-      { type: 'discrete', options: [ [ 'manual', 'auto' ] ] }
+      { type: 'discrete', options: [ [ 'manual', 'none' ] ] }
     ]
   },
   'image-orientation': {
