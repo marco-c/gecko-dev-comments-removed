@@ -118,7 +118,7 @@ add_task(async function test_register() {
 
   
   ok(active, "request should still be active");
-  PopupNotifications.panel.firstChild.button.click();
+  PopupNotifications.panel.firstElementChild.button.click();
   await request;
 
   
@@ -139,7 +139,7 @@ add_task(async function test_sign() {
 
   
   ok(active, "request should still be active");
-  PopupNotifications.panel.firstChild.button.click();
+  PopupNotifications.panel.firstElementChild.button.click();
   await request;
 
   
@@ -159,7 +159,7 @@ add_task(async function test_register_direct_cancel() {
 
   
   ok(active, "request should still be active");
-  PopupNotifications.panel.firstChild.secondaryButton.click();
+  PopupNotifications.panel.firstElementChild.secondaryButton.click();
   await promise;
 
   
@@ -186,7 +186,7 @@ add_task(async function test_register_direct_proceed() {
   await promiseNotification("webauthn-prompt-register-direct");
 
   
-  PopupNotifications.panel.firstChild.button.click();
+  PopupNotifications.panel.firstElementChild.button.click();
 
   
   await request.then(verifyDirectCertificate);
@@ -204,8 +204,8 @@ add_task(async function test_register_direct_proceed_anon() {
   await promiseNotification("webauthn-prompt-register-direct");
 
   
-  PopupNotifications.panel.firstChild.checkbox.checked = true;
-  PopupNotifications.panel.firstChild.button.click();
+  PopupNotifications.panel.firstElementChild.checkbox.checked = true;
+  PopupNotifications.panel.firstElementChild.button.click();
 
   
   await request.then(verifyAnonymizedCertificate);

@@ -289,7 +289,7 @@ function triggerSecondaryCommand(popup, index) {
   }
 
   
-  notification.secondaryButton.nextSibling.nextSibling.focus();
+  notification.secondaryButton.nextElementSibling.nextElementSibling.focus();
 
   popup.addEventListener("popupshown", function() {
     info("Command popup open for notification " + notification.id);

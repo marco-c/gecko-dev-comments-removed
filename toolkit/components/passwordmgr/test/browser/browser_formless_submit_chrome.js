@@ -66,7 +66,7 @@ add_task(async function test_backButton_forwardButton() {
     let forwardButton = document.getElementById("forward-button");
 
     let forwardTransitionPromise;
-    if (forwardButton.nextSibling == gURLBar) {
+    if (forwardButton.nextElementSibling == gURLBar) {
       
       
       forwardTransitionPromise = BrowserTestUtils.waitForEvent(forwardButton, "transitionend");
