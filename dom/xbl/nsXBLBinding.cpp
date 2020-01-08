@@ -996,7 +996,7 @@ nsXBLBinding::DoInitJSClass(JSContext *cx,
     return NS_ERROR_FAILURE;
   }
   js::AssertSameCompartment(holder, xblScope);
-  JSAutoRealmAllowCCW ar(cx, holder);
+  JSAutoRealm ar(cx, holder);
 
   
   
@@ -1036,7 +1036,7 @@ nsXBLBinding::DoInitJSClass(JSContext *cx,
 
     
     
-    JSAutoRealmAllowCCW ar3(cx, holder);
+    JSAutoRealm ar3(cx, holder);
     if (!JS_WrapObject(cx, &proto) ||
         !JS_DefineUCProperty(cx, holder, aClassName.get(), -1, proto,
                              JSPROP_READONLY | JSPROP_PERMANENT))
