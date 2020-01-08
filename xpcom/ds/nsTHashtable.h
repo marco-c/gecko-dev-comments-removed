@@ -98,6 +98,7 @@ public:
   ~nsTHashtable();
 
   nsTHashtable(nsTHashtable<EntryType>&& aOther);
+  nsTHashtable<EntryType>& operator=(nsTHashtable<EntryType>&& aOther);
 
   
 
@@ -403,6 +404,14 @@ template<class EntryType>
 nsTHashtable<EntryType>::nsTHashtable(nsTHashtable<EntryType>&& aOther)
   : mTable(std::move(aOther.mTable))
 {
+}
+
+template<class EntryType>
+nsTHashtable<EntryType>&
+nsTHashtable<EntryType>::operator=(nsTHashtable<EntryType>&& aOther)
+{
+  mTable = std::move(aOther.mTable);
+  return *this;
 }
 
 template<class EntryType>
