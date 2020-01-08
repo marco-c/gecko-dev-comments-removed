@@ -25,7 +25,6 @@ config = {
 
     
     
-    'base_name': 'OS X 10.7 %(branch)s',
     'platform': 'macosx64',
     'stage_platform': 'macosx64',
     'env': {

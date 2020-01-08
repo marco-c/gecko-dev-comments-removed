@@ -18,7 +18,6 @@ config = {
 
     
     
-    'base_name': 'OS X 10.7 %(branch)s_Artifact_build',
     'platform': 'macosx64',
     'stage_platform': 'macosx64-debug',
     'env': {

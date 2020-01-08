@@ -36,7 +36,6 @@ config = {
 
     
     
-    'base_name': 'Linux_%(branch)s',
     'platform': 'linux',
     'stage_platform': 'linux',
     'env': {
