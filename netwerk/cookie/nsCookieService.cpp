@@ -2582,45 +2582,6 @@ nsCookieService::GetSessionEnumerator(nsISimpleEnumerator **aEnumerator)
   return NS_NewArrayEnumerator(aEnumerator, cookieList, NS_GET_IID(nsICookie2));
 }
 
-static nsresult
-InitializeOriginAttributes(OriginAttributes* aAttrs,
-                           JS::HandleValue aOriginAttributes,
-                           JSContext* aCx,
-                           uint8_t aArgc,
-                           const char16_t* aAPI,
-                           const char16_t* aInterfaceSuffix)
-{
-  MOZ_ASSERT(aAttrs);
-  MOZ_ASSERT(aCx);
-  MOZ_ASSERT(aAPI);
-  MOZ_ASSERT(aInterfaceSuffix);
-
-  if (aArgc == 0) {
-    const char16_t* params[] = {
-      aAPI,
-      aInterfaceSuffix
-    };
-
-    
-    
-    
-    
-    nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-                                    NS_LITERAL_CSTRING("Cookie Manager"),
-                                    nullptr,
-                                    nsContentUtils::eNECKO_PROPERTIES,
-                                    "nsICookieManagerAPIDeprecated",
-                                    params, ArrayLength(params));
-  } else if (aArgc == 1) {
-    if (!aOriginAttributes.isObject() ||
-        !aAttrs->Init(aCx, aOriginAttributes)) {
-      return NS_ERROR_INVALID_ARG;
-    }
-  }
-
-  return NS_OK;
-}
-
 NS_IMETHODIMP
 nsCookieService::Add(const nsACString &aHost,
                      const nsACString &aPath,
