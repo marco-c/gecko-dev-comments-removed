@@ -37,7 +37,7 @@ ReflowTracker.prototype = {
 
   async startTracking() {
     
-    if (!this.reflowFront && this.target.form.reflowActor) {
+    if (!this.reflowFront) {
       this.reflowFront = await this.target.getFront("reflow");
     }
 
