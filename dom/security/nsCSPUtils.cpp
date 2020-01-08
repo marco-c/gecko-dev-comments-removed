@@ -153,7 +153,7 @@ CSP_LogMessage(const nsAString& aMessage,
   
   
   if (!aSourceLine.IsEmpty()) {
-    cspMsg.AppendLiteral(" Source: ");
+    cspMsg.AppendLiteral(u" Source: ");
     cspMsg.Append(aSourceLine);
     cspMsg.AppendLiteral(u".");
   }
