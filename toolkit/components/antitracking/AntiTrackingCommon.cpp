@@ -886,9 +886,14 @@ bool AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
   }
 
   
-  if (!nsContentUtils::IsThirdPartyWindowOrChannel(aWindow, nullptr, aURI)) {
-    LOG(("Our window isn't a third-party window"));
-    return true;
+  
+  
+  if (behavior != nsICookieService::BEHAVIOR_REJECT_TRACKER) {
+    
+    if (!nsContentUtils::IsThirdPartyWindowOrChannel(aWindow, nullptr, aURI)) {
+      LOG(("Our window isn't a third-party window"));
+      return true;
+    }
   }
 
   if (behavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN ||
@@ -908,6 +913,9 @@ bool AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
     LOG(("Our window isn't a third-party tracking window"));
     return true;
   }
+
+  MOZ_ASSERT(
+      !nsContentUtils::IsThirdPartyWindowOrChannel(aWindow, nullptr, aURI));
 
   nsCOMPtr<nsIPrincipal> parentPrincipal;
   nsCOMPtr<nsIURI> parentPrincipalURI;
