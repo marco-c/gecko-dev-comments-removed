@@ -691,15 +691,23 @@ async function sanitizeOnShutdown(progress) {
 
   
   for (let permission of Services.perms.enumerator) {
-    if (permission.type == "cookie" && permission.capability == Ci.nsICookiePermission.ACCESS_SESSION) {
-      
-      let principals = await getAllPrincipals(permission.principal.URI);
-      let promises = [];
-      principals.forEach(principal => {
-        promises.push(sanitizeSessionPrincipal(principal));
-      });
-      await Promise.all(promises);
+    if (permission.type != "cookie" ||
+        permission.capability != Ci.nsICookiePermission.ACCESS_SESSION) {
+      continue;
     }
+
+    
+    if (!isSupportedURI(permission.principal.URI)) {
+      continue;
+    }
+
+    
+    let principals = await getAllPrincipals(permission.principal.URI);
+    let promises = [];
+    principals.forEach(principal => {
+      promises.push(sanitizeSessionPrincipal(principal));
+    });
+    await Promise.all(promises);
   }
 
   if (Sanitizer.shouldSanitizeNewTabContainer) {
@@ -732,8 +740,11 @@ async function getAllPrincipals(matchUri = null) {
       for (let item of request.result) {
         let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(item.origin);
         let uri = principal.URI;
-        if ((!matchUri || Services.eTLD.hasRootDomain(matchUri.host, uri.host)) &&
-            (uri.scheme == "http" || uri.scheme == "https" || uri.scheme == "file")) {
+        if (!isSupportedURI(uri)) {
+          continue;
+        }
+
+        if (!matchUri || Services.eTLD.hasRootDomain(matchUri.host, uri.host)) {
           list.push(principal);
         }
       }
@@ -745,6 +756,7 @@ async function getAllPrincipals(matchUri = null) {
   for (let i = 0; i < serviceWorkers.length; i++) {
     let sw = serviceWorkers.queryElementAt(i, Ci.nsIServiceWorkerRegistrationInfo);
     let uri = sw.principal.URI;
+    
     if (!matchUri || Services.eTLD.hasRootDomain(matchUri.host, uri.host)) {
       principals.push(sw.principal);
     }
@@ -804,6 +816,11 @@ function cookiesAllowedForDomainOrSubDomain(principal) {
     }
 
     
+    if (!isSupportedURI(perm.principal.URI)) {
+      continue;
+    }
+
+    
     if (Services.eTLD.hasRootDomain(perm.principal.URI.host,
                                     principal.URI.host)) {
       return cookiesAllowedForDomainOrSubDomain(perm.principal);
@@ -859,6 +876,7 @@ function addPendingSanitization(id, itemsToClear, options) {
   Services.prefs.setStringPref(Sanitizer.PREF_PENDING_SANITIZATIONS,
                                JSON.stringify(pendingSanitizations));
 }
+
 function removePendingSanitization(id) {
   let pendingSanitizations = safeGetPendingSanitizations();
   let i = pendingSanitizations.findIndex(s => s.id == id);
@@ -867,12 +885,14 @@ function removePendingSanitization(id) {
     JSON.stringify(pendingSanitizations));
   return s;
 }
+
 function getAndClearPendingSanitizations() {
   let pendingSanitizations = safeGetPendingSanitizations();
   if (pendingSanitizations.length)
     Services.prefs.clearUserPref(Sanitizer.PREF_PENDING_SANITIZATIONS);
   return pendingSanitizations;
 }
+
 function safeGetPendingSanitizations() {
   try {
     return JSON.parse(
@@ -894,4 +914,10 @@ async function clearData(range, flags) {
       Services.clearData.deleteData(flags, resolve);
     });
   }
+}
+
+function isSupportedURI(uri) {
+  return uri.scheme == "http" ||
+         uri.scheme == "https" ||
+         uri.scheme == "file";
 }
