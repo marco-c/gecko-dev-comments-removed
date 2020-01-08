@@ -56,13 +56,12 @@ public:
 
   void ResolutionUpdated();
 
+private:
+  ~MobileViewportManager();
+
   
 
-
   void SetInitialViewport();
-
-  private:
-  ~MobileViewportManager();
 
   
 

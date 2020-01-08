@@ -1081,10 +1081,6 @@ private:
 
   
   
-  uint32_t mMetaViewportOverride;
-
-  
-  
   
   
   
