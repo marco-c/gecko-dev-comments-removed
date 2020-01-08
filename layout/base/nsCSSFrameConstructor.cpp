@@ -10760,11 +10760,6 @@ bool nsCSSFrameConstructor::MayNeedToCreateColumnSpanSiblings(
     return false;
   }
 
-  if (aBlockFrame->IsDetailsFrame()) {
-    
-    
-    return false;
-  }
   
   return true;
 }
@@ -10775,7 +10770,6 @@ nsFrameItems nsCSSFrameConstructor::CreateColumnSpanSiblings(
   MOZ_ASSERT(!aPositionedFrame || aPositionedFrame->IsAbsPosContainingBlock());
 
   nsIContent* const content = aInitialBlock->GetContent();
-  ComputedStyle* const initialBlockStyle = aInitialBlock->Style();
   nsContainerFrame* const parentFrame = aInitialBlock->GetParent();
 
   aInitialBlock->SetProperty(nsIFrame::HasColumnSpanSiblings(), true);
@@ -10810,10 +10804,9 @@ nsFrameItems nsCSSFrameConstructor::CreateColumnSpanSiblings(
 
     
     
-    nsBlockFrame* nonColumnSpanWrapper =
-        NS_NewBlockFrame(mPresShell, initialBlockStyle);
-    InitAndRestoreFrame(aState, content, parentFrame, nonColumnSpanWrapper,
-                        false);
+    auto* nonColumnSpanWrapper = static_cast<nsContainerFrame*>(
+        CreateContinuingFrame(mPresShell->GetPresContext(),
+                              lastNonColumnSpanWrapper, parentFrame, false));
     nonColumnSpanWrapper->AddStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR |
                                        NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
 
@@ -10829,8 +10822,6 @@ nsFrameItems nsCSSFrameConstructor::CreateColumnSpanSiblings(
       }
     }
 
-    lastNonColumnSpanWrapper->SetNextContinuation(nonColumnSpanWrapper);
-    nonColumnSpanWrapper->SetPrevContinuation(lastNonColumnSpanWrapper);
     siblings.AddChild(nonColumnSpanWrapper);
 
     lastNonColumnSpanWrapper = nonColumnSpanWrapper;
