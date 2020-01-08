@@ -74,8 +74,7 @@ SendCallToMiddleman(size_t aCallId, CallArguments* aArguments, bool aDiverged)
   const Redirection& redirection = gRedirections[aCallId];
   MOZ_RELEASE_ASSERT(redirection.mMiddlemanCall);
 
-  Maybe<MonitorAutoLock> lock;
-  lock.emplace(*gMonitor);
+  MonitorAutoLock lock(*gMonitor);
 
   
   size_t id = gMiddlemanCalls.length();
@@ -120,12 +119,7 @@ SendCallToMiddleman(size_t aCallId, CallArguments* aArguments, bool aDiverged)
 
   
   InfallibleVector<char> outputData;
-  if (!child::SendMiddlemanCallRequest(inputData.begin(), inputData.length(), &outputData)) {
-    
-    
-    lock.reset();
-    Thread::WaitForever();
-  }
+  child::SendMiddlemanCallRequest(inputData.begin(), inputData.length(), &outputData);
 
   
   

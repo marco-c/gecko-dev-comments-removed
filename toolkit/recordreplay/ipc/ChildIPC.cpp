@@ -71,6 +71,10 @@ static bool gDebuggerRunsInMiddleman;
 static MiddlemanCallResponseMessage* gCallResponseMessage;
 
 
+
+static bool gWaitingForCallResponse;
+
+
 static void
 ChannelMessageHandler(Message* aMsg)
 {
@@ -168,6 +172,7 @@ ChannelMessageHandler(Message* aMsg)
   }
   case MessageType::MiddlemanCallResponse: {
     MonitorAutoLock lock(*gMonitor);
+    MOZ_RELEASE_ASSERT(gWaitingForCallResponse);
     MOZ_RELEASE_ASSERT(!gCallResponseMessage);
     gCallResponseMessage = (MiddlemanCallResponseMessage*) aMsg;
     aMsg = nullptr; 
@@ -564,6 +569,9 @@ NotifyPaintComplete()
   NS_DispatchToMainThread(NewRunnableFunction("PaintFromMainThread", PaintFromMainThread));
 }
 
+
+static bool gDidRepaint;
+
 void
 Repaint(size_t* aWidth, size_t* aHeight)
 {
@@ -579,14 +587,16 @@ Repaint(size_t* aWidth, size_t* aHeight)
 
   
   
-  
-  Thread* compositorThread = Thread::GetById(gCompositorThreadId);
-  if (!compositorThread->WillDivergeFromRecordingSoon()) {
+  if (!gDidRepaint) {
+    gDidRepaint = true;
+
     
     
     
-    Thread::GetById(gCompositorThreadId)->SetShouldDivergeFromRecording();
-    Thread::ResumeSingleIdleThread(gCompositorThreadId);
+    for (size_t i = MainThreadId + 1; i <= MaxRecordedThreadId; i++) {
+      Thread::GetById(i)->SetShouldDivergeFromRecording();
+    }
+    Thread::ResumeIdleThreads();
 
     
     
@@ -594,10 +604,14 @@ Repaint(size_t* aWidth, size_t* aHeight)
 
     
     
-    MonitorAutoLock lock(*gMonitor);
-    while (gNumPendingPaints) {
-      gMonitor->Wait();
+    {
+      MonitorAutoLock lock(*gMonitor);
+      while (gNumPendingPaints) {
+        gMonitor->Wait();
+      }
     }
+
+    Thread::WaitForIdleThreads();
   }
 
   if (gDrawTargetBuffer) {
@@ -608,14 +622,6 @@ Repaint(size_t* aWidth, size_t* aHeight)
     *aWidth = 0;
     *aHeight = 0;
   }
-}
-
-static bool
-CompositorCanPerformMiddlemanCalls()
-{
-  
-  
-  return !!gNumPendingPaints;
 }
 
 bool
@@ -710,27 +716,17 @@ HitBreakpoint(bool aRecordingEndpoint, const uint32_t* aBreakpoints, size_t aNum
     });
 }
 
-bool
+void
 SendMiddlemanCallRequest(const char* aInputData, size_t aInputSize,
                          InfallibleVector<char>* aOutputData)
 {
-  Thread* thread = Thread::Current();
-
-  
-  
-  
-  
-  
-  
-  MOZ_RELEASE_ASSERT(thread->IsMainThread() || thread->Id() == gCompositorThreadId);
-
-  if (thread->Id() == gCompositorThreadId && !CompositorCanPerformMiddlemanCalls()) {
-    return false;
-  }
-
+  AutoPassThroughThreadEvents pt;
   MonitorAutoLock lock(*gMonitor);
 
-  MOZ_RELEASE_ASSERT(!gCallResponseMessage);
+  while (gWaitingForCallResponse) {
+    gMonitor->Wait();
+  }
+  gWaitingForCallResponse = true;
 
   MiddlemanCallRequestMessage* msg = MiddlemanCallRequestMessage::New(aInputData, aInputSize);
   gChannel->SendMessage(*msg);
@@ -744,9 +740,9 @@ SendMiddlemanCallRequest(const char* aInputData, size_t aInputSize,
 
   free(gCallResponseMessage);
   gCallResponseMessage = nullptr;
+  gWaitingForCallResponse = false;
 
   gMonitor->Notify();
-  return true;
 }
 
 void
