@@ -32,6 +32,7 @@ const TOPICS = [
   "fxaccounts:onlogin", 
   "fxaccounts:onlogout",
   "fxaccounts:profilechange",
+  "fxaccounts:statechange",
 ];
 
 const ON_UPDATE = "sync-ui-state:update";
