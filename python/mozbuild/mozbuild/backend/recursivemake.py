@@ -1092,11 +1092,11 @@ class RecursiveMakeBackend(CommonBackend):
             
             
 
-            mk.add_statement('%s_deps = %s' % (module_name, ' '.join(deps)))
+            mk.add_statement('%s_deps := %s' % (module_name, ' '.join(deps)))
 
             build_files.add_optional_exists('%s.xpt' % module_name)
 
-        mk.add_statement('all_idl_dirs = %s' % ' '.join(sorted(all_directories)))
+        mk.add_statement('all_idl_dirs := %s' % ' '.join(sorted(all_directories)))
 
         rules = StringIO()
         mk.dump(rules, removal_guard=False)
