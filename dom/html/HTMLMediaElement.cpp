@@ -2598,14 +2598,6 @@ HTMLMediaElement::NotifyMediaStreamTracksAvailable(DOMMediaStream* aStream)
 
   mSrcStreamTracksAvailable = true;
 
-  bool videoHasChanged = IsVideo() && HasVideo() != !VideoTracks()->IsEmpty();
-
-  if (videoHasChanged) {
-    
-    
-    NotifyOwnerDocumentActivityChanged();
-  }
-
   FirstFrameLoaded();
   UpdateReadyStateInternal();
 }
