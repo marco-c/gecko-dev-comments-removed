@@ -33,22 +33,27 @@ class StackSlotAllocator
         MOZ_ASSERT(SupportsSimd);
         
         
-        if (height_ % 8 != 0)
+        if (height_ % 8 != 0) {
             addAvailableSlot(height_ += 4);
-        if (height_ % 16 != 0)
+        }
+        if (height_ % 16 != 0) {
             addAvailableDoubleSlot(height_ += 8);
+        }
         return height_ += 16;
     }
     uint32_t allocateDoubleSlot() {
-        if (!doubleSlots.empty())
+        if (!doubleSlots.empty()) {
             return doubleSlots.popCopy();
-        if (height_ % 8 != 0)
+        }
+        if (height_ % 8 != 0) {
             addAvailableSlot(height_ += 4);
+        }
         return height_ += 8;
     }
     uint32_t allocateSlot() {
-        if (!normalSlots.empty())
+        if (!normalSlots.empty()) {
             return normalSlots.popCopy();
+        }
         if (!doubleSlots.empty()) {
             uint32_t index = doubleSlots.popCopy();
             addAvailableSlot(index - 4);

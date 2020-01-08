@@ -54,8 +54,9 @@ ValueNumberer::VisibleValues::ValueHasher::match(Key k, Lookup l)
 {
     
     
-    if (k->dependency() != l->dependency())
+    if (k->dependency() != l->dependency()) {
         return false;
+    }
 
     bool congruent = k->congruentTo(l); 
 #ifdef JS_JITSPEW
@@ -111,8 +112,9 @@ void
 ValueNumberer::VisibleValues::forget(const MDefinition* def)
 {
     Ptr p = set_.lookup(def);
-    if (p && *p == def)
+    if (p && *p == def) {
         set_.remove(p);
+    }
 }
 
 
@@ -150,8 +152,9 @@ static bool
 HasSuccessor(const MControlInstruction* block, const MBasicBlock* succ)
 {
     for (size_t i = 0, e = block->numSuccessors(); i != e; ++i) {
-        if (block->getSuccessor(i) == succ)
+        if (block->getSuccessor(i) == succ) {
             return true;
+        }
     }
     return false;
 }
@@ -169,8 +172,9 @@ ComputeNewDominator(MBasicBlock* block, MBasicBlock* old)
         
         while (!now->dominates(pred)) {
             MBasicBlock* next = now->immediateDominator();
-            if (next == old)
+            if (next == old) {
                 return old;
+            }
             if (next == now) {
                 MOZ_ASSERT(block == old, "Non-self-dominating block became self-dominating");
                 return block;
@@ -195,12 +199,14 @@ static bool
 ScanDominatorsForDefs(MBasicBlock* block)
 {
     for (MBasicBlock* i = block;;) {
-        if (BlockHasInterestingDefs(block))
+        if (BlockHasInterestingDefs(block)) {
             return true;
+        }
 
         MBasicBlock* immediateDominator = i->immediateDominator();
-        if (immediateDominator == i)
+        if (immediateDominator == i) {
             break;
+        }
         i = immediateDominator;
     }
     return false;
@@ -214,8 +220,9 @@ ScanDominatorsForDefs(MBasicBlock* now, MBasicBlock* old)
     MOZ_ASSERT(old->dominates(now), "Refined dominator not dominated by old dominator");
 
     for (MBasicBlock* i = now; i != old; i = i->immediateDominator()) {
-        if (BlockHasInterestingDefs(i))
+        if (BlockHasInterestingDefs(i)) {
             return true;
+        }
     }
     return false;
 }
@@ -241,8 +248,9 @@ IsDominatorRefined(MBasicBlock* block)
 
     
     
-    if (block == old)
+    if (block == old) {
         return block != now && ScanDominatorsForDefs(now);
+    }
     MOZ_ASSERT(block != now, "Non-self-dominating block became self-dominating");
     return ScanDominatorsForDefs(now, old);
 }
@@ -254,11 +262,13 @@ ValueNumberer::handleUseReleased(MDefinition* def, UseRemovedOption useRemovedOp
 {
     if (IsDiscardable(def)) {
         values_.forget(def);
-        if (!deadDefs_.append(def))
+        if (!deadDefs_.append(def)) {
             return false;
+        }
     } else {
-        if (useRemovedOption == SetUseRemoved)
+        if (useRemovedOption == SetUseRemoved) {
             def->setUseRemovedUnchecked();
+        }
     }
     return true;
 }
@@ -280,16 +290,18 @@ bool
 ValueNumberer::releaseResumePointOperands(MResumePoint* resume)
 {
     for (size_t i = 0, e = resume->numOperands(); i < e; ++i) {
-        if (!resume->hasOperand(i))
+        if (!resume->hasOperand(i)) {
             continue;
+        }
         MDefinition* op = resume->getOperand(i);
         resume->releaseOperand(i);
 
         
         
         
-        if (!handleUseReleased(op, SetUseRemoved))
+        if (!handleUseReleased(op, SetUseRemoved)) {
             return false;
+        }
     }
     return true;
 }
@@ -303,8 +315,9 @@ ValueNumberer::releaseAndRemovePhiOperands(MPhi* phi)
     for (int o = phi->numOperands() - 1; o >= 0; --o) {
         MDefinition* op = phi->getOperand(o);
         phi->removeOperand(o);
-        if (!handleUseReleased(op, DontSetUseRemoved))
+        if (!handleUseReleased(op, DontSetUseRemoved)) {
             return false;
+        }
     }
     return true;
 }
@@ -317,8 +330,9 @@ ValueNumberer::releaseOperands(MDefinition* def)
     for (size_t o = 0, e = def->numOperands(); o < e; ++o) {
         MDefinition* op = def->getOperand(o);
         def->releaseOperand(o);
-        if (!handleUseReleased(op, DontSetUseRemoved))
+        if (!handleUseReleased(op, DontSetUseRemoved)) {
             return false;
+        }
     }
     return true;
 }
@@ -345,17 +359,20 @@ ValueNumberer::discardDef(MDefinition* def)
     MBasicBlock* block = def->block();
     if (def->isPhi()) {
         MPhi* phi = def->toPhi();
-        if (!releaseAndRemovePhiOperands(phi))
+        if (!releaseAndRemovePhiOperands(phi)) {
              return false;
+        }
         block->discardPhi(phi);
     } else {
         MInstruction* ins = def->toInstruction();
         if (MResumePoint* resume = ins->resumePoint()) {
-            if (!releaseResumePointOperands(resume))
+            if (!releaseResumePointOperands(resume)) {
                 return false;
+            }
         }
-        if (!releaseOperands(ins))
+        if (!releaseOperands(ins)) {
              return false;
+        }
         block->discardIgnoreOperands(ins);
     }
 
@@ -390,11 +407,13 @@ ValueNumberer::processDeadDefs()
 
         
         
-        if (def == nextDef)
+        if (def == nextDef) {
             continue;
+        }
 
-        if (!discardDef(def))
+        if (!discardDef(def)) {
             return false;
+        }
     }
     return true;
 }
@@ -409,8 +428,9 @@ hasNonDominatingPredecessor(MBasicBlock* block, MBasicBlock* loopPred)
 
     for (uint32_t i = 0, e = block->numPredecessors(); i < e; ++i) {
         MBasicBlock* pred = block->getPredecessor(i);
-        if (pred != loopPred && !block->dominates(pred))
+        if (pred != loopPred && !block->dominates(pred)) {
             return true;
+        }
     }
     return false;
 }
@@ -427,8 +447,9 @@ ValueNumberer::fixupOSROnlyLoop(MBasicBlock* block, MBasicBlock* backedge)
     
     
     MBasicBlock* fake = MBasicBlock::New(graph_, block->info(), nullptr, MBasicBlock::NORMAL);
-    if (fake == nullptr)
+    if (fake == nullptr) {
         return false;
+    }
 
     graph_.insertBlockBefore(block, fake);
     fake->setImmediateDominator(fake);
@@ -443,14 +464,16 @@ ValueNumberer::fixupOSROnlyLoop(MBasicBlock* block, MBasicBlock* backedge)
         MPhi* phi = *iter;
         MPhi* fakePhi = MPhi::New(graph_.alloc(), phi->type());
         fake->addPhi(fakePhi);
-        if (!phi->addInputSlow(fakePhi))
+        if (!phi->addInputSlow(fakePhi)) {
             return false;
+        }
     }
 
     fake->end(MGoto::New(graph_.alloc(), block));
 
-    if (!block->addPredecessorWithoutPhis(fake))
+    if (!block->addPredecessorWithoutPhis(fake)) {
         return false;
+    }
 
     
     block->clearLoopHeader();
@@ -481,8 +504,9 @@ ValueNumberer::removePredecessorAndDoDCE(MBasicBlock* block, MBasicBlock* pred, 
         phi->removeOperand(predIndex);
 
         nextDef_ = iter != end ? *iter : nullptr;
-        if (!handleUseReleased(op, DontSetUseRemoved) || !processDeadDefs())
+        if (!handleUseReleased(op, DontSetUseRemoved) || !processDeadDefs()) {
             return false;
+        }
 
         
         
@@ -490,8 +514,9 @@ ValueNumberer::removePredecessorAndDoDCE(MBasicBlock* block, MBasicBlock* pred, 
             phi = nextDef_->toPhi();
             iter++;
             nextDef_ = iter != end ? *iter : nullptr;
-            if (!discardDefsRecursively(phi))
+            if (!discardDefsRecursively(phi)) {
                 return false;
+            }
         }
     }
     nextDef_ = nullptr;
@@ -511,8 +536,9 @@ ValueNumberer::removePredecessorAndCleanUp(MBasicBlock* block, MBasicBlock* pred
 
     
     
-    for (MPhiIterator iter(block->phisBegin()), end(block->phisEnd()); iter != end; ++iter)
+    for (MPhiIterator iter(block->phisBegin()), end(block->phisEnd()); iter != end; ++iter) {
         values_.forget(*iter);
+    }
 
     
     
@@ -539,8 +565,9 @@ ValueNumberer::removePredecessorAndCleanUp(MBasicBlock* block, MBasicBlock* pred
     }
 
     
-    if (!removePredecessorAndDoDCE(block, pred, block->getPredecessorIndex(pred)))
+    if (!removePredecessorAndDoDCE(block, pred, block->getPredecessorIndex(pred))) {
         return false;
+    }
 
     
     if (block->numPredecessors() == 0 || isUnreachableLoop) {
@@ -550,37 +577,43 @@ ValueNumberer::removePredecessorAndCleanUp(MBasicBlock* block, MBasicBlock* pred
         
         
         MBasicBlock* parent = block->immediateDominator();
-        if (parent != block)
+        if (parent != block) {
             parent->removeImmediatelyDominatedBlock(block);
+        }
 
         
         
         
         
         
-        if (block->isLoopHeader())
+        if (block->isLoopHeader()) {
             block->clearLoopHeader();
+        }
         for (size_t i = 0, e = block->numPredecessors(); i < e; ++i) {
-            if (!removePredecessorAndDoDCE(block, block->getPredecessor(i), i))
+            if (!removePredecessorAndDoDCE(block, block->getPredecessor(i), i)) {
                 return false;
+            }
         }
 
         
         
         if (MResumePoint* resume = block->entryResumePoint()) {
-            if (!releaseResumePointOperands(resume) || !processDeadDefs())
+            if (!releaseResumePointOperands(resume) || !processDeadDefs()) {
                 return false;
+            }
             if (MResumePoint* outer = block->outerResumePoint()) {
-                if (!releaseResumePointOperands(outer) || !processDeadDefs())
+                if (!releaseResumePointOperands(outer) || !processDeadDefs()) {
                     return false;
+                }
             }
             MOZ_ASSERT(nextDef_ == nullptr);
             for (MInstructionIterator iter(block->begin()), end(block->end()); iter != end; ) {
                 MInstruction* ins = *iter++;
                 nextDef_ = iter != end ? *iter : nullptr;
                 if (MResumePoint* resume = ins->resumePoint()) {
-                    if (!releaseResumePointOperands(resume) || !processDeadDefs())
+                    if (!releaseResumePointOperands(resume) || !processDeadDefs()) {
                         return false;
+                    }
                 }
             }
             nextDef_ = nullptr;
@@ -637,8 +670,9 @@ ValueNumberer::leader(MDefinition* def)
             values_.overwrite(p, def);
         } else {
             
-            if (!values_.add(p, def))
+            if (!values_.add(p, def)) {
                 return nullptr;
+            }
         }
 
 #ifdef JS_JITSPEW
@@ -668,8 +702,9 @@ bool
 ValueNumberer::loopHasOptimizablePhi(MBasicBlock* header) const
 {
     
-    if (header->isMarked())
+    if (header->isMarked()) {
         return false;
+    }
 
     
     
@@ -677,8 +712,9 @@ ValueNumberer::loopHasOptimizablePhi(MBasicBlock* header) const
         MPhi* phi = *iter;
         MOZ_ASSERT_IF(!phi->hasUses(), !DeadIfUnused(phi));
 
-        if (phi->operandIfRedundant() || hasLeader(phi, header))
+        if (phi->operandIfRedundant() || hasLeader(phi, header)) {
             return true; 
+        }
     }
     return false;
 }
@@ -748,8 +784,9 @@ ValueNumberer::visitDefinition(MDefinition* def)
     
     
     
-    if (def->isRecoveredOnBailout())
+    if (def->isRecoveredOnBailout()) {
         return true;
+    }
 
     
     
@@ -772,14 +809,16 @@ ValueNumberer::visitDefinition(MDefinition* def)
     
     MDefinition* sim = simplified(def);
     if (sim != def) {
-        if (sim == nullptr)
+        if (sim == nullptr) {
             return false;
+        }
 
         bool isNewInstruction = sim->block() == nullptr;
 
         
-        if (isNewInstruction)
+        if (isNewInstruction) {
             def->block()->insertAfter(def->toInstruction(), sim->toInstruction());
+        }
 
 #ifdef JS_JITSPEW
         JitSpew(JitSpew_GVN, "      Folded %s%u to %s%u",
@@ -793,16 +832,19 @@ ValueNumberer::visitDefinition(MDefinition* def)
         
         def->setNotGuardUnchecked();
 
-        if (def->isGuardRangeBailouts())
+        if (def->isGuardRangeBailouts()) {
             sim->setGuardRangeBailoutsUnchecked();
+        }
 
         if (DeadIfUnused(def)) {
-            if (!discardDefsRecursively(def))
+            if (!discardDefsRecursively(def)) {
                 return false;
+            }
 
             
-            if (sim->isDiscarded())
+            if (sim->isDiscarded()) {
                 return true;
+            }
         }
 
         if (!rerun_ && def->isPhi() && !sim->isPhi()) {
@@ -816,21 +858,24 @@ ValueNumberer::visitDefinition(MDefinition* def)
 
         
         
-        if (!isNewInstruction)
+        if (!isNewInstruction) {
             return true;
+        }
     }
 
     
     
     
-    if (dep != nullptr)
+    if (dep != nullptr) {
         def->setDependency(dep);
+    }
 
     
     MDefinition* rep = leader(def);
     if (rep != def) {
-        if (rep == nullptr)
+        if (rep == nullptr) {
             return false;
+        }
         if (rep->updateForReplacement(def)) {
 #ifdef JS_JITSPEW
             JitSpew(JitSpew_GVN,
@@ -867,11 +912,13 @@ ValueNumberer::visitControlInstruction(MBasicBlock* block)
     
     MControlInstruction* control = block->lastIns();
     MDefinition* rep = simplified(control);
-    if (rep == control)
+    if (rep == control) {
         return true;
+    }
 
-    if (rep == nullptr)
+    if (rep == nullptr) {
         return false;
+    }
 
     MControlInstruction* newControl = rep->toControlInstruction();
     MOZ_ASSERT(!newControl->block(),
@@ -889,27 +936,34 @@ ValueNumberer::visitControlInstruction(MBasicBlock* block)
         MOZ_ASSERT(newNumSuccs < oldNumSuccs, "New control instruction has too many successors");
         for (size_t i = 0; i != oldNumSuccs; ++i) {
             MBasicBlock* succ = control->getSuccessor(i);
-            if (HasSuccessor(newControl, succ))
+            if (HasSuccessor(newControl, succ)) {
                 continue;
-            if (succ->isMarked())
+            }
+            if (succ->isMarked()) {
                 continue;
-            if (!removePredecessorAndCleanUp(succ, block))
+            }
+            if (!removePredecessorAndCleanUp(succ, block)) {
                 return false;
-            if (succ->isMarked())
+            }
+            if (succ->isMarked()) {
                 continue;
+            }
             if (!rerun_) {
-                if (!remainingBlocks_.append(succ))
+                if (!remainingBlocks_.append(succ)) {
                     return false;
+                }
             }
         }
     }
 
-    if (!releaseOperands(control))
+    if (!releaseOperands(control)) {
         return false;
+    }
     block->discardIgnoreOperands(control);
     block->end(newControl);
-    if (block->entryResumePoint() && newNumSuccs != oldNumSuccs)
+    if (block->entryResumePoint() && newNumSuccs != oldNumSuccs) {
         block->flagOperandsOfPrunedBranches(newControl);
+    }
     return processDeadDefs();
 }
 
@@ -932,17 +986,21 @@ ValueNumberer::visitUnreachableBlock(MBasicBlock* block)
     
     for (size_t i = 0, e = block->numSuccessors(); i < e; ++i) {
         MBasicBlock* succ = block->getSuccessor(i);
-        if (succ->isDead() || succ->isMarked())
+        if (succ->isDead() || succ->isMarked()) {
             continue;
-        if (!removePredecessorAndCleanUp(succ, block))
+        }
+        if (!removePredecessorAndCleanUp(succ, block)) {
             return false;
-        if (succ->isMarked())
+        }
+        if (succ->isMarked()) {
             continue;
+        }
         
         
         if (!rerun_) {
-            if (!remainingBlocks_.append(succ))
+            if (!remainingBlocks_.append(succ)) {
                 return false;
+            }
         }
     }
 
@@ -951,11 +1009,13 @@ ValueNumberer::visitUnreachableBlock(MBasicBlock* block)
     MOZ_ASSERT(nextDef_ == nullptr);
     for (MDefinitionIterator iter(block); iter; ) {
         MDefinition* def = *iter++;
-        if (def->hasUses())
+        if (def->hasUses()) {
             continue;
+        }
         nextDef_ = iter ? *iter : nullptr;
-        if (!discardDefsRecursively(def))
+        if (!discardDefsRecursively(def)) {
             return false;
+        }
     }
 
     nextDef_ = nullptr;
@@ -975,8 +1035,9 @@ ValueNumberer::visitBlock(MBasicBlock* block)
     
     MOZ_ASSERT(nextDef_ == nullptr);
     for (MDefinitionIterator iter(block); iter; ) {
-        if (!graph_.alloc().ensureBallast())
+        if (!graph_.alloc().ensureBallast()) {
             return false;
+        }
         MDefinition* def = *iter++;
 
         
@@ -984,18 +1045,21 @@ ValueNumberer::visitBlock(MBasicBlock* block)
 
         
         if (IsDiscardable(def)) {
-            if (!discardDefsRecursively(def))
+            if (!discardDefsRecursively(def)) {
                 return false;
+            }
             continue;
         }
 
-        if (!visitDefinition(def))
+        if (!visitDefinition(def)) {
             return false;
+        }
     }
     nextDef_ = nullptr;
 
-    if (!graph_.alloc().ensureBallast())
+    if (!graph_.alloc().ensureBallast()) {
         return false;
+    }
 
     return visitControlInstruction(block);
 }
@@ -1023,8 +1087,9 @@ ValueNumberer::visitDominatorTree(MBasicBlock* dominatorRoot)
         MOZ_ASSERT(iter != graph_.rpoEnd(), "Inconsistent dominator information");
         MBasicBlock* block = *iter++;
         
-        if (!dominatorRoot->dominates(block))
+        if (!dominatorRoot->dominates(block)) {
             continue;
+        }
 
         
         
@@ -1032,13 +1097,15 @@ ValueNumberer::visitDominatorTree(MBasicBlock* dominatorRoot)
 
         if (block->isMarked()) {
             
-            if (!visitUnreachableBlock(block))
+            if (!visitUnreachableBlock(block)) {
                 return false;
+            }
             ++numDiscarded;
         } else {
             
-            if (!visitBlock(block))
+            if (!visitBlock(block)) {
                 return false;
+            }
             ++numVisited;
         }
 
@@ -1053,8 +1120,9 @@ ValueNumberer::visitDominatorTree(MBasicBlock* dominatorRoot)
 
         MOZ_ASSERT(numVisited <= dominatorRoot->numDominated() - numDiscarded,
                    "Visited blocks too many times");
-        if (numVisited >= dominatorRoot->numDominated() - numDiscarded)
+        if (numVisited >= dominatorRoot->numDominated() - numDiscarded) {
             break;
+        }
     }
 
     totalNumVisited_ += numVisited;
@@ -1075,8 +1143,9 @@ ValueNumberer::visitGraph()
         MOZ_ASSERT(iter != graph_.rpoEnd(), "Inconsistent dominator information");
         MBasicBlock* block = *iter;
         if (block->immediateDominator() == block) {
-            if (!visitDominatorTree(block))
+            if (!visitDominatorTree(block)) {
                 return false;
+            }
 
             
             
@@ -1096,8 +1165,9 @@ ValueNumberer::visitGraph()
             }
 
             MOZ_ASSERT(totalNumVisited_ <= graph_.numBlocks(), "Visited blocks too many times");
-            if (totalNumVisited_ >= graph_.numBlocks())
+            if (totalNumVisited_ >= graph_.numBlocks()) {
                 break;
+            }
         } else {
             
             ++iter;
@@ -1115,17 +1185,20 @@ ValueNumberer::insertOSRFixups()
         MBasicBlock* block = *iter++;
 
         
-        if (!block->isLoopHeader())
+        if (!block->isLoopHeader()) {
             continue;
+        }
 
         
         
         
-        if (block->immediateDominator() != block)
+        if (block->immediateDominator() != block) {
             continue;
+        }
 
-        if (!fixupOSROnlyLoop(block, block->backedge()))
+        if (!fixupOSROnlyLoop(block, block->backedge())) {
             return false;
+        }
     }
 
     return true;
@@ -1142,8 +1215,9 @@ bool ValueNumberer::cleanupOSRFixups()
     unsigned numMarked = 2;
     graph_.entryBlock()->mark();
     graph_.osrBlock()->mark();
-    if (!worklist.append(graph_.entryBlock()) || !worklist.append(graph_.osrBlock()))
+    if (!worklist.append(graph_.entryBlock()) || !worklist.append(graph_.osrBlock())) {
         return false;
+    }
     while (!worklist.empty()) {
         MBasicBlock* block = worklist.popCopy();
         for (size_t i = 0, e = block->numSuccessors(); i != e; ++i) {
@@ -1151,8 +1225,9 @@ bool ValueNumberer::cleanupOSRFixups()
             if (!succ->isMarked()) {
                 ++numMarked;
                 succ->mark();
-                if (!worklist.append(succ))
+                if (!worklist.append(succ)) {
                     return false;
+                }
             } else if (succ->isLoopHeader() &&
                        succ->loopPredecessor() == block &&
                        succ->numPredecessors() == 3)
@@ -1176,8 +1251,9 @@ bool ValueNumberer::cleanupOSRFixups()
                 maybeFixupBlock = block->getPredecessor(0);
             } else {
                 MOZ_ASSERT(block->numPredecessors() == 3);
-                if (!block->loopPredecessor()->isMarked())
+                if (!block->loopPredecessor()->isMarked()) {
                     maybeFixupBlock = block->getPredecessor(1);
+                }
             }
 
             if (maybeFixupBlock &&
@@ -1230,8 +1306,9 @@ ValueNumberer::run(UpdateAliasAnalysisFlag updateAliasAnalysis)
     
     
     if (graph_.osrBlock()) {
-        if (!insertOSRFixups())
+        if (!insertOSRFixups()) {
             return false;
+        }
     }
 
     
@@ -1240,8 +1317,9 @@ ValueNumberer::run(UpdateAliasAnalysisFlag updateAliasAnalysis)
     
     int runs = 0;
     for (;;) {
-        if (!visitGraph())
+        if (!visitGraph()) {
             return false;
+        }
 
         
         
@@ -1257,19 +1335,22 @@ ValueNumberer::run(UpdateAliasAnalysisFlag updateAliasAnalysis)
         }
 
         if (blocksRemoved_) {
-            if (!AccountForCFGChanges(mir_, graph_, dependenciesBroken_,  true))
+            if (!AccountForCFGChanges(mir_, graph_, dependenciesBroken_,  true)) {
                 return false;
+            }
 
             blocksRemoved_ = false;
             dependenciesBroken_ = false;
         }
 
-        if (mir_->shouldCancel("GVN (outer loop)"))
+        if (mir_->shouldCancel("GVN (outer loop)")) {
             return false;
+        }
 
         
-        if (!rerun_)
+        if (!rerun_) {
             break;
+        }
 
         rerun_ = false;
 
@@ -1289,8 +1370,9 @@ ValueNumberer::run(UpdateAliasAnalysisFlag updateAliasAnalysis)
     }
 
     if (MOZ_UNLIKELY(hasOSRFixups_)) {
-        if (!cleanupOSRFixups())
+        if (!cleanupOSRFixups()) {
             return false;
+        }
         hasOSRFixups_ = false;
     }
 

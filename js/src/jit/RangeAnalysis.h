@@ -429,8 +429,9 @@ class Range : public TempObject {
     
     
     static Range* NewDoubleRange(TempAllocator& alloc, double l, double h) {
-        if (mozilla::IsNaN(l) && mozilla::IsNaN(h))
+        if (mozilla::IsNaN(l) && mozilla::IsNaN(h)) {
             return nullptr;
+        }
 
         Range* r = new(alloc) Range();
         r->setDouble(l, h);
@@ -442,8 +443,9 @@ class Range : public TempObject {
     
     
     static Range* NewDoubleSingletonRange(TempAllocator& alloc, double d) {
-        if (mozilla::IsNaN(d))
+        if (mozilla::IsNaN(d)) {
             return nullptr;
+        }
 
         Range* r = new(alloc) Range();
         r->setDoubleSingleton(d);

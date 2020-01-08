@@ -26,8 +26,9 @@ CommonDominator(MBasicBlock* commonDominator, MBasicBlock* defBlock)
 {
     
     
-    if (!commonDominator)
+    if (!commonDominator) {
         return defBlock;
+    }
 
     
     
@@ -49,8 +50,9 @@ Sink(MIRGenerator* mir, MIRGraph& graph)
     bool sinkEnabled = mir->optimizationInfo().sinkEnabled();
 
     for (PostorderIterator block = graph.poBegin(); block != graph.poEnd(); block++) {
-        if (mir->shouldCancel("Sink"))
+        if (mir->shouldCancel("Sink")) {
             return false;
+        }
 
         for (MInstructionReverseIterator iter = block->rbegin(); iter != block->rend(); ) {
             MInstruction* ins = *iter++;
@@ -71,29 +73,34 @@ Sink(MIRGenerator* mir, MIRGraph& graph)
             for (MUseIterator i(ins->usesBegin()), e(ins->usesEnd()); i != e; i++) {
                 hasUses = true;
                 MNode* consumerNode = (*i)->consumer();
-                if (consumerNode->isResumePoint())
+                if (consumerNode->isResumePoint()) {
                     continue;
+                }
 
                 MDefinition* consumer = consumerNode->toDefinition();
-                if (consumer->isRecoveredOnBailout())
+                if (consumer->isRecoveredOnBailout()) {
                     continue;
+                }
 
                 hasLiveUses = true;
 
                 
                 
                 MBasicBlock* consumerBlock = consumer->block();
-                if (consumer->isPhi())
+                if (consumer->isPhi()) {
                     consumerBlock = consumerBlock->getPredecessor(consumer->indexOf(*i));
+                }
 
                 usesDominator = CommonDominator(usesDominator, consumerBlock);
-                if (usesDominator == *block)
+                if (usesDominator == *block) {
                     break;
+                }
             }
 
             
-            if (!hasUses)
+            if (!hasUses) {
                 continue;
+            }
 
             
             
@@ -108,14 +115,16 @@ Sink(MIRGenerator* mir, MIRGraph& graph)
             
             
             
-            if (!sinkEnabled)
+            if (!sinkEnabled) {
                 continue;
+            }
 
             
             
             
-            if (ins->isEffectful())
+            if (ins->isEffectful()) {
                 continue;
+            }
 
             
             
@@ -134,18 +143,21 @@ Sink(MIRGenerator* mir, MIRGraph& graph)
             while (*block != lastJoin && lastJoin->numPredecessors() == 1) {
                 MOZ_ASSERT(lastJoin != lastJoin->immediateDominator());
                 MBasicBlock* next = lastJoin->immediateDominator();
-                if (next->numSuccessors() > 1)
+                if (next->numSuccessors() > 1) {
                     break;
+                }
                 lastJoin = next;
             }
-            if (*block == lastJoin)
+            if (*block == lastJoin) {
                 continue;
+            }
 
             
             
             
-            if (!usesDominator || usesDominator == *block)
+            if (!usesDominator || usesDominator == *block) {
                 continue;
+            }
 
             
             
@@ -154,15 +166,17 @@ Sink(MIRGenerator* mir, MIRGraph& graph)
             
             
             
-            if (!ins->canClone())
+            if (!ins->canClone()) {
                 continue;
+            }
 
             
             
             
             
-            if (!usesDominator->entryResumePoint() && usesDominator->numPredecessors() != 1)
+            if (!usesDominator->entryResumePoint() && usesDominator->numPredecessors() != 1) {
                 continue;
+            }
 
             JitSpewDef(JitSpew_Sink, "  Can Clone & Recover, sink instruction\n", ins);
             JitSpew(JitSpew_Sink, "  into Block %u", usesDominator->id());
@@ -170,8 +184,9 @@ Sink(MIRGenerator* mir, MIRGraph& graph)
             
             MDefinitionVector operands(alloc);
             for (size_t i = 0, end = ins->numOperands(); i < end; i++) {
-                if (!operands.append(ins->getOperand(i)))
+                if (!operands.append(ins->getOperand(i))) {
                     return false;
+                }
             }
 
             MInstruction* clone = ins->clone(alloc, operands);
@@ -214,8 +229,9 @@ Sink(MIRGenerator* mir, MIRGraph& graph)
             
             
             
-            if (ins->resumePoint())
+            if (ins->resumePoint()) {
                 ins->clearResumePoint();
+            }
 
             
             

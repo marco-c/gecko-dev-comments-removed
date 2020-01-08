@@ -34,17 +34,21 @@ TypedObjectPrediction::markAsCommonPrefix(const StructTypeDescr& descrA,
     
     
     
-    if (max > descrA.fieldCount())
+    if (max > descrA.fieldCount()) {
         max = descrA.fieldCount();
-    if (max > descrB.fieldCount())
+    }
+    if (max > descrB.fieldCount()) {
         max = descrB.fieldCount();
+    }
 
     size_t i = 0;
     for (; i < max; i++) {
-        if (&descrA.fieldName(i) != &descrB.fieldName(i))
+        if (&descrA.fieldName(i) != &descrB.fieldName(i)) {
             break;
-        if (&descrA.fieldDescr(i) != &descrB.fieldDescr(i))
+        }
+        if (&descrA.fieldDescr(i) != &descrB.fieldDescr(i)) {
             break;
+        }
         MOZ_ASSERT(descrA.fieldOffset(i) == descrB.fieldOffset(i));
     }
 
@@ -67,14 +71,17 @@ TypedObjectPrediction::addDescr(const TypeDescr& descr)
         return; 
 
       case Descr: {
-        if (&descr == data_.descr)
+        if (&descr == data_.descr) {
             return; 
+        }
 
-        if (descr.kind() != data_.descr->kind())
+        if (descr.kind() != data_.descr->kind()) {
             return markInconsistent();
+        }
 
-        if (descr.kind() != type::Struct)
+        if (descr.kind() != type::Struct) {
             return markInconsistent();
+        }
 
         const StructTypeDescr& structDescr = descr.as<StructTypeDescr>();
         const StructTypeDescr& currentDescr = data_.descr->as<StructTypeDescr>();
@@ -83,8 +90,9 @@ TypedObjectPrediction::addDescr(const TypeDescr& descr)
       }
 
       case Prefix:
-        if (descr.kind() != type::Struct)
+        if (descr.kind() != type::Struct) {
             return markInconsistent();
+        }
 
         markAsCommonPrefix(*data_.prefix.descr,
                            descr.as<StructTypeDescr>(),
@@ -160,8 +168,9 @@ TypedObjectPrediction::getKnownPrototype() const
         return nullptr;
 
       case TypedObjectPrediction::Descr:
-        if (descr().is<ComplexTypeDescr>())
+        if (descr().is<ComplexTypeDescr>()) {
             return &descr().as<ComplexTypeDescr>().instancePrototype();
+        }
         return nullptr;
 
       case TypedObjectPrediction::Prefix:
@@ -260,12 +269,14 @@ TypedObjectPrediction::hasFieldNamedPrefix(const StructTypeDescr& descr,
                                            bool* isMutable) const
 {
     
-    if (!descr.fieldIndex(id, index))
+    if (!descr.fieldIndex(id, index)) {
         return false;
+    }
 
     
-    if (*index >= fieldCount)
+    if (*index >= fieldCount) {
         return false;
+    }
 
     
     *fieldOffset = descr.fieldOffset(*index);
