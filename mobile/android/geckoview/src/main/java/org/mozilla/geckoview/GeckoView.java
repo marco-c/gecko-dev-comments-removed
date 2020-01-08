@@ -363,12 +363,7 @@ public class GeckoView extends FrameLayout {
         if (!mSession.isOpen()) {
             mSession.open(mRuntime);
         }
-        
-        
-        
-        if (mRuntime != null) {
-            mRuntime.orientationChanged();
-        }
+        mRuntime.orientationChanged();
 
         super.onAttachedToWindow();
     }
@@ -428,11 +423,36 @@ public class GeckoView extends FrameLayout {
         final SavedState ss = (SavedState) state;
         super.onRestoreInstanceState(ss.getSuperState());
 
-        if (mSession == null && ss.session != null) {
-            setSession(ss.session, ss.session.getRuntime());
-        } else if (ss.session != null) {
-            mSession.transferFrom(ss.session);
-            mRuntime = mSession.getRuntime();
+        restoreSession(ss.session);
+    }
+
+    private void restoreSession(final @Nullable GeckoSession savedSession) {
+        if (savedSession == null) {
+            return;
+        }
+
+        GeckoRuntime runtimeToRestore = savedSession.getRuntime();
+        
+        
+        if (mRuntime == null) {
+            if (runtimeToRestore == null) {
+                
+                
+                runtimeToRestore = GeckoRuntime.getDefault(getContext());
+            }
+            setSession(savedSession, runtimeToRestore);
+        
+        
+        } else if (savedSession.isOpen() || !mSession.isOpen()) {
+            if (mSession.isOpen()) {
+                mSession.close();
+            }
+            mSession.transferFrom(savedSession);
+            if (runtimeToRestore != null) {
+                
+                
+                mRuntime = runtimeToRestore;
+            }
         }
     }
 
