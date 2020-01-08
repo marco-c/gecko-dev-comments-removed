@@ -109,6 +109,7 @@
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/Unused.h"
+#include "nsCommandParams.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -3005,27 +3006,21 @@ nsHTMLDocument::ExecCommand(const nsAString& commandID,
     rv = cmdMgr->DoCommand(cmdToDispatch.get(), nullptr, window);
   } else {
     
-    nsCOMPtr<nsICommandParams> cmdParams = do_CreateInstance(
-                                            NS_COMMAND_PARAMS_CONTRACTID);
-    if (!cmdParams) {
-      rv.Throw(NS_ERROR_OUT_OF_MEMORY);
-      return false;
-    }
-
+    RefPtr<nsCommandParams> params = new nsCommandParams();
     if (isBool) {
-      rv = cmdParams->SetBooleanValue("state_attribute", boolVal);
+      rv = params->SetBool("state_attribute", boolVal);
     } else if (cmdToDispatch.EqualsLiteral("cmd_fontFace")) {
-      rv = cmdParams->SetStringValue("state_attribute", value);
+      rv = params->SetString("state_attribute", value);
     } else if (cmdToDispatch.EqualsLiteral("cmd_insertHTML") ||
                cmdToDispatch.EqualsLiteral("cmd_insertText")) {
-      rv = cmdParams->SetStringValue("state_data", value);
+      rv = params->SetString("state_data", value);
     } else {
-      rv = cmdParams->SetCStringValue("state_attribute", paramStr);
+      rv = params->SetCString("state_attribute", paramStr);
     }
     if (rv.Failed()) {
       return false;
     }
-    rv = cmdMgr->DoCommand(cmdToDispatch.get(), cmdParams, window);
+    rv = cmdMgr->DoCommand(cmdToDispatch.get(), params, window);
   }
 
   return !rv.Failed();
@@ -3105,15 +3100,8 @@ nsHTMLDocument::QueryCommandIndeterm(const nsAString& commandID, ErrorResult& rv
     return false;
   }
 
-  nsresult res;
-  nsCOMPtr<nsICommandParams> cmdParams = do_CreateInstance(
-                                           NS_COMMAND_PARAMS_CONTRACTID, &res);
-  if (NS_FAILED(res)) {
-    rv.Throw(res);
-    return false;
-  }
-
-  rv = cmdMgr->GetCommandState(cmdToDispatch.get(), window, cmdParams);
+  RefPtr<nsCommandParams> params = new nsCommandParams();
+  rv = cmdMgr->GetCommandState(cmdToDispatch.get(), window, params);
   if (rv.Failed()) {
     return false;
   }
@@ -3121,9 +3109,7 @@ nsHTMLDocument::QueryCommandIndeterm(const nsAString& commandID, ErrorResult& rv
   
   
   
-  bool retval = false;
-  cmdParams->GetBooleanValue("state_mixed", &retval);
-  return retval;
+  return params->GetBool("state_mixed");
 }
 
 bool
@@ -3162,14 +3148,8 @@ nsHTMLDocument::QueryCommandState(const nsAString& commandID, ErrorResult& rv)
     return false;
   }
 
-  nsCOMPtr<nsICommandParams> cmdParams = do_CreateInstance(
-                                           NS_COMMAND_PARAMS_CONTRACTID);
-  if (!cmdParams) {
-    rv.Throw(NS_ERROR_OUT_OF_MEMORY);
-    return false;
-  }
-
-  rv = cmdMgr->GetCommandState(cmdToDispatch.get(), window, cmdParams);
+  RefPtr<nsCommandParams> params = new nsCommandParams();
+  rv = cmdMgr->GetCommandState(cmdToDispatch.get(), window, params);
   if (rv.Failed()) {
     return false;
   }
@@ -3182,7 +3162,7 @@ nsHTMLDocument::QueryCommandState(const nsAString& commandID, ErrorResult& rv)
   
   if (cmdToDispatch.EqualsLiteral("cmd_align")) {
     nsAutoCString actualAlignmentType;
-    rv = cmdParams->GetCStringValue("state_attribute", actualAlignmentType);
+    rv = params->GetCString("state_attribute", actualAlignmentType);
     return !rv.Failed() && !actualAlignmentType.IsEmpty() &&
            paramToCheck == actualAlignmentType;
   }
@@ -3190,9 +3170,7 @@ nsHTMLDocument::QueryCommandState(const nsAString& commandID, ErrorResult& rv)
   
   
   
-  bool retval = false;
-  cmdParams->GetBooleanValue("state_all", &retval);
-  return retval;
+  return params->GetBool("state_all");
 }
 
 bool
@@ -3258,38 +3236,31 @@ nsHTMLDocument::QueryCommandValue(const nsAString& commandID,
   }
 
   
-  nsCOMPtr<nsICommandParams> cmdParams = do_CreateInstance(
-                                           NS_COMMAND_PARAMS_CONTRACTID);
-  if (!cmdParams) {
-    rv.Throw(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
-
   
-  
+  RefPtr<nsCommandParams> params = new nsCommandParams();
   if (cmdToDispatch.EqualsLiteral("cmd_getContents")) {
-    rv = cmdParams->SetBooleanValue("selection_only", true);
+    rv = params->SetBool("selection_only", true);
     if (rv.Failed()) {
       return;
     }
-    rv = cmdParams->SetCStringValue("format", NS_LITERAL_CSTRING("text/html"));
+    rv = params->SetCString("format", NS_LITERAL_CSTRING("text/html"));
     if (rv.Failed()) {
       return;
     }
-    rv = cmdMgr->DoCommand(cmdToDispatch.get(), cmdParams, window);
+    rv = cmdMgr->DoCommand(cmdToDispatch.get(), params, window);
     if (rv.Failed()) {
       return;
     }
-    rv = cmdParams->GetStringValue("result", aValue);
+    params->GetString("result", aValue);
     return;
   }
 
-  rv = cmdParams->SetCStringValue("state_attribute", paramStr);
+  rv = params->SetCString("state_attribute", paramStr);
   if (rv.Failed()) {
     return;
   }
 
-  rv = cmdMgr->GetCommandState(cmdToDispatch.get(), window, cmdParams);
+  rv = cmdMgr->GetCommandState(cmdToDispatch.get(), window, params);
   if (rv.Failed()) {
     return;
   }
@@ -3299,7 +3270,7 @@ nsHTMLDocument::QueryCommandValue(const nsAString& commandID,
   
   
   nsAutoCString result;
-  cmdParams->GetCStringValue("state_attribute", result);
+  params->GetCString("state_attribute", result);
   CopyUTF8toUTF16(result, aValue);
 }
 
