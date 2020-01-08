@@ -3014,7 +3014,6 @@ HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
   nsCOMPtr<nsIContentIterator> iter = NS_NewContentIterator();
 
   bool found = !!selectedElement;
-  const nsAtom* tagNameLookingFor = aTagName;
   iter->Init(firstRange);
   
   while (!iter->IsDone()) {
@@ -3024,37 +3023,26 @@ HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
     
     
     
-    
-    
     selectedElement = Element::FromNodeOrNull(iter->GetCurrentNode());
     if (selectedElement) {
-      
-      
-      
-      
-      
       if (found) {
-        break;
+        
+        return nullptr;
       }
 
-      if (!tagNameLookingFor) {
-        
-        
-        
-        tagNameLookingFor = selectedElement->NodeInfo()->NameAtom();
-      }
-
-      
-      
-      if ((isLinkTag &&
-           HTMLEditUtils::IsLink(selectedElement)) ||
-          (isNamedAnchorTag &&
-           HTMLEditUtils::IsNamedAnchor(selectedElement))) {
+      if (!aTagName) {
         found = true;
       }
       
-      else if (tagNameLookingFor ==
-                 selectedElement->NodeInfo()->NameAtom()) {
+      
+      else if ((isLinkTag &&
+                HTMLEditUtils::IsLink(selectedElement)) ||
+               (isNamedAnchorTag &&
+                HTMLEditUtils::IsNamedAnchor(selectedElement))) {
+        found = true;
+      }
+      
+      else if (aTagName == selectedElement->NodeInfo()->NameAtom()) {
         found = true;
       }
 
