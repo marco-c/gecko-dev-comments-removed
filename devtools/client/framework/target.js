@@ -237,10 +237,6 @@ function TabTarget({ form, client, chrome, tab = null }) {
   
   
   this.fronts = new Map();
-  
-  
-  
-  this._inspector = null;
 }
 
 exports.TabTarget = TabTarget;
@@ -381,18 +377,6 @@ TabTarget.prototype = {
 
   
   
-  
-  getInspector(typeName) {
-    
-    if (this._inspector && this._inspector.actorID) {
-      return this._inspector;
-    }
-    this._inspector = getFront(this.client, "inspector", this.form);
-    return this._inspector;
-  },
-
-  
-  
   getFront(typeName) {
     let front = this.fronts.get(typeName);
     
@@ -460,6 +444,10 @@ TabTarget.prototype = {
 
   get isMultiProcess() {
     return !this.window;
+  },
+
+  get canRewind() {
+    return this.activeTab.traits.canRewind;
   },
 
   getExtensionPathName(url) {
@@ -861,6 +849,10 @@ WorkerTarget.prototype = {
 
   get client() {
     return this._workerClient.client;
+  },
+
+  get canRewind() {
+    return false;
   },
 
   destroy: function() {
