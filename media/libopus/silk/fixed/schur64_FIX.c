@@ -43,7 +43,7 @@ opus_int32 silk_schur64(
     opus_int32 C[ SILK_MAX_ORDER_LPC + 1 ][ 2 ];
     opus_int32 Ctmp1_Q30, Ctmp2_Q30, rc_tmp_Q31;
 
-    silk_assert( order >= 0 && order <= SILK_MAX_ORDER_LPC );
+    celt_assert( order >= 0 && order <= SILK_MAX_ORDER_LPC );
 
     
     if( c[ 0 ] <= 0 ) {

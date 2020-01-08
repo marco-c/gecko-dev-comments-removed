@@ -39,6 +39,7 @@
 
 
 
+
 unsigned isqrt32(opus_uint32 _val){
   unsigned b;
   unsigned g;
@@ -182,7 +183,7 @@ opus_val32 celt_rcp(opus_val32 x)
    int i;
    opus_val16 n;
    opus_val16 r;
-   celt_assert2(x>0, "celt_rcp() only defined for positive values");
+   celt_sig_assert(x>0);
    i = celt_ilog2(x);
    
    n = VSHR32(x,i-15)-32768;

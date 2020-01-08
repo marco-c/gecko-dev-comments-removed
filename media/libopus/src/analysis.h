@@ -30,6 +30,7 @@
 
 #include "celt.h"
 #include "opus_private.h"
+#include "mlp.h"
 
 #define NB_FRAMES 8
 #define NB_TBANDS 18
@@ -64,28 +65,16 @@ typedef struct {
    float mem[32];
    float cmean[8];
    float std[9];
-   float music_prob;
-   float vad_prob;
    float Etracker;
    float lowECount;
    int E_count;
-   int last_music;
    int count;
    int analysis_offset;
-   
-
-   float pspeech[DETECT_SIZE];
-   
-
-   float pmusic[DETECT_SIZE];
-   float speech_confidence;
-   float music_confidence;
-   int speech_confidence_count;
-   int music_confidence_count;
    int write_pos;
    int read_pos;
    int read_subframe;
    float hp_ener_accum;
+   float rnn_state[MAX_NEURONS];
    opus_val32 downmix_state[3];
    AnalysisInfo info[DETECT_SIZE];
 } TonalityAnalysisState;

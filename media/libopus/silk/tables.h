@@ -98,12 +98,6 @@ extern const silk_NLSF_CB_struct silk_NLSF_CB_WB;
 extern const silk_NLSF_CB_struct silk_NLSF_CB_NB_MB;                                                
 
 
-extern const opus_int32  silk_TargetRate_table_NB[  TARGET_RATE_TAB_SZ ];                           
-extern const opus_int32  silk_TargetRate_table_MB[  TARGET_RATE_TAB_SZ ];                           
-extern const opus_int32  silk_TargetRate_table_WB[  TARGET_RATE_TAB_SZ ];                           
-extern const opus_int16  silk_SNR_table_Q1[         TARGET_RATE_TAB_SZ ];                           
-
-
 extern const opus_int16  silk_Quantization_Offsets_Q10[ 2 ][ 2 ];                                   
 
 

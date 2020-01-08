@@ -457,7 +457,7 @@ void unquant_coarse_energy(const CELTMode *m, int start, int end, opus_val16 *ol
          
 
 
-         celt_assert(c<2);
+         celt_sig_assert(c<2);
          tell = ec_tell(dec);
          if(budget-tell>=15)
          {

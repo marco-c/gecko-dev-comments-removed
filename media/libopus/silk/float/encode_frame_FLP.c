@@ -42,21 +42,28 @@ static OPUS_INLINE void silk_LBRR_encode_FLP(
 );
 
 void silk_encode_do_VAD_FLP(
-    silk_encoder_state_FLP          *psEnc                              
+    silk_encoder_state_FLP          *psEnc,                             
+    opus_int                        activity                            
 )
 {
-    
-    
-    
-    silk_VAD_GetSA_Q8( &psEnc->sCmn, psEnc->sCmn.inputBuf + 1, psEnc->sCmn.arch );
+    const opus_int activity_threshold = SILK_FIX_CONST( SPEECH_ACTIVITY_DTX_THRES, 8 );
 
     
     
     
-    if( psEnc->sCmn.speech_activity_Q8 < SILK_FIX_CONST( SPEECH_ACTIVITY_DTX_THRES, 8 ) ) {
+    silk_VAD_GetSA_Q8( &psEnc->sCmn, psEnc->sCmn.inputBuf + 1, psEnc->sCmn.arch );
+    
+    if( activity == VAD_NO_ACTIVITY && psEnc->sCmn.speech_activity_Q8 >= activity_threshold ) {
+        psEnc->sCmn.speech_activity_Q8 = activity_threshold - 1;
+    }
+
+    
+    
+    
+    if( psEnc->sCmn.speech_activity_Q8 < activity_threshold ) {
         psEnc->sCmn.indices.signalType = TYPE_NO_VOICE_ACTIVITY;
         psEnc->sCmn.noSpeechCounter++;
-        if( psEnc->sCmn.noSpeechCounter < NB_SPEECH_FRAMES_BEFORE_DTX ) {
+        if( psEnc->sCmn.noSpeechCounter <= NB_SPEECH_FRAMES_BEFORE_DTX ) {
             psEnc->sCmn.inDTX = 0;
         } else if( psEnc->sCmn.noSpeechCounter > MAX_CONSECUTIVE_DTX + NB_SPEECH_FRAMES_BEFORE_DTX ) {
             psEnc->sCmn.noSpeechCounter = NB_SPEECH_FRAMES_BEFORE_DTX;
@@ -241,7 +248,7 @@ opus_int silk_encode_frame_FLP(
                 if( found_lower && ( gainsID == gainsID_lower || nBits > maxBits ) ) {
                     
                     silk_memcpy( psRangeEnc, &sRangeEnc_copy2, sizeof( ec_enc ) );
-                    silk_assert( sRangeEnc_copy2.offs <= 1275 );
+                    celt_assert( sRangeEnc_copy2.offs <= 1275 );
                     silk_memcpy( psRangeEnc->buf, ec_buf_copy, sRangeEnc_copy2.offs );
                     silk_memcpy( &psEnc->sCmn.sNSQ, &sNSQ_copy2, sizeof( silk_nsq_state ) );
                     psEnc->sShape.LastGainIndex = LastGainIndex_copy2;
@@ -271,7 +278,7 @@ opus_int silk_encode_frame_FLP(
                     gainsID_lower = gainsID;
                     
                     silk_memcpy( &sRangeEnc_copy2, psRangeEnc, sizeof( ec_enc ) );
-                    silk_assert( psRangeEnc->offs <= 1275 );
+                    celt_assert( psRangeEnc->offs <= 1275 );
                     silk_memcpy( ec_buf_copy, psRangeEnc->buf, psRangeEnc->offs );
                     silk_memcpy( &sNSQ_copy2, &psEnc->sCmn.sNSQ, sizeof( silk_nsq_state ) );
                     LastGainIndex_copy2 = psEnc->sShape.LastGainIndex;

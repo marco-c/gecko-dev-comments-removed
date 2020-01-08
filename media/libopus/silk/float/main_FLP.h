@@ -56,7 +56,8 @@ void silk_HP_variable_cutoff(
 
 
 void silk_encode_do_VAD_FLP(
-    silk_encoder_state_FLP          *psEnc                              
+    silk_encoder_state_FLP          *psEnc,                             
+    opus_int                        activity                            
 );
 
 

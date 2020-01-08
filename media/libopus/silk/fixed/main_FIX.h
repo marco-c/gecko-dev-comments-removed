@@ -66,7 +66,8 @@ void silk_HP_variable_cutoff(
 
 
 void silk_encode_do_VAD_FIX(
-    silk_encoder_state_FIX          *psEnc                                  
+    silk_encoder_state_FIX          *psEnc,                                 
+    opus_int                        activity                                
 );
 
 

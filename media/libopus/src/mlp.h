@@ -24,20 +24,37 @@
 
 
 
-
 #ifndef _MLP_H_
 #define _MLP_H_
 
-#include "arch.h"
+#include "opus_types.h"
+
+#define WEIGHTS_SCALE (1.f/128)
+
+#define MAX_NEURONS 32
 
 typedef struct {
-    int layers;
-    const int *topo;
-    const float *weights;
-} MLP;
+  const opus_int8 *bias;
+  const opus_int8 *input_weights;
+  int nb_inputs;
+  int nb_neurons;
+  int sigmoid;
+} DenseLayer;
 
-extern const MLP net;
+typedef struct {
+  const opus_int8 *bias;
+  const opus_int8 *input_weights;
+  const opus_int8 *recurrent_weights;
+  int nb_inputs;
+  int nb_neurons;
+} GRULayer;
 
-void mlp_process(const MLP *m, const float *in, float *out);
+extern const DenseLayer layer0;
+extern const GRULayer layer1;
+extern const DenseLayer layer2;
+
+void compute_dense(const DenseLayer *layer, float *output, const float *input);
+
+void compute_gru(const GRULayer *gru, float *state, const float *input);
 
 #endif 

@@ -46,7 +46,7 @@ void silk_warped_autocorrelation_FLP(
     double      C[     MAX_SHAPE_LPC_ORDER + 1 ] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
 
     
-    silk_assert( ( order & 1 ) == 0 );
+    celt_assert( ( order & 1 ) == 0 );
 
     
     for( n = 0; n < length; n++ ) {

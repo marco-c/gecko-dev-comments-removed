@@ -78,6 +78,7 @@ typedef struct {
     opus_int32                   In_LP_State[ 2 ];           
     opus_int32                   transition_frame_no;        
     opus_int                     mode;                       
+    opus_int32                   saved_fs_kHz;               
 } silk_LP_state;
 
 

@@ -58,7 +58,7 @@ void silk_residual_energy_FIX(
 
     
     ALLOC( LPC_res, ( MAX_NB_SUBFR >> 1 ) * offset, opus_int16 );
-    silk_assert( ( nb_subfr >> 1 ) * ( MAX_NB_SUBFR >> 1 ) == nb_subfr );
+    celt_assert( ( nb_subfr >> 1 ) * ( MAX_NB_SUBFR >> 1 ) == nb_subfr );
     for( i = 0; i < nb_subfr >> 1; i++ ) {
         
         silk_LPC_analysis_filter( LPC_res, x_ptr, a_Q12[ i ], ( MAX_NB_SUBFR >> 1 ) * offset, LPC_order, arch );

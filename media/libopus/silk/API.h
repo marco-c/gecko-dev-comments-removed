@@ -80,7 +80,8 @@ opus_int silk_Encode(
     opus_int                        nSamplesIn,         
     ec_enc                          *psRangeEnc,        
     opus_int32                      *nBytesOut,         
-    const opus_int                  prefillFlag         
+    const opus_int                  prefillFlag,        
+    int                             activity            
 );
 
 

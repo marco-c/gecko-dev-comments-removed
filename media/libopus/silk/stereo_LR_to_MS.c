@@ -109,7 +109,7 @@ void silk_stereo_LR_to_MS(
     if( total_rate_bps < 1 ) {
         total_rate_bps = 1;
     }
-    min_mid_rate_bps = silk_SMLABB( 2000, fs_kHz, 900 );
+    min_mid_rate_bps = silk_SMLABB( 2000, fs_kHz, 600 );
     silk_assert( min_mid_rate_bps < 32767 );
     
     frac_3_Q16 = silk_MUL( 3, frac_Q16 );
