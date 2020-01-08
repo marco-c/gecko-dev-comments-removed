@@ -174,14 +174,7 @@ pub enum TrackKeyword {
 
 
 #[derive(
-    Animate,
-    Clone,
-    Debug,
-    MallocSizeOf,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToComputedValue,
-    ToCss,
+    Animate, Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
 )]
 pub enum TrackBreadth<L> {
     
@@ -492,14 +485,7 @@ impl<L: Clone> TrackRepeat<L, specified::Integer> {
 
 
 #[derive(
-    Animate,
-    Clone,
-    Debug,
-    MallocSizeOf,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToComputedValue,
-    ToCss
+    Animate, Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
 )]
 pub enum TrackListValue<LengthPercentage, Integer> {
     
@@ -712,20 +698,17 @@ impl ToCss for LineNameList {
 
 
 #[derive(
-    Animate,
-    Clone,
-    Debug,
-    MallocSizeOf,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToComputedValue,
-    ToCss
+    Animate, Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
 )]
 pub enum GridTemplateComponent<L, I> {
     
     None,
     
-    TrackList(#[animation(field_bound)] #[compute(field_bound)] TrackList<L, I>),
+    TrackList(
+        #[animation(field_bound)]
+        #[compute(field_bound)]
+        TrackList<L, I>,
+    ),
     
     
     #[animation(error)]
