@@ -56,19 +56,14 @@ public:
   NS_IMETHOD GetBaseDomain(nsACString& aBaseDomain) override;
   NS_IMETHOD GetAddonId(nsAString& aAddonId) override;
 
-  static already_AddRefed<NullPrincipal>
-  CreateWithInheritedAttributes(nsIPrincipal* aInheritFrom);
+  static already_AddRefed<NullPrincipal> CreateWithInheritedAttributes(nsIPrincipal* aInheritFrom);
 
   
   
   
   
   static already_AddRefed<NullPrincipal>
-  CreateWithInheritedAttributes(nsIDocShell* aDocShell,
-                                bool aIsFirstParty = false);
-  static already_AddRefed<NullPrincipal>
-  CreateWithInheritedAttributes(const OriginAttributes& aOriginAttributes,
-                                bool aIsFirstParty = false);
+  CreateWithInheritedAttributes(nsIDocShell* aDocShell, bool aIsFirstParty = false);
 
   static already_AddRefed<NullPrincipal>
   Create(const OriginAttributes& aOriginAttributes,
@@ -90,8 +85,7 @@ public:
  protected:
   virtual ~NullPrincipal() = default;
 
-  bool SubsumesInternal(nsIPrincipal* aOther,
-                        DocumentDomainConsideration aConsideration) override
+  bool SubsumesInternal(nsIPrincipal* aOther, DocumentDomainConsideration aConsideration) override
   {
     return aOther == this;
   }

@@ -169,7 +169,7 @@
 #include "nsDocShellCID.h"
 #include "nsDocShellEditorData.h"
 #include "nsDocShellEnumerator.h"
-#include "nsDocShellLoadState.h"
+#include "nsDocShellLoadInfo.h"
 #include "nsDocShellLoadTypes.h"
 #include "nsDOMCID.h"
 #include "nsDOMNavigationTiming.h"
@@ -643,12 +643,14 @@ nsDocShell::GetInterface(const nsIID& aIID, void** aSink)
 }
 
 NS_IMETHODIMP
-nsDocShell::LoadURI(nsDocShellLoadState* aLoadState)
+nsDocShell::LoadURI(nsIURI* aURI,
+                    nsDocShellLoadInfo* aLoadInfo,
+                    uint32_t aLoadFlags,
+                    bool aFirstParty)
 {
-  MOZ_ASSERT(aLoadState, "Must have a valid load state!");
-  MOZ_ASSERT((aLoadState->LoadFlags() & INTERNAL_LOAD_FLAGS_LOADURI_SETUP_FLAGS) == 0,
-             "Should not have these flags set");
-  MOZ_ASSERT(aLoadState->URI(), "Should have a valid URI to load");
+  MOZ_ASSERT(aLoadInfo || (aLoadFlags & EXTRA_LOAD_FLAGS) == 0,
+             "Unexpected flags");
+  MOZ_ASSERT((aLoadFlags & 0xf) == 0, "Should not have these flags set");
 
   
   
@@ -660,112 +662,78 @@ nsDocShell::LoadURI(nsDocShellLoadState* aLoadState)
     return NS_OK; 
   }
 
+  nsCOMPtr<nsIURI> referrer;
+  nsCOMPtr<nsIURI> originalURI;
+  Maybe<nsCOMPtr<nsIURI>> resultPrincipalURI;
+  bool keepResultPrincipalURIIfSet = false;
+  bool loadReplace = false;
+  nsCOMPtr<nsIInputStream> postStream;
+  nsCOMPtr<nsIInputStream> headersStream;
+  nsCOMPtr<nsIPrincipal> triggeringPrincipal;
+  bool inheritPrincipal = false;
+  bool principalIsExplicit = false;
+  bool sendReferrer = true;
+  uint32_t referrerPolicy = RP_Unset;
+  bool isSrcdoc = false;
+  nsCOMPtr<nsISHEntry> shEntry;
+  nsString target;
+  nsAutoString srcdoc;
+  bool forceAllowDataURI = false;
+  bool originalFrameSrc = false;
+  nsCOMPtr<nsIDocShell> sourceDocShell;
+  nsCOMPtr<nsIURI> baseURI;
+
+  uint32_t loadType = MAKE_LOAD_TYPE(LOAD_NORMAL, aLoadFlags);
+
+  NS_ENSURE_ARG(aURI);
+
   if (!StartupTimeline::HasRecord(StartupTimeline::FIRST_LOAD_URI) &&
-      mItemType == typeContent && !NS_IsAboutBlank(aLoadState->URI())) {
+      mItemType == typeContent && !NS_IsAboutBlank(aURI)) {
     StartupTimeline::RecordOnce(StartupTimeline::FIRST_LOAD_URI);
+  }
+
+  
+  if (aLoadInfo) {
+    referrer = aLoadInfo->Referrer();
+    originalURI = aLoadInfo->OriginalURI();
+    aLoadInfo->GetMaybeResultPrincipalURI(resultPrincipalURI);
+    keepResultPrincipalURIIfSet = aLoadInfo->KeepResultPrincipalURIIfSet();
+    loadReplace = aLoadInfo->LoadReplace();
+    
+    loadType = aLoadInfo->LoadType();
+
+    triggeringPrincipal = aLoadInfo->TriggeringPrincipal();
+    inheritPrincipal = aLoadInfo->InheritPrincipal();
+    principalIsExplicit = aLoadInfo->PrincipalIsExplicit();
+    shEntry = aLoadInfo->SHEntry();
+    aLoadInfo->GetTarget(target);
+    postStream = aLoadInfo->PostDataStream();
+    headersStream = aLoadInfo->HeadersStream();
+    sendReferrer = aLoadInfo->SendReferrer();
+    referrerPolicy = aLoadInfo->ReferrerPolicy();
+    isSrcdoc = aLoadInfo->IsSrcdocLoad();
+    aLoadInfo->GetSrcdocData(srcdoc);
+    sourceDocShell = aLoadInfo->SourceDocShell();
+    baseURI = aLoadInfo->BaseURI();
+    forceAllowDataURI = aLoadInfo->ForceAllowDataURI();
+    originalFrameSrc = aLoadInfo->OriginalFrameSrc();
   }
 
   MOZ_LOG(gDocShellLeakLog, LogLevel::Debug,
           ("nsDocShell[%p]: loading %s with flags 0x%08x",
-           this, aLoadState->URI()->GetSpecOrDefault().get(),
-           aLoadState->LoadFlags()));
+           this, aURI->GetSpecOrDefault().get(), aLoadFlags));
 
-  if (!aLoadState->SHEntry() &&
-      !LOAD_TYPE_HAS_FLAGS(aLoadState->LoadType(),
-                           LOAD_FLAGS_REPLACE_HISTORY)) {
+  if (!shEntry &&
+      !LOAD_TYPE_HAS_FLAGS(loadType, LOAD_FLAGS_REPLACE_HISTORY)) {
     
-    
-    
-    
-    MaybeHandleSubframeHistory(aLoadState);
-  }
-
-  if (aLoadState->SHEntry()) {
-#ifdef DEBUG
-    MOZ_LOG(gDocShellLog, LogLevel::Debug,
-           ("nsDocShell[%p]: loading from session history", this));
-#endif
-
-    return LoadHistoryEntry(aLoadState->SHEntry(), aLoadState->LoadType());
-  }
-
-  
-  
-  
-  
-  
-  
-  if ((aLoadState->LoadType() == LOAD_NORMAL ||
-       aLoadState->LoadType() == LOAD_STOP_CONTENT) &&
-      ShouldBlockLoadingForBackButton()) {
-    return NS_OK;
-  }
-
-  
-  nsresult rv = aLoadState->SetupInheritingPrincipal(mItemType, mOriginAttributes);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = aLoadState->SetupTriggeringPrincipal(mOriginAttributes);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  aLoadState->CalculateDocShellInternalLoadFlags();
-
-  mozilla::Maybe<nsCOMPtr<nsIURI>> resultPrincipalURI;
-  aLoadState->GetMaybeResultPrincipalURI(resultPrincipalURI);
-
-  MOZ_ASSERT(aLoadState->TypeHint().IsVoid(),
-             "Typehint should be null when calling InternalLoad from LoadURI");
-  MOZ_ASSERT(aLoadState->FileName().IsVoid(),
-             "FileName should be null when calling InternalLoad from LoadURI");
-  MOZ_ASSERT(aLoadState->SHEntry() == nullptr,
-             "SHEntry should be null when calling InternalLoad from LoadURI");
-
-  return InternalLoad(aLoadState->URI(),
-                      aLoadState->OriginalURI(),
-                      resultPrincipalURI,
-                      aLoadState->KeepResultPrincipalURIIfSet(),
-                      aLoadState->LoadReplace(),
-                      aLoadState->Referrer(),
-                      aLoadState->ReferrerPolicy(),
-                      aLoadState->TriggeringPrincipal(),
-                      aLoadState->PrincipalToInherit(),
-                      aLoadState->DocShellInternalLoadFlags(),
-                      aLoadState->Target(),
-                      aLoadState->TypeHint(),
-                      aLoadState->FileName(),
-                      aLoadState->PostDataStream(),
-                      aLoadState->HeadersStream(),
-                      aLoadState->LoadType(),
-                      aLoadState->SHEntry(),
-                      aLoadState->FirstParty(),
-                      aLoadState->SrcdocData(),
-                      aLoadState->SourceDocShell(),
-                      aLoadState->BaseURI(),
-                      nullptr, 
-                      nullptr); 
-}
-
-void
-nsDocShell::MaybeHandleSubframeHistory(nsDocShellLoadState* aLoadState)
-{
-  
     nsCOMPtr<nsIDocShellTreeItem> parentAsItem;
     GetSameTypeParent(getter_AddRefs(parentAsItem));
     nsCOMPtr<nsIDocShell> parentDS(do_QueryInterface(parentAsItem));
+    uint32_t parentLoadType;
 
-  if (!parentDS || parentDS == static_cast<nsIDocShell*>(this)) {
-    
-    
-    
-    bool inOnLoadHandler = false;
-    GetIsExecutingOnLoadHandler(&inOnLoadHandler);
-    if (inOnLoadHandler) {
-      aLoadState->SetLoadType(LOAD_NORMAL_REPLACE);
-    }
-    return;
-  }
+    if (parentDS && parentDS != static_cast<nsIDocShell*>(this)) {
+      
 
-  
 
 
 
@@ -774,7 +742,6 @@ nsDocShell::MaybeHandleSubframeHistory(nsDocShellLoadState* aLoadState)
 
 
       
-  uint32_t parentLoadType;
       parentDS->GetLoadType(&parentLoadType);
 
       
@@ -782,17 +749,13 @@ nsDocShell::MaybeHandleSubframeHistory(nsDocShellLoadState* aLoadState)
       bool oshe = false;
       parentDS->GetCurrentSHEntry(getter_AddRefs(currentSH), &oshe);
       bool dynamicallyAddedChild = mDynamicallyCreated;
-
       if (!dynamicallyAddedChild && !oshe && currentSH) {
         currentSH->HasDynamicallyAddedChild(&dynamicallyAddedChild);
       }
-
       if (!dynamicallyAddedChild) {
         
         
-    nsCOMPtr<nsISHEntry> shEntry;
         parentDS->GetChildSHEntry(mChildOffset, getter_AddRefs(shEntry));
-    aLoadState->SetSHEntry(shEntry);
       }
 
       
@@ -805,13 +768,58 @@ nsDocShell::MaybeHandleSubframeHistory(nsDocShellLoadState* aLoadState)
       
       nsCOMPtr<nsISHEntry> currentChildEntry;
       GetCurrentSHEntry(getter_AddRefs(currentChildEntry), &oshe);
-
-  if (mCurrentURI && (!NS_IsAboutBlank(mCurrentURI) || currentChildEntry)) {
+      if (!mCurrentURI || (NS_IsAboutBlank(mCurrentURI) && !currentChildEntry)) {
+        
+        
+        if (shEntry && (parentLoadType == LOAD_NORMAL ||
+                        parentLoadType == LOAD_LINK   ||
+                        parentLoadType == LOAD_NORMAL_EXTERNAL)) {
+          
+          
+          
+          
+          
+          
+          bool inOnLoadHandler = false;
+          parentDS->GetIsExecutingOnLoadHandler(&inOnLoadHandler);
+          if (inOnLoadHandler) {
+            loadType = LOAD_NORMAL_REPLACE;
+            shEntry = nullptr;
+          }
+        } else if (parentLoadType == LOAD_REFRESH) {
+          
+          
+          shEntry = nullptr;
+        } else if ((parentLoadType == LOAD_BYPASS_HISTORY) ||
+                   (shEntry &&
+                    ((parentLoadType & LOAD_CMD_HISTORY) ||
+                     (parentLoadType == LOAD_RELOAD_NORMAL) ||
+                     (parentLoadType == LOAD_RELOAD_CHARSET_CHANGE) ||
+                     (parentLoadType == LOAD_RELOAD_CHARSET_CHANGE_BYPASS_CACHE) ||
+                     (parentLoadType == LOAD_RELOAD_CHARSET_CHANGE_BYPASS_PROXY_AND_CACHE)))) {
+          
+          
+          
+          
+          loadType = parentLoadType;
+        } else if (parentLoadType == LOAD_ERROR_PAGE) {
+          
+          
+          
+          loadType = LOAD_BYPASS_HISTORY;
+        } else if ((parentLoadType == LOAD_RELOAD_BYPASS_CACHE) ||
+                   (parentLoadType == LOAD_RELOAD_BYPASS_PROXY) ||
+                   (parentLoadType == LOAD_RELOAD_BYPASS_PROXY_AND_CACHE)) {
+          
+          
+          loadType = parentLoadType;
+        }
+      } else {
         
         
         
         
-    
+        
         
         
         
@@ -823,57 +831,187 @@ nsDocShell::MaybeHandleSubframeHistory(nsDocShellLoadState* aLoadState)
         GetBusyFlags(&selfBusy);
         if (parentBusy & BUSY_FLAGS_BUSY ||
             selfBusy & BUSY_FLAGS_BUSY) {
-      aLoadState->SetLoadType(LOAD_NORMAL_REPLACE);
-      aLoadState->SetSHEntry(nullptr);
+          loadType = LOAD_NORMAL_REPLACE;
+          shEntry = nullptr;
+        }
+      }
+    } 
+    else {
+      
+      
+      
+      bool inOnLoadHandler = false;
+      GetIsExecutingOnLoadHandler(&inOnLoadHandler);
+      if (inOnLoadHandler) {
+        loadType = LOAD_NORMAL_REPLACE;
+      }
     }
-    return;
+  } 
+
+  if (shEntry) {
+#ifdef DEBUG
+    MOZ_LOG(gDocShellLog, LogLevel::Debug,
+           ("nsDocShell[%p]: loading from session history", this));
+#endif
+
+    return LoadHistoryEntry(shEntry, loadType);
   }
 
   
   
-  if (aLoadState->SHEntry() && (parentLoadType == LOAD_NORMAL ||
-                                parentLoadType == LOAD_LINK   ||
-                                parentLoadType == LOAD_NORMAL_EXTERNAL)) {
-    
-    
-    
-    
-    
-    
-      bool inOnLoadHandler = false;
-    parentDS->GetIsExecutingOnLoadHandler(&inOnLoadHandler);
-      if (inOnLoadHandler) {
-      aLoadState->SetLoadType(LOAD_NORMAL_REPLACE);
-      aLoadState->SetSHEntry(nullptr);
-    }
-  } else if (parentLoadType == LOAD_REFRESH) {
-    
-    
-    aLoadState->SetSHEntry(nullptr);
-  } else if ((parentLoadType == LOAD_BYPASS_HISTORY) ||
-             (aLoadState->SHEntry() &&
-              ((parentLoadType & LOAD_CMD_HISTORY) ||
-               (parentLoadType == LOAD_RELOAD_NORMAL) ||
-               (parentLoadType == LOAD_RELOAD_CHARSET_CHANGE) ||
-               (parentLoadType == LOAD_RELOAD_CHARSET_CHANGE_BYPASS_CACHE) ||
-               (parentLoadType == LOAD_RELOAD_CHARSET_CHANGE_BYPASS_PROXY_AND_CACHE)))) {
-    
-    
-    
-    
-    aLoadState->SetLoadType(parentLoadType);
-  } else if (parentLoadType == LOAD_ERROR_PAGE) {
-    
-    
-    
-    aLoadState->SetLoadType(LOAD_BYPASS_HISTORY);
-  } else if ((parentLoadType == LOAD_RELOAD_BYPASS_CACHE) ||
-             (parentLoadType == LOAD_RELOAD_BYPASS_PROXY) ||
-             (parentLoadType == LOAD_RELOAD_BYPASS_PROXY_AND_CACHE)) {
-    
-    
-    aLoadState->SetLoadType(parentLoadType);
+  
+  
+  
+  
+  if ((loadType == LOAD_NORMAL || loadType == LOAD_STOP_CONTENT) &&
+      ShouldBlockLoadingForBackButton()) {
+    return NS_OK;
   }
+
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIPrincipal> principalToInherit = triggeringPrincipal;
+  if (principalToInherit && mItemType != typeChrome) {
+    if (nsContentUtils::IsSystemPrincipal(principalToInherit)) {
+      if (principalIsExplicit) {
+        return NS_ERROR_DOM_SECURITY_ERR;
+      }
+      principalToInherit = nullptr;
+      inheritPrincipal = true;
+    } else if (nsContentUtils::IsExpandedPrincipal(principalToInherit)) {
+      if (principalIsExplicit) {
+        return NS_ERROR_DOM_SECURITY_ERR;
+      }
+      
+      
+      
+      
+      
+      principalToInherit = NullPrincipal::CreateWithInheritedAttributes(this);
+      inheritPrincipal = false;
+    }
+  }
+  if (!principalToInherit && !inheritPrincipal && !principalIsExplicit) {
+    
+    inheritPrincipal = nsContentUtils::LegacyIsCallerChromeOrNativeCode();
+  }
+
+  if (aLoadFlags & LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL) {
+    inheritPrincipal = false;
+    
+    
+    principalToInherit = NullPrincipal::CreateWithInheritedAttributes(this, aFirstParty);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!triggeringPrincipal) {
+    if (referrer) {
+      nsresult rv = CreatePrincipalFromReferrer(referrer,
+                                                getter_AddRefs(triggeringPrincipal));
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+    else {
+      triggeringPrincipal = nsContentUtils::GetSystemPrincipal();
+    }
+  }
+
+  uint32_t flags = 0;
+
+  if (inheritPrincipal) {
+    MOZ_ASSERT(!nsContentUtils::IsSystemPrincipal(principalToInherit), "Should not inherit SystemPrincipal");
+    flags |= INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL;
+  }
+
+  if (!sendReferrer) {
+    flags |= INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER;
+  }
+
+  if (aLoadFlags & LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP) {
+    flags |= INTERNAL_LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
+  }
+
+  if (aLoadFlags & LOAD_FLAGS_FIRST_LOAD) {
+    flags |= INTERNAL_LOAD_FLAGS_FIRST_LOAD;
+  }
+
+  if (aLoadFlags & LOAD_FLAGS_BYPASS_CLASSIFIER) {
+    flags |= INTERNAL_LOAD_FLAGS_BYPASS_CLASSIFIER;
+  }
+
+  if (aLoadFlags & LOAD_FLAGS_FORCE_ALLOW_COOKIES) {
+    flags |= INTERNAL_LOAD_FLAGS_FORCE_ALLOW_COOKIES;
+  }
+
+  if (isSrcdoc) {
+    flags |= INTERNAL_LOAD_FLAGS_IS_SRCDOC;
+  }
+
+  if (forceAllowDataURI) {
+    flags |= INTERNAL_LOAD_FLAGS_FORCE_ALLOW_DATA_URI;
+  }
+
+  if (originalFrameSrc) {
+    flags |= INTERNAL_LOAD_FLAGS_ORIGINAL_FRAME_SRC;
+  }
+
+  return InternalLoad(aURI,
+                      originalURI,
+                      resultPrincipalURI,
+                      keepResultPrincipalURIIfSet,
+                      loadReplace,
+                      referrer,
+                      referrerPolicy,
+                      triggeringPrincipal,
+                      principalToInherit,
+                      flags,
+                      target,
+                      nullptr,      
+                      VoidString(), 
+                      postStream,
+                      headersStream,
+                      loadType,
+                      nullptr, 
+                      aFirstParty,
+                      srcdoc,
+                      sourceDocShell,
+                      baseURI,
+                      nullptr,  
+                      nullptr); 
 }
 
 
@@ -4088,7 +4226,7 @@ nsDocShell::LoadURIWithOptions(const nsAString& aURI,
                                nsIURI* aBaseURI,
                                nsIPrincipal* aTriggeringPrincipal)
 {
-  NS_ASSERTION((aLoadFlags & INTERNAL_LOAD_FLAGS_LOADURI_SETUP_FLAGS) == 0, "Unexpected flags");
+  NS_ASSERTION((aLoadFlags & 0xf) == 0, "Unexpected flags");
 
   if (!IsNavigationAllowed()) {
     return NS_OK; 
@@ -4183,28 +4321,27 @@ nsDocShell::LoadURIWithOptions(const nsAString& aURI,
   uint32_t extraFlags = (aLoadFlags & EXTRA_LOAD_FLAGS);
   aLoadFlags &= ~EXTRA_LOAD_FLAGS;
 
-  RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState();
+  RefPtr<nsDocShellLoadInfo> loadInfo = new nsDocShellLoadInfo();
 
   
 
 
 
+  uint32_t loadType;
   if (aLoadFlags & LOAD_FLAGS_ALLOW_MIXED_CONTENT) {
-    loadState->SetLoadType(MAKE_LOAD_TYPE(LOAD_NORMAL_ALLOW_MIXED_CONTENT, aLoadFlags));
+    loadType = MAKE_LOAD_TYPE(LOAD_NORMAL_ALLOW_MIXED_CONTENT, aLoadFlags);
   } else {
-    loadState->SetLoadType(MAKE_LOAD_TYPE(LOAD_NORMAL, aLoadFlags));
+    loadType = MAKE_LOAD_TYPE(LOAD_NORMAL, aLoadFlags);
   }
 
-  loadState->SetURI(uri);
-  loadState->SetLoadFlags(extraFlags);
-  loadState->SetFirstParty(true);
-  loadState->SetPostDataStream(postStream);
-  loadState->SetReferrer(aReferringURI);
-  loadState->SetReferrerPolicy((mozilla::net::ReferrerPolicy)aReferrerPolicy);
-  loadState->SetHeadersStream(aHeaderStream);
-  loadState->SetBaseURI(aBaseURI);
-  loadState->SetTriggeringPrincipal(aTriggeringPrincipal);
-  loadState->SetForceAllowDataURI(forceAllowDataURI);
+  loadInfo->SetLoadType(loadType);
+  loadInfo->SetPostDataStream(postStream);
+  loadInfo->SetReferrer(aReferringURI);
+  loadInfo->SetReferrerPolicy((mozilla::net::ReferrerPolicy)aReferrerPolicy);
+  loadInfo->SetHeadersStream(aHeaderStream);
+  loadInfo->SetBaseURI(aBaseURI);
+  loadInfo->SetTriggeringPrincipal(aTriggeringPrincipal);
+  loadInfo->SetForceAllowDataURI(forceAllowDataURI);
 
   if (fixupInfo) {
     nsAutoString searchProvider, keyword;
@@ -4213,7 +4350,7 @@ nsDocShell::LoadURIWithOptions(const nsAString& aURI,
     MaybeNotifyKeywordSearchLoading(searchProvider, keyword);
   }
 
-  rv = LoadURI(loadState);
+  rv = LoadURI(uri, loadInfo, extraFlags, true);
 
   
   
@@ -4781,7 +4918,7 @@ nsDocShell::LoadErrorPage(nsIURI* aErrorURI, nsIURI* aFailedURI, nsIChannel* aFa
   return InternalLoad(aErrorURI, nullptr, Nothing(), false, false, nullptr, RP_Unset,
                       nsContentUtils::GetSystemPrincipal(), nullptr,
                       INTERNAL_LOAD_FLAGS_NONE, EmptyString(),
-                      VoidCString(), VoidString(), nullptr, nullptr,
+                      nullptr, VoidString(), nullptr, nullptr,
                       LOAD_ERROR_PAGE, nullptr, true, VoidString(), this,
                       nullptr, nullptr, nullptr);
 }
@@ -4793,7 +4930,7 @@ nsDocShell::Reload(uint32_t aReloadFlags)
     return NS_OK; 
   }
   nsresult rv;
-  NS_ASSERTION(((aReloadFlags & INTERNAL_LOAD_FLAGS_LOADURI_SETUP_FLAGS) == 0),
+  NS_ASSERTION(((aReloadFlags & 0xf) == 0),
                "Reload command not updated to use load flags!");
   NS_ASSERTION((aReloadFlags & EXTRA_LOAD_FLAGS) == 0,
                "Don't pass these flags to Reload");
@@ -4881,7 +5018,7 @@ nsDocShell::Reload(uint32_t aReloadFlags)
                       triggeringPrincipal,
                       flags,
                       EmptyString(),   
-                      NS_LossyConvertUTF16toASCII(contentTypeHint),
+                      NS_LossyConvertUTF16toASCII(contentTypeHint).get(),
                       VoidString(),    
                       nullptr,         
                       nullptr,         
@@ -6133,22 +6270,22 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal, int32_t aDel
 {
   NS_ENSURE_ARG(aURI);
 
-  RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState();
+  RefPtr<nsDocShellLoadInfo> loadInfo = new nsDocShellLoadInfo();
 
   
 
 
-  loadState->SetSendReferrer(false);
+  loadInfo->SetSendReferrer(false);
 
   
 
 
-  loadState->SetReferrer(mCurrentURI);
+  loadInfo->SetReferrer(mCurrentURI);
 
-  loadState->SetOriginalURI(mCurrentURI);
-  loadState->SetResultPrincipalURI(aURI);
-  loadState->SetResultPrincipalURIIsSome(true);
-  loadState->SetKeepResultPrincipalURIIfSet(true);
+  loadInfo->SetOriginalURI(mCurrentURI);
+  loadInfo->SetResultPrincipalURI(aURI);
+  loadInfo->SetResultPrincipalURIIsSome(true);
+  loadInfo->SetKeepResultPrincipalURIIfSet(true);
 
   
   
@@ -6160,8 +6297,8 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal, int32_t aDel
     }
     principal = doc->NodePrincipal();
   }
-  loadState->SetTriggeringPrincipal(principal);
-  loadState->SetPrincipalIsExplicit(true);
+  loadInfo->SetTriggeringPrincipal(principal);
+  loadInfo->SetPrincipalIsExplicit(true);
 
   
 
@@ -6174,7 +6311,7 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal, int32_t aDel
 
 
 
-    loadState->SetLoadType(LOAD_NORMAL_REPLACE);
+    loadInfo->SetLoadType(LOAD_NORMAL_REPLACE);
 
     
 
@@ -6182,21 +6319,17 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal, int32_t aDel
     nsCOMPtr<nsIURI> internalReferrer;
     GetReferringURI(getter_AddRefs(internalReferrer));
     if (internalReferrer) {
-      loadState->SetReferrer(internalReferrer);
+      loadInfo->SetReferrer(internalReferrer);
     }
   } else {
-    loadState->SetLoadType(LOAD_REFRESH);
+    loadInfo->SetLoadType(LOAD_REFRESH);
   }
-
-  loadState->SetURI(aURI);
-  loadState->SetLoadFlags(nsIWebNavigation::LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL);
-  loadState->SetFirstParty(true);
 
   
 
 
 
-  LoadURI(loadState);
+  LoadURI(aURI, loadInfo, nsIWebNavigation::LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL, true);
 
   return NS_OK;
 }
@@ -8962,7 +9095,7 @@ public:
                     nsIPrincipal* aTriggeringPrincipal,
                     nsIPrincipal* aPrincipalToInherit,
                     uint32_t aFlags,
-                    const nsACString& aTypeHint,
+                    const char* aTypeHint,
                     nsIInputStream* aPostData,
                     nsIInputStream* aHeadersData,
                     uint32_t aLoadType,
@@ -8972,7 +9105,6 @@ public:
                     nsIDocShell* aSourceDocShell,
                     nsIURI* aBaseURI)
     : mozilla::Runnable("InternalLoadEvent")
-    , mTypeHint(aTypeHint)
     , mSrcdoc(aSrcdoc)
     , mDocShell(aDocShell)
     , mURI(aURI)
@@ -8993,6 +9125,12 @@ public:
     , mSourceDocShell(aSourceDocShell)
     , mBaseURI(aBaseURI)
   {
+    
+    if (aTypeHint) {
+      mTypeHint = aTypeHint;
+    } else {
+      mTypeHint.SetIsVoid(true);
+    }
   }
 
   NS_IMETHOD
@@ -9005,7 +9143,8 @@ public:
                                    mReferrerPolicy,
                                    mTriggeringPrincipal, mPrincipalToInherit,
                                    mFlags, EmptyString(),
-                                   mTypeHint,
+                                   mTypeHint.IsVoid() ? nullptr
+                                                      : mTypeHint.get(),
                                    VoidString(), mPostData,
                                    mHeadersData, mLoadType, mSHEntry,
                                    mFirstParty, mSrcdoc, mSourceDocShell,
@@ -9076,7 +9215,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
                          nsIPrincipal* aPrincipalToInherit,
                          uint32_t aFlags,
                          const nsAString& aWindowTarget,
-                         const nsACString& aTypeHint,
+                         const char* aTypeHint,
                          const nsAString& aFileName,
                          nsIInputStream* aPostData,
                          nsIInputStream* aHeadersData,
@@ -9357,31 +9496,31 @@ nsDocShell::InternalLoad(nsIURI* aURI,
         MOZ_ASSERT(!aSHEntry);
         MOZ_ASSERT(aFirstParty); 
 
-        RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState();
+        RefPtr<nsDocShellLoadInfo> loadInfo = new nsDocShellLoadInfo();
 
         
         
-        loadState->SetReferrer(aReferrer);
-        loadState->SetReferrerPolicy((mozilla::net::ReferrerPolicy)aReferrerPolicy);
-        loadState->SetSendReferrer(!(aFlags &
+        loadInfo->SetReferrer(aReferrer);
+        loadInfo->SetReferrerPolicy((mozilla::net::ReferrerPolicy)aReferrerPolicy);
+        loadInfo->SetSendReferrer(!(aFlags &
                                     INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER));
-        loadState->SetOriginalURI(aOriginalURI);
-        loadState->SetMaybeResultPrincipalURI(aResultPrincipalURI);
-        loadState->SetKeepResultPrincipalURIIfSet(aKeepResultPrincipalURIIfSet);
-        loadState->SetLoadReplace(aLoadReplace);
-        loadState->SetTriggeringPrincipal(aTriggeringPrincipal);
-        loadState->SetInheritPrincipal(
+        loadInfo->SetOriginalURI(aOriginalURI);
+        loadInfo->SetMaybeResultPrincipalURI(aResultPrincipalURI);
+        loadInfo->SetKeepResultPrincipalURIIfSet(aKeepResultPrincipalURIIfSet);
+        loadInfo->SetLoadReplace(aLoadReplace);
+        loadInfo->SetTriggeringPrincipal(aTriggeringPrincipal);
+        loadInfo->SetInheritPrincipal(
           aFlags & INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL);
         
         
-        loadState->SetPrincipalIsExplicit(true);
-        loadState->SetLoadType(LOAD_LINK);
-        loadState->SetForceAllowDataURI(aFlags & INTERNAL_LOAD_FLAGS_FORCE_ALLOW_DATA_URI);
+        loadInfo->SetPrincipalIsExplicit(true);
+        loadInfo->SetLoadType(LOAD_LINK);
+        loadInfo->SetForceAllowDataURI(aFlags & INTERNAL_LOAD_FLAGS_FORCE_ALLOW_DATA_URI);
 
         rv = win->Open(NS_ConvertUTF8toUTF16(spec),
                        aWindowTarget, 
                        EmptyString(), 
-                       loadState,
+                       loadInfo,
                        true, 
                        getter_AddRefs(newWin));
         MOZ_ASSERT(!newWin);
@@ -10192,7 +10331,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
                       uint32_t aReferrerPolicy,
                       nsIPrincipal* aTriggeringPrincipal,
                       nsIPrincipal* aPrincipalToInherit,
-                      const nsACString& aTypeHint,
+                      const char* aTypeHint,
                       const nsAString& aFileName,
                       nsIInputStream* aPostData,
                       nsIInputStream* aHeadersData,
@@ -10541,8 +10680,8 @@ nsDocShell::DoURILoad(nsIURI* aURI,
     loadInfo->SetResultPrincipalURI(aResultPrincipalURI.ref());
   }
 
-  if (!aTypeHint.IsVoid()) {
-    channel->SetContentType(aTypeHint);
+  if (aTypeHint && *aTypeHint) {
+    channel->SetContentType(nsDependentCString(aTypeHint));
     mContentTypeHint = aTypeHint;
   } else {
     mContentTypeHint.Truncate();
@@ -12096,7 +12235,7 @@ nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType)
                     principalToInherit,
                     flags,
                     EmptyString(),      
-                    contentType,        
+                    contentType.get(),  
                     VoidString(),       
                     postData,           
                     nullptr,            
@@ -13284,7 +13423,7 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent,
                              aContent->NodePrincipal(),
                              flags,
                              target,                    
-                             NS_LossyConvertUTF16toASCII(typeHint),
+                             NS_LossyConvertUTF16toASCII(typeHint).get(),
                              aFileName,                 
                              aPostDataStream,           
                              aHeadersDataStream,        

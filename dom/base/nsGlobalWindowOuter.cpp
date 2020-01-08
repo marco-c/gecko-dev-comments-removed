@@ -65,7 +65,7 @@
 #include "nsPrintfCString.h"
 #include "mozilla/intl/LocaleService.h"
 #include "WindowDestroyedEvent.h"
-#include "nsDocShellLoadState.h"
+#include "nsDocShellLoadInfo.h"
 
 
 #include "nsJSUtils.h"
@@ -5520,7 +5520,7 @@ nsGlobalWindowOuter::OpenOuter(const nsAString& aUrl, const nsAString& aName,
 
 nsresult
 nsGlobalWindowOuter::Open(const nsAString& aUrl, const nsAString& aName,
-                          const nsAString& aOptions, nsDocShellLoadState* aLoadState,
+                          const nsAString& aOptions, nsDocShellLoadInfo* aLoadInfo,
                           bool aForceNoOpener, nsPIDOMWindowOuter **_retval)
 {
   return OpenInternal(aUrl, aName, aOptions,
@@ -5530,7 +5530,7 @@ nsGlobalWindowOuter::Open(const nsAString& aUrl, const nsAString& aName,
                       false,          
                       true,           
                       nullptr, nullptr,  
-                      aLoadState,
+                      aLoadInfo,
                       aForceNoOpener,
                       _retval);
 }
@@ -6937,7 +6937,7 @@ nsGlobalWindowOuter::OpenInternal(const nsAString& aUrl, const nsAString& aName,
                                   bool aDoJSFixups, bool aNavigate,
                                   nsIArray *argv,
                                   nsISupports *aExtraArgument,
-                                  nsDocShellLoadState* aLoadState,
+                                  nsDocShellLoadInfo* aLoadInfo,
                                   bool aForceNoOpener,
                                   nsPIDOMWindowOuter **aReturn)
 {
@@ -7086,7 +7086,7 @@ nsGlobalWindowOuter::OpenInternal(const nsAString& aUrl, const nsAString& aName,
                                 aDialog, aNavigate, argv,
                                 isPopupSpamWindow,
                                 forceNoOpener,
-                                aLoadState,
+                                aLoadInfo,
                                 getter_AddRefs(domReturn));
     } else {
       
@@ -7109,7 +7109,7 @@ nsGlobalWindowOuter::OpenInternal(const nsAString& aUrl, const nsAString& aName,
                                 aDialog, aNavigate, aExtraArgument,
                                 isPopupSpamWindow,
                                 forceNoOpener,
-                                aLoadState,
+                                aLoadInfo,
                                 getter_AddRefs(domReturn));
 
     }
