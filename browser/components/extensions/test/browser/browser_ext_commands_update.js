@@ -112,7 +112,7 @@ add_task(async function test_update_defined_command() {
         await browser.commands.update({
           name: "foo",
           description: "The new command",
-          shortcut: "   Alt+  Shift +P",
+          shortcut: "   Alt+  Shift +9",
         });
 
         
@@ -121,7 +121,7 @@ add_task(async function test_update_defined_command() {
         command = commands[0];
         browser.test.assertEq("foo", command.name, "The name is unchanged");
         browser.test.assertEq("The new command", command.description, "The description is updated");
-        browser.test.assertEq("Alt+Shift+P", command.shortcut, "The shortcut is updated");
+        browser.test.assertEq("Alt+Shift+9", command.shortcut, "The shortcut is updated");
 
         
         browser.test.assertThrows(
@@ -155,6 +155,18 @@ add_task(async function test_update_defined_command() {
     is(key.getAttribute("modifiers"), modifiers, "The modifiers are correct");
   }
 
+  function checkNumericKey(extensionId, key, modifiers) {
+    let keyset = extensionKeyset(extensionId);
+    is(keyset.children.length, 2, "There are 2 keys in the keyset now, 1 of which contains a keycode.");
+    let numpadKey = keyset.children[0];
+    is(numpadKey.getAttribute("keycode"), `VK_NUMPAD${key}`, "The numpad keycode is correct.");
+    is(numpadKey.getAttribute("modifiers"), modifiers, "The modifiers are correct");
+
+    let originalNumericKey = keyset.children[1];
+    is(originalNumericKey.getAttribute("keycode"), `VK_${key}`, "The original key is correct.");
+    is(originalNumericKey.getAttribute("modifiers"), modifiers, "The modifiers are correct");
+  }
+
   
   checkKey(extension.id, "I", "accel shift");
 
@@ -163,7 +175,7 @@ add_task(async function test_update_defined_command() {
   await extension.awaitFinish("commands");
 
   
-  checkKey(extension.id, "P", "alt shift");
+  checkNumericKey(extension.id, "9", "alt shift");
 
   
   let storedCommands = ExtensionSettingsStore.getAllForExtension(
@@ -171,7 +183,7 @@ add_task(async function test_update_defined_command() {
   is(storedCommands.length, 1, "There is only one stored command");
   let command = ExtensionSettingsStore.getSetting("commands", "foo", extension.id).value;
   is(command.description, "The new command", "The description is stored");
-  is(command.shortcut, "Alt+Shift+P", "The shortcut is stored");
+  is(command.shortcut, "Alt+Shift+9", "The shortcut is stored");
 
   
   extension.sendMessage("update", {name: "foo", shortcut: "Ctrl+Shift+M"});
@@ -183,11 +195,11 @@ add_task(async function test_update_defined_command() {
   await ExtensionSettingsStore.addSetting(
     extension.id, "commands", "foo", {description: "description only"});
   
-  extension.sendMessage("update", {name: "foo", shortcut: "Alt+Shift+P"});
+  extension.sendMessage("update", {name: "foo", shortcut: "Alt+Shift+9"});
   await extension.awaitMessage("updateDone");
   let storedCommand = await ExtensionSettingsStore.getSetting(
     "commands", "foo", extension.id);
-  is(storedCommand.value.shortcut, "Alt+Shift+P", "The shortcut is saved correctly");
+  is(storedCommand.value.shortcut, "Alt+Shift+9", "The shortcut is saved correctly");
   is(storedCommand.value.description, "description only", "The description is saved correctly");
 
   
@@ -203,7 +215,7 @@ add_task(async function test_update_defined_command() {
   is(keyset, null, "The extension keyset is removed when disabled");
   
   await ExtensionSettingsStore.addSetting(
-    extension.id, "commands", "foo", {shortcut: "Alt+Shift+P"});
+    extension.id, "commands", "foo", {shortcut: "Alt+Shift+9"});
   await ExtensionSettingsStore.addSetting(
     extension.id, "commands", "unknown", {shortcut: "Ctrl+Shift+P"});
   storedCommands = ExtensionSettingsStore.getAllForExtension(extension.id, "commands");
@@ -212,7 +224,7 @@ add_task(async function test_update_defined_command() {
   
   await TestUtils.waitForCondition(() => extensionKeyset(extension.id));
   
-  checkKey(extension.id, "P", "alt shift");
+  checkNumericKey(extension.id, "9", "alt shift");
 
   
   updatedExtension = ExtensionTestUtils.loadExtension({
@@ -234,7 +246,7 @@ add_task(async function test_update_defined_command() {
 
   await TestUtils.waitForCondition(() => extensionKeyset(extension.id));
   
-  checkKey(extension.id, "P", "alt shift");
+  checkNumericKey(extension.id, "9", "alt shift");
 });
 
 add_task(async function updateSidebarCommand() {
