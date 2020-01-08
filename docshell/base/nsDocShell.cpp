@@ -1024,16 +1024,6 @@ nsDocShell::LoadURI(nsIURI* aURI,
                       nullptr); 
 }
 
-NS_IMETHODIMP
-nsDocShell::CreateLoadInfo(nsDocShellLoadInfo** aLoadInfo)
-{
-  nsDocShellLoadInfo* loadInfo = new nsDocShellLoadInfo();
-  RefPtr<nsDocShellLoadInfo> localRef(loadInfo);
-
-  localRef.forget(aLoadInfo);
-  return NS_OK;
-}
-
 
 
 
