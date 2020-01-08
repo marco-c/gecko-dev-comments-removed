@@ -213,9 +213,6 @@ ReturnPromiseRejectedWithPendingError(JSContext* cx, const CallArgs& args)
 
 
 
-
-
-
 inline static MOZ_MUST_USE bool
 SetNewList(JSContext* cx, HandleNativeObject unwrappedContainer, uint32_t slot)
 {
@@ -471,7 +468,7 @@ class TeeState : public NativeObject
         setFixedSlot(Slot_Branch2, ObjectValue(*controller));
     }
 
-    static TeeState* create(JSContext* cx, Handle<ReadableStream*> stream) {
+    static TeeState* create(JSContext* cx, Handle<ReadableStream*> unwrappedStream) {
         Rooted<TeeState*> state(cx, NewBuiltinClassInstance<TeeState>(cx));
         if (!state) {
             return nullptr;
@@ -484,7 +481,7 @@ class TeeState : public NativeObject
 
         state->setFixedSlot(Slot_Flags, Int32Value(0));
         state->setFixedSlot(Slot_Promise, ObjectValue(*promise));
-        RootedObject wrappedStream(cx, stream);
+        RootedObject wrappedStream(cx, unwrappedStream);
         if (!cx->compartment()->wrap(cx, &wrappedStream)) {
             return nullptr;
         }
@@ -531,6 +528,8 @@ const Class cls::protoClass_ = { \
 
 
 
+
+
 ReadableStream*
 ReadableStream::createStream(JSContext* cx, HandleObject proto )
 {
@@ -552,6 +551,8 @@ static MOZ_MUST_USE ReadableStreamDefaultController*
 CreateReadableStreamDefaultController(JSContext* cx, Handle<ReadableStream*> stream,
                                       HandleValue underlyingSource, HandleValue size,
                                       HandleValue highWaterMarkVal);
+
+
 
 
 ReadableStream*
@@ -602,6 +603,8 @@ ReadableStream::createExternalSourceStream(JSContext* cx, void* underlyingSource
 
     return stream;
 }
+
+
 
 
 bool
@@ -691,29 +694,33 @@ ReadableStream::constructor(JSContext* cx, unsigned argc, Value* vp)
 }
 
 
+
+
 static bool
 ReadableStream_locked(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 
     
-    Rooted<ReadableStream*> stream(cx);
+    Rooted<ReadableStream*> unwrappedStream(cx);
     if (!UnwrapThisForNonGenericMethod(cx,
                                        args.thisv(),
                                        "ReadableStream",
                                        "get locked",
-                                       &stream))
+                                       &unwrappedStream))
     {
         return false;
     }
 
     
-    args.rval().setBoolean(stream->locked());
+    args.rval().setBoolean(unwrappedStream->locked());
     return true;
 }
 
 static MOZ_MUST_USE JSObject*
-ReadableStreamCancel(JSContext* cx, Handle<ReadableStream*> stream, HandleValue reason);
+ReadableStreamCancel(JSContext* cx, Handle<ReadableStream*> unwrappedStream, HandleValue reason);
+
+
 
 
 static MOZ_MUST_USE bool
@@ -723,21 +730,23 @@ ReadableStream_cancel(JSContext* cx, unsigned argc, Value* vp)
 
     
     
-    Rooted<ReadableStream*> stream(cx);
-    if (!UnwrapThisForNonGenericMethod(cx, args.thisv(), "ReadableStream", "cancel", &stream)) {
+    Rooted<ReadableStream*> unwrappedStream(cx);
+    if (!UnwrapThisForNonGenericMethod(cx, args.thisv(), "ReadableStream", "cancel",
+                                       &unwrappedStream))
+    {
         return ReturnPromiseRejectedWithPendingError(cx, args);
     }
 
     
     
-    if (stream->locked()) {
+    if (unwrappedStream->locked()) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                   JSMSG_READABLESTREAM_LOCKED_METHOD, "cancel");
         return ReturnPromiseRejectedWithPendingError(cx, args);
     }
 
     
-    RootedObject cancelPromise(cx, ::ReadableStreamCancel(cx, stream, args.get(0)));
+    RootedObject cancelPromise(cx, ::ReadableStreamCancel(cx, unwrappedStream, args.get(0)));
     if (!cancelPromise) {
         return false;
     }
@@ -746,7 +755,9 @@ ReadableStream_cancel(JSContext* cx, unsigned argc, Value* vp)
 }
 
 static MOZ_MUST_USE ReadableStreamDefaultReader*
-CreateReadableStreamDefaultReader(JSContext* cx, Handle<ReadableStream*> stream);
+CreateReadableStreamDefaultReader(JSContext* cx, Handle<ReadableStream*> unwrappedStream);
+
+
 
 
 static bool
@@ -755,8 +766,10 @@ ReadableStream_getReader(JSContext* cx, unsigned argc, Value* vp)
     CallArgs args = CallArgsFromVp(argc, vp);
 
     
-    Rooted<ReadableStream*> stream(cx);
-    if (!UnwrapThisForNonGenericMethod(cx, args.thisv(), "ReadableStream", "getReader", &stream)) {
+    Rooted<ReadableStream*> unwrappedStream(cx);
+    if (!UnwrapThisForNonGenericMethod(cx, args.thisv(), "ReadableStream", "getReader",
+                                       &unwrappedStream))
+    {
         return false;
     }
 
@@ -773,7 +786,7 @@ ReadableStream_getReader(JSContext* cx, unsigned argc, Value* vp)
     }
 
     if (modeVal.isUndefined()) {
-        reader = CreateReadableStreamDefaultReader(cx, stream);
+        reader = CreateReadableStreamDefaultReader(cx, unwrappedStream);
     } else {
         
         RootedString mode(cx, ToString<CanGC>(cx, modeVal));
@@ -812,8 +825,10 @@ ReadableStream_getReader(JSContext* cx, unsigned argc, Value* vp)
 
 
 static MOZ_MUST_USE bool
-ReadableStreamTee(JSContext* cx, Handle<ReadableStream*> stream, bool cloneForBranch2,
+ReadableStreamTee(JSContext* cx, Handle<ReadableStream*> unwrappedStream, bool cloneForBranch2,
                   MutableHandle<ReadableStream*> branch1, MutableHandle<ReadableStream*> branch2);
+
+
 
 
 static bool
@@ -822,15 +837,17 @@ ReadableStream_tee(JSContext* cx, unsigned argc, Value* vp)
     CallArgs args = CallArgsFromVp(argc, vp);
 
     
-    Rooted<ReadableStream*> stream(cx);
-    if (!UnwrapThisForNonGenericMethod(cx, args.thisv(), "ReadableStream", "tee", &stream)) {
+    Rooted<ReadableStream*> unwrappedStream(cx);
+    if (!UnwrapThisForNonGenericMethod(cx, args.thisv(), "ReadableStream", "tee",
+                                       &unwrappedStream))
+    {
         return false;
     }
 
     
     Rooted<ReadableStream*> branch1(cx);
     Rooted<ReadableStream*> branch2(cx);
-    if (!ReadableStreamTee(cx, stream, false, &branch1, &branch2)) {
+    if (!ReadableStreamTee(cx, unwrappedStream, false, &branch1, &branch2)) {
         return false;
     }
 
@@ -860,6 +877,8 @@ static const JSPropertySpec ReadableStream_properties[] = {
 };
 
 CLASS_SPEC(ReadableStream, 0, SlotCount, 0, 0, JS_NULL_CLASS_OPS);
+
+
 
 
 
@@ -1043,18 +1062,15 @@ ReadableStreamTee_Pull(JSContext* cx, Handle<TeeState*> unwrappedTeeState)
 
 
 
-
-
-
-
-
 static MOZ_MUST_USE JSObject*
-ReadableStreamTee_Cancel(JSContext* cx, Handle<TeeState*> teeState,
-                         Handle<ReadableStreamDefaultController*> branch, HandleValue reason_)
+ReadableStreamTee_Cancel(JSContext* cx,
+                         Handle<TeeState*> unwrappedTeeState,
+                         Handle<ReadableStreamDefaultController*> unwrappedBranch,
+                         HandleValue reason)
 {
     
-    Rooted<ReadableStream*> stream(cx);
-    if (!UnwrapInternalSlot(cx, teeState, TeeState::Slot_Stream, &stream)) {
+    Rooted<ReadableStream*> unwrappedStream(cx);
+    if (!UnwrapInternalSlot(cx, unwrappedTeeState, TeeState::Slot_Stream, &unwrappedStream)) {
         return nullptr;
     }
 
@@ -1063,22 +1079,20 @@ ReadableStreamTee_Cancel(JSContext* cx, Handle<TeeState*> teeState,
     
     
     {
-        RootedValue reason(cx, reason_);
-        if (reason.isGCThing() &&
-            reason.toGCThing()->maybeCompartment() != teeState->compartment())
+        RootedValue unwrappedReason(cx, reason);
         {
-            AutoRealm ar(cx, teeState);
-            if (!cx->compartment()->wrap(cx, &reason)) {
+            AutoRealm ar(cx, unwrappedTeeState);
+            if (!cx->compartment()->wrap(cx, &unwrappedReason)) {
                 return nullptr;
             }
         }
-        if (branch->isTeeBranch1()) {
-            teeState->setCanceled1(reason);
-            bothBranchesCanceled = teeState->canceled2();
+        if (unwrappedBranch->isTeeBranch1()) {
+            unwrappedTeeState->setCanceled1(unwrappedReason);
+            bothBranchesCanceled = unwrappedTeeState->canceled2();
         } else {
-            MOZ_ASSERT(branch->isTeeBranch2());
-            teeState->setCanceled2(reason);
-            bothBranchesCanceled = teeState->canceled1();
+            MOZ_ASSERT(unwrappedBranch->isTeeBranch2());
+            unwrappedTeeState->setCanceled2(unwrappedReason);
+            bothBranchesCanceled = unwrappedTeeState->canceled1();
         }
     }
 
@@ -1094,23 +1108,22 @@ ReadableStreamTee_Cancel(JSContext* cx, Handle<TeeState*> teeState,
 
         compositeReason->setDenseInitializedLength(2);
 
-        RootedValue reason1(cx, teeState->reason1());
-        RootedValue reason2(cx, teeState->reason2());
-        if (teeState->compartment() != cx->compartment()) {
-            if (!cx->compartment()->wrap(cx, &reason1) || !cx->compartment()->wrap(cx, &reason2)) {
-                return nullptr;
-            }
+        RootedValue reason1(cx, unwrappedTeeState->reason1());
+        RootedValue reason2(cx, unwrappedTeeState->reason2());
+        if (!cx->compartment()->wrap(cx, &reason1) || !cx->compartment()->wrap(cx, &reason2)) {
+            return nullptr;
         }
         compositeReason->initDenseElement(0, reason1);
         compositeReason->initDenseElement(1, reason2);
         RootedValue compositeReasonVal(cx, ObjectValue(*compositeReason));
 
-        Rooted<PromiseObject*> promise(cx, teeState->promise());
-
         
-        RootedObject cancelResult(cx, ::ReadableStreamCancel(cx, stream, compositeReasonVal));
+        RootedObject cancelResult(cx,
+            ::ReadableStreamCancel(cx, unwrappedStream, compositeReasonVal));
         {
+            Rooted<PromiseObject*> promise(cx, unwrappedTeeState->promise());
             AutoRealm ar(cx, promise);
+
             if (!cancelResult) {
                 if (!RejectPromiseWithPendingError(cx, promise)) {
                     return nullptr;
@@ -1129,19 +1142,19 @@ ReadableStreamTee_Cancel(JSContext* cx, Handle<TeeState*> teeState,
     }
 
     
-    RootedObject promise(cx, teeState->promise());
-    if (promise->compartment() != cx->compartment()) {
-        if (!cx->compartment()->wrap(cx, &promise)) {
-            return nullptr;
-        }
+    RootedObject promise(cx, unwrappedTeeState->promise());
+    if (!cx->compartment()->wrap(cx, &promise)) {
+        return nullptr;
     }
     return promise;
 }
 
 static MOZ_MUST_USE bool
 ReadableStreamDefaultControllerErrorIfNeeded(JSContext* cx,
-                                             Handle<ReadableStreamDefaultController*> controller,
+                                             Handle<ReadableStreamDefaultController*> unwrappedController,
                                              HandleValue e);
+
+
 
 
 
@@ -1178,12 +1191,10 @@ TeeReaderClosedHandler(JSContext* cx, unsigned argc, Value* vp)
 
 
 
-
-
-
-
 static MOZ_MUST_USE bool
-ReadableStreamTee(JSContext* cx, Handle<ReadableStream*> stream, bool cloneForBranch2,
+ReadableStreamTee(JSContext* cx,
+                  Handle<ReadableStream*> unwrappedStream,
+                  bool cloneForBranch2,
                   MutableHandle<ReadableStream*> branch1Stream,
                   MutableHandle<ReadableStream*> branch2Stream)
 {
@@ -1191,7 +1202,8 @@ ReadableStreamTee(JSContext* cx, Handle<ReadableStream*> stream, bool cloneForBr
     
 
     
-    Rooted<ReadableStreamDefaultReader*> reader(cx, CreateReadableStreamDefaultReader(cx, stream));
+    Rooted<ReadableStreamDefaultReader*> reader(cx,
+        CreateReadableStreamDefaultReader(cx, unwrappedStream));
     if (!reader) {
         return false;
     }
@@ -1202,7 +1214,7 @@ ReadableStreamTee(JSContext* cx, Handle<ReadableStream*> stream, bool cloneForBr
     
     
     
-    Rooted<TeeState*> teeState(cx, TeeState::create(cx, stream));
+    Rooted<TeeState*> teeState(cx, TeeState::create(cx, unwrappedStream));
     if (!teeState) {
         return false;
     }
@@ -1280,29 +1292,27 @@ ReadableStreamTee(JSContext* cx, Handle<ReadableStream*> stream, bool cloneForBr
 
 
 inline static MOZ_MUST_USE bool
-AppendToListAtSlot(JSContext* cx, HandleNativeObject container, uint32_t slot, HandleObject obj);
-
-
-
-
-
+AppendToListAtSlot(JSContext* cx,
+                   HandleNativeObject unwrappedContainer,
+                   uint32_t slot,
+                   HandleObject obj);
 
 
 
 
 
 static MOZ_MUST_USE JSObject*
-ReadableStreamAddReadOrReadIntoRequest(JSContext* cx, Handle<ReadableStream*> stream)
+ReadableStreamAddReadOrReadIntoRequest(JSContext* cx, Handle<ReadableStream*> unwrappedStream)
 {
     
     
-    Rooted<ReadableStreamReader*> reader(cx);
-    if (!UnwrapReaderFromStream(cx, stream, &reader)) {
+    Rooted<ReadableStreamReader*> unwrappedReader(cx);
+    if (!UnwrapReaderFromStream(cx, unwrappedStream, &unwrappedReader)) {
         return nullptr;
     }
 
     
-    MOZ_ASSERT_IF(reader->is<ReadableStreamDefaultReader>(), stream->readable());
+    MOZ_ASSERT_IF(unwrappedReader->is<ReadableStreamDefaultReader>(), unwrappedStream->readable());
 
     
     RootedObject promise(cx, PromiseObject::createSkippingExecutor(cx));
@@ -1314,7 +1324,7 @@ ReadableStreamAddReadOrReadIntoRequest(JSContext* cx, Handle<ReadableStream*> st
     
     
     
-    if (!AppendToListAtSlot(cx, reader, ReadableStreamReader::Slot_Requests, promise)) {
+    if (!AppendToListAtSlot(cx, unwrappedReader, ReadableStreamReader::Slot_Requests, promise)) {
         return nullptr;
     }
 
@@ -1323,8 +1333,11 @@ ReadableStreamAddReadOrReadIntoRequest(JSContext* cx, Handle<ReadableStream*> st
 }
 
 static MOZ_MUST_USE JSObject*
-ReadableStreamControllerCancelSteps(JSContext* cx, Handle<ReadableStreamController*> controller,
+ReadableStreamControllerCancelSteps(JSContext* cx,
+                                    Handle<ReadableStreamController*> unwrappedController,
                                     HandleValue reason);
+
+
 
 
 static bool
@@ -1336,32 +1349,29 @@ ReturnUndefined(JSContext* cx, unsigned argc, Value* vp)
 }
 
 MOZ_MUST_USE bool
-ReadableStreamCloseInternal(JSContext* cx, Handle<ReadableStream*> stream);
-
-
-
+ReadableStreamCloseInternal(JSContext* cx, Handle<ReadableStream*> unwrappedStream);
 
 
 
 
 static MOZ_MUST_USE JSObject*
-ReadableStreamCancel(JSContext* cx, Handle<ReadableStream*> stream, HandleValue reason)
+ReadableStreamCancel(JSContext* cx, Handle<ReadableStream*> unwrappedStream, HandleValue reason)
 {
     AssertSameCompartment(cx, reason);
 
     
-    stream->setDisturbed();
+    unwrappedStream->setDisturbed();
 
     
     
-    if (stream->closed()) {
+    if (unwrappedStream->closed()) {
         return PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
     }
 
     
     
-    if (stream->errored()) {
-        RootedValue storedError(cx, stream->storedError());
+    if (unwrappedStream->errored()) {
+        RootedValue storedError(cx, unwrappedStream->storedError());
         if (!cx->compartment()->wrap(cx, &storedError)) {
             return nullptr;
         }
@@ -1369,15 +1379,15 @@ ReadableStreamCancel(JSContext* cx, Handle<ReadableStream*> stream, HandleValue 
     }
 
     
-    if (!ReadableStreamCloseInternal(cx, stream)) {
+    if (!ReadableStreamCloseInternal(cx, unwrappedStream)) {
         return nullptr;
     }
 
     
     
-    Rooted<ReadableStreamController*> controller(cx, stream->controller());
-    RootedObject sourceCancelPromise(cx);
-    sourceCancelPromise = ReadableStreamControllerCancelSteps(cx, controller, reason);
+    Rooted<ReadableStreamController*> unwrappedController(cx, unwrappedStream->controller());
+    RootedObject sourceCancelPromise(cx,
+        ReadableStreamControllerCancelSteps(cx, unwrappedController, reason));
     if (!sourceCancelPromise) {
         return nullptr;
     }
@@ -1395,42 +1405,39 @@ ReadableStreamCancel(JSContext* cx, Handle<ReadableStream*> stream, HandleValue 
 
 
 
-
-
-
 MOZ_MUST_USE bool
-ReadableStreamCloseInternal(JSContext* cx, Handle<ReadableStream*> stream)
+ReadableStreamCloseInternal(JSContext* cx, Handle<ReadableStream*> unwrappedStream)
 {
     
-    MOZ_ASSERT(stream->readable());
+    MOZ_ASSERT(unwrappedStream->readable());
 
     
-    stream->setClosed();
+    unwrappedStream->setClosed();
 
     
-    if (!stream->hasReader()) {
+    if (!unwrappedStream->hasReader()) {
         return true;
     }
 
     
-    Rooted<ReadableStreamReader*> reader(cx);
-    if (!UnwrapReaderFromStream(cx, stream, &reader)) {
+    Rooted<ReadableStreamReader*> unwrappedReader(cx);
+    if (!UnwrapReaderFromStream(cx, unwrappedStream, &unwrappedReader)) {
         return false;
     }
 
     
-    if (reader->is<ReadableStreamDefaultReader>()) {
+    if (unwrappedReader->is<ReadableStreamDefaultReader>()) {
         
         
-        RootedNativeObject readRequests(cx, reader->requests());
-        uint32_t len = readRequests->getDenseInitializedLength();
+        RootedNativeObject unwrappedReadRequests(cx, unwrappedReader->requests());
+        uint32_t len = unwrappedReadRequests->getDenseInitializedLength();
         RootedObject readRequest(cx);
         RootedObject resultObj(cx);
         RootedValue resultVal(cx);
         for (uint32_t i = 0; i < len; i++) {
             
             
-            readRequest = &readRequests->getDenseElement(i).toObject();
+            readRequest = &unwrappedReadRequests->getDenseElement(i).toObject();
             if (!cx->compartment()->wrap(cx, &readRequest)) {
                 return false;
             }
@@ -1446,12 +1453,12 @@ ReadableStreamCloseInternal(JSContext* cx, Handle<ReadableStream*> stream)
         }
 
         
-        reader->clearRequests();
+        unwrappedReader->clearRequests();
     }
 
     
     
-    RootedObject closedPromise(cx, reader->closedPromise());
+    RootedObject closedPromise(cx, unwrappedReader->closedPromise());
     if (!cx->compartment()->wrap(cx, &closedPromise)) {
         return false;
     }
@@ -1459,14 +1466,17 @@ ReadableStreamCloseInternal(JSContext* cx, Handle<ReadableStream*> stream)
         return false;
     }
 
-    if (stream->mode() == JS::ReadableStreamMode::ExternalSource &&
+    if (unwrappedStream->mode() == JS::ReadableStreamMode::ExternalSource &&
         cx->runtime()->readableStreamClosedCallback)
     {
         
-        AutoRealm ar(cx, stream);
-        ReadableStreamController* controller = stream->controller();
+        AutoRealm ar(cx, unwrappedStream);
+        ReadableStreamController* controller = unwrappedStream->controller();
         void* source = controller->underlyingSource().toPrivate();
-        cx->runtime()->readableStreamClosedCallback(cx, stream, source, stream->embeddingFlags());
+        cx->runtime()->readableStreamClosedCallback(cx,
+                                                    unwrappedStream,
+                                                    source,
+                                                    unwrappedStream->embeddingFlags());
     }
 
     return true;
@@ -1475,51 +1485,48 @@ ReadableStreamCloseInternal(JSContext* cx, Handle<ReadableStream*> stream)
 
 
 
-
-
-
 MOZ_MUST_USE bool
-ReadableStreamErrorInternal(JSContext* cx, Handle<ReadableStream*> stream, HandleValue e)
+ReadableStreamErrorInternal(JSContext* cx, Handle<ReadableStream*> unwrappedStream, HandleValue e)
 {
     
 
     
-    MOZ_ASSERT(stream->readable());
+    MOZ_ASSERT(unwrappedStream->readable());
 
     
-    stream->setErrored();
+    unwrappedStream->setErrored();
 
     
     {
-        AutoRealm ar(cx, stream);
+        AutoRealm ar(cx, unwrappedStream);
         RootedValue wrappedError(cx, e);
         if (!cx->compartment()->wrap(cx, &wrappedError)) {
             return false;
         }
-        stream->setStoredError(wrappedError);
+        unwrappedStream->setStoredError(wrappedError);
     }
 
     
-    if (!stream->hasReader()) {
+    if (!unwrappedStream->hasReader()) {
         return true;
     }
 
     
-    Rooted<ReadableStreamReader*> reader(cx);
-    if (!UnwrapReaderFromStream(cx, stream, &reader)) {
+    Rooted<ReadableStreamReader*> unwrappedReader(cx);
+    if (!UnwrapReaderFromStream(cx, unwrappedStream, &unwrappedReader)) {
         return false;
     }
 
     
     
     
-    RootedNativeObject readRequests(cx, reader->requests());
+    RootedNativeObject unwrappedReadRequests(cx, unwrappedReader->requests());
     RootedObject readRequest(cx);
     RootedValue val(cx);
-    uint32_t len = readRequests->getDenseInitializedLength();
+    uint32_t len = unwrappedReadRequests->getDenseInitializedLength();
     for (uint32_t i = 0; i < len; i++) {
         
-        val = readRequests->getDenseElement(i);
+        val = unwrappedReadRequests->getDenseElement(i);
         readRequest = &val.toObject();
 
         
@@ -1535,17 +1542,17 @@ ReadableStreamErrorInternal(JSContext* cx, Handle<ReadableStream*> stream, Handl
     }
 
     
-    if (!SetNewList(cx, reader, ReadableStreamReader::Slot_Requests)) {
+    if (!SetNewList(cx, unwrappedReader, ReadableStreamReader::Slot_Requests)) {
         return false;
     }
 
     
-    RootedObject closedPromise(cx, reader->closedPromise());
-
     
     
     
     
+    
+    RootedObject closedPromise(cx, unwrappedReader->closedPromise());
     if (!cx->compartment()->wrap(cx, &closedPromise)) {
         return false;
     }
@@ -1553,12 +1560,12 @@ ReadableStreamErrorInternal(JSContext* cx, Handle<ReadableStream*> stream, Handl
         return false;
     }
 
-    if (stream->mode() == JS::ReadableStreamMode::ExternalSource &&
+    if (unwrappedStream->mode() == JS::ReadableStreamMode::ExternalSource &&
         cx->runtime()->readableStreamErroredCallback)
     {
         
-        AutoRealm ar(cx, stream);
-        ReadableStreamController* controller = stream->controller();
+        AutoRealm ar(cx, unwrappedStream);
+        ReadableStreamController* controller = unwrappedStream->controller();
         void* source = controller->underlyingSource().toPrivate();
 
         
@@ -1568,8 +1575,11 @@ ReadableStreamErrorInternal(JSContext* cx, Handle<ReadableStream*> stream, Handl
             return false;
         }
 
-        cx->runtime()->readableStreamErroredCallback(cx, stream, source,
-                                                     stream->embeddingFlags(), error);
+        cx->runtime()->readableStreamErroredCallback(cx,
+                                                     unwrappedStream,
+                                                     source,
+                                                     unwrappedStream->embeddingFlags(),
+                                                     error);
     }
 
     return true;
@@ -1580,17 +1590,17 @@ ReadableStreamErrorInternal(JSContext* cx, Handle<ReadableStream*> stream, Handl
 
 
 
-
-
-
-
 static MOZ_MUST_USE bool
-ReadableStreamFulfillReadOrReadIntoRequest(JSContext* cx, Handle<ReadableStream*> stream,
-                                           HandleValue chunk, bool done)
+ReadableStreamFulfillReadOrReadIntoRequest(JSContext* cx,
+                                           Handle<ReadableStream*> unwrappedStream,
+                                           HandleValue chunk,
+                                           bool done)
 {
+    cx->check(chunk);
+
     
-    Rooted<ReadableStreamReader*> reader(cx);
-    if (!UnwrapReaderFromStream(cx, stream, &reader)) {
+    Rooted<ReadableStreamReader*> unwrappedReader(cx);
+    if (!UnwrapReaderFromStream(cx, unwrappedStream, &unwrappedReader)) {
         return false;
     }
 
@@ -1599,8 +1609,8 @@ ReadableStreamFulfillReadOrReadIntoRequest(JSContext* cx, Handle<ReadableStream*
     
     
     
-    RootedNativeObject readIntoRequests(cx, reader->requests());
-    RootedObject readIntoRequest(cx, ShiftFromList<JSObject>(cx, readIntoRequests));
+    RootedNativeObject unwrappedReadIntoRequests(cx, unwrappedReader->requests());
+    RootedObject readIntoRequest(cx, ShiftFromList<JSObject>(cx, unwrappedReadIntoRequests));
     MOZ_ASSERT(readIntoRequest);
     if (!cx->compartment()->wrap(cx, &readIntoRequest)) {
         return false;
@@ -1608,17 +1618,15 @@ ReadableStreamFulfillReadOrReadIntoRequest(JSContext* cx, Handle<ReadableStream*
 
     
     
-    RootedValue wrappedChunk(cx, chunk);
-    if (!cx->compartment()->wrap(cx, &wrappedChunk)) {
-        return false;
-    }
-    RootedObject iterResult(cx, CreateIterResultObject(cx, wrappedChunk, done));
+    RootedObject iterResult(cx, CreateIterResultObject(cx, chunk, done));
     if (!iterResult) {
         return false;
     }
     RootedValue val(cx, ObjectValue(*iterResult));
     return ResolvePromise(cx, readIntoRequest, val);
 }
+
+
 
 
 
@@ -1644,24 +1652,28 @@ ReadableStreamGetNumReadRequests(ReadableStream* stream)
 }
 
 
+
+
 static MOZ_MUST_USE bool
-ReadableStreamHasDefaultReader(JSContext* cx, Handle<ReadableStream*> stream, bool* result)
+ReadableStreamHasDefaultReader(JSContext* cx,
+                               Handle<ReadableStream*> unwrappedStream,
+                               bool* result)
 {
     
     
-    if (!stream->hasReader()) {
+    if (!unwrappedStream->hasReader()) {
         *result = false;
         return true;
     }
 
     
     
-    Rooted<ReadableStreamReader*> reader(cx);
-    if (!UnwrapReaderFromStream(cx, stream, &reader)) {
+    Rooted<ReadableStreamReader*> unwrappedReader(cx);
+    if (!UnwrapReaderFromStream(cx, unwrappedStream, &unwrappedReader)) {
         return false;
     }
 
-    *result = reader->is<ReadableStreamDefaultReader>();
+    *result = unwrappedReader->is<ReadableStreamDefaultReader>();
     return true;
 }
 
