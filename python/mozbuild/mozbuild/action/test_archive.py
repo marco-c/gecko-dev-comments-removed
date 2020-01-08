@@ -139,6 +139,7 @@ ARCHIVE_FILES = {
             'base': '',
             'manifests': [
                 'testing/marionette/harness/marionette_harness/tests/unit-tests.ini',
+                'gfx/tests/marionette/manifest.ini',
             ],
             
             'pattern': 'testing/marionette/harness/marionette_harness/tests/**',
