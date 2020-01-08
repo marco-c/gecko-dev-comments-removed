@@ -1761,6 +1761,9 @@ protected:
   
   bool mUnboundFromTree = false;
 
+  
+  bool mBlockedAsWithoutMetadata = false;
+
 public:
   
   class TimeDurationAccumulator
@@ -1814,7 +1817,7 @@ private:
 
   already_AddRefed<PlayPromise> CreatePlayPromise(ErrorResult& aRv) const;
 
-  void UpdateHadAudibleAutoplayState() const;
+  void UpdateHadAudibleAutoplayState();
 
   
 
