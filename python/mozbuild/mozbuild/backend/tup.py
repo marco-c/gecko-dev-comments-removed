@@ -711,11 +711,9 @@ class TupBackend(CommonBackend):
             'PYTHON': self.environment.substs['PYTHON'],
             'PYTHONDONTWRITEBYTECODE': '1',
         }
-        cargo_incremental = self.environment.substs.get('CARGO_INCREMENTAL')
-        if cargo_incremental is not None:
-            
-            
-            pass 
+        
+        
+        env['CARGO_INCREMENTAL'] = '0'
 
         rust_simd = self.environment.substs.get('MOZ_RUST_SIMD')
         if rust_simd is not None:
