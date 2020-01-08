@@ -86,6 +86,15 @@ private:
 
 
 
+
+
+
+
+
+
+
+
+
 class SVGRenderingObserver : public nsStubMutationObserver
 {
 
@@ -120,14 +129,15 @@ public:
   
   void NotifyEvictedFromRenderingObserverList();
 
-  nsIFrame* GetReferencedFrame();
+  nsIFrame* GetAndObserveReferencedFrame();
   
 
 
 
-  nsIFrame* GetReferencedFrame(mozilla::LayoutFrameType aFrameType, bool* aOK);
+  nsIFrame* GetAndObserveReferencedFrame(mozilla::LayoutFrameType aFrameType,
+                                         bool* aOK);
 
-  Element* GetReferencedElement();
+  Element* GetAndObserveReferencedElement();
 
   virtual bool ObservesReflow() { return true; }
 
@@ -149,9 +159,7 @@ protected:
 
   virtual void OnRenderingChange() = 0;
 
-  
-  
-  virtual Element* GetTarget() = 0;
+  virtual Element* GetReferencedElementWithoutObserving() = 0;
 
   
   bool mInObserverList;
@@ -179,7 +187,9 @@ public:
   virtual ~SVGIDRenderingObserver();
 
 protected:
-  Element* GetTarget() override { return mObservedElementTracker.get(); }
+  Element* GetReferencedElementWithoutObserving() override {
+    return mObservedElementTracker.get();
+  }
 
   void OnRenderingChange() override;
 
@@ -314,14 +324,16 @@ public:
   {
   }
 
-  bool ReferencesValidResource() { return GetFilterFrame(); }
+  
+  
+  bool ReferencesValidResource() { return GetAndObserveFilterFrame(); }
 
   void DetachFromChainObserver() { mFilterObserverList = nullptr; }
 
   
 
 
-  nsSVGFilterFrame *GetFilterFrame();
+  nsSVGFilterFrame* GetAndObserveFilterFrame();
 
   
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS

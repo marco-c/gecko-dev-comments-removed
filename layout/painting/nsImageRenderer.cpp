@@ -194,10 +194,10 @@ nsImageRenderer::PrepareImage()
 
       
       
-      mImageElementSurface =
-        nsLayoutUtils::SurfaceFromElement(property->GetReferencedElement());
+      mImageElementSurface = nsLayoutUtils::SurfaceFromElement(
+                               property->GetAndObserveReferencedElement());
       if (!mImageElementSurface.GetSourceSurface()) {
-        nsIFrame* paintServerFrame = property->GetReferencedFrame();
+        nsIFrame* paintServerFrame = property->GetAndObserveReferencedFrame();
         
         
         if (!paintServerFrame ||
