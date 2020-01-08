@@ -1,0 +1,17 @@
+
+
+
+
+
+'use strict';
+
+idl_test(
+  ['web-share'],
+  ['html'],
+  idl_array => {
+    idl_array.add_objects({
+      Navigator: ['navigator']
+    });
+  },
+  'Test driver'
+);
