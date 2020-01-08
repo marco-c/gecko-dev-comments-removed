@@ -225,6 +225,19 @@ public:
 
 
 
+
+
+  bool IsCSSEnabled() const
+  {
+    
+    return mCSSAware && mCSSEditUtils && mCSSEditUtils->IsCSSPrefChecked();
+  }
+
+
+  
+
+
+
   void EnableObjectResizer(bool aEnable)
   {
     if (mIsObjectResizingEnabled == aEnable) {
@@ -689,12 +702,6 @@ protected:
                            bool aListOrCellNotEmpty,
                            bool aSafeToAskFrames,
                            bool* aSeenBR);
-
-  bool IsCSSEnabled() const
-  {
-    
-    return mCSSAware && mCSSEditUtils && mCSSEditUtils->IsCSSPrefChecked();
-  }
 
   static bool HasAttributes(Element* aElement)
   {
