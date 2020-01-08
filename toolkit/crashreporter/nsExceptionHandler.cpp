@@ -12,7 +12,6 @@
 #include "nsDirectoryService.h"
 #include "nsDataHashtable.h"
 #include "mozilla/ArrayUtils.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/EnumeratedRange.h"
 #include "mozilla/Services.h"
 #include "nsIObserverService.h"
@@ -1330,8 +1329,6 @@ FreeBreakpadVM()
   }
 }
 
-#if defined(XP_WIN)
-
 
 
 
@@ -1382,8 +1379,6 @@ ChildFPEFilter(void* context, EXCEPTION_POINTERS* exinfo,
   return result;
 }
 
-#endif 
-
 static MINIDUMP_TYPE
 GetMinidumpType()
 {
@@ -1433,8 +1428,6 @@ static bool ShouldReport()
   return true;
 }
 
-#if !defined(XP_WIN)
-
 static bool
 Filter(void* context)
 {
@@ -1454,8 +1447,6 @@ ChildFilter(void* context)
   }
   return result;
 }
-
-#endif 
 
 static void
 TerminateHandler()
@@ -1671,10 +1662,9 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory,
   
   gBlockUnhandledExceptionFilter = true;
   gKernel32Intercept.Init("kernel32.dll");
-  DebugOnly<bool> ok =
-    stub_SetUnhandledExceptionFilter.Set(gKernel32Intercept,
-                                         "SetUnhandledExceptionFilter",
-                                         &patched_SetUnhandledExceptionFilter);
+  bool ok = stub_SetUnhandledExceptionFilter.Set(gKernel32Intercept,
+                                                 "SetUnhandledExceptionFilter",
+                                                 &patched_SetUnhandledExceptionFilter);
 
 #ifdef DEBUG
   if (!ok)
