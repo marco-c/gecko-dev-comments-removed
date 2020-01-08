@@ -1098,6 +1098,7 @@ public:
   
   
   virtual mozilla::dom::Navigator* GetNavigator() = 0;
+  virtual mozilla::dom::Location* GetLocation() = 0;
 
   virtual nsresult GetPrompter(nsIPrompt** aPrompt) = 0;
   virtual nsresult GetControllers(nsIControllers** aControllers) = 0;
