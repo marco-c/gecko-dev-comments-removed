@@ -265,6 +265,9 @@ CookieInfo::RawHost() const
 
 const char* PERMITTED_SCHEMES[] = {"http", "https", "ws", "wss", "file", "ftp", "data", nullptr};
 
+
+const char* HOST_LOCATOR_SCHEMES[] = {"http", "https", "ws", "wss", "file", "ftp", "moz-extension", "chrome", "resource", "moz", "moz-icon", "moz-gio", nullptr};
+
 const char* WILDCARD_SCHEMES[] = {"http", "https", "ws", "wss", nullptr};
 
  already_AddRefed<MatchPattern>
@@ -310,12 +313,15 @@ MatchPattern::Init(JSContext* aCx, const nsAString& aPattern, bool aIgnorePath,
   }
 
   RefPtr<nsAtom> scheme = NS_AtomizeMainThread(StringHead(aPattern, index));
+  bool requireHostLocatorScheme = true;
   if (scheme == nsGkAtoms::_asterisk) {
     mSchemes = AtomSet::Get<WILDCARD_SCHEMES>();
   } else if (!aRestrictSchemes ||
              permittedSchemes->Contains(scheme) ||
              scheme == nsGkAtoms::moz_extension) {
     mSchemes = new AtomSet({scheme});
+    RefPtr<AtomSet> hostLocatorSchemes = AtomSet::Get<HOST_LOCATOR_SCHEMES>();
+    requireHostLocatorScheme = hostLocatorSchemes->Contains(scheme);
   } else {
     aRv.Throw(NS_ERROR_INVALID_ARG);
     return;
@@ -327,7 +333,8 @@ MatchPattern::Init(JSContext* aCx, const nsAString& aPattern, bool aIgnorePath,
   offset = index + 1;
   tail.Rebind(aPattern, offset);
 
-  if (scheme == nsGkAtoms::about || scheme == nsGkAtoms::data) {
+  if (!requireHostLocatorScheme) {
+    
     
     
     aIgnorePath = false;
