@@ -232,17 +232,6 @@ evaluate.fromJSON = function(obj, seenEls = undefined, window = undefined) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 evaluate.toJSON = function(obj, seenEls) {
   const t = Object.prototype.toString.call(obj);
 
@@ -332,7 +321,6 @@ this.sandbox = {};
 sandbox.cloneInto = function(obj, sb) {
   return Cu.cloneInto(obj, sb, {cloneFunctions: true, wrapReflectors: true});
 };
-
 
 
 
