@@ -672,6 +672,14 @@ public:
 
   void SyncRealTimeSpell();
 
+ 
+
+
+
+
+
+ void ReinitializeSelection(Element& aElement);
+
 protected: 
   
 

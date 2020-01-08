@@ -2339,6 +2339,20 @@ nsHTMLDocument::TurnEditingOff()
 
   mEditingState = eOff;
 
+  
+  
+  nsFocusManager* fm = nsFocusManager::GetFocusManager();
+  if (fm) {
+    Element* element = fm->GetFocusedElement();
+    nsCOMPtr<nsITextControlElement> txtCtrl = do_QueryInterface(element);
+    if (txtCtrl) {
+      RefPtr<TextEditor> textEditor = txtCtrl->GetTextEditor();
+      if (textEditor) {
+        textEditor->ReinitializeSelection(*element);
+      }
+    }
+  }
+
   return NS_OK;
 }
 
