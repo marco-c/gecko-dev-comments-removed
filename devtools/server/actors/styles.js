@@ -1489,12 +1489,17 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
   logChange(change) {
-    const prevValue = this._declarations[change.index]
+    let prevValue = this._declarations[change.index]
       ? this._declarations[change.index].value
       : null;
     const prevName = this._declarations[change.index]
       ? this._declarations[change.index].name
       : null;
+    const prevPriority = this._declarations[change.index]
+      ? this._declarations[change.index].priority
+      : null;
+    
+    prevValue = (prevValue && prevPriority) ? `${prevValue} !important` : prevValue;
 
     
     const data = {};
@@ -1554,7 +1559,10 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         
         const name = change.newName ? change.newName : change.name;
         
-        const value = change.newName ? prevValue : change.value;
+        const newValue = change.priority ? `${change.value} !important` : change.value;
+        
+        
+        const value = change.newName ? prevValue : newValue;
 
         data.add = { property: name, value };
         
