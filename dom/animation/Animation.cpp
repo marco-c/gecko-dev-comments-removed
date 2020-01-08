@@ -145,13 +145,6 @@ Animation::SetEffectNoUpdate(AnimationEffect* aEffect)
   bool wasRelevant = mIsRelevant;
 
   if (mEffect) {
-    if (!aEffect) {
-      
-      
-      
-      ResetPendingTasks();
-    }
-
     
     
     if (mIsRelevant) {
