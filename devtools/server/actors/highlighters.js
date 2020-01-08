@@ -555,7 +555,6 @@ exports.CustomHighlighterActor = protocol.ActorClassWithSpec(customHighlighterSp
 
 
 
-
 function HighlighterEnvironment() {
   this.relayTargetActorWindowReady = this.relayTargetActorWindowReady.bind(this);
   this.relayTargetActorNavigate = this.relayTargetActorNavigate.bind(this);

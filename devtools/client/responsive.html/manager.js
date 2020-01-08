@@ -212,39 +212,6 @@ const ResponsiveUIManager = exports.ResponsiveUIManager = {
     return this.activeTabs.get(tab);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-  handleGcliCommand(window, tab, command, args) {
-    let completed;
-    switch (command) {
-      case "resize to":
-        completed = this.openIfNeeded(window, tab, { trigger: "command" });
-        this.activeTabs.get(tab).setViewportSize(args);
-        break;
-      case "resize on":
-        completed = this.openIfNeeded(window, tab, { trigger: "command" });
-        break;
-      case "resize off":
-        completed = this.closeIfNeeded(window, tab, { trigger: "command" });
-        break;
-      case "resize toggle":
-        completed = this.toggle(window, tab, { trigger: "command" });
-        break;
-      default:
-    }
-    completed.catch(console.error);
-  },
-
   handleMenuCheck({target}) {
     ResponsiveUIManager.setMenuCheckFor(target);
   },
@@ -272,14 +239,12 @@ const ResponsiveUIManager = exports.ResponsiveUIManager = {
 
   showRemoteOnlyNotification(window, tab, { trigger } = {}) {
     showNotification(window, tab, {
-      command: trigger == "command",
+      toolboxButton: trigger == "toolbox",
       msg: l10n.getStr("responsive.remoteOnly"),
       priority: PriorityLevels.PRIORITY_CRITICAL_MEDIUM,
     });
   },
 };
-
-
 
 EventEmitter.decorate(ResponsiveUIManager);
 
