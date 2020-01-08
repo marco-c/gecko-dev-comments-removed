@@ -25,7 +25,6 @@ from taskgraph.util.taskcluster import get_artifact_prefix
 from taskgraph.util.workertypes import worker_type_implementation
 from taskgraph.transforms.task import task_description_schema
 from voluptuous import (
-    Any,
     Extra,
     Optional,
     Required,
@@ -73,12 +72,12 @@ job_description_schema = Schema({
     
     
     
-    Exclusive('when', 'optimization'): Any({
+    Exclusive('when', 'optimization'): {
         
         
         
         Optional('files-changed'): [basestring],
-    }),
+    },
 
     
     Optional('fetches'): {

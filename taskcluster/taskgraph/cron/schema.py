@@ -28,7 +28,7 @@ cron_yml_schema = Schema({
         
 
         
-        Required('job'): Any({
+        Required('job'): {
             Required('type'): 'decision-task',
 
             
@@ -36,7 +36,7 @@ cron_yml_schema = Schema({
 
             
             'target-tasks-method': basestring,
-        }),
+        },
 
         
 

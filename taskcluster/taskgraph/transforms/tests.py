@@ -371,9 +371,9 @@ test_description_schema = Schema({
     Optional('product'): basestring,
 
     
-    Exclusive(Optional('when'), 'optimization'): Any({
+    Exclusive(Optional('when'), 'optimization'): {
         Optional('files-changed'): [basestring],
-    }),
+    },
 
     
     

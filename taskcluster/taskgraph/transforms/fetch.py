@@ -10,7 +10,6 @@ from __future__ import absolute_import, unicode_literals
 import os
 
 from voluptuous import (
-    Any,
     Optional,
     Required,
 )
@@ -47,7 +46,7 @@ FETCH_SCHEMA = Schema({
     
     Required('description'): basestring,
 
-    Required('fetch'): Any({
+    Required('fetch'): {
         'type': 'static-url',
 
         
@@ -75,7 +74,7 @@ FETCH_SCHEMA = Schema({
 
         
         
-    }),
+    },
 })
 
 
