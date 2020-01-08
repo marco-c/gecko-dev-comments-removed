@@ -1,15 +1,31 @@
 const SERVER_LOCATION = "resources";
 const SERVER_SCRIPT = SERVER_LOCATION + "/cookie-setter.py";
 
+
+function log(message, tag) {
+  let log_str = document.createElement('div');
+  log_str.textContent = new Date().toTimeString().replace(/\s.+$/, '');
+  if (tag) {
+    log_str.textContent += " [" + tag + "] ";
+  }
+  log_str.textContent += " - " + message;
+  let log_container = document.getElementById("log");
+  log_container.appendChild(log_str);
+  log_container.scrollTo(0, log_container.scrollHeight);
+}
+
+
 function stripPrefixAndWhitespace(cookie_text) {
   return cookie_text.replace(/^Cookie: /, '').replace(/^\s+|\s+$/g, '');
 }
+
 
 function getLocalResourcesPath() {
   let replace = "(" + SERVER_LOCATION + "\/)*";  
   replace += "[^\/]*$";  
   return location.pathname.replace(new RegExp(replace), "") + SERVER_LOCATION;
 }
+
 
 function getAbsoluteServerLocation() {
   
@@ -18,6 +34,7 @@ function getAbsoluteServerLocation() {
   return getLocalResourcesPath().replace(new RegExp(replace),'')+ SERVER_SCRIPT;
 }
 
+
 function expireCookie(name, expiry_date, path) {
   name = name || "";
   expiry_date = expiry_date || "Thu, 01 Jan 1970 00:00:00 UTC";
@@ -25,9 +42,15 @@ function expireCookie(name, expiry_date, path) {
   document.cookie = name + "=; expires=" + expiry_date + "; path=" + path + ";";
 }
 
+
+
+
+
+
 function CookieManager() {
   this.initial_cookies = [];
 }
+
 
 CookieManager.prototype.parse = document_cookies => {
   this.initial_cookies = [];
@@ -37,22 +60,25 @@ CookieManager.prototype.parse = document_cookies => {
   }
 }
 
+
+
+
 CookieManager.prototype.diffWith = document_cookies => {
   this.actual_cookies = document_cookies;
   for (let i in initial_cookies) {
     let no_spaces_cookie_regex =
-        new RegExp(/\s*[\;]*\s/.source + initial_cookies[i]);
-    this.actual_cookies = actual_cookies.replace(no_spaces_cookie_regex, '');
+        new RegExp(/\s*[\;]*\s/.source + initial_cookies[i].replace(/\\/, "\\\\"));
+    this.actual_cookies = this.actual_cookies.replace(no_spaces_cookie_regex, '');
   }
   return this.actual_cookies;
 }
 
+
+
+
 CookieManager.prototype.resetCookies = () => {
-  expireCookie("");  
-  if (this.actual_cookies == "") {
-    return;  
-  }
-  let cookies_to_delete = this.actual_cookies.split(/\s*;\s*/)
+  
+  let cookies_to_delete = [""].concat(this.actual_cookies.split(/\s*;\s*/))
   for (let i in cookies_to_delete){
     expireCookie(cookies_to_delete[i].replace(/=.*$/, ""));
     
@@ -63,14 +89,27 @@ CookieManager.prototype.resetCookies = () => {
   }
 }
 
+
+
+
+
+
+
 function createCookieTest(file) {
   return t => {
+    let iframe_container = document.getElementById("iframes");
     const iframe = document.createElement('iframe');
-    document.body.appendChild(iframe);
+    iframe_container.appendChild(iframe);
+    iframe_container.scrollTo(0, iframe_container.scrollHeight);
     let diff_tool = new CookieManager();
     t.add_cleanup(diff_tool.resetCookies);
     return new Promise((resolve, reject) => {
       diff_tool.parse(document.cookie);
+      if (diff_tool.initial_cookies.length > 0) {
+        
+        
+        log("Run with existing cookies: " + diff_tool.initial_cookies, file);
+      }
       window.addEventListener("message", t.step_func(e => {
         assert_true(!!e.data, "Message contains data")
         resolve(e.data);
