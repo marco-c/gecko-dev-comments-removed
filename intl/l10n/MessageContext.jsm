@@ -25,6 +25,9 @@ const MAX_PLACEABLES = 100;
 const entryIdentifierRe = /-?[a-zA-Z][a-zA-Z0-9_-]*/y;
 const identifierRe = /[a-zA-Z][a-zA-Z0-9_-]*/y;
 const functionIdentifierRe = /^[A-Z][A-Z_?-]*$/;
+const unicodeEscapeRe = /^[a-fA-F0-9]{4}$/;
+const trailingWSRe = /[ \t\n\r]+$/;
+
 
 
 
@@ -94,44 +97,13 @@ class RuntimeParser {
     const ch = this._source[this._index];
 
     
-    if (ch === "/" ||
-      (ch === "#" &&
-        [" ", "#", "\n"].includes(this._source[this._index + 1]))) {
+    if (ch === "#" &&
+        [" ", "#", "\n"].includes(this._source[this._index + 1])) {
       this.skipComment();
       return;
     }
 
-    if (ch === "[") {
-      this.skipSection();
-      return;
-    }
-
     this.getMessage();
-  }
-
-  
-
-
-
-
-  skipSection() {
-    this._index += 1;
-    if (this._source[this._index] !== "[") {
-      throw this.error('Expected "[[" to open a section');
-    }
-
-    this._index += 1;
-
-    this.skipInlineWS();
-    this.getVariantName();
-    this.skipInlineWS();
-
-    if (this._source[this._index] !== "]" ||
-        this._source[this._index + 1] !== "]") {
-      throw this.error('Expected "]]" to close a section');
-    }
-
-    this._index += 2;
   }
 
   
@@ -147,6 +119,8 @@ class RuntimeParser {
 
     if (this._source[this._index] === "=") {
       this._index++;
+    } else {
+      throw this.error("Expected \"=\" after the identifier");
     }
 
     this.skipInlineWS();
@@ -311,21 +285,30 @@ class RuntimeParser {
 
 
   getString() {
-    const start = this._index + 1;
+    let value = "";
+    this._index++;
 
-    while (++this._index < this._length) {
+    while (this._index < this._length) {
       const ch = this._source[this._index];
 
       if (ch === '"') {
+        this._index++;
         break;
       }
 
       if (ch === "\n") {
         throw this.error("Unterminated string expression");
       }
+
+      if (ch === "\\") {
+        value += this.getEscapedCharacter(["{", "\\", "\""]);
+      } else {
+        this._index++;
+        value += ch;
+      }
     }
 
-    return this._source.substring(start, this._index++);
+    return value;
   }
 
   
@@ -349,10 +332,17 @@ class RuntimeParser {
       eol = this._length;
     }
 
-    const firstLineContent = start !== eol ?
-      this._source.slice(start, eol) : null;
+    
+    
+    const firstLineContent = start !== eol
+      
+      
+      ? this._source.slice(start, eol).replace(trailingWSRe, "")
+      : null;
 
-    if (firstLineContent && firstLineContent.includes("{")) {
+    if (firstLineContent
+      && (firstLineContent.includes("{")
+        || firstLineContent.includes("\\"))) {
       return this.getComplexPattern();
     }
 
@@ -439,13 +429,19 @@ class RuntimeParser {
         }
         ch = this._source[this._index];
         continue;
-      } else if (ch === "\\") {
-        const ch2 = this._source[this._index + 1];
-        if (ch2 === '"' || ch2 === "{" || ch2 === "\\") {
-          ch = ch2;
-          this._index++;
-        }
-      } else if (ch === "{") {
+      }
+
+      if (ch === undefined) {
+        break;
+      }
+
+      if (ch === "\\") {
+        buffer += this.getEscapedCharacter();
+        ch = this._source[this._index];
+        continue;
+      }
+
+      if (ch === "{") {
         
         if (buffer.length) {
           content.push(buffer);
@@ -457,18 +453,13 @@ class RuntimeParser {
         buffer = "";
         content.push(this.getPlaceable());
 
-        this._index++;
-
-        ch = this._source[this._index];
+        ch = this._source[++this._index];
         placeables++;
         continue;
       }
 
-      if (ch) {
-        buffer += ch;
-      }
-      this._index++;
-      ch = this._source[this._index];
+      buffer += ch;
+      ch = this._source[++this._index];
     }
 
     if (content.length === 0) {
@@ -476,12 +467,41 @@ class RuntimeParser {
     }
 
     if (buffer.length) {
-      content.push(buffer);
+      
+      content.push(buffer.replace(trailingWSRe, ""));
     }
 
     return content;
   }
   
+
+  
+
+
+
+
+
+  getEscapedCharacter(specials = ["{", "\\"]) {
+    this._index++;
+    const next = this._source[this._index];
+
+    if (specials.includes(next)) {
+      this._index++;
+      return next;
+    }
+
+    if (next === "u") {
+      const sequence = this._source.slice(this._index + 1, this._index + 5);
+      if (unicodeEscapeRe.test(sequence)) {
+        this._index += 5;
+        return String.fromCodePoint(parseInt(sequence, 16));
+      }
+
+      throw this.error(`Invalid Unicode escape sequence: \\u${sequence}`);
+    }
+
+    throw this.error(`Unknown escape sequence: \\${next}`);
+  }
 
   
 
@@ -519,7 +539,7 @@ class RuntimeParser {
     const ch = this._source[this._index];
 
     if (ch === "}") {
-      if (selector.type === "attr" && selector.id.name.startsWith("-")) {
+      if (selector.type === "getattr" && selector.id.name.startsWith("-")) {
         throw this.error(
           "Attributes of private messages cannot be interpolated."
         );
@@ -536,11 +556,11 @@ class RuntimeParser {
       throw this.error("Message references cannot be used as selectors.");
     }
 
-    if (selector.type === "var") {
+    if (selector.type === "getvar") {
       throw this.error("Variants cannot be used as selectors.");
     }
 
-    if (selector.type === "attr" && !selector.id.name.startsWith("-")) {
+    if (selector.type === "getattr" && !selector.id.name.startsWith("-")) {
       throw this.error(
         "Attributes of public messages cannot be used as selectors."
       );
@@ -578,6 +598,10 @@ class RuntimeParser {
 
 
   getSelectorExpression() {
+    if (this._source[this._index] === "{") {
+      return this.getPlaceable();
+    }
+
     const literal = this.getLiteral();
 
     if (literal.type !== "ref") {
@@ -590,7 +614,7 @@ class RuntimeParser {
       const name = this.getIdentifier();
       this._index++;
       return {
-        type: "attr",
+        type: "getattr",
         id: literal,
         name
       };
@@ -602,7 +626,7 @@ class RuntimeParser {
       const key = this.getVariantKey();
       this._index++;
       return {
-        type: "var",
+        type: "getvar",
         id: literal,
         key
       };
@@ -640,7 +664,7 @@ class RuntimeParser {
     const args = [];
 
     while (this._index < this._length) {
-      this.skipInlineWS();
+      this.skipWS();
 
       if (this._source[this._index] === ")") {
         return args;
@@ -657,7 +681,7 @@ class RuntimeParser {
 
         if (this._source[this._index] === ":") {
           this._index++;
-          this.skipInlineWS();
+          this.skipWS();
 
           const val = this.getSelectorExpression();
 
@@ -685,7 +709,7 @@ class RuntimeParser {
         }
       }
 
-      this.skipInlineWS();
+      this.skipWS();
 
       if (this._source[this._index] === ")") {
         break;
@@ -885,7 +909,7 @@ class RuntimeParser {
     if (cc0 === 36) { 
       this._index++;
       return {
-        type: "ext",
+        type: "var",
         name: this.getIdentifier()
       };
     }
@@ -925,12 +949,11 @@ class RuntimeParser {
     
     let eol = this._source.indexOf("\n", this._index);
 
-    while (eol !== -1 &&
-      ((this._source[eol + 1] === "/" && this._source[eol + 2] === "/") ||
-       (this._source[eol + 1] === "#" &&
-         [" ", "#"].includes(this._source[eol + 2])))) {
-      this._index = eol + 3;
+    while (eol !== -1
+      && this._source[eol + 1] === "#"
+      && [" ", "#"].includes(this._source[eol + 2])) {
 
+      this._index = eol + 3;
       eol = this._source.indexOf("\n", this._index);
 
       if (eol === -1) {
@@ -972,7 +995,7 @@ class RuntimeParser {
 
         if ((cc >= 97 && cc <= 122) || 
             (cc >= 65 && cc <= 90) || 
-             cc === 47 || cc === 91) { 
+             cc === 45) { 
           this._index = start;
           return;
         }
@@ -1436,8 +1459,8 @@ function Type(env, expr) {
       return new FluentSymbol(expr.name);
     case "num":
       return new FluentNumber(expr.val);
-    case "ext":
-      return ExternalArgument(env, expr);
+    case "var":
+      return VariableReference(env, expr);
     case "fun":
       return FunctionReference(env, expr);
     case "call":
@@ -1446,11 +1469,11 @@ function Type(env, expr) {
       const message = MessageReference(env, expr);
       return Type(env, message);
     }
-    case "attr": {
+    case "getattr": {
       const attr = AttributeExpression(env, expr);
       return Type(env, attr);
     }
-    case "var": {
+    case "getvar": {
       const variant = VariantExpression(env, expr);
       return Type(env, variant);
     }
@@ -1485,11 +1508,11 @@ function Type(env, expr) {
 
 
 
-function ExternalArgument(env, {name}) {
+function VariableReference(env, {name}) {
   const { args, errors } = env;
 
   if (!args || !args.hasOwnProperty(name)) {
-    errors.push(new ReferenceError(`Unknown external: ${name}`));
+    errors.push(new ReferenceError(`Unknown variable: ${name}`));
     return new FluentNone(name);
   }
 
@@ -1512,7 +1535,7 @@ function ExternalArgument(env, {name}) {
       }
     default:
       errors.push(
-        new TypeError(`Unsupported external type: ${name}, ${typeof arg}`)
+        new TypeError(`Unsupported variable type: ${name}, ${typeof arg}`)
       );
       return new FluentNone(name);
   }

@@ -25,13 +25,25 @@ const { L10nRegistry } = ChromeUtils.import("resource://gre/modules/L10nRegistry
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
 const { AppConstants } = ChromeUtils.import("resource://gre/modules/AppConstants.jsm", {});
 
+class CachedIterable extends Array {
+  
 
 
 
 
 
 
-class CachedAsyncIterable {
+
+  static from(iterable) {
+    if (iterable instanceof this) {
+      return iterable;
+    }
+
+    return new this(iterable);
+  }
+}
+
+class CachedAsyncIterable extends CachedIterable {
   
 
 
@@ -39,6 +51,8 @@ class CachedAsyncIterable {
 
 
   constructor(iterable) {
+    super();
+
     if (Symbol.asyncIterator in Object(iterable)) {
       this.iterator = iterable[Symbol.asyncIterator]();
     } else if (Symbol.iterator in Object(iterable)) {
@@ -46,20 +60,46 @@ class CachedAsyncIterable {
     } else {
       throw new TypeError("Argument must implement the iteration protocol.");
     }
-
-    this.seen = [];
   }
 
+  
+
+
+
+
+
+  [Symbol.iterator]() {
+    const cached = this;
+    let cur = 0;
+
+    return {
+      next() {
+        if (cached.length === cur) {
+          return {value: undefined, done: true};
+        }
+        return cached[cur++];
+      }
+    };
+  }
+
+  
+
+
+
+
+
+
+
   [Symbol.asyncIterator]() {
-    const { seen, iterator } = this;
+    const cached = this;
     let cur = 0;
 
     return {
       async next() {
-        if (seen.length <= cur) {
-          seen.push(await iterator.next());
+        if (cached.length <= cur) {
+          cached.push(await cached.iterator.next());
         }
-        return seen[cur++];
+        return cached[cur++];
       }
     };
   }
@@ -71,13 +111,17 @@ class CachedAsyncIterable {
 
 
   async touchNext(count = 1) {
-    const { seen, iterator } = this;
     let idx = 0;
     while (idx++ < count) {
-      if (seen.length === 0 || seen[seen.length - 1].done === false) {
-        seen.push(await iterator.next());
+      const last = this[this.length - 1];
+      if (last && last.done) {
+        break;
       }
+      this.push(await this.iterator.next());
     }
+    
+    
+    return this[this.length - 1];
   }
 }
 
@@ -112,8 +156,8 @@ class Localization {
   constructor(resourceIds = [], generateMessages = defaultGenerateMessages) {
     this.resourceIds = resourceIds;
     this.generateMessages = generateMessages;
-    this.ctxs =
-      new CachedAsyncIterable(this.generateMessages(this.resourceIds));
+    this.ctxs = CachedAsyncIterable.from(
+      this.generateMessages(this.resourceIds));
   }
 
   addResourceIds(resourceIds) {
@@ -276,8 +320,8 @@ class Localization {
 
 
   onChange() {
-    this.ctxs =
-      new CachedAsyncIterable(this.generateMessages(this.resourceIds));
+    this.ctxs = CachedAsyncIterable.from(
+      this.generateMessages(this.resourceIds));
     this.ctxs.touchNext(2);
   }
 }
