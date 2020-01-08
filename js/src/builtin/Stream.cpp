@@ -370,11 +370,12 @@ class TeeState : public NativeObject
 
 
 
+
     enum Slots {
         Slot_Flags = 0,
         Slot_Reason1,
         Slot_Reason2,
-        Slot_Promise,
+        Slot_CancelPromise,
         Slot_Stream,
         Slot_Branch1,
         Slot_Branch2,
@@ -426,8 +427,8 @@ class TeeState : public NativeObject
         return getFixedSlot(Slot_Reason2);
     }
 
-    PromiseObject* promise() {
-        return &getFixedSlot(Slot_Promise).toObject().as<PromiseObject>();
+    PromiseObject* cancelPromise() {
+        return &getFixedSlot(Slot_CancelPromise).toObject().as<PromiseObject>();
     }
 
     ReadableStreamDefaultController* branch1() {
@@ -464,13 +465,13 @@ class TeeState : public NativeObject
             return nullptr;
         }
 
-        Rooted<PromiseObject*> promise(cx, PromiseObject::createSkippingExecutor(cx));
-        if (!promise) {
+        Rooted<PromiseObject*> cancelPromise(cx, PromiseObject::createSkippingExecutor(cx));
+        if (!cancelPromise) {
             return nullptr;
         }
 
         state->setFixedSlot(Slot_Flags, Int32Value(0));
-        state->setFixedSlot(Slot_Promise, ObjectValue(*promise));
+        state->setFixedSlot(Slot_CancelPromise, ObjectValue(*cancelPromise));
         RootedObject wrappedStream(cx, unwrappedStream);
         if (!cx->compartment()->wrap(cx, &wrappedStream)) {
             return nullptr;
@@ -1057,13 +1058,16 @@ ReadableStreamTee_Pull(JSContext* cx, Handle<TeeState*> unwrappedTeeState)
 
 
 
+
+
+
+
 static MOZ_MUST_USE JSObject*
 ReadableStreamTee_Cancel(JSContext* cx,
                          Handle<TeeState*> unwrappedTeeState,
                          Handle<ReadableStreamDefaultController*> unwrappedBranch,
                          HandleValue reason)
 {
-    
     Rooted<ReadableStream*> unwrappedStream(cx,
         UnwrapInternalSlot<ReadableStream>(cx, unwrappedTeeState, TeeState::Slot_Stream));
     if (!unwrappedStream) {
@@ -1093,7 +1097,6 @@ ReadableStreamTee_Cancel(JSContext* cx,
     }
 
     
-    
     if (bothBranchesCanceled) {
         
         
@@ -1114,14 +1117,18 @@ ReadableStreamTee_Cancel(JSContext* cx,
         RootedValue compositeReasonVal(cx, ObjectValue(*compositeReason));
 
         
+        
+        
+        
         RootedObject cancelResult(cx,
             ::ReadableStreamCancel(cx, unwrappedStream, compositeReasonVal));
         {
-            Rooted<PromiseObject*> promise(cx, unwrappedTeeState->promise());
-            AutoRealm ar(cx, promise);
+            Rooted<PromiseObject*> cancelPromise(cx, unwrappedTeeState->cancelPromise());
+            AutoRealm ar(cx, cancelPromise);
 
             if (!cancelResult) {
-                if (!RejectPromiseWithPendingError(cx, promise)) {
+                
+                if (!RejectPromiseWithPendingError(cx, cancelPromise)) {
                     return nullptr;
                 }
             } else {
@@ -1130,7 +1137,7 @@ ReadableStreamTee_Cancel(JSContext* cx,
                 if (!cx->compartment()->wrap(cx, &resultVal)) {
                     return nullptr;
                 }
-                if (!PromiseObject::resolve(cx, promise, resultVal)) {
+                if (!PromiseObject::resolve(cx, cancelPromise, resultVal)) {
                     return nullptr;
                 }
             }
@@ -1138,11 +1145,11 @@ ReadableStreamTee_Cancel(JSContext* cx,
     }
 
     
-    RootedObject promise(cx, unwrappedTeeState->promise());
-    if (!cx->compartment()->wrap(cx, &promise)) {
+    RootedObject cancelPromise(cx, unwrappedTeeState->cancelPromise());
+    if (!cx->compartment()->wrap(cx, &cancelPromise)) {
         return nullptr;
     }
-    return promise;
+    return cancelPromise;
 }
 
 static MOZ_MUST_USE bool
