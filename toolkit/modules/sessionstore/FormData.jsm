@@ -168,6 +168,15 @@ var FormDataInternal = {
         }
       }
 
+      
+      
+      if (node.getAutocompleteInfo) {
+        let autocompleteInfo = node.getAutocompleteInfo();
+        if (autocompleteInfo && !autocompleteInfo.canAutomaticallyPersist) {
+          continue;
+        }
+      }
+
       if (ChromeUtils.getClassName(node) === "HTMLInputElement" ||
           ChromeUtils.getClassName(node) === "HTMLTextAreaElement" ||
           (node.namespaceURI == this.namespaceURIs.xul && node.localName == "textbox")) {
