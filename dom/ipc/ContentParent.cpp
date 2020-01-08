@@ -2742,15 +2742,6 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority)
   
   shouldSandbox = IsContentSandboxEnabled();
 
-#ifdef XP_MACOSX
-  
-  
-  
-  
-  shouldSandbox = shouldSandbox &&
-    (!sEarlySandboxInit || IsRecordingOrReplaying());
-#endif
-
 #ifdef XP_LINUX
   if (shouldSandbox) {
     MOZ_ASSERT(!mSandboxBroker);

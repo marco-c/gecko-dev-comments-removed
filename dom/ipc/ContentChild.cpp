@@ -1555,6 +1555,12 @@ StartMacOSContentSandbox()
 #endif
   }
 
+  
+  if (Preferences::GetBool("security.sandbox.content.mac.earlyinit") &&
+      !recordreplay::IsRecordingOrReplaying()) {
+    return true;
+  }
+
   nsAutoCString appPath;
   if (!nsMacUtilsImpl::GetAppPath(appPath)) {
     MOZ_CRASH("Error resolving child process app path");
