@@ -3,9 +3,9 @@
 
 
 basic-card-option {
-  grid-row-gap: 5px;
-  grid-column-gap: 10px;
-  grid-template-areas: "type cc-number cc-name cc-exp";
+  grid-column-gap: 1ch;
+  grid-template-areas: "type cc-number cc-exp cc-name";
+  justify-content: start;
 }
 
 basic-card-option > .cc-number {
