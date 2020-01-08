@@ -10,6 +10,7 @@ use foreign_types::ForeignType;
 
 pub type CGEventField = libc::uint32_t;
 pub type CGKeyCode = libc::uint16_t;
+pub type CGScrollEventUnit = libc::uint32_t;
 
 
 
@@ -92,6 +93,13 @@ impl KeyCode {
     pub const RIGHT_ARROW: CGKeyCode = 0x7C;
     pub const DOWN_ARROW: CGKeyCode = 0x7D;
     pub const UP_ARROW: CGKeyCode = 0x7E;
+}
+
+#[repr(C)]
+pub struct ScrollEventUnit {}
+impl ScrollEventUnit {
+    pub const PIXEL: CGScrollEventUnit = 0;
+    pub const LINE: CGScrollEventUnit = 1;
 }
 
 
@@ -435,6 +443,31 @@ impl CGEvent {
         }
     }
 
+    pub fn new_scroll_event(
+        source: CGEventSource,
+        units: CGScrollEventUnit,
+        wheel_count: u32,
+        wheel1: i32,
+        wheel2: i32,
+        wheel3: i32,
+    ) -> Result<CGEvent, ()> {
+        unsafe {
+            let event_ref = CGEventCreateScrollWheelEvent2(
+                source.as_ptr(),
+                units,
+                wheel_count,
+                wheel1,
+                wheel2,
+                wheel3,
+            );
+            if !event_ref.is_null() {
+                Ok(Self::from_ptr(event_ref))
+            } else {
+                Err(())
+            }
+        }
+    }
+
     pub fn post(&self, tap_location: CGEventTapLocation) {
         unsafe {
             CGEventPost(tap_location, self.as_ptr());
@@ -544,6 +577,21 @@ extern {
     
     fn CGEventCreateMouseEvent(source: ::sys::CGEventSourceRef, mouseType: CGEventType,
         mouseCursorPosition: CGPoint, mouseButton: CGMouseButton) -> ::sys::CGEventRef;
+
+    
+    
+    
+    
+    
+    
+    fn CGEventCreateScrollWheelEvent2(
+        source: ::sys::CGEventSourceRef,
+        units: CGScrollEventUnit,
+        wheelCount: libc::uint32_t,
+        wheel1: libc::int32_t,
+        wheel2: libc::int32_t,
+        wheel3: libc::int32_t,
+    ) -> ::sys::CGEventRef;
 
     
     
