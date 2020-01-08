@@ -114,13 +114,12 @@ nsresult MediaEngineWebRTCMicrophoneSource::EvaluateSettings(
     const char** aOutBadConstraint) {
   AssertIsOnOwningThread();
 
+  FlattenedConstraints c(aConstraintsUpdate);
   MediaEnginePrefs prefs = aInPrefs;
 
-  FlattenedConstraints c(aConstraintsUpdate);
-
   prefs.mAecOn = c.mEchoCancellation.Get(aInPrefs.mAecOn);
-  prefs.mAgcOn = c.mAutoGainControl.Get(aInPrefs.mAgcOn);
-  prefs.mNoiseOn = c.mNoiseSuppression.Get(aInPrefs.mNoiseOn);
+  prefs.mAgcOn = c.mAutoGainControl.Get(aInPrefs.mAgcOn && prefs.mAecOn);
+  prefs.mNoiseOn = c.mNoiseSuppression.Get(aInPrefs.mNoiseOn && prefs.mAecOn);
 
   
   
