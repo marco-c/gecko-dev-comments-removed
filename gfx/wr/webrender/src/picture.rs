@@ -101,6 +101,10 @@ pub struct OpacityBindingInfo {
 }
 
 
+#[derive(Debug, Copy, Clone)]
+struct TileId(usize);
+
+
 #[derive(Debug)]
 pub struct Tile {
     
@@ -118,11 +122,15 @@ pub struct Tile {
     
     
     is_valid: bool,
+    
+    
+    id: TileId,
 }
 
 impl Tile {
     
     fn new(
+        id: TileId,
     ) -> Self {
         Tile {
             local_rect: LayoutRect::zero(),
@@ -131,6 +139,7 @@ impl Tile {
             handle: TextureCacheHandle::invalid(),
             descriptor: TileDescriptor::new(),
             is_valid: false,
+            id,
         }
     }
 
@@ -290,6 +299,8 @@ pub struct TileCache {
     
     
     world_bounding_rect: WorldRect,
+    
+    next_id: usize,
 }
 
 impl TileCache {
@@ -312,7 +323,14 @@ impl TileCache {
             scroll_offset: None,
             pending_blits: Vec::new(),
             world_bounding_rect: WorldRect::zero(),
+            next_id: 0,
         }
+    }
+
+    fn next_id(&mut self) -> TileId {
+        let id = TileId(self.next_id);
+        self.next_id += 1;
+        id
     }
 
     
@@ -521,7 +539,7 @@ impl TileCache {
 
                 let mut tile = match old_tiles.remove(&key) {
                     Some(tile) => tile,
-                    None => Tile::new(),
+                    None => Tile::new(self.next_id()),
                 };
 
                 tile.world_rect = WorldRect::new(
@@ -897,6 +915,21 @@ impl TileCache {
 
         
         for (i, tile) in self.tiles.iter_mut().enumerate() {
+            
+            if resource_cache.texture_cache.is_allocated(&tile.handle) {
+                
+                
+                
+                
+                
+                
+                
+                
+                resource_cache.texture_cache.request(&tile.handle, gpu_cache);
+            } else {
+                tile.is_valid = false;
+            }
+
             let visible_rect = match tile
                 .world_rect
                 .intersection(&frame_context.screen_world_rect)
@@ -907,14 +940,6 @@ impl TileCache {
 
             
             tile.is_valid &= tile.descriptor.is_valid();
-
-            
-            if !resource_cache.texture_cache.is_allocated(&tile.handle) {
-                tile.is_valid = false;
-            }
-
-            
-            resource_cache.texture_cache.request(&tile.handle, gpu_cache);
 
             
             if tile.is_valid {
