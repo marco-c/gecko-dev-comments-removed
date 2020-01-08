@@ -30,8 +30,6 @@ static NS_DEFINE_CID(kPrefServiceCID,   NS_PREFSERVICE_CID);
 
 
 static const char kCookiesPermissions[] = "network.cookie.cookieBehavior";
-static const char kCookiesLifetimeEnabled[] = "network.cookie.lifetime.enabled";
-static const char kCookiesLifetimeCurrentSession[] = "network.cookie.lifetime.behavior";
 static const char kCookiesMaxPerHost[] = "network.cookie.maxPerHost";
 static const char kCookieLeaveSecurityAlone[] = "network.cookie.leave-secure-alone";
 
@@ -180,8 +178,6 @@ InitPrefs(nsIPrefBranch *aPrefBranch)
     
     
     aPrefBranch->SetIntPref(kCookiesPermissions, 0); 
-    aPrefBranch->SetBoolPref(kCookiesLifetimeEnabled, true);
-    aPrefBranch->SetIntPref(kCookiesLifetimeCurrentSession, 0);
     aPrefBranch->SetBoolPref(kCookieLeaveSecurityAlone, true);
     
     aPrefBranch->SetIntPref(kCookiesMaxPerHost, 50);

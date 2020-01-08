@@ -2251,7 +2251,6 @@ pref("network.cookie.ipc.sync",             false);
 
 pref("network.cookie.lifetimePolicy",       0);
 
-pref("network.cookie.prefsMigrated",        false);
 
 
 pref("network.cookie.move.interval_sec",    10);
