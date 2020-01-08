@@ -262,6 +262,15 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   void initFromBodyPosition(TokenPos bodyPosition);
 
+  
+
+
+
+
+  void reportNeedMoreArgsError(ParseNode* pn, const char* errorName,
+                               const char* requiredArgs, const char* pluralizer,
+                               const ListNode* argsList);
+
  public:
   BytecodeEmitter(BytecodeEmitter* parent, BCEParserHandle* parser,
                   SharedContext* sc, HandleScript script,
