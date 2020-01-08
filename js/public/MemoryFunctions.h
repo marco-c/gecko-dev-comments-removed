@@ -8,6 +8,7 @@
 #ifndef js_MemoryFunctions_h
 #define js_MemoryFunctions_h
 
+#include "mozilla/Assertions.h" 
 #include "mozilla/Attributes.h" 
 
 #include <stddef.h> 
@@ -15,6 +16,23 @@
 #include "jstypes.h" 
 
 struct JSContext;
+struct JSRuntime;
+
+struct JSFreeOp
+{
+  protected:
+    JSRuntime* runtime_;
+
+    explicit JSFreeOp(JSRuntime* rt)
+      : runtime_(rt)
+    {}
+
+  public:
+    JSRuntime* runtime() const {
+        MOZ_ASSERT(runtime_);
+        return runtime_;
+    }
+};
 
 extern JS_PUBLIC_API void*
 JS_malloc(JSContext* cx, size_t nbytes);

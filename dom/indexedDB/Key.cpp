@@ -11,6 +11,7 @@
 #include <stdint.h> 
 #include "IndexedDatabaseManager.h"
 #include "js/Date.h"
+#include "js/MemoryFunctions.h"
 #include "js/Value.h"
 #include "jsfriendapi.h"
 #include "mozilla/Casting.h"
@@ -28,7 +29,6 @@
 namespace mozilla {
 namespace dom {
 namespace indexedDB {
-
 
 
 

@@ -3,6 +3,7 @@
 
 
 #include "js/CompilationAndEvaluation.h"
+#include "js/MemoryFunctions.h"
 #include "jsapi-tests/tests.h"
 #include "vm/JSScript.h"
 
