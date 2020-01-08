@@ -41,6 +41,12 @@ class ChromeBrowsingContext final : public BrowsingContext {
   void RegisterWindowGlobal(WindowGlobalParent* aGlobal);
   void UnregisterWindowGlobal(WindowGlobalParent* aGlobal);
 
+  
+  WindowGlobalParent* GetCurrentWindowGlobal() const {
+    return mCurrentWindowGlobal;
+  }
+  void SetCurrentWindowGlobal(WindowGlobalParent* aGlobal);
+
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
@@ -62,6 +68,7 @@ class ChromeBrowsingContext final : public BrowsingContext {
 
   
   nsTHashtable<nsRefPtrHashKey<WindowGlobalParent>> mWindowGlobals;
+  RefPtr<WindowGlobalParent> mCurrentWindowGlobal;
 };
 
 }  

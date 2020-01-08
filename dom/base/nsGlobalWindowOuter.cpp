@@ -68,6 +68,7 @@
 #include "mozilla/intl/LocaleService.h"
 #include "WindowDestroyedEvent.h"
 #include "nsDocShellLoadState.h"
+#include "mozilla/dom/WindowGlobalChild.h"
 
 
 #include "nsJSUtils.h"
@@ -1964,6 +1965,10 @@ nsresult nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
 
   
   
+  mInnerWindow->GetWindowGlobalChild()->SendBecomeCurrentWindowGlobal();
+
+  
+  
   if (doomCurrentInner) {
     currentInner->FreeInnerObjects(handleDocumentOpen);
   }
@@ -2226,16 +2231,9 @@ void nsGlobalWindowOuter::SetOpenerWindow(nsPIDOMWindowOuter* aOpener,
   NS_ASSERTION(mOpener || !aOpener, "Opener must support weak references!");
 
   if (mDocShell) {
-    MOZ_DIAGNOSTIC_ASSERT(
-        !aOriginalOpener || !aOpener ||
-        
-        
-        
-        
-        
-        
-        nsGlobalWindowOuter::Cast(aOpener)->IsClosedOrClosing() ||
-        aOpener->GetBrowsingContext() == GetBrowsingContext()->GetOpener());
+    MOZ_DIAGNOSTIC_ASSERT(!aOriginalOpener || !aOpener ||
+                          aOpener->GetBrowsingContext() ==
+                              GetBrowsingContext()->GetOpener());
     
     
     GetBrowsingContext()->SetOpener(aOpener ? aOpener->GetBrowsingContext()

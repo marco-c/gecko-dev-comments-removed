@@ -74,6 +74,20 @@ void ChromeBrowsingContext::UnregisterWindowGlobal(
     WindowGlobalParent* aGlobal) {
   MOZ_ASSERT(mWindowGlobals.Contains(aGlobal), "Global not registered!");
   mWindowGlobals.RemoveEntry(aGlobal);
+
+  
+  
+  if (aGlobal == mCurrentWindowGlobal) {
+    mCurrentWindowGlobal = nullptr;
+  }
+}
+
+void ChromeBrowsingContext::SetCurrentWindowGlobal(
+    WindowGlobalParent* aGlobal) {
+  MOZ_ASSERT(mWindowGlobals.Contains(aGlobal), "Global not registered!");
+
+  
+  mCurrentWindowGlobal = aGlobal;
 }
 
 JSObject* ChromeBrowsingContext::WrapObject(JSContext* aCx,

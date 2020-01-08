@@ -53,6 +53,8 @@ public:
   uint64_t InnerWindowId() { return mInnerWindowId; }
   uint64_t OuterWindowId() { return mOuterWindowId; }
 
+  bool IsCurrentGlobal();
+
   
   
   already_AddRefed<WindowGlobalParent> GetParentActor();
