@@ -35,11 +35,6 @@ class TextInputHandler;
 - (NSMenu*)contextMenu;
 
   
-  
-- (void)setNeedsPendingDisplay;
-- (void)setNeedsPendingDisplayInRect:(NSRect)invalidRect;
-
-  
 - (void)widgetDestroyed;
 
 - (BOOL)isDragInProgress;
