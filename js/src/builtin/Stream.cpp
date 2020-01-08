@@ -18,34 +18,6 @@
 
 using namespace js;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum ReaderSlots {
-    ReaderSlot_Stream,
-    ReaderSlot_Requests,
-    ReaderSlot_ClosedPromise,
-    ReaderSlotCount,
-};
-
 enum ReaderType {
     ReaderType_Default,
     ReaderType_BYOB
@@ -202,18 +174,6 @@ RemoveControllerFlags(ReadableStreamController* controller, uint32_t flags)
                              Int32Value(ControllerFlags(controller) & ~flags));
 }
 
-inline static bool
-ReaderHasStream(const ReadableStreamReader* reader)
-{
-    return !reader->getFixedSlot(ReaderSlot_Stream).isUndefined();
-}
-
-bool
-js::ReadableStreamReaderIsClosed(const JSObject* reader)
-{
-    return !ReaderHasStream(&reader->as<ReadableStreamReader>());
-}
-
 static inline ReadableStream*
 StreamFromController(const ReadableStreamController* controller)
 {
@@ -274,8 +234,8 @@ UnwrapStreamFromReader(JSContext *cx,
                        Handle<ReadableStreamReader*> reader,
                        MutableHandle<ReadableStream*> unwrappedResult)
 {
-    MOZ_ASSERT(ReaderHasStream(reader));
-    return UnwrapInternalSlot(cx, reader, ReaderSlot_Stream, unwrappedResult);
+    MOZ_ASSERT(reader->hasStream());
+    return UnwrapInternalSlot(cx, reader, ReadableStreamReader::Slot_Stream, unwrappedResult);
 }
 
 
@@ -1399,7 +1359,7 @@ ReadableStreamTee(JSContext* cx, Handle<ReadableStream*> stream, bool cloneForBr
     
 
     
-    RootedObject closedPromise(cx, &reader->getFixedSlot(ReaderSlot_ClosedPromise).toObject());
+    RootedObject closedPromise(cx, reader->closedPromise());
 
     RootedObject onRejected(cx, NewHandler(cx, TeeReaderClosedHandler, teeState));
     if (!onRejected) {
@@ -1452,7 +1412,7 @@ ReadableStreamAddReadOrReadIntoRequest(JSContext* cx, Handle<ReadableStream*> st
     
     
     
-    if (!AppendToListAtSlot(cx, reader, ReaderSlot_Requests, promise)) {
+    if (!AppendToListAtSlot(cx, reader, ReadableStreamReader::Slot_Requests, promise)) {
         return nullptr;
     }
 
@@ -1565,39 +1525,36 @@ ReadableStreamCloseInternal(JSContext* cx, Handle<ReadableStream*> stream)
     if (reader->is<ReadableStreamDefaultReader>()) {
         
         
-        RootedValue val(cx, reader->getFixedSlot(ReaderSlot_Requests));
-        if (!val.isUndefined()) {
-            RootedNativeObject readRequests(cx, &val.toObject().as<NativeObject>());
-            uint32_t len = readRequests->getDenseInitializedLength();
-            RootedObject readRequest(cx);
-            RootedObject resultObj(cx);
-            RootedValue resultVal(cx);
-            for (uint32_t i = 0; i < len; i++) {
-                
-                
-                readRequest = &readRequests->getDenseElement(i).toObject();
-                if (needsWrapping && !cx->compartment()->wrap(cx, &readRequest)) {
-                    return false;
-                }
-
-                resultObj = CreateIterResultObject(cx, UndefinedHandleValue, true);
-                if (!resultObj) {
-                    return false;
-                }
-                resultVal = ObjectValue(*resultObj);
-                if (!ResolvePromise(cx, readRequest, resultVal)) {
-                    return false;
-                }
+        RootedNativeObject readRequests(cx, reader->requests());
+        uint32_t len = readRequests->getDenseInitializedLength();
+        RootedObject readRequest(cx);
+        RootedObject resultObj(cx);
+        RootedValue resultVal(cx);
+        for (uint32_t i = 0; i < len; i++) {
+            
+            
+            readRequest = &readRequests->getDenseElement(i).toObject();
+            if (needsWrapping && !cx->compartment()->wrap(cx, &readRequest)) {
+                return false;
             }
 
-            
-            reader->setFixedSlot(ReaderSlot_Requests, UndefinedValue());
+            resultObj = CreateIterResultObject(cx, UndefinedHandleValue, true);
+            if (!resultObj) {
+                return false;
+            }
+            resultVal = ObjectValue(*resultObj);
+            if (!ResolvePromise(cx, readRequest, resultVal)) {
+                return false;
+            }
         }
+
+        
+        reader->clearRequests();
     }
 
     
     
-    RootedObject closedPromise(cx, &reader->getFixedSlot(ReaderSlot_ClosedPromise).toObject());
+    RootedObject closedPromise(cx, reader->closedPromise());
     if (needsWrapping && !cx->compartment()->wrap(cx, &closedPromise)) {
         return false;
     }
@@ -1652,9 +1609,9 @@ ReadableStreamErrorInternal(JSContext* cx, Handle<ReadableStream*> stream, Handl
     
     
     
-    RootedValue val(cx, reader->getFixedSlot(ReaderSlot_Requests));
-    RootedNativeObject readRequests(cx, &val.toObject().as<NativeObject>());
+    RootedNativeObject readRequests(cx, reader->requests());
     RootedObject readRequest(cx);
+    RootedValue val(cx);
     uint32_t len = readRequests->getDenseInitializedLength();
     for (uint32_t i = 0; i < len; i++) {
         
@@ -1674,12 +1631,12 @@ ReadableStreamErrorInternal(JSContext* cx, Handle<ReadableStream*> stream, Handl
     }
 
     
-    if (!SetNewList(cx, reader, ReaderSlot_Requests)) {
+    if (!SetNewList(cx, reader, ReadableStreamReader::Slot_Requests)) {
         return false;
     }
 
     
-    RootedObject closedPromise(cx, &reader->getFixedSlot(ReaderSlot_ClosedPromise).toObject());
+    RootedObject closedPromise(cx, reader->closedPromise());
 
     
     
@@ -1738,8 +1695,7 @@ ReadableStreamFulfillReadOrReadIntoRequest(JSContext* cx, Handle<ReadableStream*
     
     
     
-    RootedValue val(cx, reader->getFixedSlot(ReaderSlot_Requests));
-    RootedNativeObject readIntoRequests(cx, &val.toObject().as<NativeObject>());
+    RootedNativeObject readIntoRequests(cx, reader->requests());
     RootedObject readIntoRequest(cx, ShiftFromList<JSObject>(cx, readIntoRequests));
     MOZ_ASSERT(readIntoRequest);
     if (!cx->compartment()->wrap(cx, &readIntoRequest)) {
@@ -1756,7 +1712,7 @@ ReadableStreamFulfillReadOrReadIntoRequest(JSContext* cx, Handle<ReadableStream*
     if (!iterResult) {
         return false;
     }
-    val = ObjectValue(*iterResult);
+    RootedValue val(cx, ObjectValue(*iterResult));
     return ResolvePromise(cx, readIntoRequest, val);
 }
 
@@ -1780,8 +1736,7 @@ ReadableStreamGetNumReadRequests(ReadableStream* stream)
         return 0;
     }
 
-    Value readRequests = reader->getFixedSlot(ReaderSlot_Requests);
-    return readRequests.toObject().as<NativeObject>().getDenseInitializedLength();
+    return reader->requests()->getDenseInitializedLength();
 }
 
 enum class ReaderMode
@@ -1870,7 +1825,7 @@ CreateReadableStreamDefaultReader(JSContext* cx, Handle<ReadableStream*> stream)
     }
 
     
-    if (!SetNewList(cx, reader, ReaderSlot_Requests)) {
+    if (!SetNewList(cx, reader, ReadableStreamReader::Slot_Requests)) {
         return nullptr;
     }
 
@@ -1928,12 +1883,12 @@ ReadableStreamDefaultReader_closed(JSContext* cx, unsigned argc, Value* vp)
     }
 
     
-    RootedValue closedPromise(cx, reader->getFixedSlot(ReaderSlot_ClosedPromise));
+    RootedObject closedPromise(cx, reader->closedPromise());
     if (!cx->compartment()->wrap(cx, &closedPromise)) {
         return false;
     }
 
-    args.rval().set(closedPromise);
+    args.rval().setObject(*closedPromise);
     return true;
 }
 
@@ -1961,7 +1916,7 @@ ReadableStreamDefaultReader_cancel(JSContext* cx, unsigned argc, Value* vp)
 
     
     
-    if (!ReaderHasStream(reader)) {
+    if (!reader->hasStream()) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                   JSMSG_READABLESTREAMREADER_NOT_OWNED, "cancel");
         return ReturnPromiseRejectedWithPendingError(cx, args);
@@ -1996,7 +1951,7 @@ ReadableStreamDefaultReader_read(JSContext* cx, unsigned argc, Value* vp)
 
     
     
-    if (!ReaderHasStream(reader)) {
+    if (!reader->hasStream()) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                   JSMSG_READABLESTREAMREADER_NOT_OWNED, "read");
         return ReturnPromiseRejectedWithPendingError(cx, args);
@@ -2037,20 +1992,20 @@ ReadableStreamDefaultReader_releaseLock(JSContext* cx, unsigned argc, Value* vp)
     }
 
     
-    if (!ReaderHasStream(reader)) {
+    if (!reader->hasStream()) {
         args.rval().setUndefined();
         return true;
     }
 
     
-    Value val = reader->getFixedSlot(ReaderSlot_Requests);
+    Value val = reader->getFixedSlot(ReadableStreamReader::Slot_Requests);
     if (!val.isUndefined()) {
         NativeObject* readRequests = &val.toObject().as<NativeObject>();
         uint32_t len = readRequests->getDenseInitializedLength();
         if (len != 0) {
             JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                        JSMSG_READABLESTREAMREADER_NOT_EMPTY,
-                                        "releaseLock");
+                                      JSMSG_READABLESTREAMREADER_NOT_EMPTY,
+                                      "releaseLock");
             return false;
         }
     }
@@ -2075,7 +2030,7 @@ const Class ReadableStreamReader::class_ = {
     "ReadableStreamReader"
 };
 
-CLASS_SPEC(ReadableStreamDefaultReader, 1, ReaderSlotCount, ClassSpec::DontDefineConstructor, 0,
+CLASS_SPEC(ReadableStreamDefaultReader, 1, SlotCount, ClassSpec::DontDefineConstructor, 0,
            JS_NULL_CLASS_OPS);
 
 
@@ -2125,7 +2080,7 @@ ReadableStreamReaderGenericInitialize(JSContext* cx, Handle<ReadableStreamReader
         if (!cx->compartment()->wrap(cx, &wrappedStream)) {
             return false;
         }
-        reader->setFixedSlot(ReaderSlot_Stream, ObjectValue(*wrappedStream));
+        reader->setStream(wrappedStream);
         AutoRealm ar(cx, stream);
         RootedObject wrappedReader(cx, reader);
         if (!cx->compartment()->wrap(cx, &wrappedReader)) {
@@ -2133,7 +2088,7 @@ ReadableStreamReaderGenericInitialize(JSContext* cx, Handle<ReadableStreamReader
         }
         stream->setReader(wrappedReader);
     } else {
-        reader->setFixedSlot(ReaderSlot_Stream, ObjectValue(*stream));
+        reader->setStream(stream);
         stream->setReader(reader);
     }
 
@@ -2166,7 +2121,7 @@ ReadableStreamReaderGenericInitialize(JSContext* cx, Handle<ReadableStreamReader
         return false;
     }
 
-    reader->setFixedSlot(ReaderSlot_ClosedPromise, ObjectValue(*promise));
+    reader->setClosedPromise(promise);
     return true;
 }
 
@@ -2206,8 +2161,14 @@ ReadableStreamReaderGenericRelease(JSContext* cx, Handle<ReadableStreamReader*> 
     
     
     if (stream->readable()) {
-        Value val = reader->getFixedSlot(ReaderSlot_ClosedPromise);
-        Rooted<PromiseObject*> closedPromise(cx, &val.toObject().as<PromiseObject>());
+        Rooted<PromiseObject*> closedPromise(cx);
+        if (!UnwrapInternalSlot(cx,
+                                reader,
+                                ReadableStreamReader::Slot_ClosedPromise,
+                                &closedPromise))
+        {
+            return false;
+        }
         if (closedPromise->compartment() != cx->compartment()) {
             ar.emplace(cx, closedPromise);
             if (!cx->compartment()->wrap(cx, &exn)) {
@@ -2230,14 +2191,14 @@ ReadableStreamReaderGenericRelease(JSContext* cx, Handle<ReadableStreamReader*> 
                 return false;
             }
         }
-        reader->setFixedSlot(ReaderSlot_ClosedPromise, ObjectValue(*closedPromise));
+        reader->setClosedPromise(closedPromise);
     }
 
     
     stream->clearReader();
 
     
-    reader->setFixedSlot(ReaderSlot_Stream, UndefinedValue());
+    reader->clearStream();
 
     return true;
 }
