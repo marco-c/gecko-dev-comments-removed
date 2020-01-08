@@ -36,6 +36,9 @@ class SampleIterator {
  private:
   Sample* Get();
 
+  
+  
+  SampleDescriptionEntry* GetSampleDescriptionEntry();
   CencSampleEncryptionInfoEntry* GetSampleEncryptionEntry();
 
   void Next();
