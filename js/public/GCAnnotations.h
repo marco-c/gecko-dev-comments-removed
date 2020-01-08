@@ -16,11 +16,14 @@
 
 
 
+
 # define JS_HAZ_GC_POINTER __attribute__((annotate("GC Pointer")))
 
 
 
+
 # define JS_HAZ_ROOTED __attribute__((annotate("Rooted Pointer")))
+
 
 
 

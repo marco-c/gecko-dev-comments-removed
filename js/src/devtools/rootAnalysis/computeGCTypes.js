@@ -11,11 +11,13 @@ var typeInfo_filename = scriptArgs[1] || "typeInfo.txt";
 var typeInfo = {
     'GCPointers': [],
     'GCThings': [],
+    'GCInvalidated': [],
     'NonGCTypes': {}, 
     'NonGCPointers': {},
     'RootedGCThings': {},
     'RootedPointers': {},
     'RootedBases': {'JS::AutoGCRooter': true},
+    'InheritFromTemplateArgs': {},
 
     
     
@@ -44,7 +46,7 @@ function processCSU(csu, body)
         if (tag == 'GC Pointer')
             typeInfo.GCPointers.push(csu);
         else if (tag == 'Invalidated by GC')
-            typeInfo.GCPointers.push(csu);
+            typeInfo.GCInvalidated.push(csu);
         else if (tag == 'GC Thing')
             typeInfo.GCThings.push(csu);
         else if (tag == 'Suppressed GC Pointer')
@@ -55,6 +57,8 @@ function processCSU(csu, body)
             typeInfo.RootedBases[csu] = true;
         else if (tag == 'Suppress GC')
             typeInfo.GCSuppressors[csu] = true;
+        else if (tag == 'moz_inherit_type_annotations_from_template_args')
+            typeInfo.InheritFromTemplateArgs[csu] = true;
     }
 
     for (let { 'Base': base } of (body.CSUBaseClass || []))
@@ -139,6 +143,47 @@ for (const csu of typeInfo.GCThings)
     addGCType(csu);
 for (const csu of typeInfo.GCPointers)
     addGCPointer(csu);
+for (const csu of typeInfo.GCInvalidated)
+    addGCPointer(csu);
+
+
+
+
+
+
+
+
+
+
+
+var inheritors = Object.keys(typeInfo.InheritFromTemplateArgs).sort((a, b) => a.length - b.length);
+for (const csu of inheritors) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const [_, params_str] = csu.match(/<(.*)>/);
+    for (let param of params_str.split(",")) {
+        param = param.replace(/^\s+/, '')
+        param = param.replace(/\s+$/, '')
+        const pieces = param.split("*");
+        const core_type = pieces[0];
+        const ptrdness = pieces.length - 1;
+        if (ptrdness > 1)
+            continue;
+        const paramDesc = 'template-param-' + param;
+        const why = '(inherited annotations from ' + param + ')';
+        if (typeInfo.GCThings.indexOf(core_type) != -1)
+            markGCType(csu, paramDesc, why, ptrdness, 0, "");
+        if (typeInfo.GCPointers.indexOf(core_type) != -1)
+            markGCType(csu, paramDesc, why, ptrdness + 1, 0, "");
+    }
+}
 
 
 

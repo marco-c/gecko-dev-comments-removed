@@ -714,8 +714,35 @@
 
 
 
-#ifdef MOZ_CLANG_PLUGIN
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef XGILL_PLUGIN
+#pragma GCC diagnostic ignored "-Wignored-attributes"
+#pragma GCC diagnostic ignored "-Wattributes"
+#endif
+
+#if defined(MOZ_CLANG_PLUGIN) || defined(XGILL_PLUGIN)
 #  define MOZ_CAN_RUN_SCRIPT __attribute__((annotate("moz_can_run_script")))
+#  define MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION __attribute__((annotate("moz_can_run_script")))
 #  define MOZ_CAN_RUN_SCRIPT_BOUNDARY __attribute__((annotate("moz_can_run_script_boundary")))
 #  define MOZ_MUST_OVERRIDE __attribute__((annotate("moz_must_override")))
 #  define MOZ_STATIC_CLASS __attribute__((annotate("moz_global_class")))
@@ -764,14 +791,18 @@
 
 
 
-
-#  define MOZ_HEAP_ALLOCATOR \
-    _Pragma("clang diagnostic push") \
-    _Pragma("clang diagnostic ignored \"-Wgcc-compat\"") \
-    __attribute__((annotate("moz_heap_allocator"))) \
-    _Pragma("clang diagnostic pop")
+#  ifdef __clang__
+#    define MOZ_HEAP_ALLOCATOR \
+       _Pragma("clang diagnostic push") \
+       _Pragma("clang diagnostic ignored \"-Wgcc-compat\"") \
+       __attribute__((annotate("moz_heap_allocator"))) \
+       _Pragma("clang diagnostic pop")
+#  else
+#    define MOZ_HEAP_ALLOCATOR __attribute__((annotate("moz_heap_allocator")))
+#  endif
 #else
 #  define MOZ_CAN_RUN_SCRIPT
+#  define MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION
 #  define MOZ_CAN_RUN_SCRIPT_BOUNDARY
 #  define MOZ_MUST_OVERRIDE
 #  define MOZ_STATIC_CLASS
@@ -809,6 +840,17 @@
 #endif 
 
 #define MOZ_RAII MOZ_NON_TEMPORARY_CLASS MOZ_STACK_CLASS
+
+
+
+
+
+#ifdef XGILL_PLUGIN
+#  undef MOZ_MUST_OVERRIDE
+#  define MOZ_MUST_OVERRIDE
+#  undef MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION
+#  define MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION
+#endif
 
 #endif 
 
