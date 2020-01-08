@@ -116,6 +116,31 @@ var TrackingProtection = {
     }
 
     
+    
+    
+    
+    
+    
+    if (fragment.childNodes.length == 0) {
+      let emptyBox = document.createXULElement("vbox");
+      let emptyImage = document.createXULElement("image");
+      emptyImage.classList.add("identity-popup-content-blocking-trackersView-empty-image");
+      emptyImage.classList.add("tracking-protection-icon");
+
+      let emptyLabel = document.createXULElement("label");
+      emptyLabel.classList.add("identity-popup-content-blocking-empty-label");
+      emptyLabel.textContent = gNavigatorBundle.getString("contentBlocking.trackersView.empty.label");
+
+      emptyBox.appendChild(emptyImage);
+      emptyBox.appendChild(emptyLabel);
+      fragment.appendChild(emptyBox);
+
+      this.subViewList.classList.add("empty");
+    } else {
+      this.subViewList.classList.remove("empty");
+    }
+
+    
     if (previousURI == gBrowser.currentURI.spec &&
         previousWindow == gBrowser.selectedBrowser.innerWindowID) {
       this.subViewList.textContent = "";
