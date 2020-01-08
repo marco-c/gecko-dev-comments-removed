@@ -5198,7 +5198,6 @@ CodeGenerator::generateArgumentsChecks(bool assert)
         if (!types || types->unknown())
             continue;
 
-#ifndef JS_CODEGEN_ARM64
         
         
         
@@ -5208,16 +5207,9 @@ CodeGenerator::generateArgumentsChecks(bool assert)
 
         
         
-        Register spectreRegToZero = masm.getStackPointer();
+        Register spectreRegToZero = AsRegister(masm.getStackPointer());
         masm.guardTypeSet(argAddr, types, BarrierKind::TypeSet, temp1, temp2,
                           spectreRegToZero, &miss);
-#else
-        
-        
-        mozilla::Unused << temp1;
-        mozilla::Unused << temp2;
-        MOZ_CRASH("NYI");
-#endif
     }
 
     if (miss.used()) {
