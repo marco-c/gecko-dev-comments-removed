@@ -644,17 +644,6 @@ FindFirstBlock(nsFrameList::FrameLinkEnumerator& aLink)
   aLink.Find([](nsIFrame* aFrame) { return !aFrame->IsInlineOutside(); });
 }
 
-
-
-
-static nsFrameList::FrameLinkEnumerator
-FindFirstNonBlock(const nsFrameList& aList)
-{
-  nsFrameList::FrameLinkEnumerator link(aList);
-  link.Find([](nsIFrame* aFrame) { return aFrame->IsInlineOutside(); });
-  return link;
-}
-
 inline void
 SetInitialSingleChild(nsContainerFrame* aParent, nsIFrame* aFrame)
 {
@@ -6216,9 +6205,8 @@ nsCSSFrameConstructor::AppendFramesToParent(nsFrameConstructorState&       aStat
       if (firstContinuation->PrincipalChildList().IsEmpty()) {
         
         
-        nsFrameList::FrameLinkEnumerator firstNonBlockEnumerator =
-          FindFirstNonBlock(aFrameList);
-        nsFrameList blockKids = aFrameList.ExtractHead(firstNonBlockEnumerator);
+        nsFrameList blockKids =
+          aFrameList.Split([](nsIFrame* f) { return f->IsInlineOutside();} );
         NS_ASSERTION(blockKids.NotEmpty(), "No blocks?");
 
         nsContainerFrame* prevBlock = GetIBSplitPrevSibling(firstContinuation);
@@ -11207,10 +11195,8 @@ nsCSSFrameConstructor::CreateIBSiblings(nsFrameConstructorState& aState,
 
     
     
-    nsFrameList::FrameLinkEnumerator firstNonBlock =
-      FindFirstNonBlock(aChildItems);
-    nsFrameList blockKids = aChildItems.ExtractHead(firstNonBlock);
-
+    nsFrameList blockKids =
+      aChildItems.Split([](nsIFrame* f) { return f->IsInlineOutside(); });
     MoveChildrenTo(aInitialInline, blockFrame, blockKids);
 
     SetFrameIsIBSplit(lastNewInline, blockFrame);

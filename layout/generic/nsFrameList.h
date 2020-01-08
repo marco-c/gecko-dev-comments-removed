@@ -235,6 +235,22 @@ public:
 
 
 
+
+
+
+
+  template<typename Predicate>
+  nsFrameList Split(Predicate&& aPredicate) {
+    FrameLinkEnumerator link(*this);
+    link.Find(aPredicate);
+    return ExtractHead(link);
+  }
+
+  
+
+
+
+
   nsFrameList ExtractHead(FrameLinkEnumerator& aLink);
 
   
