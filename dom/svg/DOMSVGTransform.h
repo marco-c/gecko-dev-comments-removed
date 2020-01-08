@@ -13,7 +13,7 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"
 #include "nsID.h"
-#include "nsSVGTransform.h"
+#include "SVGTransform.h"
 #include "nsWrapperCache.h"
 #include "mozilla/Attributes.h"
 
@@ -54,7 +54,7 @@ class DOMSVGTransform final : public nsWrapperCache {
   
 
 
-  explicit DOMSVGTransform(const nsSVGTransform& aMatrix);
+  explicit DOMSVGTransform(const SVGTransform& aMatrix);
 
   
 
@@ -101,7 +101,7 @@ class DOMSVGTransform final : public nsWrapperCache {
 
   void RemovingFromList();
 
-  nsSVGTransform ToSVGTransform() const { return Transform(); }
+  SVGTransform ToSVGTransform() const { return Transform(); }
 
   
   DOMSVGTransformList* GetParentObject() const { return mList; }
@@ -133,17 +133,17 @@ class DOMSVGTransform final : public nsWrapperCache {
 
 
 
-  nsSVGTransform& InternalItem();
-  const nsSVGTransform& InternalItem() const;
+  SVGTransform& InternalItem();
+  const SVGTransform& InternalItem() const;
 
 #ifdef DEBUG
   bool IndexIsValid();
 #endif
 
-  const nsSVGTransform& Transform() const {
+  const SVGTransform& Transform() const {
     return HasOwner() ? InternalItem() : *mTransform;
   }
-  nsSVGTransform& Transform() {
+  SVGTransform& Transform() {
     return HasOwner() ? InternalItem() : *mTransform;
   }
 
@@ -162,7 +162,7 @@ class DOMSVGTransform final : public nsWrapperCache {
   
   
   
-  nsAutoPtr<nsSVGTransform> mTransform;
+  nsAutoPtr<SVGTransform> mTransform;
 };
 
 }  

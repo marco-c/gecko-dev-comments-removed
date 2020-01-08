@@ -17,10 +17,10 @@ namespace mozilla {
 
 
 
-class nsSVGTransform {
+class SVGTransform {
  public:
   
-  nsSVGTransform()
+  SVGTransform()
       : mMatrix()  
         ,
         mAngle(0.f),
@@ -28,14 +28,14 @@ class nsSVGTransform {
         mOriginY(0.f),
         mType(dom::SVGTransform_Binding::SVG_TRANSFORM_MATRIX) {}
 
-  explicit nsSVGTransform(const gfxMatrix& aMatrix)
+  explicit SVGTransform(const gfxMatrix& aMatrix)
       : mMatrix(aMatrix),
         mAngle(0.f),
         mOriginX(0.f),
         mOriginY(0.f),
         mType(dom::SVGTransform_Binding::SVG_TRANSFORM_MATRIX) {}
 
-  bool operator==(const nsSVGTransform& rhs) const {
+  bool operator==(const SVGTransform& rhs) const {
     return mType == rhs.mType && MatricesEqual(mMatrix, rhs.mMatrix) &&
            mAngle == rhs.mAngle && mOriginX == rhs.mOriginX &&
            mOriginY == rhs.mOriginY;
@@ -125,8 +125,8 @@ class SVGTransformSMILData {
   }
 
   
-  explicit SVGTransformSMILData(const nsSVGTransform& aTransform);
-  nsSVGTransform ToSVGTransform() const;
+  explicit SVGTransformSMILData(const SVGTransform& aTransform);
+  SVGTransform ToSVGTransform() const;
 
   bool operator==(const SVGTransformSMILData& aOther) const {
     if (mTransformType != aOther.mTransformType) return false;
