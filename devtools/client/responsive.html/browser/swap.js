@@ -126,8 +126,24 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
           triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}),
         });
       }
-      if (mustChangeProcess) {
-        debug(`Tab will force a process flip on navigation, load about:blank first`);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (mustChangeProcess &&
+          tab.linkedBrowser.remoteType == "privileged") {
+        debug(`Tab must flip away from the privileged content process ` +
+              `on navigation`);
         gBrowser.updateBrowserRemoteness(tab.linkedBrowser, true, {
           remoteType: requiredRemoteType,
         });
