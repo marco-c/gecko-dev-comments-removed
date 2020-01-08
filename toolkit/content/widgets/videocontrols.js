@@ -1773,11 +1773,20 @@ this.VideoControlsImplPageWidget = class {
         return new Proxy(element, this.reflowTriggeringCallValidator);
       },
 
-      
       reflowedDimensions: {
+        
+        
+        
+        
+        
         videoHeight: 150,
         videoWidth: 300,
-        videocontrolsWidth: 300,
+
+        
+        
+        
+        
+        videocontrolsWidth: 0,
       },
 
       updateReflowedDimensions() {
@@ -1785,6 +1794,29 @@ this.VideoControlsImplPageWidget = class {
         this.reflowedDimensions.videoWidth = this.video.clientWidth;
         this.reflowedDimensions.videocontrolsWidth = this.videocontrols.clientWidth;
       },
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
       adjustControlSize() {
         const minControlBarPaddingWidth = 18;
