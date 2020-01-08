@@ -32,6 +32,8 @@ var testSwitchToTab = async function(url, options) {
   ok(tab.hasAttribute("pending"), "tab is pending");
   await promise;
 
+  options.triggeringPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+
   
   switchToTabHavingURI(url, false, options);
 

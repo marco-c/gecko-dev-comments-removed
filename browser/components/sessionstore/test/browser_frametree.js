@@ -20,7 +20,7 @@ add_task(async function test_frametree() {
   is(await countNonDynamicFrames(browser), 0, "no child frames");
 
   
-  browser.loadURI(URL_FRAMESET);
+  BrowserTestUtils.loadURI(browser, URL_FRAMESET);
   await promiseBrowserLoaded(browser);
 
   
