@@ -528,7 +528,7 @@ pref("media.getusermedia.use_aec_mobile", false);
 pref("media.getusermedia.aec", 1); 
 pref("media.getusermedia.aec_extended_filter", true);
 pref("media.getusermedia.noise", 1); 
-pref("media.getusermedia.agc_enabled", false);
+pref("media.getusermedia.agc_enabled", true);
 pref("media.getusermedia.agc", 1); 
 
 
