@@ -1290,23 +1290,10 @@ impl StrongRuleNode {
 
         
         
-        
-        const IGNORED_WHEN_COLORS_DISABLED: &'static [LonghandId] = &[
-            LonghandId::BackgroundImage,
-            LonghandId::BorderImageSource,
-            LonghandId::BorderTopColor,
-            LonghandId::BorderRightColor,
-            LonghandId::BorderBottomColor,
-            LonghandId::BorderLeftColor,
-            LonghandId::BorderInlineStartColor,
-            LonghandId::BorderInlineEndColor,
-            LonghandId::BorderBlockStartColor,
-            LonghandId::BorderBlockEndColor,
-        ];
-
         if !author_colors_allowed {
-            for id in IGNORED_WHEN_COLORS_DISABLED {
-                properties.remove(*id);
+            properties.remove_all(LonghandIdSet::ignored_when_colors_disabled());
+            if rule_type_mask & NS_AUTHOR_SPECIFIED_BACKGROUND != 0 {
+                properties.insert(LonghandId::BackgroundColor);
             }
         }
 
