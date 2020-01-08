@@ -11179,9 +11179,12 @@ nsCSSFrameConstructor::ConstructBlock(nsFrameConstructorState& aState,
   
   AutoRestore<nsFrameState> savedStateBits(aState.mAdditionalStateBits);
   if (StaticPrefs::layout_css_column_span_enabled()) {
+    
+    
+    
     if (needsColumn) {
       aState.mAdditionalStateBits |= NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR;
-    } else if (blockFrame->IsColumnSpan()) {
+    } else if (blockFrame->HasAllStateBits(NS_BLOCK_FORMATTING_CONTEXT_STATE_BITS)) {
       aState.mAdditionalStateBits &= ~NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR;
     }
   }
@@ -11392,8 +11395,16 @@ nsCSSFrameConstructor::MayNeedToCreateColumnSpanSiblings(
   MOZ_ASSERT(StaticPrefs::layout_css_column_span_enabled(),
              "Call this only when layout.css.column-span.enabled is true!");
 
-  if (aBlockFrame->IsColumnSpan() ||
-      !aBlockFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
+  if (!aBlockFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
+    
+    return false;
+  }
+
+  if (aBlockFrame->HasAllStateBits(NS_BLOCK_FORMATTING_CONTEXT_STATE_BITS) &&
+      aBlockFrame->Style()->GetPseudo() != nsCSSAnonBoxes::columnContent()) {
+    
+    
+    
     
     
     
