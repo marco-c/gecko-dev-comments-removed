@@ -148,9 +148,13 @@ public:
   bool     BlockedOnRwin() { return mBlockedOnRwin; }
 
   uint32_t Priority() { return mPriority; }
+  uint32_t PriorityDependency() { return mPriorityDependency; }
+  uint8_t PriorityWeight() { return mPriorityWeight; }
   void SetPriority(uint32_t);
-  void SetPriorityDependency(uint32_t, uint8_t, bool);
+  void SetPriorityDependency(uint32_t, uint32_t);
   void UpdatePriorityDependency();
+
+  uint64_t TransactionTabId() { return mTransactionTabId; }
 
   
   
@@ -176,7 +180,8 @@ public:
 
   nsresult GetOriginAttributes(mozilla::OriginAttributes *oa);
 
-  void TopLevelOuterContentWindowIdChanged(uint64_t windowId);
+  virtual void TopLevelOuterContentWindowIdChanged(uint64_t windowId);
+  void TopLevelOuterContentWindowIdChangedInternal(uint64_t windowId); 
 
 protected:
   static void CreatePushHashKey(const nsCString &scheme,
@@ -240,6 +245,11 @@ protected:
 
   
   nsISocketTransport         *mSocketTransport;
+
+  uint8_t mPriorityWeight; 
+  uint32_t mPriorityDependency; 
+  uint64_t mCurrentForegroundTabOuterContentWindowId;
+  uint64_t mTransactionTabId;
 
 private:
   friend class nsAutoPtr<Http2Stream>;
@@ -318,8 +328,6 @@ private:
   int64_t                      mRequestBodyLenRemaining;
 
   uint32_t                     mPriority; 
-  uint32_t                     mPriorityDependency; 
-  uint8_t                      mPriorityWeight; 
 
   
   
@@ -354,10 +362,6 @@ private:
   SimpleBuffer mSimpleBuffer;
 
   bool mAttempting0RTT;
-
-  uint64_t mCurrentForegroundTabOuterContentWindowId;
-
-  uint64_t mTransactionTabId;
 
 
 public:

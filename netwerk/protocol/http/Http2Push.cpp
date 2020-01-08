@@ -81,7 +81,18 @@ Http2PushedStream::Http2PushedStream(Http2PushTransactionBuffer *aTransaction,
   mBufferedPush->SetPushStream(this);
   mRequestContext = aAssociatedStream->RequestContext();
   mLastRead = TimeStamp::Now();
-  SetPriority(aAssociatedStream->Priority() + 1);
+  mPriorityDependency = aAssociatedStream->PriorityDependency();
+  if (mPriorityDependency == Http2Session::kUrgentStartGroupID ||
+      mPriorityDependency == Http2Session::kLeaderGroupID) {
+    mPriorityDependency = Http2Session::kFollowerGroupID;
+  }
+  
+  mDefaultPriorityDependency = mPriorityDependency;
+  SetPriorityDependency(aAssociatedStream->Priority() + 1, mPriorityDependency);
+  
+  
+  
+  mTransactionTabId = aAssociatedStream->TransactionTabId();
 }
 
 bool
@@ -308,6 +319,36 @@ Http2PushedStream::GetBufferedData(char *buf,
     rv = GetPushComplete() ? NS_BASE_STREAM_CLOSED : NS_BASE_STREAM_WOULD_BLOCK;
 
   return rv;
+}
+
+void
+Http2PushedStream::TopLevelOuterContentWindowIdChanged(uint64_t windowId)
+{
+  if (mConsumerStream) {
+    
+    mConsumerStream->TopLevelOuterContentWindowIdChangedInternal(windowId);
+    return;
+  }
+
+  MOZ_ASSERT(gHttpHandler->ActiveTabPriority());
+
+  mCurrentForegroundTabOuterContentWindowId = windowId;
+
+  if (!mSession->UseH2Deps()) {
+    return;
+  }
+
+  uint32_t oldDependency = mPriorityDependency;
+  if (mTransactionTabId != mCurrentForegroundTabOuterContentWindowId) {
+    mPriorityDependency = Http2Session::kBackgroundGroupID;
+    nsHttp::NotifyActiveTabLoadOptimization();
+  } else {
+    mPriorityDependency = mDefaultPriorityDependency;
+  }
+
+  if (mPriorityDependency != oldDependency) {
+    mSession->SendPriorityFrame(mStreamID, mPriorityDependency, mPriorityWeight);
+  }
 }
 
 
