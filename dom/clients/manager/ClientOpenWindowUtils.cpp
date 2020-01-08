@@ -365,6 +365,13 @@ RefPtr<ClientOpPromise> ClientOpenWindowInCurrentProcess(
 #ifdef MOZ_WIDGET_ANDROID
   
   
+  if (!jni::IsFennec()) {
+    promise->Reject(NS_ERROR_NOT_IMPLEMENTED, __func__);
+    return promise.forget();
+  }
+
+  
+  
   
   RefPtr<LaunchObserver> launchObserver = LaunchObserver::Create();
   java::GeckoApp::LaunchOrBringToFront();
