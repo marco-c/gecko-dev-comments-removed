@@ -110,7 +110,7 @@ class CreditCard {
       
       
       
-      normalizedNumber = normalizedNumber.match(/^\d{9,}$/) ?
+      normalizedNumber = normalizedNumber.match(/^\d{12,}$/) ?
         normalizedNumber : null;
       this._number = normalizedNumber;
     }
@@ -126,6 +126,8 @@ class CreditCard {
 
   
   
+  
+  
   isValidNumber() {
     if (!this._number) {
       return false;
@@ -135,7 +137,7 @@ class CreditCard {
     let number = this._number.replace(/[\-\s]/g, "");
 
     let len = number.length;
-    if (len != 9 && len != 15 && len != 16) {
+    if (len < 12 || len > 19) {
       return false;
     }
 
