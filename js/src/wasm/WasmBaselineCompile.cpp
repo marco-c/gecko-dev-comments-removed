@@ -979,6 +979,31 @@ using ScratchI8 = ScratchI32;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 BaseLocalIter::BaseLocalIter(const ValTypeVector& locals, size_t argsLength,
                              bool debugEnabled)
     : locals_(locals),
@@ -1057,7 +1082,7 @@ void BaseLocalIter::operator++(int) {
 
 
 class StackHeight {
-  friend class BaseStackFrame;
+  friend class BaseStackFrameAllocator;
 
   uint32_t height;
 
@@ -1070,7 +1095,15 @@ class StackHeight {
 
 
 
-class BaseStackFrame {
+
+
+
+
+
+
+class BaseStackFrameAllocator {
+  MacroAssembler& masm;
+
 #ifdef RABALDR_CHUNKY_STACK
   
   
@@ -1109,28 +1142,267 @@ class BaseStackFrame {
 
   static constexpr uint32_t ChunkSize = 8 * sizeof(void*);
   static constexpr uint32_t InitialChunk = ChunkSize;
+
+  
+  
+  
+  
+  
+
+  uint32_t currentStackHeight_;
 #endif
 
+  
+  
+  
+  
+  
+  
+
+  uint32_t localSize_;
+
+ protected:
+  
+  
+  
+
+  explicit BaseStackFrameAllocator(MacroAssembler& masm)
+      : masm(masm),
+#ifdef RABALDR_CHUNKY_STACK
+        currentStackHeight_(0),
+#endif
+        localSize_(UINT32_MAX) {
+  }
+
+ protected:
+  
+  
+  
+
+  
+
+  void setLocalSize(uint32_t localSize) {
+    MOZ_ASSERT(localSize == AlignBytes(localSize, sizeof(void*)),
+               "localSize_ should be aligned to at least a pointer");
+    MOZ_ASSERT(localSize_ == UINT32_MAX);
+    localSize_ = localSize;
+  }
+
+  
+  
+
+  void onFixedStackAllocated() {
+    MOZ_ASSERT(localSize_ != UINT32_MAX);
+#ifdef RABALDR_CHUNKY_STACK
+    currentStackHeight_ = localSize_;
+#endif
+  }
+
+ public:
+  
+  
+  
+
+  uint32_t fixedSize() const {
+    MOZ_ASSERT(localSize_ != UINT32_MAX);
+#ifdef RABALDR_CHUNKY_STACK
+    return localSize_ + InitialChunk;
+#else
+    return localSize_;
+#endif
+  }
+
+ protected:
+  
+  
+  
+  
+
+  
+
+  int32_t stackOffset(int32_t offset) { return masm.framePushed() - offset; }
+
+#ifdef RABALDR_CHUNKY_STACK
+  void pushChunkyBytes(uint32_t bytes) {
+    MOZ_ASSERT(bytes <= ChunkSize);
+    checkChunkyInvariants();
+    if (masm.framePushed() - currentStackHeight_ < bytes) {
+      masm.reserveStack(ChunkSize);
+    }
+    currentStackHeight_ += bytes;
+    checkChunkyInvariants();
+  }
+
+  void popChunkyBytes(uint32_t bytes) {
+    checkChunkyInvariants();
+    currentStackHeight_ -= bytes;
+    
+    
+    
+    if (masm.framePushed() - currentStackHeight_ >= ChunkSize) {
+      uint32_t target =
+          Max(fixedSize(), AlignBytes(currentStackHeight_, ChunkSize));
+      uint32_t amount = masm.framePushed() - target;
+      if (amount) {
+        masm.freeStack(amount);
+      }
+      MOZ_ASSERT(masm.framePushed() >= fixedSize());
+    }
+    checkChunkyInvariants();
+  }
+#endif
+
+  uint32_t currentStackHeight() const {
+#ifdef RABALDR_CHUNKY_STACK
+    return currentStackHeight_;
+#else
+    return masm.framePushed();
+#endif
+  }
+
+ private:
+#ifdef RABALDR_CHUNKY_STACK
+  void checkChunkyInvariants() {
+    MOZ_ASSERT(masm.framePushed() >= currentStackHeight_);
+    MOZ_ASSERT(masm.framePushed() == fixedSize() ||
+               masm.framePushed() - currentStackHeight_ < ChunkSize);
+  }
+#endif
+
+  
+  
+
+  uint32_t framePushedForHeight(StackHeight stackHeight) {
+#ifdef RABALDR_CHUNKY_STACK
+    
+    
+    return stackHeight.height <= fixedSize()
+               ? fixedSize()
+               : fixedSize() +
+                     AlignBytes(stackHeight.height - fixedSize(), ChunkSize);
+#else
+    
+    return stackHeight.height;
+#endif
+  }
+
+ public:
+  
+  
+
+  StackHeight stackHeight() const { return StackHeight(currentStackHeight()); }
+
+  
+
+  void setStackHeight(StackHeight amount) {
+#ifdef RABALDR_CHUNKY_STACK
+    currentStackHeight_ = amount.height;
+    masm.setFramePushed(framePushedForHeight(amount));
+    checkChunkyInvariants();
+#else
+    masm.setFramePushed(amount.height);
+#endif
+  }
+
+  
+  
+
+  uint32_t dynamicHeight() const { return currentStackHeight() - localSize_; }
+
+  
+  
+  
+  
+  
+
+  void popStackBeforeBranch(StackHeight destStackHeight) {
+    uint32_t framePushedHere = masm.framePushed();
+    uint32_t framePushedThere = framePushedForHeight(destStackHeight);
+    if (framePushedHere > framePushedThere) {
+      masm.addToStackPtr(Imm32(framePushedHere - framePushedThere));
+    }
+  }
+
+  bool willPopStackBeforeBranch(StackHeight destStackHeight) {
+    uint32_t framePushedHere = masm.framePushed();
+    uint32_t framePushedThere = framePushedForHeight(destStackHeight);
+    return framePushedHere > framePushedThere;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+
+  void popStackOnBlockExit(StackHeight destStackHeight, bool deadCode) {
+    uint32_t stackHeightHere = currentStackHeight();
+    uint32_t stackHeightThere = destStackHeight.height;
+    if (stackHeightHere > stackHeightThere) {
+#ifdef RABALDR_CHUNKY_STACK
+      if (deadCode) {
+        setStackHeight(destStackHeight);
+      } else {
+        popChunkyBytes(stackHeightHere - stackHeightThere);
+      }
+#else
+      if (deadCode) {
+        masm.setFramePushed(stackHeightThere);
+      } else {
+        masm.freeStack(stackHeightHere - stackHeightThere);
+      }
+#endif
+    }
+  }
+
+ public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+
+  void allocArgArea(size_t argSize) {
+    if (argSize) {
+      masm.reserveStack(argSize);
+    }
+  }
+
+  
+  
+  
+  
+
+  void freeArgAreaAndPopBytes(size_t argSize, size_t dropSize) {
+#ifdef RABALDR_CHUNKY_STACK
+    
+    
+    if (argSize) {
+      masm.freeStack(argSize);
+    }
+    popChunkyBytes(dropSize);
+#else
+    if (argSize + dropSize) {
+      masm.freeStack(argSize + dropSize);
+    }
+#endif
+  }
+};
+
+class BaseStackFrame final : public BaseStackFrameAllocator {
   MacroAssembler& masm;
 
   
-  uint32_t localSize_;
-
-  
-  uint32_t varLow_;
-
-  
-  uint32_t varHigh_;
-
-#ifdef RABALDR_CHUNKY_STACK
-  
-  
-  
-  
-  
-  uint32_t currentFramePushed_;
-#endif
-
   
   
   uint32_t maxFramePushed_;
@@ -1139,26 +1411,75 @@ class BaseStackFrame {
   CodeOffset stackAddOffset_;
 
   
+  uint32_t varLow_;
+
+  
+  uint32_t varHigh_;
+
+  
   RegisterOrSP sp_;
 
  public:
   explicit BaseStackFrame(MacroAssembler& masm)
-      : masm(masm),
-        localSize_(UINT32_MAX),
-        varLow_(UINT32_MAX),
-        varHigh_(UINT32_MAX),
-#ifdef RABALDR_CHUNKY_STACK
-        currentFramePushed_(0),
-#endif
+      : BaseStackFrameAllocator(masm),
+        masm(masm),
         maxFramePushed_(0),
         stackAddOffset_(0),
-        sp_(masm.getStackPointer()) {
+        varLow_(UINT32_MAX),
+        varHigh_(UINT32_MAX),
+        sp_(masm.getStackPointer()) {}
+
+  
+  
+  
+
+  
+  
+  
+
+  void onFixedStackAllocated() {
+    maxFramePushed_ = masm.framePushed();
+    BaseStackFrameAllocator::onFixedStackAllocated();
   }
 
   
   
   
+  
+  
+  
 
+  void checkStack(Register tmp, BytecodeOffset trapOffset) {
+    stackAddOffset_ = masm.sub32FromStackPtrWithPatch(tmp);
+    Label ok;
+    masm.branchPtr(Assembler::Below,
+                   Address(WasmTlsReg, offsetof(wasm::TlsData, stackLimit)),
+                   tmp, &ok);
+    masm.wasmTrap(Trap::StackOverflow, trapOffset);
+    masm.bind(&ok);
+  }
+
+  void patchCheckStack() {
+    masm.patchSub32FromStackPtr(stackAddOffset_,
+                                Imm32(int32_t(maxFramePushed_)));
+  }
+
+  
+
+  bool checkStackHeight() {
+    
+    
+    
+    
+    
+    
+    
+    
+    return maxFramePushed_ <= 512 * 1024;
+  }
+
+  
+  
   
 
   struct Local {
@@ -1177,22 +1498,9 @@ class BaseStackFrame {
 
   using LocalVector = Vector<Local, 8, SystemAllocPolicy>;
 
- private:
-  
-  int32_t localOffset(const Local& local) { return localOffset(local.offs); }
-
-  
-  int32_t localOffset(int32_t offset) { return masm.framePushed() - offset; }
-
-  
-  uint32_t minimumSize() const { return fixedSize(); }
-
- public:
   
   bool setupLocals(const ValTypeVector& locals, const ValTypeVector& args,
                    bool debugEnabled, LocalVector* localInfo) {
-    MOZ_ASSERT(maxFramePushed_ != UINT32_MAX);
-
     if (!localInfo->reserve(locals.length())) {
       return false;
     }
@@ -1217,26 +1525,9 @@ class BaseStackFrame {
       index++;
     }
 
-    localSize_ = AlignBytes(varHigh_, WasmStackAlignment);
-    maxFramePushed_ = localSize_;
-#ifdef RABALDR_CHUNKY_STACK
-    currentFramePushed_ = localSize_;
-#endif
+    setLocalSize(AlignBytes(varHigh_, WasmStackAlignment));
+
     return true;
-  }
-
-  
-  
-  
-
-  uint32_t fixedSize() const {
-    MOZ_ASSERT(localSize_ != UINT32_MAX);
-
-#ifdef RABALDR_CHUNKY_STACK
-    return localSize_ + InitialChunk;
-#else
-    return localSize_;
-#endif
   }
 
   void zeroLocals(BaseRegAlloc* ra);
@@ -1291,74 +1582,18 @@ class BaseStackFrame {
     masm.storeFloat32(src, Address(sp_, localOffset(dest)));
   }
 
-  
-  
-  
-
  private:
   
-  int32_t stackOffset(int32_t offset) { return masm.framePushed() - offset; }
-
-#ifdef RABALDR_CHUNKY_STACK
-
-#define CHUNKY_INVARIANT()                               \
-  MOZ_ASSERT(masm.framePushed() >= currentFramePushed_); \
-  MOZ_ASSERT(masm.framePushed() == minimumSize() ||      \
-             masm.framePushed() - currentFramePushed_ < ChunkSize)
-
-  void pushChunkyBytes(uint32_t bytes) {
-    CHUNKY_INVARIANT();
-    if (masm.framePushed() - currentFramePushed_ < bytes) {
-      masm.reserveStack(ChunkSize);
-    }
-    currentFramePushed_ += bytes;
-    CHUNKY_INVARIANT();
-  }
-
-  void popChunkyBytes(uint32_t bytes) {
-    CHUNKY_INVARIANT();
-    currentFramePushed_ -= bytes;
-    
-    
-    
-    if (masm.framePushed() - currentFramePushed_ >= ChunkSize) {
-      uint32_t target =
-          Max(minimumSize(), AlignBytes(currentFramePushed_, ChunkSize));
-      uint32_t amount = masm.framePushed() - target;
-      if (amount) {
-        masm.freeStack(amount);
-      }
-      MOZ_ASSERT(masm.framePushed() >= minimumSize());
-    }
-    CHUNKY_INVARIANT();
-  }
-#endif
+  int32_t localOffset(const Local& local) { return localOffset(local.offs); }
 
   
-  
-  uint32_t framePushedForHeight(StackHeight stackHeight) {
-#ifdef RABALDR_CHUNKY_STACK
-    
-    
-    return stackHeight.height <= minimumSize()
-               ? minimumSize()
-               : minimumSize() +
-                     AlignBytes(stackHeight.height - minimumSize(), ChunkSize);
-#else
-    
-    return stackHeight.height;
-#endif
-  }
-
-  uint32_t currentFramePushed() const {
-#ifdef RABALDR_CHUNKY_STACK
-    return currentFramePushed_;
-#else
-    return masm.framePushed();
-#endif
-  }
+  int32_t localOffset(int32_t offset) { return masm.framePushed() - offset; }
 
  public:
+  
+  
+  
+
   
   
   
@@ -1376,129 +1611,76 @@ class BaseStackFrame {
 #endif
   static const size_t StackSizeOfDouble = sizeof(double);
 
-  
-  
-  
-  
-  
-  
-
-  void checkStack(Register tmp, BytecodeOffset trapOffset) {
-    stackAddOffset_ = masm.sub32FromStackPtrWithPatch(tmp);
-    Label ok;
-    masm.branchPtr(Assembler::Below,
-                   Address(WasmTlsReg, offsetof(wasm::TlsData, stackLimit)),
-                   tmp, &ok);
-    masm.wasmTrap(Trap::StackOverflow, trapOffset);
-    masm.bind(&ok);
-  }
-
-  void patchCheckStack() {
-    masm.patchSub32FromStackPtr(stackAddOffset_,
-                                Imm32(int32_t(maxFramePushed_)));
-  }
-
-  
-  bool checkStackHeight() {
-    
-    
-    
-    
-    
-    
-    
-    
-    return maxFramePushed_ <= 512 * 1024;
-  }
-
-  
-  StackHeight stackHeight() const { return StackHeight(currentFramePushed()); }
-
-  
-  
-  uint32_t dynamicHeight() const { return currentFramePushed() - localSize_; }
-
-  
-  void setStackHeight(StackHeight amount) {
-#ifdef RABALDR_CHUNKY_STACK
-    currentFramePushed_ = amount.height;
-    masm.setFramePushed(framePushedForHeight(amount));
-    CHUNKY_INVARIANT();
-#else
-    masm.setFramePushed(amount.height);
-#endif
-  }
-
   uint32_t pushPtr(Register r) {
-    DebugOnly<uint32_t> stackBefore = currentFramePushed();
+    DebugOnly<uint32_t> stackBefore = currentStackHeight();
 #ifdef RABALDR_CHUNKY_STACK
     pushChunkyBytes(StackSizeOfPtr);
-    masm.storePtr(r, Address(sp_, stackOffset(currentFramePushed())));
+    masm.storePtr(r, Address(sp_, stackOffset(currentStackHeight())));
 #else
     masm.Push(r);
 #endif
-    maxFramePushed_ = Max(maxFramePushed_, currentFramePushed());
-    MOZ_ASSERT(stackBefore + StackSizeOfPtr == currentFramePushed());
-    return currentFramePushed();
+    maxFramePushed_ = Max(maxFramePushed_, masm.framePushed());
+    MOZ_ASSERT(stackBefore + StackSizeOfPtr == currentStackHeight());
+    return currentStackHeight();
   }
 
   uint32_t pushFloat32(FloatRegister r) {
-    DebugOnly<uint32_t> stackBefore = currentFramePushed();
+    DebugOnly<uint32_t> stackBefore = currentStackHeight();
 #ifdef RABALDR_CHUNKY_STACK
     pushChunkyBytes(StackSizeOfFloat);
-    masm.storeFloat32(r, Address(sp_, stackOffset(currentFramePushed())));
+    masm.storeFloat32(r, Address(sp_, stackOffset(currentStackHeight())));
 #else
     masm.Push(r);
 #endif
-    maxFramePushed_ = Max(maxFramePushed_, currentFramePushed());
-    MOZ_ASSERT(stackBefore + StackSizeOfFloat == currentFramePushed());
-    return currentFramePushed();
+    maxFramePushed_ = Max(maxFramePushed_, masm.framePushed());
+    MOZ_ASSERT(stackBefore + StackSizeOfFloat == currentStackHeight());
+    return currentStackHeight();
   }
 
   uint32_t pushDouble(FloatRegister r) {
-    DebugOnly<uint32_t> stackBefore = currentFramePushed();
+    DebugOnly<uint32_t> stackBefore = currentStackHeight();
 #ifdef RABALDR_CHUNKY_STACK
     pushChunkyBytes(StackSizeOfDouble);
-    masm.storeDouble(r, Address(sp_, stackOffset(currentFramePushed())));
+    masm.storeDouble(r, Address(sp_, stackOffset(currentStackHeight())));
 #else
     masm.Push(r);
 #endif
-    maxFramePushed_ = Max(maxFramePushed_, currentFramePushed());
-    MOZ_ASSERT(stackBefore + StackSizeOfDouble == currentFramePushed());
-    return currentFramePushed();
+    maxFramePushed_ = Max(maxFramePushed_, masm.framePushed());
+    MOZ_ASSERT(stackBefore + StackSizeOfDouble == currentStackHeight());
+    return currentStackHeight();
   }
 
   void popPtr(Register r) {
-    DebugOnly<uint32_t> stackBefore = currentFramePushed();
+    DebugOnly<uint32_t> stackBefore = currentStackHeight();
 #ifdef RABALDR_CHUNKY_STACK
-    masm.loadPtr(Address(sp_, stackOffset(currentFramePushed())), r);
+    masm.loadPtr(Address(sp_, stackOffset(currentStackHeight())), r);
     popChunkyBytes(StackSizeOfPtr);
 #else
     masm.Pop(r);
 #endif
-    MOZ_ASSERT(stackBefore - StackSizeOfPtr == currentFramePushed());
+    MOZ_ASSERT(stackBefore - StackSizeOfPtr == currentStackHeight());
   }
 
   void popFloat32(FloatRegister r) {
-    DebugOnly<uint32_t> stackBefore = currentFramePushed();
+    DebugOnly<uint32_t> stackBefore = currentStackHeight();
 #ifdef RABALDR_CHUNKY_STACK
-    masm.loadFloat32(Address(sp_, stackOffset(currentFramePushed())), r);
+    masm.loadFloat32(Address(sp_, stackOffset(currentStackHeight())), r);
     popChunkyBytes(StackSizeOfFloat);
 #else
     masm.Pop(r);
 #endif
-    MOZ_ASSERT(stackBefore - StackSizeOfFloat == currentFramePushed());
+    MOZ_ASSERT(stackBefore - StackSizeOfFloat == currentStackHeight());
   }
 
   void popDouble(FloatRegister r) {
-    DebugOnly<uint32_t> stackBefore = currentFramePushed();
+    DebugOnly<uint32_t> stackBefore = currentStackHeight();
 #ifdef RABALDR_CHUNKY_STACK
-    masm.loadDouble(Address(sp_, stackOffset(currentFramePushed())), r);
+    masm.loadDouble(Address(sp_, stackOffset(currentStackHeight())), r);
     popChunkyBytes(StackSizeOfDouble);
 #else
     masm.Pop(r);
 #endif
-    MOZ_ASSERT(stackBefore - StackSizeOfDouble == currentFramePushed());
+    MOZ_ASSERT(stackBefore - StackSizeOfDouble == currentStackHeight());
   }
 
   void popBytes(size_t bytes) {
@@ -1507,54 +1689,6 @@ class BaseStackFrame {
       popChunkyBytes(bytes);
 #else
       masm.freeStack(bytes);
-#endif
-    }
-  }
-
-  
-  
-  
-  
-  
-
-  void popStackBeforeBranch(StackHeight destStackHeight) {
-    uint32_t framePushedHere = masm.framePushed();
-    uint32_t framePushedThere = framePushedForHeight(destStackHeight);
-    if (framePushedHere > framePushedThere) {
-      masm.addToStackPtr(Imm32(framePushedHere - framePushedThere));
-    }
-  }
-
-  bool willPopStackBeforeBranch(StackHeight destStackHeight) {
-    uint32_t framePushedHere = masm.framePushed();
-    uint32_t framePushedThere = framePushedForHeight(destStackHeight);
-    return framePushedHere > framePushedThere;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-
-  void popStackOnBlockExit(StackHeight destStackHeight, bool deadCode) {
-    uint32_t stackHeightHere = currentFramePushed();
-    uint32_t stackHeightThere = destStackHeight.height;
-    if (stackHeightHere > stackHeightThere) {
-#ifdef RABALDR_CHUNKY_STACK
-      if (deadCode) {
-        setStackHeight(destStackHeight);
-      } else {
-        popChunkyBytes(stackHeightHere - stackHeightThere);
-      }
-#else
-      if (deadCode) {
-        masm.setFramePushed(stackHeightThere);
-      } else {
-        masm.freeStack(stackHeightHere - stackHeightThere);
-      }
 #endif
     }
   }
@@ -1591,44 +1725,6 @@ class BaseStackFrame {
   void loadStackF32(int32_t offset, RegF32 dest) {
     masm.loadFloat32(Address(sp_, stackOffset(offset)), dest);
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  void allocArgArea(size_t argSize) {
-    if (argSize) {
-      masm.reserveStack(argSize);
-    }
-  }
-
-  
-  
-  
-  
-  void freeArgAreaAndPopBytes(size_t argSize, size_t dropSize) {
-#ifdef RABALDR_CHUNKY_STACK
-    
-    
-    if (argSize) {
-      masm.freeStack(argSize);
-    }
-    popChunkyBytes(dropSize);
-#else
-    if (argSize + dropSize) {
-      masm.freeStack(argSize + dropSize);
-    }
-#endif
-  }
 };
 
 void BaseStackFrame::zeroLocals(BaseRegAlloc* ra) {
@@ -1655,7 +1751,6 @@ void BaseStackFrame::zeroLocals(BaseRegAlloc* ra) {
   MOZ_ASSERT(low % wordSize == 0);
 
   const uint32_t high = AlignBytes(varHigh_, wordSize);
-  MOZ_ASSERT(high <= localSize_, "localSize_ should be aligned at least that");
 
   
   
@@ -3458,6 +3553,7 @@ class BaseCompiler final : public BaseCompilerInterface {
 
     fr.checkStack(ABINonArgReg0, BytecodeOffset(func_.lineOrBytecode));
     masm.reserveStack(fr.fixedSize() - masm.framePushed());
+    fr.onFixedStackAllocated();
 
     
 
@@ -11151,7 +11247,6 @@ bool js::wasm::BaselineCompileFunctions(const ModuleEnvironment& env,
   return code->swap(masm);
 }
 
-#undef CHUNKY_INVARIANT
 #undef RABALDR_INT_DIV_I64_CALLOUT
 #undef RABALDR_I64_TO_FLOAT_CALLOUT
 #undef RABALDR_FLOAT_TO_I64_CALLOUT
