@@ -146,10 +146,8 @@ SessionAccessibility::GetInstanceFor(Accessible* aAccessible)
   vm->GetRootWidget(getter_AddRefs(rootWidget));
   
   
-  if (rootWidget &&
-      rootWidget->WindowType() == nsWindowType::eWindowType_toplevel &&
-      rootWidget->GetNativeData(NS_NATIVE_WIDGET) == rootWidget) {
-    return static_cast<nsWindow*>(rootWidget.get())->GetSessionAccessibility();
+  if (RefPtr<nsWindow> window = nsWindow::From(rootWidget)) {
+    return window->GetSessionAccessibility();
   }
 
   return nullptr;

@@ -618,18 +618,7 @@ nsAppShell::Observe(nsISupports* aSubject,
         
         nsCOMPtr<nsIDocument> doc = do_QueryInterface(aSubject);
         MOZ_ASSERT(doc);
-        nsCOMPtr<nsIWidget> widget =
-            widget::WidgetUtils::DOMWindowToWidget(doc->GetWindow());
-
-        
-        
-        
-        
-        
-        
-        if (widget &&
-            widget->WindowType() == nsWindowType::eWindowType_toplevel &&
-            widget->GetNativeData(NS_NATIVE_WIDGET) == widget) {
+        if (const RefPtr<nsWindow> window = nsWindow::From(doc->GetWindow())) {
             if (jni::IsAvailable()) {
                 
                 
@@ -637,7 +626,6 @@ nsAppShell::Observe(nsISupports* aSubject,
                         java::GeckoThread::State::PROFILE_READY(),
                         java::GeckoThread::State::RUNNING());
             }
-            const auto window = static_cast<nsWindow*>(widget.get());
             window->OnGeckoViewReady();
         }
     } else if (!strcmp(aTopic, "quit-application")) {

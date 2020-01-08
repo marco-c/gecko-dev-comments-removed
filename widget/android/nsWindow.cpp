@@ -1263,10 +1263,8 @@ nsWindow::GeckoViewSupport::Open(const jni::Class::LocalRef& aCls,
 
     nsCOMPtr<nsPIDOMWindowOuter> pdomWindow =
             nsPIDOMWindowOuter::From(domWindow);
-    nsCOMPtr<nsIWidget> widget = WidgetUtils::DOMWindowToWidget(pdomWindow);
-    MOZ_ASSERT(widget);
-
-    const auto window = static_cast<nsWindow*>(widget.get());
+    const RefPtr<nsWindow> window = nsWindow::From(pdomWindow);
+    MOZ_ASSERT(window);
     window->SetScreenId(aScreenId);
 
     
@@ -1402,6 +1400,32 @@ nsWindow::InitNatives()
 
     GeckoEditableSupport::Init();
     a11y::SessionAccessibility::Init();
+}
+
+ already_AddRefed<nsWindow>
+nsWindow::From(nsPIDOMWindowOuter* aDOMWindow)
+{
+    nsCOMPtr<nsIWidget> widget = WidgetUtils::DOMWindowToWidget(aDOMWindow);
+    return From(widget);
+}
+
+ already_AddRefed<nsWindow>
+nsWindow::From(nsIWidget* aWidget)
+{
+    
+    
+    
+    
+    
+    
+    if (aWidget &&
+        aWidget->WindowType() == nsWindowType::eWindowType_toplevel &&
+        aWidget->GetNativeData(NS_NATIVE_WIDGET) == aWidget) {
+
+        RefPtr<nsWindow> window = static_cast<nsWindow*>(aWidget);
+        return window.forget();
+    }
+    return nullptr;
 }
 
 nsWindow*
