@@ -65,6 +65,8 @@ var DownloadHistory = {
 
 
   getList({type = Downloads.PUBLIC, maxHistoryResults} = {}) {
+    DownloadCache.ensureInitialized();
+
     let key = `${type}|${maxHistoryResults ? maxHistoryResults : -1}`;
     if (!this._listPromises[key]) {
       this._listPromises[key] = Downloads.getList(type).then(list => {
@@ -92,33 +94,7 @@ var DownloadHistory = {
       return;
     }
 
-    let targetFile = new FileUtils.File(download.target.path);
-    let targetUri = Services.io.newFileURI(targetFile);
-
-    let originalPageInfo = await PlacesUtils.history.fetch(download.source.url);
-
-    let pageInfo = await PlacesUtils.history.insert({
-      url: download.source.url,
-      
-      
-      
-      
-      title: (originalPageInfo && originalPageInfo.title) || targetFile.leafName,
-      visits: [{
-        
-        date: download.startTime,
-        transition: PlacesUtils.history.TRANSITIONS.DOWNLOAD,
-        referrer: download.source.referrer,
-      }]
-    });
-
-    await PlacesUtils.history.update({
-      annotations: new Map([["downloads/destinationFileURI", targetUri.spec]]),
-      
-      
-      guid: pageInfo.guid,
-      url: pageInfo.url,
-    });
+    await DownloadCache.addDownload(download);
 
     await this._updateHistoryListData(download.source.url);
   },
@@ -163,49 +139,19 @@ var DownloadHistory = {
         download.error.reputationCheckVerdict;
     }
 
-    try {
-      await PlacesUtils.history.update({
-        annotations: new Map([[METADATA_ANNO, JSON.stringify(metaData)]]),
-        url: download.source.url,
-      });
+    
+    
+    await DownloadCache.setMetadata(download.source.url, metaData);
 
-      await this._updateHistoryListData(download.source.url);
-    } catch (ex) {
-      Cu.reportError(ex);
-    }
+    await this._updateHistoryListData(download.source.url);
   },
 
   async _updateHistoryListData(sourceUrl) {
     for (let key of Object.getOwnPropertyNames(this._listPromises)) {
       let downloadHistoryList = await this._listPromises[key];
-      downloadHistoryList.updateForMetadataChange(sourceUrl);
+      downloadHistoryList.updateForMetaDataChange(sourceUrl,
+        DownloadCache.get(sourceUrl));
     }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  getPlacesMetaDataFor(spec) {
-    let metaData = {};
-
-    try {
-      let uri = Services.io.newURI(spec);
-      try {
-        metaData = JSON.parse(PlacesUtils.annotations.getPageAnnotation(
-                                          uri, METADATA_ANNO));
-      } catch (ex) {}
-      metaData.targetFileSpec = PlacesUtils.annotations.getPageAnnotation(
-                                            uri, DESTINATIONFILEURI_ANNO);
-    } catch (ex) {}
-
-    return metaData;
   },
 };
 
@@ -222,41 +168,149 @@ var DownloadHistory = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-XPCOMUtils.defineLazyGetter(this, "gCachedPlacesMetaData", function() {
-  let placesMetaData = new Map();
+var DownloadCache = {
+  _data: new Map(),
+  _initialized: false,
 
   
-  for (let result of PlacesUtils.annotations.getAnnotationsWithName(
-                                             METADATA_ANNO)) {
-    try {
-      placesMetaData.set(result.uri.spec, JSON.parse(result.annotationValue));
-    } catch (ex) {}
-  }
 
-  
-  for (let result of PlacesUtils.annotations.getAnnotationsWithName(
-                                             DESTINATIONFILEURI_ANNO)) {
-    let metaData = placesMetaData.get(result.uri.spec);
-    if (!metaData) {
-      metaData = {};
-      placesMetaData.set(result.uri.spec, metaData);
+
+  ensureInitialized() {
+    if (this._initialized) {
+      return;
     }
-    metaData.targetFileSpec = result.annotationValue;
-  }
+    this._initialized = true;
 
-  return placesMetaData;
-});
+    PlacesUtils.history.addObserver(this, true);
+
+    
+    for (let result of PlacesUtils.annotations.getAnnotationsWithName(
+                                               METADATA_ANNO)) {
+      try {
+        this._data.set(result.uri.spec, JSON.parse(result.annotationValue));
+      } catch (ex) {}
+    }
+
+    
+    for (let result of PlacesUtils.annotations.getAnnotationsWithName(
+                                               DESTINATIONFILEURI_ANNO)) {
+      let newData = this.get(result.uri.spec);
+      newData.targetFileSpec = result.annotationValue;
+      this._data.set(result.uri.spec, newData);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  get(url) {
+    return this._data.get(url) || {};
+  },
+
+  
+
+
+
+
+  async addDownload(download) {
+    this.ensureInitialized();
+
+    let targetFile = new FileUtils.File(download.target.path);
+    let targetUri = Services.io.newFileURI(targetFile);
+
+    
+    
+    
+    
+    this._data.set(download.source.url, { targetFileSpec: targetUri.spec });
+
+    let originalPageInfo = await PlacesUtils.history.fetch(download.source.url);
+
+    let pageInfo = await PlacesUtils.history.insert({
+      url: download.source.url,
+      
+      
+      
+      
+      title: (originalPageInfo && originalPageInfo.title) || targetFile.leafName,
+      visits: [{
+        
+        date: download.startTime,
+        transition: PlacesUtils.history.TRANSITIONS.DOWNLOAD,
+        referrer: download.source.referrer,
+      }]
+    });
+
+    await PlacesUtils.history.update({
+      annotations: new Map([["downloads/destinationFileURI", targetUri.spec]]),
+      
+      
+      guid: pageInfo.guid,
+      url: pageInfo.url,
+    });
+  },
+
+  
+
+
+
+
+
+
+
+  async setMetadata(url, metadata) {
+    this.ensureInitialized();
+
+    
+    
+    let existingData = this.get(url);
+    let newData = { ...metadata };
+    if ("targetFileSpec" in existingData) {
+      newData.targetFileSpec = existingData.targetFileSpec;
+    }
+    this._data.set(url, newData);
+
+    try {
+      await PlacesUtils.history.update({
+        annotations: new Map([[METADATA_ANNO, JSON.stringify(metadata)]]),
+        url,
+      });
+    } catch (ex) {
+      Cu.reportError(ex);
+    }
+  },
+
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsINavHistoryObserver,
+    Ci.nsISupportsWeakReference
+  ]),
+
+  
+  onDeleteURI(uri) {
+    this._data.delete(uri.spec);
+  },
+  onClearHistory() {
+    this._data.clear();
+  },
+  onBeginUpdateBatch() {},
+  onEndUpdateBatch() {},
+  onTitleChanged() {},
+  onFrecencyChanged() {},
+  onManyFrecenciesChanged() {},
+  onPageChanged() {},
+  onDeleteVisits() {},
+};
 
 
 
@@ -511,7 +565,8 @@ this.DownloadHistoryList.prototype = {
 
 
 
-  updateForMetadataChange(sourceUrl) {
+
+  updateForMetaDataChange(sourceUrl, metaData) {
     let slotsForUrl = this._slotsForUrl.get(sourceUrl);
     if (!slotsForUrl) {
       return;
@@ -522,8 +577,7 @@ this.DownloadHistoryList.prototype = {
         
         return;
       }
-      slot.historyDownload.updateFromMetaData(
-        DownloadHistory.getPlacesMetaDataFor(sourceUrl));
+      slot.historyDownload.updateFromMetaData(metaData);
       this._notifyAllViews("onDownloadChanged", slot.download);
     }
   },
@@ -602,9 +656,7 @@ this.DownloadHistoryList.prototype = {
     
     
     let historyDownload = new HistoryDownload(placesNode);
-    historyDownload.updateFromMetaData(
-      gCachedPlacesMetaData.get(placesNode.uri) ||
-      DownloadHistory.getPlacesMetaDataFor(placesNode.uri));
+    historyDownload.updateFromMetaData(DownloadCache.get(placesNode.uri));
     let slot = new DownloadSlot(this);
     slot.historyDownload = historyDownload;
     this._insertSlot({ slot, slotsForUrl, index: this._firstSessionSlotIndex });
@@ -684,16 +736,6 @@ this.DownloadHistoryList.prototype = {
     
     
     
-    
-    
-    
-    
-    gCachedPlacesMetaData.delete(url);
-
-    
-    
-    
-    
     let slot = [...slotsForUrl][0];
     if (slot && !slot.sessionDownload) {
       
@@ -719,6 +761,8 @@ this.DownloadHistoryList.prototype = {
     let slot = this._slotForDownload.get(download);
     this._removeSlot({ slot, slotsForUrl });
 
+    this._slotForDownload.delete(download);
+
     
     
     if (slotsForUrl.size == 0 && slot.historyDownload) {
@@ -728,14 +772,12 @@ this.DownloadHistoryList.prototype = {
       
       
       slot.historyDownload.updateFromMetaData(
-        DownloadHistory.getPlacesMetaDataFor(url));
+        DownloadCache.get(url));
       slot.sessionDownload = null;
       
       this._insertSlot({ slot, slotsForUrl,
                          index: this._firstSessionSlotIndex });
     }
-
-    this._slotForDownload.delete(download);
   },
 
   
