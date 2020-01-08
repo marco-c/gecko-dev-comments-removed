@@ -88,10 +88,6 @@ class Selection;
 
 
 
-typedef mozilla::EnumSet<mozilla::gfx::CompositionOp> BlendModeSet;
-
-
-
 
 
 
