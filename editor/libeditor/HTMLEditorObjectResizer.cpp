@@ -371,72 +371,100 @@ HTMLEditor::HideResizers()
 
   NS_NAMED_LITERAL_STRING(mousedown, "mousedown");
 
+  
+  
+  
+  
+  ManualNACPtr topLeftHandle(std::move(mTopLeftHandle));
+  ManualNACPtr topHandle(std::move(mTopHandle));
+  ManualNACPtr topRightHandle(std::move(mTopRightHandle));
+  ManualNACPtr leftHandle(std::move(mLeftHandle));
+  ManualNACPtr rightHandle(std::move(mRightHandle));
+  ManualNACPtr bottomLeftHandle(std::move(mBottomLeftHandle));
+  ManualNACPtr bottomHandle(std::move(mBottomHandle));
+  ManualNACPtr bottomRightHandle(std::move(mBottomRightHandle));
+  ManualNACPtr resizingShadow(std::move(mResizingShadow));
+  ManualNACPtr resizingInfo(std::move(mResizingInfo));
+  RefPtr<Element> activatedHandle(std::move(mActivatedHandle));
+  nsCOMPtr<nsIDOMEventListener> mouseMotionListener(
+                                  std::move(mMouseMotionListenerP));
+  nsCOMPtr<nsIDOMEventListener> resizeEventListener(
+                                  std::move(mResizeEventListenerP));
+  RefPtr<Element> resizedObject(std::move(mResizedObject));
+
+  
   RemoveListenerAndDeleteRef(mousedown, mEventListener, true,
-                             std::move(mTopLeftHandle), presShell);
+                             std::move(topLeftHandle), presShell);
 
   RemoveListenerAndDeleteRef(mousedown, mEventListener, true,
-                             std::move(mTopHandle), presShell);
+                             std::move(topHandle), presShell);
 
   RemoveListenerAndDeleteRef(mousedown, mEventListener, true,
-                             std::move(mTopRightHandle), presShell);
+                             std::move(topRightHandle), presShell);
 
   RemoveListenerAndDeleteRef(mousedown, mEventListener, true,
-                             std::move(mLeftHandle), presShell);
+                             std::move(leftHandle), presShell);
 
   RemoveListenerAndDeleteRef(mousedown, mEventListener, true,
-                             std::move(mRightHandle), presShell);
+                             std::move(rightHandle), presShell);
 
   RemoveListenerAndDeleteRef(mousedown, mEventListener, true,
-                             std::move(mBottomLeftHandle), presShell);
+                             std::move(bottomLeftHandle), presShell);
 
   RemoveListenerAndDeleteRef(mousedown, mEventListener, true,
-                             std::move(mBottomHandle), presShell);
+                             std::move(bottomHandle), presShell);
 
   RemoveListenerAndDeleteRef(mousedown, mEventListener, true,
-                             std::move(mBottomRightHandle), presShell);
+                             std::move(bottomRightHandle), presShell);
 
   RemoveListenerAndDeleteRef(mousedown, mEventListener, true,
-                             std::move(mResizingShadow), presShell);
+                             std::move(resizingShadow), presShell);
 
   RemoveListenerAndDeleteRef(mousedown, mEventListener, true,
-                             std::move(mResizingInfo), presShell);
+                             std::move(resizingInfo), presShell);
 
-  if (mActivatedHandle) {
-    mActivatedHandle->UnsetAttr(kNameSpaceID_None, nsGkAtoms::_moz_activated,
-                                true);
-    mActivatedHandle = nullptr;
+  
+  if (activatedHandle) {
+    activatedHandle->UnsetAttr(kNameSpaceID_None, nsGkAtoms::_moz_activated,
+                               true);
   }
 
   
+  resizedObject->UnsetAttr(kNameSpaceID_None, nsGkAtoms::_moz_resizing, true);
 
   
   nsCOMPtr<EventTarget> target = GetDOMEventTarget();
   NS_WARNING_ASSERTION(target, "GetDOMEventTarget() returned nullptr");
 
-  if (target && mMouseMotionListenerP) {
+  if (target && mouseMotionListener) {
     target->RemoveEventListener(NS_LITERAL_STRING("mousemove"),
-                                mMouseMotionListenerP, true);
+                                mouseMotionListener, true);
   }
-  mMouseMotionListenerP = nullptr;
+
+  
+  if (!resizeEventListener) {
+    return NS_OK;
+  }
 
   nsCOMPtr<nsIDocument> doc = GetDocument();
   if (NS_WARN_IF(!doc)) {
     return NS_ERROR_NULL_POINTER;
   }
-  NS_WARNING_ASSERTION(doc->GetWindow(), "There should be a window");
-  target = do_QueryInterface(doc->GetWindow());
-  if (NS_WARN_IF(!target)) {
+
+  
+  
+  
+  nsPIDOMWindowOuter* window = doc->GetWindow();
+  if (NS_WARN_IF(!window)) {
+    return NS_OK;
+  }
+
+  nsCOMPtr<EventTarget> targetOfWindow = do_QueryInterface(window);
+  if (NS_WARN_IF(!targetOfWindow)) {
     return NS_ERROR_NULL_POINTER;
   }
-
-  if (mResizeEventListenerP) {
-    target->RemoveEventListener(NS_LITERAL_STRING("resize"),
-                                mResizeEventListenerP, false);
-  }
-  mResizeEventListenerP = nullptr;
-
-  mResizedObject->UnsetAttr(kNameSpaceID_None, nsGkAtoms::_moz_resizing, true);
-  mResizedObject = nullptr;
+  targetOfWindow->RemoveEventListener(NS_LITERAL_STRING("resize"),
+                                      resizeEventListener, false);
 
   return NS_OK;
 }
