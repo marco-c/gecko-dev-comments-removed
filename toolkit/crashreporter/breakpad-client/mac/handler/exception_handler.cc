@@ -41,8 +41,6 @@
 #include "common/mac/scoped_task_suspend-inl.h"
 #include "google_breakpad/common/minidump_exception_mac.h"
 
-#include "mozilla/RecordReplay.h"
-
 #ifndef __EXCEPTIONS
 
 
@@ -639,21 +637,6 @@ void ExceptionHandler::SignalHandler(int sig, siginfo_t* info, void* uc) {
 #endif
 }
 
-
-bool ExceptionHandler::WriteForwardedExceptionMinidump(int exception_type,
-						       int exception_code,
-						       int exception_subcode,
-						       mach_port_t thread)
-{
-  if (!gProtectedData.handler) {
-    return false;
-  }
-  return gProtectedData.handler->WriteMinidumpWithException(exception_type, exception_code,
-							    exception_subcode, NULL, thread,
-							     false,
-							     true);
-}
-
 bool ExceptionHandler::InstallHandler() {
   
   if (gProtectedData.handler != NULL) {
@@ -688,12 +671,6 @@ bool ExceptionHandler::InstallHandler() {
   }
   catch (std::bad_alloc) {
     return false;
-  }
-
-  
-  
-  if (mozilla::recordreplay::IsReplaying()) {
-    return true;
   }
 
   
@@ -785,9 +762,7 @@ bool ExceptionHandler::Setup(bool install_handler) {
     if (!InstallHandler())
       return false;
 
-  
-  
-  if (result == KERN_SUCCESS && !mozilla::recordreplay::IsReplaying()) {
+  if (result == KERN_SUCCESS) {
     
     pthread_attr_t attr;
     pthread_attr_init(&attr);

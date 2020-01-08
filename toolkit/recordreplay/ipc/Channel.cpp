@@ -164,13 +164,7 @@ Channel::SendMessage(const Message& aMsg)
   size_t nbytes = aMsg.mSize;
   while (nbytes) {
     int rv = HANDLE_EINTR(send(mFd, ptr, nbytes, 0));
-    if (rv < 0) {
-      
-      
-      
-      MOZ_RELEASE_ASSERT(errno == EPIPE);
-      return;
-    }
+    MOZ_RELEASE_ASSERT((size_t) rv <= nbytes);
     ptr += rv;
     nbytes -= rv;
   }

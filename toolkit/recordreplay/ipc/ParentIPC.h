@@ -38,9 +38,6 @@ const char* SaveAllRecordingsDirectory();
 
 
 
-base::ProcessId ParentProcessId();
-
-
 void SaveRecording(const ipc::FileDescriptor& aFile);
 
 

@@ -61,6 +61,9 @@ void NotifyFlushedRecording();
 void NotifyAlwaysMarkMajorCheckpoints();
 
 
+void ReportFatalError(const char* aFormat, ...);
+
+
 void BeginIdleTime();
 void EndIdleTime();
 

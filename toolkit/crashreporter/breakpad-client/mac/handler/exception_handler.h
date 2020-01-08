@@ -156,12 +156,6 @@ class ExceptionHandler {
 				    void *callback_context);
 
   
-  static bool WriteForwardedExceptionMinidump(int exception_type,
-					      int exception_code,
-					      int exception_subcode,
-					      mach_port_t thread);
-
-  
   bool IsOutOfProcess() const {
 #if TARGET_OS_IPHONE
     return false;

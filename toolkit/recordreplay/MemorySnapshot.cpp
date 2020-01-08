@@ -304,7 +304,7 @@ struct MemoryInfo {
   
   
   
-  static const size_t MaxInitialUntrackedRegions = 512;
+  static const size_t MaxInitialUntrackedRegions = 256;
   AllocatedMemoryRegion mInitialUntrackedRegions[MaxInitialUntrackedRegions];
   SpinLock mInitialUntrackedRegionsLock;
 
@@ -410,7 +410,7 @@ CountdownThreadMain(void*)
     if (gMemoryInfo->mCountdown && --gMemoryInfo->mCountdown == 0) {
       
       
-      child::ReportFatalError(Nothing(), "CountdownThread activated");
+      child::ReportFatalError("CountdownThread activated");
     }
     ThreadYield();
   }
@@ -665,13 +665,11 @@ HandleDirtyMemoryFault(uint8_t* aAddress)
 void
 UnrecoverableSnapshotFailure()
 {
-  if (gMemoryInfo) {
-    AutoSpinLock lock(gMemoryInfo->mTrackedRegionsLock);
-    DirectUnprotectMemory(PageBase(&errno), PageSize, false);
-    for (auto region : gMemoryInfo->mTrackedRegionsByAllocationOrder) {
-      DirectUnprotectMemory(region.mBase, region.mSize, region.mExecutable,
-                             true);
-    }
+  AutoSpinLock lock(gMemoryInfo->mTrackedRegionsLock);
+  DirectUnprotectMemory(PageBase(&errno), PageSize, false);
+  for (auto region : gMemoryInfo->mTrackedRegionsByAllocationOrder) {
+    DirectUnprotectMemory(region.mBase, region.mSize, region.mExecutable,
+                           true);
   }
 }
 
@@ -728,80 +726,13 @@ RemoveInitialUntrackedRegion(uint8_t* aBase, size_t aSize)
   MOZ_CRASH();
 }
 
-
-
-
-
-
-static bool
-QueryRegion(uint8_t** aAddress, size_t* aSize,
-            int* aProtection = nullptr, int* aMaxProtection = nullptr)
-{
-  mach_vm_address_t addr = (mach_vm_address_t) *aAddress;
-  mach_vm_size_t nbytes;
-
-  vm_region_basic_info_64 info;
-  mach_msg_type_number_t info_count = sizeof(vm_region_basic_info_64);
-  mach_port_t some_port;
-  kern_return_t rv = mach_vm_region(mach_task_self(), &addr, &nbytes, VM_REGION_BASIC_INFO,
-                                    (vm_region_info_t) &info, &info_count, &some_port);
-  if (rv == KERN_INVALID_ADDRESS) {
-    return false;
-  }
-  MOZ_RELEASE_ASSERT(rv == KERN_SUCCESS);
-
-  *aAddress = (uint8_t*) addr;
-  *aSize = nbytes;
-  if (aProtection) {
-    *aProtection = info.protection;
-  }
-  if (aMaxProtection) {
-    *aMaxProtection = info.max_protection;
-  }
-  return true;
-}
-
 static void
 MarkThreadStacksAsUntracked()
 {
-  AutoPassThroughThreadEvents pt;
-
   
   for (size_t i = MainThreadId; i <= MaxThreadId; i++) {
     Thread* thread = Thread::GetById(i);
-    if (!thread->StackBase()) {
-      continue;
-    }
-
     AddInitialUntrackedMemoryRegion(thread->StackBase(), thread->StackSize());
-
-    
-    
-    
-    
-    
-    
-
-    
-    uint8_t* base = thread->StackBase();
-    size_t size;
-    if (!QueryRegion(&base, &size)) {
-      MOZ_CRASH("Could not find memory region information for thread stack");
-    }
-
-    
-    
-    MOZ_RELEASE_ASSERT(base <= thread->StackBase());
-    MOZ_RELEASE_ASSERT(base + size >= thread->StackBase() + thread->StackSize());
-
-    uint8_t* trailing = base + size;
-    size_t trailingSize;
-    int protection;
-    if (QueryRegion(&trailing, &trailingSize, &protection)) {
-      if (trailing == base + size && protection == 0) {
-        AddInitialUntrackedMemoryRegion(trailing, trailingSize);
-      }
-    }
   }
 }
 
@@ -898,7 +829,6 @@ AddInitialTrackedMemoryRegions(uint8_t* aAddress, size_t aSize, bool aExecutable
 static void UpdateNumTrackedRegionsForSnapshot();
 
 
-
 static void
 ProcessAllInitialMemoryRegions()
 {
@@ -906,21 +836,26 @@ ProcessAllInitialMemoryRegions()
 
   {
     AutoPassThroughThreadEvents pt;
-    for (uint8_t* addr = nullptr;;) {
-      size_t size;
-      int maxProtection;
-      if (!QueryRegion(&addr, &size, nullptr, &maxProtection)) {
+    for (mach_vm_address_t addr = 0;;) {
+      mach_vm_size_t nbytes;
+
+      vm_region_basic_info_64 info;
+      mach_msg_type_number_t info_count = sizeof(vm_region_basic_info_64);
+      mach_port_t some_port;
+      kern_return_t rv = mach_vm_region(mach_task_self(), &addr, &nbytes, VM_REGION_BASIC_INFO,
+                                        (vm_region_info_t) &info, &info_count, &some_port);
+      if (rv == KERN_INVALID_ADDRESS) {
         break;
       }
+      MOZ_RELEASE_ASSERT(rv == KERN_SUCCESS);
 
-      
-      
-      if (maxProtection & VM_PROT_WRITE) {
-        MOZ_RELEASE_ASSERT(maxProtection & VM_PROT_READ);
-        AddInitialTrackedMemoryRegions(addr, size, maxProtection & VM_PROT_EXECUTE);
+      if (info.max_protection & VM_PROT_WRITE) {
+        MOZ_RELEASE_ASSERT(info.max_protection & VM_PROT_READ);
+        AddInitialTrackedMemoryRegions(reinterpret_cast<uint8_t*>(addr), nbytes,
+                                       info.max_protection & VM_PROT_EXECUTE);
       }
 
-      addr += size;
+      addr += nbytes;
     }
   }
 
@@ -1129,14 +1064,14 @@ CheckFixedMemory(void* aAddress, size_t aSize)
         gMemoryInfo->mTrackedRegions.lookupClosestLessOrEqual(page);
       if (!region.isSome() ||
           !MemoryContains(region.ref().mBase, region.ref().mSize, page, PageSize)) {
-        MOZ_CRASH("Fixed memory is not tracked!");
+        child::ReportFatalError("Fixed memory is not tracked!");
       }
     }
   }
 
   
   if (gFreeRegions.Intersects(aAddress, aSize)) {
-    MOZ_CRASH("Fixed memory is currently free!");
+    child::ReportFatalError("Fixed memory is currently free!");
   }
 }
 
