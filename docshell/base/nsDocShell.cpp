@@ -311,9 +311,10 @@ DecreasePrivateDocShellCount()
   }
 }
 
-nsDocShell::nsDocShell()
+nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext)
   : nsDocLoader()
   , mContentWindowID(NextWindowID())
+  , mBrowsingContext(aBrowsingContext)
   , mForcedCharset(nullptr)
   , mParentCharset(nullptr)
   , mTreeOwner(nullptr)
@@ -324,7 +325,7 @@ nsDocShell::nsDocShell()
   , mParentCharsetSource(0)
   , mMarginWidth(-1)
   , mMarginHeight(-1)
-  , mItemType(typeContent)
+  , mItemType(aBrowsingContext->IsContent() ? typeContent : typeChrome)
   , mPreviousEntryIndex(-1)
   , mLoadedEntryIndex(-1)
   , mChildOffset(0)
@@ -361,7 +362,7 @@ nsDocShell::nsDocShell()
   , mUseStrictSecurityChecks(false)
   , mObserveErrorPages(true)
   , mCSSErrorReportingEnabled(false)
-  , mAllowAuth(true)
+  , mAllowAuth(mItemType == typeContent)
   , mAllowKeywordFixup(false)
   , mIsOffScreenBrowser(false)
   , mIsActive(true)
@@ -460,8 +461,7 @@ nsDocShell::Create(BrowsingContext* aBrowsingContext)
   MOZ_ASSERT(aBrowsingContext, "DocShell without a BrowsingContext!");
 
   nsresult rv;
-  RefPtr<nsDocShell> ds = new nsDocShell();
-  ds->mBrowsingContext = aBrowsingContext;
+  RefPtr<nsDocShell> ds = new nsDocShell(aBrowsingContext);
 
   
   rv = ds->nsDocLoader::Init();
@@ -505,9 +505,6 @@ nsDocShell::Create(BrowsingContext* aBrowsingContext)
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return nullptr;
   }
-
-  
-  ds->SetItemType(aBrowsingContext->IsContent() ? typeContent : typeChrome);
 
   
   RefPtr<BrowsingContext> parent = aBrowsingContext->GetParent();
@@ -2597,34 +2594,8 @@ nsDocShell::GetItemType(int32_t* aItemType)
 {
   NS_ENSURE_ARG_POINTER(aItemType);
 
-  *aItemType = ItemType();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocShell::SetItemType(int32_t aItemType)
-{
-  NS_ENSURE_ARG((aItemType == typeChrome) || (typeContent == aItemType));
-
-  
-  
-  nsCOMPtr<nsIDocumentLoader> docLoaderService =
-    do_GetService(NS_DOCUMENTLOADER_SERVICE_CONTRACTID);
-  NS_ENSURE_TRUE(docLoaderService, NS_ERROR_UNEXPECTED);
-
-  NS_ENSURE_STATE(!mParent || mParent == docLoaderService);
-
-  mItemType = aItemType;
-
-  
-  mAllowAuth = mItemType == typeContent;
-
-  RefPtr<nsPresContext> presContext = nullptr;
-  GetPresContext(getter_AddRefs(presContext));
-  if (presContext) {
-    presContext->UpdateIsChrome();
-  }
-
+  MOZ_DIAGNOSTIC_ASSERT((mBrowsingContext->IsContent() ? typeContent : typeChrome) == mItemType);
+  *aItemType = mItemType;
   return NS_OK;
 }
 

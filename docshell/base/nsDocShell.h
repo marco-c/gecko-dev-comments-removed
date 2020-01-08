@@ -409,7 +409,7 @@ private:
   friend void mozilla::TimelineConsumers::PopMarkers(nsDocShell*,
     JSContext*, nsTArray<dom::ProfileTimelineMarker>&);
 
-  nsDocShell();
+  explicit nsDocShell(mozilla::dom::BrowsingContext* aBrowsingContext);
 
   
   
@@ -1044,8 +1044,7 @@ private:
   int32_t mMarginHeight;
 
   
-  
-  int32_t mItemType;
+  const int32_t mItemType;
 
   
   
