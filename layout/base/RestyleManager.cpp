@@ -1921,9 +1921,9 @@ RestyleManager::AnimationsWithDestroyedFrame
 
 #ifdef DEBUG
 static bool
-IsAnonBox(const nsIFrame& aFrame)
+IsAnonBox(const nsIFrame* aFrame)
 {
-  return aFrame.Style()->IsAnonBox();
+  return aFrame->Style()->IsAnonBox();
 }
 
 static const nsIFrame*
@@ -1937,15 +1937,15 @@ FirstContinuationOrPartOfIBSplit(const nsIFrame* aFrame)
 }
 
 static const nsIFrame*
-ExpectedOwnerForChild(const nsIFrame& aFrame)
+ExpectedOwnerForChild(const nsIFrame* aFrame)
 {
-  const nsIFrame* parent = aFrame.GetParent();
-  if (aFrame.IsTableFrame()) {
+  const nsIFrame* parent = aFrame->GetParent();
+  if (aFrame->IsTableFrame()) {
     MOZ_ASSERT(parent->IsTableWrapperFrame());
     parent = parent->GetParent();
   }
 
-  if (IsAnonBox(aFrame) && !aFrame.IsTextFrame()) {
+  if (IsAnonBox(aFrame) && !aFrame->IsTextFrame()) {
     if (parent->IsLineFrame()) {
       parent = parent->GetParent();
     }
@@ -1953,11 +1953,11 @@ ExpectedOwnerForChild(const nsIFrame& aFrame)
       nullptr : FirstContinuationOrPartOfIBSplit(parent);
   }
 
-  if (aFrame.IsBulletFrame()) {
+  if (aFrame->IsBulletFrame()) {
     return FirstContinuationOrPartOfIBSplit(parent);
   }
 
-  if (aFrame.IsLineFrame()) {
+  if (aFrame->IsLineFrame()) {
     
     
     
@@ -1967,7 +1967,7 @@ ExpectedOwnerForChild(const nsIFrame& aFrame)
     return parent;
   }
 
-  if (aFrame.IsLetterFrame()) {
+  if (aFrame->IsLetterFrame()) {
     
     
     if (parent->IsLineFrame()) {
@@ -1987,13 +1987,13 @@ ExpectedOwnerForChild(const nsIFrame& aFrame)
   
   
   
-  while (parent && (IsAnonBox(*parent) || parent->IsLineFrame())) {
+  while (parent && (IsAnonBox(parent) || parent->IsLineFrame())) {
     auto* pseudo = parent->Style()->GetPseudo();
     if (pseudo == nsCSSAnonBoxes::tableWrapper()) {
       const nsIFrame* tableFrame = parent->PrincipalChildList().FirstChild();
       MOZ_ASSERT(tableFrame->IsTableFrame());
       
-      parent = IsAnonBox(*tableFrame) ? parent->GetParent() : tableFrame;
+      parent = IsAnonBox(tableFrame) ? parent->GetParent() : tableFrame;
     } else {
       
       
@@ -2016,12 +2016,12 @@ ServoRestyleState::AssertOwner(const ServoRestyleState& aParent) const
   
 #ifdef DEBUG
   if (aParent.mOwner) {
-    const nsIFrame* owner = ExpectedOwnerForChild(*mOwner);
+    const nsIFrame* owner = ExpectedOwnerForChild(mOwner);
     if (owner != aParent.mOwner) {
-      MOZ_ASSERT(IsAnonBox(*owner),
+      MOZ_ASSERT(IsAnonBox(owner),
                  "Should only have expected owner weirdness when anon boxes are involved");
       bool found = false;
-      for (; owner; owner = ExpectedOwnerForChild(*owner)) {
+      for (; owner; owner = ExpectedOwnerForChild(owner)) {
         if (owner == aParent.mOwner) {
           found = true;
           break;
@@ -2034,7 +2034,7 @@ ServoRestyleState::AssertOwner(const ServoRestyleState& aParent) const
 }
 
 nsChangeHint
-ServoRestyleState::ChangesHandledFor(const nsIFrame& aFrame) const
+ServoRestyleState::ChangesHandledFor(const nsIFrame* aFrame) const
 {
   if (!mOwner) {
     MOZ_ASSERT(!mChangesHandled);
@@ -2399,7 +2399,7 @@ public:
       uint32_t equalStructs;
       mComputedHint = oldStyle->CalcStyleDifference(&aNewStyle, &equalStructs);
       mComputedHint = NS_RemoveSubsumedHints(
-        mComputedHint, mParentRestyleState.ChangesHandledFor(*aTextFrame));
+        mComputedHint, mParentRestyleState.ChangesHandledFor(aTextFrame));
     }
 
     if (mComputedHint) {
@@ -2515,7 +2515,7 @@ UpdateOneAdditionalComputedStyle(nsIFrame* aFrame,
     aOldContext.CalcStyleDifference(newStyle, &equalStructs);
   if (!aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
     childHint = NS_RemoveSubsumedHints(
-        childHint, aRestyleState.ChangesHandledFor(*aFrame));
+        childHint, aRestyleState.ChangesHandledFor(aFrame));
   }
 
   if (childHint) {
@@ -2685,7 +2685,7 @@ RestyleManager::ProcessPostTraversal(
     } else {
       maybeAnonBoxChild = primaryFrame;
       changeHint = NS_RemoveSubsumedHints(
-        changeHint, aRestyleState.ChangesHandledFor(*styleFrame));
+        changeHint, aRestyleState.ChangesHandledFor(styleFrame));
     }
 
     
