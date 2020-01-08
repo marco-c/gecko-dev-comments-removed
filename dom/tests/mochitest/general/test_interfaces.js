@@ -853,7 +853,7 @@ var interfaceNamesInGlobalScope =
 
     {name: "ScrollAreaEvent", insecureContext: true},
 
-    {name: "SecurityPolicyViolationEvent", insecureContext: true, release: false},
+    {name: "SecurityPolicyViolationEvent", insecureContext: true},
 
     {name: "Selection", insecureContext: true},
 
