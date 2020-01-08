@@ -1,0 +1,143 @@
+
+
+
+
+'use strict';
+
+
+
+
+
+
+
+
+const idlTestObjects = {};
+
+
+function initTrackEvent() {
+  const pc = new RTCPeerConnection();
+  const transceiver = pc.addTransceiver('audio');
+  const { sender, receiver } = transceiver;
+  const { track } = receiver;
+  return new RTCTrackEvent('track', {
+    receiver, track, transceiver
+  });
+}
+
+
+const asyncInitTasks = [
+  asyncInitCertificate,
+  asyncInitTransports,
+  asyncInitMediaStreamTrack,
+];
+
+
+function asyncInitCertificate() {
+  return RTCPeerConnection.generateCertificate({
+    name: 'RSASSA-PKCS1-v1_5',
+    modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]),
+    hash: 'SHA-256'
+  }).then(cert => {
+    idlTestObjects.certificate = cert;
+  });
+}
+
+
+
+
+function asyncInitTransports() {
+  const pc = new RTCPeerConnection();
+  pc.createDataChannel('test');
+
+  
+  return pc.createOffer()
+  .then(offer =>
+    pc.setLocalDescription(offer)
+    .then(() => generateAnswer(offer)))
+  .then(answer => pc.setRemoteDescription(answer))
+  .then(() => {
+    const sctpTransport = pc.sctp;
+    assert_true(sctpTransport instanceof RTCSctpTransport,
+      'Expect pc.sctp to be instance of RTCSctpTransport');
+    idlTestObjects.sctpTransport = sctpTransport;
+
+    const dtlsTransport = sctpTransport.transport;
+    assert_true(dtlsTransport instanceof RTCDtlsTransport,
+      'Expect sctpTransport.transport to be instance of RTCDtlsTransport');
+    idlTestObjects.dtlsTransport = dtlsTransport;
+
+    const iceTransport = dtlsTransport.transport;
+    idlTestObjects.iceTransport = iceTransport;
+  });
+}
+
+
+function asyncInitMediaStreamTrack() {
+  return getNoiseStream({ audio: true })
+    .then(mediaStream => {
+      idlTestObjects.mediaStreamTrack = mediaStream.getTracks()[0];
+    });
+}
+
+
+
+
+function asyncInit() {
+  return Promise.all(asyncInitTasks.map(
+    task => {
+      const t = async_test(`Test driver for ${task.name}`);
+      let promise;
+      t.step(() => {
+        promise = task().then(
+          t.step_func_done(),
+          t.step_func(err =>
+            assert_unreached(`Failed to run ${task.name}: ${err}`)));
+      });
+      return promise;
+    }));
+}
+
+idl_test(
+  ['webrtc'],
+  ['mediacapture-streams', 'dom'],
+  async idlArray => {
+    idlArray.add_objects({
+      RTCPeerConnection: [`new RTCPeerConnection()`],
+      RTCSessionDescription: [`new RTCSessionDescription({ type: 'offer' })`],
+      RTCIceCandidate: [`new RTCIceCandidate({ sdpMid: 1 })`],
+      RTCDataChannel: [`new RTCPeerConnection().createDataChannel('')`],
+      RTCRtpTransceiver: [`new RTCPeerConnection().addTransceiver('audio')`],
+      RTCRtpSender: [`new RTCPeerConnection().addTransceiver('audio').sender`],
+      RTCRtpReceiver: [`new RTCPeerConnection().addTransceiver('audio').receiver`],
+      RTCPeerConnectionIceEvent: [`new RTCPeerConnectionIceEvent('ice')`],
+      RTCPeerConnectionIceErrorEvent: [
+        `new RTCPeerConnectionIceErrorEvent('ice-error', { errorCode: 701 });`
+      ],
+      RTCTrackEvent: [`initTrackEvent()`],
+      RTCErrorEvent: [`new RTCErrorEvent('error')`],
+      RTCDataChannelEvent: [
+        `new RTCDataChannelEvent('channel', {
+          channel: new RTCPeerConnection().createDataChannel('')
+        })`
+      ],
+      
+      RTCCertificate: ['idlTestObjects.certificate'],
+      RTCSctpTransport: ['idlTestObjects.sctpTransport'],
+      RTCDtlsTransport: ['idlTestObjects.dtlsTransport'],
+      RTCIceTransport: ['idlTestObjects.iceTransport'],
+      MediaStreamTrack: ['idlTestObjects.mediaStreamTrack'],
+    });
+    
+
+
+
+
+
+
+
+
+
+    await asyncInit();
+  }
+);
