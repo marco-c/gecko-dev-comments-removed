@@ -15,18 +15,53 @@
 namespace js {
 
 enum PromiseSlots {
+    
     PromiseSlot_Flags = 0,
+
+    
+    
+    
+    
+    
+    
     PromiseSlot_ReactionsOrResult,
+
+    
+    
+    
+    
+    
+    
     PromiseSlot_RejectFunction,
     PromiseSlot_AwaitGenerator = PromiseSlot_RejectFunction,
+
+    
+    
+    
+    
+    
     PromiseSlot_DebugInfo,
+
     PromiseSlots,
 };
 
+
+
 #define PROMISE_FLAG_RESOLVED  0x1
+
+
+
 #define PROMISE_FLAG_FULFILLED 0x2
+
+
+
 #define PROMISE_FLAG_HANDLED   0x4
+
+
+
 #define PROMISE_FLAG_DEFAULT_RESOLVING_FUNCTIONS 0x08
+
+
 #define PROMISE_FLAG_ASYNC    0x10
 
 class AutoSetNewObjectMetadata;
@@ -92,7 +127,10 @@ class PromiseObject : public NativeObject
         return resolutionTime() - allocationTime();
     }
     MOZ_MUST_USE bool dependentPromises(JSContext* cx, MutableHandle<GCVector<Value>> values);
+
+    
     uint64_t getID();
+
     bool isUnhandled() {
         MOZ_ASSERT(state() == JS::PromiseState::Rejected);
         return !(flags() & PROMISE_FLAG_HANDLED);
@@ -113,9 +151,18 @@ class PromiseObject : public NativeObject
 MOZ_MUST_USE JSObject*
 GetWaitForAllPromise(JSContext* cx, const JS::AutoObjectVector& promises);
 
+
+
+
 enum class CreateDependentPromise {
+    
     Always,
+
+    
     SkipIfCtorUnobservable,
+
+    
+    
     Never
 };
 
@@ -144,8 +191,16 @@ MOZ_MUST_USE JSObject*
 PromiseResolve(JSContext* cx, HandleObject constructor, HandleValue value);
 
 
+
+
+
+
 MOZ_MUST_USE PromiseObject*
 CreatePromiseObjectForAsync(JSContext* cx, HandleValue generatorVal);
+
+
+
+
 
 MOZ_MUST_USE bool
 IsPromiseForAsync(JSObject* promise);

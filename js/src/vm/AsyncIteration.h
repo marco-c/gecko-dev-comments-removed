@@ -20,27 +20,49 @@ namespace js {
 
 
 
+
+
+
+
+
+
+
+
+
 JSObject*
 WrapAsyncGeneratorWithProto(JSContext* cx, HandleFunction unwrapped, HandleObject proto);
+
+
 
 JSObject*
 WrapAsyncGenerator(JSContext* cx, HandleFunction unwrapped);
 
+
 bool
 IsWrappedAsyncGenerator(JSFunction* fun);
+
 
 JSFunction*
 GetWrappedAsyncGenerator(JSFunction* unwrapped);
 
+
 JSFunction*
 GetUnwrappedAsyncGenerator(JSFunction* wrapped);
+
 
 MOZ_MUST_USE bool
 AsyncGeneratorAwaitedFulfilled(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
                                HandleValue value);
+
+
 MOZ_MUST_USE bool
 AsyncGeneratorAwaitedRejected(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
                               HandleValue reason);
+
+
+
+
+
 MOZ_MUST_USE bool
 AsyncGeneratorYieldReturnAwaitedFulfilled(JSContext* cx,
                                           Handle<AsyncGeneratorObject*> asyncGenObj,
@@ -52,13 +74,27 @@ AsyncGeneratorYieldReturnAwaitedRejected(JSContext* cx,
 
 class AsyncGeneratorObject;
 
+
+
+
+
+
 class AsyncGeneratorRequest : public NativeObject
 {
   private:
     enum AsyncGeneratorRequestSlots {
+        
+        
+        
+        
         Slot_CompletionKind = 0,
+
+        
         Slot_CompletionValue,
+
+        
         Slot_Promise,
+
         Slots,
     };
 
@@ -68,6 +104,7 @@ class AsyncGeneratorRequest : public NativeObject
         setFixedSlot(Slot_Promise, ObjectValue(*promise));
     }
 
+    
     void clearData() {
         setFixedSlot(Slot_CompletionValue, NullValue());
         setFixedSlot(Slot_Promise, NullValue());
@@ -97,23 +134,50 @@ class AsyncGeneratorObject : public NativeObject
 {
   private:
     enum AsyncGeneratorObjectSlots {
+        
         Slot_State = 0,
+
+        
         Slot_Generator,
+
+        
+        
+        
         Slot_QueueOrRequest,
+
+        
+        
         Slot_CachedRequest,
+
         Slots
     };
 
     enum State {
-        State_SuspendedStart,
-        State_SuspendedYield,
-        State_Executing,
         
+        
+        State_SuspendedStart,
+
+        
+        
+        State_SuspendedYield,
+
+        
+        
+        
+        State_Executing,
+
         
         
         
         State_AwaitingYieldReturn,
+
+        
+        
+        
         State_AwaitingReturn,
+
+        
+        
         State_Completed
     };
 
@@ -267,8 +331,12 @@ class AsyncFromSyncIteratorObject : public NativeObject
 {
   private:
     enum AsyncFromSyncIteratorObjectSlots {
+        
         Slot_Iterator = 0,
+
+        
         Slot_NextMethod = 1,
+
         Slots
     };
 
