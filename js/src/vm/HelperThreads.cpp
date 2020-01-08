@@ -943,7 +943,12 @@ js::CurrentThreadIsParseThread()
 }
 #endif
 
-static const uint32_t kDefaultHelperStackSize = 2048 * 1024;
+
+
+
+
+
+static const uint32_t kDefaultHelperStackSize = 2048 * 1024 - 2 * 4096;
 static const uint32_t kDefaultHelperStackQuota = 1800 * 1024;
 
 
