@@ -7,6 +7,7 @@
 #include "LayerAnimationInfo.h"
 
 #include "nsCSSProps.h" 
+#include "nsCSSPropertyIDSet.h" 
 
 namespace mozilla {
 
@@ -29,6 +30,7 @@ LayerAnimationInfo::Initialize()
                "have the CSSPropFlags::CanAnimateOnCompositor flag");
   }
 
+  nsCSSPropertyIDSet properties;
   
   
   for (nsCSSPropertyID prop = nsCSSPropertyID(0);
@@ -40,6 +42,7 @@ LayerAnimationInfo::Initialize()
       for (const Record& record : sRecords) {
         if (record.mProperty == prop) {
           found = true;
+          properties.AddProperty(record.mProperty);
           break;
         }
       }
@@ -48,6 +51,7 @@ LayerAnimationInfo::Initialize()
                  "flag does not have an entry in LayerAnimationInfo::sRecords");
     }
   }
+  MOZ_ASSERT(properties.Equals(nsCSSPropertyIDSet::CompositorAnimatables()));
 }
 #endif
 
