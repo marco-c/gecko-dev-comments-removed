@@ -549,7 +549,7 @@ HTMLEditor::SplitStyleAbovePoint(nsCOMPtr<nsINode>* aNode,
   }
 
   
-  OwningNonNull<nsIContent> node = *(*aNode)->AsContent();
+  nsCOMPtr<nsIContent> node = (*aNode)->AsContent();
 
   bool useCSS = IsCSSEnabled();
 
@@ -572,7 +572,7 @@ HTMLEditor::SplitStyleAbovePoint(nsCOMPtr<nsINode>* aNode,
         
         (aProperty == nsGkAtoms::href && HTMLEditUtils::IsLink(node)) ||
         
-        (!aProperty && NodeIsProperty(node)) ||
+        (!aProperty && NodeIsProperty(*node)) ||
         
         isSet) {
       
@@ -593,6 +593,9 @@ HTMLEditor::SplitStyleAbovePoint(nsCOMPtr<nsINode>* aNode,
       }
     }
     node = node->GetParent();
+    if (NS_WARN_IF(!node)) {
+      return NS_ERROR_FAILURE;
+    }
   }
 
   return NS_OK;
