@@ -141,7 +141,7 @@ VRDisplayPresentation::~VRDisplayPresentation()
 void VRDisplayPresentation::SubmitFrame()
 {
   for (VRLayerChild *layer : mLayers) {
-    layer->SubmitFrame(mDisplayClient->GetDisplayInfo());
+    layer->SubmitFrame(mDisplayClient->GetDisplayInfo().GetFrameId());
     break; 
   }
 }

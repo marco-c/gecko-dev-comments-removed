@@ -50,38 +50,22 @@ VRLayerChild::Initialize(dom::HTMLCanvasElement* aCanvasElement,
 }
 
 void
-VRLayerChild::SubmitFrame(const VRDisplayInfo& aDisplayInfo)
+VRLayerChild::SubmitFrame(uint64_t aFrameId)
 {
-  uint64_t frameId = aDisplayInfo.GetFrameId();
-
   
   
   
   
-  if (!mCanvasElement || frameId == mLastSubmittedFrameId) {
+  if (!mCanvasElement || aFrameId == mLastSubmittedFrameId) {
     return;
   }
+  mLastSubmittedFrameId = aFrameId;
 
   
   
   mLastFrameTexture = mThisFrameTexture;
 
-#if defined(MOZ_WIDGET_ANDROID)
-  
-
-
-
-
-
-  if (!mThisFrameTexture || aDisplayInfo.mDisplayState.mLastSubmittedFrameId == mLastSubmittedFrameId) {
-      mThisFrameTexture = mCanvasElement->GetVRFrame();
-  }
-#else
   mThisFrameTexture = mCanvasElement->GetVRFrame();
-#endif 
-
-  mLastSubmittedFrameId = frameId;
-
   if (!mThisFrameTexture) {
     return;
   }
@@ -106,7 +90,7 @@ VRLayerChild::SubmitFrame(const VRDisplayInfo& aDisplayInfo)
     return;
   }
 
-  SendSubmitFrame(desc, frameId, mLeftEyeRect, mRightEyeRect);
+  SendSubmitFrame(desc, aFrameId, mLeftEyeRect, mRightEyeRect);
 }
 
 bool
