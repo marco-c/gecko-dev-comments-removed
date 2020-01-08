@@ -1811,50 +1811,8 @@ nsDisplayImage::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilde
   IntSize decodeSize =
     nsLayoutUtils::ComputeImageContainerDrawingParameters(mImage, mFrame, destRect,
                                                           aSc, flags, svgContext);
-
-  RefPtr<layers::ImageContainer> container;
-  ImgDrawResult drawResult =
-    mImage->GetImageContainerAtSize(aManager, decodeSize, svgContext,
-                                    flags, getter_AddRefs(container));
-
-  
-  
-  
-  bool updatePrevImage = false;
-  switch (drawResult) {
-    case ImgDrawResult::NOT_READY:
-    case ImgDrawResult::INCOMPLETE:
-    case ImgDrawResult::TEMPORARY_ERROR:
-      if (mPrevImage && mPrevImage != mImage) {
-        RefPtr<ImageContainer> prevContainer;
-        drawResult = mPrevImage->GetImageContainerAtSize(aManager, decodeSize,
-                                                         svgContext, flags,
-                                                         getter_AddRefs(prevContainer));
-        if (prevContainer && drawResult == ImgDrawResult::SUCCESS) {
-          container = std::move(prevContainer);
-          break;
-        }
-
-        
-        updatePrevImage = true;
-      }
-      break;
-    default:
-      updatePrevImage = mPrevImage != mImage;
-      break;
-  }
-
-  
-  
-  
-  if (updatePrevImage) {
-    mPrevImage = mImage;
-    if (mFrame->IsImageFrame()) {
-      nsImageFrame* f = static_cast<nsImageFrame*>(mFrame);
-      f->mPrevImage = f->mImage;
-    }
-  }
-
+  RefPtr<ImageContainer> container =
+    mImage->GetImageContainerAtSize(aManager, decodeSize, svgContext, flags);
   if (!container) {
     return false;
   }

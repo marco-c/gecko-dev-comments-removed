@@ -46,9 +46,6 @@ namespace image {
 
 
 
-
-
-
 enum class MOZ_MUST_USE_TYPE ImgDrawResult : uint8_t
 {
   SUCCESS,
@@ -57,8 +54,7 @@ enum class MOZ_MUST_USE_TYPE ImgDrawResult : uint8_t
   NOT_READY,
   TEMPORARY_ERROR,
   BAD_IMAGE,
-  BAD_ARGS,
-  NOT_SUPPORTED
+  BAD_ARGS
 };
 
 
