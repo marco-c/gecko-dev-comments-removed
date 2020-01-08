@@ -14,52 +14,52 @@ function run_test() {
 
   
   setCookie("foo=bar", {
-    type: "added", isSession: true, isSecure: false, isHttpOnly: false,
+    type: "added", isSession: true, isSecure: false, isHttpOnly: false
   });
 
   
   setCookie("foo=bar; HttpOnly", {
-    type: "changed", isSession: true, isSecure: false, isHttpOnly: true,
+    type: "changed", isSession: true, isSecure: false, isHttpOnly: true
   });
 
   
   setCookie("foo=bar; Secure", {
-    type: "changed", isSession: true, isSecure: true, isHttpOnly: false,
+    type: "changed", isSession: true, isSecure: true, isHttpOnly: false
   });
 
   
   let expiry = new Date();
   expiry.setUTCFullYear(expiry.getUTCFullYear() + 2);
   setCookie(`foo=bar; Expires=${expiry.toGMTString()}`, {
-    type: "changed", isSession: false, isSecure: false, isHttpOnly: false,
+    type: "changed", isSession: false, isSecure: false, isHttpOnly: false
   });
 
   
   setCookie("foo=bar", {
-    type: "changed", isSession: true, isSecure: false, isHttpOnly: false,
+    type: "changed", isSession: true, isSecure: false, isHttpOnly: false
   });
 }
 
 function setCookie(value, expected) {
-  function setCookieInternal(valueInternal, expectedInternal = null) {
+  function setCookieInternal(value, expected = null) {
     function observer(subject, topic, data) {
-      if (!expectedInternal) {
+      if (!expected) {
         do_throw("no notification expected");
         return;
       }
 
       
-      Assert.equal(data, expectedInternal.type);
+      Assert.equal(data, expected.type);
 
       
       let cookie = subject.QueryInterface(Ci.nsICookie2);
-      Assert.equal(cookie.isSession, expectedInternal.isSession);
-      Assert.equal(cookie.isSecure, expectedInternal.isSecure);
-      Assert.equal(cookie.isHttpOnly, expectedInternal.isHttpOnly);
+      Assert.equal(cookie.isSession, expected.isSession);
+      Assert.equal(cookie.isSecure, expected.isSecure);
+      Assert.equal(cookie.isHttpOnly, expected.isHttpOnly);
     }
 
     Services.obs.addObserver(observer, "cookie-changed");
-    cs.setCookieStringFromHttp(URI, null, null, valueInternal, null, null);
+    cs.setCookieStringFromHttp(URI, null, null, value, null, null);
     Services.obs.removeObserver(observer, "cookie-changed");
   }
 
