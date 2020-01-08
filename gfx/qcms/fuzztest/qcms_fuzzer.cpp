@@ -39,7 +39,7 @@ transform(qcms_profile* src_profile, qcms_profile* dst_profile, size_t size)
   qcms_intent intent = qcms_profile_get_rendering_intent(src_profile);
   
   
-  if (size % 0x10) {
+  if (size % 15) {
     qcms_profile_precache_output_transform(dst_profile);
   }
 
