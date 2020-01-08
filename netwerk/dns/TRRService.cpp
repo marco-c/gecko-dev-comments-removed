@@ -12,6 +12,7 @@
 #include "TRRService.h"
 
 #include "mozilla/Preferences.h"
+#include "mozilla/Tokenizer.h"
 
 static const char kOpenCaptivePortalLoginEvent[] = "captive-portal-login";
 static const char kClearPrivateData[] = "clear-private-data";
@@ -160,7 +161,35 @@ TRRService::ReadPrefs(const char *name)
       mPrivateURI.Truncate();
     }
     if (!mPrivateURI.IsEmpty()) {
-      LOG(("TRRService TRR URI %s\n", mPrivateURI.get()));
+      
+      
+      nsAutoCString uri(mPrivateURI);
+
+      do {
+        nsCCharSeparatedTokenizer openBrace(uri, '{');
+        if (openBrace.hasMoreTokens()) {
+          
+          nsAutoCString prefix(openBrace.nextToken());
+
+          
+          const nsACString& endBrace = openBrace.nextToken();
+          nsCCharSeparatedTokenizer closeBrace(endBrace, '}');
+          if (closeBrace.hasMoreTokens()) {
+            
+            
+            closeBrace.nextToken();
+            nsAutoCString suffix(closeBrace.nextToken());
+            uri = prefix + suffix;
+          } else {
+            
+            break;
+          }
+        } else {
+          
+          break;
+        }
+      } while (true);
+      mPrivateURI = uri;
     }
     if (!old.IsEmpty() && !mPrivateURI.Equals(old)) {
       mClearTRRBLStorage = true;
