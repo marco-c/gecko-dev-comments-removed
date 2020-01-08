@@ -20,7 +20,9 @@ public:
   void SetUp() override
   {
     
-    MOZ_RELEASE_ASSERT(NSS_NoDB_Init(nullptr) == SECSuccess);
+    if (NSS_NoDB_Init(nullptr) != SECSuccess) {
+      abort();
+    }
 
     ASSERT_EQ(Success, mLog.Init(InputForBuffer(GetTestPublicKey()),
                                  -1 ,
