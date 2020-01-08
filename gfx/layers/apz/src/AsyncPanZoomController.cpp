@@ -4235,10 +4235,19 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
 
   bool needContentRepaint = false;
   bool viewportUpdated = false;
-  if (FuzzyEqualsAdditive(aLayerMetrics.GetCompositionBounds().Width(), Metrics().GetCompositionBounds().Width()) &&
-      FuzzyEqualsAdditive(aLayerMetrics.GetCompositionBounds().Height(), Metrics().GetCompositionBounds().Height())) {
-    
-    
+
+  
+  
+  
+  
+  
+  bool entertainViewportUpdates =
+       FuzzyEqualsAdditive(aLayerMetrics.GetCompositionBounds().Width(), Metrics().GetCompositionBounds().Width()) &&
+       FuzzyEqualsAdditive(aLayerMetrics.GetCompositionBounds().Height(), Metrics().GetCompositionBounds().Height());
+#if defined(MOZ_WIDGET_ANDROID)
+  entertainViewportUpdates = true;
+#endif
+  if (entertainViewportUpdates) {
     if (Metrics().GetViewport().Width() != aLayerMetrics.GetViewport().Width() ||
         Metrics().GetViewport().Height() != aLayerMetrics.GetViewport().Height()) {
       needContentRepaint = true;
