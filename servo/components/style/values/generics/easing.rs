@@ -5,8 +5,8 @@
 
 
 
-use values::CSSFloat;
 use parser::ParserContext;
+use values::CSSFloat;
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
