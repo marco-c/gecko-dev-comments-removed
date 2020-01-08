@@ -3580,7 +3580,7 @@ Element::RequestFullscreen(CallerType aCallerType, ErrorResult& aError)
   
   
   if (const char* error = GetFullscreenError(aCallerType)) {
-    OwnerDoc()->DispatchFullscreenError(error);
+    OwnerDoc()->DispatchFullscreenError(error, this);
     return;
   }
 

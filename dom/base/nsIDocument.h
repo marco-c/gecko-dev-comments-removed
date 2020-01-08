@@ -1858,7 +1858,7 @@ public:
 
 
 
-  void DispatchFullscreenError(const char* aMessage);
+  void DispatchFullscreenError(const char* aMessage, nsINode* aTarget);
 
   void RequestPointerLock(Element* aElement, mozilla::dom::CallerType);
   bool SetPointerLock(Element* aElement, int aCursorStyle);
