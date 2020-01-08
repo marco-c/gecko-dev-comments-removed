@@ -30,15 +30,15 @@ pub trait CanDeriveDebug {
 pub trait CanTriviallyDeriveDebug {
     
     
-    fn can_trivially_derive_debug(&self) -> bool;
+    fn can_trivially_derive_debug(&self, ctx: &BindgenContext) -> bool;
 }
 
 
 
-pub trait CanDeriveCopy<'a> {
+pub trait CanDeriveCopy {
     
     
-    fn can_derive_copy(&'a self, ctx: &'a BindgenContext) -> bool;
+    fn can_derive_copy(&self, ctx: &BindgenContext) -> bool;
 }
 
 
@@ -47,7 +47,7 @@ pub trait CanDeriveCopy<'a> {
 pub trait CanTriviallyDeriveCopy {
     
     
-    fn can_trivially_derive_copy(&self) -> bool;
+    fn can_trivially_derive_copy(&self, ctx: &BindgenContext) -> bool;
 }
 
 
@@ -64,7 +64,7 @@ pub trait CanDeriveDefault {
 pub trait CanTriviallyDeriveDefault {
     
     
-    fn can_trivially_derive_default(&self) -> bool;
+    fn can_trivially_derive_default(&self, ctx: &BindgenContext) -> bool;
 }
 
 
@@ -111,7 +111,7 @@ pub trait CanDeriveOrd {
 pub trait CanTriviallyDeriveHash {
     
     
-    fn can_trivially_derive_hash(&self) -> bool;
+    fn can_trivially_derive_hash(&self, ctx: &BindgenContext) -> bool;
 }
 
 
@@ -120,7 +120,7 @@ pub trait CanTriviallyDeriveHash {
 pub trait CanTriviallyDerivePartialEqOrPartialOrd {
     
     
-    fn can_trivially_derive_partialeq_or_partialord(&self) -> CanDerive;
+    fn can_trivially_derive_partialeq_or_partialord(&self, ctx: &BindgenContext) -> CanDerive;
 }
 
 

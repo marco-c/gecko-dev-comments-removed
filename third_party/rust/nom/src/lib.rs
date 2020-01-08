@@ -349,85 +349,52 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#![cfg_attr(not(feature = "std"), feature(no_std))]
-#![cfg_attr(not(feature = "std"), feature(collections))]
+#![cfg_attr(all(not(feature = "std"), feature = "alloc"), feature(alloc))]
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(feature = "nightly", feature(test))]
-#![cfg_attr(feature = "nightly", feature(const_fn))]
-#![cfg_attr(feature = "nightly", feature(plugin))]
-#![cfg_attr(feature = "nightly", plugin(compiler_error))]
 
+#![cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
+#![cfg_attr(nightly, feature(test))]
 
-#[cfg(not(feature = "std"))]
-extern crate collections;
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+#[macro_use]
+extern crate alloc;
+#[cfg(feature = "regexp_macros")]
+#[macro_use]
+extern crate lazy_static;
+extern crate memchr;
 #[cfg(feature = "regexp")]
 extern crate regex;
-#[cfg(feature = "regexp_macros")]
-#[macro_use] extern crate lazy_static;
-extern crate memchr;
-#[cfg(feature = "nightly")]
+#[cfg(nightly)]
 extern crate test;
 
-#[cfg(not(feature = "nightly"))]
-#[allow(unused_macros)]
-#[macro_export]
-macro_rules! compiler_error {
-    ($e:expr) => {
-      INVALID_NOM_SYNTAX_PLEASE_SEE_FAQ //https://github.com/Geal/nom/blob/master/doc/FAQ.md#using-nightly-to-get-better-error-messages
-    }
-}
 
-#[cfg(not(feature = "std"))]
-mod std {
-#[macro_use]
-  pub use core::{fmt, cmp, iter, option, result, ops, slice, str, mem, convert};
-  pub use collections::{boxed, vec, string};
-  pub mod prelude {
-    pub use core::prelude as v1;
+
+pub mod lib {
+  
+  
+  #[cfg(not(feature = "std"))]
+  pub mod std {
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(feature = "alloc", macro_use)]
+    pub use alloc::{boxed, string, vec};
+
+    pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
+    pub mod prelude {
+      pub use core::prelude as v1;
+    }
+  }
+
+  #[cfg(feature = "std")]
+  pub mod std {
+    pub use std::{boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result, slice, str, string, vec};
+    pub mod prelude {
+      pub use std::prelude as v1;
+    }
   }
 }
 
-pub use self::util::*;
 pub use self::traits::*;
+pub use self::util::*;
 
 #[cfg(feature = "verbose-errors")]
 pub use self::verbose_errors::*;
@@ -435,57 +402,67 @@ pub use self::verbose_errors::*;
 #[cfg(not(feature = "verbose-errors"))]
 pub use self::simple_errors::*;
 
+pub use self::branch::*;
 pub use self::internal::*;
 pub use self::macros::*;
-pub use self::branch::*;
-pub use self::sequence::*;
-pub use self::multi::*;
 pub use self::methods::*;
-pub use self::bytes::*;
-pub use self::bits::*;
+pub use self::multi::*;
+pub use self::sequence::*;
 
-pub use self::nom::*;
+pub use self::bits::*;
+pub use self::bytes::*;
+
 pub use self::character::*;
+pub use self::nom::*;
 
 pub use self::whitespace::*;
 
 #[cfg(feature = "regexp")]
 pub use self::regexp::*;
-
-#[cfg(feature = "std")]
-#[cfg(feature = "stream")]
-pub use self::stream::*;
-
 pub use self::str::*;
 
-#[macro_use] mod util;
+#[macro_use]
+mod util;
+
+#[cfg(feature = "verbose-errors")]
+#[macro_use]
+pub mod verbose_errors;
+
+#[cfg(not(feature = "verbose-errors"))]
+#[macro_use]
+pub mod simple_errors;
+
+#[macro_use]
+mod internal;
 mod traits;
+#[macro_use]
+mod macros;
+#[macro_use]
+mod branch;
+#[macro_use]
+mod sequence;
+#[macro_use]
+mod multi;
+#[macro_use]
+pub mod methods;
 
-#[cfg(feature = "verbose-errors")] #[macro_use] pub mod verbose_errors;
+#[macro_use]
+mod bytes;
+#[macro_use]
+pub mod bits;
 
-#[cfg(not(feature = "verbose-errors"))] #[macro_use] pub mod simple_errors;
-
-#[macro_use] mod internal;
-#[macro_use] mod macros;
-#[macro_use] mod branch;
-#[macro_use] mod sequence;
-#[macro_use] mod multi;
-#[macro_use] pub mod methods;
-#[macro_use] mod bytes;
-#[macro_use] pub mod bits;
-
-#[macro_use] mod nom;
-#[macro_use] mod character;
+#[macro_use]
+mod character;
+#[macro_use]
+mod nom;
 
 #[macro_use]
 pub mod whitespace;
 
 #[cfg(feature = "regexp")]
-#[macro_use] mod regexp;
-
 #[macro_use]
-#[cfg(feature = "std")]
-#[cfg(feature = "stream")]
-mod stream;
+mod regexp;
 
 mod str;
+
+pub mod types;

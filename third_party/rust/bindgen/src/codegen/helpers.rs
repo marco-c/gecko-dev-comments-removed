@@ -59,14 +59,14 @@ pub mod attributes {
 
 
 
-pub fn blob(layout: Layout) -> quote::Tokens {
+pub fn blob(ctx: &BindgenContext, layout: Layout) -> quote::Tokens {
     let opaque = layout.opaque();
 
     
     
     
     
-    let ty_name = match opaque.known_rust_type_for_array() {
+    let ty_name = match opaque.known_rust_type_for_array(ctx) {
         Some(ty) => ty,
         None => {
             warn!("Found unknown alignment on code generation!");
@@ -76,7 +76,7 @@ pub fn blob(layout: Layout) -> quote::Tokens {
 
     let ty_name = Term::new(ty_name, Span::call_site());
 
-    let data_len = opaque.array_size().unwrap_or(layout.size);
+    let data_len = opaque.array_size(ctx).unwrap_or(layout.size);
 
     if data_len == 1 {
         quote! {
@@ -90,8 +90,8 @@ pub fn blob(layout: Layout) -> quote::Tokens {
 }
 
 
-pub fn integer_type(layout: Layout) -> Option<quote::Tokens> {
-    let name = Layout::known_type_for_size(layout.size)?;
+pub fn integer_type(ctx: &BindgenContext, layout: Layout) -> Option<quote::Tokens> {
+    let name = Layout::known_type_for_size(ctx, layout.size)?;
     let name = Term::new(name, Span::call_site());
     Some(quote! { #name })
 }
@@ -122,6 +122,7 @@ pub fn bitfield_unit(ctx: &BindgenContext, layout: Layout) -> quote::Tokens {
 pub mod ast_ty {
     use ir::context::BindgenContext;
     use ir::function::FunctionSig;
+    use ir::layout::Layout;
     use ir::ty::FloatKind;
     use quote;
     use proc_macro2;
@@ -144,22 +145,44 @@ pub mod ast_ty {
     pub fn float_kind_rust_type(
         ctx: &BindgenContext,
         fk: FloatKind,
+        layout: Option<Layout>,
     ) -> quote::Tokens {
-        
-        
-        
         
         
         
         
         match (fk, ctx.options().convert_floats) {
             (FloatKind::Float, true) => quote! { f32 },
-            (FloatKind::Double, true) |
-            (FloatKind::LongDouble, true) => quote! { f64 },
+            (FloatKind::Double, true) => quote! { f64 },
             (FloatKind::Float, false) => raw_type(ctx, "c_float"),
-            (FloatKind::Double, false) |
-            (FloatKind::LongDouble, false) => raw_type(ctx, "c_double"),
-            (FloatKind::Float128, _) => quote! { [u8; 16] },
+            (FloatKind::Double, false) => raw_type(ctx, "c_double"),
+            (FloatKind::LongDouble, _) => {
+                match layout {
+                    Some(layout) => {
+                        match layout.size {
+                            4 => quote! { f32 },
+                            8 => quote! { f64 },
+                            
+                            
+                            _ => super::integer_type(ctx, layout).unwrap_or(quote! { f64 }),
+                        }
+                    }
+                    None => {
+                        debug_assert!(
+                            false,
+                            "How didn't we know the layout for a primitive type?"
+                        );
+                        quote! { f64 }
+                    }
+                }
+            }
+            (FloatKind::Float128, _) => {
+                if ctx.options().rust_features.i128_and_u128 {
+                    quote! { u128 }
+                } else {
+                    quote! { [u64; 2] }
+                }
+            }
         }
     }
 

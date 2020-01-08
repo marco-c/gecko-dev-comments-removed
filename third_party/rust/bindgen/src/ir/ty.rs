@@ -91,6 +91,14 @@ impl Type {
     }
 
     
+    pub fn is_block_pointer(&self) -> bool {
+        match self.kind {
+            TypeKind::BlockPointer(..) => true,
+            _ => false,
+        }
+    }
+
+    
     pub fn is_comp(&self) -> bool {
         match self.kind {
             TypeKind::Comp(..) => true,
@@ -155,7 +163,6 @@ impl Type {
             TypeKind::Array(..) |
             TypeKind::Reference(..) |
             TypeKind::Pointer(..) |
-            TypeKind::BlockPointer |
             TypeKind::Int(..) |
             TypeKind::Float(..) |
             TypeKind::TypeParam => true,
@@ -244,8 +251,7 @@ impl Type {
                 TypeKind::Comp(ref ci) => ci.layout(ctx),
                 
                 
-                TypeKind::Pointer(..) |
-                TypeKind::BlockPointer => {
+                TypeKind::Pointer(..) => {
                     Some(Layout::new(
                         ctx.target_pointer_size(),
                         ctx.target_pointer_size(),
@@ -339,7 +345,6 @@ impl Type {
             TypeKind::Reference(..) |
             TypeKind::Void |
             TypeKind::NullPtr |
-            TypeKind::BlockPointer |
             TypeKind::Pointer(..) |
             TypeKind::ObjCId |
             TypeKind::ObjCSel |
@@ -347,6 +352,7 @@ impl Type {
 
             TypeKind::ResolvedTypeRef(inner) |
             TypeKind::Alias(inner) |
+            TypeKind::BlockPointer(inner) |
             TypeKind::TemplateAlias(inner, _) => {
                 ctx.resolve_type(inner).safe_canonical_type(ctx)
             }
@@ -485,7 +491,7 @@ impl TypeKind {
             TypeKind::Function(..) => "Function",
             TypeKind::Enum(..) => "Enum",
             TypeKind::Pointer(..) => "Pointer",
-            TypeKind::BlockPointer => "BlockPointer",
+            TypeKind::BlockPointer(..) => "BlockPointer",
             TypeKind::Reference(..) => "Reference",
             TypeKind::TemplateInstantiation(..) => "TemplateInstantiation",
             TypeKind::UnresolvedTypeRef(..) => "UnresolvedTypeRef",
@@ -579,7 +585,7 @@ impl TemplateParameters for TypeKind {
             TypeKind::Function(_) |
             TypeKind::Enum(_) |
             TypeKind::Pointer(_) |
-            TypeKind::BlockPointer |
+            TypeKind::BlockPointer(_) |
             TypeKind::Reference(_) |
             TypeKind::UnresolvedTypeRef(..) |
             TypeKind::TypeParam |
@@ -655,7 +661,7 @@ pub enum TypeKind {
     Pointer(TypeId),
 
     
-    BlockPointer,
+    BlockPointer(TypeId),
 
     
     Reference(TypeId),
@@ -1056,37 +1062,17 @@ impl Type {
                 CXType_ObjCObjectPointer |
                 CXType_MemberPointer |
                 CXType_Pointer => {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    let mut pointee = ty.pointee_type().unwrap();
-                    let canonical_pointee =
-                        canonical_ty.pointee_type().unwrap();
-                    if pointee.call_conv() != canonical_pointee.call_conv() {
-                        pointee = canonical_pointee;
-                    }
+                    let pointee = ty.pointee_type().unwrap();
                     let inner =
                         Item::from_ty_or_ref(pointee, location, None, ctx);
                     TypeKind::Pointer(inner)
                 }
-                CXType_BlockPointer => TypeKind::BlockPointer,
+                CXType_BlockPointer => {
+                    let pointee = ty.pointee_type().expect("Not valid Type?");
+                    let inner =
+                        Item::from_ty_or_ref(pointee, location, None, ctx);
+                    TypeKind::BlockPointer(inner)
+                },
                 
                 
                 CXType_RValueReference |
@@ -1232,6 +1218,7 @@ impl Trace for Type {
             TypeKind::Reference(inner) |
             TypeKind::Array(inner, _) |
             TypeKind::Vector(inner, _) |
+            TypeKind::BlockPointer(inner) |
             TypeKind::Alias(inner) |
             TypeKind::ResolvedTypeRef(inner) => {
                 tracer.visit_kind(inner.into(), EdgeKind::TypeReference);
@@ -1273,8 +1260,7 @@ impl Trace for Type {
             TypeKind::Float(_) |
             TypeKind::Complex(_) |
             TypeKind::ObjCId |
-            TypeKind::ObjCSel |
-            TypeKind::BlockPointer => {}
+            TypeKind::ObjCSel => {}
         }
     }
 }

@@ -1,117 +1,84 @@
+#![cfg(feature = "alloc")]
 
 
 #[macro_use]
 extern crate nom;
 
-use nom::{digit, alphanumeric};
+use nom::{is_alphanumeric, recognize_float};
 
-use std::str::{self,FromStr};
+use std::str;
 use std::collections::HashMap;
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum JsonValue {
   Str(String),
   Num(f32),
   Array(Vec<JsonValue>),
-  Object(HashMap<String,JsonValue>)
+  Object(HashMap<String, JsonValue>),
 }
 
+named!(float<f32>, flat_map!(recognize_float, parse_to!(f32)));
 
 
-
-
-named!(unsigned_float <f32>, map_res!(
-  map_res!(
-    recognize!(
-      alt_complete!(
-        delimited!(digit, tag!("."), opt!(complete!(digit))) |
-        delimited!(opt!(digit), tag!("."), digit)            |
-        digit
-      )
-    ),
-    str::from_utf8
-  ),
-  FromStr::from_str
-));
-named!(float<f32>, map!(
-  pair!(
-    opt!(alt!(tag!("+") | tag!("-"))),
-    unsigned_float
-  ),
-  |(sign, value): (Option<&[u8]>, f32)| {
-    sign.and_then(|s| if s[0] == ('-' as u8) { Some(-1f32) } else { None }).unwrap_or(1f32) * value
-  }
-));
-
-
-named!(string<&str>,
+named!(
+  string<&str>,
   delimited!(
     tag!("\""),
-    map_res!(escaped!(call!(alphanumeric), '\\', is_a!("\"n\\")), str::from_utf8),
+    //map_res!(escaped!(call!(alphanumeric), '\\', is_a!("\"n\\")), str::from_utf8),
+    map_res!(
+      escaped!(take_while1!(is_alphanumeric), '\\', one_of!("\"n\\")),
+      str::from_utf8
+    ),
     tag!("\"")
   )
 );
 
-named!(array < Vec<JsonValue> >,
-  ws!(
-    delimited!(
-      tag!("["),
-      separated_list!(tag!(","), value),
-      tag!("]")
-    )
-  )
+named!(
+  array<Vec<JsonValue>>,
+  ws!(delimited!(
+    tag!("["),
+    separated_list!(tag!(","), value),
+    tag!("]")
+  ))
 );
 
-named!(key_value<(&str,JsonValue)>,
-  ws!(
-    separated_pair!(
-      string,
-      tag!(":"),
-      value
-    )
-  )
+named!(
+  key_value<(&str, JsonValue)>,
+  ws!(separated_pair!(string, tag!(":"), value))
 );
 
-named!(hash< HashMap<String,JsonValue> >,
-  ws!(
-    map!(
-      delimited!(
-        tag!("{"),
-        separated_list!(tag!(","), key_value),
-        tag!("}")
-        ),
-      |tuple_vec| {
-        let mut h: HashMap<String, JsonValue> = HashMap::new();
-        for (k, v) in tuple_vec {
-          h.insert(String::from(k), v);
-        }
-        h
+named!(
+  hash<HashMap<String, JsonValue>>,
+  ws!(map!(
+    delimited!(tag!("{"), separated_list!(tag!(","), key_value), tag!("}")),
+    |tuple_vec| {
+      let mut h: HashMap<String, JsonValue> = HashMap::new();
+      for (k, v) in tuple_vec {
+        h.insert(String::from(k), v);
       }
-    )
-  )
+      h
+    }
+  ))
 );
 
-named!(value<JsonValue>,
-  ws!(
-    alt!(
+named!(
+  value<JsonValue>,
+  ws!(alt!(
       hash   => { |h|   JsonValue::Object(h)            } |
       array  => { |v|   JsonValue::Array(v)             } |
       string => { |s|   JsonValue::Str(String::from(s)) } |
       float  => { |num| JsonValue::Num(num)             }
-    )
-  )
+    ))
 );
-
-
 
 #[test]
 fn hash_test() {
   let test = &b"  { \"a\"\t: 42,
   \"b\": \"x\"
-  }";
+  }\0";
 
-
-  println!("{:?}", value(&test[..]));
+  
+  println!("{:?}", value(&test[..]).unwrap());
   
 }
 
@@ -119,12 +86,11 @@ fn hash_test() {
 fn parse_example_test() {
   let test = &b"  { \"a\"\t: 42,
   \"b\": [ \"x\", \"y\", 12 ] ,
-  \"c\": { \"hello\" : \"world\" 
+  \"c\": { \"hello\" : \"world\"
   }
-  }";
+  }\0";
 
-
-  println!("{:?}", value(&test[..]));
+  
+  println!("{:?}", value(&test[..]).unwrap());
   
 }
-

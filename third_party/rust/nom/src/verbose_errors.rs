@@ -13,13 +13,10 @@
 
 
 
-
-
-use util::ErrorKind;
-use internal::{IResult, IError};
-use internal::IResult::*;
-
-
+use util::{Convert, ErrorKind};
+use lib::std::convert::From;
+#[cfg(feature = "alloc")]
+use lib::std::vec::Vec;
 
 
 
@@ -27,104 +24,130 @@ use internal::IResult::*;
 
 
 
-#[derive(Debug,PartialEq,Eq,Clone)]
-pub enum Err<P,E=u32>{
+
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum Context<I, E = u32> {
   
-  Code(ErrorKind<E>),
-  
-  Node(ErrorKind<E>, Vec<Err<P,E>>),
-  
-  Position(ErrorKind<E>, P),
-  
-  NodePosition(ErrorKind<E>, P, Vec<Err<P,E>>)
+  Code(I, ErrorKind<E>),
+  List(Vec<(I, ErrorKind<E>)>),
 }
 
-impl<P,E> Err<P,E> {
+impl<I, F, E: From<F>> Convert<Context<I, F>> for Context<I, E> {
+  fn convert(c: Context<I, F>) -> Self {
+    match c {
+      Context::Code(i, e) => Context::Code(i, ErrorKind::convert(e)),
+      Context::List(mut v) => Context::List(
+        v.drain(..)
+          .map(|(i, e)| (i, ErrorKind::convert(e)))
+          .collect(),
+      ),
+    }
+  }
+}
+
+impl<I, E> Context<I, E> {
   
   
   
   pub fn into_error_kind(self) -> ErrorKind<E> {
     match self {
-      Err::Code(kind) => kind,
-      Err::Node(kind, _) => kind,
-      Err::Position(kind, _) => kind,
-      Err::NodePosition(kind, _, _) => kind,
-    }
-  }
-}
-
-impl<I,O,E> IResult<I,O,E> {
-  
-  
-  
-  #[inline]
-  pub fn map_err<N, F>(self, f: F) -> IResult<I, O, N>
-   where F: FnOnce(Err<I, E>) -> Err<I, N> {
-    match self {
-      Error(e)      => Error(f(e)),
-      Incomplete(n) => Incomplete(n),
-      Done(i, o)    => Done(i, o),
-    }
-  }
-
-  
-  
-  pub fn unwrap_err(self) -> Err<I, E> {
-    match self {
-      Error(e)      => e,
-      Done(_, _)    => panic!("unwrap_err() called on an IResult that is Done"),
-      Incomplete(_) => panic!("unwrap_err() called on an IResult that is Incomplete"),
-    }
-  }
-
-  
-  pub fn to_full_result(self) -> Result<O, IError<I,E>> {
-    match self {
-      Done(_, o)    => Ok(o),
-      Incomplete(n) => Err(IError::Incomplete(n)),
-      Error(e)      => Err(IError::Error(e))
-    }
-  }
-
-  
-  pub fn to_result(self) -> Result<O, Err<I,E>> {
-    match self {
-      Done(_, o)    => Ok(o),
-      Error(e)      => Err(e),
-      Incomplete(_) => panic!("to_result() called on an IResult that is Incomplete")
-    }
-  }
-}
-
-#[cfg(feature = "std")]
-use std::any::Any;
-#[cfg(feature = "std")]
-use std::{error,fmt};
-#[cfg(feature = "std")]
-use std::fmt::Debug;
-#[cfg(feature = "std")]
-impl<P:Debug+Any,E:Debug+Any> error::Error for Err<P,E> {
-  fn description(&self) -> &str {
-    let kind = match *self {
-      Err::Code(ref e) | Err::Node(ref e, _) | Err::Position(ref e, _) | Err::NodePosition(ref e, _, _) => e
-    };
-    kind.description()
-  }
-}
-
-#[cfg(feature = "std")]
-impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match *self {
-      Err::Code(ref e) | Err::Node(ref e, _) => {
-        write!(f, "{:?}", e)
-      },
-      Err::Position(ref e, ref p) | Err::NodePosition(ref e, ref p, _) => {
-        write!(f, "{:?}:{:?}", p, e)
+      Context::Code(_, kind) => kind,
+      Context::List(mut v) => {
+        let (_, kind) = v.remove(0);
+        kind
       }
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -150,34 +173,47 @@ impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
 macro_rules! fix_error (
   ($i:expr, $t:ty, $submac:ident!( $($args:tt)* )) => (
     {
+      use $crate::lib::std::result::Result::*;
+      use $crate::{Err,Convert,ErrorKind,Context};
+
       match $submac!($i, $($args)*) {
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
-        $crate::IResult::Error(e) => {
-          let err = match e {
-            $crate::Err::Code($crate::ErrorKind::Custom(_)) |
-              $crate::Err::Node($crate::ErrorKind::Custom(_), _) => {
-              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
-              $crate::Err::Code(e)
+        Err(e)     => {
+          let e2 = match e {
+            Err::Error(err) => {
+              let err2 = match err {
+                Context::Code(i, code) => {
+                  let code2: ErrorKind<$t> = ErrorKind::convert(code);
+                  Context::Code(i, code2)
+                },
+                Context::List(mut v) => {
+                  Context::List(v.drain(..).map(|(i, code)| {
+                    let code2: ErrorKind<$t> = ErrorKind::convert(code);
+                    (i, code2)
+                  }).collect())
+                }
+              };
+              Err::Error(err2)
             },
-            $crate::Err::Position($crate::ErrorKind::Custom(_), p) |
-              $crate::Err::NodePosition($crate::ErrorKind::Custom(_), p, _) => {
-              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
-              $crate::Err::Position(e, p)
+            Err::Failure(err) => {
+              let err2 = match err {
+                Context::Code(i, code) => {
+                  let code2: ErrorKind<$t> = ErrorKind::convert(code);
+                  Context::Code(i, code2)
+                },
+                Context::List(mut v) => {
+                  Context::List(v.drain(..).map(|(i, code)| {
+                    let code2: ErrorKind<$t> = ErrorKind::convert(code);
+                    (i, code2)
+                  }).collect())
+                }
+              };
+              Err::Failure(err2)
             },
-            $crate::Err::Code(_) |
-              $crate::Err::Node(_, _) => {
-              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
-              $crate::Err::Code(e)
-            },
-            $crate::Err::Position(_, p) |
-              $crate::Err::NodePosition(_, p, _) => {
-              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
-              $crate::Err::Position(e, p)
-            },
+            Err::Incomplete(i) => Err::Incomplete(i),
           };
-          $crate::IResult::Error(err)
-        }
+          Err(e2)
+        },
+        Ok((i, o)) => Ok((i, o)),
       }
     }
   );
@@ -194,34 +230,28 @@ macro_rules! fix_error (
 #[macro_export]
 macro_rules! flat_map(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    {
-      match $submac!($i, $($args)*) {
-        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
-        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
-        $crate::IResult::Done(i, o)                          => match $submac2!(o, $($args2)*) {
-          $crate::IResult::Error(e)                                 => {
-            let err = match e {
-              $crate::Err::Code(k) | $crate::Err::Node(k, _) | $crate::Err::Position(k, _) | $crate::Err::NodePosition(k, _, _) => {
-                $crate::Err::Position(k, $i)
-              }
-            };
-            $crate::IResult::Error(err)
-          },
-          $crate::IResult::Incomplete($crate::Needed::Unknown)      => $crate::IResult::Incomplete($crate::Needed::Unknown),
-          $crate::IResult::Incomplete($crate::Needed::Size(ref i2)) => $crate::IResult::Incomplete($crate::Needed::Size(*i2)),
-          $crate::IResult::Done(_, o2)                              => $crate::IResult::Done(i, o2)
-        }
-      }
-    }
+    flat_map!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    flat_map!($i, $submac!($($args)*), call!($g));
-  );
-  ($i:expr, $f:expr, $g:expr) => (
-    flat_map!($i, call!($f), call!($g));
+    flat_map!(__impl $i, $submac!($($args)*), call!($g));
   );
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    flat_map!($i, call!($f), $submac!($($args)*));
+    flat_map!(__impl $i, call!($f), $submac!($($args)*));
+  );
+  ($i:expr, $f:expr, $g:expr) => (
+    flat_map!(__impl $i, call!($f), call!($g));
+  );
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    {
+      use $crate::lib::std::result::Result::*;
+      use $crate::{Err,Convert};
+
+      ($submac!($i, $($args)*)).and_then(|(i,o)| {
+        match $submac2!(o, $($args2)*) {
+          Err(e)      => Err(Err::convert(e)),
+          Ok((_, o2)) => Ok((i, o2))
+        }
+      })
+    }
   );
 );
