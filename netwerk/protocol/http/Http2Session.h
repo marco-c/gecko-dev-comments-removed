@@ -49,7 +49,7 @@ public:
   Http2Session(nsISocketTransport *, enum SpdyVersion version, bool attemptingEarlyData);
 
   MOZ_MUST_USE bool AddStream(nsAHttpTransaction *, int32_t,
-                              bool, nsIInterfaceRequestor *) override;
+                              bool, bool, nsIInterfaceRequestor *) override;
   bool CanReuse() override { return !mShouldGoAway && !mClosed; }
   bool RoomForMoreStreams() override;
   enum SpdyVersion SpdyVersion() override;
@@ -133,7 +133,10 @@ public:
     SETTINGS_TYPE_ENABLE_PUSH = 2,     
     SETTINGS_TYPE_MAX_CONCURRENT = 3,  
     SETTINGS_TYPE_INITIAL_WINDOW = 4,  
-    SETTINGS_TYPE_MAX_FRAME_SIZE = 5   
+    SETTINGS_TYPE_MAX_FRAME_SIZE = 5,   
+    
+    
+    SETTINGS_TYPE_ENABLE_CONNECT_PROTOCOL = 8   
   };
 
   
@@ -262,6 +265,8 @@ public:
 
   void SendPriorityFrame(uint32_t streamID, uint32_t dependsOn, uint8_t weight);
   void IncrementTrrCounter() { mTrrStreams++; }
+
+  bool CanAcceptWebsocket() override;
 
 private:
 
@@ -581,6 +586,15 @@ private:
   uint32_t FindTunnelCount(nsHttpConnectionInfo *);
   nsDataHashtable<nsCStringHashKey, uint32_t> mTunnelHash;
   uint32_t mTrrStreams;
+
+  
+  void CreateWebsocketStream(nsAHttpTransaction *, nsIInterfaceRequestor *);
+  void ProcessWaitingWebsockets();
+  bool mEnableWebsockets; 
+  bool mPeerAllowsWebsockets; 
+  bool mProcessedWaitingWebsockets; 
+  nsTArray<RefPtr<nsAHttpTransaction>> mWaitingWebsockets; 
+  nsCOMArray<nsIInterfaceRequestor> mWaitingWebsocketCallbacks;
 };
 
 } 

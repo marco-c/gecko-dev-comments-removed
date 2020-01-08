@@ -189,7 +189,8 @@ public:
                          nsIInterfaceRequestor *callbacks,
                          uint32_t caps,
                          nsHttpTransaction *trans,
-                         nsAHttpConnection *session);
+                         nsAHttpConnection *session,
+                         bool isWebsocket);
   ~SpdyConnectTransaction();
 
   SpdyConnectTransaction *QuerySpdyConnectTransaction() override { return this; }
@@ -212,6 +213,9 @@ public:
   
   
   bool ConnectedReadyForInput();
+
+  bool IsWebsocket() { return mIsWebsocket; }
+  void SetConnRefTaken();
 
 private:
   friend class InputStreamShim;
@@ -249,6 +253,18 @@ private:
   RefPtr<InputStreamShim>      mTunnelStreamIn;
   RefPtr<OutputStreamShim>     mTunnelStreamOut;
   RefPtr<nsHttpTransaction>    mDrivingTransaction;
+
+  
+  bool                           mIsWebsocket;
+  bool                           mConnRefTaken;
+  nsCOMPtr<nsIAsyncOutputStream> mInputShimPipe;
+  nsCOMPtr<nsIAsyncInputStream>  mOutputShimPipe;
+  nsresult WriteDataToBuffer(nsAHttpSegmentWriter *writer,
+                             uint32_t count,
+                             uint32_t *countWritten);
+  MOZ_MUST_USE nsresult WebsocketWriteSegments(nsAHttpSegmentWriter *writer,
+                                               uint32_t count,
+                                               uint32_t *countWritten);
 };
 
 } 

@@ -1817,6 +1817,7 @@ pref("network.http.spdy.push-allowance", 131072);
 pref("network.http.spdy.pull-allowance", 12582912); 
 pref("network.http.spdy.default-concurrent", 100);
 pref("network.http.spdy.default-hpack-buffer", 65536); 
+pref("network.http.spdy.websockets", true);
 
 
 

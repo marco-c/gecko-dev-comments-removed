@@ -1111,12 +1111,15 @@ nsresult
 Http2Compressor::EncodeHeaderBlock(const nsCString &nvInput,
                                    const nsACString &method, const nsACString &path,
                                    const nsACString &host, const nsACString &scheme,
-                                   bool connectForm, nsACString &output)
+                                   const nsACString &protocol, bool simpleConnectForm,
+                                   nsACString &output)
 {
   mSetInitialMaxBufferSizeAllowed = false;
   mOutput = &output;
   output.Truncate();
   mParsedContentLength = -1;
+
+  bool isWebsocket = (!simpleConnectForm && !protocol.IsEmpty());
 
   
   if (mBufferSizeChangeWaiting) {
@@ -1128,11 +1131,14 @@ Http2Compressor::EncodeHeaderBlock(const nsCString &nvInput,
   }
 
   
-  if (!connectForm) {
+  if (!simpleConnectForm) {
     ProcessHeader(nvPair(NS_LITERAL_CSTRING(":method"), method), false, false);
     ProcessHeader(nvPair(NS_LITERAL_CSTRING(":path"), path), true, false);
     ProcessHeader(nvPair(NS_LITERAL_CSTRING(":authority"), host), false, false);
     ProcessHeader(nvPair(NS_LITERAL_CSTRING(":scheme"), scheme), false, false);
+    if (isWebsocket) {
+      ProcessHeader(nvPair(NS_LITERAL_CSTRING(":protocol"), protocol), false, false);
+    }
   } else {
     ProcessHeader(nvPair(NS_LITERAL_CSTRING(":method"), method), false, false);
     ProcessHeader(nvPair(NS_LITERAL_CSTRING(":authority"), host), false, false);
@@ -1169,7 +1175,8 @@ Http2Compressor::EncodeHeaderBlock(const nsCString &nvInput,
         name.EqualsLiteral("proxy-connection") ||
         name.EqualsLiteral("te") ||
         name.EqualsLiteral("transfer-encoding") ||
-        name.EqualsLiteral("upgrade")) {
+        name.EqualsLiteral("upgrade") ||
+        name.EqualsLiteral("sec-websocket-key")) {
       continue;
     }
 
@@ -1235,7 +1242,7 @@ Http2Compressor::EncodeHeaderBlock(const nsCString &nvInput,
   
   
   
-  if (!connectForm) {
+  if (!simpleConnectForm && !isWebsocket) {
     
     nsAutoCString te("te");
     nsAutoCString trailers("trailers");

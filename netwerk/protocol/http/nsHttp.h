@@ -114,6 +114,11 @@ namespace net {
 
 
 
+#define NS_HTTP_ALLOW_SPDY_WITHOUT_KEEPALIVE (1<<15)
+
+
+
+
 
 #define NS_HTTP_DEFAULT_PORT  80
 #define NS_HTTPS_DEFAULT_PORT 443

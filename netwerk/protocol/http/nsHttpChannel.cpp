@@ -593,7 +593,17 @@ nsHttpChannel::OnBeforeConnect()
         return NS_ERROR_UNKNOWN_HOST;
 
     if (mUpgradeProtocolCallback) {
-        mCaps |=  NS_HTTP_DISALLOW_SPDY;
+        
+        if (mUpgradeProtocol.EqualsLiteral("websocket") &&
+            gHttpHandler->IsH2WebsocketsEnabled()) {
+            
+            
+            
+            
+            mCaps |= NS_HTTP_ALLOW_SPDY_WITHOUT_KEEPALIVE;
+        } else {
+            mCaps |=  NS_HTTP_DISALLOW_SPDY;
+        }
     }
 
     if (mTRR) {
@@ -7767,7 +7777,9 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
         }
 
         if (mUpgradeProtocolCallback && stickyConn &&
-            mResponseHead && mResponseHead->Status() == 101) {
+            mResponseHead &&
+            ((mResponseHead->Status() == 101 && mResponseHead->Version() == HttpVersion::v1_1) ||
+             (mResponseHead->Status() == 200 && mResponseHead->Version() == HttpVersion::v2_0))) {
             nsresult rv =
                 gHttpHandler->ConnMgr()->CompleteUpgrade(stickyConn,
                                                          mUpgradeProtocolCallback);
