@@ -2816,22 +2816,17 @@ class StaticAnalysis(MachCommandBase):
         path_list = self._generate_path_list(assume_filename, False)
 
         if path_list == []:
-            
-            with open(paths[0], 'r') as fin:
-                sys.stdout.write(fin.read().decode('utf8'))
-                return 0
+            return 0
 
         
         
         
         args = [clang_format, "-assume-filename={}".format(assume_filename[0])]
 
-        process = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        process = subprocess.Popen(args, stdin=subprocess.PIPE)
         with open(paths[0], 'r') as fin:
             process.stdin.write(fin.read())
-            output = process.communicate()[0]
             process.stdin.close()
-            sys.stdout.write(output.decode('utf8'))
             return 0
 
     def _run_clang_format_path(self, clang_format, show, paths):
