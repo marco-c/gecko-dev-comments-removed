@@ -150,6 +150,8 @@ class Nursery {
     CellAlignedByte cell;
   };
 
+  using BufferSet = HashSet<void*, PointerHasher<void*>, SystemAllocPolicy>;
+
   explicit Nursery(JSRuntime* rt);
   ~Nursery();
 
@@ -297,8 +299,6 @@ class Nursery {
   
   void removeMallocedBuffer(void* buffer) { mallocedBuffers.remove(buffer); }
 
-  void waitBackgroundFreeEnd();
-
   MOZ_MUST_USE bool addedUniqueIdToCell(gc::Cell* cell) {
     MOZ_ASSERT(IsInsideNursery(cell));
     MOZ_ASSERT(isEnabled());
@@ -312,7 +312,7 @@ class Nursery {
   }
   size_t sizeOfMallocedBuffers(mozilla::MallocSizeOf mallocSizeOf) const {
     size_t total = 0;
-    for (MallocedBuffersSet::Range r = mallocedBuffers.all(); !r.empty();
+    for (BufferSet::Range r = mallocedBuffers.all(); !r.empty();
          r.popFront()) {
       total += mallocSizeOf(r.front());
     }
@@ -489,13 +489,7 @@ class Nursery {
 
 
 
-  typedef HashSet<void*, PointerHasher<void*>, SystemAllocPolicy>
-      MallocedBuffersSet;
-  MallocedBuffersSet mallocedBuffers;
-
-  
-  struct FreeMallocedBuffersTask;
-  FreeMallocedBuffersTask* freeMallocedBuffersTask;
+  BufferSet mallocedBuffers;
 
   
 
@@ -590,9 +584,6 @@ class Nursery {
   inline void setElementsForwardingPointer(ObjectElements* oldHeader,
                                            ObjectElements* newHeader,
                                            uint32_t capacity);
-
-  
-  void freeMallocedBuffers();
 
   
 

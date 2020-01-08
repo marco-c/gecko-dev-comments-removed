@@ -314,6 +314,7 @@ class GCRuntime {
     waitBackgroundSweepEnd();
     allocTask.cancelAndWait();
   }
+  void waitBackgroundFreeEnd();
 
   void lockGC() { lock.lock(); }
 
@@ -474,6 +475,7 @@ class GCRuntime {
   void queueUnusedLifoBlocksForFree(LifoAlloc* lifo);
   void queueAllLifoBlocksForFree(LifoAlloc* lifo);
   void queueAllLifoBlocksForFreeAfterMinorGC(LifoAlloc* lifo);
+  void queueBuffersForFreeAfterMinorGC(Nursery::BufferSet& buffers);
 
   
   void releaseArena(Arena* arena, const AutoLockGC& lock);
@@ -597,7 +599,7 @@ class GCRuntime {
                              const mozilla::TimeStamp& currentTime,
                              JS::gcreason::Reason reason,
                              bool canAllocateMoreCode);
-  void freeQueuedLifoBlocksAfterMinorGC();
+  void startBackgroundFreeAfterMinorGC();
   void traceRuntimeForMajorGC(JSTracer* trc, AutoGCSession& session);
   void traceRuntimeAtoms(JSTracer* trc, const AutoAccessAtomsZone& atomsAccess);
   void traceKeptAtoms(JSTracer* trc);
@@ -866,6 +868,7 @@ class GCRuntime {
 
   HelperThreadLockData<LifoAlloc> lifoBlocksToFree;
   MainThreadData<LifoAlloc> lifoBlocksToFreeAfterMinorGC;
+  HelperThreadLockData<Nursery::BufferSet> buffersToFreeAfterMinorGC;
 
   
   MainThreadData<unsigned> sweepGroupIndex;
