@@ -375,6 +375,12 @@ private:
   
   
   
+  size_t mTotalAsyncPaints;
+  TimeStamp mAsyncTransactionBegin;
+
+  
+  
+  
   size_t mOutstandingAsyncPaints;
 
   

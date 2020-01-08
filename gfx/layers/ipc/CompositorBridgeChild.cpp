@@ -92,6 +92,7 @@ CompositorBridgeChild::CompositorBridgeChild(CompositorManagerChild *aManager)
   , mProcessToken(0)
   , mSectionAllocator(nullptr)
   , mPaintLock("CompositorBridgeChild.mPaintLock")
+  , mTotalAsyncPaints(0)
   , mOutstandingAsyncPaints(0)
   , mOutstandingAsyncEndTransaction(false)
   , mIsDelayingForAsyncPaints(false)
@@ -1190,6 +1191,11 @@ CompositorBridgeChild::NotifyBeginAsyncPaint(PaintTask* aTask)
 
   MonitorAutoLock lock(mPaintLock);
 
+  if (mTotalAsyncPaints == 0) {
+    mAsyncTransactionBegin = TimeStamp::Now();
+  }
+  mTotalAsyncPaints += 1;
+
   
   
   
@@ -1248,6 +1254,13 @@ CompositorBridgeChild::NotifyFinishedAsyncEndLayerTransaction()
   }
 
   MonitorAutoLock lock(mPaintLock);
+
+  if (mTotalAsyncPaints > 0) {
+    float tenthMs = (TimeStamp::Now() - mAsyncTransactionBegin).ToMilliseconds() * 10;
+    Telemetry::Accumulate(Telemetry::GFX_OMTP_PAINT_TASK_COUNT, int32_t(mTotalAsyncPaints));
+    Telemetry::Accumulate(Telemetry::GFX_OMTP_PAINT_TIME, int32_t(tenthMs));
+    mTotalAsyncPaints = 0;
+  }
 
   
   
