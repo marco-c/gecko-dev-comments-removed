@@ -202,11 +202,14 @@ runTestFromPath(JSContext* cx, const char* path)
         CompileOptions binOptions(cx);
         binOptions.setFileAndLine(binPath.begin(), 0);
 
-        js::frontend::UsedNameTracker binUsedNames(cx);
+        frontend::UsedNameTracker binUsedNames(cx);
 
-        js::frontend::BinASTParser<Tok> binParser(cx, allocScope.alloc(), binUsedNames, binOptions);
+        frontend::Directives directives(false);
+        frontend::GlobalSharedContext globalsc(cx, ScopeKind::Global, directives, false);
 
-        auto binParsed = binParser.parse(binSource); 
+        frontend::BinASTParser<Tok> binParser(cx, allocScope.alloc(), binUsedNames, binOptions);
+
+        auto binParsed = binParser.parse(&globalsc, binSource); 
         RootedValue binExn(cx);
         if (binParsed.isErr()) {
             

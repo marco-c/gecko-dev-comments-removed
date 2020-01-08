@@ -124,11 +124,13 @@ class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEPa
 
 
 
-    JS::Result<ParseNode*> parse(const uint8_t* start, const size_t length);
-    JS::Result<ParseNode*> parse(const Vector<uint8_t>& data);
+    JS::Result<ParseNode*> parse(GlobalSharedContext* globalsc,
+                                 const uint8_t* start, const size_t length);
+    JS::Result<ParseNode*> parse(GlobalSharedContext* globalsc, const Vector<uint8_t>& data);
 
   private:
-    MOZ_MUST_USE JS::Result<ParseNode*> parseAux(const uint8_t* start, const size_t length);
+    MOZ_MUST_USE JS::Result<ParseNode*> parseAux(GlobalSharedContext* globalsc,
+                                                 const uint8_t* start, const size_t length);
 
     
     
