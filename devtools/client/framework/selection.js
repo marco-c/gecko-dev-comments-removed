@@ -140,8 +140,16 @@ Selection.prototype = {
       nodeFront = parentNode;
     }
 
+    if (this._nodeFront == null && nodeFront == null) {
+      
+      
+      
+      return;
+    }
+
     this._isSlotted = isSlotted;
     this._nodeFront = nodeFront;
+
     this.emit("new-node-front", nodeFront, this.reason);
   },
 
