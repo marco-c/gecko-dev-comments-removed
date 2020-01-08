@@ -5331,9 +5331,10 @@ nsGlobalWindowOuter::NotifyContentBlockingState(unsigned aState,
   } else {
     
   }
+  const uint32_t oldState = state;
   state |= aState;
 
-  eventSink->OnSecurityChange(aChannel, state);
+  eventSink->OnSecurityChange(aChannel, oldState, state, doc->GetContentBlockingLog());
 }
 
 
