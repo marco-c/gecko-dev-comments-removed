@@ -21,17 +21,20 @@ def main(request, response):
   if 'retrieve' in request.GET:
     response.writer.write_status(200)
     response.writer.end_headers()
-    header_value = request.server.stash.take(testId)
-    if header_value != None:
+    try:
+      header_value = request.server.stash.take(testId)
       response.writer.write(header_value)
+    except (KeyError, ValueError) as e:
+      response.writer.write("No header has been recorded")
+      pass
 
     response.close_connection = True
 
   
   else:
-    
-    header = request.headers.get("Sec-Metadata", "")
     try:
+      
+      header = request.headers.get("Sec-Metadata", "")
       request.server.stash.put(testId, header)
     except KeyError:
       
@@ -61,6 +64,7 @@ def main(request, response):
 
     
     if key.startswith("font"):
+      response.headers.set("Content-Type", "application/x-font-ttf")
       file = open("fonts/Ahem.ttf", "r")
       font = file.read()
       file.close()
