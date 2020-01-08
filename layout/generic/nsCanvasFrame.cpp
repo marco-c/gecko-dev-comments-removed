@@ -478,7 +478,7 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   
-  if (IsVisibleForPainting(aBuilder)) {
+  if (IsVisibleForPainting()) {
     ComputedStyle* bg = nullptr;
     nsIFrame* dependentFrame = nullptr;
     bool isThemed = IsThemed();

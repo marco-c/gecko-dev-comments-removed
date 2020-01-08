@@ -196,7 +196,7 @@ void nsFieldSetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   if (!(GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER) &&
-      IsVisibleForPainting(aBuilder)) {
+      IsVisibleForPainting()) {
     if (StyleEffects()->mBoxShadow) {
       aLists.BorderBackground()->AppendToTop(
           MakeDisplayItem<nsDisplayBoxShadowOuter>(aBuilder, this));

@@ -217,7 +217,6 @@ nsPresContext::nsPresContext(nsIDocument* aDocument, nsPresContextType aType)
       mDrawImageBackground(true),  
       mDrawColorBackground(true),
       
-      mIsRenderingOnlySelection(false),
       mPaginated(aType != eContext_Galley),
       mCanPaginatedScroll(false),
       mDoScaledTwips(true),

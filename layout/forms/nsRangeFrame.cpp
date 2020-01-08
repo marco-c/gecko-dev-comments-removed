@@ -246,7 +246,7 @@ void nsRangeFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   
 
-  if (!aBuilder->IsForPainting() || !IsVisibleForPainting(aBuilder)) {
+  if (!aBuilder->IsForPainting() || !IsVisibleForPainting()) {
     
     
     return;

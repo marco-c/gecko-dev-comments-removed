@@ -2564,7 +2564,7 @@ class nsDisplayTreeBody final : public nsDisplayItem {
 void nsTreeBodyFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                        const nsDisplayListSet& aLists) {
   
-  if (!IsVisibleForPainting(aBuilder))
+  if (!IsVisibleForPainting())
     return;  
 
   

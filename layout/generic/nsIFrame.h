@@ -3414,28 +3414,12 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  bool IsVisibleForPainting(nsDisplayListBuilder* aBuilder);
-  
-
-
-
-  bool IsVisibleOrCollapsedForPainting(nsDisplayListBuilder* aBuilder);
-  
-
-
-
   bool IsVisibleForPainting();
   
 
 
 
-  bool IsVisibleInSelection(nsDisplayListBuilder* aBuilder);
-
-  
-
-
-
-  virtual bool IsVisibleInSelection(mozilla::dom::Selection* aSelection);
+  bool IsVisibleOrCollapsedForPainting();
 
   
 

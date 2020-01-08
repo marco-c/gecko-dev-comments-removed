@@ -559,12 +559,6 @@ class nsDisplayListBuilder {
 
 
 
-  mozilla::dom::Selection* GetBoundingSelection() { return mBoundingSelection; }
-
-  
-
-
-
   const nsIFrame* FindReferenceFrameFor(const nsIFrame* aFrame,
                                         nsPoint* aOffset = nullptr) const;
 
@@ -1867,7 +1861,6 @@ class nsDisplayListBuilder {
   nsIFrame* mIgnoreScrollFrame;
   nsPresArena mPool;
 
-  RefPtr<mozilla::dom::Selection> mBoundingSelection;
   AutoTArray<PresShellState, 8> mPresShellStates;
   AutoTArray<nsIFrame*, 400> mFramesMarkedForDisplay;
   AutoTArray<nsIFrame*, 40> mFramesMarkedForDisplayIfVisible;
