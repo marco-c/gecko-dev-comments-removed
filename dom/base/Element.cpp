@@ -3573,6 +3573,7 @@ GetFullscreenError(CallerType aCallerType)
 void
 Element::RequestFullscreen(CallerType aCallerType, ErrorResult& aError)
 {
+  auto request = FullscreenRequest::Create(this, aCallerType);
   
   
   
@@ -3581,11 +3582,9 @@ Element::RequestFullscreen(CallerType aCallerType, ErrorResult& aError)
   
   
   if (const char* error = GetFullscreenError(aCallerType)) {
-    OwnerDoc()->DispatchFullscreenError(error, this);
+    request->Reject(error);
     return;
   }
-
-  auto request = FullscreenRequest::Create(this, aCallerType);
   OwnerDoc()->AsyncRequestFullscreen(std::move(request));
 }
 

@@ -1756,8 +1756,8 @@ public:
 
   
   
-  bool FullscreenElementReadyCheck(Element* aElement,
-                                   mozilla::dom::CallerType aCallerType);
+  
+  bool FullscreenElementReadyCheck(const FullscreenRequest&);
 
   
   
@@ -1853,12 +1853,6 @@ public:
 
 
   static bool HandlePendingFullscreenRequests(nsIDocument* aDocument);
-
-  
-
-
-
-  void DispatchFullscreenError(const char* aMessage, nsINode* aTarget);
 
   void RequestPointerLock(Element* aElement, mozilla::dom::CallerType);
   bool SetPointerLock(Element* aElement, int aCursorStyle);
