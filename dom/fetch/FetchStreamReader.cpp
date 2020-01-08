@@ -12,6 +12,7 @@
 #include "nsContentUtils.h"
 #include "nsIScriptError.h"
 #include "nsPIDOMWindow.h"
+#include "jsapi.h"
 
 namespace mozilla {
 namespace dom {
@@ -160,6 +161,12 @@ FetchStreamReader::StartConsuming(JSContext* aCx,
 
   aRv.MightThrowJSException();
 
+  
+  
+  
+  
+  JSAutoRealm ar(aCx, mGlobal->GetGlobalJSObject());
+
   JS::Rooted<JSObject*> reader(aCx,
                                JS::ReadableStreamGetReader(aCx, aStream,
                                                            JS::ReadableStreamReaderMode::Default));
@@ -195,6 +202,7 @@ FetchStreamReader::OnOutputStreamReady(nsIAsyncOutputStream* aStream)
     return WriteBuffer();
   }
 
+  
   
   
   AutoEntryScript aes(mGlobal, "ReadableStreamReader.read", !mWorkerRef);
