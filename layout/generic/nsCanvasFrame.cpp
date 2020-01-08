@@ -78,12 +78,25 @@ nsCanvasFrame::HideCustomContentContainer()
 nsresult
 nsCanvasFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
 {
+  MOZ_ASSERT(!mCustomContentContainer);
+
   if (!mContent) {
     return NS_OK;
   }
 
   nsCOMPtr<nsIDocument> doc = mContent->OwnerDoc();
-  nsresult rv = NS_OK;
+
+  RefPtr<AccessibleCaretEventHub> eventHub =
+    PresShell()->GetAccessibleCaretEventHub();
+
+  
+  
+  
+  
+  
+  if (eventHub) {
+    eventHub->Init();
+  }
 
   
   mCustomContentContainer = doc->CreateHTMLElement(nsGkAtoms::div);
@@ -99,35 +112,46 @@ nsCanvasFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
   mCustomContentContainer->SetProperty(nsGkAtoms::docLevelNativeAnonymousContent,
                                        reinterpret_cast<void*>(true));
 
+  
+  
+  
+  
+  
+  mCustomContentContainer->SetIsNativeAnonymousRoot();
+
   aElements.AppendElement(mCustomContentContainer);
 
   
   mCustomContentContainer->SetAttr(kNameSpaceID_None, nsGkAtoms::role,
                                    NS_LITERAL_STRING("presentation"), false);
 
-  
-  rv = mCustomContentContainer->SetAttr(kNameSpaceID_None, nsGkAtoms::_class,
-                                        NS_LITERAL_STRING("moz-custom-content-container"),
-                                        true);
-  NS_ENSURE_SUCCESS(rv, rv);
+  mCustomContentContainer->SetAttr(kNameSpaceID_None, nsGkAtoms::_class,
+                                   NS_LITERAL_STRING("moz-custom-content-container"),
+                                   false);
 
   
-  size_t len = doc->GetAnonymousContents().Length();
-  for (size_t i = 0; i < len; ++i) {
-    nsCOMPtr<Element> node = doc->GetAnonymousContents()[i]->GetContentNode();
-    mCustomContentContainer->AppendChildTo(node->AsContent(), true);
-  }
-
-  
-  if (len == 0) {
+  if (doc->GetAnonymousContents().IsEmpty()) {
     HideCustomContentContainer();
   }
 
-  RefPtr<AccessibleCaretEventHub> eventHub =
-    PresContext()->GetPresShell()->GetAccessibleCaretEventHub();
-  if (eventHub) {
-    
-    eventHub->Init();
+  for (RefPtr<AnonymousContent>& anonContent : doc->GetAnonymousContents()) {
+    if (nsCOMPtr<nsINode> parent = anonContent->ContentNode().GetParentNode()) {
+      
+      
+      
+      
+      
+      
+      MOZ_ASSERT(parent != mCustomContentContainer);
+      MOZ_ASSERT(parent->IsElement());
+      MOZ_ASSERT(parent->AsElement()->IsRootOfNativeAnonymousSubtree());
+      MOZ_ASSERT(!parent->IsInComposedDoc());
+      MOZ_ASSERT(!parent->GetParentNode());
+
+      parent->RemoveChildNode(&anonContent->ContentNode(), false);
+    }
+
+    mCustomContentContainer->AppendChildTo(&anonContent->ContentNode(), false);
   }
 
   
@@ -140,8 +164,9 @@ nsCanvasFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
                                    nullptr, kNameSpaceID_XUL,
                                    nsINode::ELEMENT_NODE);
 
-    rv = NS_NewXULElement(getter_AddRefs(mPopupgroupContent),
-                          nodeInfo.forget(), dom::NOT_FROM_PARSER);
+    nsresult rv = NS_NewXULElement(getter_AddRefs(mPopupgroupContent),
+                                   nodeInfo.forget(),
+                                   dom::NOT_FROM_PARSER);
     NS_ENSURE_SUCCESS(rv, rv);
 
     aElements.AppendElement(mPopupgroupContent);
@@ -190,21 +215,6 @@ nsCanvasFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestro
     sf->RemoveScrollPositionListener(this);
   }
 
-  
-  
-  
-  if (mCustomContentContainer) {
-    nsCOMPtr<nsIDocument> doc = mContent->OwnerDoc();
-    ErrorResult rv;
-
-    nsTArray<RefPtr<mozilla::dom::AnonymousContent>>& docAnonContents =
-      doc->GetAnonymousContents();
-    for (size_t i = 0, len = docAnonContents.Length(); i < len; ++i) {
-      AnonymousContent* content = docAnonContents[i];
-      nsCOMPtr<nsINode> clonedElement = content->GetContentNode()->CloneNode(true, rv);
-      content->SetContentNode(clonedElement->AsElement());
-    }
-  }
   aPostDestroyData.AddAnonymousContent(mCustomContentContainer.forget());
   if (mPopupgroupContent) {
     aPostDestroyData.AddAnonymousContent(mPopupgroupContent.forget());
@@ -879,8 +889,7 @@ nsresult
 nsCanvasFrame::GetContentForEvent(WidgetEvent* aEvent, nsIContent** aContent)
 {
   NS_ENSURE_ARG_POINTER(aContent);
-  nsresult rv = nsFrame::GetContentForEvent(aEvent,
-                                            aContent);
+  nsresult rv = nsFrame::GetContentForEvent(aEvent, aContent);
   if (NS_FAILED(rv) || !*aContent) {
     nsIFrame* kid = mFrames.FirstChild();
     if (kid) {

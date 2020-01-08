@@ -141,9 +141,9 @@ public:
   }
 
   
-  dom::Element* CaretElement() const
+  dom::Element& CaretElement() const
   {
-    return mCaretElementHolder->GetContentNode();
+    return mCaretElementHolder->ContentNode();
   }
 
   

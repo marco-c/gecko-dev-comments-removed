@@ -968,13 +968,12 @@ static bool
 HasVisibleAnonymousContents(nsIDocument* aDoc)
 {
   for (RefPtr<AnonymousContent>& ac : aDoc->GetAnonymousContents()) {
-    Element* elem = ac->GetContentNode();
     
     
     
     
     
-    if (elem && elem->GetPrimaryFrame()) {
+    if (ac->ContentNode().GetPrimaryFrame()) {
       return true;
     }
   }
