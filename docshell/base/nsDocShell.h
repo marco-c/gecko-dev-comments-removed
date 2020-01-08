@@ -590,12 +590,18 @@ private:
                        nsresult aResult);
 
 
+  
+  
   nsresult LoadErrorPage(nsIURI* aURI, const char16_t* aURL,
-                           const char* aErrorPage,
-                           const char* aErrorType,
-                           const char16_t* aDescription,
-                           const char* aCSSClass,
-                           nsIChannel* aFailedChannel);
+                         const char* aErrorPage,
+                         const char* aErrorType,
+                         const char16_t* aDescription,
+                         const char* aCSSClass,
+                         nsIChannel* aFailedChannel);
+
+  
+  
+  nsresult LoadErrorPage(nsIURI* aErrorURI, nsIURI* aFailedURI, nsIChannel* aFailedChannel);
 
   bool DisplayLoadError(nsresult aError, nsIURI* aURI, const char16_t* aURL,
                         nsIChannel* aFailedChannel)
