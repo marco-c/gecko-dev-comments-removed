@@ -212,7 +212,7 @@ JSString::dumpRepresentation(js::GenericPrinter& out, int indent) const
 void
 JSString::dumpRepresentationHeader(js::GenericPrinter& out, const char* subclass) const
 {
-    uint32_t flags = d.u1.flags;
+    uint32_t flags = JSString::flags();
     
     
     out.printf("((%s*) %p) length: %zu  flags: 0x%x", subclass, this, length(), flags);
@@ -519,9 +519,7 @@ JSRope::flattenInternal(JSContext* maybecx)
     CharT* pos;
 
     
-
-
-
+    
     static const uintptr_t Tag_Mask = 0x3;
     static const uintptr_t Tag_FinishNode = 0x0;
     static const uintptr_t Tag_VisitRightChild = 0x1;
@@ -556,7 +554,7 @@ JSRope::flattenInternal(JSContext* maybecx)
                 
                 MOZ_ASSERT(child->isRope());
                 str->setNonInlineChars(wholeChars);
-                child->d.u1.flattenData = uintptr_t(str) | Tag_VisitRightChild;
+                child->setFlattenData(uintptr_t(str) | Tag_VisitRightChild);
                 str = child;
             }
             if (b == WithIncrementalBarrier) {
@@ -564,11 +562,12 @@ JSRope::flattenInternal(JSContext* maybecx)
                 JSString::writeBarrierPre(str->d.s.u3.right);
             }
             str->setNonInlineChars(wholeChars);
-            pos = wholeChars + left.d.u1.length;
+            uint32_t left_len = left.length();
+            pos = wholeChars + left_len;
             if (IsSame<CharT, char16_t>::value)
-                left.d.u1.flags = DEPENDENT_FLAGS;
+                left.setLengthAndFlags(left_len, DEPENDENT_FLAGS);
             else
-                left.d.u1.flags = DEPENDENT_FLAGS | LATIN1_CHARS_BIT;
+                left.setLengthAndFlags(left_len, DEPENDENT_FLAGS | LATIN1_CHARS_BIT);
             left.d.s.u3.base = (JSLinearString*)this;  
             Nursery& nursery = runtimeFromMainThread()->gc.nursery();
             bool inTenured = !bufferIfNursery;
@@ -614,7 +613,7 @@ JSRope::flattenInternal(JSContext* maybecx)
         str->setNonInlineChars(pos);
         if (left.isRope()) {
             
-            left.d.u1.flattenData = uintptr_t(str) | Tag_VisitRightChild;
+            left.setFlattenData(uintptr_t(str) | Tag_VisitRightChild);
             str = &left;
             goto first_visit_node;
         }
@@ -625,7 +624,7 @@ JSRope::flattenInternal(JSContext* maybecx)
         JSString& right = *str->d.s.u3.right;
         if (right.isRope()) {
             
-            right.d.u1.flattenData = uintptr_t(str) | Tag_FinishNode;
+            right.setFlattenData(uintptr_t(str) | Tag_FinishNode);
             str = &right;
             goto first_visit_node;
         }
@@ -637,21 +636,20 @@ JSRope::flattenInternal(JSContext* maybecx)
         if (str == this) {
             MOZ_ASSERT(pos == wholeChars + wholeLength);
             *pos = '\0';
-            str->d.u1.length = wholeLength;
             if (IsSame<CharT, char16_t>::value)
-                str->d.u1.flags = EXTENSIBLE_FLAGS;
+                str->setLengthAndFlags(wholeLength, EXTENSIBLE_FLAGS);
             else
-                str->d.u1.flags = EXTENSIBLE_FLAGS | LATIN1_CHARS_BIT;
+                str->setLengthAndFlags(wholeLength, EXTENSIBLE_FLAGS | LATIN1_CHARS_BIT);
             str->setNonInlineChars(wholeChars);
             str->d.s.u3.capacity = wholeCapacity;
             return &this->asFlat();
         }
-        uintptr_t flattenData = str->d.u1.flattenData;
+        uintptr_t flattenData;
+        uint32_t len = pos - str->nonInlineCharsRaw<CharT>();
         if (IsSame<CharT, char16_t>::value)
-            str->d.u1.flags = DEPENDENT_FLAGS;
+            flattenData = str->unsetFlattenData(len, DEPENDENT_FLAGS);
         else
-            str->d.u1.flags = DEPENDENT_FLAGS | LATIN1_CHARS_BIT;
-        str->d.u1.length = pos - str->asLinear().nonInlineChars<CharT>(nogc);
+            flattenData = str->unsetFlattenData(len, DEPENDENT_FLAGS | LATIN1_CHARS_BIT);
         str->d.s.u3.base = (JSLinearString*)this;       
 
         
@@ -806,9 +804,9 @@ JSDependentString::undependInternal(JSContext* cx)
 
 
     if (IsSame<CharT, Latin1Char>::value)
-        d.u1.flags = UNDEPENDED_FLAGS | LATIN1_CHARS_BIT;
+        setLengthAndFlags(n, UNDEPENDED_FLAGS | LATIN1_CHARS_BIT);
     else
-        d.u1.flags = UNDEPENDED_FLAGS;
+        setLengthAndFlags(n, UNDEPENDED_FLAGS);
 
     return &this->asFlat();
 }
@@ -1383,8 +1381,8 @@ JSExternalString::ensureFlat(JSContext* cx)
     
     
     
+    setLengthAndFlags(n, INIT_FLAT_FLAGS);
     setNonInlineChars<char16_t>(s.release());
-    d.u1.flags = INIT_FLAT_FLAGS;
 
     return &this->asFlat();
 }

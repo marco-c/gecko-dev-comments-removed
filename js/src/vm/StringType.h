@@ -167,10 +167,10 @@ class JSString : public js::gc::Cell
     {
         union {
             struct {
-                uint32_t           flags;               
-                uint32_t           length;              
+                uint32_t           flags_;              
+                uint32_t           length_;             
             };
-            uintptr_t              flattenData;         
+            uintptr_t              flattenData_;        
         } u1;
         union {
             union {
@@ -317,9 +317,9 @@ class JSString : public js::gc::Cell
 
         
         using JS::shadow::String;
-        static_assert(offsetof(JSString, d.u1.length) == offsetof(String, length),
+        static_assert(offsetof(JSString, d.u1.length_) == offsetof(String, length_),
                       "shadow::String length offset must match JSString");
-        static_assert(offsetof(JSString, d.u1.flags) == offsetof(String, flags),
+        static_assert(offsetof(JSString, d.u1.flags_) == offsetof(String, flags_),
                       "shadow::String flags offset must match JSString");
         static_assert(offsetof(JSString, d.s.u2.nonInlineCharsLatin1) == offsetof(String, nonInlineCharsLatin1),
                       "shadow::String nonInlineChars offset must match JSString");
@@ -355,37 +355,79 @@ class JSString : public js::gc::Cell
     MOZ_ALWAYS_INLINE
     void setNonInlineChars(const CharT* chars);
 
-  public:
-    
+    MOZ_ALWAYS_INLINE
+    uint32_t flags() const {
+        return d.u1.flags_;
+    }
 
+  public:
     MOZ_ALWAYS_INLINE
     size_t length() const {
-        return d.u1.length;
+        return d.u1.length_;
+    }
+
+  protected:
+    MOZ_ALWAYS_INLINE
+    void setFlagBit(uint32_t flags) {
+        d.u1.flags_ |= flags;
     }
 
     MOZ_ALWAYS_INLINE
+    void clearFlagBit(uint32_t flags) {
+        d.u1.flags_ &= ~flags;
+    }
+
+    MOZ_ALWAYS_INLINE
+    void setLengthAndFlags(uint32_t len, uint32_t flags) {
+        d.u1.flags_ = flags;
+        d.u1.length_ = len;
+    }
+
+    
+    
+    
+    MOZ_ALWAYS_INLINE
+    void setFlattenData(uintptr_t data) {
+        d.u1.flattenData_ = data;
+    }
+
+    
+    
+    MOZ_ALWAYS_INLINE
+    uintptr_t unsetFlattenData(uint32_t len, uint32_t flags) {
+        uintptr_t data = d.u1.flattenData_;
+        setLengthAndFlags(len, flags);
+        return data;
+    }
+
+    
+    template <typename CharT> MOZ_ALWAYS_INLINE const CharT* nonInlineCharsRaw() const;
+
+  public:
+
+    MOZ_ALWAYS_INLINE
     bool empty() const {
-        return d.u1.length == 0;
+        return length() == 0;
     }
 
     inline bool getChar(JSContext* cx, size_t index, char16_t* code);
 
     
     bool hasLatin1Chars() const {
-        return d.u1.flags & LATIN1_CHARS_BIT;
+        return flags() & LATIN1_CHARS_BIT;
     }
     bool hasTwoByteChars() const {
-        return !(d.u1.flags & LATIN1_CHARS_BIT);
+        return !(flags() & LATIN1_CHARS_BIT);
     }
 
     
     bool hasIndexValue() const {
-        return d.u1.flags & INDEX_VALUE_BIT;
+        return flags() & INDEX_VALUE_BIT;
     }
     uint32_t getIndexValue() const {
         MOZ_ASSERT(hasIndexValue());
         MOZ_ASSERT(isFlat());
-        return d.u1.flags >> INDEX_VALUE_SHIFT;
+        return flags() >> INDEX_VALUE_SHIFT;
     }
 
     
@@ -401,7 +443,7 @@ class JSString : public js::gc::Cell
 
     MOZ_ALWAYS_INLINE
     bool isRope() const {
-        return !(d.u1.flags & LINEAR_BIT);
+        return !(flags() & LINEAR_BIT);
     }
 
     MOZ_ALWAYS_INLINE
@@ -412,7 +454,7 @@ class JSString : public js::gc::Cell
 
     MOZ_ALWAYS_INLINE
     bool isLinear() const {
-        return d.u1.flags & LINEAR_BIT;
+        return flags() & LINEAR_BIT;
     }
 
     MOZ_ALWAYS_INLINE
@@ -423,7 +465,7 @@ class JSString : public js::gc::Cell
 
     MOZ_ALWAYS_INLINE
     bool isDependent() const {
-        return (d.u1.flags & TYPE_FLAGS_MASK) == DEPENDENT_FLAGS;
+        return (flags() & TYPE_FLAGS_MASK) == DEPENDENT_FLAGS;
     }
 
     MOZ_ALWAYS_INLINE
@@ -445,7 +487,7 @@ class JSString : public js::gc::Cell
 
     MOZ_ALWAYS_INLINE
     bool isExtensible() const {
-        return (d.u1.flags & TYPE_FLAGS_MASK) == EXTENSIBLE_FLAGS;
+        return (flags() & TYPE_FLAGS_MASK) == EXTENSIBLE_FLAGS;
     }
 
     MOZ_ALWAYS_INLINE
@@ -456,7 +498,7 @@ class JSString : public js::gc::Cell
 
     MOZ_ALWAYS_INLINE
     bool isInline() const {
-        return d.u1.flags & INLINE_CHARS_BIT;
+        return flags() & INLINE_CHARS_BIT;
     }
 
     MOZ_ALWAYS_INLINE
@@ -467,12 +509,12 @@ class JSString : public js::gc::Cell
 
     MOZ_ALWAYS_INLINE
     bool isFatInline() const {
-        return (d.u1.flags & FAT_INLINE_MASK) == FAT_INLINE_MASK;
+        return (flags() & FAT_INLINE_MASK) == FAT_INLINE_MASK;
     }
 
     
     bool isExternal() const {
-        return (d.u1.flags & TYPE_FLAGS_MASK) == EXTERNAL_FLAGS;
+        return (flags() & TYPE_FLAGS_MASK) == EXTERNAL_FLAGS;
     }
 
     MOZ_ALWAYS_INLINE
@@ -483,17 +525,17 @@ class JSString : public js::gc::Cell
 
     MOZ_ALWAYS_INLINE
     bool isUndepended() const {
-        return (d.u1.flags & TYPE_FLAGS_MASK) == UNDEPENDED_FLAGS;
+        return (flags() & TYPE_FLAGS_MASK) == UNDEPENDED_FLAGS;
     }
 
     MOZ_ALWAYS_INLINE
     bool isAtom() const {
-        return !(d.u1.flags & NON_ATOM_BIT);
+        return !(flags() & NON_ATOM_BIT);
     }
 
     MOZ_ALWAYS_INLINE
     bool isPermanentAtom() const {
-        return (d.u1.flags & PERMANENT_ATOM_MASK) == PERMANENT_ATOM_FLAGS;
+        return (flags() & PERMANENT_ATOM_MASK) == PERMANENT_ATOM_FLAGS;
     }
 
     MOZ_ALWAYS_INLINE
@@ -517,7 +559,7 @@ class JSString : public js::gc::Cell
     
 
     inline bool hasBase() const {
-        return d.u1.flags & HAS_BASE_BIT;
+        return flags() & HAS_BASE_BIT;
     }
 
     inline JSLinearString* base() const;
@@ -535,10 +577,10 @@ class JSString : public js::gc::Cell
     
 
     static size_t offsetOfLength() {
-        return offsetof(JSString, d.u1.length);
+        return offsetof(JSString, d.u1.length_);
     }
     static size_t offsetOfFlags() {
-        return offsetof(JSString, d.u1.flags);
+        return offsetof(JSString, d.u1.flags_);
     }
 
   private:
@@ -931,7 +973,7 @@ class JSFlatString : public JSLinearString
         MOZ_ASSERT(isIndexSlow(&containedIndex));
         MOZ_ASSERT(index == containedIndex);
 
-        d.u1.flags |= (index << INDEX_VALUE_SHIFT) | INDEX_VALUE_BIT;
+        setFlagBit((index << INDEX_VALUE_SHIFT) | INDEX_VALUE_BIT);
     }
 
     
@@ -1167,19 +1209,19 @@ class JSAtom : public JSFlatString
     
     MOZ_ALWAYS_INLINE void morphIntoPermanentAtom() {
         MOZ_ASSERT(static_cast<JSString*>(this)->isAtom());
-        d.u1.flags |= PERMANENT_ATOM_FLAGS | PINNED_ATOM_BIT;
+        setFlagBit(PERMANENT_ATOM_FLAGS | PINNED_ATOM_BIT);
     }
 
     MOZ_ALWAYS_INLINE
     bool isPinned() const {
-        return d.u1.flags & PINNED_ATOM_BIT;
+        return flags() & PINNED_ATOM_BIT;
     }
 
     
     MOZ_ALWAYS_INLINE void setPinned() {
         MOZ_ASSERT(static_cast<JSString*>(this)->isAtom());
         MOZ_ASSERT(!isPinned());
-        d.u1.flags |= PINNED_ATOM_BIT;
+        setFlagBit(PINNED_ATOM_BIT);
     }
 
     inline js::HashNumber hash() const;
@@ -1257,7 +1299,7 @@ MOZ_ALWAYS_INLINE JSAtom*
 JSFlatString::morphAtomizedStringIntoAtom(js::HashNumber hash)
 {
     MOZ_ASSERT(!isAtom());
-    d.u1.flags &= ~NON_ATOM_BIT;
+    clearFlagBit(NON_ATOM_BIT);
     JSAtom* atom = &asAtom();
     atom->initHash(hash);
     return atom;
@@ -1267,8 +1309,8 @@ MOZ_ALWAYS_INLINE JSAtom*
 JSFlatString::morphAtomizedStringIntoPermanentAtom(js::HashNumber hash)
 {
     MOZ_ASSERT(!isAtom());
-    d.u1.flags |= PERMANENT_ATOM_FLAGS | PINNED_ATOM_BIT;
-    d.u1.flags &= ~NON_ATOM_BIT;
+    setFlagBit(PERMANENT_ATOM_FLAGS | PINNED_ATOM_BIT);
+    clearFlagBit(NON_ATOM_BIT);
     JSAtom* atom = &asAtom();
     atom->initHash(hash);
     return atom;
