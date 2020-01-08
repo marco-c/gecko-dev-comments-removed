@@ -3280,15 +3280,31 @@ function getWebNavigation() {
 }
 
 function BrowserReloadWithFlags(reloadFlags) {
-  let url = gBrowser.currentURI.spec;
-  if (gBrowser.updateBrowserRemotenessByURL(gBrowser.selectedBrowser, url)) {
-    
-    
-    
-    gBrowser.loadURI(url, {
-      flags: reloadFlags,
-      triggeringPrincipal: gBrowser.selectedBrowser.contentPrincipal,
-    });
+  let unchangedRemoteness = [];
+
+  for (let tab of gBrowser.selectedTabs) {
+    let browser = tab.linkedBrowser;
+    let url = browser.currentURI.spec;
+    if (gBrowser.updateBrowserRemotenessByURL(browser, url)) {
+      
+      
+      
+      if (tab.linkedPanel) {
+        loadBrowserURI(browser, url);
+      } else {
+        
+        
+        tab.addEventListener("SSTabRestoring",
+                             () => loadBrowserURI(browser, url),
+                             { once: true });
+        gBrowser._insertBrowser(tab);
+      }
+    } else {
+      unchangedRemoteness.push(tab);
+    }
+  }
+
+  if (unchangedRemoteness.length == 0) {
     return;
   }
 
@@ -3296,20 +3312,45 @@ function BrowserReloadWithFlags(reloadFlags) {
   
   
   
-  maybeRecordAbandonmentTelemetry(gBrowser.selectedTab, "reload");
+  for (let tab of unchangedRemoteness) {
+    maybeRecordAbandonmentTelemetry(tab, "reload");
+  }
 
   
   
-  SitePermissions.clearTemporaryPermissions(gBrowser.selectedBrowser);
+  
+  for (let tab of unchangedRemoteness) {
+    SitePermissions.clearTemporaryPermissions(tab.linkedBrowser);
+  }
   PanelMultiView.hidePopup(gIdentityHandler._identityPopup);
 
 
   let handlingUserInput = window.windowUtils.isHandlingUserInput;
 
-  gBrowser.selectedBrowser
-          .messageManager
-          .sendAsyncMessage("Browser:Reload",
-                            { flags: reloadFlags, handlingUserInput });
+  for (let tab of unchangedRemoteness) {
+    if (tab.linkedPanel) {
+      sendReloadMessage(tab);
+    } else {
+      
+      
+      tab.addEventListener("SSTabRestoring", () => sendReloadMessage(tab), { once: true });
+      gBrowser._insertBrowser(tab);
+    }
+  }
+
+  function loadBrowserURI(browser, url) {
+    browser.loadURI(url, {
+      flags: reloadFlags,
+      triggeringPrincipal: browser.contentPrincipal,
+    });
+  }
+
+  function sendReloadMessage(tab) {
+    tab.linkedBrowser
+         .messageManager
+         .sendAsyncMessage("Browser:Reload",
+                           { flags: reloadFlags, handlingUserInput });
+  }
 }
 
 function getSecurityInfo(securityInfoAsString) {
