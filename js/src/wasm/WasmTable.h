@@ -29,6 +29,17 @@ namespace wasm {
 
 
 
+
+
+
+
+
+
+
+
+
+typedef GCVector<JS::Heap<JSObject*>, 0, SystemAllocPolicy> TableAnyRefVector;
+
 class Table : public ShareableBase<Table>
 {
     using InstanceSet = JS::WeakCache<GCHashSet<ReadBarrieredWasmInstanceObject,
@@ -38,7 +49,8 @@ class Table : public ShareableBase<Table>
 
     ReadBarrieredWasmTableObject maybeObject_;
     InstanceSet                  observers_;
-    UniqueByteArray              array_;
+    UniqueByteArray              array_;     
+    TableAnyRefVector            objects_;   
     const TableKind              kind_;
     uint32_t                     length_;
     const Maybe<uint32_t>        maximum_;
@@ -47,6 +59,8 @@ class Table : public ShareableBase<Table>
     template <class> friend struct js::MallocProvider;
     Table(JSContext* cx, const TableDesc& td, HandleWasmTableObject maybeObject,
           UniqueByteArray array);
+    Table(JSContext* cx, const TableDesc& td, HandleWasmTableObject maybeObject,
+          TableAnyRefVector&& objects);
 
     void tracePrivate(JSTracer* trc);
     friend class js::WasmTableObject;
@@ -57,16 +71,31 @@ class Table : public ShareableBase<Table>
     void trace(JSTracer* trc);
 
     bool external() const { return external_; }
+    TableKind kind() const { return kind_; }
     bool isTypedFunction() const { return kind_ == TableKind::TypedFunction; }
     uint32_t length() const { return length_; }
     Maybe<uint32_t> maximum() const { return maximum_; }
-    uint8_t* base() const { return array_.get(); }
 
     
+    uint8_t* functionBase() const;
 
+    
     void** internalArray() const;
+
+    
     ExternalTableElem* externalArray() const;
-    void set(uint32_t index, void* code, const Instance* instance);
+
+    
+    TableAnyRefVector& objectArray();
+
+    const TableAnyRefVector& objectArray() const;
+
+    
+    
+    
+
+    void setAnyFunc(uint32_t index, void* code, const Instance* instance);
+    void setAnyRef(uint32_t index, HandleObject obj);
     void setNull(uint32_t index);
 
     

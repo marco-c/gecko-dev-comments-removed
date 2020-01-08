@@ -1955,6 +1955,7 @@ struct Limits
 enum class TableKind
 {
     AnyFunction,
+    AnyRef,
     TypedFunction
 };
 
@@ -2107,8 +2108,9 @@ struct TableTls
 
     
     
-    void* base;
+    void* functionBase;
 };
+
 
 
 
@@ -2233,9 +2235,9 @@ class CalleeDesc
         MOZ_ASSERT(isTable());
         return u.table.globalDataOffset_ + offsetof(TableTls, length);
     }
-    uint32_t tableBaseGlobalDataOffset() const {
+    uint32_t tableFunctionBaseGlobalDataOffset() const {
         MOZ_ASSERT(isTable());
-        return u.table.globalDataOffset_ + offsetof(TableTls, base);
+        return u.table.globalDataOffset_ + offsetof(TableTls, functionBase);
     }
     bool wasmTableIsExternal() const {
         MOZ_ASSERT(which_ == WasmTable);
