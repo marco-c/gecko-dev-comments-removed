@@ -274,6 +274,11 @@ class ChildProcessInfo
   
   bool mPauseNeeded;
 
+  
+  
+  bool mHasBegunFatalError;
+  bool mHasFatalError;
+
   void OnIncomingMessage(size_t aChannelId, const Message& aMsg);
   void OnIncomingRecoveryMessage(const Message& aMsg);
   void SendNextRecoveryMessage();

@@ -108,8 +108,9 @@ ChannelMessageHandler(Message* aMsg)
       PrintSpew("Terminate message received, exiting...\n");
       _exit(0);
     } else {
-      MOZ_CRASH("Hanged replaying process");
+      ReportFatalError(Nothing(), "Hung replaying process");
     }
+    break;
   }
   case MessageType::SetIsActive: {
     const SetIsActiveMessage& nmsg = (const SetIsActiveMessage&) *aMsg;
@@ -350,6 +351,10 @@ CreateCheckpoint()
 void
 ReportFatalError(const Maybe<MinidumpInfo>& aMinidump, const char* aFormat, ...)
 {
+  
+  
+  gChannel->SendMessage(BeginFatalErrorMessage());
+
   
   UnrecoverableSnapshotFailure();
 

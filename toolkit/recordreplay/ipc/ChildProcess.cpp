@@ -40,6 +40,8 @@ ChildProcessInfo::ChildProcessInfo(UniquePtr<ChildRole> aRole,
   , mNumRecoveredMessages(0)
   , mRole(std::move(aRole))
   , mPauseNeeded(false)
+  , mHasBegunFatalError(false)
+  , mHasFatalError(false)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
@@ -199,7 +201,11 @@ ChildProcessInfo::OnIncomingMessage(size_t aChannelId, const Message& aMsg)
   }
 
   
-  if (aMsg.mType == MessageType::FatalError) {
+  if (aMsg.mType == MessageType::BeginFatalError) {
+    mHasBegunFatalError = true;
+    return;
+  } else if (aMsg.mType == MessageType::FatalError) {
+    mHasFatalError = true;
     const FatalErrorMessage& nmsg = static_cast<const FatalErrorMessage&>(aMsg);
     OnCrash(nmsg.Error());
     return;
@@ -528,11 +534,22 @@ ChildProcessInfo::OnCrash(const char* aWhy)
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   
-  
-  
   CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::RecordReplayError,
                                      nsAutoCString(aWhy));
-  Shutdown();
+
+  
+  
+  if (mHasFatalError) {
+    Shutdown();
+  }
+
+  
+  
+  
+  MOZ_RELEASE_ASSERT(!mHasBegunFatalError);
+
+  
+  MOZ_CRASH("Unexpected child crash");
 }
 
 
