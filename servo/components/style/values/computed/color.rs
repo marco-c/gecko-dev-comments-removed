@@ -4,12 +4,12 @@
 
 
 
-use crate::values::animated::color::RGBA as AnimatedRGBA;
-use crate::values::animated::ToAnimatedValue;
-use crate::values::generics::color::Color as GenericColor;
 use cssparser::{Color as CSSParserColor, RGBA};
 use std::fmt;
 use style_traits::{CssWriter, ToCss};
+use values::animated::color::RGBA as AnimatedRGBA;
+use values::animated::ToAnimatedValue;
+use values::generics::color::Color as GenericColor;
 
 
 pub type RGBAColor = RGBA;

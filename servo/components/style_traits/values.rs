@@ -507,7 +507,7 @@ macro_rules! define_css_keyword_enum {
 
 
 pub mod specified {
-    use crate::ParsingMode;
+    use ParsingMode;
 
     
     #[repr(u8)]

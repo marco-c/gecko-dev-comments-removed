@@ -4,12 +4,12 @@
 
 
 
-use crate::parser::ParserContext;
-use crate::values::animated::ToAnimatedValue;
 use cssparser::Parser;
 use euclid::Size2D;
+use parser::ParserContext;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, SpecifiedValueInfo, ToCss};
+use values::animated::ToAnimatedValue;
 
 
 

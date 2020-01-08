@@ -4,12 +4,12 @@
 
 
 
-use crate::values::generics::url::UrlOrNone as GenericUrlOrNone;
+use values::generics::url::UrlOrNone as GenericUrlOrNone;
 
 #[cfg(feature = "gecko")]
-pub use crate::gecko::url::{ComputedImageUrl, ComputedUrl};
+pub use gecko::url::{ComputedImageUrl, ComputedUrl};
 #[cfg(feature = "servo")]
-pub use crate::servo::url::{ComputedImageUrl, ComputedUrl};
+pub use servo::url::{ComputedImageUrl, ComputedUrl};
 
 
 pub type UrlOrNone = GenericUrlOrNone<ComputedUrl>;

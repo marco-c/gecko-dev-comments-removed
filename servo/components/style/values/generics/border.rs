@@ -4,10 +4,10 @@
 
 
 
-use crate::values::generics::rect::Rect;
-use crate::values::generics::size::Size;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
+use values::generics::rect::Rect;
+use values::generics::size::Size;
 
 
 #[derive(

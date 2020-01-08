@@ -4,8 +4,8 @@
 
 
 
-use crate::values::computed::length::LengthOrPercentage;
-use crate::values::generics::gecko::ScrollSnapPoint as GenericScrollSnapPoint;
+use values::computed::length::LengthOrPercentage;
+use values::generics::gecko::ScrollSnapPoint as GenericScrollSnapPoint;
 
 
 pub type ScrollSnapPoint = GenericScrollSnapPoint<LengthOrPercentage>;

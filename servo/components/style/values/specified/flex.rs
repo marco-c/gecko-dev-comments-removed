@@ -4,18 +4,18 @@
 
 
 
-use crate::parser::{Parse, ParserContext};
-use crate::values::generics::flex::FlexBasis as GenericFlexBasis;
 use cssparser::Parser;
+use parser::{Parse, ParserContext};
 use style_traits::ParseError;
+use values::generics::flex::FlexBasis as GenericFlexBasis;
 
 
 #[cfg(feature = "servo")]
-pub type Width = crate::values::specified::NonNegativeLengthOrPercentageOrAuto;
+pub type Width = ::values::specified::NonNegativeLengthOrPercentageOrAuto;
 
 
 #[cfg(feature = "gecko")]
-pub type Width = crate::values::specified::MozLength;
+pub type Width = ::values::specified::MozLength;
 
 
 pub type FlexBasis = GenericFlexBasis<Width>;

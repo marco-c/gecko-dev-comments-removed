@@ -4,12 +4,12 @@
 
 
 
-use crate::parser::{Parse, ParserContext};
-use crate::values::generics::background::BackgroundSize as GenericBackgroundSize;
-use crate::values::specified::length::NonNegativeLengthOrPercentageOrAuto;
 use cssparser::Parser;
+use parser::{Parse, ParserContext};
 use selectors::parser::SelectorParseErrorKind;
 use style_traits::ParseError;
+use values::generics::background::BackgroundSize as GenericBackgroundSize;
+use values::specified::length::NonNegativeLengthOrPercentageOrAuto;
 
 
 pub type BackgroundSize = GenericBackgroundSize<NonNegativeLengthOrPercentageOrAuto>;

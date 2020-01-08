@@ -5,8 +5,8 @@
 
 
 use app_units::Au;
-use crate::gecko_bindings::structs::nsCSSShadowItem;
-use crate::values::computed::effects::{BoxShadow, SimpleShadow};
+use gecko_bindings::structs::nsCSSShadowItem;
+use values::computed::effects::{BoxShadow, SimpleShadow};
 
 impl nsCSSShadowItem {
     

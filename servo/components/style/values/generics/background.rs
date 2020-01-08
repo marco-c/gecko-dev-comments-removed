@@ -4,9 +4,9 @@
 
 
 
-use crate::values::IsAuto;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
+use values::IsAuto;
 
 
 #[derive(

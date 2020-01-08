@@ -7,12 +7,12 @@
 
 
 
-use crate::values::computed::{Integer, LengthOrPercentage, Percentage};
-use crate::values::generics::position::Position as GenericPosition;
-use crate::values::generics::position::ZIndex as GenericZIndex;
-pub use crate::values::specified::position::{GridAutoFlow, GridTemplateAreas};
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
+use values::computed::{Integer, LengthOrPercentage, Percentage};
+use values::generics::position::Position as GenericPosition;
+use values::generics::position::ZIndex as GenericZIndex;
+pub use values::specified::position::{GridAutoFlow, GridTemplateAreas};
 
 
 pub type Position = GenericPosition<HorizontalPosition, VerticalPosition>;

@@ -4,13 +4,13 @@
 
 
 
-use crate::values::computed::color::Color;
-use crate::values::computed::url::ComputedImageUrl;
-use crate::values::computed::Number;
-use crate::values::generics::ui as generics;
-use crate::values::{Auto, Either};
+use values::computed::color::Color;
+use values::computed::url::ComputedImageUrl;
+use values::computed::Number;
+use values::generics::ui as generics;
+use values::{Auto, Either};
 
-pub use crate::values::specified::ui::MozForceBrokenImageIcon;
+pub use values::specified::ui::MozForceBrokenImageIcon;
 
 
 pub type ColorOrAuto = Either<Color, Auto>;

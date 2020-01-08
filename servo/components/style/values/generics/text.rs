@@ -5,11 +5,11 @@
 
 
 use app_units::Au;
-use crate::parser::ParserContext;
-use crate::values::animated::{Animate, Procedure, ToAnimatedZero};
-use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use cssparser::Parser;
+use parser::ParserContext;
 use style_traits::ParseError;
+use values::animated::{Animate, Procedure, ToAnimatedZero};
+use values::distance::{ComputeSquaredDistance, SquaredDistance};
 
 
 #[derive(

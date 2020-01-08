@@ -4,8 +4,8 @@
 
 
 
-use crate::parser::{Parse, ParserContext};
 use cssparser::Parser;
+use parser::{Parse, ParserContext};
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, ToCss};
 

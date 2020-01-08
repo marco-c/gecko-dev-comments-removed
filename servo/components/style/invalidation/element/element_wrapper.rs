@@ -5,16 +5,16 @@
 
 
 
-use crate::dom::TElement;
-use crate::element_state::ElementState;
-use crate::selector_parser::{AttrValue, NonTSPseudoClass, PseudoElement, SelectorImpl};
-use crate::selector_parser::{Snapshot, SnapshotMap};
-use crate::{Atom, CaseSensitivityExt, LocalName, Namespace, WeakAtom};
+use dom::TElement;
+use element_state::ElementState;
+use selector_parser::{AttrValue, NonTSPseudoClass, PseudoElement, SelectorImpl};
+use selector_parser::{Snapshot, SnapshotMap};
 use selectors::attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint};
 use selectors::matching::{ElementSelectorFlags, MatchingContext};
 use selectors::{Element, OpaqueElement};
 use std::cell::Cell;
 use std::fmt;
+use {Atom, CaseSensitivityExt, LocalName, Namespace, WeakAtom};
 
 
 
@@ -60,7 +60,7 @@ pub trait ElementSnapshot: Sized {
 
     
     
-    fn each_class<F>(&self, _: F)
+    fn each_class<F>(&self, F)
     where
         F: FnMut(&Atom);
 

@@ -4,14 +4,14 @@
 
 
 
-use crate::parser::{Parse, ParserContext};
-#[cfg(feature = "gecko")]
-use crate::values::generics::CounterStyleOrNone;
-#[cfg(feature = "gecko")]
-use crate::values::CustomIdent;
 use cssparser::{Parser, Token};
+use parser::{Parse, ParserContext};
 use servo_arc::Arc;
 use style_traits::{ParseError, StyleParseErrorKind};
+#[cfg(feature = "gecko")]
+use values::generics::CounterStyleOrNone;
+#[cfg(feature = "gecko")]
+use values::CustomIdent;
 
 
 #[cfg(feature = "gecko")]
@@ -37,7 +37,7 @@ impl ListStyleType {
     
     
     pub fn from_gecko_keyword(value: u32) -> Self {
-        use crate::gecko_bindings::structs;
+        use gecko_bindings::structs;
 
         if value == structs::NS_STYLE_LIST_STYLE_NONE {
             return ListStyleType::CounterStyle(CounterStyleOrNone::None);

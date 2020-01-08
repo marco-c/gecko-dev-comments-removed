@@ -7,11 +7,11 @@
 
 
 use super::{Device, MediaQuery, Qualifier};
-use crate::context::QuirksMode;
-use crate::error_reporting::ContextualParseError;
-use crate::parser::ParserContext;
+use context::QuirksMode;
 use cssparser::{Delimiter, Parser};
 use cssparser::{ParserInput, Token};
+use error_reporting::ContextualParseError;
+use parser::ParserContext;
 
 
 #[css(comma, derive_debug)]

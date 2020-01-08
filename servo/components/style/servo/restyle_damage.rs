@@ -5,9 +5,9 @@
 
 
 
-use crate::computed_values::display::T as Display;
-use crate::matching::{StyleChange, StyleDifference};
-use crate::properties::ComputedValues;
+use computed_values::display::T as Display;
+use matching::{StyleChange, StyleDifference};
+use properties::ComputedValues;
 use std::fmt;
 
 bitflags! {

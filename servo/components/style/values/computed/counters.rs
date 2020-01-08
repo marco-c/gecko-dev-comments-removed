@@ -4,10 +4,10 @@
 
 
 
-use crate::values::computed::url::ComputedImageUrl;
-use crate::values::generics::counters as generics;
-use crate::values::generics::counters::CounterIncrement as GenericCounterIncrement;
-use crate::values::generics::counters::CounterReset as GenericCounterReset;
+use values::computed::url::ComputedImageUrl;
+use values::generics::counters as generics;
+use values::generics::counters::CounterIncrement as GenericCounterIncrement;
+use values::generics::counters::CounterReset as GenericCounterReset;
 
 
 pub type CounterIncrement = GenericCounterIncrement<i32>;

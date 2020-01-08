@@ -4,15 +4,15 @@
 
 
 
-use crate::values::generics::flex::FlexBasis as GenericFlexBasis;
+use values::generics::flex::FlexBasis as GenericFlexBasis;
 
 
 #[cfg(feature = "servo")]
-pub type Width = crate::values::computed::NonNegativeLengthOrPercentageOrAuto;
+pub type Width = ::values::computed::NonNegativeLengthOrPercentageOrAuto;
 
 
 #[cfg(feature = "gecko")]
-pub type Width = crate::values::computed::MozLength;
+pub type Width = ::values::computed::MozLength;
 
 
 pub type FlexBasis = GenericFlexBasis<Width>;

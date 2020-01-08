@@ -4,10 +4,10 @@
 
 
 
-use crate::parser::{Parse, ParserContext};
-use crate::values::specified::SVGPathData;
 use cssparser::Parser;
+use parser::{Parse, ParserContext};
 use style_traits::{ParseError, StyleParseErrorKind};
+use values::specified::SVGPathData;
 
 
 

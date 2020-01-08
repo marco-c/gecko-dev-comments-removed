@@ -4,16 +4,16 @@
 
 
 
-use crate::values::computed::color::Color;
-use crate::values::computed::length::{Length, NonNegativeLength};
+use values::computed::color::Color;
+use values::computed::length::{Length, NonNegativeLength};
 #[cfg(feature = "gecko")]
-use crate::values::computed::url::ComputedUrl;
-use crate::values::computed::{Angle, NonNegativeNumber};
-use crate::values::generics::effects::BoxShadow as GenericBoxShadow;
-use crate::values::generics::effects::Filter as GenericFilter;
-use crate::values::generics::effects::SimpleShadow as GenericSimpleShadow;
+use values::computed::url::ComputedUrl;
+use values::computed::{Angle, NonNegativeNumber};
+use values::generics::effects::BoxShadow as GenericBoxShadow;
+use values::generics::effects::Filter as GenericFilter;
+use values::generics::effects::SimpleShadow as GenericSimpleShadow;
 #[cfg(not(feature = "gecko"))]
-use crate::values::Impossible;
+use values::Impossible;
 
 
 pub type BoxShadow = GenericBoxShadow<Color, Length, NonNegativeLength, Length>;

@@ -6,16 +6,16 @@
 
 
 
-use crate::context::QuirksMode;
-use crate::media_queries::MediaList;
-use crate::shared_lock::{DeepCloneParams, DeepCloneWithLock};
-use crate::shared_lock::{SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard};
-use crate::str::CssStringWriter;
-use crate::stylesheets::{CssRule, Origin, StylesheetInDocument};
-use crate::values::CssUrl;
+use context::QuirksMode;
 use cssparser::SourceLocation;
+use media_queries::MediaList;
+use shared_lock::{DeepCloneParams, DeepCloneWithLock};
+use shared_lock::{SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard};
 use std::fmt::{self, Write};
+use str::CssStringWriter;
 use style_traits::{CssWriter, ToCss};
+use stylesheets::{CssRule, Origin, StylesheetInDocument};
+use values::CssUrl;
 
 
 
@@ -30,7 +30,7 @@ pub struct PendingSheet {
 #[derive(Debug)]
 pub enum ImportSheet {
     
-    Sheet(crate::gecko::data::GeckoStyleSheet),
+    Sheet(::gecko::data::GeckoStyleSheet),
     
     
     Pending(PendingSheet),
@@ -39,7 +39,7 @@ pub enum ImportSheet {
 #[cfg(feature = "gecko")]
 impl ImportSheet {
     
-    pub fn new(sheet: crate::gecko::data::GeckoStyleSheet) -> Self {
+    pub fn new(sheet: ::gecko::data::GeckoStyleSheet) -> Self {
         ImportSheet::Sheet(sheet)
     }
 
@@ -53,7 +53,7 @@ impl ImportSheet {
 
     
     
-    pub fn as_sheet(&self) -> Option<&crate::gecko::data::GeckoStyleSheet> {
+    pub fn as_sheet(&self) -> Option<&::gecko::data::GeckoStyleSheet> {
         match *self {
             ImportSheet::Sheet(ref s) => Some(s),
             ImportSheet::Pending(_) => None,
@@ -69,8 +69,8 @@ impl DeepCloneWithLock for ImportSheet {
         _guard: &SharedRwLockReadGuard,
         params: &DeepCloneParams,
     ) -> Self {
-        use crate::gecko::data::GeckoStyleSheet;
-        use crate::gecko_bindings::bindings;
+        use gecko::data::GeckoStyleSheet;
+        use gecko_bindings::bindings;
         match *self {
             ImportSheet::Sheet(ref s) => {
                 let clone = unsafe {
@@ -124,7 +124,7 @@ impl StylesheetInDocument for ImportSheet {
 
 #[cfg(feature = "servo")]
 #[derive(Debug)]
-pub struct ImportSheet(pub ::servo_arc::Arc<crate::stylesheets::Stylesheet>);
+pub struct ImportSheet(pub ::servo_arc::Arc<::stylesheets::Stylesheet>);
 
 #[cfg(feature = "servo")]
 impl StylesheetInDocument for ImportSheet {

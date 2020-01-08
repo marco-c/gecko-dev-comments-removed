@@ -4,11 +4,11 @@
 
 
 
-use crate::parser::ParserContext;
-use crate::values::generics::rect::Rect;
-use crate::values::specified::length::LengthOrNumber;
 use cssparser::Parser;
+use parser::ParserContext;
 use style_traits::ParseError;
+use values::generics::rect::Rect;
+use values::specified::length::LengthOrNumber;
 
 
 pub type LengthOrNumberRect = Rect<LengthOrNumber>;

@@ -4,11 +4,11 @@
 
 
 
-use crate::parser::{Parse, ParserContext};
-use crate::values::generics::column::ColumnCount as GenericColumnCount;
-use crate::values::specified::PositiveInteger;
 use cssparser::Parser;
+use parser::{Parse, ParserContext};
 use style_traits::ParseError;
+use values::generics::column::ColumnCount as GenericColumnCount;
+use values::specified::PositiveInteger;
 
 
 pub type ColumnCount = GenericColumnCount<PositiveInteger>;

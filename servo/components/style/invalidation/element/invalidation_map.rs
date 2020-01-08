@@ -4,18 +4,18 @@
 
 
 
-use crate::context::QuirksMode;
-use crate::element_state::{DocumentState, ElementState};
-use crate::selector_map::{MaybeCaseInsensitiveHashMap, SelectorMap, SelectorMapEntry};
-use crate::selector_parser::SelectorImpl;
-use crate::{Atom, LocalName, Namespace};
+use context::QuirksMode;
+use element_state::{DocumentState, ElementState};
 use fallible::FallibleVec;
 use hashglobe::FailedAllocationError;
+use selector_map::{MaybeCaseInsensitiveHashMap, SelectorMap, SelectorMapEntry};
+use selector_parser::SelectorImpl;
 use selectors::attr::NamespaceConstraint;
 use selectors::parser::{Combinator, Component};
 use selectors::parser::{Selector, SelectorIter, Visit};
 use selectors::visitor::SelectorVisitor;
 use smallvec::SmallVec;
+use {Atom, LocalName, Namespace};
 
 
 
@@ -358,7 +358,7 @@ impl<'a> SelectorVisitor for CompoundSelectorDependencyCollector<'a> {
 
     fn visit_simple_selector(&mut self, s: &Component<SelectorImpl>) -> bool {
         #[cfg(feature = "gecko")]
-        use crate::selector_parser::NonTSPseudoClass;
+        use selector_parser::NonTSPseudoClass;
 
         match *s {
             Component::ID(ref id) => {

@@ -8,8 +8,8 @@
 
 
 
-use crate::alloc::{alloc, dealloc};
-use crate::shim::{Shared, Unique};
+use alloc::{alloc, dealloc};
+use shim::{Shared, Unique};
 use std::cmp;
 use std::hash::{BuildHasher, Hash, Hasher};
 use std::marker;
@@ -18,7 +18,7 @@ use std::ops::{Deref, DerefMut};
 use std::ptr;
 
 use self::BucketState::*;
-use crate::FailedAllocationError;
+use FailedAllocationError;
 
 
 
@@ -795,7 +795,7 @@ impl<K, V> RawTable<K, V> {
         let buffer = alloc(size, alignment);
 
         if buffer.is_null() {
-            use crate::AllocationInfo;
+            use AllocationInfo;
             return Err(FailedAllocationError {
                 reason: "out of memory when allocating RawTable",
                 allocation_info: Some(AllocationInfo { size, alignment }),
