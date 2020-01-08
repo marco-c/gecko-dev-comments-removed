@@ -1988,13 +1988,6 @@ TransactionId WebRenderBridgeParent::FlushTransactionIdsForEpoch(
       
       
       
-      
-      
-      
-      
-      latencyMs = (aEndTime - transactionId.mRefreshStartTime).ToMilliseconds();
-      latencyNorm = latencyMs / mVsyncRate.ToMilliseconds();
-      fracLatencyNorm = lround(latencyNorm * 100.0);
       if (fracLatencyNorm < 200) {
         
         Telemetry::AccumulateCategorical(

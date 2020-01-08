@@ -905,9 +905,6 @@ TransactionId LayerTransactionParent::FlushTransactionId(
     
     
     
-    latencyMs = (aCompositeEnd - mRefreshStartTime).ToMilliseconds();
-    latencyNorm = latencyMs / mVsyncRate.ToMilliseconds();
-    fracLatencyNorm = lround(latencyNorm * 100.0);
     if (fracLatencyNorm < 200) {
       
       Telemetry::AccumulateCategorical(
