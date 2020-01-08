@@ -230,18 +230,6 @@ where
         self.index.remove(index);
         self.values.remove(key)
     }
-
-    fn remove_set<S>(&mut self, set: &::hash::HashSet<K, S>)
-    where
-        S: ::std::hash::BuildHasher,
-    {
-        if set.is_empty() {
-            return;
-        }
-        self.index.retain(|key| !set.contains(key));
-        self.values.retain(|key, _| !set.contains(key));
-        debug_assert_eq!(self.values.len(), self.index.len());
-    }
 }
 
 
@@ -642,11 +630,9 @@ impl<'a> CustomPropertiesBuilder<'a> {
                 
                 
                 let value = if !has_references && unparsed_value.references_environment {
-                    let invalid = Default::default(); 
                     let result = substitute_references_in_value(
                         unparsed_value,
                         &map,
-                        &invalid,
                         &self.environment,
                     );
                     match result {
@@ -735,18 +721,6 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
     
     struct VarInfo {
@@ -775,8 +749,6 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
         
         stack: SmallVec<[usize; 5]>,
         map: &'a mut CustomPropertiesMap,
-        
-        invalid: &'a mut PrecomputedHashSet<Name>,
         
         environment: &'a CssEnvironment,
     }
@@ -810,11 +782,6 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
                     !value.references_environment,
                     "Should've been handled earlier"
                 );
-                return None;
-            }
-
-            
-            if context.invalid.contains(&name) {
                 return None;
             }
 
@@ -879,6 +846,7 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
             
             
             
+            
             return Some(index);
         }
 
@@ -905,13 +873,12 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
             
             
             
-            
-            context.invalid.insert(var_name);
+            context.map.remove(&var_name);
             in_loop = true;
         }
         if in_loop {
             
-            context.invalid.insert(name);
+            context.map.remove(&name);
             return None;
         }
 
@@ -921,7 +888,6 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
         let result = substitute_references_in_value(
             &value,
             &context.map,
-            &context.invalid,
             &context.environment,
         );
 
@@ -930,7 +896,7 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
                 context.map.insert(name, Arc::new(computed_value));
             },
             Err(..) => {
-                context.invalid.insert(name);
+                context.map.remove(&name);
             },
         }
 
@@ -941,7 +907,6 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
     
     
     let names = custom_properties_map.index.clone();
-    let mut invalid = PrecomputedHashSet::default();
     for name in names.into_iter() {
         let mut context = Context {
             count: 0,
@@ -949,20 +914,16 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
             stack: SmallVec::new(),
             var_info: SmallVec::new(),
             map: custom_properties_map,
-            invalid: &mut invalid,
             environment,
         };
         traverse(name, &mut context);
     }
-
-    custom_properties_map.remove_set(&invalid);
 }
 
 
 fn substitute_references_in_value<'i>(
     value: &'i VariableValue,
     custom_properties: &CustomPropertiesMap,
-    invalid_custom_properties: &PrecomputedHashSet<Name>,
     environment: &CssEnvironment,
 ) -> Result<ComputedValue, ParseError<'i>> {
     debug_assert!(!value.references.is_empty() || value.references_environment);
@@ -977,7 +938,6 @@ fn substitute_references_in_value<'i>(
         &mut position,
         &mut computed_value,
         custom_properties,
-        invalid_custom_properties,
         environment,
     )?;
 
@@ -1000,7 +960,6 @@ fn substitute_block<'i, 't>(
     position: &mut (SourcePosition, TokenSerializationType),
     partial_computed_value: &mut ComputedValue,
     custom_properties: &CustomPropertiesMap,
-    invalid_custom_properties: &PrecomputedHashSet<Name>,
     env: &CssEnvironment,
 ) -> Result<TokenSerializationType, ParseError<'i>> {
     let mut last_token_type = TokenSerializationType::nothing();
@@ -1050,11 +1009,7 @@ fn substitute_block<'i, 't>(
                     let value = if is_env {
                         env.get(&name)
                     } else {
-                        if invalid_custom_properties.contains(&name) {
-                            None
-                        } else {
-                            custom_properties.get(&name).map(|v| &**v)
-                        }
+                        custom_properties.get(&name).map(|v| &**v)
                     };
 
                     if let Some(v) = value {
@@ -1079,7 +1034,6 @@ fn substitute_block<'i, 't>(
                             &mut position,
                             partial_computed_value,
                             custom_properties,
-                            invalid_custom_properties,
                             env,
                         )?;
                         partial_computed_value.push_from(position, input, last_token_type);
@@ -1098,7 +1052,6 @@ fn substitute_block<'i, 't>(
                         position,
                         partial_computed_value,
                         custom_properties,
-                        invalid_custom_properties,
                         env,
                     )
                 })?;
@@ -1131,7 +1084,6 @@ pub fn substitute<'i>(
     let mut input = ParserInput::new(input);
     let mut input = Parser::new(&mut input);
     let mut position = (input.position(), first_token_type);
-    let invalid = PrecomputedHashSet::default();
     let empty_map = CustomPropertiesMap::new();
     let custom_properties = match computed_values_map {
         Some(m) => &**m,
@@ -1142,7 +1094,6 @@ pub fn substitute<'i>(
         &mut position,
         &mut substituted,
         &custom_properties,
-        &invalid,
         env,
     )?;
     substituted.push_from(position, &input, last_token_type);
