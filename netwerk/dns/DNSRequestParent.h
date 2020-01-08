@@ -31,7 +31,6 @@ public:
   
   
   mozilla::ipc::IPCResult RecvCancelDNSRequest(const nsCString& hostName,
-                                               const uint16_t& type,
                                                const OriginAttributes& originAttributes,
                                                const uint32_t& flags,
                                                const nsresult& reason) override;

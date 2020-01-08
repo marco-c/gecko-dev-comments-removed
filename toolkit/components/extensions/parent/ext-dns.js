@@ -33,30 +33,28 @@ this.dns = class extends ExtensionAPI {
             let response = {
               addresses: [],
             };
-            let listener = {
-              onLookupComplete: function(inRequest, inRecord, inStatus) {
-                if (inRequest === request) {
-                  if (!Components.isSuccessCode(inStatus)) {
-                    return reject({message: getErrorString(inStatus)});
-                  }
-                  if (dnsFlags & Ci.nsIDNSService.RESOLVE_CANONICAL_NAME) {
-                    try {
-                      response.canonicalName = inRecord.canonicalName;
-                    } catch (e) {
-                      
-                    }
-                  }
-                  response.isTRR = inRecord.IsTRR();
-                  while (inRecord.hasMore()) {
-                    let addr = inRecord.getNextAddrAsString();
-                    
-                    if (!response.addresses.includes(addr)) {
-                      response.addresses.push(addr);
-                    }
-                  }
-                  return resolve(response);
+            let listener = (inRequest, inRecord, inStatus) => {
+              if (inRequest === request) {
+                if (!Components.isSuccessCode(inStatus)) {
+                  return reject({message: getErrorString(inStatus)});
                 }
-              },
+                if (dnsFlags & Ci.nsIDNSService.RESOLVE_CANONICAL_NAME) {
+                  try {
+                    response.canonicalName = inRecord.canonicalName;
+                  } catch (e) {
+                    
+                  }
+                }
+                response.isTRR = inRecord.IsTRR();
+                while (inRecord.hasMore()) {
+                  let addr = inRecord.getNextAddrAsString();
+                  
+                  if (!response.addresses.includes(addr)) {
+                    response.addresses.push(addr);
+                  }
+                }
+                return resolve(response);
+              }
             };
             try {
               request = dnss.asyncResolve(hostname, dnsFlags, listener, null, {} );
