@@ -18,6 +18,7 @@ KeyboardEvent::KeyboardEvent(EventTarget* aOwner,
   : UIEvent(aOwner, aPresContext,
             aEvent ? aEvent :
                      new WidgetKeyboardEvent(false, eVoidEvent, nullptr))
+  , mInitializedByJS(false)
   , mInitializedByCtor(false)
   , mInitializedWhichValue(0)
 {
@@ -145,47 +146,106 @@ void KeyboardEvent::GetInitDict(KeyboardEventInit& aParam)
   aParam.mCancelable = internalEvent->mFlags.mCancelable;
 }
 
-uint32_t
-KeyboardEvent::CharCode()
+bool
+KeyboardEvent::ShouldUseSameValueForCharCodeAndKeyCode(
+                 CallerType aCallerType) const
 {
   
-  if (mInitializedByCtor) {
-    return mEvent->AsKeyboardEvent()->mCharCode;
+  
+  
+  
+  
+  
+  
+  if (mInitializedByJS ||
+      mEvent->mMessage != eKeyPress ||
+      aCallerType == CallerType::System ||
+      mEvent->mFlags.mInSystemGroup) {
+    return false;
   }
 
-  switch (mEvent->mMessage) {
-  case eKeyDown:
-  case eKeyDownOnPlugin:
-  case eKeyUp:
-  case eKeyUpOnPlugin:
-    return 0;
-  case eKeyPress:
-  case eAccessKeyNotFound:
-    return mEvent->AsKeyboardEvent()->mCharCode;
-  default:
-    break;
+  MOZ_ASSERT(aCallerType == CallerType::NonSystem);
+
+  return StaticPrefs::
+    dom_keyboardevent_keypress_set_keycode_and_charcode_to_same_value();
+}
+
+uint32_t
+KeyboardEvent::CharCode(CallerType aCallerType)
+{
+  WidgetKeyboardEvent* widgetKeyboardEvent = mEvent->AsKeyboardEvent();
+  if (mInitializedByJS) {
+    
+    if (mInitializedByCtor) {
+      return widgetKeyboardEvent->mCharCode;
+    }
+    
+    
+    
+    return widgetKeyboardEvent->mMessage == eKeyPress ||
+           widgetKeyboardEvent->mMessage == eAccessKeyNotFound ?
+             widgetKeyboardEvent->mCharCode : 0;
   }
-  return 0;
+
+  
+  
+  
+  
+
+  if (widgetKeyboardEvent->mKeyNameIndex != KEY_NAME_INDEX_USE_STRING &&
+      ShouldUseSameValueForCharCodeAndKeyCode(aCallerType)) {
+    return ComputeTraditionalKeyCode(*widgetKeyboardEvent, aCallerType);
+  }
+
+  return widgetKeyboardEvent->mCharCode;
 }
 
 uint32_t
 KeyboardEvent::KeyCode(CallerType aCallerType)
 {
+  WidgetKeyboardEvent* widgetKeyboardEvent = mEvent->AsKeyboardEvent();
+  if (mInitializedByJS) {
+    
+    if (mInitializedByCtor) {
+      return widgetKeyboardEvent->mKeyCode;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    return widgetKeyboardEvent->HasKeyEventMessage() ?
+             widgetKeyboardEvent->mKeyCode : 0;
+  }
+
   
-  if (mInitializedByCtor) {
-    return mEvent->AsKeyboardEvent()->mKeyCode;
+  
+  
+
+  if (widgetKeyboardEvent->mKeyNameIndex == KEY_NAME_INDEX_USE_STRING &&
+      ShouldUseSameValueForCharCodeAndKeyCode(aCallerType)) {
+    return widgetKeyboardEvent->mCharCode;
   }
 
-  if (!mEvent->HasKeyEventMessage()) {
-    return 0;
-  }
+  return ComputeTraditionalKeyCode(*widgetKeyboardEvent, aCallerType);
+}
 
+uint32_t
+KeyboardEvent::ComputeTraditionalKeyCode(WidgetKeyboardEvent& aKeyboardEvent,
+                                         CallerType aCallerType)
+{
   if (!ShouldResistFingerprinting(aCallerType)) {
-    return mEvent->AsKeyboardEvent()->mKeyCode;
+    return aKeyboardEvent.mKeyCode;
   }
 
   
-  if (CharCode()) {
+  
+  if ((mEvent->mMessage == eKeyPress ||
+       mEvent->mMessage == eAccessKeyNotFound) &&
+      aKeyboardEvent.mCharCode) {
     return 0;
   }
 
@@ -194,8 +254,7 @@ KeyboardEvent::KeyCode(CallerType aCallerType)
   nsCOMPtr<nsIDocument> doc = GetDocument();
   uint32_t spoofedKeyCode;
 
-  if (nsRFPService::GetSpoofedKeyCode(doc, mEvent->AsKeyboardEvent(),
-                                      spoofedKeyCode)) {
+  if (nsRFPService::GetSpoofedKeyCode(doc, &aKeyboardEvent, spoofedKeyCode)) {
     return spoofedKeyCode;
   }
 
@@ -241,10 +300,10 @@ KeyboardEvent::Location()
 
 
 already_AddRefed<KeyboardEvent>
-KeyboardEvent::Constructor(const GlobalObject& aGlobal,
-                           const nsAString& aType,
-                           const KeyboardEventInit& aParam,
-                           ErrorResult& aRv)
+KeyboardEvent::ConstructorJS(const GlobalObject& aGlobal,
+                             const nsAString& aType,
+                             const KeyboardEventInit& aParam,
+                             ErrorResult& aRv)
 {
   nsCOMPtr<EventTarget> target = do_QueryInterface(aGlobal.GetAsSupports());
   RefPtr<KeyboardEvent> newEvent =
@@ -261,12 +320,13 @@ KeyboardEvent::InitWithKeyboardEventInit(EventTarget* aOwner,
                                          ErrorResult& aRv)
 {
   bool trusted = Init(aOwner);
-  InitKeyEvent(aType, aParam.mBubbles, aParam.mCancelable,
-               aParam.mView, false, false, false, false,
-               aParam.mKeyCode, aParam.mCharCode);
+  InitKeyEventJS(aType, aParam.mBubbles, aParam.mCancelable,
+                 aParam.mView, false, false, false, false,
+                 aParam.mKeyCode, aParam.mCharCode);
   InitModifiers(aParam);
   SetTrusted(trusted);
   mDetail = aParam.mDetail;
+  mInitializedByJS = true;
   mInitializedByCtor = true;
   mInitializedWhichValue = aParam.mWhich;
 
@@ -287,13 +347,15 @@ KeyboardEvent::InitWithKeyboardEventInit(EventTarget* aOwner,
 }
 
 void
-KeyboardEvent::InitKeyEvent(const nsAString& aType, bool aCanBubble,
-                            bool aCancelable, nsGlobalWindowInner* aView,
-                            bool aCtrlKey, bool aAltKey,
-                            bool aShiftKey, bool aMetaKey,
-                            uint32_t aKeyCode, uint32_t aCharCode)
+KeyboardEvent::InitKeyEventJS(const nsAString& aType, bool aCanBubble,
+                              bool aCancelable, nsGlobalWindowInner* aView,
+                              bool aCtrlKey, bool aAltKey,
+                              bool aShiftKey, bool aMetaKey,
+                              uint32_t aKeyCode, uint32_t aCharCode)
 {
   NS_ENSURE_TRUE_VOID(!mEvent->mFlags.mIsBeingDispatched);
+  mInitializedByJS = true;
+  mInitializedByCtor = false;
 
   UIEvent::InitUIEvent(aType, aCanBubble, aCancelable, aView, 0);
 
@@ -304,19 +366,21 @@ KeyboardEvent::InitKeyEvent(const nsAString& aType, bool aCanBubble,
 }
 
 void
-KeyboardEvent::InitKeyboardEvent(const nsAString& aType,
-                                 bool aCanBubble,
-                                 bool aCancelable,
-                                 nsGlobalWindowInner* aView,
-                                 const nsAString& aKey,
-                                 uint32_t aLocation,
-                                 bool aCtrlKey,
-                                 bool aAltKey,
-                                 bool aShiftKey,
-                                 bool aMetaKey,
-                                 ErrorResult& aRv)
+KeyboardEvent::InitKeyboardEventJS(const nsAString& aType,
+                                   bool aCanBubble,
+                                   bool aCancelable,
+                                   nsGlobalWindowInner* aView,
+                                   const nsAString& aKey,
+                                   uint32_t aLocation,
+                                   bool aCtrlKey,
+                                   bool aAltKey,
+                                   bool aShiftKey,
+                                   bool aMetaKey,
+                                   ErrorResult& aRv)
 {
   NS_ENSURE_TRUE_VOID(!mEvent->mFlags.mIsBeingDispatched);
+  mInitializedByJS = true;
+  mInitializedByCtor = false;
 
   UIEvent::InitUIEvent(aType, aCanBubble, aCancelable, aView, 0);
 
@@ -355,7 +419,7 @@ KeyboardEvent::ShouldResistFingerprinting(CallerType aCallerType)
   
   
   
-  if (mInitializedByCtor ||
+  if (mInitializedByJS ||
       aCallerType == CallerType::System ||
       mEvent->mFlags.mInSystemGroup ||
       !nsContentUtils::ShouldResistFingerprinting() ||

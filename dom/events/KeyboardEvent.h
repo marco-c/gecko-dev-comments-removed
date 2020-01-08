@@ -29,7 +29,7 @@ public:
     return this;
   }
 
-  static already_AddRefed<KeyboardEvent> Constructor(
+  static already_AddRefed<KeyboardEvent> ConstructorJS(
                                            const GlobalObject& aGlobal,
                                            const nsAString& aType,
                                            const KeyboardEventInit& aParam,
@@ -63,7 +63,7 @@ public:
   bool Repeat();
   bool IsComposing();
   void GetKey(nsAString& aKey) const;
-  uint32_t CharCode();
+  uint32_t CharCode(CallerType aCallerType = CallerType::System);
   uint32_t KeyCode(CallerType aCallerType = CallerType::System);
   virtual uint32_t Which(CallerType aCallerType = CallerType::System) override;
   uint32_t Location();
@@ -71,16 +71,16 @@ public:
   void GetCode(nsAString& aCode, CallerType aCallerType = CallerType::System);
   void GetInitDict(KeyboardEventInit& aParam);
 
-  void InitKeyEvent(const nsAString& aType, bool aCanBubble, bool aCancelable,
-                    nsGlobalWindowInner* aView, bool aCtrlKey, bool aAltKey,
-                    bool aShiftKey, bool aMetaKey,
-                    uint32_t aKeyCode, uint32_t aCharCode);
+  void InitKeyEventJS(const nsAString& aType, bool aCanBubble, bool aCancelable,
+                      nsGlobalWindowInner* aView, bool aCtrlKey, bool aAltKey,
+                      bool aShiftKey, bool aMetaKey,
+                      uint32_t aKeyCode, uint32_t aCharCode);
 
-  void InitKeyboardEvent(const nsAString& aType,
-                         bool aCanBubble, bool aCancelable,
-                         nsGlobalWindowInner* aView, const nsAString& aKey,
-                         uint32_t aLocation, bool aCtrlKey, bool aAltKey,
-                         bool aShiftKey, bool aMetaKey, ErrorResult& aRv);
+  void InitKeyboardEventJS(const nsAString& aType,
+                           bool aCanBubble, bool aCancelable,
+                           nsGlobalWindowInner* aView, const nsAString& aKey,
+                           uint32_t aLocation, bool aCtrlKey, bool aAltKey,
+                           bool aShiftKey, bool aMetaKey, ErrorResult& aRv);
 
 protected:
   ~KeyboardEvent() {}
@@ -91,6 +91,8 @@ protected:
                                  ErrorResult& aRv);
 
 private:
+  
+  bool mInitializedByJS;
   
   bool mInitializedByCtor;
 
@@ -113,6 +115,26 @@ private:
   
   bool GetSpoofedModifierStates(const Modifiers aModifierKey,
                                 const bool aRawModifierState);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  uint32_t ComputeTraditionalKeyCode(WidgetKeyboardEvent& aKeyboardEvent,
+                                     CallerType aCallerType);
+  
+
+
+
+  bool ShouldUseSameValueForCharCodeAndKeyCode(CallerType aCallerType) const;
 };
 
 } 
