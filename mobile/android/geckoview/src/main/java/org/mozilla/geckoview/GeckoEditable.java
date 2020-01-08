@@ -328,20 +328,27 @@ import android.view.inputmethod.EditorInfo;
             final int currentEnd = mCurrentNewEnd + Math.max(0, mShadowOldEnd - mCurrentOldEnd);
 
             
-            
-            
-            Object[] spans = mCurrentText.getSpans(start, currentEnd, Object.class);
-            for (final Object span : spans) {
-                mShadowText.removeSpan(span);
-            }
-
-            
-            spans = mShadowText.getSpans(start, shadowEnd, Object.class);
+            Object[] spans = mShadowText.getSpans(start, shadowEnd, Object.class);
             for (final Object span : spans) {
                 mShadowText.removeSpan(span);
             }
 
             mShadowText.replace(start, shadowEnd, mCurrentText, start, currentEnd);
+
+            
+            
+            spans = mCurrentText.getSpans(Math.max(start - 1, 0),
+                                          Math.min(currentEnd + 1, mCurrentText.length()),
+                                          Object.class);
+            for (final Object span : spans) {
+                if (span == Selection.SELECTION_START || span == Selection.SELECTION_END) {
+                    continue;
+                }
+                mShadowText.setSpan(span,
+                                    mCurrentText.getSpanStart(span),
+                                    mCurrentText.getSpanEnd(span),
+                                    mCurrentText.getSpanFlags(span));
+            }
 
             
             
@@ -382,6 +389,10 @@ import android.view.inputmethod.EditorInfo;
 
         final Object[] o1s = s1.getSpans(0, s1.length(), Object.class);
         final Object[] o2s = s2.getSpans(0, s2.length(), Object.class);
+
+        if (o1s.length != o2s.length) {
+            return false;
+        }
 
         o1loop: for (final Object o1 : o1s) {
             for (final Object o2 : o2s)  {
