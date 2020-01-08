@@ -252,11 +252,12 @@ this.FormAutofillUtils = {
 
 
 
-  getAddressLabel(address) {
+
+  getAddressLabel(address, addressFields = null) {
     
     
     
-    const fieldOrder = [
+    let fieldOrder = [
       "name",
       "-moz-street-address-one-line",  
       "address-level2",  
@@ -270,6 +271,10 @@ this.FormAutofillUtils = {
 
     address = {...address};
     let parts = [];
+    if (addressFields) {
+      let requiredFields = addressFields.trim().split(/\s+/);
+      fieldOrder = fieldOrder.filter(name => requiredFields.includes(name));
+    }
     if (address["street-address"]) {
       address["-moz-street-address-one-line"] = this.toOneLineAddress(
         address["street-address"]
@@ -280,7 +285,7 @@ this.FormAutofillUtils = {
       if (string) {
         parts.push(string);
       }
-      if (parts.length == 2) {
+      if (parts.length == 2 && !addressFields) {
         break;
       }
     }

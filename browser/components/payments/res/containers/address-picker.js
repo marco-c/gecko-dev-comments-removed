@@ -100,7 +100,10 @@ export default class AddressPicker extends RichPicker {
         }
       }
 
-      optionEl.textContent = AddressOption.formatSingleLineLabel(address);
+      
+      
+      let addressFields = this.getAttribute("address-fields");
+      optionEl.textContent = AddressOption.formatSingleLineLabel(address, addressFields);
       desiredOptions.push(optionEl);
     }
 
