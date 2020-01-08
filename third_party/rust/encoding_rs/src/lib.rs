@@ -15,7 +15,7 @@
         new_ret_no_self
     )
 )]
-#![doc(html_root_url = "https://docs.rs/encoding_rs/0.8.12")]
+#![doc(html_root_url = "https://docs.rs/encoding_rs/0.8.13")]
 
 
 
