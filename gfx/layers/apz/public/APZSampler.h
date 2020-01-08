@@ -97,13 +97,6 @@ public:
 
 
 
-  UniquePtr<AutoApplyAsyncTestAttributes> ApplyAsyncTestAttributes(const LayerMetricsWrapper& aLayer);
-
-  
-
-
-
-
   void AssertOnSamplerThread() const;
 
   

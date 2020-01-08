@@ -604,7 +604,7 @@ APZCTreeManager::SampleForWebRender(wr::TransactionWrapper& aTxn,
 
     
     
-    auto _ = MakeUnique<AutoApplyAsyncTestAttributes>(apzc);
+    AutoApplyAsyncTestAttributes testAttributeApplier(apzc);
 
     ParentLayerPoint layerTranslation = apzc->GetCurrentAsyncTransform(
         AsyncPanZoomController::eForCompositing).mTranslation;
@@ -3061,7 +3061,7 @@ APZCTreeManager::ComputeTransformForNode(const HitTestingTreeNode* aNode) const
   if (AsyncPanZoomController* apzc = aNode->GetApzc()) {
     
     
-    auto _ = MakeUnique<AutoApplyAsyncTestAttributes>(apzc);
+    AutoApplyAsyncTestAttributes testAttributeApplier(apzc);
     
     
     return aNode->GetTransform() *
@@ -3153,7 +3153,7 @@ APZCTreeManager::ComputeTransformForScrollThumb(
 
   
   
-  auto _ = MakeUnique<AutoApplyAsyncTestAttributes>(aApzc);
+  AutoApplyAsyncTestAttributes testAttributeApplier(aApzc);
 
   AsyncTransformComponentMatrix asyncTransform =
     aApzc->GetCurrentAsyncTransform(AsyncPanZoomController::eForCompositing);
