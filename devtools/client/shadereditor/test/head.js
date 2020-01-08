@@ -83,12 +83,15 @@ function createCanvas() {
 
 function observe(aNotificationName, aOwnsWeak = false) {
   info("Waiting for observer notification: '" + aNotificationName + ".");
-  return new Promise(resolve =>{
-    Services.obs.addObserver(function onNotification(...aArgs) {
-      Services.obs.removeObserver(onNotification, aNotificationName);
-      resolve.apply(deferred, aArgs);
-    }, aNotificationName, aOwnsWeak);
-  });
+
+  const deferred = defer();
+
+  Services.obs.addObserver(function onNotification(...aArgs) {
+    Services.obs.removeObserver(onNotification, aNotificationName);
+    deferred.resolve.apply(deferred, aArgs);
+  }, aNotificationName, aOwnsWeak);
+
+  return deferred.promise;
 }
 
 function isApprox(aFirst, aSecond, aMargin = 1) {
@@ -149,7 +152,7 @@ function initBackend(aUrl) {
 
   return (async function() {
     const tab = await addTab(aUrl);
-    const target = TargetFactory.forTab(tab);
+    const target = await TargetFactory.forTab(tab);
 
     await target.makeRemote();
 
@@ -163,7 +166,7 @@ function initShaderEditor(aUrl) {
 
   return (async function() {
     const tab = await addTab(aUrl);
-    const target = TargetFactory.forTab(tab);
+    const target = await TargetFactory.forTab(tab);
 
     await target.makeRemote();
 
@@ -192,19 +195,19 @@ function teardown(aPanel) {
 
 
 function getPrograms(front, count, onAdd) {
-  return new Promise(resolve => {
-    const actors = [];
-    front.on("program-linked", function onLink(actor) {
-      if (actors.length !== count) {
-        actors.push(actor);
-        if (typeof onAdd === "function") {
-          onAdd(actors);
-        }
+  const actors = [];
+  const deferred = defer();
+  front.on("program-linked", function onLink(actor) {
+    if (actors.length !== count) {
+      actors.push(actor);
+      if (typeof onAdd === "function") {
+        onAdd(actors);
       }
-      if (actors.length === count) {
-        front.off("program-linked", onLink);
-        resolve(actors);
-      }
-    });
+    }
+    if (actors.length === count) {
+      front.off("program-linked", onLink);
+      deferred.resolve(actors);
+    }
   });
+  return deferred.promise;
 }

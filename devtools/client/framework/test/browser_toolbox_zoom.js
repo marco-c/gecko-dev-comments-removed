@@ -15,7 +15,7 @@ add_task(async function() {
   
   Services.prefs.setCharPref("devtools.toolbox.zoomValue", "1.0");
   await addTab("about:blank");
-  const target = TargetFactory.forTab(gBrowser.selectedTab);
+  const target = await TargetFactory.forTab(gBrowser.selectedTab);
   const toolbox = await gDevTools.showToolbox(target,
                                             "styleeditor",
                                             Toolbox.HostType.BOTTOM);

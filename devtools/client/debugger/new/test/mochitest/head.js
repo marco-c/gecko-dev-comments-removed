@@ -69,7 +69,7 @@ async function takeScreenshot(dbg) {
 
 
 async function attachDebugger(tab) {
-  let target = TargetFactory.forTab(tab);
+  let target = await TargetFactory.forTab(tab);
   let toolbox = await gDevTools.showToolbox(target, "jsdebugger");
   return toolbox;
 }

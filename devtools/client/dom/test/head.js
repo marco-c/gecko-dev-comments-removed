@@ -62,14 +62,11 @@ function addTestTab(url) {
 
 
 
-function initDOMPanel(tab) {
-  return new Promise(resolve => {
-    const target = TargetFactory.forTab(tab || gBrowser.selectedTab);
-    gDevTools.showToolbox(target, "dom").then(toolbox => {
-      const panel = toolbox.getCurrentPanel();
-      resolve(panel);
-    });
-  });
+async function initDOMPanel(tab) {
+  const target = await TargetFactory.forTab(tab || gBrowser.selectedTab);
+  const toolbox = await gDevTools.showToolbox(target, "dom");
+  const panel = toolbox.getCurrentPanel();
+  return panel;
 }
 
 
