@@ -137,6 +137,12 @@ OriginalFunction(size_t aCallId)
 #define OriginalCall(aName, aReturnType, ...)                   \
   OriginalCallABI(aName, aReturnType, DEFAULTABI, ##__VA_ARGS__)
 
+static inline ThreadEvent
+CallIdToThreadEvent(size_t aCallId)
+{
+  return (ThreadEvent)((uint32_t)ThreadEvent::CallStart + aCallId);
+}
+
 
 
 
@@ -151,19 +157,19 @@ struct AutoRecordReplayFunctionVoid
 protected:
   
   size_t mCallId;
-  const char* mCallName;
 
 public:
-  AutoRecordReplayFunctionVoid(size_t aCallId, const char* aCallName)
-    : mThread(AreThreadEventsPassedThrough() ? nullptr : Thread::Current()),
-      mError(0), mCallId(aCallId), mCallName(aCallName)
+  explicit AutoRecordReplayFunctionVoid(size_t aCallId)
+    : mThread(Thread::Current()), mError(0), mCallId(aCallId)
   {
-    if (mThread) {
+    if (mThread && mThread->PassThroughEvents()) {
+      mThread = nullptr;
+    } else if (mThread) {
       
       
       EnsureNotDivergedFromRecording();
 
-      MOZ_ASSERT(!AreThreadEventsDisallowed());
+      MOZ_RELEASE_ASSERT(mThread->CanAccessRecording());
 
       
       mThread->SetPassThrough(true);
@@ -190,9 +196,7 @@ public:
     mThread->SetPassThrough(false);
 
     
-    RecordReplayAssert("%s", mCallName);
-    ThreadEvent ev = (ThreadEvent)((uint32_t)ThreadEvent::CallStart + mCallId);
-    mThread->Events().RecordOrReplayThreadEvent(ev);
+    mThread->Events().RecordOrReplayThreadEvent(CallIdToThreadEvent(mCallId));
   }
 };
 
@@ -204,8 +208,8 @@ struct AutoRecordReplayFunction : AutoRecordReplayFunctionVoid
   
   ReturnType mRval;
 
-  AutoRecordReplayFunction(size_t aCallId, const char* aCallName)
-    : AutoRecordReplayFunctionVoid(aCallId, aCallName)
+  explicit AutoRecordReplayFunction(size_t aCallId)
+    : AutoRecordReplayFunctionVoid(aCallId)
   {}
 };
 
@@ -221,7 +225,7 @@ struct AutoRecordReplayFunction : AutoRecordReplayFunctionVoid
 
 
 #define RecordReplayFunctionABI(aName, aReturnType, aABI, ...)          \
-  AutoRecordReplayFunction<aReturnType> rrf(CallEvent_ ##aName, #aName); \
+  AutoRecordReplayFunction<aReturnType> rrf(CallEvent_ ##aName);        \
   if (!rrf.mThread) {                                                   \
     return OriginalCallABI(aName, aReturnType, aABI, ##__VA_ARGS__);    \
   }                                                                     \
@@ -239,7 +243,7 @@ struct AutoRecordReplayFunction : AutoRecordReplayFunctionVoid
 
 
 #define RecordReplayFunctionVoidABI(aName, aABI, ...)                   \
-  AutoRecordReplayFunctionVoid rrf(CallEvent_ ##aName, #aName);         \
+  AutoRecordReplayFunctionVoid rrf(CallEvent_ ##aName);                 \
   if (!rrf.mThread) {                                                   \
     OriginalCallABI(aName, void, aABI, ##__VA_ARGS__);                  \
     return;                                                             \

@@ -183,15 +183,17 @@ NewCheckpoint(bool aTemporary)
   return reachedCheckpoint;
 }
 
-static bool gRecordingDiverged;
 static bool gUnhandledDivergeAllowed;
 
 void
 DivergeFromRecording()
 {
-  MOZ_RELEASE_ASSERT(Thread::CurrentIsMainThread());
   MOZ_RELEASE_ASSERT(IsReplaying());
-  gRecordingDiverged = true;
+
+  Thread* thread = Thread::Current();
+  MOZ_RELEASE_ASSERT(thread->IsMainThread());
+  thread->DivergeFromRecording();
+
   gUnhandledDivergeAllowed = true;
 }
 
@@ -200,7 +202,8 @@ extern "C" {
 MOZ_EXPORT bool
 RecordReplayInterface_InternalHasDivergedFromRecording()
 {
-  return Thread::CurrentIsMainThread() && gRecordingDiverged;
+  Thread* thread = Thread::Current();
+  return thread && thread->HasDivergedFromRecording();
 }
 
 } 
@@ -250,7 +253,7 @@ PauseMainThreadAndServiceCallbacks()
 {
   MOZ_RELEASE_ASSERT(Thread::CurrentIsMainThread());
   MOZ_RELEASE_ASSERT(!AreThreadEventsPassedThrough());
-  MOZ_RELEASE_ASSERT(!gRecordingDiverged);
+  MOZ_RELEASE_ASSERT(!HasDivergedFromRecording());
 
   
   static bool gMainThreadIsPaused = false;
@@ -283,7 +286,7 @@ PauseMainThreadAndServiceCallbacks()
 
   
   
-  MOZ_RELEASE_ASSERT(!gRecordingDiverged);
+  MOZ_RELEASE_ASSERT(!HasDivergedFromRecording());
 
   gMainThreadIsPaused = false;
 }

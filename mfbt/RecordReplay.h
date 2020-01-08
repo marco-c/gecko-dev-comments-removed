@@ -168,18 +168,6 @@ struct MOZ_RAII AutoDisallowThreadEvents
 };
 
 
-
-static inline void BeginCaptureEventStacks();
-static inline void EndCaptureEventStacks();
-
-
-struct MOZ_RAII AutoCaptureEventStacks
-{
-  AutoCaptureEventStacks() { BeginCaptureEventStacks(); }
-  ~AutoCaptureEventStacks() { EndCaptureEventStacks(); }
-};
-
-
 static inline size_t RecordReplayValue(size_t aValue);
 
 
@@ -430,8 +418,6 @@ MOZ_MakeRecordReplayWrapper(AreThreadEventsPassedThrough, bool, false, (), ())
 MOZ_MakeRecordReplayWrapperVoid(BeginDisallowThreadEvents, (), ())
 MOZ_MakeRecordReplayWrapperVoid(EndDisallowThreadEvents, (), ())
 MOZ_MakeRecordReplayWrapper(AreThreadEventsDisallowed, bool, false, (), ())
-MOZ_MakeRecordReplayWrapperVoid(BeginCaptureEventStacks, (), ())
-MOZ_MakeRecordReplayWrapperVoid(EndCaptureEventStacks, (), ())
 MOZ_MakeRecordReplayWrapper(RecordReplayValue, size_t, aValue, (size_t aValue), (aValue))
 MOZ_MakeRecordReplayWrapperVoid(RecordReplayBytes, (void* aData, size_t aSize), (aData, aSize))
 MOZ_MakeRecordReplayWrapper(HasDivergedFromRecording, bool, false, (), ())

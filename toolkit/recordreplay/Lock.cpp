@@ -68,15 +68,13 @@ static ReadWriteSpinLock gLocksLock;
  void
 Lock::New(void* aNativeLock)
 {
-  if (AreThreadEventsPassedThrough() || HasDivergedFromRecording()) {
+  Thread* thread = Thread::Current();
+  if (!thread || thread->PassThroughEvents() || HasDivergedFromRecording()) {
     Destroy(aNativeLock); 
     return;
   }
 
-  MOZ_RELEASE_ASSERT(!AreThreadEventsDisallowed());
-  Thread* thread = Thread::Current();
-
-  RecordReplayAssert("CreateLock");
+  MOZ_RELEASE_ASSERT(thread->CanAccessRecording());
 
   thread->Events().RecordOrReplayThreadEvent(ThreadEvent::CreateLock);
 
@@ -153,16 +151,13 @@ Lock::Find(void* aNativeLock)
 void
 Lock::Enter()
 {
-  MOZ_RELEASE_ASSERT(!AreThreadEventsPassedThrough() && !HasDivergedFromRecording());
-  MOZ_RELEASE_ASSERT(!AreThreadEventsDisallowed());
-
-  RecordReplayAssert("Lock %d", (int) mId);
-
-  
-  
-  
-  
   Thread* thread = Thread::Current();
+  MOZ_RELEASE_ASSERT(thread->CanAccessRecording());
+
+  
+  
+  
+  
   thread->Events().RecordOrReplayThreadEvent(ThreadEvent::Lock);
   thread->Events().CheckInput(mId);
 

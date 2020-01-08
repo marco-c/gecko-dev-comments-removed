@@ -78,14 +78,6 @@ public:
   
   typedef void (*Callback)(void*);
 
-  
-  static const size_t NumRecentAsserts = 128;
-
-  struct RecentAssertInfo {
-    char* mText;
-    size_t mPosition;
-  };
-
 private:
   
   
@@ -104,7 +96,7 @@ private:
 
   
   
-  size_t mCaptureEventStacks;
+  bool mDivergedFromRecording;
 
   
   
@@ -119,16 +111,7 @@ private:
   NativeThreadId mNativeId;
 
   
-  
   Stream* mEvents;
-  Stream* mAsserts;
-
-  
-  RecentAssertInfo mRecentAsserts[NumRecentAsserts];
-
-  
-  char* mBuffer;
-  size_t mBufferCapacity;
 
   
   uint8_t* mStackBase;
@@ -158,20 +141,19 @@ public:
   size_t Id() { return mId; }
   NativeThreadId NativeId() { return mNativeId; }
   Stream& Events() { return *mEvents; }
-  Stream& Asserts() { return *mAsserts; }
   uint8_t* StackBase() { return mStackBase; }
   size_t StackSize() { return mStackSize; }
 
-  inline bool IsMainThread() { return mId == MainThreadId; }
-  inline bool IsRecordedThread() { return mId <= MaxRecordedThreadId; }
-  inline bool IsNonMainRecordedThread() { return IsRecordedThread() && !IsMainThread(); }
+  inline bool IsMainThread() const { return mId == MainThreadId; }
+  inline bool IsRecordedThread() const { return mId <= MaxRecordedThreadId; }
+  inline bool IsNonMainRecordedThread() const { return IsRecordedThread() && !IsMainThread(); }
 
   
   void SetPassThrough(bool aPassThrough) {
     MOZ_RELEASE_ASSERT(mPassThroughEvents == !aPassThrough);
     mPassThroughEvents = aPassThrough;
   }
-  bool PassThroughEvents() {
+  bool PassThroughEvents() const {
     return mPassThroughEvents;
   }
 
@@ -183,32 +165,24 @@ public:
     MOZ_RELEASE_ASSERT(mDisallowEvents);
     mDisallowEvents--;
   }
-  bool AreEventsDisallowed() {
+  bool AreEventsDisallowed() const {
     return mDisallowEvents != 0;
   }
 
   
-  void BeginCaptureEventStacks() {
-    mCaptureEventStacks++;
+  
+  
+  void DivergeFromRecording() {
+    mDivergedFromRecording = true;
   }
-  void EndCaptureEventStacks() {
-    MOZ_RELEASE_ASSERT(mCaptureEventStacks);
-    mCaptureEventStacks--;
-  }
-  bool ShouldCaptureEventStacks() {
-    return mCaptureEventStacks != 0;
+  bool HasDivergedFromRecording() const {
+    return mDivergedFromRecording;
   }
 
   
-  RecentAssertInfo& RecentAssert(size_t i) {
-    MOZ_ASSERT(i < NumRecentAsserts);
-    return mRecentAsserts[i];
+  bool CanAccessRecording() const {
+    return !PassThroughEvents() && !AreEventsDisallowed() && !HasDivergedFromRecording();
   }
-
-  
-  
-  char* TakeBuffer(size_t aSize);
-  void RestoreBuffer(char* aBuf);
 
   
   

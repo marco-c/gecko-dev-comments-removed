@@ -125,7 +125,6 @@ Thread::InitializeThreads()
 
     if (i <= MaxRecordedThreadId) {
       thread->mEvents = gRecordingFile->OpenStream(StreamName::Event, i);
-      thread->mAsserts = gRecordingFile->OpenStream(StreamName::Assert, i);
     }
 
     DirectCreatePipe(&thread->mNotifyfd, &thread->mIdlefd);
@@ -235,14 +234,10 @@ Thread::SpawnThread(Thread* aThread)
  NativeThreadId
 Thread::StartThread(Callback aStart, void* aArgument, bool aNeedsJoin)
 {
-  MOZ_ASSERT(IsRecordingOrReplaying());
-  MOZ_ASSERT(!AreThreadEventsPassedThrough());
-  MOZ_ASSERT(!AreThreadEventsDisallowed());
-
   EnsureNotDivergedFromRecording();
-  Thread* thread = Thread::Current();
 
-  RecordReplayAssert("StartThread");
+  Thread* thread = Thread::Current();
+  MOZ_RELEASE_ASSERT(thread->CanAccessRecording());
 
   MonitorAutoLock lock(*gMonitor);
 
@@ -304,33 +299,6 @@ Thread::Join()
 
 
 
-char*
-Thread::TakeBuffer(size_t aSize)
-{
-  MOZ_ASSERT(mBuffer != (char*) 0x1);
-  if (aSize > mBufferCapacity) {
-    mBufferCapacity = aSize;
-    mBuffer = (char*) realloc(mBuffer, aSize);
-  }
-  char* buf = mBuffer;
-
-  
-  mBuffer = (char*) 0x1;
-
-  return buf;
-}
-
-void
-Thread::RestoreBuffer(char* aBuf)
-{
-  MOZ_ASSERT(mBuffer == (char*) 0x1);
-  mBuffer = aBuf;
-}
-
-
-
-
-
 extern "C" {
 
 MOZ_EXPORT void
@@ -379,20 +347,6 @@ RecordReplayInterface_InternalAreThreadEventsDisallowed()
   MOZ_ASSERT(IsRecordingOrReplaying());
   Thread* thread = Thread::Current();
   return thread && thread->AreEventsDisallowed();
-}
-
-MOZ_EXPORT void
-RecordReplayInterface_InternalBeginCaptureEventStacks()
-{
-  MOZ_ASSERT(IsRecordingOrReplaying());
-  Thread::Current()->BeginCaptureEventStacks();
-}
-
-MOZ_EXPORT void
-RecordReplayInterface_InternalEndCaptureEventStacks()
-{
-  MOZ_ASSERT(IsRecordingOrReplaying());
-  Thread::Current()->EndCaptureEventStacks();
 }
 
 } 
