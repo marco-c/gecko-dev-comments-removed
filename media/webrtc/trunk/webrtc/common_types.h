@@ -472,12 +472,14 @@ enum Profile {
 struct VideoCodecH264 {
   bool frameDroppingOn;
   int keyFrameInterval;
+  double         scaleDownBy;
   
   const uint8_t* spsData;
   size_t spsLen;
   const uint8_t* ppsData;
   size_t ppsLen;
   H264::Profile profile;
+  uint8_t       packetizationMode; 
 };
 
 
@@ -513,6 +515,7 @@ struct SimulcastStream {
   unsigned int targetBitrate;  
   unsigned int minBitrate;     
   unsigned int qpMax;          
+  char         rid[kRIDSize];
 };
 
 struct SpatialLayer {
@@ -651,6 +654,26 @@ struct OverUseDetectorOptions {
   double initial_process_noise[2];
   double initial_avg_noise;
   double initial_var_noise;
+};
+
+enum CPULoadState {
+  kLoadRelaxed = 0,
+  kLoadNormal,
+  kLoadStressed,
+  kLoadLast,
+};
+
+class CPULoadStateObserver {
+public:
+  virtual void onLoadStateChanged(CPULoadState aNewState) = 0;
+  virtual ~CPULoadStateObserver() {};
+};
+
+class CPULoadStateCallbackInvoker {
+public:
+    virtual void AddObserver(CPULoadStateObserver* aObserver) = 0;
+    virtual void RemoveObserver(CPULoadStateObserver* aObserver) = 0;
+    virtual ~CPULoadStateCallbackInvoker() {};
 };
 
 

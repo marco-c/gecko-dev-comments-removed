@@ -540,7 +540,13 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
 
   configurations_[0].rc_target_bitrate = stream_bitrates[stream_idx];
   temporal_layers_[stream_idx]->OnRatesUpdated(
-      stream_bitrates[stream_idx], inst->maxBitrate, inst->maxFramerate);
+    
+    
+    
+    
+    
+    stream_bitrates[stream_idx] > 0 ? stream_bitrates[stream_idx] : inst->simulcastStream[stream_idx].minBitrate,
+    inst->maxBitrate, inst->maxFramerate);
   temporal_layers_[stream_idx]->UpdateConfiguration(&configurations_[0]);
   --stream_idx;
   for (size_t i = 1; i < encoders_.size(); ++i, --stream_idx) {

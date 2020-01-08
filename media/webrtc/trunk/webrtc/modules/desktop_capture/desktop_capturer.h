@@ -66,6 +66,7 @@ class DesktopCapturer {
   struct Source {
     
     SourceId id;
+    pid_t pid;
 
     
     
@@ -79,6 +80,7 @@ class DesktopCapturer {
   
   
   virtual void Start(Callback* callback) = 0;
+  virtual void Stop() = 0;
 
   
   
@@ -134,6 +136,10 @@ class DesktopCapturer {
   static std::unique_ptr<DesktopCapturer> CreateScreenCapturer(
       const DesktopCaptureOptions& options);
 
+  
+  static std::unique_ptr<DesktopCapturer> CreateAppCapturer(
+      const DesktopCaptureOptions& options);
+
  protected:
   
   
@@ -146,6 +152,11 @@ class DesktopCapturer {
   
   
   static std::unique_ptr<DesktopCapturer> CreateRawScreenCapturer(
+      const DesktopCaptureOptions& options);
+
+  
+  
+  static std::unique_ptr<DesktopCapturer> CreateRawAppCapturer(
       const DesktopCaptureOptions& options);
 };
 

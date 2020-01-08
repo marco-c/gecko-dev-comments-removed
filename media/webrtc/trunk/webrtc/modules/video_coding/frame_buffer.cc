@@ -111,9 +111,12 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
     }
   }
 
+  
+  
   uint32_t requiredSizeBytes =
       Length() + packet.sizeBytes +
       (packet.insertStartCode ? kH264StartCodeLengthBytes : 0) +
+      kBufferSafetyMargin +
       EncodedImage::GetBufferPaddingBytes(packet.codec);
   if (requiredSizeBytes >= _size) {
     const uint8_t* prevBuffer = _buffer;

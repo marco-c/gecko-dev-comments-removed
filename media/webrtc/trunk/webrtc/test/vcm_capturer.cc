@@ -98,7 +98,7 @@ void VcmCapturer::Destroy() {
     return;
 
   vcm_->StopCapture();
-  vcm_->DeRegisterCaptureDataCallback();
+  vcm_->DeRegisterCaptureDataCallback(this);
   
   vcm_ = nullptr;
 }

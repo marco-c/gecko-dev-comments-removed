@@ -78,6 +78,19 @@ protected:
     ~VideoCaptureExternal() {}
 };
 
+
+
+class VideoCaptureDataCallback
+{
+public:
+    virtual void OnIncomingCapturedFrame(const int32_t id,
+                                         const VideoFrame& videoFrame) = 0;
+    virtual void OnCaptureDelayChanged(const int32_t id,
+                                       const int32_t delay) = 0;
+protected:
+    virtual ~VideoCaptureDataCallback(){}
+};
+
 }  
 
 #endif  

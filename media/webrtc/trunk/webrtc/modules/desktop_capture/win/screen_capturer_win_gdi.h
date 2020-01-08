@@ -37,6 +37,7 @@ class ScreenCapturerWinGdi : public DesktopCapturer {
 
   
   void Start(Callback* callback) override;
+  void Stop() override;
   void SetSharedMemoryFactory(
       std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override;
   void CaptureFrame() override;
@@ -45,6 +46,7 @@ class ScreenCapturerWinGdi : public DesktopCapturer {
 
  private:
   typedef HRESULT (WINAPI * DwmEnableCompositionFunc)(UINT);
+  typedef HRESULT (WINAPI * DwmIsCompositionEnabledFunc)(BOOL*);
 
   
   void PrepareCaptureResources();

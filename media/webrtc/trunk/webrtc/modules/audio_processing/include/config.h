@@ -35,7 +35,8 @@ enum class ConfigOptionID {
   kIntelligibility,
   kEchoCanceller3,  
   kAecRefinedAdaptiveFilter,
-  kLevelControl
+  kLevelControl,
+  kCaptureDeviceInfo
 };
 
 

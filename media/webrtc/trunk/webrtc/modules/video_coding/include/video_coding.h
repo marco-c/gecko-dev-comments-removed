@@ -314,6 +314,19 @@ class VideoCodingModule : public Module {
   
   virtual int32_t RegisterPacketRequestCallback(
       VCMPacketRequestCallback* callback) = 0;
+ 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual int32_t RegisterReceiveStateCallback(
+      VCMReceiveStateCallback* callback) = 0;
 
   
   
@@ -409,11 +422,16 @@ class VideoCodingModule : public Module {
   
   
   virtual int SetMinReceiverDelay(int desired_delay_ms) = 0;
+ 
+  
+  virtual void SetCPULoadState(CPULoadState state) = 0;
 
   virtual void RegisterPostEncodeImageCallback(
       EncodedImageCallback* post_encode_callback) = 0;
   
   virtual void TriggerDecoderShutdown() = 0;
+  
+  virtual void Reset() = 0;
 };
 
 }  

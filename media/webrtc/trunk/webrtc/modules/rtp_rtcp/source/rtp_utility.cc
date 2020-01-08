@@ -42,7 +42,7 @@ bool StringCompare(const char* str1, const char* str2,
                    const uint32_t length) {
   return _strnicmp(str1, str2, length) == 0;
 }
-#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_BSD) || defined(WEBRTC_MAC)
 bool StringCompare(const char* str1, const char* str2,
                    const uint32_t length) {
   return strncasecmp(str1, str2, length) == 0;
@@ -161,12 +161,16 @@ bool RtpHeaderParser::ParseRtcp(RTPHeader* header) const {
   header->payloadType  = PT;
   header->ssrc         = SSRC;
   header->headerLength = 4 + (len << 2);
+  if (header->headerLength > static_cast<size_t>(length)) {
+    return false;
+  }
 
   return true;
 }
 
 bool RtpHeaderParser::Parse(RTPHeader* header,
-                            RtpHeaderExtensionMap* ptrExtensionMap) const {
+                            RtpHeaderExtensionMap* ptrExtensionMap,
+                            bool secured) const {
   const ptrdiff_t length = _ptrRTPDataEnd - _ptrRTPDataBegin;
   if (length < kRtpMinParseLength) {
     return false;
@@ -198,12 +202,6 @@ bool RtpHeaderParser::Parse(RTPHeader* header,
     return false;
   }
 
-  const size_t CSRCocts = CC * 4;
-
-  if ((ptr + CSRCocts) > _ptrRTPDataEnd) {
-    return false;
-  }
-
   header->markerBit      = M;
   header->payloadType    = PT;
   header->sequenceNumber = sequenceNumber;
@@ -212,13 +210,21 @@ bool RtpHeaderParser::Parse(RTPHeader* header,
   header->numCSRCs       = CC;
   header->paddingLength  = P ? *(_ptrRTPDataEnd - 1) : 0;
 
+  
+  header->headerLength   = 12 + (CC * 4);
+  
+  
+  if (!secured &&
+      (header->paddingLength + header->headerLength > (size_t) length)) {
+    return false;
+  }
+
   for (uint8_t i = 0; i < CC; ++i) {
     uint32_t CSRC = ByteReader<uint32_t>::ReadBigEndian(ptr);
     ptr += 4;
     header->arrOfCSRCs[i] = CSRC;
   }
-
-  header->headerLength   = 12 + CSRCocts;
+  assert((ptr - _ptrRTPDataBegin) == (ptrdiff_t) header->headerLength);
 
   
   
@@ -259,8 +265,9 @@ bool RtpHeaderParser::Parse(RTPHeader* header,
 
 
 
-    const ptrdiff_t remain = _ptrRTPDataEnd - ptr;
-    if (remain < 4) {
+    
+    const ptrdiff_t remain = (_ptrRTPDataEnd - ptr) - header->paddingLength;
+    if (remain < 4) { 
       return false;
     }
 
@@ -313,6 +320,11 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
     
     const int id = (*ptr & 0xf0) >> 4;
     const int len = (*ptr & 0x0f);
+    if (ptr + len + 1 > ptrRTPDataExtensionEnd) {
+      LOG(LS_WARNING)
+          << "RTP extension header length out of bounds. Terminate parsing.";
+      return;
+    }
     ptr++;
 
     if (id == 0) {

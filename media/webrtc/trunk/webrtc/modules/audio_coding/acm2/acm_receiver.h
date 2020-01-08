@@ -216,6 +216,7 @@ class AcmReceiver {
   int LastAudioCodec(CodecInst* codec) const;
 
   rtc::Optional<SdpAudioFormat> LastAudioFormat() const;
+  int LastAudioSampleRate() const;
 
   
   

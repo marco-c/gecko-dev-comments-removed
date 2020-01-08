@@ -118,6 +118,8 @@ double SincScaleFactor(double io_ratio) {
 
 }  
 
+namespace webrtc {
+
 const size_t SincResampler::kKernelSize;
 
 
