@@ -2147,14 +2147,17 @@ class nsIDocument : public nsINode,
 
 
 
-  virtual void BlockOnload() = 0;
+  void BlockOnload();
   
 
 
 
 
 
-  virtual void UnblockOnload(bool aFireSync) = 0;
+  void UnblockOnload(bool aFireSync);
+
+  
+  void AsyncBlockOnload();
 
   void BlockDOMContentLoaded() { ++mBlockDOMContentLoaded; }
 
