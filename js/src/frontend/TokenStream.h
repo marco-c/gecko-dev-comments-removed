@@ -2039,14 +2039,6 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
 
 
 
-    MOZ_MUST_USE bool getCodePoint(int32_t* cp);
-
-    
-
-
-
-
-
 
 
 
@@ -2276,7 +2268,6 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using TokenStreamCharsShared::copyCharBufferTo;
     using TokenStreamCharsShared::drainCharBufferIntoAtom;
     using CharsBase::fillCharBufferFromSourceNormalizingAsciiLineBreaks;
-    using SpecializedChars::getCodePoint;
     using GeneralCharsBase::getCodeUnit;
     using GeneralCharsBase::getFullAsciiCodePoint;
     using SpecializedChars::getNonAsciiCodePoint;
@@ -2302,6 +2293,14 @@ class MOZ_STACK_CLASS TokenStreamSpecific
   public:
     TokenStreamSpecific(JSContext* cx, const ReadOnlyCompileOptions& options,
                         const CharT* base, size_t length);
+
+    
+
+
+
+
+
+    MOZ_MUST_USE bool getCodePoint(int32_t* cp);
 
     
     
