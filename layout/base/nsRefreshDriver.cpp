@@ -501,7 +501,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       static mozilla::Atomic<bool> sHighPriorityEnabled;
     };
 
-    bool NotifyVsync(TimeStamp aVsyncTimestamp) override {
+    bool NotifyVsync(const VsyncEvent& aVsync) override {
       
       
 
@@ -512,7 +512,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         
         {  
           MonitorAutoLock lock(mRefreshTickLock);
-          mRecentVsync = aVsyncTimestamp;
+          mRecentVsync = aVsync.mTime;
           if (!mProcessedVsync) {
             return true;
           }
@@ -520,11 +520,11 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         }
 
         nsCOMPtr<nsIRunnable> vsyncEvent =
-            new ParentProcessVsyncNotifier(this, aVsyncTimestamp);
+            new ParentProcessVsyncNotifier(this, aVsync.mTime);
         NS_DispatchToMainThread(vsyncEvent);
       } else {
-        mRecentVsync = aVsyncTimestamp;
-        if (!mBlockUntil.IsNull() && mBlockUntil > aVsyncTimestamp) {
+        mRecentVsync = aVsync.mTime;
+        if (!mBlockUntil.IsNull() && mBlockUntil > aVsync.mTime) {
           if (mProcessedVsync) {
             
             
@@ -539,7 +539,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         }
 
         RefPtr<RefreshDriverVsyncObserver> kungFuDeathGrip(this);
-        TickRefreshDriver(aVsyncTimestamp);
+        TickRefreshDriver(aVsync.mTime);
       }
 
       return true;
