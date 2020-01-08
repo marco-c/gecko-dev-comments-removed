@@ -78,7 +78,9 @@ public:
   {
     for (int i=0; i<count; i++) {
       if (key == entries[i].key) {
-        entries[i].destroy(entries[i].userData);
+        if (entries[i].destroy) {
+          entries[i].destroy(entries[i].userData);
+        }
         
         --count;
         for (;i<count; i++) {
