@@ -25,6 +25,8 @@
 #include "nsIPresShell.h"
 #include "nsIChannelEventSink.h"
 #include "nsIProgressEventSink.h"
+#include "nsIRadioGroupContainer.h"
+#include "nsIScriptObjectPrincipal.h"
 #include "nsISecurityEventSink.h"
 #include "nsIScriptGlobalObject.h"  
 #include "nsIServiceManager.h"
@@ -35,6 +37,7 @@
 #include "nsPIDOMWindow.h"           
 #include "nsPropertyTable.h"         
 #include "nsStringFwd.h"
+#include "nsStubMutationObserver.h"
 #include "nsTHashtable.h"  
 #include "nsURIHashKey.h"
 #include "mozilla/net/ReferrerPolicy.h"  
@@ -434,6 +437,11 @@ class PrincipalFlashClassifier;
 
 class nsIDocument : public nsINode,
                     public mozilla::dom::DocumentOrShadowRoot,
+                    public nsSupportsWeakReference,
+                    public nsIRadioGroupContainer,
+                    public nsIScriptObjectPrincipal,
+                    public nsIApplicationCacheContainer,
+                    public nsStubMutationObserver,
                     public mozilla::dom::DispatcherTrait {
   typedef mozilla::dom::GlobalObject GlobalObject;
 
@@ -450,10 +458,62 @@ class nsIDocument : public nsINode,
   typedef mozilla::dom::SVGElement SVGElement;
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IDOCUMENT_IID)
+  NS_DECL_ISUPPORTS_INHERITED
 
 #ifdef MOZILLA_INTERNAL_API
   nsIDocument();
 #endif
+
+  
+  NS_DECL_NSIAPPLICATIONCACHECONTAINER
+
+  
+  NS_IMETHOD WalkRadioGroup(const nsAString& aName, nsIRadioVisitor* aVisitor,
+                            bool aFlushContent) final {
+    return DocumentOrShadowRoot::WalkRadioGroup(aName, aVisitor, aFlushContent);
+  }
+
+  void SetCurrentRadioButton(const nsAString& aName,
+                             mozilla::dom::HTMLInputElement* aRadio) final {
+    DocumentOrShadowRoot::SetCurrentRadioButton(aName, aRadio);
+  }
+
+  mozilla::dom::HTMLInputElement* GetCurrentRadioButton(
+      const nsAString& aName) final {
+    return DocumentOrShadowRoot::GetCurrentRadioButton(aName);
+  }
+
+  NS_IMETHOD
+  GetNextRadioButton(const nsAString& aName, const bool aPrevious,
+                     mozilla::dom::HTMLInputElement* aFocusedRadio,
+                     mozilla::dom::HTMLInputElement** aRadioOut) final {
+    return DocumentOrShadowRoot::GetNextRadioButton(aName, aPrevious,
+                                                    aFocusedRadio, aRadioOut);
+  }
+  void AddToRadioGroup(const nsAString& aName,
+                       mozilla::dom::HTMLInputElement* aRadio) final {
+    DocumentOrShadowRoot::AddToRadioGroup(aName, aRadio);
+  }
+  void RemoveFromRadioGroup(const nsAString& aName,
+                            mozilla::dom::HTMLInputElement* aRadio) final {
+    DocumentOrShadowRoot::RemoveFromRadioGroup(aName, aRadio);
+  }
+  uint32_t GetRequiredRadioCount(const nsAString& aName) const final {
+    return DocumentOrShadowRoot::GetRequiredRadioCount(aName);
+  }
+  void RadioRequiredWillChange(const nsAString& aName,
+                               bool aRequiredAdded) final {
+    DocumentOrShadowRoot::RadioRequiredWillChange(aName, aRequiredAdded);
+  }
+  bool GetValueMissingState(const nsAString& aName) const final {
+    return DocumentOrShadowRoot::GetValueMissingState(aName);
+  }
+  void SetValueMissingState(const nsAString& aName, bool aValue) final {
+    return DocumentOrShadowRoot::SetValueMissingState(aName, aValue);
+  }
+
+  
+  nsIPrincipal* GetPrincipal() final { return NodePrincipal(); }
 
   
   
@@ -3323,6 +3383,10 @@ class nsIDocument : public nsINode,
 
   nsTArray<nsString> mL10nResources;
 
+  
+  
+  nsCOMPtr<nsIApplicationCache> mApplicationCache;
+
  public:
   bool IsThirdParty();
 
@@ -4495,6 +4559,10 @@ inline nsIDocument* nsINode::AsDocument() {
 inline const nsIDocument* nsINode::AsDocument() const {
   MOZ_ASSERT(IsDocument());
   return static_cast<const nsIDocument*>(this);
+}
+
+inline nsISupports* ToSupports(nsIDocument* aDoc) {
+  return static_cast<nsINode*>(aDoc);
 }
 
 #endif 

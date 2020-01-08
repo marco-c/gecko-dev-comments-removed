@@ -520,8 +520,8 @@ class nsBeforeFirstPaintDispatcher : public Runnable {
     nsCOMPtr<nsIObserverService> observerService =
         mozilla::services::GetObserverService();
     if (observerService) {
-      observerService->NotifyObservers(mDocument, "before-first-paint",
-                                       nullptr);
+      observerService->NotifyObservers(ToSupports(mDocument),
+                                       "before-first-paint", nullptr);
     }
     return NS_OK;
   }
@@ -796,16 +796,15 @@ nsIPresShell::nsIPresShell()
       mObservingLayoutFlushes(false),
       mResizeEventPending(false),
       mNeedThrottledAnimationFlush(true),
+      mPresShellId(0),
+      mFontSizeInflationEmPerLine(0),
+      mFontSizeInflationMinTwips(0),
+      mFontSizeInflationLineThreshold(0),
       mFontSizeInflationForceEnabled(false),
       mFontSizeInflationDisabledInMasterProcess(false),
       mFontSizeInflationEnabled(false),
       mPaintingIsFrozen(false),
       mIsNeverPainting(false),
-      mResolutionUpdated(false),
-      mPresShellId(0),
-      mFontSizeInflationEmPerLine(0),
-      mFontSizeInflationMinTwips(0),
-      mFontSizeInflationLineThreshold(0),
       mInFlush(false),
       mCurrentEventFrame(nullptr) {
 }
@@ -840,6 +839,7 @@ PresShell::PresShell()
       mHasReceivedPaintMessage(false),
       mIsLastKeyDownCanceled(false),
       mHasHandledUserInput(false),
+      mResolutionUpdated(false),
       mForceDispatchKeyPressEventsForNonPrintableKeys(false),
       mForceUseLegacyKeyCodeAndCharCodeValues(false),
       mInitializedWithKeyPressEventDispatchingBlacklist(false) {
@@ -1444,7 +1444,7 @@ void nsIPresShell::SetAuthorStyleDisabled(bool aStyleDisabled) {
         mozilla::services::GetObserverService();
     if (observerService) {
       observerService->NotifyObservers(
-          mDocument, "author-style-disabled-changed", nullptr);
+          ToSupports(mDocument), "author-style-disabled-changed", nullptr);
     }
   }
 }
@@ -5157,7 +5157,7 @@ void PresShell::SetIgnoreViewportScrolling(bool aIgnore) {
 }
 
 nsresult PresShell::SetResolutionAndScaleTo(float aResolution,
-                                            ChangeOrigin aOrigin) {
+                                            nsAtom* aOrigin) {
   if (!(aResolution > 0.0)) {
     return NS_ERROR_ILLEGAL_VALUE;
   }
@@ -5171,7 +5171,7 @@ nsresult PresShell::SetResolutionAndScaleTo(float aResolution,
   if (mMobileViewportManager) {
     mMobileViewportManager->ResolutionUpdated();
   }
-  if (aOrigin != ChangeOrigin::eApz) {
+  if (aOrigin != nsGkAtoms::apz) {
     mResolutionUpdated = true;
   }
   if (auto* window = nsGlobalWindowInner::Cast(mDocument->GetInnerWindow())) {

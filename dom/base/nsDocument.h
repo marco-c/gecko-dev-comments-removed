@@ -17,7 +17,6 @@
 #include "nsCOMPtr.h"
 #include "nsAutoPtr.h"
 #include "nsCRT.h"
-#include "nsIWeakReferenceUtils.h"
 #include "nsTArray.h"
 #include "nsIdentifierMapEntry.h"
 #include "nsStubDocumentObserver.h"
@@ -28,8 +27,6 @@
 #include "nsBindingManager.h"
 #include "nsRefPtrHashtable.h"
 #include "nsJSThingHashtable.h"
-#include "nsIScriptObjectPrincipal.h"
-#include "nsIRadioGroupContainer.h"
 #include "nsILayoutHistoryState.h"
 #include "nsIRequest.h"
 #include "nsILoadGroup.h"
@@ -95,12 +92,7 @@ class nsOnloadBlocker final : public nsIRequest {
 };
 
 
-class nsDocument : public nsIDocument,
-                   public nsSupportsWeakReference,
-                   public nsIScriptObjectPrincipal,
-                   public nsIRadioGroupContainer,
-                   public nsIApplicationCacheContainer,
-                   public nsStubMutationObserver {
+class nsDocument : public nsIDocument {
   friend class nsIDocument;
 
  public:
@@ -136,52 +128,6 @@ class nsDocument : public nsIDocument,
   virtual void EndLoad() override;
 
   
-  NS_IMETHOD WalkRadioGroup(const nsAString& aName, nsIRadioVisitor* aVisitor,
-                            bool aFlushContent) override {
-    return DocumentOrShadowRoot::WalkRadioGroup(aName, aVisitor, aFlushContent);
-  }
-  virtual void SetCurrentRadioButton(
-      const nsAString& aName, mozilla::dom::HTMLInputElement* aRadio) override {
-    DocumentOrShadowRoot::SetCurrentRadioButton(aName, aRadio);
-  }
-  virtual mozilla::dom::HTMLInputElement* GetCurrentRadioButton(
-      const nsAString& aName) override {
-    return DocumentOrShadowRoot::GetCurrentRadioButton(aName);
-  }
-  NS_IMETHOD
-  GetNextRadioButton(const nsAString& aName, const bool aPrevious,
-                     mozilla::dom::HTMLInputElement* aFocusedRadio,
-                     mozilla::dom::HTMLInputElement** aRadioOut) override {
-    return DocumentOrShadowRoot::GetNextRadioButton(aName, aPrevious,
-                                                    aFocusedRadio, aRadioOut);
-  }
-  virtual void AddToRadioGroup(
-      const nsAString& aName, mozilla::dom::HTMLInputElement* aRadio) override {
-    DocumentOrShadowRoot::AddToRadioGroup(aName, aRadio);
-  }
-  virtual void RemoveFromRadioGroup(
-      const nsAString& aName, mozilla::dom::HTMLInputElement* aRadio) override {
-    DocumentOrShadowRoot::RemoveFromRadioGroup(aName, aRadio);
-  }
-  virtual uint32_t GetRequiredRadioCount(
-      const nsAString& aName) const override {
-    return DocumentOrShadowRoot::GetRequiredRadioCount(aName);
-  }
-  virtual void RadioRequiredWillChange(const nsAString& aName,
-                                       bool aRequiredAdded) override {
-    DocumentOrShadowRoot::RadioRequiredWillChange(aName, aRequiredAdded);
-  }
-  virtual bool GetValueMissingState(const nsAString& aName) const override {
-    return DocumentOrShadowRoot::GetValueMissingState(aName);
-  }
-  virtual void SetValueMissingState(const nsAString& aName,
-                                    bool aValue) override {
-    return DocumentOrShadowRoot::SetValueMissingState(aName, aValue);
-  }
-
-  
-  
-  
   static bool IsCallerChromeOrAddon(JSContext* aCx, JSObject* aObject);
 
  public:
@@ -196,12 +142,6 @@ class nsDocument : public nsIDocument,
   virtual mozilla::EventListenerManager* GetExistingListenerManager()
       const override;
 
-  
-  virtual nsIPrincipal* GetPrincipal() override;
-
-  
-  NS_DECL_NSIAPPLICATIONCACHECONTAINER
-
   virtual nsresult Init();
 
   virtual void Destroy() override;
@@ -211,7 +151,7 @@ class nsDocument : public nsIDocument,
   virtual void UnblockOnload(bool aFireSync) override;
 
   NS_DECL_CYCLE_COLLECTION_SKIPPABLE_SCRIPT_HOLDER_CLASS_AMBIGUOUS(nsDocument,
-                                                                   nsIDocument)
+                                                                   nsINode)
 
   void SetLoadedAsData(bool aLoadedAsData) { mLoadedAsData = aLoadedAsData; }
   void SetLoadedAsInteractiveData(bool aLoadedAsInteractiveData) {
@@ -267,10 +207,6 @@ class nsDocument : public nsIDocument,
   js::ExpandoAndGeneration mExpandoAndGeneration;
 
   friend class nsCallRequestFullscreen;
-
-  
-  
-  nsCOMPtr<nsIApplicationCache> mApplicationCache;
 
   nsCOMPtr<nsIContent> mFirstBaseNodeWithHref;
 

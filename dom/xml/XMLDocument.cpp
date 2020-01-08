@@ -545,7 +545,7 @@ void XMLDocument::EndLoad() {
     
     
     WidgetEvent event(true, eLoad);
-    EventDispatcher::Dispatch(static_cast<nsIDocument*>(this), nullptr, &event);
+    EventDispatcher::Dispatch(ToSupports(this), nullptr, &event);
   }
 }
 
