@@ -281,8 +281,6 @@ ComposerCommandsUpdater::UpdateCommandGroup(const nsAString& aCommandGroup)
   NS_ENSURE_TRUE(commandUpdater, NS_ERROR_FAILURE);
 
 
-  
-  
   if (aCommandGroup.EqualsLiteral("undo")) {
     commandUpdater->CommandStatusChanged("cmd_undo");
     commandUpdater->CommandStatusChanged("cmd_redo");
