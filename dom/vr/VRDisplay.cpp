@@ -376,7 +376,7 @@ void VRDisplay::UpdateFrameInfo() {
 
 
   if (mFrameInfo.IsDirty() || !mPresentation) {
-    gfx::VRHMDSensorState state = mClient->GetSensorState();
+    const gfx::VRHMDSensorState& state = mClient->GetSensorState();
     const gfx::VRDisplayInfo& info = mClient->GetDisplayInfo();
     mFrameInfo.Update(info, state, mDepthNear, mDepthFar);
   }
