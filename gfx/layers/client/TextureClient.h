@@ -94,10 +94,6 @@ enum TextureAllocationFlags {
   
   
   ALLOC_UPDATE_FROM_SURFACE = 1 << 7,
-
-  
-  
-  ALLOC_ALLOW_DIRECT_MAPPING = 1 << 8,
 };
 
 
@@ -378,6 +374,16 @@ public:
                            gfx::BackendType aMoz2dBackend,
                            TextureFlags aTextureFlags,
                            TextureAllocationFlags flags = ALLOC_DEFAULT);
+
+  
+  
+  
+  static already_AddRefed<TextureClient>
+  CreateForYCbCrWithBufferSize(KnowsCompositor* aAllocator,
+                               size_t aSize,
+                               YUVColorSpace aYUVColorSpace,
+                               uint32_t aBitDepth,
+                               TextureFlags aTextureFlags);
 
   
   already_AddRefed<TextureClient>

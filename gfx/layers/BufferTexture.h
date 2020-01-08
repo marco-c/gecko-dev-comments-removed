@@ -17,8 +17,7 @@ namespace mozilla {
 namespace layers {
 
 bool ComputeHasIntermediateBuffer(gfx::SurfaceFormat aFormat,
-                                  LayersBackend aLayersBackend,
-                                  bool aSupportsTextureDirectMapping);
+                                  LayersBackend aLayersBackend);
 
 class BufferTextureData : public TextureData
 {
@@ -39,6 +38,15 @@ public:
                                            YUVColorSpace aYUVColorSpace,
                                            uint32_t aBitDepth,
                                            TextureFlags aTextureFlags);
+
+  
+  
+  
+  static BufferTextureData* CreateForYCbCrWithBufferSize(KnowsCompositor* aAllocator,
+                                                         int32_t aSize,
+                                                         YUVColorSpace aYUVColorSpace,
+                                                         uint32_t aBitDepth,
+                                                         TextureFlags aTextureFlags);
 
   virtual bool Lock(OpenMode aMode) override { return true; }
 

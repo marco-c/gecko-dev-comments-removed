@@ -114,8 +114,6 @@ struct TileClient
     CompositableClient::DumpTextureClient(aStream, mFrontBuffer, aCompress);
   }
 
-  void GetSyncTextureSerials(SurfaceMode aMode, nsTArray<uint64_t>& aSerials);
-
   
 
 
@@ -327,9 +325,6 @@ public:
                    LayerManager::DrawPaintedLayerCallback aCallback,
                    void* aCallbackData,
                    TilePaintFlags aFlags) = 0;
-  virtual void GetSyncTextureSerials(const nsIntRegion& aPaintRegion,
-                                     const nsIntRegion& aDirtyRegion,
-                                     nsTArray<uint64_t>& aSerials) { return; }
 
   virtual bool SupportsProgressiveUpdate() = 0;
   virtual bool ProgressiveUpdate(const nsIntRegion& aValidRegion,

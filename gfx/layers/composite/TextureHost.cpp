@@ -21,9 +21,6 @@
 #include "mozilla/layers/TextureHostOGL.h"  
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/TextureClient.h"
-#ifdef XP_DARWIN
-#include "mozilla/layers/TextureSync.h"
-#endif
 #include "mozilla/layers/GPUVideoTextureHost.h"
 #include "mozilla/layers/WebRenderTextureHost.h"
 #include "mozilla/webrender/RenderBufferTextureHost.h"
@@ -373,14 +370,11 @@ TextureHost::TextureHost(TextureFlags aFlags)
 
 TextureHost::~TextureHost()
 {
-  if (mReadLocked) {
-    
-    
-    
-    
-    ReadUnlock();
-    MaybeNotifyUnlocked();
-  }
+  
+  
+  
+  
+  ReadUnlock();
 }
 
 void TextureHost::Finalize()
@@ -406,7 +400,6 @@ TextureHost::UnbindTextureSource()
       
       
       ReadUnlock();
-      MaybeNotifyUnlocked();
     }
   }
 }
@@ -708,9 +701,6 @@ TextureHost::SetReadLocked()
   
   MOZ_ASSERT(!mReadLocked);
   mReadLocked = true;
-  if (mProvider) {
-    mProvider->MaybeUnlockBeforeNextComposition(this);
-  }
 }
 
 void
@@ -897,35 +887,11 @@ BufferTextureHost::AcquireTextureSource(CompositableTextureSourceRef& aTexture)
 }
 
 void
-BufferTextureHost::ReadUnlock()
-{
-  if (mFirstSource) {
-    mFirstSource->Sync(true);
-  }
-
-  TextureHost::ReadUnlock();
-}
-
-void
-BufferTextureHost::MaybeNotifyUnlocked()
-{
-#ifdef XP_DARWIN
-  auto actor = GetIPDLActor();
-  if (actor) {
-    AutoTArray<uint64_t, 1> serials;
-    serials.AppendElement(TextureHost::GetTextureSerial(actor));
-    TextureSync::SetTexturesUnlocked(actor->OtherPid(), serials);
-  }
-#endif
-}
-
-void
 BufferTextureHost::UnbindTextureSource()
 {
   if (mFirstSource && mFirstSource->IsOwnedBy(this)) {
     mFirstSource->Unbind();
   }
-
   
   
   
@@ -934,7 +900,6 @@ BufferTextureHost::UnbindTextureSource()
   
   
   ReadUnlock();
-  MaybeNotifyUnlocked();
 }
 
 gfx::SurfaceFormat
@@ -1001,7 +966,6 @@ BufferTextureHost::MaybeUpload(nsIntRegion *aRegion)
     
     
     ReadUnlock();
-    MaybeNotifyUnlocked();
   }
 
   
@@ -1031,9 +995,7 @@ BufferTextureHost::Upload(nsIntRegion *aRegion)
     return false;
   }
   if (!mHasIntermediateBuffer && EnsureWrappingTextureSource()) {
-    if (!mFirstSource || !mFirstSource->IsDirectMap()) {
-      return true;
-    }
+    return true;
   }
 
   if (mFormat == gfx::SurfaceFormat::UNKNOWN) {
@@ -1315,12 +1277,9 @@ TextureParent::Destroy()
     return;
   }
 
-  if (mTextureHost->mReadLocked) {
-    
-    
-    mTextureHost->ReadUnlock();
-    mTextureHost->MaybeNotifyUnlocked();
-  }
+  
+  
+  mTextureHost->ReadUnlock();
 
   if (mTextureHost->GetFlags() & TextureFlags::DEALLOCATE_CLIENT) {
     mTextureHost->ForgetSharedData();
