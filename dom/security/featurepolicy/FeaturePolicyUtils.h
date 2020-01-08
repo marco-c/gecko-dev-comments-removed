@@ -18,25 +18,36 @@ namespace dom {
 class FeaturePolicyUtils final
 {
 public:
+  enum FeaturePolicyValue
+  {
+    
+    eAll,
+
+    
+    eSelf,
+
+    
+    eNone,
+  };
+
+  
+  
   static bool
   IsFeatureAllowed(nsIDocument* aDocument,
                    const nsAString& aFeatureName);
 
+  
   static bool
   IsSupportedFeature(const nsAString& aFeatureName);
 
+  
+  
   static void
   ForEachFeature(const std::function<void(const char*)>& aCallback);
 
-  static void
-  DefaultAllowListFeature(const nsAString& aFeatureName,
-                          const nsAString& aDefaultOrigin,
-                          nsAString& aDefaultAllowList);
-
-  static bool
-  AllowDefaultFeature(const nsAString& aFeatureName,
-                      const nsAString& aDefaultOrigin,
-                      const nsAString& aOrigin);
+  
+  static FeaturePolicyValue
+  DefaultAllowListFeature(const nsAString& aFeatureName);
 };
 
 } 

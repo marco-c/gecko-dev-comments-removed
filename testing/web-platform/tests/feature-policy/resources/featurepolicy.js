@@ -402,8 +402,9 @@ function test_subframe_header_policy(
 
 
 
+
 function test_frame_policy(
-    feature, src, test_expect, allow, allowfullscreen, sandbox) {
+    feature, src, srcdoc, test_expect, allow, allowfullscreen, sandbox) {
   let frame = document.createElement('iframe');
   document.body.appendChild(frame);
   
@@ -418,7 +419,12 @@ function test_frame_policy(
   if (!!sandbox) {
     frame.setAttribute('sandbox', 'allow-scripts');
   }
-  frame.src = src;
+  if (!!src) {
+    frame.src = src;
+  }
+  if (!!srcdoc) {
+    frame.srcdoc = "<h1>Hello world!</h1>";
+  }
   if (test_expect) {
     assert_true(frame_policy.allowedFeatures().includes(feature));
   } else {

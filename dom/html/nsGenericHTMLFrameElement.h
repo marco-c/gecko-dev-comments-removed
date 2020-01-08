@@ -10,7 +10,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/nsBrowserElement.h"
-#include "mozilla/dom/FeaturePolicy.h"
 
 #include "nsFrameLoader.h"
 #include "nsGenericHTMLElement.h"
@@ -127,9 +126,6 @@ protected:
   nsCOMPtr<nsPIDOMWindowOuter> mOpenerWindow;
 
   nsCOMPtr<nsIPrincipal> mSrcTriggeringPrincipal;
-
-  
-  RefPtr<mozilla::dom::FeaturePolicy> mFeaturePolicy;
 
   
 

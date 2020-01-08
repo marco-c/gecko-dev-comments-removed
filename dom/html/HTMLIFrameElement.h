@@ -8,6 +8,7 @@
 #define mozilla_dom_HTMLIFrameElement_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/dom/FeaturePolicy.h"
 #include "nsGenericHTMLFrameElement.h"
 #include "nsDOMTokenList.h"
 
@@ -23,8 +24,9 @@ public:
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLIFrameElement, iframe)
 
   
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLIFrameElement,
-                                       nsGenericHTMLFrameElement)
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(HTMLIFrameElement,
+                                           nsGenericHTMLFrameElement)
 
   
   virtual bool IsInteractiveHTMLContent(bool aIgnoreTabindex) const override
@@ -223,8 +225,13 @@ private:
 
   void RefreshFeaturePolicy();
 
+  
+  
+  
+  
+  
   nsresult
-  GetFeaturePolicyDefaultOrigin(nsAString& aDefaultOrigin) const;
+  GetFeaturePolicyDefaultOrigin(nsIPrincipal** aDefaultOrigin) const;
 
   
 
@@ -236,6 +243,8 @@ private:
 
 
   void AfterMaybeChangeAttr(int32_t aNamespaceID, nsAtom* aName, bool aNotify);
+
+  RefPtr<mozilla::dom::FeaturePolicy> mFeaturePolicy;
 };
 
 } 

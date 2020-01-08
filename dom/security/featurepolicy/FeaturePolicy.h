@@ -76,15 +76,13 @@ public:
   
   
   void
-  SetDefaultOrigin(const nsAString& aOrigin)
+  SetDefaultOrigin(nsIPrincipal* aPrincipal)
   {
-    
-    mDefaultOrigin = aOrigin;
+    mDefaultOrigin = aPrincipal;
   }
 
-  const nsAString& DefaultOrigin() const
+  nsIPrincipal* DefaultOrigin() const
   {
-    
     return mDefaultOrigin;
   }
 
@@ -97,9 +95,8 @@ public:
   void
   SetDeclaredPolicy(nsIDocument* aDocument,
                     const nsAString& aPolicyString,
-                    const nsAString& aSelfOrigin,
-                    const nsAString& aSrcOrigin,
-                    bool aSrcEnabled);
+                    nsIPrincipal* aSelfOrigin,
+                    nsIPrincipal* aSrcOrigin);
 
   
   
@@ -140,9 +137,12 @@ public:
 private:
   ~FeaturePolicy() = default;
 
+  
+  
+  
   bool
   AllowsFeatureInternal(const nsAString& aFeatureName,
-                        const nsAString& aOrigin) const;
+                        nsIPrincipal* aOrigin) const;
 
   
   void
@@ -151,6 +151,7 @@ private:
   bool
   HasInheritedDeniedFeature(const nsAString& aFeatureName) const;
 
+  
   bool
   HasDeclaredFeature(const nsAString& aFeatureName) const;
 
@@ -163,7 +164,7 @@ private:
   
   nsTArray<Feature> mFeatures;
 
-  nsString mDefaultOrigin;
+  nsCOMPtr<nsIPrincipal> mDefaultOrigin;
 };
 
 } 

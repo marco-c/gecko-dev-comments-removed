@@ -10,7 +10,7 @@
 #include "nsString.h"
 
 class nsIDocument;
-class nsIURI;
+class nsIPrincipal;
 
 namespace mozilla {
 namespace dom {
@@ -25,9 +25,8 @@ public:
   static bool
   ParseString(const nsAString& aPolicy,
               nsIDocument* aDocument,
-              const nsAString& aSelfOrigin,
-              const nsAString& aSrcOrigin,
-              bool aSrcEnabled,
+              nsIPrincipal* aSelfOrigin,
+              nsIPrincipal* aSrcOrigin,
               nsTArray<Feature>& aParsedFeatures);
 };
 
