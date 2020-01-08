@@ -73,3 +73,14 @@ body[dir=rtl] .error-text::before {
 :-moz-any(input, textarea, select):valid + .error-text {
   display: none;
 }
+
+address-form > footer > .cancel-button {
+  
+  margin-right: auto;
+}
+
+address-form > footer > .back-button {
+  
+  
+  margin-right: auto;
+}
