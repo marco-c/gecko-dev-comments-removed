@@ -121,7 +121,8 @@ function processBody(functionName, body)
             } else if (callee.kind == 'field') {
                 var { csu, field, isVirtual } = callee;
                 const tag = isVirtual ? 'V' : 'F';
-                printOnce(tag + " " + prologue + memo(`${csu}.${field}`) + " CLASS " + csu + " FIELD " + field);
+                const fullfield = `${csu}.${field}`;
+                printOnce(`${tag} ${prologue}${memo(fullfield)} CLASS ${csu} FIELD ${field}`);
             } else if (callee.kind == 'resolved-field') {
                 
                 
