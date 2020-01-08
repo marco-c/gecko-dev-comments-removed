@@ -60,7 +60,7 @@ public:
 
 
 
-  mozilla::dom::Element* GetTargetElement();
+  Element* GetTargetElement();
 
   
 
@@ -274,8 +274,8 @@ public:
 
 
   bool SetAttr(nsAtom* aAttribute, const nsAString& aValue,
-                 nsAttrValue& aResult, Element* aContextNode,
-                 nsresult* aParseResult = nullptr);
+               nsAttrValue& aResult, Element& aContextElement,
+               nsresult* aParseResult = nullptr);
 
   
 
@@ -330,14 +330,13 @@ public:
 
 
 
-
-  void BindToTree(nsIContent* aContextNode);
+  void BindToTree(Element& aContextElement);
 
   
 
 
 
-  void HandleTargetElementChange(mozilla::dom::Element* aNewTarget);
+  void HandleTargetElementChange(Element* aNewTarget);
 
   
 
@@ -377,10 +376,10 @@ protected:
   
 
   nsresult          SetBeginSpec(const nsAString& aBeginSpec,
-                                 Element* aContextNode,
+                                 Element& aContextElement,
                                  RemovalTestFunction aRemove);
   nsresult          SetEndSpec(const nsAString& aEndSpec,
-                               Element* aContextNode,
+                               Element& aContextElement,
                                RemovalTestFunction aRemove);
   nsresult          SetSimpleDuration(const nsAString& aDurSpec);
   nsresult          SetMin(const nsAString& aMinSpec);
@@ -401,7 +400,7 @@ protected:
   void              UnsetFillMode();
 
   nsresult          SetBeginOrEndSpec(const nsAString& aSpec,
-                                      Element* aContextNode,
+                                      Element& aContextElement,
                                       bool aIsBegin,
                                       RemovalTestFunction aRemove);
   void              ClearSpecs(TimeValueSpecList& aSpecs,

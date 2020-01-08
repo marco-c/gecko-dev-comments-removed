@@ -78,7 +78,7 @@ public:
 
 
 
-  void ResetWithID(nsIContent* aFrom, nsAtom* aID, bool aWatch = true);
+  void ResetWithID(Element& aFrom, nsAtom* aID, bool aWatch = true);
 
   
 
