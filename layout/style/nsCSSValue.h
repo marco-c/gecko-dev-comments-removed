@@ -336,9 +336,7 @@ enum nsCSSUnit {
   eCSSUnit_String       = 11,     
   eCSSUnit_Ident        = 12,     
   eCSSUnit_Attr         = 14,     
-  eCSSUnit_Local_Font   = 15,     
-  eCSSUnit_Font_Format  = 16,     
-  eCSSUnit_Element      = 17,     
+  eCSSUnit_Element      = 15,     
 
   eCSSUnit_Array        = 20,     
   eCSSUnit_Counter      = 21,     
@@ -367,8 +365,6 @@ enum nsCSSUnit {
   eCSSUnit_Calc_Times_L = 33,     
   eCSSUnit_Calc_Times_R = 34,     
   eCSSUnit_Calc_Divided = 35,     
-
-  eCSSUnit_URL          = 40,     
 
   eCSSUnit_Pair         = 50,     
   eCSSUnit_List         = 53,     
@@ -444,8 +440,6 @@ public:
   struct Array;
   friend struct Array;
 
-  friend struct mozilla::css::URLValueData;
-
   friend struct mozilla::css::ImageValue;
 
   
@@ -459,8 +453,6 @@ public:
   nsCSSValue(float aValue, nsCSSUnit aUnit);
   nsCSSValue(const nsString& aValue, nsCSSUnit aUnit);
   nsCSSValue(Array* aArray, nsCSSUnit aUnit);
-  explicit nsCSSValue(mozilla::css::URLValue* aValue);
-  explicit nsCSSValue(mozilla::css::ImageValue* aValue);
   explicit nsCSSValue(mozilla::SharedFontList* aValue);
   nsCSSValue(const nsCSSValue& aCopy);
   nsCSSValue(nsCSSValue&& aOther)
@@ -594,12 +586,6 @@ public:
     return mValue.mArray;
   }
 
-  nsIURI* GetURLValue() const
-  {
-    MOZ_ASSERT(mUnit == eCSSUnit_URL, "not a URL value");
-    return mValue.mURL->GetURI();
-  }
-
   nsCSSValueSharedList* GetSharedListValue() const
   {
     MOZ_ASSERT(mUnit == eCSSUnit_SharedList, "not a shared list value");
@@ -624,14 +610,6 @@ public:
 
   inline nsCSSValuePairList* GetPairListValue();
   inline const nsCSSValuePairList* GetPairListValue() const;
-
-  mozilla::css::URLValue* GetURLStructValue() const
-  {
-    
-    
-    MOZ_ASSERT(mUnit == eCSSUnit_URL, "not a URL value");
-    return mValue.mURL;
-  }
 
   
   
@@ -675,7 +653,6 @@ public:
   
   void SetIntegerCoordValue(nscoord aCoord);
   void SetArrayValue(nsCSSValue::Array* aArray, nsCSSUnit aUnit);
-  void SetURLValue(mozilla::css::URLValue* aURI);
   void SetFontFamilyListValue(already_AddRefed<mozilla::SharedFontList> aFontListValue);
   void SetPairValue(const nsCSSValuePair* aPair);
   void SetPairValue(const nsCSSValue& xValue, const nsCSSValue& yValue);
@@ -718,7 +695,6 @@ protected:
     nsStringBuffer* MOZ_OWNING_REF mString;
     nsAtom* MOZ_OWNING_REF mAtom;
     Array* MOZ_OWNING_REF mArray;
-    mozilla::css::URLValue* MOZ_OWNING_REF mURL;
     nsCSSValuePair_heap* MOZ_OWNING_REF mPair;
     nsCSSValueList_heap* MOZ_OWNING_REF mList;
     nsCSSValueList* mListDependent;
