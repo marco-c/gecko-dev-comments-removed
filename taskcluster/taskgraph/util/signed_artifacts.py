@@ -31,7 +31,7 @@ def generate_specifications_of_artifacts_to_sign(
             'artifacts': [
                 get_artifact_path(task, '{locale}/target.apk'),
             ],
-            'formats': ['jar'],
+            'formats': ['autograph_apk_fennec_sha1'],
         }]
     
     
