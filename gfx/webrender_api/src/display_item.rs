@@ -768,6 +768,17 @@ pub struct ImageMask {
     pub repeat: bool,
 }
 
+impl ImageMask {
+    
+    pub fn get_local_clip_rect(&self) -> Option<LayoutRect> {
+        if self.repeat {
+            None
+        } else {
+            Some(self.rect)
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize, Eq, Hash)]
 pub enum ClipMode {
@@ -864,6 +875,19 @@ impl ComplexClipRegion {
     }
 }
 
+impl ComplexClipRegion {
+    
+    pub fn get_local_clip_rect(&self) -> Option<LayoutRect> {
+        match self.mode {
+            ClipMode::Clip => {
+                Some(self.rect)
+            }
+            ClipMode::ClipOut => {
+                None
+            }
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct ClipChainId(pub u64, pub PipelineId);

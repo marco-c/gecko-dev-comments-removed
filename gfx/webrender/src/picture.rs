@@ -3,26 +3,25 @@
 
 
 use api::{DeviceRect, FilterOp, MixBlendMode, PipelineId, PremultipliedColorF, PictureRect, PicturePoint};
-use api::{DeviceIntRect, DeviceIntSize, DevicePoint, LayoutRect, PictureToRasterTransform};
+use api::{DeviceIntRect, DeviceIntSize, DevicePoint, LayoutRect, PictureToRasterTransform, LayoutPixel};
 use api::{DevicePixelScale, PictureIntPoint, PictureIntRect, PictureIntSize, RasterRect, RasterSpace};
-use api::{PicturePixel, RasterPixel, WorldPixel};
+use api::{PicturePixel, RasterPixel, WorldPixel, WorldRect};
 use box_shadow::{BLUR_SAMPLE_SCALE};
 use clip::ClipNodeCollector;
 use clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, ClipScrollTree, SpatialNodeIndex};
-use euclid::{TypedScale, vec3};
-use internal_types::PlaneSplitter;
-use frame_builder::{FrameBuildingContext, FrameBuildingState, PictureState};
-use frame_builder::{PictureContext, PrimitiveContext};
+use euclid::{TypedScale, vec3, TypedRect};
+use internal_types::{FastHashMap, PlaneSplitter};
+use frame_builder::{FrameBuildingContext, FrameBuildingState, PictureState, PictureContext};
 use gpu_cache::{GpuCacheAddress, GpuCacheHandle};
 use gpu_types::{TransformPalette, TransformPaletteId, UvRectKind};
 use plane_split::{Clipper, Polygon, Splitter};
-use prim_store::{PictureIndex, PrimitiveInstance, SpaceMapper, PrimitiveDetails};
-use prim_store::{Primitive, get_raster_rects, BrushKind, BrushPrimitive};
+use prim_store::{PictureIndex, PrimitiveInstance, SpaceMapper, VisibleFace, PrimitiveInstanceKind};
+use prim_store::{get_raster_rects, PrimitiveDataInterner};
 use render_task::{ClearMode, RenderTask, RenderTaskCacheEntryHandle};
 use render_task::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskId, RenderTaskLocation};
 use scene::{FilterOpHelpers, SceneProperties};
 use smallvec::SmallVec;
-use std::mem;
+use std::{mem, ops};
 use tiling::RenderTargetKind;
 use util::{TransformedRectKind, MatrixHelpers, MaxRect};
 
@@ -40,21 +39,95 @@ use util::{TransformedRectKind, MatrixHelpers, MaxRect};
 
 
 pub struct PictureUpdateContext {
-    pub surface_spatial_node_index: SpatialNodeIndex,
+    
+    
+    pub surface_index: SurfaceIndex,
+    
+    pub parent_spatial_node_index: SpatialNodeIndex,
+}
+
+impl PictureUpdateContext {
+    pub fn new(
+        surface_index: SurfaceIndex,
+        parent_spatial_node_index: SpatialNodeIndex,
+    ) -> Self {
+        PictureUpdateContext {
+            surface_index,
+            parent_spatial_node_index,
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct SurfaceIndex(pub usize);
+
+pub const ROOT_SURFACE_INDEX: SurfaceIndex = SurfaceIndex(0);
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct SurfaceInfo {
+    
+    
+    pub rect: PictureRect,
+    
+    
+    pub map_local_to_surface: SpaceMapper<LayoutPixel, PicturePixel>,
+    pub map_surface_to_world: SpaceMapper<PicturePixel, WorldPixel>,
+    
+    
     pub raster_spatial_node_index: SpatialNodeIndex,
+    pub surface_spatial_node_index: SpatialNodeIndex,
+    
+    pub surface: Option<PictureSurface>,
+}
+
+impl SurfaceInfo {
+    pub fn new(
+        surface_spatial_node_index: SpatialNodeIndex,
+        raster_spatial_node_index: SpatialNodeIndex,
+        world_rect: WorldRect,
+        clip_scroll_tree: &ClipScrollTree,
+    ) -> Self {
+        let map_surface_to_world = SpaceMapper::new_with_target(
+            ROOT_SPATIAL_NODE_INDEX,
+            surface_spatial_node_index,
+            world_rect,
+            clip_scroll_tree,
+        );
+
+        let pic_bounds = map_surface_to_world
+            .unmap(&map_surface_to_world.bounds)
+            .unwrap_or(PictureRect::max_rect());
+
+        let map_local_to_surface = SpaceMapper::new(
+            surface_spatial_node_index,
+            pic_bounds,
+        );
+
+        SurfaceInfo {
+            rect: PictureRect::zero(),
+            map_surface_to_world,
+            map_local_to_surface,
+            surface: None,
+            raster_spatial_node_index,
+            surface_spatial_node_index,
+        }
+    }
 }
 
 #[derive(Debug)]
 pub struct RasterConfig {
+    
+    
     pub composite_mode: PictureCompositeMode,
-
     
     
-    pub surface: Option<PictureSurface>,
-
-    
-    
-    pub raster_spatial_node_index: SpatialNodeIndex,
+    pub surface_index: SurfaceIndex,
 }
 
 
@@ -194,47 +267,173 @@ pub struct OrderedPictureChild {
 
 
 
+#[derive(Hash, Eq, PartialEq, Copy, Clone)]
+struct PrimitiveClusterKey {
+    
+    
+    
+    spatial_node_index: SpatialNodeIndex,
+    
+    
+    
+    is_backface_visible: bool,
+}
+
+
+
+pub struct PrimitiveCluster {
+    
+    spatial_node_index: SpatialNodeIndex,
+    
+    is_backface_visible: bool,
+    
+    
+    
+    
+    bounding_rect: LayoutRect,
+    
+    
+    
+    pub is_visible: bool,
+}
+
+impl PrimitiveCluster {
+    fn new(
+        spatial_node_index: SpatialNodeIndex,
+        is_backface_visible: bool,
+    ) -> Self {
+        PrimitiveCluster {
+            bounding_rect: LayoutRect::zero(),
+            spatial_node_index,
+            is_backface_visible,
+            is_visible: false,
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct PrimitiveClusterIndex(pub u32);
+
+pub type ClusterRange = ops::Range<u32>;
+
+
+
 
 
 pub struct PrimitiveList {
+    
     pub prim_instances: Vec<PrimitiveInstance>,
+    
+    
     pub pictures: SmallVec<[PictureIndex; 4]>,
+    
+    pub clusters: SmallVec<[PrimitiveCluster; 4]>,
+    
+    
+    
+    pub prim_cluster_map: Vec<PrimitiveClusterIndex>,
 }
 
 impl PrimitiveList {
+    
+    
+    
+    
+    pub fn empty() -> Self {
+        PrimitiveList {
+            prim_instances: Vec::new(),
+            pictures: SmallVec::new(),
+            clusters: SmallVec::new(),
+            prim_cluster_map: Vec::new(),
+        }
+    }
+
+    
+    
+    
+    
     pub fn new(
-        prim_instances: Vec<PrimitiveInstance>,
-        primitives: &[Primitive],
+        mut prim_instances: Vec<PrimitiveInstance>,
+        prim_interner: &PrimitiveDataInterner,
     ) -> Self {
         let mut pictures = SmallVec::new();
+        let mut clusters_map = FastHashMap::default();
+        let mut clusters: SmallVec<[PrimitiveCluster; 4]> = SmallVec::new();
+        let mut prim_cluster_map = Vec::new();
 
         
         
-        for prim_instance in &prim_instances {
-            let prim = &primitives[prim_instance.prim_index.0];
-            match prim.details {
-                PrimitiveDetails::Brush(BrushPrimitive { kind: BrushKind::Picture { pic_index }, .. }) => {
+        for prim_instance in &mut prim_instances {
+            
+            
+            let is_pic = match prim_instance.kind {
+                PrimitiveInstanceKind::Picture { pic_index } => {
                     pictures.push(pic_index);
+                    true
                 }
                 _ => {
-                    
-                    
-                    
-                    
+                    false
                 }
+            };
+
+            
+            
+            let prim_data = &prim_interner[prim_instance.prim_data_handle];
+            let key = PrimitiveClusterKey {
+                spatial_node_index: prim_instance.spatial_node_index,
+                is_backface_visible: prim_data.is_backface_visible,
+            };
+
+            
+            let cluster_index = *clusters_map
+                .entry(key)
+                .or_insert_with(|| {
+                    let index = clusters.len();
+                    clusters.push(PrimitiveCluster::new(
+                        prim_instance.spatial_node_index,
+                        prim_data.is_backface_visible,
+                    ));
+                    index
+                }
+            );
+
+            
+            
+            
+            let cluster = &mut clusters[cluster_index];
+            if !is_pic {
+                cluster.bounding_rect = cluster.bounding_rect.union(&prim_data.culling_rect);
             }
+
+            
+            
+            
+            
+            
+            let start = prim_cluster_map.len() as u32;
+            let cluster_range = ClusterRange {
+                start,
+                end: start + 1,
+            };
+
+            
+            prim_cluster_map.push(PrimitiveClusterIndex(cluster_index as u32));
+            prim_instance.cluster_range = cluster_range;
         }
 
         PrimitiveList {
             prim_instances,
             pictures,
+            clusters,
+            prim_cluster_map,
         }
     }
 }
 
 pub struct PicturePrimitive {
     
-    pub prim_instances: Vec<PrimitiveInstance>,
+    pub prim_list: PrimitiveList,
+
     pub state: Option<(PictureState, PictureContext)>,
 
     
@@ -274,11 +473,15 @@ pub struct PicturePrimitive {
     pub id: PictureId,
 
     
-    child_pictures: SmallVec<[PictureIndex; 4]>,
+    
+    spatial_node_index: SpatialNodeIndex,
 
     
     
-    spatial_node_index: SpatialNodeIndex,
+    pub local_rect: LayoutRect,
+
+    
+    pub local_clip_rect: LayoutRect,
 }
 
 impl PicturePrimitive {
@@ -317,10 +520,10 @@ impl PicturePrimitive {
         requested_raster_space: RasterSpace,
         prim_list: PrimitiveList,
         spatial_node_index: SpatialNodeIndex,
+        local_clip_rect: LayoutRect,
     ) -> Self {
         PicturePrimitive {
-            prim_instances: prim_list.prim_instances,
-            child_pictures: prim_list.pictures,
+            prim_list,
             state: None,
             secondary_render_task_id: None,
             requested_composite_mode,
@@ -333,26 +536,21 @@ impl PicturePrimitive {
             id,
             requested_raster_space,
             spatial_node_index,
+            local_rect: LayoutRect::zero(),
+            local_clip_rect,
         }
     }
 
     pub fn take_context(
         &mut self,
         pic_index: PictureIndex,
-        prim_context: &PrimitiveContext,
-        parent_spatial_node_index: SpatialNodeIndex,
         surface_spatial_node_index: SpatialNodeIndex,
         raster_spatial_node_index: SpatialNodeIndex,
         parent_allows_subpixel_aa: bool,
         frame_state: &mut FrameBuildingState,
         frame_context: &FrameBuildingContext,
-        is_chased: bool,
-    ) -> Option<(PictureContext, PictureState, Vec<PrimitiveInstance>)> {
+    ) -> Option<(PictureContext, PictureState, PrimitiveList)> {
         if !self.is_visible() {
-            if cfg!(debug_assertions) && is_chased {
-                println!("\tculled for carrying an invisible composite filter");
-            }
-
             return None;
         }
 
@@ -361,7 +559,9 @@ impl PicturePrimitive {
         
         let (raster_spatial_node_index, surface_spatial_node_index) = match self.raster_config {
             Some(ref raster_config) => {
-                (raster_config.raster_spatial_node_index, self.spatial_node_index)
+                let surface = &frame_state.surfaces[raster_config.surface_index.0];
+
+                (surface.raster_spatial_node_index, self.spatial_node_index)
             }
             None => {
                 (raster_spatial_node_index, surface_spatial_node_index)
@@ -394,34 +594,27 @@ impl PicturePrimitive {
             frame_context,
         );
 
-        let (containing_block_index, plane_splitter) = match self.context_3d {
+        let plane_splitter = match self.context_3d {
             Picture3DContext::Out => {
-                (parent_spatial_node_index, None)
+                None
             }
-            Picture3DContext::In { root_data: Some(_), ancestor_index } => {
-                (ancestor_index, Some(PlaneSplitter::new()))
+            Picture3DContext::In { root_data: Some(_), .. } => {
+                Some(PlaneSplitter::new())
             }
-            Picture3DContext::In { root_data: None, ancestor_index } => {
-                (ancestor_index, None)
+            Picture3DContext::In { root_data: None, .. } => {
+                None
             }
         };
-
-        let map_local_to_containing_block = SpaceMapper::new(
-            containing_block_index,
-            LayoutRect::zero(), 
-        );
 
         let state = PictureState {
             tasks: Vec::new(),
             has_non_root_coord_system: false,
             is_cacheable: true,
             local_rect_changed: false,
-            rect: PictureRect::zero(),
             map_local_to_pic,
             map_pic_to_world,
             map_pic_to_raster,
             map_raster_to_world,
-            map_local_to_containing_block,
             plane_splitter,
         };
 
@@ -449,68 +642,38 @@ impl PicturePrimitive {
             allow_subpixel_aa,
             is_passthrough: self.raster_config.is_none(),
             raster_space: self.requested_raster_space,
-            local_spatial_node_index: prim_context.spatial_node_index,
             raster_spatial_node_index,
             surface_spatial_node_index,
         };
 
-        let instances = mem::replace(&mut self.prim_instances, Vec::new());
+        let prim_list = mem::replace(&mut self.prim_list, PrimitiveList::empty());
 
-        Some((context, state, instances))
+        Some((context, state, prim_list))
     }
 
     pub fn restore_context(
         &mut self,
-        prim_instances: Vec<PrimitiveInstance>,
+        prim_list: PrimitiveList,
         context: PictureContext,
         state: PictureState,
-        local_rect: Option<PictureRect>,
         frame_state: &mut FrameBuildingState,
-    ) -> (LayoutRect, Option<ClipNodeCollector>) {
-        let local_rect = match local_rect {
-            Some(local_rect) => {
-                let local_content_rect = LayoutRect::from_untyped(&local_rect.to_untyped());
-
-                match self.raster_config {
-                    Some(RasterConfig { composite_mode: PictureCompositeMode::Filter(FilterOp::Blur(blur_radius)), .. }) => {
-                        let inflate_size = (blur_radius * BLUR_SAMPLE_SCALE).ceil();
-                        local_content_rect.inflate(inflate_size, inflate_size)
-                    }
-                    Some(RasterConfig { composite_mode: PictureCompositeMode::Filter(FilterOp::DropShadow(_, blur_radius, _)), .. }) => {
-                        let inflate_size = (blur_radius * BLUR_SAMPLE_SCALE).ceil();
-                        local_content_rect.inflate(inflate_size, inflate_size)
-
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                    }
-                    _ => {
-                        local_content_rect
-                    }
-                }
-            }
-            None => {
-                assert!(self.raster_config.is_none());
-                LayoutRect::zero()
-            }
-        };
-
-        let clip_node_collector = if context.is_passthrough {
-            None
-        } else {
-            Some(frame_state.clip_store.pop_surface())
-        };
-
-        self.prim_instances = prim_instances;
+    ) -> (bool, Option<ClipNodeCollector>) {
+        self.prim_list = prim_list;
         self.state = Some((state, context));
 
-        (local_rect, clip_node_collector)
+        match self.raster_config {
+            Some(ref raster_config) => {
+                let local_rect = frame_state.surfaces[raster_config.surface_index.0].rect;
+                let local_rect = LayoutRect::from_untyped(&local_rect.to_untyped());
+                let local_rect_changed = local_rect != self.local_rect;
+                self.local_rect = local_rect;
+
+                (local_rect_changed, Some(frame_state.clip_store.pop_surface()))
+            }
+            None => {
+                (false, None)
+            }
+        }
     }
 
     pub fn take_state_and_context(&mut self) -> (PictureState, PictureContext) {
@@ -592,7 +755,7 @@ impl PicturePrimitive {
         
         
         for poly in splitter.sort(vec3(0.0, 0.0, 1.0)) {
-            let spatial_node_index = self.prim_instances[poly.anchor].spatial_node_index;
+            let spatial_node_index = self.prim_list.prim_instances[poly.anchor].spatial_node_index;
 
             let transform = frame_state.transforms.get_world_inv_transform(spatial_node_index);
             let transform_id = frame_state.transforms.get_id(
@@ -629,76 +792,192 @@ impl PicturePrimitive {
         &mut self,
         context: &PictureUpdateContext,
         frame_context: &FrameBuildingContext,
+        surfaces: &mut Vec<SurfaceInfo>,
     ) -> Option<(PictureUpdateContext, SmallVec<[PictureIndex; 4]>)> {
         
         self.raster_config = None;
 
+        
+        
         if !self.resolve_scene_properties(frame_context.scene_properties) {
             return None;
         }
 
+        
         let actual_composite_mode = match self.requested_composite_mode {
             Some(PictureCompositeMode::Filter(filter)) if filter.is_noop() => None,
             mode => mode,
         };
 
-        let has_surface = actual_composite_mode.is_some();
+        let surface_index = match actual_composite_mode {
+            Some(composite_mode) => {
+                
+                let parent_raster_spatial_node_index = surfaces[context.surface_index.0].raster_spatial_node_index;
+                let surface_spatial_node_index = self.spatial_node_index;
 
-        let surface_spatial_node_index = if has_surface {
-            self.spatial_node_index
-        } else {
-            context.surface_spatial_node_index
-        };
+                
+                
+                let xf = frame_context.clip_scroll_tree.get_relative_transform(
+                    parent_raster_spatial_node_index,
+                    surface_spatial_node_index,
+                ).expect("BUG: unable to get relative transform");
 
-        let xf = frame_context.clip_scroll_tree.get_relative_transform(
-            context.raster_spatial_node_index,
-            surface_spatial_node_index,
-        ).expect("BUG: unable to get relative transform");
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                let establishes_raster_root = xf.has_perspective_component();
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let wants_raster_root = xf.has_perspective_component();
+                let raster_spatial_node_index = if establishes_raster_root {
+                    surface_spatial_node_index
+                } else {
+                    parent_raster_spatial_node_index
+                };
 
-        let establishes_raster_root = has_surface && wants_raster_root;
+                let surface_index = SurfaceIndex(surfaces.len());
+                let surface = SurfaceInfo::new(
+                    surface_spatial_node_index,
+                    raster_spatial_node_index,
+                    frame_context.world_rect,
+                    &frame_context.clip_scroll_tree,
+                );
+                surfaces.push(surface);
 
-        let raster_spatial_node_index = if establishes_raster_root {
-            surface_spatial_node_index
-        } else {
-            context.raster_spatial_node_index
-        };
+                self.raster_config = Some(RasterConfig {
+                    composite_mode,
+                    surface_index,
+                });
 
-        self.raster_config = actual_composite_mode.map(|composite_mode| {
-            RasterConfig {
-                composite_mode,
-                surface: None,
-                raster_spatial_node_index,
+                surface_index
             }
-        });
-
-        let child_context = PictureUpdateContext {
-            raster_spatial_node_index,
-            surface_spatial_node_index,
+            None => {
+                context.surface_index
+            }
         };
 
-        Some((child_context, mem::replace(&mut self.child_pictures, SmallVec::new())))
+        let child_context = PictureUpdateContext::new(
+            surface_index,
+            self.spatial_node_index,
+        );
+
+        Some((child_context, mem::replace(&mut self.prim_list.pictures, SmallVec::new())))
     }
 
     
     
     pub fn post_update(
         &mut self,
+        parent_context: &PictureUpdateContext,
+        this_context: &PictureUpdateContext,
         child_pictures: SmallVec<[PictureIndex; 4]>,
+        surfaces: &mut [SurfaceInfo],
+        frame_context: &FrameBuildingContext,
     ) {
-        self.child_pictures = child_pictures;
+        
+        
+        
+
+        for cluster in &mut self.prim_list.clusters {
+            
+            cluster.is_visible = false;
+
+            
+            if !cluster.is_backface_visible {
+                let containing_block_index = match self.context_3d {
+                    Picture3DContext::Out => {
+                        parent_context.parent_spatial_node_index
+                    }
+                    Picture3DContext::In { root_data: Some(_), ancestor_index } => {
+                        ancestor_index
+                    }
+                    Picture3DContext::In { root_data: None, ancestor_index } => {
+                        ancestor_index
+                    }
+                };
+
+                let map_local_to_containing_block: SpaceMapper<LayoutPixel, LayoutPixel> = SpaceMapper::new_with_target(
+                    containing_block_index,
+                    cluster.spatial_node_index,
+                    LayoutRect::zero(),     
+                    &frame_context.clip_scroll_tree,
+                );
+
+                match map_local_to_containing_block.visible_face() {
+                    VisibleFace::Back => continue,
+                    VisibleFace::Front => {}
+                }
+            }
+
+            
+            let spatial_node = &frame_context
+                .clip_scroll_tree
+                .spatial_nodes[cluster.spatial_node_index.0];
+            if !spatial_node.invertible {
+                continue;
+            }
+
+            
+            
+            let surface = &mut surfaces[this_context.surface_index.0];
+            surface.map_local_to_surface.set_target_spatial_node(
+                cluster.spatial_node_index,
+                frame_context.clip_scroll_tree,
+            );
+
+            
+            
+            
+            
+            cluster.is_visible = true;
+            if let Some(cluster_rect) = surface.map_local_to_surface.map(&cluster.bounding_rect) {
+                surface.rect = surface.rect.union(&cluster_rect);
+            }
+        }
+
+        
+        let inflation_size = match self.raster_config {
+            Some(RasterConfig { composite_mode: PictureCompositeMode::Filter(FilterOp::Blur(blur_radius)), .. }) |
+            Some(RasterConfig { composite_mode: PictureCompositeMode::Filter(FilterOp::DropShadow(_, blur_radius, _)), .. }) => {
+                Some((blur_radius * BLUR_SAMPLE_SCALE).ceil())
+            }
+            _ => {
+                None
+            }
+        };
+        if let Some(inflation_size) = inflation_size {
+            let surface = &mut surfaces[this_context.surface_index.0];
+            surface.rect = surface.rect.inflate(inflation_size, inflation_size);
+        }
+
+        
+        
+        
+        if let Some(ref raster_config) = self.raster_config {
+            let surface_rect = surfaces[raster_config.surface_index.0].rect;
+            let surface_rect = TypedRect::from_untyped(&surface_rect.to_untyped());
+
+            
+            let parent_surface = &mut surfaces[parent_context.surface_index.0];
+            parent_surface.map_local_to_surface.set_target_spatial_node(
+                self.spatial_node_index,
+                frame_context.clip_scroll_tree,
+            );
+            if let Some(parent_surface_rect) = parent_surface
+                .map_local_to_surface
+                .map(&surface_rect) {
+                parent_surface.rect = parent_surface.rect.union(&parent_surface_rect);
+            }
+        }
+
+        
+        self.prim_list.pictures = child_pictures;
     }
 
     pub fn prepare_for_render(
@@ -728,9 +1007,11 @@ impl PicturePrimitive {
             }
         };
 
+        let surface_info = &mut frame_state.surfaces[raster_config.surface_index.0];
+
         let (map_raster_to_world, map_pic_to_raster) = create_raster_mappers(
             prim_instance.spatial_node_index,
-            raster_config.raster_spatial_node_index,
+            surface_info.raster_spatial_node_index,
             frame_context,
         );
 
@@ -876,7 +1157,7 @@ impl PicturePrimitive {
                     PictureSurface::TextureCache(cache_item)
                 };
 
-                raster_config.surface = Some(surface);
+                surface_info.surface = Some(surface);
             }
             PictureCompositeMode::Filter(FilterOp::DropShadow(offset, blur_radius, color)) => {
                 let blur_std_deviation = blur_radius * frame_context.device_pixel_scale.0;
@@ -927,7 +1208,7 @@ impl PicturePrimitive {
 
                 let render_task_id = frame_state.render_tasks.add(blur_render_task);
                 pic_state.tasks.push(render_task_id);
-                raster_config.surface = Some(PictureSurface::RenderTask(render_task_id));
+                surface_info.surface = Some(PictureSurface::RenderTask(render_task_id));
 
                 
                 
@@ -992,7 +1273,7 @@ impl PicturePrimitive {
 
                 let render_task_id = frame_state.render_tasks.add(picture_task);
                 pic_state.tasks.push(render_task_id);
-                raster_config.surface = Some(PictureSurface::RenderTask(render_task_id));
+                surface_info.surface = Some(PictureSurface::RenderTask(render_task_id));
             }
             PictureCompositeMode::Filter(filter) => {
                 if let FilterOp::ColorMatrix(m) = filter {
@@ -1022,7 +1303,7 @@ impl PicturePrimitive {
 
                 let render_task_id = frame_state.render_tasks.add(picture_task);
                 pic_state.tasks.push(render_task_id);
-                raster_config.surface = Some(PictureSurface::RenderTask(render_task_id));
+                surface_info.surface = Some(PictureSurface::RenderTask(render_task_id));
             }
             PictureCompositeMode::Blit => {
                 let uv_rect_kind = calculate_uv_rect_kind(
@@ -1044,7 +1325,7 @@ impl PicturePrimitive {
 
                 let render_task_id = frame_state.render_tasks.add(picture_task);
                 pic_state.tasks.push(render_task_id);
-                raster_config.surface = Some(PictureSurface::RenderTask(render_task_id));
+                surface_info.surface = Some(PictureSurface::RenderTask(render_task_id));
             }
         }
 

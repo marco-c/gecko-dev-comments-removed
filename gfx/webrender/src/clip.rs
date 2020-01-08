@@ -679,6 +679,52 @@ impl ClipStore {
     }
 
     
+    
+    #[allow(dead_code)]
+    pub fn build_local_clip_rect(
+        &self,
+        prim_clip_rect: LayoutRect,
+        spatial_node_index: SpatialNodeIndex,
+        clip_chain_id: ClipChainId,
+        clip_interner: &ClipDataInterner,
+    ) -> LayoutRect {
+        let mut clip_rect = prim_clip_rect;
+        let mut current_clip_chain_id = clip_chain_id;
+
+        
+        while current_clip_chain_id != ClipChainId::NONE {
+            let clip_chain_node = &self.clip_chain_nodes[current_clip_chain_id.0 as usize];
+
+            
+            
+            
+            
+            
+            
+            
+
+            if clip_chain_node.spatial_node_index == spatial_node_index {
+                let clip_data = &clip_interner[clip_chain_node.handle];
+
+                
+                
+                
+                
+                
+                
+                
+                clip_rect = clip_rect
+                    .intersection(&clip_data.clip_rect)
+                    .unwrap_or(LayoutRect::zero());
+            }
+
+            current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
+        }
+
+        clip_rect
+    }
+
+    
     pub fn malloc_size_of(&self, op: VoidPtrToSizeFn) -> usize {
         let mut size = 0;
         unsafe {
@@ -758,12 +804,7 @@ impl ClipRegion<Option<ComplexClipRegion>> {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ClipItemSceneData {
-    
-    
-    
-    
-    
-    
+    pub clip_rect: LayoutRect,
 }
 
 
