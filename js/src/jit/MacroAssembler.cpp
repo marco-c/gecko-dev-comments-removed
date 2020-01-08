@@ -1436,19 +1436,21 @@ MacroAssembler::compareStrings(JSOp op, Register left, Register right, Register 
 
     bind(&notPointerEqual);
 
-    Label notAtom;
+    Label leftIsNotAtom;
+    Label setNotEqualResult;
     
     Imm32 nonAtomBit(JSString::NON_ATOM_BIT);
-    branchTest32(Assembler::NonZero, Address(left, JSString::offsetOfFlags()), nonAtomBit, &notAtom);
-    branchTest32(Assembler::NonZero, Address(right, JSString::offsetOfFlags()), nonAtomBit, &notAtom);
+    branchTest32(Assembler::NonZero, Address(left, JSString::offsetOfFlags()), nonAtomBit,
+                 &leftIsNotAtom);
+    branchTest32(Assembler::Zero, Address(right, JSString::offsetOfFlags()), nonAtomBit,
+                 &setNotEqualResult);
 
-    cmpPtrSet(JSOpToCondition(MCompare::Compare_String, op), left, right, result);
-    jump(&done);
-
-    bind(&notAtom);
+    bind(&leftIsNotAtom);
     
     loadStringLength(left, result);
     branch32(Assembler::Equal, Address(right, JSString::offsetOfLength()), result, fail);
+
+    bind(&setNotEqualResult);
     move32(Imm32(op == JSOP_NE || op == JSOP_STRICTNE), result);
 
     bind(&done);
