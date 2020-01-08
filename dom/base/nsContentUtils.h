@@ -458,7 +458,31 @@ public:
                                int32_t* aNode1Index = nullptr,
                                int32_t* aNode2Index = nullptr);
 
+
+  struct ComparePointsCache {
+    int32_t ComputeIndexOf(nsINode* aParent, nsINode* aChild) {
+      if (aParent == mParent &&
+          aChild == mChild) {
+        return mIndex;
+      }
+
+      mIndex = aParent->ComputeIndexOf(aChild);
+      mParent = aParent;
+      mChild = aChild;
+      return mIndex;
+    }
+
+
+  private:
+    nsINode* mParent = nullptr;
+    nsINode* mChild = nullptr;
+    int32_t mIndex = 0;
+  };
+
   
+
+
+
 
 
 
@@ -476,7 +500,8 @@ public:
 
   static int32_t ComparePoints(nsINode* aParent1, int32_t aOffset1,
                                nsINode* aParent2, int32_t aOffset2,
-                               bool* aDisconnected = nullptr);
+                               bool* aDisconnected = nullptr,
+                               ComparePointsCache* aParent1Cache = nullptr);
   static int32_t ComparePoints(const mozilla::RawRangeBoundary& aFirst,
                                const mozilla::RawRangeBoundary& aSecond,
                                bool* aDisconnected = nullptr);
