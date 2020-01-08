@@ -2420,21 +2420,8 @@ HelperThread::threadLoop()
     cx.setHelperThread(this);
     JS_SetNativeStackQuota(&cx, HELPER_STACK_QUOTA);
 
-    if (mozilla::recordreplay::IsRecordingOrReplaying())
-        mozilla::recordreplay::NotifyUnrecordedWait(WakeupAll);
-
     while (!terminate) {
         MOZ_ASSERT(idle());
-
-        if (mozilla::recordreplay::IsRecordingOrReplaying()) {
-            
-            
-            
-            
-            
-            AutoUnlockHelperThreadState unlock(lock);
-            mozilla::recordreplay::MaybeWaitForCheckpointSave();
-        }
 
         
         
@@ -2445,6 +2432,19 @@ HelperThread::threadLoop()
         const TaskSpec* task = findHighestPriorityTask(lock);
         if (!task) {
             AUTO_PROFILER_LABEL("HelperThread::threadLoop::wait", IDLE);
+            if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+                
+                
+                
+                
+                
+                {
+                    AutoUnlockHelperThreadState unlock(lock);
+                    mozilla::recordreplay::MaybeWaitForCheckpointSave();
+                }
+                mozilla::recordreplay::NotifyUnrecordedWait(WakeupAll);
+            }
+
             HelperThreadState().wait(lock, GlobalHelperThreadState::PRODUCER);
             continue;
         }

@@ -478,6 +478,15 @@ void
 Thread::NotifyUnrecordedWait(const std::function<void()>& aCallback)
 {
   MonitorAutoLock lock(*gMonitor);
+  if (mUnrecordedWaitCallback) {
+    
+    
+    
+    mUnrecordedWaitNotified = false;
+  } else {
+    MOZ_RELEASE_ASSERT(!mUnrecordedWaitNotified);
+  }
+
   mUnrecordedWaitCallback = aCallback;
 
   
