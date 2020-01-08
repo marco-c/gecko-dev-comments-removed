@@ -95,7 +95,6 @@ class MobileSingleLocale(LocalesMixin, TooltoolMixin, AutomationMixin,
         self.upload_env = None
         self.version = None
         self.upload_urls = {}
-        self.locales_property = {}
 
     
     def query_repack_env(self):
@@ -209,23 +208,7 @@ class MobileSingleLocale(LocalesMixin, TooltoolMixin, AutomationMixin,
         return self.abs_dirs
 
     def add_failure(self, locale, message, **kwargs):
-        self.locales_property[locale] = "Failed"
-        prop_key = "%s_failure" % locale
-        prop_value = self.query_property(prop_key)
-        if prop_value:
-            prop_value = "%s  %s" % (prop_value, message)
-        else:
-            prop_value = message
-        self.set_property(prop_key, prop_value)
         AutomationMixin.add_failure(self, locale, message=message, **kwargs)
-
-    def summary(self):
-        MercurialScript.summary(self)
-        
-        locales = self.query_locales()
-        for locale in locales:
-            self.locales_property.setdefault(locale, "Success")
-        self.set_property("locales", json.dumps(self.locales_property))
 
     
     def clone_locales(self):
