@@ -577,7 +577,7 @@ var State = {
       
       
       this._trackingState.set(host, false);
-      if (host.startsWith("about:"))
+      if (host.startsWith("about:") || host.startsWith("moz-nullprincipal"))
         return false;
 
       let principal =
