@@ -491,7 +491,6 @@ js::intl_CompareStrings(JSContext* cx, unsigned argc, Value* vp)
     Rooted<CollatorObject*> collator(cx, &args[0].toObject().as<CollatorObject>());
 
     
-    
     void* priv = collator->getReservedSlot(CollatorObject::UCOLLATOR_SLOT).toPrivate();
     UCollator* coll = static_cast<UCollator*>(priv);
     if (!coll) {

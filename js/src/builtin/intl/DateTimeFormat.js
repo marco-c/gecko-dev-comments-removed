@@ -188,20 +188,15 @@ function getDateTimeFormatInternals(obj) {
 
 
 
-function UnwrapDateTimeFormat(dtf, methodName) {
+function UnwrapDateTimeFormat(dtf) {
     
-
-    
-    if (IsObject(dtf) && (GuardToDateTimeFormat(dtf)) === null && dtf instanceof GetDateTimeFormatConstructor())
+    if (IsObject(dtf) &&
+        GuardToDateTimeFormat(dtf) === null &&
+        !IsWrappedDateTimeFormat(dtf) &&
+        dtf instanceof GetDateTimeFormatConstructor())
+    {
         dtf = dtf[intlFallbackSymbol()];
-
-    
-    if (!IsObject(dtf) || (dtf = GuardToDateTimeFormat(dtf)) === null) {
-        ThrowTypeError(JSMSG_INTL_OBJECT_NOT_INITED, "DateTimeFormat", methodName,
-                       "DateTimeFormat");
     }
-
-    
     return dtf;
 }
 
@@ -803,7 +798,12 @@ function dateTimeFormatFormatToBind(date) {
 
 function Intl_DateTimeFormat_format_get() {
     
-    var dtf = UnwrapDateTimeFormat(this, "format");
+    var thisArg = UnwrapDateTimeFormat(this);
+    var dtf = thisArg;
+    if (!IsObject(dtf) || (dtf = GuardToDateTimeFormat(dtf)) === null) {
+        return callFunction(CallDateTimeFormatMethodIfWrapped, thisArg,
+                            "Intl_DateTimeFormat_format_get");
+    }
 
     var internals = getDateTimeFormatInternals(dtf);
 
@@ -831,9 +831,9 @@ function Intl_DateTimeFormat_formatToParts(date) {
     var dtf = this;
 
     
-    if (!IsObject(dtf) || (dtf = GuardToDateTimeFormat(dtf)) == null) {
-        ThrowTypeError(JSMSG_INTL_OBJECT_NOT_INITED, "DateTimeFormat", "formatToParts",
-                       "DateTimeFormat");
+    if (!IsObject(dtf) || (dtf = GuardToDateTimeFormat(dtf)) === null) {
+        return callFunction(CallDateTimeFormatMethodIfWrapped, this, date,
+                            "Intl_DateTimeFormat_formatToParts");
     }
 
     
@@ -853,7 +853,12 @@ function Intl_DateTimeFormat_formatToParts(date) {
 
 function Intl_DateTimeFormat_resolvedOptions() {
     
-    var dtf = UnwrapDateTimeFormat(this, "resolvedOptions");
+    var thisArg = UnwrapDateTimeFormat(this);
+    var dtf = thisArg;
+    if (!IsObject(dtf) || (dtf = GuardToDateTimeFormat(dtf)) === null) {
+        return callFunction(CallDateTimeFormatMethodIfWrapped, thisArg,
+                            "Intl_DateTimeFormat_resolvedOptions");
+    }
 
     var internals = getDateTimeFormatInternals(dtf);
 

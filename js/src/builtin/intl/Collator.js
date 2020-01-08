@@ -354,7 +354,7 @@ function Intl_Collator_compare_get() {
 
     
     if (!IsObject(collator) || (collator = GuardToCollator(collator)) === null)
-        ThrowTypeError(JSMSG_INTL_OBJECT_NOT_INITED, "Collator", "compare", "Collator");
+        return callFunction(CallCollatorMethodIfWrapped, this, "Intl_Collator_compare_get");
 
     var internals = getCollatorInternals(collator);
 
@@ -383,7 +383,7 @@ function Intl_Collator_resolvedOptions() {
 
     
     if (!IsObject(collator) || (collator = GuardToCollator(collator)) === null)
-        ThrowTypeError(JSMSG_INTL_OBJECT_NOT_INITED, "Collator", "resolvedOptions", "Collator");
+        return callFunction(CallCollatorMethodIfWrapped, this, "Intl_Collator_resolvedOptions");
 
     var internals = getCollatorInternals(collator);
 

@@ -107,18 +107,15 @@ function getNumberFormatInternals(obj) {
 
 
 
-function UnwrapNumberFormat(nf, methodName) {
+function UnwrapNumberFormat(nf) {
     
-
-    
-    if (IsObject(nf) && (GuardToNumberFormat(nf)) === null && nf instanceof GetNumberFormatConstructor())
+    if (IsObject(nf) &&
+        GuardToNumberFormat(nf) === null &&
+        !IsWrappedNumberFormat(nf) &&
+        nf instanceof GetNumberFormatConstructor())
+    {
         nf = nf[intlFallbackSymbol()];
-
-    
-    if (!IsObject(nf) || (nf = GuardToNumberFormat(nf)) === null)
-        ThrowTypeError(JSMSG_INTL_OBJECT_NOT_INITED, "NumberFormat", methodName, "NumberFormat");
-
-    
+    }
     return nf;
 }
 
@@ -423,7 +420,12 @@ function numberFormatFormatToBind(value) {
 
 function Intl_NumberFormat_format_get() {
     
-    var nf = UnwrapNumberFormat(this, "format");
+    var thisArg = UnwrapNumberFormat(this);
+    var nf = thisArg;
+    if (!IsObject(nf) || (nf = GuardToNumberFormat(nf)) === null) {
+        return callFunction(CallNumberFormatMethodIfWrapped, thisArg,
+                            "Intl_NumberFormat_format_get");
+    }
 
     var internals = getNumberFormatInternals(nf);
 
@@ -450,8 +452,8 @@ function Intl_NumberFormat_formatToParts(value) {
 
     
     if (!IsObject(nf) || (nf = GuardToNumberFormat(nf)) === null) {
-        ThrowTypeError(JSMSG_INTL_OBJECT_NOT_INITED, "NumberFormat", "formatToParts",
-                       "NumberFormat");
+        return callFunction(CallNumberFormatMethodIfWrapped, this, value,
+                            "Intl_NumberFormat_formatToParts");
     }
 
     
@@ -471,7 +473,12 @@ function Intl_NumberFormat_formatToParts(value) {
 
 function Intl_NumberFormat_resolvedOptions() {
     
-    var nf = UnwrapNumberFormat(this, "resolvedOptions");
+    var thisArg = UnwrapNumberFormat(this);
+    var nf = thisArg;
+    if (!IsObject(nf) || (nf = GuardToNumberFormat(nf)) === null) {
+        return callFunction(CallNumberFormatMethodIfWrapped, thisArg,
+                            "Intl_NumberFormat_resolvedOptions");
+    }
 
     var internals = getNumberFormatInternals(nf);
 
