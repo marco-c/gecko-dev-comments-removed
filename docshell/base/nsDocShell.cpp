@@ -9752,7 +9752,24 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
                         nsIProtocolHandler::URI_DOES_NOT_RETURN_DATA,
                         &doesNotReturnData);
     if (doesNotReturnData) {
-      return NS_ERROR_UNKNOWN_PROTOCOL;
+      bool popupBlocked = true;
+
+      
+      
+      if (PopupBlocker::GetPopupControlState() <= PopupBlocker::openBlocked) {
+        popupBlocked = !PopupBlocker::TryUsePopupOpeningToken();
+      } else {
+        nsCOMPtr<nsINode> loadingNode =
+            mScriptGlobal->AsOuter()->GetFrameElementInternal();
+        if (loadingNode) {
+          popupBlocked = !PopupBlocker::CanShowPopupByPermission(
+              loadingNode->NodePrincipal());
+        }
+      }
+
+      if (popupBlocked) {
+        return NS_ERROR_UNKNOWN_PROTOCOL;
+      }
     }
 
     
