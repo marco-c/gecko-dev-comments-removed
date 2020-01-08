@@ -118,7 +118,13 @@ add_task(async function() {
     
     
     
-    await waitForAutocompleteResultAt(indexToWaitFor);
+    try {
+      await waitForAutocompleteResultAt(indexToWaitFor);
+    } catch (e) {
+      
+      info(gURLBar.popup.richlistbox.outerHTML.replace(/data:image[^"\s]+/g, "data:image..."));
+      throw e;
+    }
 
     return char;
   }
