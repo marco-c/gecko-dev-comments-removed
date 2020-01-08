@@ -481,18 +481,6 @@ union alignas(8) Value
     void setObject(JSObject& obj) {
         MOZ_ASSERT(js::gc::IsCellPointerValid(&obj));
 
-        
-        
-        
-        
-        
-        
-        
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-        JSObject* testObj = &obj;
-        MOZ_DIAGNOSTIC_ASSERT(testObj != nullptr);
-#endif
-
 #if defined(JS_PUNBOX64)
         
         
