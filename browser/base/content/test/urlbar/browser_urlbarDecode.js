@@ -5,6 +5,11 @@
 
 
 
+XPCOMUtils.defineLazyModuleGetters(this, {
+  UrlbarMatch: "resource:///modules/UrlbarMatch.jsm",
+  UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
+});
+
 add_task(async function injectJSON() {
   let inputStrs = [
     'http://example.com/ ", "url": "bar',
@@ -27,7 +32,12 @@ add_task(async function injectJSON() {
 add_task(function losslessDecode() {
   let urlNoScheme = "example.com/\u30a2\u30a4\u30a6\u30a8\u30aa";
   let url = "http://" + urlNoScheme;
-  gURLBar.textValue = url;
+  if (Services.prefs.getBoolPref("browser.urlbar.quantumbar", true)) {
+    const result = new UrlbarMatch(UrlbarUtils.MATCH_TYPE.TAB_SWITCH, {url});
+    gURLBar.setValueFromResult(result);
+  } else {
+    gURLBar.textValue = url;
+  }
   
   Assert.equal(gURLBar.inputField.value, urlNoScheme,
                "The string displayed in the textbox should not be escaped");

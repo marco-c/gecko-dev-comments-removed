@@ -230,7 +230,16 @@ class UrlbarInput {
 
 
   resultSelected(event, result) {
-    
+    this.setValueFromResult(result);
+    this.controller.resultSelected(event, result);
+  }
+
+  
+
+
+
+
+  setValueFromResult(result) {
     let val = result.url;
     let uri;
     try {
@@ -240,8 +249,6 @@ class UrlbarInput {
       val = this.window.losslessDecodeURI(uri);
     }
     this.value = val;
-
-    this.controller.resultSelected(event, result);
   }
 
   
