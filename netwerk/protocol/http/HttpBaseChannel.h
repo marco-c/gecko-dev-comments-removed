@@ -211,7 +211,8 @@ public:
   NS_IMETHOD GetTopLevelOuterContentWindowId(uint64_t *aWindowId) override;
   NS_IMETHOD SetTopLevelOuterContentWindowId(uint64_t aWindowId) override;
   NS_IMETHOD GetIsTrackingResource(bool* aIsTrackingResource) override;
-  NS_IMETHOD OverrideTrackingResource(bool aIsTracking) override;
+  NS_IMETHOD GetIsThirdPartyTrackingResource(bool* aIsTrackingResource) override;
+  NS_IMETHOD OverrideTrackingFlagsForDocumentCookieAccessor(nsIHttpChannel* aDocumentChannel) override;
 
   
   NS_IMETHOD GetDocumentURI(nsIURI **aDocumentURI) override;
@@ -378,7 +379,7 @@ public:
     
     virtual void OnCopyComplete(nsresult aStatus);
 
-    void SetIsTrackingResource();
+    void SetIsTrackingResource(bool aIsThirdParty);
 
     const uint64_t& ChannelId() const
     {
@@ -625,7 +626,8 @@ protected:
   
   
   Atomic<bool, ReleaseAcquire> mCanceled;
-  Atomic<bool, ReleaseAcquire> mIsTrackingResource;
+  Atomic<bool, ReleaseAcquire> mIsFirstPartyTrackingResource;
+  Atomic<bool, ReleaseAcquire> mIsThirdPartyTrackingResource;
 
   uint32_t                          mLoadFlags;
   uint32_t                          mCaps;

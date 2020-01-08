@@ -39,7 +39,7 @@ FileChannelParent::NotifyTrackingProtectionDisabled()
 }
 
 NS_IMETHODIMP
-FileChannelParent::NotifyTrackingResource()
+FileChannelParent::NotifyTrackingResource(bool aIsThirdParty)
 {
   
   return NS_OK;

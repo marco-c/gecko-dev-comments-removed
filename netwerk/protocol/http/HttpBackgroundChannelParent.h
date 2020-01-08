@@ -70,7 +70,7 @@ public:
   bool OnNotifyTrackingProtectionDisabled();
 
   
-  bool OnNotifyTrackingResource();
+  bool OnNotifyTrackingResource(bool aIsThirdParty);
 
   
   bool OnSetClassifierMatchedInfo(const nsACString& aList,

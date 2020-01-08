@@ -39,7 +39,7 @@ SimpleChannelParent::NotifyTrackingProtectionDisabled()
 }
 
 NS_IMETHODIMP
-SimpleChannelParent::NotifyTrackingResource()
+SimpleChannelParent::NotifyTrackingResource(bool aIsThirdParty)
 {
   
   return NS_OK;

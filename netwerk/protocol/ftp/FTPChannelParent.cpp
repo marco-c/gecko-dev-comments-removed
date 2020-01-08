@@ -577,7 +577,7 @@ FTPChannelParent::NotifyTrackingProtectionDisabled()
 }
 
 NS_IMETHODIMP
-FTPChannelParent::NotifyTrackingResource()
+FTPChannelParent::NotifyTrackingResource(bool aIsThirdParty)
 {
   
   return NS_OK;
