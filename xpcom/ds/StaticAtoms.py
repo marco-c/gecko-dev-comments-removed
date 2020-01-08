@@ -1882,6 +1882,10 @@ STATIC_ATOMS = [
     Atom("ondevicechange", "ondevicechange"),
 
     
+    Atom("onmozvisualresize", "onmozvisualresize"),
+    Atom("onmozvisualscroll", "onmozvisualscroll"),
+
+    
     Atom("moz_extension", "moz-extension"),
     Atom("all_urlsPermission", "<all_urls>"),
     Atom("clipboardRead", "clipboardRead"),

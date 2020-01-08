@@ -33,9 +33,11 @@ class VisualViewport final : public mozilla::DOMEventTargetHelper {
 
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
+  void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 
   void PostResizeEvent();
-  void PostScrollEvent(const nsPoint& aPrevRelativeOffset);
+  void PostScrollEvent(const nsPoint& aPrevVisualOffset,
+                       const nsPoint& aPrevLayoutOffset);
 
   
   
@@ -55,9 +57,11 @@ class VisualViewport final : public mozilla::DOMEventTargetHelper {
     NS_DECL_NSIRUNNABLE
     VisualViewportScrollEvent(VisualViewport* aViewport,
                               nsPresContext* aPresContext,
-                              const nsPoint& aPrevRelativeOffset);
+                              const nsPoint& aPrevVisualOffset,
+                              const nsPoint& aPrevLayoutOffset);
     void Revoke() { mViewport = nullptr; }
-    nsPoint PrevRelativeOffset() const { return mPrevRelativeOffset; }
+    nsPoint PrevVisualOffset() const { return mPrevVisualOffset; }
+    nsPoint PrevLayoutOffset() const { return mPrevLayoutOffset; }
 
    private:
     VisualViewport* mViewport;
@@ -70,7 +74,8 @@ class VisualViewport final : public mozilla::DOMEventTargetHelper {
     
     
     
-    const nsPoint mPrevRelativeOffset;
+    const nsPoint mPrevVisualOffset;
+    const nsPoint mPrevLayoutOffset;
   };
 
  private:

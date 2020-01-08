@@ -2676,9 +2676,6 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
   if (dist.x >= horzAllowance || dist.y >= vertAllowance) {
     needFrameVisibilityUpdate = true;
   }
-  nsPoint prevVVRelativeOffset =
-      presContext->PresShell()
-          ->GetVisualViewportOffsetRelativeToLayoutViewport();
 
   
   for (uint32_t i = 0; i < mListeners.Length(); i++) {
@@ -2740,7 +2737,7 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
     
     
     
-    presContext->PresShell()->SetVisualViewportOffset(pt, prevVVRelativeOffset);
+    presContext->PresShell()->SetVisualViewportOffset(pt, curPos);
   }
 
   ScrollVisual();
@@ -2866,7 +2863,8 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
   if (mIsRoot) {
     if (auto* window = nsGlobalWindowInner::Cast(
             mOuter->PresContext()->Document()->GetInnerWindow())) {
-      window->VisualViewport()->PostScrollEvent(prevVVRelativeOffset);
+      window->VisualViewport()->PostScrollEvent(
+          presContext->PresShell()->GetVisualViewportOffset(), curPos);
     }
   }
 
