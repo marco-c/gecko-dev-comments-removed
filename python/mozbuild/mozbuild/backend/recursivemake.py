@@ -1449,14 +1449,14 @@ class RecursiveMakeBackend(CommonBackend):
         
         
         
-        if isinstance(obj, SharedLibrary):
+        if isinstance(obj, (SharedLibrary, Program)):
             self._process_rust_libraries(obj, backend_file, pretty_relpath)
 
         
         self._process_defines(obj.lib_defines, backend_file)
 
     def _process_rust_libraries(self, obj, backend_file, pretty_relpath):
-        assert isinstance(obj, SharedLibrary)
+        assert isinstance(obj, (SharedLibrary, Program))
 
         
         direct_linked = [l for l in obj.linked_libraries if isinstance(l, RustLibrary)]
@@ -1469,7 +1469,7 @@ class RecursiveMakeBackend(CommonBackend):
         
 
         direct_linked = direct_linked[0]
-        backend_file.write('RUST_STATIC_LIB_FOR_SHARED_LIB := %s\n' %
+        backend_file.write('RUST_STATIC_LIB := %s\n' %
                            pretty_relpath(direct_linked, direct_linked.import_name))
 
     def _process_final_target_files(self, obj, files, backend_file):
@@ -1677,7 +1677,6 @@ class RecursiveMakeBackend(CommonBackend):
             pp.handleLine(b'topobjdir := @topobjdir@\n')
             pp.handleLine(b'topsrcdir := @top_srcdir@\n')
             pp.handleLine(b'srcdir := @srcdir@\n')
-            pp.handleLine(b'srcdir_rel := @srcdir_rel@\n')
             pp.handleLine(b'VPATH := @srcdir@\n')
             pp.handleLine(b'relativesrcdir := @relativesrcdir@\n')
             pp.handleLine(b'include $(DEPTH)/config/@autoconfmk@\n')
