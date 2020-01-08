@@ -95,6 +95,16 @@ use util::{extract_inner_rect_safe, project_rect, ScaleOffset};
 
 
 
+
+
+
+
+
+
+
+
+
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -205,12 +215,6 @@ pub struct ClipChainNode {
     pub spatial_node_index: SpatialNodeIndex,
     pub parent_clip_chain_id: ClipChainId,
 }
-
-
-#[derive(Clone, Copy, Debug, PartialEq, Hash, Eq)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct ClipNodeIndex(pub u32);
 
 
 
