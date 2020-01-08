@@ -48,6 +48,8 @@ namespace ipc {
 
 
 
+
+
 class SharedMap : public DOMEventTargetHelper
 {
   using FileDescriptor = mozilla::ipc::FileDescriptor;
@@ -366,9 +368,13 @@ private:
 
   RefPtr<SharedMap> mReadOnly;
 
+  bool mPendingFlush = false;
+
   
   
   Result<Ok, nsresult> Serialize();
+
+  void IdleFlush();
 
   
   
@@ -377,7 +383,7 @@ private:
   
   
   
-  void KeyChanged(const nsACString& aName);
+  nsresult KeyChanged(const nsACString& aName);
 };
 
 } 

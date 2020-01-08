@@ -46,13 +46,15 @@ function checkParentMap(expected) {
   checkMap(getContents(Services.ppmm.sharedData), expected);
 }
 
-async function checkContentMaps(expected) {
+async function checkContentMaps(expected, parentOnly = false) {
   info("Checking in-process content map");
   checkMap(getContents(Services.cpmm.sharedData), expected);
 
-  info("Checking out-of-process content map");
-  let contents = await contentPage.spawn(undefined, getContents);
-  checkMap(contents, expected);
+  if (!parentOnly) {
+    info("Checking out-of-process content map");
+    let contents = await contentPage.spawn(undefined, getContents);
+    checkMap(contents, expected);
+  }
 }
 
 add_task(async function setup() {
@@ -108,26 +110,50 @@ add_task(async function test_sharedMap() {
 
   setKey("baz-a", {meh: "meh"});
 
+  
+  
+  
+
   checkParentMap(expected);
-  await checkContentMaps(oldExpected);
+  checkContentMaps(oldExpected, true);
 
   info("Add another entry. Check that both new entries are only available in the parent");
 
   setKey("baz-a", {meh: 12});
 
   checkParentMap(expected);
-  await checkContentMaps(oldExpected);
+  checkContentMaps(oldExpected, true);
 
   info("Delete an entry. Check that all changes are only visible in the parent");
 
   deleteKey("foo-b");
 
   checkParentMap(expected);
-  await checkContentMaps(oldExpected);
+  checkContentMaps(oldExpected, true);
 
   info("Flush. Check that all entries are available in both parent and children");
 
   sharedData.flush();
+
+  checkParentMap(expected);
+  await checkContentMaps(expected);
+
+
+  info("Test that entries are automatically flushed on idle:");
+
+  info("Add a new entry. Check that it is initially only available in the parent");
+
+  
+  oldExpected = Array.from(expected);
+
+  setKey("thing", "stuff");
+
+  checkParentMap(expected);
+  checkContentMaps(oldExpected, true);
+
+  info("Wait for an idle timeout. Check that changes are now visible in all children");
+
+  await new Promise(resolve => ChromeUtils.idleDispatch(resolve));
 
   checkParentMap(expected);
   await checkContentMaps(expected);
