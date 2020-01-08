@@ -577,6 +577,11 @@ private:
   
   void MarkLoadTreeFailed(SheetLoadData* aLoadData);
 
+  
+  
+  void UpdateLoadingData(URIPrincipalReferrerPolicyAndCORSModeHashKey* aOldKey,
+                         SheetLoadData* aData);
+
   struct Sheets {
     nsBaseHashtable<URIPrincipalReferrerPolicyAndCORSModeHashKey,
                     RefPtr<StyleSheet>,

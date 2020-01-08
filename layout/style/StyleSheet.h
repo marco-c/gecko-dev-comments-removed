@@ -364,6 +364,9 @@ public:
   }
 
   
+  void SetReferrerPolicy(net::ReferrerPolicy aReferrerPolicy);
+
+  
   net::ReferrerPolicy GetReferrerPolicy() const
   {
     return Inner().mReferrerPolicy;
