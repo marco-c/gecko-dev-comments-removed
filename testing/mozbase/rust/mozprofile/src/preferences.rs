@@ -79,6 +79,7 @@ pub struct Pref {
 }
 
 impl Pref {
+    
     pub fn new<T>(value: T) -> Pref
     where
         T: Into<PrefValue>,
@@ -89,6 +90,8 @@ impl Pref {
         }
     }
 
+    
+    
     pub fn new_sticky<T>(value: T) -> Pref
     where
         T: Into<PrefValue>,
