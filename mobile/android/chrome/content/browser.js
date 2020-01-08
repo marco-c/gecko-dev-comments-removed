@@ -127,10 +127,6 @@ var lazilyLoadedBrowserScripts = [
   ["RemoteDebugger", "chrome://browser/content/RemoteDebugger.js"],
   ["gViewSourceUtils", "chrome://global/content/viewSourceUtils.js"],
 ];
-if (!["release", "esr"].includes(AppConstants.MOZ_UPDATE_CHANNEL)) {
-  lazilyLoadedBrowserScripts.push(
-    ["WebcompatReporter", "chrome://browser/content/WebcompatReporter.js"]);
-}
 
 lazilyLoadedBrowserScripts.forEach(function (aScript) {
   let [name, script] = aScript;
@@ -533,10 +529,6 @@ var BrowserApp = {
 
       
       InitLater(() => AsyncPrefs.init());
-
-      if (!["release", "esr"].includes(AppConstants.MOZ_UPDATE_CHANNEL)) {
-        InitLater(() => WebcompatReporter.init());
-      }
 
       
       
@@ -5220,9 +5212,24 @@ var XPInstallObserver = {
             break;
           }
         }
+        this._monitorReportSiteIssueEnabledPref();
         break;
       }
     }
+  },
+
+  _monitorReportSiteIssueEnabledPref: function() {
+    const PREF = "extensions.webcompat-reporter.enabled";
+    const ID = "webcompat-reporter@mozilla.org";
+    Services.prefs.addObserver(PREF, async () => {
+      let addon = await AddonManager.getAddonByID(ID);
+      let enabled = Services.prefs.getBoolPref(PREF, false);
+      if (enabled && !addon.isActive) {
+        await addon.enable({allowSystemAddons: true});
+      } else if (!enabled && addon.isActive) {
+        await addon.disable({allowSystemAddons: true});
+      }
+    });
   },
 
   _notifyUnsignedAddonsDisabled: function() {
