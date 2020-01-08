@@ -997,6 +997,9 @@
 
     function assert_object_equals(actual, expected, description)
     {
+         assert(typeof actual === "object" && actual !== null, "assert_object_equals", description,
+                                                               "value is ${actual}, expected object",
+                                                               {actual: actual});
          
          function check_equal(actual, expected, stack)
          {
