@@ -19,8 +19,8 @@ class FontPropertyValue extends PureComponent {
       className: PropTypes.string,
       defaultValue: PropTypes.oneOfType([ PropTypes.string, PropTypes.number ]),
       label: PropTypes.string.isRequired,
-      min: PropTypes.oneOfType([ PropTypes.string, PropTypes.number ]),
-      max: PropTypes.oneOfType([ PropTypes.string, PropTypes.number ]),
+      min: PropTypes.number.isRequired,
+      max: PropTypes.number.isRequired,
       name: PropTypes.string.isRequired,
       onChange: PropTypes.func.isRequired,
       step: PropTypes.oneOfType([ PropTypes.string, PropTypes.number ]),
@@ -44,12 +44,18 @@ class FontPropertyValue extends PureComponent {
     this.state = {
       
       interactive: false,
-      value: null,
+      
+      
+      initialValue: this.props.value,
+      
+      
+      value: this.props.value,
     };
 
     this.autoIncrement = this.autoIncrement.bind(this);
     this.onBlur = this.onBlur.bind(this);
     this.onChange = this.onChange.bind(this);
+    this.onFocus = this.onFocus.bind(this);
     this.onKeyDown = this.onKeyDown.bind(this);
     this.onKeyUp = this.onKeyUp.bind(this);
     this.onMouseDown = this.onMouseDown.bind(this);
@@ -91,7 +97,53 @@ class FontPropertyValue extends PureComponent {
     return value >= Math.floor(this.props.max);
   }
 
+  
+
+
+
+
+
+
+
+
+
+  isValueValid(value) {
+    const { allowAutoIncrement, min, max } = this.props;
+
+    if (typeof value !== "number" || isNaN(value)) {
+      return false;
+    }
+
+    if (min !== undefined && value < min) {
+      return false;
+    }
+
+    
+    if (max !== undefined && value > this.props.max && !allowAutoIncrement) {
+      return false;
+    }
+
+    return true;
+  }
+
+  
+
+
+
+
   onBlur() {
+    const isValid = this.isValueValid(this.state.value);
+    let value;
+
+    if (isValid) {
+      value = this.state.value;
+    } else if (this.state.value !== null) {
+      value = Math.max(this.props.min, Math.min(this.state.value, this.props.max));
+    } else {
+      value = this.state.initialValue;
+    }
+
+    this.updateValue(value);
     this.toggleInteractiveState(false);
   }
 
@@ -103,19 +155,59 @@ class FontPropertyValue extends PureComponent {
 
 
 
+
+
+
   onChange(e) {
-    const value = parseFloat(e.target.value);
+    
+    
+    const regex = /^[0-9]+(.[0-9]+)?$/;
+    let string = e.target.value.trim();
+
+    if (e.target.validity.badInput) {
+      return;
+    }
+
+    
+    if (string.charAt(0) === "." && string.length > 1) {
+      string = "0" + string;
+      e.target.value = string;
+    }
+
+    
+    
+    if (string === "") {
+      this.setState((prevState) => {
+        return {
+          ...prevState,
+          value: null,
+        };
+      });
+
+      return;
+    }
+
+    
+    if (!regex.test(string)) {
+      return;
+    }
+
+    const value = parseFloat(string);
     this.updateValue(value);
+  }
 
-    
-    if (value < this.props.max && this.interval) {
-      this.stopAutoIncrement();
+  onFocus(e) {
+    if (e.target.type === "number") {
+      e.target.select();
     }
 
-    
-    if (this.isAtUpperBound(value) && this.state.interactive) {
-      this.startAutoIncrement();
-    }
+    this.setState((prevState) => {
+      return {
+        ...prevState,
+        interactive: true,
+        initialValue: this.props.value,
+      };
+    });
   }
 
   
@@ -127,37 +219,15 @@ class FontPropertyValue extends PureComponent {
 
 
   onKeyDown(e) {
-    const inputType = e.target.type;
-
-    if ([
-      KeyCodes.DOM_VK_UP,
-      KeyCodes.DOM_VK_DOWN,
-      KeyCodes.DOM_VK_RIGHT,
-      KeyCodes.DOM_VK_LEFT
-    ].includes(e.keyCode)) {
-      this.toggleInteractiveState(true);
-    }
-
-    
-    
-    if (this.isAtUpperBound(this.props.value)) {
-      if ((inputType === "range" &&
-            e.keyCode === KeyCodes.DOM_VK_UP || e.keyCode === KeyCodes.DOM_VK_RIGHT) ||
-          (inputType === "number" &&
-            e.keyCode === KeyCodes.DOM_VK_UP)) {
-        this.startAutoIncrement();
-      }
+    if (this.isAtUpperBound(this.props.value) &&
+        e.keyCode === KeyCodes.DOM_VK_UP || e.keyCode === KeyCodes.DOM_VK_RIGHT) {
+      this.startAutoIncrement();
     }
   }
 
   onKeyUp(e) {
-    if ([
-      KeyCodes.DOM_VK_UP,
-      KeyCodes.DOM_VK_DOWN,
-      KeyCodes.DOM_VK_RIGHT,
-      KeyCodes.DOM_VK_LEFT
-    ].includes(e.keyCode)) {
-      this.toggleInteractiveState(false);
+    if (e.keyCode === KeyCodes.DOM_VK_UP || e.keyCode === KeyCodes.DOM_VK_RIGHT) {
+      this.stopAutoIncrement();
     }
   }
 
@@ -232,8 +302,15 @@ class FontPropertyValue extends PureComponent {
 
 
 
+
+
+
+
   updateValue(value) {
-    this.props.onChange(this.props.name, value, this.props.unit);
+    if (this.isValueValid(value)) {
+      this.props.onChange(this.props.name, value, this.props.unit);
+    }
+
     this.setState((prevState) => {
       return {
         ...prevState,
@@ -282,8 +359,7 @@ class FontPropertyValue extends PureComponent {
       max: this.props.max,
       onBlur: this.onBlur,
       onChange: this.onChange,
-      onKeyUp: this.onKeyUp,
-      onKeyDown: this.onKeyDown,
+      onFocus: this.onFocus,
       step: this.props.step || 1,
       
       
@@ -295,6 +371,8 @@ class FontPropertyValue extends PureComponent {
     const range = dom.input(
       {
         ...defaults,
+        onKeyDown: this.onKeyDown,
+        onKeyUp: this.onKeyUp,
         onMouseDown: this.onMouseDown,
         onMouseUp: this.onMouseUp,
         className: "font-value-slider",
@@ -307,6 +385,8 @@ class FontPropertyValue extends PureComponent {
     const input = dom.input(
       {
         ...defaults,
+        
+        max: this.props.allowAutoIncrement ? null : this.props.max,
         name: this.props.name,
         className: "font-value-input",
         type: "number",
