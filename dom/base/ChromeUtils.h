@@ -27,7 +27,6 @@ struct IdleRequestOptions;
 class MozQueryInterface;
 class PrecompiledScript;
 class Promise;
-struct WindowActorOptions;
 
 class ChromeUtils {
  private:
@@ -174,10 +173,9 @@ class ChromeUtils {
                                           const nsAString& aOrigin,
                                           ErrorResult& aRv);
 
-  static void RegisterWindowActor(const GlobalObject& aGlobal,
-                                  const nsAString& aName,
-                                  const WindowActorOptions& aOptions,
-                                  ErrorResult& aRv);
+  static PopupBlockerState GetPopupControlState(GlobalObject& aGlobal);
+
+  static bool IsPopupTokenUnused(GlobalObject& aGlobal);
 };
 
 }  

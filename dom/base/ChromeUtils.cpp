@@ -19,7 +19,6 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/IdleDeadline.h"
-#include "mozilla/dom/JSWindowActorService.h"
 #include "mozilla/dom/ReportingHeader.h"
 #include "mozilla/dom/UnionTypes.h"
 #include "mozilla/dom/WindowBinding.h"  
@@ -771,13 +770,33 @@ constexpr auto kSkipSelfHosted = JS::SavedFrameSelfHosted::Exclude;
       NS_ConvertUTF16toUTF8(aOrigin));
 }
 
- void ChromeUtils::RegisterWindowActor(
-    const GlobalObject& aGlobal, const nsAString& aName,
-    const WindowActorOptions& aOptions, ErrorResult& aRv) {
-  MOZ_ASSERT(XRE_IsParentProcess());
+ PopupBlockerState ChromeUtils::GetPopupControlState(
+    GlobalObject& aGlobal) {
+  switch (PopupBlocker::GetPopupControlState()) {
+    case PopupBlocker::PopupControlState::openAllowed:
+      return PopupBlockerState::OpenAllowed;
 
-  RefPtr<JSWindowActorService> service = JSWindowActorService::GetSingleton();
-  service->RegisterWindowActor(aName, aOptions, aRv);
+    case PopupBlocker::PopupControlState::openControlled:
+      return PopupBlockerState::OpenControlled;
+
+    case PopupBlocker::PopupControlState::openBlocked:
+      return PopupBlockerState::OpenBlocked;
+
+    case PopupBlocker::PopupControlState::openAbused:
+      return PopupBlockerState::OpenAbused;
+
+    case PopupBlocker::PopupControlState::openOverridden:
+      return PopupBlockerState::OpenOverridden;
+
+    default:
+      MOZ_CRASH(
+          "PopupBlocker::PopupControlState and PopupBlockerState are out of "
+          "sync");
+  }
+}
+
+ bool ChromeUtils::IsPopupTokenUnused(GlobalObject& aGlobal) {
+  return PopupBlocker::IsPopupOpeningTokenUnused();
 }
 
 }  

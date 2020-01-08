@@ -20,6 +20,7 @@ class PopupBlocker final {
   
   
   
+  
   enum PopupControlState {
     openAllowed = 0,  
     openControlled,   
@@ -46,6 +47,8 @@ class PopupBlocker final {
   
   
   static bool TryUsePopupOpeningToken();
+
+  static bool IsPopupOpeningTokenUnused();
 
   static PopupBlocker::PopupControlState GetEventPopupControlState(
       WidgetEvent* aEvent, Event* aDOMEvent = nullptr);

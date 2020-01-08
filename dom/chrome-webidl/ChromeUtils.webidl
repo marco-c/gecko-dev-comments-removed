@@ -380,8 +380,11 @@ partial namespace ChromeUtils {
   [ChromeOnly, Throws]
   boolean hasReportingHeaderForOrigin(DOMString aOrigin);
 
-  [ChromeOnly, Throws]
-  void registerWindowActor(DOMString aName, WindowActorOptions aOptions);
+  [ChromeOnly]
+  PopupBlockerState getPopupControlState();
+
+  [ChromeOnly]
+  boolean isPopupTokenUnused();
 };
 
 /**
@@ -518,17 +521,6 @@ dictionary Base64URLEncodeOptions {
   required boolean pad;
 };
 
-dictionary WindowActorOptions {
-  /** This fields are used for configuring individual sides of the actor. */
-  required WindowActorSidedOptions parent;
-  required WindowActorSidedOptions child;
-};
-
-dictionary WindowActorSidedOptions {
-  /** The module path which should be loaded for the actor on this side. */
-  required DOMString moduleURI;
-};
-
 enum Base64URLDecodePadding {
   /**
    * Fails decoding if the input is unpadded. RFC 4648, section 3.2 requires
@@ -550,4 +542,13 @@ enum Base64URLDecodePadding {
 dictionary Base64URLDecodeOptions {
   /** Specifies the padding mode for decoding the input. */
   required Base64URLDecodePadding padding;
+};
+
+// Keep this in sync with PopupBlocker::PopupControlState!
+enum PopupBlockerState {
+  "openAllowed",
+  "openControlled",
+  "openBlocked",
+  "openAbused",
+  "openOverridden",
 };

@@ -141,6 +141,10 @@ PopupBlocker::GetPopupControlState() {
   return false;
 }
 
+ bool PopupBlocker::IsPopupOpeningTokenUnused() {
+  return sUnusedPopupToken;
+}
+
  void PopupBlocker::PopupStatePusherCreated() {
   ++sPopupStatePusherCount;
 }
