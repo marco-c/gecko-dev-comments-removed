@@ -168,9 +168,7 @@ public class GeckoResult<T> {
 
     public GeckoResult(GeckoResult<T> from) {
         this();
-        mComplete = from.mComplete;
-        mValue = from.mValue;
-        mError = from.mError;
+        completeFrom(from);
     }
 
     

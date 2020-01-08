@@ -112,7 +112,7 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
             sOnPageStop = GeckoSession.ProgressDelegate.class.getMethod(
                     "onPageStop", GeckoSession.class, boolean.class);
             sOnNewSession = GeckoSession.NavigationDelegate.class.getMethod(
-                    "onNewSession", GeckoSession.class, String.class, GeckoResponse.class);
+                    "onNewSession", GeckoSession.class, String.class);
             sOnCrash = GeckoSession.ContentDelegate.class.getMethod(
                     "onCrash", GeckoSession.class);
         } catch (final NoSuchMethodException e) {
@@ -1182,34 +1182,50 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
                     }
                 }
 
-                if (call != null && sOnNewSession.equals(method)) {
-                    
-                    
-                    final GeckoSession oldSession = (GeckoSession) args[0];
-                    @SuppressWarnings("unchecked")
-                    final GeckoResponse<GeckoSession> realResponse =
-                            (GeckoResponse<GeckoSession>) args[2];
-                    args[2] = new GeckoResponse<GeckoSession>() {
-                        @Override
-                        public void respond(final GeckoSession newSession) {
-                            realResponse.respond(newSession);
-                            
-                            if (oldSession.isOpen() && newSession != null) {
-                                GeckoSessionTestRule.this.waitForOpenSession(newSession);
-                            }
-                        }
-                    };
-                }
-
+                Object returnValue = null;
                 try {
                     mCurrentMethodCall = call;
-                    return method.invoke((call != null) ? call.target
+                    returnValue = method.invoke((call != null) ? call.target
                                                         : Callbacks.Default.INSTANCE, args);
                 } catch (final IllegalAccessException | InvocationTargetException e) {
                     throw unwrapRuntimeException(e);
                 } finally {
                     mCurrentMethodCall = null;
                 }
+
+                if (call == null || returnValue == null || !sOnNewSession.equals(method)) {
+                    return returnValue;
+                }
+
+                
+                
+                final GeckoSession oldSession = (GeckoSession) args[0];
+
+                @SuppressWarnings("unchecked")
+                final GeckoResult<GeckoSession> result = (GeckoResult<GeckoSession>)returnValue;
+                final GeckoResult<GeckoSession> tmpResult = new GeckoResult<>();
+                result.then(new OnValueListener<GeckoSession, Void>() {
+                    @Override
+                    public GeckoResult<Void> onValue(final GeckoSession newSession) throws Throwable {
+                        tmpResult.complete(newSession);
+
+                        
+                        
+                        
+                        tmpResult.then(new OnValueListener<GeckoSession, Void>() {
+                            @Override
+                            public GeckoResult<Void> onValue(GeckoSession newSession) throws Throwable {
+                                if (oldSession.isOpen() && newSession != null) {
+                                    GeckoSessionTestRule.this.waitForOpenSession(newSession);
+                                }
+                                return null;
+                            }
+                        });
+                        return null;
+                    }
+                });
+
+                return tmpResult;
             }
         };
 

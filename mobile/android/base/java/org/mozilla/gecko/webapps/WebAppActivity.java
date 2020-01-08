@@ -435,8 +435,7 @@ public class WebAppActivity extends AppCompatActivity
     }
 
     @Override
-    public void onNewSession(final GeckoSession session, final String uri,
-                             final GeckoResponse<GeckoSession> response) {
+    public GeckoResult<GeckoSession> onNewSession(final GeckoSession session, final String uri) {
         
         throw new IllegalStateException("Unexpected new session");
     }
