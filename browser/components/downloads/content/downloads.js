@@ -450,7 +450,7 @@ var DownloadsPanel = {
     
     try {
       let data = {};
-      trans.getAnyTransferData({}, data, {});
+      trans.getAnyTransferData({}, data);
       let [url, name] = data.value
                             .QueryInterface(Ci.nsISupportsString)
                             .data

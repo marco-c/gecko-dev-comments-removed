@@ -347,7 +347,7 @@ PlacesController.prototype = {
     try {
       
       var data = { }, type = { };
-      xferable.getAnyTransferData(type, data, { });
+      xferable.getAnyTransferData(type, data);
       data = data.value.QueryInterface(Ci.nsISupportsString).data;
       if (type.value != PlacesUtils.TYPE_X_MOZ_URL &&
           type.value != PlacesUtils.TYPE_UNICODE)
@@ -1135,7 +1135,7 @@ PlacesController.prototype = {
     
     let data = {}, type = {}, items = [];
     try {
-      xferable.getAnyTransferData(type, data, {});
+      xferable.getAnyTransferData(type, data);
       data = data.value.QueryInterface(Ci.nsISupportsString).data;
       type = type.value;
       items = PlacesUtils.unwrapNodes(data, type);
