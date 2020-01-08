@@ -66,6 +66,15 @@ APZInputBridge::ReceiveInputEvent(
         UpdateWheelTransaction(mouseEvent.mRefPoint, mouseEvent.mMessage);
       }
 
+      
+      
+      
+      
+      
+      if (gfxPrefs::APZAllowZooming()) {
+        mouseEvent.mIgnoreRootScrollFrame = true;
+      }
+
       if (WillHandleMouseEvent(mouseEvent)) {
 
         MouseInput input(mouseEvent);
