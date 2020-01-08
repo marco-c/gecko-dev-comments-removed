@@ -80,6 +80,7 @@ pub struct TileIndex(pub usize);
 
 pub const TILE_SIZE_WIDTH: i32 = 1024;
 pub const TILE_SIZE_HEIGHT: i32 = 256;
+const FRAMES_BEFORE_CACHING: usize = 2;
 
 #[derive(Debug)]
 pub struct GlobalTransformInfo {
@@ -128,8 +129,6 @@ pub struct Tile {
     
     pub local_rect: LayoutRect,
     
-    valid_rect: WorldRect,
-    
     
     visible_rect: Option<WorldRect>,
     
@@ -141,6 +140,10 @@ pub struct Tile {
     
     
     is_valid: bool,
+    
+    is_same_content: bool,
+    
+    same_frames: usize,
     
     
     id: TileId,
@@ -158,11 +161,12 @@ impl Tile {
         Tile {
             local_rect: LayoutRect::zero(),
             world_rect: WorldRect::zero(),
-            valid_rect: WorldRect::zero(),
             visible_rect: None,
             handle: TextureCacheHandle::invalid(),
             descriptor: TileDescriptor::new(),
+            is_same_content: false,
             is_valid: false,
+            same_frames: 0,
             transforms: FastHashSet::default(),
             id,
         }
@@ -173,6 +177,26 @@ impl Tile {
         self.transforms.clear();
         self.descriptor.clear();
     }
+
+    
+    
+    fn update_validity(&mut self, tile_bounding_rect: &WorldRect) {
+        
+        
+        self.is_same_content &= self.descriptor.is_same_content();
+
+        
+        
+        
+        self.is_valid &= self.is_same_content;
+        self.is_valid &= self.descriptor.is_valid(&tile_bounding_rect);
+
+        
+        if !self.is_same_content {
+            self.same_frames = 0;
+        }
+        self.same_frames += 1;
+    }
 }
 
 
@@ -181,11 +205,20 @@ pub struct PrimitiveDescriptor {
     
     prim_uid: ItemUid,
     
-    origin: LayoutPoint,
+    origin: WorldPoint,
     
     first_clip: u16,
     
     clip_count: u16,
+}
+
+
+#[derive(Debug)]
+pub struct PrimitiveRegion {
+    
+    prim_region: WorldRect,
+    
+    tile_offset: WorldPoint,
 }
 
 
@@ -214,10 +247,10 @@ pub struct TileDescriptor {
     opacity_bindings: ComparableVec<OpacityBinding>,
 
     
-    needed_rects: Vec<WorldRect>,
+    needed_regions: Vec<PrimitiveRegion>,
 
     
-    current_rects: Vec<WorldRect>,
+    current_regions: Vec<PrimitiveRegion>,
 
     
     
@@ -232,8 +265,8 @@ impl TileDescriptor {
             clip_vertices: ComparableVec::new(),
             opacity_bindings: ComparableVec::new(),
             image_keys: ComparableVec::new(),
-            needed_rects: Vec::new(),
-            current_rects: Vec::new(),
+            needed_regions: Vec::new(),
+            current_regions: Vec::new(),
             transforms: ComparableVec::new(),
         }
     }
@@ -246,12 +279,24 @@ impl TileDescriptor {
         self.clip_vertices.reset();
         self.opacity_bindings.reset();
         self.image_keys.reset();
-        self.needed_rects.clear();
+        self.needed_regions.clear();
         self.transforms.reset();
     }
 
     
-    fn is_valid(&self) -> bool {
+    
+    
+    fn is_same_content(&self) -> bool {
+        self.image_keys.is_valid() &&
+        self.opacity_bindings.is_valid() &&
+        self.clip_uids.is_valid() &&
+        self.clip_vertices.is_valid() &&
+        self.prims.is_valid() &&
+        self.transforms.is_valid()
+    }
+
+    
+    fn is_valid(&self, tile_bounding_rect: &WorldRect) -> bool {
         
         
         
@@ -260,9 +305,29 @@ impl TileDescriptor {
         
         
         
-        let rects_valid = if self.needed_rects.len() == self.current_rects.len() {
-            for (needed, current) in self.needed_rects.iter().zip(self.current_rects.iter()) {
-                if !current.contains_rect(needed) {
+        if self.needed_regions.len() == self.current_regions.len() {
+            for (needed, current) in self.needed_regions.iter().zip(self.current_regions.iter()) {
+                let needed_region = needed
+                    .prim_region
+                    .translate(&needed.tile_offset.to_vector())
+                    .intersection(tile_bounding_rect);
+
+                let needed_rect = match needed_region {
+                    Some(rect) => rect,
+                    None => continue,
+                };
+
+                let current_region = current
+                    .prim_region
+                    .translate(&current.tile_offset.to_vector())
+                    .intersection(tile_bounding_rect);
+
+                let current_rect = match current_region {
+                    Some(rect) => rect,
+                    None => return false,
+                };
+
+                if needed_rect != current_rect {
                     return false;
                 }
             }
@@ -270,15 +335,7 @@ impl TileDescriptor {
             true
         } else {
             false
-        };
-
-        self.image_keys.is_valid() &&
-        self.opacity_bindings.is_valid() &&
-        self.clip_uids.is_valid() &&
-        self.clip_vertices.is_valid() &&
-        self.prims.is_valid() &&
-        self.transforms.is_valid() &&
-        rects_valid
+        }
     }
 }
 
@@ -613,9 +670,12 @@ impl TileCache {
         
         for tile in &mut self.tiles {
             
+            tile.is_same_content = true;
+
+            
             for image_key in tile.descriptor.image_keys.items() {
                 if resource_cache.is_image_dirty(*image_key) {
-                    tile.is_valid = false;
+                    tile.is_same_content = false;
                     break;
                 }
             }
@@ -628,7 +688,7 @@ impl TileCache {
                         None => true,
                     };
                     if changed {
-                        tile.is_valid = false;
+                        tile.is_same_content = false;
                         break;
                     }
                 }
@@ -874,32 +934,20 @@ impl TileCache {
                 
                 
                 
-                
-                let visible_rect = match tile.visible_rect {
-                    Some(visible_rect) => visible_rect,
-                    None => WorldRect::zero(),
-                };
 
                 
                 
                 
                 
+                let prim_region = world_clip_rect.translate(&-world_rect.origin.to_vector());
+
+                tile.descriptor.needed_regions.push(PrimitiveRegion {
+                    prim_region,
+                    tile_offset: world_rect.origin - tile.world_rect.origin.to_vector(),
+                });
 
                 
-                
-                
-                
-                let needed_rect = world_clip_rect
-                    .intersection(&visible_rect)
-                    .map(|rect| {
-                        rect.translate(&-tile.world_rect.origin.to_vector())
-                    })
-                    .unwrap_or(WorldRect::zero());
-
-                tile.descriptor.needed_rects.push(needed_rect);
-
-                
-                tile.is_valid &= is_cacheable;
+                tile.is_same_content &= is_cacheable;
 
                 
                 tile.descriptor.image_keys.extend_from_slice(&image_keys);
@@ -910,7 +958,7 @@ impl TileCache {
                 
                 tile.descriptor.prims.push(PrimitiveDescriptor {
                     prim_uid: prim_instance.uid(),
-                    origin: prim_instance.prim_origin,
+                    origin: world_rect.origin - tile.world_rect.origin.to_vector(),
                     first_clip: tile.descriptor.clip_uids.len() as u16,
                     clip_count: clip_chain_uids.len() as u16,
                 });
@@ -998,56 +1046,66 @@ impl TileCache {
             };
 
             
-            tile.is_valid &= tile.descriptor.is_valid();
+            let tile_bounding_rect = match visible_rect.intersection(&self.world_bounding_rect) {
+                Some(rect) => rect.translate(&-tile.world_rect.origin.to_vector()),
+                None => continue,
+            };
+
+            tile.update_validity(&tile_bounding_rect);
+
+            
+            if tile.descriptor.prims.is_empty() {
+                continue;
+            }
 
             
             if tile.is_valid {
-                
-                
-                
-                if !tile.descriptor.prims.is_empty() {
-                    self.tiles_to_draw.push(TileIndex(i));
-                }
+                self.tiles_to_draw.push(TileIndex(i));
             } else {
                 
                 dirty_world_rect = dirty_world_rect.union(&visible_rect);
 
                 
-                resource_cache.texture_cache.update(
-                    &mut tile.handle,
-                    descriptor,
-                    TextureFilter::Linear,
-                    None,
-                    [0.0; 3],
-                    DirtyRect::All,
-                    gpu_cache,
-                    None,
-                    UvRectKind::Rect,
-                    Eviction::Eager,
-                );
-
-                let cache_item = resource_cache
-                    .get_texture_cache_item(&tile.handle);
-
-                let src_origin = (visible_rect.origin * frame_context.device_pixel_scale).round().to_i32();
-                tile.valid_rect = visible_rect.translate(&-tile.world_rect.origin.to_vector());
-
                 
                 
-                let dest_rect = (tile.valid_rect * frame_context.device_pixel_scale).round().to_i32();
-                self.pending_blits.push(TileBlit {
-                    target: cache_item,
-                    src_offset: src_origin,
-                    dest_offset: dest_rect.origin,
-                    size: dest_rect.size,
-                });
+                if tile.same_frames > FRAMES_BEFORE_CACHING {
+                    
+                    resource_cache.texture_cache.update(
+                        &mut tile.handle,
+                        descriptor,
+                        TextureFilter::Linear,
+                        None,
+                        [0.0; 3],
+                        DirtyRect::All,
+                        gpu_cache,
+                        None,
+                        UvRectKind::Rect,
+                        Eviction::Eager,
+                    );
 
-                
-                tile.is_valid = true;
-                tile.descriptor.current_rects = mem::replace(
-                    &mut tile.descriptor.needed_rects,
-                    Vec::new(),
-                );
+                    let cache_item = resource_cache
+                        .get_texture_cache_item(&tile.handle);
+
+                    let src_origin = (visible_rect.origin * frame_context.device_pixel_scale).round().to_i32();
+                    let valid_rect = visible_rect.translate(&-tile.world_rect.origin.to_vector());
+
+                    
+                    
+                    let dest_rect = (valid_rect * frame_context.device_pixel_scale).round().to_i32();
+                    self.pending_blits.push(TileBlit {
+                        target: cache_item,
+                        src_offset: src_origin,
+                        dest_offset: dest_rect.origin,
+                        size: dest_rect.size,
+                    });
+
+                    
+                    tile.is_valid = true;
+                    tile.descriptor.current_regions = mem::replace(
+                        &mut tile.descriptor.needed_regions,
+                        Vec::new(),
+                    );
+                }
             }
         }
 
