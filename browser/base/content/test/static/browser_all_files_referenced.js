@@ -125,7 +125,6 @@ var whitelist = [
 
   
   
-  {file: "resource://app/modules/UrlbarController.jsm"},
   {file: "resource://app/modules/UrlbarTokenizer.jsm"},
 
   
