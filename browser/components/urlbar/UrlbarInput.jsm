@@ -475,14 +475,6 @@ class UrlbarInput {
       }
     }
 
-    
-    
-    
-    let action = this._parseActionUrl(this.value);
-    if (action && action.type == "searchengine") {
-      return selectedVal;
-    }
-
     let uri;
     if (this.getAttribute("pageproxystate") == "valid") {
       uri = this.window.gBrowser.currentURI;
@@ -527,42 +519,6 @@ class UrlbarInput {
            event.altKey ||
            (AppConstants.platform == "macosx" ?
               event.metaKey : event.ctrlKey);
-  }
-
-  
-
-
-
-
-  _parseActionUrl(url) {
-    const MOZ_ACTION_REGEX = /^moz-action:([^,]+),(.*)$/;
-    if (!MOZ_ACTION_REGEX.test(url)) {
-      return null;
-    }
-
-    
-    
-    let [, type, params] = url.match(MOZ_ACTION_REGEX);
-
-    let action = {
-      type,
-    };
-
-    action.params = JSON.parse(params);
-    for (let key in action.params) {
-      action.params[key] = decodeURIComponent(action.params[key]);
-    }
-
-    if ("url" in action.params) {
-      try {
-        let uri = Services.io.newURI(action.params.url);
-        action.params.displayUrl = this.window.losslessDecodeURI(uri);
-      } catch (e) {
-        action.params.displayUrl = action.params.url;
-      }
-    }
-
-    return action;
   }
 
   
