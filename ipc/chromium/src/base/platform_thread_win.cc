@@ -9,6 +9,8 @@
 #include "base/logging.h"
 #include "base/win_util.h"
 
+#include "nsThreadUtils.h"
+
 namespace {
 
 
@@ -23,6 +25,10 @@ typedef struct tagTHREADNAME_INFO {
 } THREADNAME_INFO;
 
 DWORD __stdcall ThreadFunc(void* closure) {
+  
+  
+  (void) NS_GetCurrentThread();
+
   PlatformThread::Delegate* delegate =
       static_cast<PlatformThread::Delegate*>(closure);
   delegate->ThreadMain();
@@ -48,24 +54,10 @@ void PlatformThread::Sleep(int duration_ms) {
 
 
 void PlatformThread::SetName(const char* name) {
-#ifdef HAVE_SEH_EXCEPTIONS
   
   
-  if (!::IsDebuggerPresent())
-    return;
-
-  THREADNAME_INFO info;
-  info.dwType = 0x1000;
-  info.szName = name;
-  info.dwThreadID = CurrentId();
-  info.dwFlags = 0;
-
-  MOZ_SEH_TRY {
-    RaiseException(kVCThreadNameException, 0, sizeof(info)/sizeof(DWORD),
-                   reinterpret_cast<DWORD_PTR*>(&info));
-  } MOZ_SEH_EXCEPT(EXCEPTION_CONTINUE_EXECUTION) {
-  }
-#endif
+  
+  NS_SetCurrentThreadName(name);
 }
 
 
