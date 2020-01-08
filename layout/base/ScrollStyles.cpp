@@ -4,13 +4,13 @@
 
 
 
-#include "ScrollbarStyles.h"
+#include "mozilla/ScrollStyles.h"
 #include "nsStyleStruct.h" 
 
 namespace mozilla {
 
-  ScrollbarStyles::ScrollbarStyles(uint8_t aH, uint8_t aV,
-                                   const nsStyleDisplay* aDisplay)
+  ScrollStyles::ScrollStyles(uint8_t aH, uint8_t aV,
+                             const nsStyleDisplay* aDisplay)
     : mHorizontal(aH), mVertical(aV),
       mScrollBehavior(aDisplay->mScrollBehavior),
       mOverscrollBehaviorX(aDisplay->mOverscrollBehaviorX),
@@ -22,7 +22,7 @@ namespace mozilla {
       mScrollSnapDestinationX(aDisplay->mScrollSnapDestination.mXPosition),
       mScrollSnapDestinationY(aDisplay->mScrollSnapDestination.mYPosition) {}
 
-  ScrollbarStyles::ScrollbarStyles(const nsStyleDisplay* aDisplay)
+  ScrollStyles::ScrollStyles(const nsStyleDisplay* aDisplay)
     : mHorizontal(aDisplay->mOverflowX), mVertical(aDisplay->mOverflowY),
       mScrollBehavior(aDisplay->mScrollBehavior),
       mOverscrollBehaviorX(aDisplay->mOverscrollBehaviorX),

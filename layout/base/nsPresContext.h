@@ -12,6 +12,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/MediaFeatureChange.h"
 #include "mozilla/NotNull.h"
+#include "mozilla/ScrollStyles.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "nsColor.h"
@@ -41,7 +42,6 @@
 #include "mozilla/AppUnits.h"
 #include "prclist.h"
 #include "nsThreadUtils.h"
-#include "ScrollbarStyles.h"
 #include "nsIMessageManager.h"
 #include "Units.h"
 #include "prenv.h"
@@ -133,7 +133,7 @@ public:
   using Encoding = mozilla::Encoding;
   template <typename T> using NotNull = mozilla::NotNull<T>;
   typedef mozilla::LangGroupFontPrefs LangGroupFontPrefs;
-  typedef mozilla::ScrollbarStyles ScrollbarStyles;
+  typedef mozilla::ScrollStyles ScrollStyles;
   typedef mozilla::StaticPresData StaticPresData;
   using TransactionId = mozilla::layers::TransactionId;
 
@@ -754,7 +754,7 @@ public:
 
 
 
-  mozilla::dom::Element* UpdateViewportScrollbarStylesOverride();
+  mozilla::dom::Element* UpdateViewportScrollStylesOverride();
 
   
 
@@ -762,20 +762,20 @@ public:
 
 
 
-  mozilla::dom::Element* GetViewportScrollbarStylesOverrideElement() const {
-    return mViewportScrollbarOverrideElement;
+  mozilla::dom::Element* GetViewportScrollStylesOverrideElement() const {
+    return mViewportScrollOverrideElement;
   }
 
-  const ScrollbarStyles& GetViewportScrollbarStylesOverride() const
+  const ScrollStyles& GetViewportScrollStylesOverride() const
   {
-    return mViewportStyleScrollbar;
+    return mViewportScrollStyles;
   }
 
   
 
 
 
-  bool ElementWouldPropagateScrollbarStyles(const mozilla::dom::Element&);
+  bool ElementWouldPropagateScrollStyles(const mozilla::dom::Element&);
 
   
 
@@ -1358,8 +1358,8 @@ protected:
   
   
   
-  mozilla::dom::Element* MOZ_NON_OWNING_REF mViewportScrollbarOverrideElement;
-  ScrollbarStyles       mViewportStyleScrollbar;
+  mozilla::dom::Element* MOZ_NON_OWNING_REF mViewportScrollOverrideElement;
+  ScrollStyles          mViewportScrollStyles;
 
   uint8_t               mFocusRingWidth;
 

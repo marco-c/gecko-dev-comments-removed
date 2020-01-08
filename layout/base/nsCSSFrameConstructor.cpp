@@ -2414,7 +2414,7 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
   
   DebugOnly<nsIContent*> propagatedScrollFrom;
   if (nsPresContext* presContext = mPresShell->GetPresContext()) {
-    propagatedScrollFrom = presContext->UpdateViewportScrollbarStylesOverride();
+    propagatedScrollFrom = presContext->UpdateViewportScrollStylesOverride();
   }
 
   SetUpDocElementContainingBlock(aDocElement);
@@ -4529,7 +4529,7 @@ nsCSSFrameConstructor::FindDisplayData(const nsStyleDisplay& aDisplay,
   if (aElement.IsHTMLElement(nsGkAtoms::body)) {
     if (nsPresContext* presContext = mPresShell->GetPresContext()) {
       propagatedScrollToViewport =
-        presContext->UpdateViewportScrollbarStylesOverride() == &aElement;
+        presContext->UpdateViewportScrollStylesOverride() == &aElement;
     }
   }
 
@@ -4565,7 +4565,7 @@ nsCSSFrameConstructor::FindDisplayData(const nsStyleDisplay& aDisplay,
       
       
       if (mPresShell->GetPresContext()->
-            ElementWouldPropagateScrollbarStyles(aElement)) {
+            ElementWouldPropagateScrollStyles(aElement)) {
         suppressScrollFrame = false;
       }
     }
@@ -7688,7 +7688,7 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
   
   
   
-  if (aChild == presContext->GetViewportScrollbarStylesOverrideElement() ||
+  if (aChild == presContext->GetViewportScrollStylesOverrideElement() ||
       (aChild->IsElement() && !aChild->GetParent())) {
     
     
@@ -7700,7 +7700,7 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
     
     
     Element* newOverrideElement =
-      presContext->UpdateViewportScrollbarStylesOverride();
+      presContext->UpdateViewportScrollStylesOverride();
 
     
     

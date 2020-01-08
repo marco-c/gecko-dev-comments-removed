@@ -127,13 +127,13 @@ ScrollFrameTo(nsIScrollableFrame* aFrame, const FrameMetrics& aMetrics, bool& aS
   
   
   
-  if (aFrame->GetScrollbarStyles().mVertical == NS_STYLE_OVERFLOW_HIDDEN &&
+  if (aFrame->GetScrollStyles().mVertical == NS_STYLE_OVERFLOW_HIDDEN &&
       targetScrollPosition.y != geckoScrollPosition.y) {
     NS_WARNING(nsPrintfCString(
           "APZCCH: targetScrollPosition.y (%f) != geckoScrollPosition.y (%f)",
           targetScrollPosition.y, geckoScrollPosition.y).get());
   }
-  if (aFrame->GetScrollbarStyles().mHorizontal == NS_STYLE_OVERFLOW_HIDDEN &&
+  if (aFrame->GetScrollStyles().mHorizontal == NS_STYLE_OVERFLOW_HIDDEN &&
       targetScrollPosition.x != geckoScrollPosition.x) {
     NS_WARNING(nsPrintfCString(
           "APZCCH: targetScrollPosition.x (%f) != geckoScrollPosition.x (%f)",

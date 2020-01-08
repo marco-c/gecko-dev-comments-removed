@@ -1381,9 +1381,9 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
         
         
         nsIContent* prevOverrideNode =
-          presContext->GetViewportScrollbarStylesOverrideElement();
+          presContext->GetViewportScrollStylesOverrideElement();
         nsIContent* newOverrideNode =
-          presContext->UpdateViewportScrollbarStylesOverride();
+          presContext->UpdateViewportScrollStylesOverride();
 
         if (data.mContent == prevOverrideNode ||
             data.mContent == newOverrideNode) {

@@ -9993,7 +9993,7 @@ nsIFrame::IsFocusable(int32_t *aTabIndex, bool aWithMouse)
       
       nsIScrollableFrame *scrollFrame = do_QueryFrame(this);
       if (scrollFrame &&
-          !scrollFrame->GetScrollbarStyles().IsHiddenInBothDirections() &&
+          !scrollFrame->GetScrollStyles().IsHiddenInBothDirections() &&
           !scrollFrame->GetScrollRange().IsEqualEdges(nsRect(0, 0, 0, 0))) {
         
         isFocusable = true;

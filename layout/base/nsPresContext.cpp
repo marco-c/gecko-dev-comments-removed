@@ -197,8 +197,8 @@ nsPresContext::nsPresContext(nsIDocument* aDocument, nsPresContextType aType)
     mFocusBackgroundColor(mBackgroundColor),
     mFocusTextColor(mDefaultColor),
     mBodyTextColor(mDefaultColor),
-    mViewportScrollbarOverrideElement(nullptr),
-    mViewportStyleScrollbar(NS_STYLE_OVERFLOW_AUTO, NS_STYLE_OVERFLOW_AUTO),
+    mViewportScrollOverrideElement(nullptr),
+    mViewportScrollStyles(NS_STYLE_OVERFLOW_AUTO, NS_STYLE_OVERFLOW_AUTO),
     mFocusRingWidth(1),
     mExistThrottledUpdates(false),
     
@@ -1334,7 +1334,7 @@ nsPresContext::ScreenSizeInchesForFontInflation(bool* aChanged)
 }
 
 static bool
-CheckOverflow(const nsStyleDisplay* aDisplay, ScrollbarStyles* aStyles)
+CheckOverflow(const nsStyleDisplay* aDisplay, ScrollStyles* aStyles)
 {
   if (aDisplay->mOverflowX == NS_STYLE_OVERFLOW_VISIBLE &&
       aDisplay->mScrollBehavior == NS_STYLE_SCROLL_BEHAVIOR_AUTO &&
@@ -1350,17 +1350,17 @@ CheckOverflow(const nsStyleDisplay* aDisplay, ScrollbarStyles* aStyles)
   }
 
   if (aDisplay->mOverflowX == NS_STYLE_OVERFLOW_CLIP) {
-    *aStyles = ScrollbarStyles(NS_STYLE_OVERFLOW_HIDDEN,
-                               NS_STYLE_OVERFLOW_HIDDEN, aDisplay);
+    *aStyles = ScrollStyles(NS_STYLE_OVERFLOW_HIDDEN,
+                            NS_STYLE_OVERFLOW_HIDDEN, aDisplay);
   } else {
-    *aStyles = ScrollbarStyles(aDisplay);
+    *aStyles = ScrollStyles(aDisplay);
   }
   return true;
 }
 
 static Element*
-GetPropagatedScrollbarStylesForViewport(nsPresContext* aPresContext,
-                                        ScrollbarStyles *aStyles)
+GetPropagatedScrollStylesForViewport(nsPresContext* aPresContext,
+                                     ScrollStyles *aStyles)
 {
   nsIDocument* document = aPresContext->Document();
   Element* docElement = document->GetRootElement();
@@ -1410,16 +1410,16 @@ GetPropagatedScrollbarStylesForViewport(nsPresContext* aPresContext,
 }
 
 Element*
-nsPresContext::UpdateViewportScrollbarStylesOverride()
+nsPresContext::UpdateViewportScrollStylesOverride()
 {
   
-  mViewportStyleScrollbar = ScrollbarStyles(NS_STYLE_OVERFLOW_AUTO,
-                                            NS_STYLE_OVERFLOW_AUTO);
-  mViewportScrollbarOverrideElement = nullptr;
+  mViewportScrollStyles = ScrollStyles(NS_STYLE_OVERFLOW_AUTO,
+                                       NS_STYLE_OVERFLOW_AUTO);
+  mViewportScrollOverrideElement = nullptr;
   
   if (!IsPaginated()) {
-    mViewportScrollbarOverrideElement =
-      GetPropagatedScrollbarStylesForViewport(this, &mViewportStyleScrollbar);
+    mViewportScrollOverrideElement =
+      GetPropagatedScrollStylesForViewport(this, &mViewportScrollStyles);
   }
 
   nsIDocument* document = Document();
@@ -1430,16 +1430,16 @@ nsPresContext::UpdateViewportScrollbarStylesOverride()
     
     
     if (fullscreenElement != document->GetRootElement() &&
-        fullscreenElement != mViewportScrollbarOverrideElement) {
-      mViewportStyleScrollbar = ScrollbarStyles(NS_STYLE_OVERFLOW_HIDDEN,
-                                                NS_STYLE_OVERFLOW_HIDDEN);
+        fullscreenElement != mViewportScrollOverrideElement) {
+      mViewportScrollStyles = ScrollStyles(NS_STYLE_OVERFLOW_HIDDEN,
+                                           NS_STYLE_OVERFLOW_HIDDEN);
     }
   }
-  return mViewportScrollbarOverrideElement;
+  return mViewportScrollOverrideElement;
 }
 
 bool
-nsPresContext::ElementWouldPropagateScrollbarStyles(const Element& aElement)
+nsPresContext::ElementWouldPropagateScrollStyles(const Element& aElement)
 {
   MOZ_ASSERT(IsPaginated(), "Should only be called on paginated contexts");
   if (aElement.GetParent() && !aElement.IsHTMLElement(nsGkAtoms::body)) {
@@ -1452,8 +1452,8 @@ nsPresContext::ElementWouldPropagateScrollbarStyles(const Element& aElement)
   
   
   
-  ScrollbarStyles dummy(NS_STYLE_OVERFLOW_AUTO, NS_STYLE_OVERFLOW_AUTO);
-  return GetPropagatedScrollbarStylesForViewport(this, &dummy) == &aElement;
+  ScrollStyles dummy(NS_STYLE_OVERFLOW_AUTO, NS_STYLE_OVERFLOW_AUTO);
+  return GetPropagatedScrollStylesForViewport(this, &dummy) == &aElement;
 }
 
 void
