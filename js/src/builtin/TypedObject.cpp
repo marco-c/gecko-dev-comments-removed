@@ -683,7 +683,7 @@ static const ClassOps StructTypeDescrClassOps = {
     nullptr, 
     nullptr, 
     TypeDescr::finalize,
-    nullptr, 
+    StructTypeDescr::call,
     nullptr, 
     TypedObject::construct
 };
@@ -1047,6 +1047,15 @@ StructTypeDescr::fieldDescr(size_t index) const
     ArrayObject& fieldDescrs = fieldInfoObject(JS_DESCR_SLOT_STRUCT_FIELD_TYPES);
     MOZ_ASSERT(index < fieldDescrs.getDenseInitializedLength());
     return fieldDescrs.getDenseElement(index).toObject().as<TypeDescr>();
+}
+
+bool
+StructTypeDescr::call(JSContext* cx, unsigned argc, Value* vp)
+{
+    
+    
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPEDOBJECT_STRUCTTYPE_NOT_CALLABLE);
+    return false;
 }
 
 
