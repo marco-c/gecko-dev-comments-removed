@@ -5970,11 +5970,12 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
 
     if type.isDictionary():
         
+        
         assert(not type.nullable() or isCallbackReturnValue or
                (isMember and isMember != "Dictionary"))
         
         
-        assert not isOptional
+        assert not isOptional or isMember == "Dictionary"
         
         
         assert not isCallbackReturnValue or defaultValue is None
@@ -6055,7 +6056,8 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
             declArgs = None
 
         return JSToNativeConversionInfo(template, declType=declType,
-                                        declArgs=declArgs)
+                                        declArgs=declArgs,
+                                        dealWithOptional=isOptional)
 
     if type.isVoid():
         assert not isOptional

@@ -4526,7 +4526,8 @@ class IDLArgument(IDLObjectWithIdentifier):
 
         if ((self.type.isDictionary() or
              self.type.isUnion() and self.type.unroll().hasDictionaryType()) and
-            self.optional and not self.defaultValue and not self.variadic):
+            self.optional and not self.defaultValue and not self.variadic and
+            not self.dictionaryMember):
             
             
             self.defaultValue = IDLNullValue(self.location)
