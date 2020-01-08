@@ -8,6 +8,9 @@
 
 requestLongerTimeout(5);
 
+ChromeUtils.defineModuleGetter(this, "ActorManagerParent",
+                               "resource://gre/modules/ActorManagerParent.jsm");
+
 var isDevtools = SimpleTest.harnessParameters.subsuite == "devtools";
 
 var gExceptionPaths = [
@@ -415,7 +418,11 @@ function parseCodeFile(fileUri) {
 
         
         
-        url = Services.io.newURI(url).specIgnoringRef;
+        try {
+          url = Services.io.newURI(url).specIgnoringRef;
+        } catch (e) {
+          continue;
+        }
 
         if (isDevtools && line.includes("require(") &&
             !/\.(properties|js|jsm|json|css)$/.test(url))
@@ -502,6 +509,17 @@ function findChromeUrlsFromArray(array, prefix) {
   }
 }
 
+function addActorModules() {
+  let groups = [...ActorManagerParent.parentGroups.values(),
+                ...ActorManagerParent.childGroups.values(),
+                ...ActorManagerParent.singletons.values()];
+  for (let group of groups) {
+    for (let {module} of group.actors.values()) {
+      gReferencesFromCode.set(module, null);
+    }
+  }
+}
+
 add_task(async function checkAllTheFiles() {
   let libxulPath = OS.Constants.Path.libxul;
   if (AppConstants.platform != "macosx")
@@ -538,6 +556,8 @@ add_task(async function checkAllTheFiles() {
 
   
   await throttledMapPromises(manifestURIs, parseManifest);
+
+  addActorModules();
 
   
   
