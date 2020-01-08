@@ -72,7 +72,7 @@ public:
   cdm::FileIO* CreateFileIO(cdm::FileIOClient* aClient) override;
   
   
-  void OnInitialized(bool success) override {}
+  void OnInitialized(bool aSuccess) override;
   
 
   void GiveBuffer(ipc::Shmem&& aBuffer);
@@ -145,6 +145,9 @@ protected:
   bool mPersistentStateAllowed = false;
   bool mDestroyed = false;
   nsCString mStorageId;
+
+  typedef MozPromise<bool, nsresult,  true> InitPromise;
+  MozPromiseHolder<InitPromise> mInitPromise;
 };
 
 } 

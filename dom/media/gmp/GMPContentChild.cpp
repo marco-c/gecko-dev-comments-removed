@@ -146,6 +146,9 @@ public:
   {
     
     mCDM->Initialize(aAllowDistinctiveIdentifier, aAllowPersistentState);
+    
+    
+    mHost->OnInitialized(true);
   }
 
   void GetStatusForPolicy(uint32_t aPromiseId,
