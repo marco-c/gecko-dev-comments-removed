@@ -37,12 +37,25 @@
 
 
 
+
+
+
+
+
+
 function doTest(context, should, options) {
   let merger = new ChannelMergerNode(
       context, {numberOfInputs: context.destination.numberOfChannels});
   merger.connect(context.destination);
 
-  let src = new OscillatorNode(context);
+  let src = null;
+
+  
+  
+  if (options.sourceNodeName !== 'none') {
+    src = new window[options.sourceNodeName || 'OscillatorNode'](context);
+  }
+
   let kRateNode = new window[options.nodeName](context, options.nodeOptions);
   let aRateNode = new window[options.nodeName](context, options.nodeOptions);
   let inverter = new GainNode(context, {gain: -1});
@@ -82,15 +95,29 @@ function doTest(context, should, options) {
   });
 
   
-  src.connect(kRateNode).connect(merger, 0, 0);
-  src.connect(aRateNode).connect(merger, 0, 1);
+  if (src) {
+    src.connect(kRateNode);
+    src.connect(aRateNode);
+  }
+
+  
+  kRateNode.connect(merger, 0, 0);
+  aRateNode.connect(merger, 0, 1);
 
   
   
   kRateNode.connect(merger, 0, 2);
   aRateNode.connect(inverter).connect(merger, 0, 2);
 
-  src.start();
+  if (src) {
+    src.start();
+  } else {
+    
+    
+    kRateNode.start();
+    aRateNode.start();
+  }
+
   return context.startRendering().then(renderedBuffer => {
     let kRateOutput = renderedBuffer.getChannelData(0);
     let aRateOutput = renderedBuffer.getChannelData(1);
@@ -113,5 +140,16 @@ function doTest(context, should, options) {
            options.prefix
          }: Difference between a-rate and k-rate ${options.nodeName}`)
         .notBeConstantValueOf(0);
+
+    if (options.verifyPieceWiseConstant) {
+      
+      
+      for (let k = 0; k < kRateOutput.length; k += 128) {
+        should(
+            kRateOutput.slice(k, k + 128),
+            `${options.prefix} k-rate output [${k}: ${k + 127}]`)
+            .beConstantValueOf(kRateOutput[k]);
+      }
+    }
   });
 }
