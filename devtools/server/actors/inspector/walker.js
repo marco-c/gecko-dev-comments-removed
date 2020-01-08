@@ -521,10 +521,18 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     
     
     
+    
+    
+    const isAssignedSlot =
+      !!firstChild &&
+      node.rawNode.nodeName === "SLOT" &&
+      isDirectShadowHostChild(firstChild);
+
     if (!firstChild ||
         walker.nextSibling() ||
         firstChild.nodeType !== Node.TEXT_NODE ||
-        firstChild.nodeValue.length > gValueSummaryLength
+        firstChild.nodeValue.length > gValueSummaryLength ||
+        isAssignedSlot
         ) {
       return undefined;
     }
