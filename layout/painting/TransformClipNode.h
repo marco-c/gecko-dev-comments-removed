@@ -45,7 +45,7 @@ public:
 
 
 
-  nsRect TransformRect(const nsRect& aRect, const int32_t aA2D)
+  nsRect TransformRect(const nsRect& aRect, const int32_t aA2D) const
   {
     if (aRect.IsEmpty()) {
       return aRect;
@@ -66,7 +66,7 @@ public:
 
 
 
-  gfx::IntRect TransformRect(const gfx::IntRect& aRect)
+  gfx::IntRect TransformRect(const gfx::IntRect& aRect) const
   {
     if (aRect.IsEmpty()) {
       return aRect;
@@ -117,7 +117,7 @@ protected:
 
   const gfx::Matrix4x4Flagged& Transform() const { return mTransform; }
 
-  void TransformRect(gfx::Rect& aRect)
+  void TransformRect(gfx::Rect& aRect) const
   {
     const TransformClipNode* node = this;
     while (node) {
