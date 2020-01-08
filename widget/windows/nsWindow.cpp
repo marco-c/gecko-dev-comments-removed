@@ -5325,11 +5325,8 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
           
           
           
-          if (IsWin10OrLater() && mWindowType == eWindowType_toplevel) {
-            nsIPresShell* presShell = mWidgetListener->GetPresShell();
-            if (presShell) {
-              presShell->ThemeChanged();
-            }
+          if (IsWin10OrLater()) {
+            NotifyThemeChanged();
           }
           
           OnSysColorChanged();
