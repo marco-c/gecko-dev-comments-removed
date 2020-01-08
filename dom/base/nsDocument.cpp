@@ -11109,11 +11109,8 @@ nsresult nsIDocument::RemoteFrameFullscreenChanged(Element* aFrameElement)
   
   
   
-  auto request = MakeUnique<FullscreenRequest>(aFrameElement,
-                                               CallerType::NonSystem);
-  request->mShouldNotifyNewOrigin = false;
+  auto request = FullscreenRequest::CreateForRemote(aFrameElement);
   RequestFullscreen(std::move(request));
-
   return NS_OK;
 }
 
