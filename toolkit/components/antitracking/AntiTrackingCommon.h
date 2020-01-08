@@ -68,6 +68,12 @@ public:
   static bool
   IsFirstPartyStorageAccessGrantedFor(nsIPrincipal* aPrincipal);
 
+  enum StorageAccessGrantedReason
+  {
+    eStorageAccessAPI,
+    eHeuristic,
+  };
+
   
   
   
@@ -86,7 +92,8 @@ public:
   typedef MozPromise<bool, bool, false> StorageAccessGrantPromise;
   static MOZ_MUST_USE RefPtr<StorageAccessGrantPromise>
   AddFirstPartyStorageAccessGrantedFor(const nsAString& aOrigin,
-                                       nsPIDOMWindowInner* aParentWindow);
+                                       nsPIDOMWindowInner* aParentWindow,
+                                       StorageAccessGrantedReason aReason);
 
   
   static void
