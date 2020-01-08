@@ -12,6 +12,7 @@ import java.lang.ref.WeakReference;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import org.mozilla.gecko.annotation.WrapForJNI;
@@ -273,6 +274,71 @@ public class GeckoSession implements Parcelable {
                     new UnknownError());
         }
     }
+
+    private final GeckoSessionHandler<HistoryDelegate> mHistoryHandler =
+        new GeckoSessionHandler<HistoryDelegate>(
+            "GeckoViewHistory", this,
+            new String[]{
+                "GeckoView:OnVisited",
+                "GeckoView:GetVisited",
+            }
+        ) {
+            @Override
+            public void handleMessage(final HistoryDelegate delegate,
+                                      final String event,
+                                      final GeckoBundle message,
+                                      final EventCallback callback) {
+                if ("GeckoView:OnVisited".equals(event)) {
+                    final GeckoResult<Boolean> result =
+                        delegate.onVisited(GeckoSession.this, message.getString("url"),
+                                           message.getString("lastVisitedURL"),
+                                           message.getInt("flags"));
+
+                    if (result == null) {
+                        callback.sendSuccess(false);
+                        return;
+                    }
+
+                    result.then(new GeckoResult.OnValueListener<Boolean, Void>() {
+                        @Override
+                        public GeckoResult<Void> onValue(Boolean visited) throws Throwable {
+                            callback.sendSuccess(visited.booleanValue());
+                            return null;
+                        }
+                    }, new GeckoResult.OnExceptionListener<Void>() {
+                        @Override
+                        public GeckoResult<Void> onException(Throwable exception) throws Throwable {
+                            callback.sendSuccess(false);
+                            return null;
+                        }
+                    });
+                } else if ("GeckoView:GetVisited".equals(event)) {
+                    final String[] urls = message.getStringArray("urls");
+
+                    final GeckoResult<boolean[]> result =
+                        delegate.getVisited(GeckoSession.this, urls);
+
+                    if (result == null) {
+                        callback.sendSuccess(null);
+                        return;
+                    }
+
+                    result.then(new GeckoResult.OnValueListener<boolean[], Void>() {
+                        @Override
+                        public GeckoResult<Void> onValue(final boolean[] visited) throws Throwable {
+                            callback.sendSuccess(visited);
+                            return null;
+                        }
+                    }, new GeckoResult.OnExceptionListener<Void>() {
+                        @Override
+                        public GeckoResult<Void> onException(Throwable exception) throws Throwable {
+                            callback.sendError("Failed to fetch visited statuses for URIs");
+                            return null;
+                        }
+                    });
+                }
+            }
+        };
 
     private final GeckoSessionHandler<ContentDelegate> mContentHandler =
         new GeckoSessionHandler<ContentDelegate>(
@@ -755,8 +821,9 @@ public class GeckoSession implements Parcelable {
      int handlersCount;
 
     private final GeckoSessionHandler<?>[] mSessionHandlers = new GeckoSessionHandler<?>[] {
-        mContentHandler, mMediaHandler, mNavigationHandler, mProgressHandler, mScrollHandler,
-        mTrackingProtectionHandler, mPermissionHandler, mSelectionActionDelegate
+        mContentHandler, mHistoryHandler, mMediaHandler, mNavigationHandler,
+        mPermissionHandler, mProgressHandler, mScrollHandler, mSelectionActionDelegate,
+        mTrackingProtectionHandler
     };
 
     private static class PermissionCallback implements
@@ -1777,6 +1844,21 @@ public class GeckoSession implements Parcelable {
 
     public ScrollDelegate getScrollDelegate() {
         return mScrollHandler.getDelegate();
+    }
+
+    
+
+
+
+
+
+    public void setHistoryDelegate(@Nullable HistoryDelegate delegate) {
+        mHistoryHandler.setDelegate(delegate, this);
+    }
+
+    
+    public @Nullable HistoryDelegate getHistoryDelegate() {
+        return mHistoryHandler.getDelegate();
     }
 
     
@@ -4175,5 +4257,73 @@ public class GeckoSession implements Parcelable {
 
 
         void onMediaRemove(@NonNull GeckoSession session, @NonNull MediaElement element);
+    }
+
+    
+
+
+
+    public interface HistoryDelegate {
+        @Retention(RetentionPolicy.SOURCE)
+        @IntDef(flag = true,
+                value = { VISIT_TOP_LEVEL,
+                          VISIT_REDIRECT_TEMPORARY, VISIT_REDIRECT_PERMANENT,
+                          VISIT_REDIRECT_SOURCE, VISIT_REDIRECT_SOURCE_PERMANENT,
+                          VISIT_UNRECOVERABLE_ERROR })
+         @interface VisitFlags {}
+
+        
+        
+        
+
+        
+        final int VISIT_TOP_LEVEL = 1 << 0;
+        
+        final int VISIT_REDIRECT_TEMPORARY = 1 << 1;
+        
+        final int VISIT_REDIRECT_PERMANENT = 1 << 2;
+        
+        final int VISIT_REDIRECT_SOURCE = 1 << 3;
+        
+        final int VISIT_REDIRECT_SOURCE_PERMANENT = 1 << 4;
+        
+        final int VISIT_UNRECOVERABLE_ERROR = 1 << 5;
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+        default @Nullable GeckoResult<Boolean> onVisited(@NonNull GeckoSession session,
+                                                         @NonNull String url,
+                                                         @Nullable String lastVisitedURL,
+                                                         @VisitFlags int flags) {
+            return null;
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+        default @Nullable GeckoResult<boolean[]> getVisited(@NonNull GeckoSession session,
+                                                            @NonNull String[] urls) {
+            return null;
+        }
     }
 }
