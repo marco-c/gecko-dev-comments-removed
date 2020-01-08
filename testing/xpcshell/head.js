@@ -23,6 +23,7 @@
 
 
 
+
 var _quit = false;
 var _passed = true;
 var _tests_pending = 0;
@@ -1479,6 +1480,11 @@ function run_next_test() {
 try {
   
   if (runningInParent) {
+    let prefsFile = Cc["@mozilla.org/file/local;1"]
+      .createInstance(Ci.nsIFile);
+    prefsFile.initWithPath(_PREFS_FILE);
+    _Services.prefs.readUserPrefsFromFile(prefsFile);
+
     
     
     _Services.prefs.setBoolPref("geo.provider.testing", true);
