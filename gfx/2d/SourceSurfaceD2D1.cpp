@@ -147,6 +147,8 @@ SourceSurfaceD2D1::DrawTargetWillChange()
   DrawTargetD2D1::mVRAMUsageSS += mSize.width * mSize.height * BytesPerPixel(mFormat);
 
   
+  RefPtr<SourceSurfaceD2D1> deathGrip = this;
+  
   MarkIndependent();
 }
 
