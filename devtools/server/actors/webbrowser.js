@@ -531,7 +531,10 @@ BrowserTabList.prototype.receiveMessage = DevToolsUtils.makeInfallible(
 
 BrowserTabList.prototype.handleEvent =
 DevToolsUtils.makeInfallible(function(event) {
-  const browser = event.target.linkedBrowser;
+  
+  
+  
+  const browser = event.target.linkedBrowser || event.target;
   switch (event.type) {
     case "TabOpen":
     case "TabSelect": {
