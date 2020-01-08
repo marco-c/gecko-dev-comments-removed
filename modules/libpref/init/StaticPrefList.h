@@ -1757,6 +1757,29 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
+  "privacy.trackingprotection.annotate_channels",
+   privacy_trackingprotection_annotate_channels,
+  bool, true
+)
+
+
+
+
+
+#ifdef NIGHTLY_BUILD
+# define PREF_VALUE true
+#else
+# define PREF_VALUE false
+#endif
+VARCACHE_PREF(
+  "privacy.trackingprotection.lower_network_priority",
+   privacy_trackingprotection_lower_network_priority,
+  bool, PREF_VALUE
+)
+#undef PREF_VALUE
+
+
+VARCACHE_PREF(
   "privacy.restrict3rdpartystorage.expiration",
    privacy_restrict3rdpartystorage_expiration,
   uint32_t, 2592000 
@@ -1787,6 +1810,16 @@ VARCACHE_PREF(
   "privacy.resistFingerprinting.autoDeclineNoUserInputCanvasPrompts",
    privacy_resistFingerprinting_autoDeclineNoUserInputCanvasPrompts,
   RelaxedAtomicBool, false
+)
+
+
+
+
+
+VARCACHE_PREF(
+  "channelclassifier.allowlist_example",
+   channelclassifier_allowlist_example,
+  bool, false
 )
 
 

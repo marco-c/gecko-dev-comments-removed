@@ -3224,10 +3224,6 @@ class nsContentUtils {
   static bool GetUserIsInteracting();
 
   
-  
-  static bool IsLowerNetworkPriority() { return sLowerNetworkPriority; }
-
-  
   static bool IsTailingEnabled() { return sTailingEnabled; }
 
   
@@ -3472,7 +3468,6 @@ class nsContentUtils {
   static bool sGetBoxQuadsEnabled;
   static bool sSkipCursorMoveForSameValueSet;
   static bool sRequestIdleCallbackEnabled;
-  static bool sLowerNetworkPriority;
   static bool sTailingEnabled;
   static bool sShowInputPlaceholderOnFocus;
   static bool sAutoFocusEnabled;

@@ -1406,8 +1406,6 @@ pref("privacy.trackingprotection.enabled",  false);
 
 pref("privacy.trackingprotection.pbmode.enabled",  true);
 
-pref("privacy.trackingprotection.annotate_channels",  true);
-
 pref("privacy.firstparty.isolate",                        false);
 
 
@@ -1427,13 +1425,6 @@ pref("privacy.reduceTimerPrecision", true);
 pref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 1000);
 
 pref("privacy.resistFingerprinting.reduceTimerPrecision.jitter", true);
-
-
-#ifdef NIGHTLY_BUILD
-pref("privacy.trackingprotection.lower_network_priority", true);
-#else
-pref("privacy.trackingprotection.lower_network_priority", false);
-#endif
 
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.clipboardevents.enabled",   true);

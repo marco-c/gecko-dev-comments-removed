@@ -2613,7 +2613,7 @@ nsresult XMLHttpRequestMainThread::InitiateFetch(
 
   
   
-  if (nsContentUtils::IsLowerNetworkPriority()) {
+  if (StaticPrefs::privacy_trackingprotection_lower_network_priority()) {
     MaybeLowerChannelPriority();
   }
 
