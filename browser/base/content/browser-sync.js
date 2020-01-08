@@ -610,7 +610,9 @@ var gSync = {
         
         
         
-        fxAccounts.commands.fetchMissedRemoteCommands();
+        fxAccounts.commands.fetchMissedRemoteCommands().catch(e => {
+          console.error("Fetching missed remote commands failed.", e);
+        });
         Weave.Service.sync();
       });
     }
