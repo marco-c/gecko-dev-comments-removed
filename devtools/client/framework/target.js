@@ -430,10 +430,6 @@ TabTarget.prototype = {
     return this._url;
   },
 
-  get isRemote() {
-    return !this.isLocalTab;
-  },
-
   get isAddon() {
     return this.isLegacyAddon || this.isWebExtension;
   },
@@ -880,10 +876,6 @@ function WorkerTarget(workerTargetFront) {
 
 
 WorkerTarget.prototype = {
-  get isRemote() {
-    return true;
-  },
-
   get isBrowsingContext() {
     return true;
   },

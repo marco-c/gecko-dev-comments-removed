@@ -52,11 +52,6 @@ WebConsolePanel.prototype = {
         });
       }
 
-      
-      if (!this.target.isRemote) {
-        await this.target.attach();
-      }
-
       const webConsoleUIWindow = iframe.contentWindow.wrappedJSObject;
       const chromeWindow = iframe.ownerDocument.defaultView;
 
