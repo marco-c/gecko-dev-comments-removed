@@ -14,7 +14,6 @@ var EXPORTED_SYMBOLS = ["UrlbarUtils"];
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  BinarySearch: "resource://gre/modules/BinarySearch.jsm",
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   PlacesUIUtils: "resource:///modules/PlacesUIUtils.jsm",
@@ -190,38 +189,5 @@ var UrlbarUtils = {
     mimeStream.addHeader("Content-Type", type);
     mimeStream.setData(dataStream);
     return mimeStream.QueryInterface(Ci.nsIInputStream);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  getTokenMatches(tokens, str) {
-    return tokens.reduce((matches, token) => {
-      let index = 0;
-      while (index >= 0) {
-        index = str.indexOf(token.value, index);
-        if (index >= 0) {
-          let match = [index, token.value.length];
-          let matchesIndex = BinarySearch.insertionIndexOf((a, b) => {
-            return a[0] - b[0];
-          }, matches, match);
-          matches.splice(matchesIndex, 0, match);
-          index += token.value.length;
-        }
-      }
-      return matches;
-    }, []);
   },
 };

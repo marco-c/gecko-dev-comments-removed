@@ -31,12 +31,7 @@ class UrlbarMatch {
 
 
 
-
-
-
-
-
-  constructor(matchType, matchSource, payload, payloadHighlights = {}) {
+  constructor(matchType, matchSource, payload) {
     
     
     if (!Object.values(UrlbarUtils.MATCH_TYPE).includes(matchType)) {
@@ -57,20 +52,6 @@ class UrlbarMatch {
       throw new Error("Invalid match payload");
     }
     this.payload = payload;
-
-    if (!payloadHighlights || (typeof payloadHighlights != "object")) {
-      throw new Error("Invalid match payload highlights");
-    }
-    this.payloadHighlights = payloadHighlights;
-
-    
-    
-    
-    for (let name in payload) {
-      if (!(name in this.payloadHighlights)) {
-        this.payloadHighlights[name] = [];
-      }
-    }
   }
 
   
@@ -78,34 +59,16 @@ class UrlbarMatch {
 
 
   get title() {
-    return this._titleAndHighlights[0];
-  }
-
-  
-
-
-
-  get titleHighlights() {
-    return this._titleAndHighlights[1];
-  }
-
-  
-
-
-
-  get _titleAndHighlights() {
     switch (this.type) {
       case UrlbarUtils.MATCH_TYPE.TAB_SWITCH:
       case UrlbarUtils.MATCH_TYPE.URL:
       case UrlbarUtils.MATCH_TYPE.OMNIBOX:
       case UrlbarUtils.MATCH_TYPE.REMOTE_TAB:
-        return this.payload.title ?
-               [this.payload.title, this.payloadHighlights.title] :
-               ["", []];
+        return this.payload.title || "";
       case UrlbarUtils.MATCH_TYPE.SEARCH:
-        return [this.payload.engine, this.payloadHighlights.engine];
+        return this.payload.engine;
       default:
-        return ["", []];
+        return "";
     }
   }
 
@@ -115,41 +78,5 @@ class UrlbarMatch {
 
   get icon() {
     return this.payload.icon;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static payloadAndSimpleHighlights(tokens, payloadInfo) {
-    let entries = Object.entries(payloadInfo);
-    return [
-      entries.reduce((payload, [name, [val, _]]) => {
-        payload[name] = val;
-        return payload;
-      }, {}),
-      entries.reduce((highlights, [name, [val, shouldHighlight]]) => {
-        if (shouldHighlight) {
-          highlights[name] =
-            !Array.isArray(val) ?
-            UrlbarUtils.getTokenMatches(tokens, val || "") :
-            val.map(subval => UrlbarUtils.getTokenMatches(tokens, subval));
-        }
-        return highlights;
-      }, {}),
-    ];
   }
 }
