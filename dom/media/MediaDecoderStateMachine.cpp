@@ -762,8 +762,12 @@ class MediaDecoderStateMachine::LoopingDecodingState
     if (ShouldDiscardLoopedAudioData()) {
       mMaster->mAudioDataRequest.DisconnectIfExists();
       DiscardLoopedAudioData();
+    }
+    if (HasDecodedLastAudioFrame()) {
       AudioQueue().Finish();
     }
+    mAudioDataRequest.DisconnectIfExists();
+    mAudioSeekRequest.DisconnectIfExists();
     DecodingState::Exit();
   }
 
@@ -888,6 +892,14 @@ class MediaDecoderStateMachine::LoopingDecodingState
     DiscardFramesFromTail(AudioQueue(), [&](int64_t aSampleTime) {
       return aSampleTime > mAudioLoopingOffset.ToMicroseconds();
     });
+  }
+
+  bool HasDecodedLastAudioFrame() const {
+    
+    
+    return mAudioDataRequest.Exists() ||
+           mAudioSeekRequest.Exists() ||
+           ShouldDiscardLoopedAudioData();
   }
 
   media::TimeUnit mAudioLoopingOffset = media::TimeUnit::Zero();
