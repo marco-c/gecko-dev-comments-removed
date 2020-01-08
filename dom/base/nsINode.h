@@ -980,6 +980,8 @@ public:
 
   inline nsINode* GetFlattenedTreeParentNode() const;
 
+  nsINode* GetFlattenedTreeParentNodeNonInline() const;
+
   
 
 
