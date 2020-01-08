@@ -48,7 +48,7 @@ const EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
 
 
   get _consoleActor() {
-    if (this.targetActor.exited) {
+    if (this.targetActor.exited || !this.targetActor.actorID) {
       return null;
     }
     const form = this.targetActor.form();
