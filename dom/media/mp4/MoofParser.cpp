@@ -227,11 +227,11 @@ void MoofParser::ParseTrak(Box& aBox) {
     if (box.IsType("tkhd")) {
       tkhd = Tkhd(box);
     } else if (box.IsType("mdia")) {
-      if (mIsMultitrackParser || tkhd.mTrackId == mTrex.mTrackId) {
+      if (!mTrex.mTrackId || tkhd.mTrackId == mTrex.mTrackId) {
         ParseMdia(box, tkhd);
       }
     } else if (box.IsType("edts") &&
-               (mIsMultitrackParser || tkhd.mTrackId == mTrex.mTrackId)) {
+               (!mTrex.mTrackId || tkhd.mTrackId == mTrex.mTrackId)) {
       mEdts = Edts(box);
     }
   }
@@ -251,8 +251,12 @@ void MoofParser::ParseMvex(Box& aBox) {
   for (Box box = aBox.FirstChild(); box.IsAvailable(); box = box.Next()) {
     if (box.IsType("trex")) {
       Trex trex = Trex(box);
-      if (mIsMultitrackParser || trex.mTrackId == mTrex.mTrackId) {
+      if (!mTrex.mTrackId || trex.mTrackId == mTrex.mTrackId) {
+        auto trackId = mTrex.mTrackId;
         mTrex = trex;
+        
+        
+        mTrex.mTrackId = trackId;
       }
     }
   }
@@ -295,7 +299,7 @@ void MoofParser::ParseStbl(Box& aBox) {
 }
 
 void MoofParser::ParseStsd(Box& aBox) {
-  if (mIsMultitrackParser) {
+  if (mTrex.mTrackId == 0) {
     
     
     

@@ -267,16 +267,12 @@ DDLoggedTypeDeclName(MoofParser);
 
 class MoofParser : public DecoderDoctorLifeLogger<MoofParser> {
  public:
-  MoofParser(ByteStream* aSource, uint32_t aTrackId, bool aIsAudio,
-             bool aIsMultitrackParser = false)
+  MoofParser(ByteStream* aSource, uint32_t aTrackId, bool aIsAudio)
       : mSource(aSource),
         mOffset(0),
         mTrex(aTrackId),
         mIsAudio(aIsAudio),
-        mLastDecodeTime(0),
-        mIsMultitrackParser(aIsMultitrackParser) {
-    
-    
+        mLastDecodeTime(0) {
     
     
     DDLINKCHILD("source", aSource);
@@ -330,7 +326,6 @@ class MoofParser : public DecoderDoctorLifeLogger<MoofParser> {
   nsTArray<MediaByteRange> mMediaRanges;
   bool mIsAudio;
   uint64_t mLastDecodeTime;
-  bool mIsMultitrackParser;
 };
 }  
 
