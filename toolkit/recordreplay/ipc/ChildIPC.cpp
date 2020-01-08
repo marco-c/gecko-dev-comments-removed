@@ -58,26 +58,28 @@ static FileHandle gCheckpointReadFd;
 
 
 
-static IntroductionMessage* gIntroductionMessage;
+static UniquePtr<IntroductionMessage, Message::FreePolicy> gIntroductionMessage;
 
 
 static bool gDebuggerRunsInMiddleman;
 
 
-static MiddlemanCallResponseMessage* gCallResponseMessage;
+static UniquePtr<MiddlemanCallResponseMessage, Message::FreePolicy>
+  gCallResponseMessage;
 
 
 
 static bool gWaitingForCallResponse;
 
 
-static void ChannelMessageHandler(Message* aMsg) {
+static void ChannelMessageHandler(Message::UniquePtr aMsg) {
   MOZ_RELEASE_ASSERT(MainThreadShouldPause() || aMsg->CanBeSentWhileUnpaused());
 
   switch (aMsg->mType) {
     case MessageType::Introduction: {
       MOZ_RELEASE_ASSERT(!gIntroductionMessage);
-      gIntroductionMessage = (IntroductionMessage*)aMsg->Clone();
+      gIntroductionMessage.reset(
+          static_cast<IntroductionMessage*>(aMsg.release()));
       break;
     }
     case MessageType::CreateCheckpoint: {
@@ -177,16 +179,14 @@ static void ChannelMessageHandler(Message* aMsg) {
       MonitorAutoLock lock(*gMonitor);
       MOZ_RELEASE_ASSERT(gWaitingForCallResponse);
       MOZ_RELEASE_ASSERT(!gCallResponseMessage);
-      gCallResponseMessage = (MiddlemanCallResponseMessage*)aMsg;
-      aMsg = nullptr;  
+      gCallResponseMessage.reset(
+          static_cast<MiddlemanCallResponseMessage*>(aMsg.release()));
       gMonitor->NotifyAll();
       break;
     }
     default:
       MOZ_CRASH();
   }
-
-  free(aMsg);
 }
 
 
@@ -322,7 +322,6 @@ void InitRecordingOrReplayingProcess(int* aArgc, char*** aArgv) {
     free(msg);
   }
 
-  free(gIntroductionMessage);
   gIntroductionMessage = nullptr;
 
   
@@ -703,7 +702,6 @@ void SendMiddlemanCallRequest(const char* aInputData, size_t aInputSize,
   aOutputData->append(gCallResponseMessage->BinaryData(),
                       gCallResponseMessage->BinaryDataSize());
 
-  free(gCallResponseMessage);
   gCallResponseMessage = nullptr;
   gWaitingForCallResponse = false;
 
