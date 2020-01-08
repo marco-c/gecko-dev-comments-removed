@@ -104,7 +104,7 @@ private:
                               nsIPrincipal* aPrincipal,
                               const nsAString& aDocumentURI,
                               bool aPrivate,
-                              nsIDOMStorage** aRetval);
+                              Storage** aRetval);
 
   
   typedef nsTHashtable<LocalStorageCacheHashKey> CacheOriginHashtable;
