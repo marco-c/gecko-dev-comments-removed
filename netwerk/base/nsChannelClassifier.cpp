@@ -437,23 +437,6 @@ bool nsChannelClassifier::ShouldEnableTrackingAnnotation() {
     return mTrackingAnnotationEnabled.value();
   }
 
-  
-  if (ShouldEnableTrackingProtection()) {
-    return mTrackingAnnotationEnabled.value();
-  }
-
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsILoadContext> loadContext;
-  NS_QueryNotificationCallbacks(mChannel, loadContext);
-  if (loadContext && loadContext->UseTrackingProtection()) {
-    return mTrackingAnnotationEnabled.value();
-  }
-
   Unused << ShouldEnableTrackingProtectionInternal(
       mChannel, true, mTrackingAnnotationEnabled.ptr());
 
