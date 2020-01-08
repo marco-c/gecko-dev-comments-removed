@@ -50,6 +50,14 @@ function any_initial_value(syntax) {
 
 
 function generate_property(reg) {
+  
+  
+  if (typeof(reg) === 'object') {
+    const permitted = new Set(['name', 'syntax', 'initialValue', 'inherits']);
+    if (!Object.keys(reg).every(k => permitted.has(k)))
+      throw new Error('generate_property: invalid parameter');
+  }
+
   let syntax = typeof(reg) === 'string' ? reg : reg.syntax;
   let initial = typeof(reg.initialValue) === 'undefined' ? any_initial_value(syntax)
                                                          : reg.initialValue;
