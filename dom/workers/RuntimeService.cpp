@@ -896,7 +896,9 @@ InitJSContextForWorker(WorkerPrivate* aWorkerPrivate, JSContext* aWorkerCx)
   
   JS::InitDispatchToEventLoop(aWorkerCx, DispatchToEventLoop, (void*)aWorkerPrivate);
 
-  JS::InitConsumeStreamCallback(aWorkerCx, ConsumeStream);
+  JS::InitConsumeStreamCallback(aWorkerCx,
+                                ConsumeStream,
+                                FetchUtil::ReportJSStreamError);
 
   if (!JS::InitSelfHostedCode(aWorkerCx)) {
     NS_WARNING("Could not init self-hosted code!");

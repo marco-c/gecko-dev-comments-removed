@@ -484,12 +484,12 @@ public:
     }
 
     if (rv == NS_BASE_STREAM_CLOSED) {
-      mConsumer->streamClosed(JS::StreamConsumer::EndOfFile);
+      mConsumer->streamEnd();
       return NS_OK;
     }
 
     if (NS_FAILED(rv)) {
-      mConsumer->streamClosed(JS::StreamConsumer::Error);
+      mConsumer->streamError(size_t(rv));
       return NS_OK;
     }
 
@@ -501,13 +501,13 @@ public:
       return NS_OK;
     }
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      mConsumer->streamClosed(JS::StreamConsumer::Error);
+      mConsumer->streamError(size_t(rv));
       return NS_OK;
     }
 
     rv = aStream->AsyncWait(this, 0, 0, nullptr);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      mConsumer->streamClosed(JS::StreamConsumer::Error);
+      mConsumer->streamError(size_t(rv));
       return NS_OK;
     }
 
@@ -595,7 +595,7 @@ FetchUtil::StreamResponseToJS(JSContext* aCx,
   nsCOMPtr<nsIInputStream> body;
   ir->GetUnfilteredBody(getter_AddRefs(body));
   if (!body) {
-    aConsumer->streamClosed(JS::StreamConsumer::EndOfFile);
+    aConsumer->streamEnd();
     return true;
   }
 
@@ -612,6 +612,22 @@ FetchUtil::StreamResponseToJS(JSContext* aCx,
   }
 
   return true;
+}
+
+
+void
+FetchUtil::ReportJSStreamError(JSContext* aCx, size_t aErrorCode)
+{
+  
+
+  RefPtr<DOMException> e = DOMException::Create(NS_ERROR_DOM_ABORT_ERR);
+
+  JS::Rooted<JS::Value> value(aCx);
+  if (!GetOrCreateDOMReflector(aCx, e, &value)) {
+    return;
+  }
+
+  JS_SetPendingException(aCx, value);
 }
 
 } 

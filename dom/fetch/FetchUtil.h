@@ -67,6 +67,16 @@ public:
                      JS::MimeType aMimeType,
                      JS::StreamConsumer* aConsumer,
                      WorkerPrivate* aMaybeWorker);
+
+  
+
+
+
+
+
+  static void
+  ReportJSStreamError(JSContext* aCx,
+                      size_t aErrorCode);
 };
 
 } 

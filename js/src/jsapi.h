@@ -3607,6 +3607,7 @@ typedef js::Vector<char, 0, js::SystemAllocPolicy> BuildIdCharVector;
 
 
 
+
 class OptimizedEncodingListener
 {
   protected:
@@ -3641,9 +3642,12 @@ class JS_PUBLIC_API(StreamConsumer)
 
     
     
-    enum CloseReason { EndOfFile, Error };
-    virtual void streamClosed(CloseReason reason,
-                              OptimizedEncodingListener* listener = nullptr) = 0;
+    virtual void streamEnd(OptimizedEncodingListener* listener = nullptr) = 0;
+
+    
+    
+    
+    virtual void streamError(size_t errorCode) = 0;
 
     
     
@@ -3662,8 +3666,13 @@ typedef bool
 (*ConsumeStreamCallback)(JSContext* cx, JS::HandleObject obj, MimeType mimeType,
                          StreamConsumer* consumer);
 
+typedef void
+(*ReportStreamErrorCallback)(JSContext* cx, size_t errorCode);
+
 extern JS_PUBLIC_API(void)
-InitConsumeStreamCallback(JSContext* cx, ConsumeStreamCallback callback);
+InitConsumeStreamCallback(JSContext* cx,
+                          ConsumeStreamCallback consume,
+                          ReportStreamErrorCallback report);
 
 
 
