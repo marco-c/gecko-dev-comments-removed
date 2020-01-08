@@ -308,6 +308,10 @@ AnimationFrameRecyclingQueue::AnimationFrameRecyclingQueue(
   
   
   mRecycling = true;
+
+  
+  
+  mFirstFrameRefreshArea = mFirstFrame->GetRect();
 }
 
 void AnimationFrameRecyclingQueue::AddSizeOfExcludingThis(
@@ -382,7 +386,20 @@ void AnimationFrameRecyclingQueue::AdvanceInternal() {
 }
 
 bool AnimationFrameRecyclingQueue::ResetInternal() {
-  mRecycle.clear();
+  
+  
+  
+  
+  
+  
+  for (RefPtr<imgFrame>& frame : mDisplay) {
+    if (frame->ShouldRecycle()) {
+      RecycleEntry newEntry(mFirstFrameRefreshArea);
+      newEntry.mFrame = std::move(frame);
+      mRecycle.push_back(std::move(newEntry));
+    }
+  }
+
   return AnimationFrameDiscardingQueue::ResetInternal();
 }
 
@@ -394,8 +411,6 @@ RawAccessFrameRef AnimationFrameRecyclingQueue::RecycleFrame(
     
     
     
-    MOZ_ASSERT(mSizeKnown);
-    MOZ_ASSERT(!mFirstFrameRefreshArea.IsEmpty());
     for (RecycleEntry& entry : mRecycle) {
       MOZ_ASSERT(mFirstFrameRefreshArea.Contains(entry.mDirtyRect));
       entry.mDirtyRect = mFirstFrameRefreshArea;
@@ -451,11 +466,10 @@ bool AnimationFrameRecyclingQueue::MarkComplete(
   bool continueDecoding =
       AnimationFrameDiscardingQueue::MarkComplete(aFirstFrameRefreshArea);
 
-  MOZ_ASSERT_IF(!mRedecodeError, mFirstFrameRefreshArea.IsEmpty() ||
-                                     mFirstFrameRefreshArea.IsEqualEdges(
-                                         aFirstFrameRefreshArea));
-
-  mFirstFrameRefreshArea = aFirstFrameRefreshArea;
+  
+  
+  mFirstFrameRefreshArea = mRedecodeError ? mFirstFrame->GetRect()
+                                          : aFirstFrameRefreshArea;
   return continueDecoding;
 }
 
