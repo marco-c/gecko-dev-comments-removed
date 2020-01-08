@@ -204,27 +204,13 @@ const WalkerFront = FrontClassWithSpec(walkerSpec, {
 
 
 
-
-
   search: custom(async function(query, options = { }) {
-    let nodeList;
-    let searchType;
     const searchData = this.searchData = this.searchData || { };
-    const selectorOnly = !!options.selectorOnly;
-
-    if (selectorOnly) {
-      searchType = "selector";
-      nodeList = await this.multiFrameQuerySelectorAll(query);
-    } else {
-      searchType = "search";
-      const result = await this._search(query, options);
-      nodeList = result.list;
-    }
+    const result = await this._search(query, options);
+    const nodeList = result.list;
 
     
-    if (searchData.query !== query ||
-        searchData.selectorOnly !== selectorOnly) {
-      searchData.selectorOnly = selectorOnly;
+    if (searchData.query !== query) {
       searchData.query = query;
       searchData.index = -1;
     }
@@ -246,7 +232,7 @@ const WalkerFront = FrontClassWithSpec(walkerSpec, {
     
     const node = await nodeList.item(searchData.index);
     return {
-      type: searchType,
+      type: "search",
       node: node,
       resultsLength: nodeList.length,
       resultsIndex: searchData.index,
