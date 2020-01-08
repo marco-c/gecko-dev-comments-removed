@@ -119,6 +119,7 @@ public:
 
 
 
+
   nsresult InsertTextAsAction(const nsAString& aStringToInsert);
 
   
@@ -229,6 +230,14 @@ protected:
                                             bool aSuppressTransaction) override;
   using EditorBase::RemoveAttributeOrEquivalent;
   using EditorBase::SetAttributeOrEquivalent;
+
+  
+
+
+
+
+
+  nsresult InsertTextAsSubAction(const nsAString& aStringToInsert);
 
   
 
