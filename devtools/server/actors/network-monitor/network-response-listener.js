@@ -6,21 +6,24 @@
 
 "use strict";
 
-const {Cc, Ci} = require("chrome");
+const {Cc, Ci, Cr} = require("chrome");
+const ChromeUtils = require("ChromeUtils");
 const Services = require("Services");
-const flags = require("devtools/shared/flags");
 
 loader.lazyRequireGetter(this, "NetworkHelper",
-  "devtools/shared/webconsole/network-helper");
+                         "devtools/shared/webconsole/network-helper");
 loader.lazyRequireGetter(this, "DevToolsUtils",
-  "devtools/shared/DevToolsUtils");
+                         "devtools/shared/DevToolsUtils");
 loader.lazyRequireGetter(this, "NetworkThrottleManager",
-  "devtools/shared/webconsole/throttle", true);
+                         "devtools/shared/webconsole/throttle", true);
+loader.lazyRequireGetter(this, "CacheEntry",
+                         "devtools/shared/platform/cache-entry", true);
+loader.lazyRequireGetter(this, "matchRequest",
+                         "devtools/server/actors/network-monitor/network-observer", true);
+loader.lazyImporter(this, "NetUtil", "resource://gre/modules/NetUtil.jsm");
 loader.lazyServiceGetter(this, "gActivityDistributor",
-  "@mozilla.org/network/http-activity-distributor;1",
-  "nsIHttpActivityDistributor");
-loader.lazyRequireGetter(this, "NetworkResponseListener",
-  "devtools/server/actors/network-monitor/network-response-listener", true);
+                         "@mozilla.org/network/http-activity-distributor;1",
+                         "nsIHttpActivityDistributor");
 
 
 
@@ -44,57 +47,480 @@ const HTTP_TEMPORARY_REDIRECT = 307;
 
 
 
-function matchRequest(channel, filters) {
+
+
+
+
+
+
+
+function NetworkResponseListener(owner, httpActivity) {
+  this.owner = owner;
+  this.receivedData = "";
+  this.httpActivity = httpActivity;
+  this.bodySize = 0;
   
-  if (!filters.outerWindowID && !filters.window) {
-    return true;
-  }
+  this.truncated = false;
+  
+  
+  const channel = this.httpActivity.channel;
+  this._wrappedNotificationCallbacks = channel.notificationCallbacks;
+  channel.notificationCallbacks = this;
+}
+
+exports.NetworkResponseListener = NetworkResponseListener;
+
+NetworkResponseListener.prototype = {
+  QueryInterface:
+    ChromeUtils.generateQI([Ci.nsIStreamListener, Ci.nsIInputStreamCallback,
+                            Ci.nsIRequestObserver, Ci.nsIInterfaceRequestor]),
 
   
-  
-  
-  
-  
-  if (!flags.testing && channel.loadInfo &&
-      channel.loadInfo.loadingDocument === null &&
-      channel.loadInfo.loadingPrincipal ===
-      Services.scriptSecurityManager.getSystemPrincipal()) {
-    return false;
-  }
 
-  if (filters.window) {
-    
-    
-    let win = NetworkHelper.getWindowForRequest(channel);
-    while (win) {
-      if (win == filters.window) {
-        return true;
-      }
-      if (win.parent == win) {
-        break;
-      }
-      win = win.parent;
+  
+
+
+
+  getInterface(iid) {
+    if (iid.equals(Ci.nsIProgressEventSink)) {
+      return this;
     }
-  }
+    if (this._wrappedNotificationCallbacks) {
+      return this._wrappedNotificationCallbacks.getInterface(iid);
+    }
+    throw Cr.NS_ERROR_NO_INTERFACE;
+  },
 
-  if (filters.outerWindowID) {
-    const topFrame = NetworkHelper.getTopFrameForRequest(channel);
+  
+
+
+
+  _forwardNotification(iid, method, args) {
+    if (!this._wrappedNotificationCallbacks) {
+      return;
+    }
+    try {
+      const impl = this._wrappedNotificationCallbacks.getInterface(iid);
+      impl[method].apply(impl, args);
+    } catch (e) {
+      if (e.result != Cr.NS_ERROR_NO_INTERFACE) {
+        throw e;
+      }
+    }
+  },
+
+  
+
+
+
+
+  _foundOpenResponse: false,
+
+  
+
+
+
+  _wrappedNotificationCallbacks: null,
+
+  
+
+
+  owner: null,
+
+  
+
+
+
+  sink: null,
+
+  
+
+
+  httpActivity: null,
+
+  
+
+
+  receivedData: null,
+
+  
+
+
+  bodySize: null,
+
+  
+
+
+  transferredSize: null,
+
+  
+
+
+  request: null,
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  setAsyncListener: function(stream, listener) {
     
-    if (topFrame) {
+    stream.asyncWait(listener, 0, 0, Services.tm.mainThread);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  onDataAvailable: function(request, context, inputStream, offset, count) {
+    this._findOpenResponse();
+    const data = NetUtil.readInputStreamToString(inputStream, count);
+
+    this.bodySize += count;
+
+    if (!this.httpActivity.discardResponseBody) {
+      const limit = Services.prefs.getIntPref("devtools.netmonitor.responseBodyLimit");
+      if (this.receivedData.length <= limit || limit == 0) {
+        this.receivedData +=
+          NetworkHelper.convertToUnicode(data, request.contentCharset);
+      }
+      if (this.receivedData.length > limit && limit > 0) {
+        this.receivedData = this.receivedData.substr(0, limit);
+        this.truncated = true;
+      }
+    }
+  },
+
+  
+
+
+
+
+
+
+  onStartRequest: function(request) {
+    
+    if (this.request) {
+      return;
+    }
+
+    this.request = request;
+    this._getSecurityInfo();
+    this._findOpenResponse();
+    
+    
+    this.offset = 0;
+
+    const channel = this.request;
+
+    
+    
+    
+    
+    
+    let isOptimizedContent = false;
+    try {
+      if (channel instanceof Ci.nsICacheInfoChannel) {
+        isOptimizedContent = channel.alternativeDataType;
+      }
+    } catch (e) {
+      
+    }
+    if (isOptimizedContent) {
+      let charset;
       try {
-        if (topFrame.outerWindowID == filters.outerWindowID) {
-          return true;
-        }
+        charset = this.request.contentCharset;
       } catch (e) {
         
         
       }
+      if (!charset) {
+        charset = this.httpActivity.charset;
+      }
+      NetworkHelper.loadFromCache(this.httpActivity.url, charset,
+                                  this._onComplete.bind(this));
+      return;
     }
-  }
 
-  return false;
-}
-exports.matchRequest = matchRequest;
+    
+    
+    
+    
+    
+    
+    if (!this.httpActivity.fromServiceWorker &&
+        channel instanceof Ci.nsIEncodedChannel &&
+        channel.contentEncodings &&
+        !channel.applyConversion) {
+      const encodingHeader = channel.getResponseHeader("Content-Encoding");
+      const scs = Cc["@mozilla.org/streamConverters;1"]
+        .getService(Ci.nsIStreamConverterService);
+      const encodings = encodingHeader.split(/\s*\t*,\s*\t*/);
+      let nextListener = this;
+      const acceptedEncodings = ["gzip", "deflate", "br", "x-gzip", "x-deflate"];
+      for (const i in encodings) {
+        
+        const enc = encodings[i].toLowerCase();
+        if (acceptedEncodings.indexOf(enc) > -1) {
+          this.converter = scs.asyncConvertData(enc, "uncompressed",
+                                                nextListener, null);
+          nextListener = this.converter;
+        }
+      }
+      if (this.converter) {
+        this.converter.onStartRequest(this.request, null);
+      }
+    }
+    
+    this.setAsyncListener(this.sink.inputStream, this);
+  },
+
+  
+
+
+  _getSecurityInfo: DevToolsUtils.makeInfallible(function() {
+    
+    
+    
+    
+    if (Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT) {
+      return;
+    }
+
+    
+    
+    
+    
+    const secinfo = this.httpActivity.channel.securityInfo;
+    const info = NetworkHelper.parseSecurityInfo(secinfo, this.httpActivity);
+
+    this.httpActivity.owner.addSecurityInfo(info);
+  }),
+
+  
+
+
+
+  _fetchCacheInformation: function() {
+    const httpActivity = this.httpActivity;
+    CacheEntry.getCacheEntry(this.request, (descriptor) => {
+      httpActivity.owner.addResponseCache({
+        responseCache: descriptor
+      });
+    });
+  },
+
+  
+
+
+
+
+
+  onStopRequest: function() {
+    
+    
+    if (!this.httpActivity) {
+      return;
+    }
+    this._findOpenResponse();
+    this.sink.outputStream.close();
+  },
+
+  
+
+  
+
+
+
+  onProgress: function(request, context, progress, progressMax) {
+    this.transferredSize = progress;
+    
+    
+    this._forwardNotification(Ci.nsIProgressEventSink, "onProgress", arguments);
+  },
+
+  onStatus: function() {
+    this._forwardNotification(Ci.nsIProgressEventSink, "onStatus", arguments);
+  },
+
+  
+
+
+
+
+
+
+
+
+  _findOpenResponse: function() {
+    if (!this.owner || this._foundOpenResponse) {
+      return;
+    }
+
+    const channel = this.httpActivity.channel;
+    const openResponse = this.owner.openResponses.get(channel);
+    if (!openResponse) {
+      return;
+    }
+    this._foundOpenResponse = true;
+    this.owner.openResponses.delete(channel);
+
+    this.httpActivity.owner.addResponseHeaders(openResponse.headers);
+    this.httpActivity.owner.addResponseCookies(openResponse.cookies);
+  },
+
+  
+
+
+
+
+
+  onStreamClose: function() {
+    if (!this.httpActivity) {
+      return;
+    }
+    
+    this.setAsyncListener(this.sink.inputStream, null);
+
+    this._findOpenResponse();
+    if (this.request.fromCache || this.httpActivity.responseStatus == 304) {
+      this._fetchCacheInformation();
+    }
+
+    if (!this.httpActivity.discardResponseBody && this.receivedData.length) {
+      this._onComplete(this.receivedData);
+    } else if (!this.httpActivity.discardResponseBody &&
+               this.httpActivity.responseStatus == 304) {
+      
+      let charset;
+      try {
+        charset = this.request.contentCharset;
+      } catch (e) {
+        
+        
+      }
+      if (!charset) {
+        charset = this.httpActivity.charset;
+      }
+      NetworkHelper.loadFromCache(this.httpActivity.url, charset,
+                                  this._onComplete.bind(this));
+    } else {
+      this._onComplete();
+    }
+  },
+
+  
+
+
+
+
+
+
+
+  _onComplete: function(data) {
+    const response = {
+      mimeType: "",
+      text: data || "",
+    };
+
+    response.size = this.bodySize;
+    response.transferredSize = this.transferredSize + this.httpActivity.headersSize;
+
+    try {
+      response.mimeType = this.request.contentType;
+    } catch (ex) {
+      
+    }
+
+    if (!response.mimeType ||
+        !NetworkHelper.isTextMimeType(response.mimeType)) {
+      response.encoding = "base64";
+      try {
+        response.text = btoa(response.text);
+      } catch (err) {
+        
+      }
+    }
+
+    if (response.mimeType && this.request.contentCharset) {
+      response.mimeType += "; charset=" + this.request.contentCharset;
+    }
+
+    this.receivedData = "";
+
+    this.httpActivity.owner.addResponseContent(
+      response,
+      {
+        discardResponseBody: this.httpActivity.discardResponseBody,
+        truncated: this.truncated
+      }
+    );
+
+    this._wrappedNotificationCallbacks = null;
+    this.httpActivity = null;
+    this.sink = null;
+    this.inputStream = null;
+    this.converter = null;
+    this.request = null;
+    this.owner = null;
+  },
+
+  
+
+
+
+
+
+
+
+  onInputStreamReady: function(stream) {
+    if (!(stream instanceof Ci.nsIAsyncInputStream) || !this.httpActivity) {
+      return;
+    }
+
+    let available = -1;
+    try {
+      
+      available = stream.available();
+    } catch (ex) {
+      
+    }
+
+    if (available != -1) {
+      if (available != 0) {
+        if (this.converter) {
+          this.converter.onDataAvailable(this.request, null, stream,
+                                         this.offset, available);
+        } else {
+          this.onDataAvailable(this.request, null, stream, this.offset,
+                               available);
+        }
+      }
+      this.offset += available;
+      this.setAsyncListener(stream, this);
+    } else {
+      this.onStreamClose();
+      this.offset = 0;
+    }
+  },
+};
 
 
 
