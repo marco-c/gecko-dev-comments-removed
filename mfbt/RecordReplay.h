@@ -482,6 +482,9 @@ public:
 
 
 
+
+#if defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
+
 #define MOZ_MakeRecordReplayWrapperVoid(aName, aFormals, aActuals)      \
   MFBT_API void Internal ##aName aFormals;                              \
   static inline void aName aFormals                                     \
@@ -500,6 +503,19 @@ public:
     }                                                                   \
     return aDefaultValue;                                               \
   }
+
+
+
+
+#else
+
+#define MOZ_MakeRecordReplayWrapperVoid(aName, aFormals, aActuals)      \
+  static inline void aName aFormals {}
+
+#define MOZ_MakeRecordReplayWrapper(aName, aReturnType, aDefaultValue, aFormals, aActuals) \
+  static inline aReturnType aName aFormals { return aDefaultValue; }
+
+#endif
 
 MOZ_MakeRecordReplayWrapperVoid(BeginOrderedAtomicAccess, (), ())
 MOZ_MakeRecordReplayWrapperVoid(EndOrderedAtomicAccess, (), ())
