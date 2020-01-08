@@ -72,7 +72,6 @@ function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
 
     _invokeSubresource: function(callback, test) {
       var invoker = subresourceInvoker[t._scenario.subresource];
-
       
       
       var elementAttributesForDeliveryMethod = {
