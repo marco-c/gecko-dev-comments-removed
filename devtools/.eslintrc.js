@@ -239,9 +239,6 @@ module.exports = {
     
     "camelcase": "error",
     
-    
-    "comma-dangle": "off",
-    
     "complexity": ["error", 53],
     
     

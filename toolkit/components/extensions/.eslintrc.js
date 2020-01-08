@@ -110,10 +110,6 @@ module.exports = {
     "block-scoped-var": "error",
 
     
-    
-    "comma-dangle": ["error", "always-multiline"],
-
-    
     "complexity": "error",
 
     

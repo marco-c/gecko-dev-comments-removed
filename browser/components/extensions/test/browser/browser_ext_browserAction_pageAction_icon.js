@@ -166,6 +166,7 @@ add_task(async function testDetailsObjects() {
           "1": browser.runtime.getURL("data/32.png"),
           "2": browser.runtime.getURL("data/32.png")}},
     ];
+    
 
     
     ImageData.prototype.toJSON = () => "<ImageData>";
