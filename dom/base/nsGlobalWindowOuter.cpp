@@ -6635,7 +6635,6 @@ nsGlobalWindowOuter::SetIsBackground(bool aIsBackground)
     
     if (inner && changed) {
       inner->StopGamepadHaptics();
-      inner->StopVRActivity();
       
       
       inner->ResetVRTelemetry(true);
@@ -6648,7 +6647,6 @@ nsGlobalWindowOuter::SetIsBackground(bool aIsBackground)
     
     inner->ResetVRTelemetry(false);
     inner->SyncGamepadState();
-    inner->StartVRActivity();
   }
 }
 

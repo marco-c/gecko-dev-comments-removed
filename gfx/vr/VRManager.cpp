@@ -166,6 +166,7 @@ VRManager::Shutdown()
 void
 VRManager::Init()
 {
+  StartTasks();
   mInitialized = true;
 }
 
@@ -446,7 +447,6 @@ VRManager::NotifyVRVsync(const uint32_t& aDisplayID)
 void
 VRManager::EnumerateVRDisplays()
 {
-  StartTasks();
   
 
 
