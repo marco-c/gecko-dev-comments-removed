@@ -1376,6 +1376,9 @@ var gBrowserInit = {
       
       gBrowser.docShell;
 
+      
+      gURLBar.removeAttribute("focused");
+
       try {
         gBrowser.swapBrowsersAndCloseOther(gBrowser.selectedTab, tabToAdopt);
       } catch (e) {
