@@ -102,14 +102,48 @@ OSFileConstantsService::Paths
 
 
   nsString libDir;
+  nsString tmpDir;
   nsString profileDir;
   nsString localProfileDir;
+  
+
+
+  nsString homeDir;
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsString userApplicationDataDir;
+
+#if defined(XP_MACOSX)
+  
+
+
+  nsString macUserLibDir;
+#endif 
 
   Paths()
   {
     libDir.SetIsVoid(true);
+    tmpDir.SetIsVoid(true);
     profileDir.SetIsVoid(true);
     localProfileDir.SetIsVoid(true);
+    homeDir.SetIsVoid(true);
+    userApplicationDataDir.SetIsVoid(true);
+
+#if defined(XP_MACOSX)
+    macUserLibDir.SetIsVoid(true);
+#endif 
   }
 };
 
@@ -216,6 +250,17 @@ OSFileConstantsService::InitOSFileConstants()
       return rv;
     }
   }
+
+  
+  
+
+  GetPathToSpecialDir(NS_OS_TEMP_DIR, paths->tmpDir);
+  GetPathToSpecialDir(NS_OS_HOME_DIR, paths->homeDir);
+  GetPathToSpecialDir(XRE_USER_APP_DATA_DIR, paths->userApplicationDataDir);
+
+#if defined(XP_MACOSX)
+  GetPathToSpecialDir(NS_MAC_USER_LIB_DIR, paths->macUserLibDir);
+#endif 
 
   mPaths = std::move(paths);
 
@@ -874,6 +919,10 @@ OSFileConstantsService::DefineOSFileConstants(JSContext* aCx,
     return false;
   }
 
+  if (!SetStringProperty(aCx, objPath, "tmpDir", mPaths->tmpDir)) {
+    return false;
+  }
+
   
   if (!mPaths->profileDir.IsVoid()
     && !SetStringProperty(aCx, objPath, "profileDir", mPaths->profileDir)) {
@@ -885,6 +934,20 @@ OSFileConstantsService::DefineOSFileConstants(JSContext* aCx,
     && !SetStringProperty(aCx, objPath, "localProfileDir", mPaths->localProfileDir)) {
     return false;
   }
+
+  if (!SetStringProperty(aCx, objPath, "homeDir", mPaths->homeDir)) {
+    return false;
+  }
+
+  if (!SetStringProperty(aCx, objPath, "userApplicationDataDir", mPaths->userApplicationDataDir)) {
+    return false;
+  }
+
+#if defined(XP_MACOSX)
+  if (!SetStringProperty(aCx, objPath, "macUserLibDir", mPaths->macUserLibDir)) {
+    return false;
+  }
+#endif 
 
   
   nsAutoString libsqlite3;
