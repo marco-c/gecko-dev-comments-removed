@@ -681,25 +681,9 @@ pub struct CapturedDocument {
 #[derive(Clone, Deserialize, Serialize)]
 pub enum DebugCommand {
     
-    EnableProfiler(bool),
-    
-    EnableTextureCacheDebug(bool),
-    
-    EnableRenderTargetDebug(bool),
-    
-    EnableGpuCacheDebug(bool),
-    
-    EnableGpuTimeQueries(bool),
-    
-    EnableGpuSampleQueries(bool),
+    SetFlags(DebugFlags),
     
     EnableDualSourceBlending(bool),
-    
-    EnableNewFrameIndicator(bool),
-    
-    EnableNewSceneIndicator(bool),
-    
-    EnableShowOverdraw(bool),
     
     FetchDocuments,
     
@@ -724,9 +708,6 @@ pub enum DebugCommand {
     
     
     SimulateLongLowPrioritySceneBuild(u32),
-    
-    
-    SetFlags(DebugFlags),
 }
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -980,18 +961,26 @@ impl RenderApiSender {
 bitflags! {
     #[derive(Default, Deserialize, Serialize)]
     pub struct DebugFlags: u32 {
+        /// Display the frame profiler on screen.
         const PROFILER_DBG          = 1 << 0;
+        /// Display intermediate render targets on screen.
         const RENDER_TARGET_DBG     = 1 << 1;
+        /// Display all texture cache pages on screen.
         const TEXTURE_CACHE_DBG     = 1 << 2;
+        /// Display GPU timing results.
         const GPU_TIME_QUERIES      = 1 << 3;
         const GPU_SAMPLE_QUERIES    = 1 << 4;
         const DISABLE_BATCHING      = 1 << 5;
         const EPOCHS                = 1 << 6;
         const COMPACT_PROFILER      = 1 << 7;
         const ECHO_DRIVER_MESSAGES  = 1 << 8;
+        /// Show an indicator that moves every time a frame is rendered.
         const NEW_FRAME_INDICATOR   = 1 << 9;
+        /// Show an indicator that moves every time a scene is built.
         const NEW_SCENE_INDICATOR   = 1 << 10;
+        /// Show an overlay displaying overdraw amount.
         const SHOW_OVERDRAW         = 1 << 11;
+        /// Display the contents of GPU cache.
         const GPU_CACHE_DBG         = 1 << 12;
         const SLOW_FRAME_INDICATOR  = 1 << 13;
         const TEXTURE_CACHE_DBG_CLEAR_EVICTED = 1 << 14;

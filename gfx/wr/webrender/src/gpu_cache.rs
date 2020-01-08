@@ -24,7 +24,7 @@
 
 
 
-use api::{PremultipliedColorF, TexelRect};
+use api::{DebugFlags, PremultipliedColorF, TexelRect};
 use api::{VoidPtrToSizeFn};
 use euclid::TypedRect;
 use profiler::GpuCacheProfileCounters;
@@ -234,7 +234,6 @@ pub enum GpuCacheUpdate {
 
 pub struct GpuDebugChunk {
     pub address: GpuCacheAddress,
-    pub fresh: bool,
     pub tag: u8,
     pub size: u16,
 }
@@ -542,8 +541,7 @@ pub struct GpuCache {
     
     saved_block_count: usize,
     
-    
-    in_debug: bool,
+    debug_flags: DebugFlags,
 }
 
 impl GpuCache {
@@ -552,7 +550,7 @@ impl GpuCache {
             frame_id: FrameId::INVALID,
             texture: Texture::new(),
             saved_block_count: 0,
-            in_debug: false,
+            debug_flags: DebugFlags::empty(),
         }
     }
 
@@ -653,13 +651,12 @@ impl GpuCache {
         GpuCacheUpdateList {
             frame_id: self.frame_id,
             height: self.texture.height,
-            debug_chunks: if self.in_debug {
+            debug_chunks: if self.debug_flags.contains(DebugFlags::GPU_CACHE_DBG) {
                 self.texture.updates
                     .iter()
                     .map(|update| match *update {
-                        GpuCacheUpdate::Copy { address, block_index, block_count } => GpuDebugChunk {
+                        GpuCacheUpdate::Copy { address, block_index: _, block_count } => GpuDebugChunk {
                             address,
-                            fresh: self.frame_id == self.texture.blocks[block_index].last_access_time,
                             tag: 0, 
                             size: block_count.min(0xFFFF) as u16,
                         }
@@ -674,8 +671,8 @@ impl GpuCache {
     }
 
     
-    pub fn set_debug(&mut self, enable: bool) {
-        self.in_debug = enable;
+    pub fn set_debug_flags(&mut self, flags: DebugFlags) {
+        self.debug_flags = flags;
     }
 
     
