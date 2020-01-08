@@ -571,13 +571,6 @@ public:
   
 
 
-
-
-  virtual uint32_t GetSerial() = 0;
-
-  
-
-
   uint64_t WindowID() const { return mWindowID; }
 
   
@@ -1098,13 +1091,6 @@ public:
 
 
   virtual nsresult SetArguments(nsIArray *aArguments) = 0;
-
-  
-
-
-
-
-  virtual uint32_t GetSerial() = 0;
 
   
 

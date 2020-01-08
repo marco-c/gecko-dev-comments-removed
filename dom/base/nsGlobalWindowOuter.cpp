@@ -842,8 +842,8 @@ nsGlobalWindowOuter::nsGlobalWindowOuter(uint64_t aWindowID)
     mAllowScriptsToClose(false),
     mTopLevelOuterContentWindow(false),
     mHasStorageAccess(false),
-    mSerial(0),
 #ifdef DEBUG
+    mSerial(0),
     mSetOpenerWindowCalled(false),
 #endif
     mCleanedUp(false),
@@ -868,9 +868,9 @@ nsGlobalWindowOuter::nsGlobalWindowOuter(uint64_t aWindowID)
   
   
 
+#ifdef DEBUG
   mSerial = nsContentUtils::InnerOrOuterWindowCreated();
 
-#ifdef DEBUG
   if (!PR_GetEnv("MOZ_QUIET")) {
     printf_stderr("++DOMWINDOW == %d (%p) [pid = %d] [serial = %d] [outer = %p]\n",
                   nsContentUtils::GetCurrentInnerOrOuterWindowCount(),

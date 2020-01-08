@@ -511,10 +511,6 @@ public:
   virtual void DisableOrientationChangeListener() override;
 #endif
 
-  virtual uint32_t GetSerial() override {
-    return mSerial;
-  }
-
   void AddSizeOfIncludingThis(nsWindowSizes& aWindowSizes) const;
 
   void NotifyIdleObserver(IdleObserverHolder* aIdleObserverHolder,
@@ -1427,10 +1423,12 @@ protected:
   uint32_t mSuspendDepth;
   uint32_t mFreezeDepth;
 
+#ifdef DEBUG
+  uint32_t mSerial;
+#endif
+
   
   uint32_t mFocusMethod;
-
-  uint32_t mSerial;
 
   
   uint32_t mIdleRequestCallbackCounter;

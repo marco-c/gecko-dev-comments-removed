@@ -918,8 +918,10 @@ nsGlobalWindowInner::nsGlobalWindowInner(nsGlobalWindowOuter *aOuterWindow)
     mHasSeenGamepadInput(false),
     mSuspendDepth(0),
     mFreezeDepth(0),
-    mFocusMethod(0),
+#ifdef DEBUG
     mSerial(0),
+#endif
+    mFocusMethod(0),
     mIdleRequestCallbackCounter(1),
     mIdleRequestExecutor(nullptr),
     mDialogAbuseCount(0),
@@ -977,8 +979,6 @@ nsGlobalWindowInner::nsGlobalWindowInner(nsGlobalWindowOuter *aOuterWindow)
   
   
 
-  mSerial = nsContentUtils::InnerOrOuterWindowCreated();
-
   static bool sFirstTime = true;
   if (sFirstTime) {
     sFirstTime = false;
@@ -1000,6 +1000,8 @@ nsGlobalWindowInner::nsGlobalWindowInner(nsGlobalWindowOuter *aOuterWindow)
   }
 
 #ifdef DEBUG
+  mSerial = nsContentUtils::InnerOrOuterWindowCreated();
+
   if (!PR_GetEnv("MOZ_QUIET")) {
     printf_stderr("++DOMWINDOW == %d (%p) [pid = %d] [serial = %d] [outer = %p]\n",
                   nsContentUtils::GetCurrentInnerOrOuterWindowCount(),
