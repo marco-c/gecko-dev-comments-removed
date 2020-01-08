@@ -536,7 +536,7 @@ JavaScriptShared::findObjectById(JSContext* cx, const ObjectId& objId)
     
     
     
-    JSAutoRealmAllowCCW ar(cx, scopeForTargetObjects());
+    JSAutoRealm ar(cx, scopeForTargetObjects());
     if (objId.hasXrayWaiver()) {
         {
             JSAutoRealmAllowCCW ar2(cx, obj);

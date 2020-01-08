@@ -663,7 +663,7 @@ private:
     }
     JS::Rooted<JSObject*> global(mContext, mGlobal);
 
-    JSAutoRealmAllowCCW ar(mContext, global);
+    JSAutoRealm ar(mContext, global);
     AutoPACErrorReporter aper(mContext);
     if (!JS::InitRealmStandardClasses(mContext)) {
       return NS_ERROR_FAILURE;
@@ -740,7 +740,7 @@ ProxyAutoConfig::SetupJS()
 
   JSContext* cx = mJSContext->Context();
   JSAutoRequest areq(cx);
-  JSAutoRealmAllowCCW ar(cx, mJSContext->Global());
+  JSAutoRealm ar(cx, mJSContext->Global());
   AutoPACErrorReporter aper(cx);
 
   
@@ -800,7 +800,7 @@ ProxyAutoConfig::GetProxyForURI(const nsCString &aTestURI,
 
   JSContext *cx = mJSContext->Context();
   JSAutoRequest areq(cx);
-  JSAutoRealmAllowCCW ar(cx, mJSContext->Global());
+  JSAutoRealm ar(cx, mJSContext->Global());
   AutoPACErrorReporter aper(cx);
 
   
@@ -867,7 +867,7 @@ ProxyAutoConfig::GC()
   if (!mJSContext || !mJSContext->IsOK())
     return;
 
-  JSAutoRealmAllowCCW ar(mJSContext->Context(), mJSContext->Global());
+  JSAutoRealm ar(mJSContext->Context(), mJSContext->Global());
   JS_MaybeGC(mJSContext->Context());
 }
 
