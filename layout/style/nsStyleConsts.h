@@ -224,6 +224,20 @@ enum class StyleUserFocus : uint8_t {
 };
 
 
+enum class StyleUserSelect : uint8_t {
+  None,
+  Text,
+  Element,
+  Elements,
+  All,
+  Toggle,
+  TriState,
+  Auto,     
+  MozAll,   
+  MozText,  
+};
+
+
 enum class StyleUserInput : uint8_t {
   None,
   Auto,
