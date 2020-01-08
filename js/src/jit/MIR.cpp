@@ -4951,21 +4951,20 @@ MWasmLoadGlobalVar::mightAlias(const MDefinition* def) const
 {
     if (def->isWasmStoreGlobalVar()) {
         const MWasmStoreGlobalVar* store = def->toWasmStoreGlobalVar();
+        return store->globalDataOffset() == globalDataOffset_
+                   ? AliasType::MayAlias : AliasType::NoAlias;
+    }
 
-        
-        
-        if (isIndirect_ && store->isIndirect())
-            return AliasType::MayAlias;
+    return AliasType::MayAlias;
+}
 
+MDefinition::AliasType
+MWasmLoadGlobalCell::mightAlias(const MDefinition* def) const
+{
+    if (def->isWasmStoreGlobalCell()) {
         
-        
-        if (!isIndirect_ && !store->isIndirect())
-            return store->globalDataOffset() == globalDataOffset_
-                      ? AliasType::MayAlias : AliasType::NoAlias;
-
-        
-        
-        return AliasType::NoAlias;
+        if (type() != def->toWasmStoreGlobalCell()->value()->type())
+            return AliasType::NoAlias;
 
         
         
@@ -4973,6 +4972,7 @@ MWasmLoadGlobalVar::mightAlias(const MDefinition* def) const
         
         
     }
+
     return AliasType::MayAlias;
 }
 
@@ -4988,11 +4988,21 @@ MWasmLoadGlobalVar::valueHash() const
 bool
 MWasmLoadGlobalVar::congruentTo(const MDefinition* ins) const
 {
+    if (!ins->isWasmLoadGlobalVar())
+        return false;
+
+    const MWasmLoadGlobalVar* other = ins->toWasmLoadGlobalVar();
+
     
     
-    if (ins->isWasmLoadGlobalVar())
-        return globalDataOffset_ == ins->toWasmLoadGlobalVar()->globalDataOffset_;
-    return false;
+    bool sameOffsets = globalDataOffset_ == other->globalDataOffset_;
+    MOZ_ASSERT_IF(sameOffsets, isConstant_ == other->isConstant_);
+
+    
+    
+    
+    
+    return sameOffsets ;
 }
 
 MDefinition*
@@ -5012,6 +5022,15 @@ MWasmLoadGlobalVar::foldsTo(TempAllocator& alloc)
         return this;
 
     return store->value();
+}
+
+bool
+MWasmLoadGlobalCell::congruentTo(const MDefinition* ins) const
+{
+    if (!ins->isWasmLoadGlobalCell())
+        return false;
+    const MWasmLoadGlobalCell* other = ins->toWasmLoadGlobalCell();
+    return congruentIfOperandsEqual(other);
 }
 
 MDefinition::AliasType

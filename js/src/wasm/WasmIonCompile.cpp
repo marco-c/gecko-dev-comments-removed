@@ -822,8 +822,22 @@ class FunctionCompiler
         if (inDeadCode())
             return nullptr;
 
-        auto* load = MWasmLoadGlobalVar::New(alloc(), type, globalDataOffset, isConst, isIndirect,
-                                             tlsPointer_);
+        MInstruction* load;
+        if (isIndirect) {
+            
+            
+            
+            
+            
+            
+            auto* cellPtr = MWasmLoadGlobalVar::New(alloc(), MIRType::Pointer, globalDataOffset,
+                                                    true, tlsPointer_);
+            curBlock_->add(cellPtr);
+            load = MWasmLoadGlobalCell::New(alloc(), type, cellPtr);
+        } else {
+            
+            load = MWasmLoadGlobalVar::New(alloc(), type, globalDataOffset, isConst, tlsPointer_);
+        }
         curBlock_->add(load);
         return load;
     }
@@ -832,8 +846,20 @@ class FunctionCompiler
     {
         if (inDeadCode())
             return;
-        curBlock_->add(MWasmStoreGlobalVar::New(alloc(), globalDataOffset, isIndirect, v,
-                                                tlsPointer_));
+
+        MInstruction* store;
+        if (isIndirect) {
+            
+            
+            auto* cellPtr = MWasmLoadGlobalVar::New(alloc(), MIRType::Pointer, globalDataOffset,
+                                                    true, tlsPointer_);
+            curBlock_->add(cellPtr);
+            store = MWasmStoreGlobalCell::New(alloc(), v, cellPtr);
+        } else {
+            
+            store = MWasmStoreGlobalVar::New(alloc(), globalDataOffset, v, tlsPointer_);
+        }
+        curBlock_->add(store);
     }
 
     void addInterruptCheck()
