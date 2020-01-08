@@ -19,7 +19,13 @@ FileDescriptorSet::~FileDescriptorSet() {
   if (consumed_descriptor_highwater_ == descriptors_.size())
     return;
 
-  CHROMIUM_LOG(WARNING) << "FileDescriptorSet destroyed with unconsumed descriptors";
+  
+  
+  
+  if (!mozilla::recordreplay::IsMiddleman()) {
+    CHROMIUM_LOG(WARNING) << "FileDescriptorSet destroyed with unconsumed descriptors";
+  }
+
   
   
   
