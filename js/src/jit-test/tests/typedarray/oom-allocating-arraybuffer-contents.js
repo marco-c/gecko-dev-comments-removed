@@ -1,0 +1,8 @@
+
+
+oomTest(function test() {
+  
+  
+  
+  new Uint8ClampedArray(256).toLocaleString('hi');
+});
