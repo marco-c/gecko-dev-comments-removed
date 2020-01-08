@@ -9,7 +9,7 @@ const {
   APPEND_TO_HISTORY,
   CLEAR_HISTORY,
   HISTORY_LOADED,
-  UPDATE_HISTORY_PLACEHOLDER,
+  UPDATE_HISTORY_POSITION,
   HISTORY_BACK,
   HISTORY_FORWARD,
 } = require("devtools/client/webconsole/constants");
@@ -25,12 +25,13 @@ function getInitialState() {
     
     
     
-    placeHolder: undefined,
+    position: undefined,
 
     
     
     
-    index: 0,
+    
+    originalUserValue: null,
   };
 }
 
@@ -42,8 +43,8 @@ function history(state = getInitialState(), action, prefsState) {
       return clearHistory(state);
     case HISTORY_LOADED:
       return historyLoaded(state, action.entries);
-    case UPDATE_HISTORY_PLACEHOLDER:
-      return updatePlaceHolder(state, action.direction, action.expression);
+    case UPDATE_HISTORY_POSITION:
+      return updateHistoryPosition(state, action.direction, action.expression);
   }
   return state;
 }
@@ -55,21 +56,17 @@ function appendToHistory(state, prefsState, expression) {
 
   
   
-  
-  
-  if (expression.trim() != state.entries[state.index - 1]) {
-    state.entries[state.index++] = expression;
-  } else if (state.index < state.entries.length) {
-    state.entries.pop();
+  if (expression.trim() != state.entries[state.entries.length - 1]) {
+    state.entries.push(expression);
   }
-
-  state.placeHolder = state.entries.length;
 
   
   if (state.entries.length > prefsState.historyCount) {
     state.entries.splice(0, state.entries.length - prefsState.historyCount);
-    state.index = state.placeHolder = state.entries.length;
   }
+
+  state.position = state.entries.length;
+  state.originalUserValue = null;
 
   return state;
 }
@@ -91,16 +88,18 @@ function historyLoaded(state, entries) {
   return {
     ...state,
     entries: newEntries,
-    placeHolder: newEntries.length,
-    index: newEntries.length,
+    
+    
+    position: newEntries.length,
+    originalUserValue: null,
   };
 }
 
-function updatePlaceHolder(state, direction, expression) {
+function updateHistoryPosition(state, direction, expression) {
   
   
   if (direction == HISTORY_BACK) {
-    if (state.placeHolder <= 0) {
+    if (state.position <= 0) {
       return state;
     }
 
@@ -109,22 +108,19 @@ function updatePlaceHolder(state, direction, expression) {
 
     
     
-    
-    
-    if (state.placeHolder == state.index) {
-      state.entries = [...state.entries];
-      state.entries[state.index] = expression || "";
+    if (state.position == state.entries.length) {
+      state.originalUserValue = expression || "";
     }
 
-    state.placeHolder--;
+    state.position--;
   } else if (direction == HISTORY_FORWARD) {
-    if (state.placeHolder >= (state.entries.length - 1)) {
+    if (state.position >= state.entries.length) {
       return state;
     }
 
     state = {
       ...state,
-      placeHolder: state.placeHolder + 1,
+      position: state.position + 1,
     };
   }
 
