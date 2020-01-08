@@ -1250,9 +1250,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   bool AudioChannelAgentDelayingPlayback();
 
   
-  void EnsureAutoplayRequested(bool aHandlingUserInput);
-
-  
   
   
   void UpdateAudioTrackSilenceRange(bool aAudible);
@@ -1495,10 +1492,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   bool mAttachingMediaKey = false;
   MozPromiseRequestHolder<SetCDMPromise> mSetCDMRequest;
-  
-  
-  MozPromiseRequestHolder<GenericNonExclusivePromise>
-      mAutoplayPermissionRequest;
 
   
   double mCurrentPlayRangeStart = 1.0;
