@@ -105,7 +105,7 @@ private:
   mozilla::Mutex mMutex;
 
   
-  bool mNSSInitialized;
+
 #ifdef DEBUG
   nsString mTestBuiltInRootHash;
 #endif
@@ -118,6 +118,21 @@ private:
 
   
   static int mInstanceCount;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mNonIdempotentCleanupMustHappen;
 };
 
 inline nsresult

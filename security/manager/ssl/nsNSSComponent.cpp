@@ -202,8 +202,8 @@ nsNSSComponent::nsNSSComponent()
   , mLoadableRootsLoaded(false)
   , mLoadableRootsLoadedResult(NS_ERROR_FAILURE)
   , mMutex("nsNSSComponent.mMutex")
-  , mNSSInitialized(false)
   , mMitmDetecionEnabled(false)
+  , mNonIdempotentCleanupMustHappen(false)
 {
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("nsNSSComponent::ctor\n"));
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
@@ -897,12 +897,6 @@ nsNSSComponent::HasUserCertsInstalled(bool* result)
     return NS_ERROR_NOT_SAME_THREAD;
   }
 
-  MutexAutoLock nsNSSComponentLock(mMutex);
-
-  if (!mNSSInitialized) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-
   *result = false;
   UniqueCERTCertList certList(
     CERT_FindUserCertsByUsage(CERT_GetDefaultCertDB(), certUsageSSLClient,
@@ -937,12 +931,6 @@ nsresult
 nsNSSComponent::CheckForSmartCardChanges()
 {
 #ifndef MOZ_NO_SMART_CARDS
-  MutexAutoLock nsNSSComponentLock(mMutex);
-
-  if (!mNSSInitialized) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-
   
   
   
@@ -1979,7 +1967,7 @@ nsNSSComponent::InitializeNSS()
       return rv;
     }
 
-    mNSSInitialized = true;
+    mNonIdempotentCleanupMustHappen = true;
     return NS_OK;
   }
 }
@@ -1998,7 +1986,7 @@ nsNSSComponent::ShutdownNSS()
   
   
   
-  if (mNSSInitialized) {
+  if (mNonIdempotentCleanupMustHappen) {
     Unused << BlockUntilLoadableRootsLoaded();
 
     
@@ -2007,6 +1995,7 @@ nsNSSComponent::ShutdownNSS()
     
     
     Unused << SSL_ShutdownServerSessionIDCache();
+    mNonIdempotentCleanupMustHappen = false;
   }
 
   ::mozilla::psm::UnloadLoadableRoots();
@@ -2026,8 +2015,6 @@ nsNSSComponent::ShutdownNSS()
   
   
   
-
-  mNSSInitialized = false;
 }
 
 nsresult
@@ -2243,7 +2230,6 @@ nsNSSComponent::IsCertTestBuiltInRoot(CERTCertificate* cert, bool* result)
   }
 
   MutexAutoLock lock(mMutex);
-  MOZ_ASSERT(mNSSInitialized);
   if (mTestBuiltInRootHash.IsEmpty()) {
     return NS_OK;
   }
@@ -2273,7 +2259,6 @@ nsNSSComponent::IsCertContentSigningRoot(CERTCertificate* cert, bool* result)
   }
 
   MutexAutoLock lock(mMutex);
-  MOZ_ASSERT(mNSSInitialized);
 
   if (mContentSigningRootHash.IsEmpty()) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("mContentSigningRootHash is empty"));
@@ -2304,7 +2289,6 @@ NS_IMETHODIMP
 nsNSSComponent::GetDefaultCertVerifier(SharedCertVerifier** result)
 {
   MutexAutoLock lock(mMutex);
-  MOZ_ASSERT(mNSSInitialized);
   NS_ENSURE_ARG_POINTER(result);
   RefPtr<SharedCertVerifier> certVerifier(mDefaultCertVerifier);
   certVerifier.forget(result);
