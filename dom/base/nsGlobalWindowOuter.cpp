@@ -2243,6 +2243,9 @@ nsGlobalWindowOuter::SetOpenerWindow(nsPIDOMWindowOuter* aOpener,
 {
   nsWeakPtr opener = do_GetWeakReference(aOpener);
   if (opener == mOpener) {
+    MOZ_DIAGNOSTIC_ASSERT(
+      !aOpener || (GetBrowsingContext() && GetBrowsingContext()->GetOpener() ==
+                                             aOpener->GetBrowsingContext()));
     return;
   }
 
@@ -2254,6 +2257,13 @@ nsGlobalWindowOuter::SetOpenerWindow(nsPIDOMWindowOuter* aOpener,
 
   mOpener = opener.forget();
   NS_ASSERTION(mOpener || !aOpener, "Opener must support weak references!");
+
+  if (mDocShell && aOpener) {
+    
+    
+    
+    GetBrowsingContext()->SetOpener(aOpener->GetBrowsingContext());
+  }
 
   
   
@@ -7867,4 +7877,10 @@ nsAutoPopupStatePusherInternal::nsAutoPopupStatePusherInternal(PopupControlState
 nsAutoPopupStatePusherInternal::~nsAutoPopupStatePusherInternal()
 {
   nsContentUtils::PopPopupControlState(mOldState);
+}
+
+mozilla::dom::BrowsingContext*
+nsPIDOMWindowOuter::GetBrowsingContext() const
+{
+  return mDocShell ? nsDocShell::Cast(mDocShell)->GetBrowsingContext() : nullptr;
 }

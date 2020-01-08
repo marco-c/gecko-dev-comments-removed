@@ -48,6 +48,7 @@ namespace mozilla {
 class AutoplayPermissionManager;
 namespace dom {
 class AudioContext;
+class BrowsingContext;
 class ClientInfo;
 class ClientState;
 class ContentFrameMessageManager;
@@ -928,6 +929,8 @@ public:
 
 
   inline nsIDocShell *GetDocShell() const;
+
+  mozilla::dom::BrowsingContext* GetBrowsingContext() const;
 
   
 
