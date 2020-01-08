@@ -37,9 +37,6 @@ public:
   bool IsValid() const { return mValid; }
 
   
-  int64_t Index() const { return mIndex; }
-
-  
   
   
   
@@ -87,11 +84,11 @@ public:
     }
 
     
-    int64_t frame_or_sample_num = br.ReadUTF8();
-    if (frame_or_sample_num < 0) {
-      
+    int64_t frameOrSampleNum = br.ReadUTF8();
+    if (frameOrSampleNum < 0) {
       return false;
     }
+    mFrameOrSampleNum = frameOrSampleNum;
 
     
     if (bs_code == 0) {
@@ -104,13 +101,6 @@ public:
     } else {
       mBlocksize = FlacBlocksizeTable[bs_code];
     }
-
-    
-    
-    
-    
-    mIndex = mVariableBlockSize ? frame_or_sample_num
-                                : frame_or_sample_num * mBlocksize;
 
     
     if (sr_code < 12) {
@@ -153,7 +143,10 @@ private:
   };
   AudioInfo mInfo;
   
-  int64_t mIndex = 0;
+  
+  
+  
+  uint64_t mFrameOrSampleNum = 0;
   bool mVariableBlockSize = false;
   uint32_t mBlocksize = 0;;
   uint32_t mSize = 0;
@@ -290,6 +283,7 @@ public:
 
       if (foundOffset >= 0) {
         SetOffset(aResource, foundOffset + offset);
+        SetIndex();
         return true;
       }
 
@@ -318,10 +312,13 @@ public:
 
   void SetEndOffset(int64_t aOffset) { mSize = aOffset - mOffset; }
 
-  void SetEndTime(int64_t aIndex)
+  
+  uint64_t Index() const { return mIndex; }
+
+  void SetEndTime(uint64_t aIndex)
   {
-    if (aIndex > Header().mIndex) {
-      mDuration = aIndex - Header().mIndex;
+    if (aIndex > Index()) {
+      mDuration = aIndex - Index();
     }
   }
 
@@ -333,7 +330,7 @@ public:
       return TimeUnit::Invalid();
     }
     MOZ_ASSERT(Header().Info().mRate, "Invalid Frame. Need Header");
-    return FramesToTimeUnit(Header().mIndex, Header().Info().mRate);
+    return FramesToTimeUnit(Index(), Header().Info().mRate);
   }
 
   TimeUnit Duration() const
@@ -368,6 +365,18 @@ private:
     aResource.Seek(SEEK_SET, mOffset);
   }
 
+  void SetIndex()
+  {
+    
+    MOZ_ASSERT(Header().mBlocksize);
+
+    mIndex = Header().mVariableBlockSize
+      ? Header().mFrameOrSampleNum
+      : Header().mFrameOrSampleNum * Header().mBlocksize;
+  }
+
+  
+  uint64_t mIndex = 0;
   
   int64_t mOffset = 0;
   uint32_t mSize = 0;
@@ -413,7 +422,7 @@ public:
         mFrame.SetEndOffset(aResource.Tell());
       } else if (mNextFrame.IsValid()) {
         mFrame.SetEndOffset(mNextFrame.Offset());
-        mFrame.SetEndTime(mNextFrame.Header().Index());
+        mFrame.SetEndTime(mNextFrame.Index());
       }
     }
 
