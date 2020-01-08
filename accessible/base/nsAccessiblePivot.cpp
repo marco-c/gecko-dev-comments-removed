@@ -455,11 +455,10 @@ nsAccessiblePivot::MovePreviousByText(TextBoundaryType aBoundary,
     
     
     if (tempStart == -1) {
-      if (tempPosition != curPosition)
-        tempStart = text == curPosition->Parent() ?
-                    text->GetChildOffset(curPosition) : text->CharacterCount();
+      if (tempPosition != curPosition && text == curPosition->Parent())
+        tempStart = text->GetChildOffset(curPosition) + nsAccUtils::TextLength(curPosition);
       else
-        tempStart = 0;
+        tempStart = text->CharacterCount();
     }
 
     
