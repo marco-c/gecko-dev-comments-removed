@@ -126,11 +126,6 @@ var TabStateInternal = {
     }
 
     
-    if (!("iconLoadingPrincipal" in tabData)) {
-      tabData.iconLoadingPrincipal = Utils.serializePrincipal(browser.mIconLoadingPrincipal);
-    }
-
-    
     
     
     if (!("userTypedValue" in tabData) && browser.userTypedValue) {
