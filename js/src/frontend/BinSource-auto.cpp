@@ -3860,6 +3860,18 @@ BinASTParser<Tok>::parseInterfaceCallExpression(const size_t start, const BinKin
     BINJS_MOZ_TRY_DECL(arguments, parseArguments());
 
     auto op = JSOP_CALL;
+
+    
+    if (PropertyName* prop = factory_.maybeDottedProperty(callee)) {
+        if (prop == cx_->names().apply) {
+            op = JSOP_FUNAPPLY;
+            if (parseContext_->isFunctionBox())
+                parseContext_->functionBox()->usesApply = true;
+        } else if (prop == cx_->names().call) {
+            op = JSOP_FUNCALL;
+        }
+    }
+
     
     if (factory_.isEvalName(callee, cx_)) {
         if (!parseContext_->varScope().lookupDeclaredNameForAdd(callee->name())
