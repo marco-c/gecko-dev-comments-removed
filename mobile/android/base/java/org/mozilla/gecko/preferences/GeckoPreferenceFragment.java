@@ -201,6 +201,7 @@ public class GeckoPreferenceFragment extends PreferenceFragment {
             
             getPreferenceScreen().removeAll();
             addPreferencesFromResource(getResource());
+            syncPreference = (SyncPreference) findPreference(GeckoPreferences.PREFS_SYNC);
         }
 
         
