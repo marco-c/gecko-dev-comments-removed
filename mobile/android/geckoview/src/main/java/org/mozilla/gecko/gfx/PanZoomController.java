@@ -18,7 +18,7 @@ import android.view.InputDevice;
 
 import java.util.ArrayList;
 
-public class PanZoomController extends JNIObject {
+public final class PanZoomController extends JNIObject {
     private static final String LOGTAG = "GeckoNPZC";
     private static final int EVENT_SOURCE_SCROLL = 0;
     private static final int EVENT_SOURCE_MOTION = 1;
@@ -149,7 +149,7 @@ public class PanZoomController extends JNIObject {
                                 event.getMetaState(), x, y, event.getButtonState());
     }
 
-    protected PanZoomController(final LayerSession session) {
+     PanZoomController(final LayerSession session) {
         mSession = session;
         enableEventQueue();
     }
@@ -270,13 +270,15 @@ public class PanZoomController extends JNIObject {
             flushEventQueue();
         } else if (mAttached) {
             mAttached = false;
-            disposeNative();
             enableEventQueue();
         }
     }
 
-    @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko") @Override 
-    protected native void disposeNative();
+    @Override 
+    protected void disposeNative() {
+        
+        throw new UnsupportedOperationException();
+    }
 
     @WrapForJNI(stubName = "SetIsLongpressEnabled") 
     private native void nativeSetIsLongpressEnabled(boolean isLongpressEnabled);

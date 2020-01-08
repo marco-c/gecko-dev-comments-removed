@@ -1385,7 +1385,10 @@ GeckoEditableSupport::OnRemovedFrom(TextEventDispatcher* aTextEventDispatcher)
 
     if (mIsRemote) {
         
-        OnDetach();
+        OnDetach(NS_NewRunnableFunction("GeckoEditableSupport::OnRemovedFrom",
+                 [editable = java::GeckoEditableChild::GlobalRef(mEditable)] {
+                     DisposeNative(editable);
+                 }));
     }
 }
 

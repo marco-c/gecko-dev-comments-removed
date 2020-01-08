@@ -813,16 +813,13 @@ public class SessionAccessibility {
      final class NativeProvider extends JNIObject {
         @WrapForJNI(calledFrom = "ui")
         private void setAttached(final boolean attached) {
-            if (attached) {
-                mAttached = true;
-            } else if (mAttached) {
-                mAttached = false;
-                disposeNative();
-            }
+            mAttached = attached;
         }
 
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
-        @Override
-        protected native void disposeNative();
+        @Override 
+        protected void disposeNative() {
+            
+            throw new UnsupportedOperationException();
+        }
     }
 }
