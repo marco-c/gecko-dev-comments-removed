@@ -23,6 +23,8 @@
 
 #include "mozilla/ArrayUtils.h"
 
+#include <algorithm>
+
 #include "XULDocument.h"
 
 #include "nsError.h"
@@ -1286,19 +1288,16 @@ XULDocument::OnStreamComplete(nsIStreamLoader* aLoader,
             
             
             
-            
-            JS::SourceBufferHolder srcBuf(mOffThreadCompileStringBuf,
-                                          mOffThreadCompileStringLength,
-                                          JS::SourceBufferHolder::GiveOwnership);
-            mOffThreadCompileStringBuf = nullptr;
-            mOffThreadCompileStringLength = 0;
+            char16_t* units = nullptr;
+            size_t unitsLength = 0;
 
-            rv = mCurrentScriptProto->Compile(srcBuf, uri, 1, this, this);
+            std::swap(units, mOffThreadCompileStringBuf);
+            std::swap(unitsLength, mOffThreadCompileStringLength);
+
+            rv = mCurrentScriptProto->Compile(units, unitsLength,
+                                              JS::SourceBufferHolder::GiveOwnership,
+                                              uri, 1, this, this);
             if (NS_SUCCEEDED(rv) && !mCurrentScriptProto->HasScriptObject()) {
-                
-                
-                
-                MOZ_RELEASE_ASSERT(!srcBuf.ownsChars());
                 mOffThreadCompiling = true;
                 BlockOnload();
                 return NS_OK;

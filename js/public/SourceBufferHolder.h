@@ -25,57 +25,57 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #ifndef js_SourceBufferHolder_h
 #define js_SourceBufferHolder_h
 
 #include "mozilla/Assertions.h" 
+#include "mozilla/Attributes.h" 
+#include "mozilla/Likely.h" 
 
 #include <stddef.h> 
+#include <stdint.h> 
 
 #include "js/Utility.h" 
 
 namespace JS {
 
+namespace detail {
+
+MOZ_COLD extern JS_PUBLIC_API(void)
+ReportSourceTooLong(JSContext* cx);
+
+}
+
 class SourceBufferHolder final
 {
   private:
-    const char16_t* data_;
-    size_t length_;
-    bool ownsChars_;
-
-  private:
-    void fixEmptyBuffer() {
-        
-        
-        static const char16_t NullChar_ = 0;
-        if (!data_) {
-            data_ = &NullChar_;
-            length_ = 0;
-            ownsChars_ = false;
-        }
-    }
+    const char16_t* data_ = nullptr;
+    size_t length_ = 0;
+    bool ownsChars_ = false;
 
   public:
-    enum Ownership {
-      NoOwnership,
-      GiveOwnership
-    };
+    
 
-    SourceBufferHolder(const char16_t* data, size_t dataLength, Ownership ownership)
-      : data_(data),
-        length_(dataLength),
-        ownsChars_(ownership == GiveOwnership)
-    {
-        fixEmptyBuffer();
-    }
 
-    SourceBufferHolder(UniqueTwoByteChars&& data, size_t dataLength)
-      : data_(data.release()),
-        length_(dataLength),
-        ownsChars_(true)
-    {
-        fixEmptyBuffer();
-    }
+
+    SourceBufferHolder() = default;
+
+    
+
+
+
+
+
 
     SourceBufferHolder(SourceBufferHolder&& other)
       : data_(other.data_),
@@ -93,13 +93,69 @@ class SourceBufferHolder final
         }
     }
 
+    enum Ownership {
+        NoOwnership,
+        GiveOwnership
+    };
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    MOZ_IS_CLASS_INIT MOZ_MUST_USE bool
+    init(JSContext* cx, const char16_t* data, size_t dataLength, Ownership ownership) {
+        MOZ_ASSERT_IF(data == nullptr, dataLength == 0);
+
+        static const char16_t nonNullData[] = u"";
+
+        
+        
+        
+        
+        if (data) {
+            data_ = data;
+            length_ = static_cast<uint32_t>(dataLength);
+            ownsChars_ = ownership == GiveOwnership;
+        } else {
+            data_ = nonNullData;
+            length_ = 0;
+            ownsChars_ = false;
+        }
+
+        
+        
+        
+        if (MOZ_UNLIKELY(dataLength > UINT32_MAX)) {
+            detail::ReportSourceTooLong(cx);
+            return false;
+        }
+
+        return true;
+    }
+
+    
+
+
+    MOZ_IS_CLASS_INIT MOZ_MUST_USE
+    bool init(JSContext* cx, UniqueTwoByteChars data, size_t dataLength) {
+        return init(cx, data.release(), dataLength, GiveOwnership);
+    }
+
     
     const char16_t* get() const {
         return data_;
     }
 
     
-    size_t length() const {
+    uint32_t length() const {
         return length_;
     }
 
@@ -112,7 +168,6 @@ class SourceBufferHolder final
     }
 
     
-
 
 
 
