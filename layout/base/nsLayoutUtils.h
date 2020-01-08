@@ -1221,10 +1221,11 @@ public:
 
 
 
-  static void GetAllInFlowRects(nsIFrame* aFrame, nsIFrame* aRelativeTo,
+  static void GetAllInFlowRects(nsIFrame* aFrame, const nsIFrame* aRelativeTo,
                                 RectCallback* aCallback, uint32_t aFlags = 0);
 
-  static void GetAllInFlowRectsAndTexts(nsIFrame* aFrame, nsIFrame* aRelativeTo,
+  static void GetAllInFlowRectsAndTexts(nsIFrame* aFrame,
+                                        const nsIFrame* aRelativeTo,
                                         RectCallback* aCallback,
                                         mozilla::dom::Sequence<nsString>* aTextList,
                                         uint32_t aFlags = 0);
@@ -1239,7 +1240,7 @@ public:
 
 
 
-  static nsRect GetAllInFlowRectsUnion(nsIFrame* aFrame, nsIFrame* aRelativeTo,
+  static nsRect GetAllInFlowRectsUnion(nsIFrame* aFrame, const nsIFrame* aRelativeTo,
                                        uint32_t aFlags = 0);
 
   enum {
