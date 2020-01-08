@@ -172,36 +172,6 @@ function generateAnswer(offer) {
 
 
 
-
-
-
-
-
-
-
-function test_state_change_event(parentTest, pc, expectedStates) {
-  return async_test(t => {
-    pc.onsignalingstatechange = t.step_func(() => {
-      if(expectedStates.length === 0) {
-        return;
-      }
-
-      const newState = pc.signalingState;
-      const expectedState = expectedStates.shift();
-
-      assert_equals(newState, expectedState, 'New signaling state is different from expected.');
-
-      if(expectedStates.length === 0) {
-        t.done();
-      }
-    });
-  }, `Test onsignalingstatechange event for ${parentTest.name}`);
-}
-
-
-
-
-
 function test_never_resolve(testFunc, testName) {
   async_test(t => {
     testFunc(t)
