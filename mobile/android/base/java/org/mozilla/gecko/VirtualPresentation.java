@@ -45,10 +45,10 @@ class VirtualPresentation extends CastPresentation {
 
 
 
-        final GeckoSession session = new GeckoSession();
-        session.getSettings().setString(GeckoSessionSettings.CHROME_URI,
-                PRESENTATION_VIEW_URI + "#" + deviceId);
-        session.getSettings().setInt(GeckoSessionSettings.SCREEN_ID, screenId);
+        final GeckoSession session = new GeckoSession(new GeckoSessionSettings.Builder()
+                .chromeUri(PRESENTATION_VIEW_URI + "#" + deviceId)
+                .screenId(screenId)
+                .build());
 
         
         view = new GeckoView(getContext());

@@ -8,18 +8,196 @@ package org.mozilla.geckoview;
 
 import org.mozilla.gecko.util.GeckoBundle;
 
+import android.app.Service;
+import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.AnyThread;
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
 import java.util.Collection;
 
 @AnyThread
 public final class GeckoSessionSettings implements Parcelable {
+
+    
+
+
+    @AnyThread
+    public static final class Builder {
+        private final GeckoSessionSettings mSettings;
+
+        public Builder() {
+            mSettings = new GeckoSessionSettings();
+        }
+
+        public Builder(final GeckoSessionSettings settings) {
+            mSettings = new GeckoSessionSettings(settings);
+        }
+
+        
+
+
+
+
+        public @NonNull GeckoSessionSettings build() {
+            return new GeckoSessionSettings(mSettings);
+        }
+
+        
+
+
+
+
+
+
+        public @NonNull  Builder chromeUri(final String uri) {
+            mSettings.setChromeUri(uri);
+            return this;
+        }
+
+        
+
+
+
+
+
+        public @NonNull Builder screenId(final int id) {
+            mSettings.setScreenId(id);
+            return this;
+        }
+
+        
+
+
+
+
+
+
+        public @NonNull Builder usePrivateMode(final boolean flag) {
+            mSettings.setUsePrivateMode(flag);
+            return this;
+        }
+
+        
+
+
+
+
+
+
+        public @NonNull Builder useMultiprocess(final boolean flag) {
+            mSettings.setUseMultiprocess(flag);
+            return this;
+        }
+
+        
+
+
+
+
+
+
+        public @NonNull Builder useTrackingProtection(final boolean flag) {
+            mSettings.setUseTrackingProtection(flag);
+            return this;
+        }
+
+        
+
+
+
+
+
+
+
+        public @NonNull Builder userAgentMode(final int mode) {
+            mSettings.setUserAgentMode(mode);
+            return this;
+        }
+
+        
+
+
+
+
+
+
+        public @NonNull Builder userAgentOverride(final @NonNull String agent) {
+            mSettings.setUserAgentOverride(agent);
+            return this;
+        }
+
+        
+
+
+
+
+
+
+
+        public @NonNull Builder displayMode(final int mode) {
+            mSettings.setDisplayMode(mode);
+            return this;
+        }
+
+        
+
+
+
+
+
+
+        public @NonNull Builder suspendMediaWhenInactive(final boolean flag) {
+            mSettings.setSuspendMediaWhenInactive(flag);
+            return this;
+        }
+
+        
+
+
+
+
+
+
+        public @NonNull Builder allowJavascript(final boolean flag) {
+            mSettings.setAllowJavascript(flag);
+            return this;
+        }
+
+        
+
+
+
+
+
+
+        public @NonNull Builder fullAccessibilityTree(final boolean flag) {
+            mSettings.setFullAccessibilityTree(flag);
+            return this;
+        }
+
+
+        
+
+
+
+
+
+
+
+        public @NonNull Builder viewportMode(final int mode) {
+            mSettings.setViewportMode(mode);
+            return this;
+        }
+    }
+
     private static final String LOGTAG = "GeckoSessionSettings";
     private static final boolean DEBUG = false;
 
@@ -59,38 +237,38 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
 
-    public static final Key<String> CHROME_URI =
+    private static final Key<String> CHROME_URI =
         new Key<String>("chromeUri",  true,  null);
     
 
 
 
-    public static final Key<Integer> SCREEN_ID =
+    private static final Key<Integer> SCREEN_ID =
         new Key<Integer>("screenId",  true,  null);
 
     
 
 
-    public static final Key<Boolean> USE_TRACKING_PROTECTION =
+    private static final Key<Boolean> USE_TRACKING_PROTECTION =
         new Key<Boolean>("useTrackingProtection");
     
 
 
 
-    public static final Key<Boolean> USE_PRIVATE_MODE =
+    private static final Key<Boolean> USE_PRIVATE_MODE =
         new Key<Boolean>("usePrivateMode",  true,  null);
 
     
 
 
 
-    public static final Key<Boolean> USE_MULTIPROCESS =
+    private static final Key<Boolean> USE_MULTIPROCESS =
         new Key<Boolean>("useMultiprocess",  true,  null);
 
     
 
 
-    public static final Key<Integer> USER_AGENT_MODE =
+    private static final Key<Integer> USER_AGENT_MODE =
         new Key<Integer>("userAgentMode",  false,
                          Arrays.asList(USER_AGENT_MODE_MOBILE, USER_AGENT_MODE_DESKTOP, USER_AGENT_MODE_VR));
 
@@ -98,20 +276,20 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
 
-    public static final Key<String> USER_AGENT_OVERRIDE =
+    private static final Key<String> USER_AGENT_OVERRIDE =
         new Key<String>("userAgentOverride",  false,  null);
 
     
 
 
-    public static final Key<Integer> VIEWPORT_MODE =
+    private static final Key<Integer> VIEWPORT_MODE =
         new Key<Integer>("viewportMode",  false,
                          Arrays.asList(VIEWPORT_MODE_MOBILE, VIEWPORT_MODE_DESKTOP));
 
     
 
 
-    public static final Key<Integer> DISPLAY_MODE =
+    private static final Key<Integer> DISPLAY_MODE =
         new Key<Integer>("displayMode",  false,
                          Arrays.asList(DISPLAY_MODE_BROWSER, DISPLAY_MODE_MINIMAL_UI,
                                        DISPLAY_MODE_STANDALONE, DISPLAY_MODE_FULLSCREEN));
@@ -119,18 +297,18 @@ public final class GeckoSessionSettings implements Parcelable {
     
 
 
-    public static final Key<Boolean> SUSPEND_MEDIA_WHEN_INACTIVE =
+    private static final Key<Boolean> SUSPEND_MEDIA_WHEN_INACTIVE =
         new Key<Boolean>("suspendMediaWhenInactive",  false,  null);
 
     
 
 
-    public static final Key<Boolean> ALLOW_JAVASCRIPT =
+    private static final Key<Boolean> ALLOW_JAVASCRIPT =
             new Key<Boolean>("allowJavascript",  false,  null);
     
 
 
-    public static final Key<Boolean> FULL_ACCESSIBILITY_TREE =
+    private static final Key<Boolean> FULL_ACCESSIBILITY_TREE =
             new Key<Boolean>("fullAccessibilityTree",  false,  null);
 
     private final GeckoSession mSession;
@@ -168,7 +346,70 @@ public final class GeckoSessionSettings implements Parcelable {
         mBundle.putInt(DISPLAY_MODE.name, DISPLAY_MODE_BROWSER);
     }
 
-    public void setBoolean(final @NonNull Key<Boolean> key, final boolean value) {
+    
+
+
+
+
+
+    public void setUseTrackingProtection(final boolean value) {
+        setBoolean(USE_TRACKING_PROTECTION, value);
+    }
+
+    
+
+
+
+
+
+    private void setUsePrivateMode(final boolean value) {
+        setBoolean(USE_PRIVATE_MODE, value);
+    }
+
+
+    
+
+
+
+
+
+    private void setUseMultiprocess(final boolean value) {
+        setBoolean(USE_MULTIPROCESS, value);
+    }
+
+    
+
+
+
+
+
+    public void setSuspendMediaWhenInactive(final boolean value) {
+        setBoolean(SUSPEND_MEDIA_WHEN_INACTIVE, value);
+    }
+
+
+    
+
+
+
+
+
+    public void setAllowJavascript(final boolean value) {
+        setBoolean(ALLOW_JAVASCRIPT, value);
+    }
+
+
+    
+
+
+
+
+
+    public void setFullAccessibilityTree(final boolean value) {
+        setBoolean(FULL_ACCESSIBILITY_TREE, value);
+    }
+
+    private void setBoolean(final Key<Boolean> key, final boolean value) {
         synchronized (mBundle) {
             if (valueChangedLocked(key, value)) {
                 mBundle.putBoolean(key.name, value);
@@ -177,13 +418,110 @@ public final class GeckoSessionSettings implements Parcelable {
         }
     }
 
-    public boolean getBoolean(final @NonNull Key<Boolean> key) {
+    
+
+
+
+
+    public boolean getUseTrackingProtection() {
+        return getBoolean(USE_TRACKING_PROTECTION);
+    }
+
+    
+
+
+
+
+    public boolean getUsePrivateMode() {
+        return getBoolean(USE_PRIVATE_MODE);
+    }
+
+    
+
+
+
+
+    public boolean getUseMultiprocess() {
+        return getBoolean(USE_MULTIPROCESS);
+    }
+
+    
+
+
+
+
+    public boolean getSuspendMediaWhenInactive() {
+        return getBoolean(SUSPEND_MEDIA_WHEN_INACTIVE);
+    }
+
+    
+
+
+
+
+    public boolean getAllowJavascript() {
+        return getBoolean(ALLOW_JAVASCRIPT);
+    }
+
+    
+
+
+
+
+    public boolean getFullAccessibilityTree() {
+        return getBoolean(FULL_ACCESSIBILITY_TREE);
+    }
+
+    private boolean getBoolean(final Key<Boolean> key) {
         synchronized (mBundle) {
             return mBundle.getBoolean(key.name);
         }
     }
 
-    public void setInt(final @NonNull Key<Integer> key, final int value) {
+    
+
+
+
+
+    private void setScreenId(final int value) {
+        setInt(SCREEN_ID, value);
+    }
+
+
+    
+
+
+
+
+
+    public void setUserAgentMode(final int value) {
+        setInt(USER_AGENT_MODE, value);
+    }
+
+
+    
+
+
+
+
+
+
+    public void setDisplayMode(final int value) {
+        setInt(DISPLAY_MODE, value);
+    }
+
+
+    
+
+
+
+
+
+    public void setViewportMode(final int value) {
+        setInt(VIEWPORT_MODE, value);
+    }
+
+    private void setInt(final Key<Integer> key, final int value) {
         synchronized (mBundle) {
             if (valueChangedLocked(key, value)) {
                 mBundle.putInt(key.name, value);
@@ -192,13 +530,71 @@ public final class GeckoSessionSettings implements Parcelable {
         }
     }
 
-    public int getInt(final @NonNull Key<Integer> key) {
+    
+
+
+
+
+
+
+    public int getScreenId() {
+        return getInt(SCREEN_ID);
+    }
+
+    
+
+
+
+
+    public int getUserAgentMode() {
+        return getInt(USER_AGENT_MODE);
+    }
+
+    
+
+
+
+
+    public int getDisplayMode() {
+        return getInt(DISPLAY_MODE);
+    }
+
+    
+
+
+
+
+    public int getViewportMode() {
+        return getInt(VIEWPORT_MODE);
+    }
+
+    private int getInt(final Key<Integer> key) {
         synchronized (mBundle) {
             return mBundle.getInt(key.name);
         }
     }
 
-    public void setString(final @NonNull Key<String> key, final @Nullable String value) {
+    
+
+
+
+
+
+    private void setChromeUri(final @NonNull String value) {
+        setString(CHROME_URI, value);
+    }
+
+
+    
+
+
+
+
+    public void setUserAgentOverride(final @Nullable String value) {
+        setString(USER_AGENT_OVERRIDE, value);
+    }
+
+    private void setString(final Key<String> key, final String value) {
         synchronized (mBundle) {
             if (valueChangedLocked(key, value)) {
                 mBundle.putString(key.name, value);
@@ -207,13 +603,33 @@ public final class GeckoSessionSettings implements Parcelable {
         }
     }
 
-    public String getString(final @NonNull Key<String> key) {
+    
+
+
+
+
+
+
+    public @Nullable String getChromeUri() {
+        return getString(CHROME_URI);
+    }
+
+    
+
+
+
+
+    public @Nullable String getUserAgentOverride() {
+        return getString(USER_AGENT_OVERRIDE);
+    }
+
+    private String getString(final Key<String> key) {
         synchronized (mBundle) {
             return mBundle.getString(key.name);
         }
     }
 
-     GeckoBundle toBundle() {
+     @NonNull GeckoBundle toBundle() {
         return new GeckoBundle(mBundle);
     }
 
