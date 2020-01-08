@@ -111,6 +111,9 @@ public:
   static void
   StoreUserInteractionFor(nsIPrincipal* aPrincipal);
 
+  static bool
+  HasUserInteraction(nsIPrincipal* aPrincipal);
+
   
   static void
   SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(nsIPrincipal* aPrincipal,
