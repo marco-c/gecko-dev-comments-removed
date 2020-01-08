@@ -358,6 +358,33 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult GetFontColorState(bool* aIsMixed, nsAString& aColor);
+
+  
+
+
+
+
   void SetComposerCommandsUpdater(
          ComposerCommandsUpdater* aComposerCommandsUpdater)
   {
