@@ -186,6 +186,49 @@ XPCOMUtils.defineLazyGetter(this, "gCustomizeMode", function() {
   return new scope.CustomizeMode(window);
 });
 
+XPCOMUtils.defineLazyGetter(this, "gNavToolbox", () => {
+  return document.getElementById("navigator-toolbox");
+});
+
+XPCOMUtils.defineLazyGetter(this, "gURLBar", () => {
+  let element = document.getElementById("urlbar");
+
+  if (!Services.prefs.getBoolPref("browser.urlbar.quantumbar", false)) {
+    return element;
+  }
+
+  
+  element.setAttribute("quantumbar", "true");
+
+  
+  if (element.hasAttribute("focused")) {
+    element.inputField.focus();
+  }
+
+  return new UrlbarInput({
+    textbox: element,
+    panel: document.getElementById("urlbar-results"),
+  });
+});
+
+
+XPCOMUtils.defineLazyGetter(this, "gHighPriorityNotificationBox", () => {
+  return new MozElements.NotificationBox(element => {
+    element.classList.add("global-notificationbox");
+    element.setAttribute("notificationside", "top");
+    document.getElementById("appcontent").prepend(element);
+  });
+});
+
+
+XPCOMUtils.defineLazyGetter(this, "gNotificationBox", () => {
+  return new MozElements.NotificationBox(element => {
+    element.classList.add("global-notificationbox");
+    element.setAttribute("notificationside", "bottom");
+    document.getElementById("browser-bottombox").appendChild(element);
+  });
+});
+
 XPCOMUtils.defineLazyGetter(this, "InlineSpellCheckerUI", function() {
   let tmp = {};
   ChromeUtils.import("resource://gre/modules/InlineSpellChecker.jsm", tmp);
@@ -266,82 +309,10 @@ if (AppConstants.platform != "macosx") {
   var gEditUIVisible = true;
 }
 
-Object.defineProperty(this, "gURLBar", {
-  configurable: true,
-  enumerable: true,
-  get() {
-    delete this.gURLBar;
-
-    let element = document.getElementById("urlbar");
-
-    if (!Services.prefs.getBoolPref("browser.urlbar.quantumbar", false)) {
-      return this.gURLBar = element;
-    }
-
-    
-    element.setAttribute("quantumbar", "true");
-
-    
-    if (element.hasAttribute("focused")) {
-      element.inputField.focus();
-    }
-
-    return this.gURLBar =
-      new UrlbarInput({
-        textbox: element,
-        panel: document.getElementById("urlbar-results"),
-      });
-  },
-});
-
-Object.defineProperty(this, "gNavToolbox", {
-  configurable: true,
-  enumerable: true,
-  get() {
-    delete this.gNavToolbox;
-    return this.gNavToolbox = document.getElementById("navigator-toolbox");
-  },
-});
-
-
-Object.defineProperty(this, "gHighPriorityNotificationBox", {
-  configurable: true,
-  enumerable: true,
-  get() {
-    delete this.gHighPriorityNotificationBox;
-
-    let notificationbox = new MozElements.NotificationBox(element => {
-      element.classList.add("global-notificationbox");
-      element.setAttribute("notificationside", "top");
-      document.getElementById("appcontent").prepend(element);
-    });
-
-    return this.gHighPriorityNotificationBox = notificationbox;
-  },
-});
-
-
-Object.defineProperty(this, "gNotificationBox", {
-  configurable: true,
-  enumerable: true,
-  get() {
-    delete this.gNotificationBox;
-
-    let notificationbox = new MozElements.NotificationBox(element => {
-      element.classList.add("global-notificationbox");
-      element.setAttribute("notificationside", "bottom");
-      document.getElementById("browser-bottombox").appendChild(element);
-    });
-
-    return this.gNotificationBox = notificationbox;
-  },
-});
-
 
 
 
 Object.defineProperty(this, "gFindBar", {
-  configurable: true,
   enumerable: true,
   get() {
     return gBrowser.getCachedFindBar();
@@ -349,7 +320,6 @@ Object.defineProperty(this, "gFindBar", {
 });
 
 Object.defineProperty(this, "gFindBarInitialized", {
-  configurable: true,
   enumerable: true,
   get() {
     return gBrowser.isFindBarInitialized();
@@ -357,7 +327,6 @@ Object.defineProperty(this, "gFindBarInitialized", {
 });
 
 Object.defineProperty(this, "gFindBarPromise", {
-  configurable: true,
   enumerable: true,
   get() {
     return gBrowser.getFindBar();
