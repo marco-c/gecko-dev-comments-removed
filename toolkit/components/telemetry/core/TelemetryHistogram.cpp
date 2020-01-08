@@ -747,25 +747,16 @@ internal_GetHistogramAndSamples(const StaticMutexAutoLock& aLock,
   return NS_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
-
 nsresult
 internal_ReflectHistogramAndSamples(JSContext *cx,
                                     JS::Handle<JSObject*> obj,
                                     const HistogramInfo& aHistogramInfo,
                                     const HistogramSnapshotData& aSnapshot)
 {
-  if (!(JS_DefineProperty(cx, obj, "bucket_count",
-                             aHistogramInfo.bucketCount, JSPROP_ENUMERATE)
+  if (!(JS_DefineProperty(cx, obj, "min",
+                          aHistogramInfo.min, JSPROP_ENUMERATE)
+        && JS_DefineProperty(cx, obj, "max",
+                             aHistogramInfo.max, JSPROP_ENUMERATE)
         && JS_DefineProperty(cx, obj, "histogram_type",
                              aHistogramInfo.histogramType, JSPROP_ENUMERATE)
         && JS_DefineProperty(cx, obj, "sum",
@@ -781,53 +772,28 @@ internal_ReflectHistogramAndSamples(JSContext *cx,
              "The number of buckets and the number of counts must match.");
 
   
-  JS::Rooted<JSObject*> rarray(cx, JS_NewArrayObject(cx, 2));
-  if (rarray == nullptr
-      || !JS_DefineProperty(cx, obj, "range", rarray, JSPROP_ENUMERATE)) {
+  JS::Rooted<JSObject*> rarray(cx, JS_NewArrayObject(cx, count));
+  if (!rarray
+      || !JS_DefineProperty(cx, obj, "ranges", rarray, JSPROP_ENUMERATE)) {
     return NS_ERROR_FAILURE;
   }
+
   
-  if (!JS_DefineElement(cx, rarray, 0, aHistogramInfo.min, JSPROP_ENUMERATE)) {
-    return NS_ERROR_FAILURE;
-  }
-  if (!JS_DefineElement(cx, rarray, 1, aHistogramInfo.max, JSPROP_ENUMERATE)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  JS::Rooted<JSObject*> values(cx, JS_NewPlainObject(cx));
-  if (values == nullptr
-      || !JS_DefineProperty(cx, obj, "values", values, JSPROP_ENUMERATE)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  bool first = true;
-  size_t last = 0;
-
   for (size_t i = 0; i < count; i++) {
-    auto value = aSnapshot.mBucketCounts[i];
-    if (value == 0) {
-      continue;
-    }
-
-    if (i > 0 && first) {
-      auto range = aSnapshot.mBucketRanges[i - 1];
-      if (!JS_DefineProperty(cx, values, nsPrintfCString("%d", range).get(), 0, JSPROP_ENUMERATE)) {
-        return NS_ERROR_FAILURE;
-      }
-    }
-
-    first = false;
-    last = i + 1;
-
-    auto range = aSnapshot.mBucketRanges[i];
-    if (!JS_DefineProperty(cx, values, nsPrintfCString("%d", range).get(), value, JSPROP_ENUMERATE)) {
+    if (!JS_DefineElement(cx, rarray, i, aSnapshot.mBucketRanges[i], JSPROP_ENUMERATE)) {
       return NS_ERROR_FAILURE;
     }
   }
 
-  if (last > 0 && last < count) {
-    auto range = aSnapshot.mBucketRanges[last];
-    if (!JS_DefineProperty(cx, values, nsPrintfCString("%d", range).get(), 0, JSPROP_ENUMERATE)) {
+  JS::Rooted<JSObject*> counts_array(cx, JS_NewArrayObject(cx, count));
+  if (!counts_array
+      || !JS_DefineProperty(cx, obj, "counts", counts_array, JSPROP_ENUMERATE)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  for (size_t i = 0; i < count; i++) {
+    if (!JS_DefineElement(cx, counts_array, i, aSnapshot.mBucketCounts[i], JSPROP_ENUMERATE)) {
       return NS_ERROR_FAILURE;
     }
   }
