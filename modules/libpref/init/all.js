@@ -855,6 +855,9 @@ pref("gfx.font_rendering.graphite.enabled", true);
 pref("gfx.font_rendering.directwrite.use_gdi_table_loading", true);
 #endif
 
+
+pref("gfx.font_ahem_antialias_none", false);
+
 #ifdef XP_WIN
 
 
