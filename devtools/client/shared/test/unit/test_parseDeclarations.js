@@ -403,7 +403,8 @@ const TEST_DATA = [
   
   {
     input: "color: blue \\9 no\\_need",
-    expected: [{name: "color", value: "blue \\9 no_need", priority: "", offsets: [0, 23]}],
+    expected: [{name: "color", value: "blue \\9 no_need",
+                priority: "", offsets: [0, 23]}],
   },
 
   

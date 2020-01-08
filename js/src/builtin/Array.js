@@ -884,7 +884,7 @@ function MakeIteratorWrapper(items, method) {
         
         [std_iterator]: function IteratorMethod() {
             return callContentFunction(method, items);
-        }
+        },
     };
 }
 
