@@ -38,10 +38,8 @@ impl MediaListKey {
 pub trait ToMediaListKey: Sized {
     
     
-    #[allow(unsafe_code)]
     fn to_media_list_key(&self) -> MediaListKey {
-        use std::mem;
-        MediaListKey(unsafe { mem::transmute(self as *const Self) })
+        MediaListKey(self as *const Self as usize)
     }
 }
 
