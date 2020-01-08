@@ -584,32 +584,6 @@ function fetchRegion(ss) {
 
 
 
-function convertGoogleEngines(engineNames) {
-  let overrides = {
-    "google": "google-b-d",
-    "google-2018": "google-b-1-d",
-  };
-
-  let mobileOverrides = {
-    "google": "google-b-m",
-    "google-2018": "google-b-1-m",
-  };
-
-  if (AppConstants.platform == "android") {
-    overrides = mobileOverrides;
-  }
-  for (let engine in overrides) {
-    let index = engineNames.indexOf(engine);
-    if (index > -1) {
-      engineNames[index] = overrides[engine];
-    }
-  }
-  return engineNames;
-}
-
-
-
-
 
 
 
@@ -3539,10 +3513,6 @@ SearchService.prototype = {
       }
 
       engineNames = visibleDefaultEngines.split(",");
-      
-      
-      engineNames = convertGoogleEngines(engineNames);
-
       for (let engineName of engineNames) {
         
         
@@ -3594,21 +3564,6 @@ SearchService.prototype = {
         let index = engineNames.indexOf(engine);
         if (index > -1) {
           engineNames[index] = json.regionOverrides[searchRegion][engine];
-        }
-      }
-    }
-
-    
-    if (AppConstants.MOZ_APP_VERSION_DISPLAY.endsWith("esr")) {
-      let esrOverrides = {
-        "google-b-d": "google-b-e",
-        "google-b-1-d": "google-b-1-e",
-      };
-
-      for (let engine in esrOverrides) {
-        let index = engineNames.indexOf(engine);
-        if (index > -1) {
-          engineNames[index] = esrOverrides[engine];
         }
       }
     }
