@@ -291,6 +291,14 @@ public:
     return mEvent->mFlags.mIsSynthesizedForTests;
   }
 
+  bool IsSafeToBeDispatchedAsynchronously() const
+  {
+    
+    
+    
+    return mEventIsInternal;
+  }
+
   double TimeStamp();
 
   EventTarget* GetOriginalTarget() const;

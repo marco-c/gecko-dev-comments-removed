@@ -94,12 +94,21 @@ public:
     MOZ_ASSERT(mEventMessage != eUnidentifiedEvent);
   }
 
+  
+
+
+
+
+
   AsyncEventDispatcher(dom::EventTarget* aTarget, dom::Event* aEvent)
     : CancelableRunnable("AsyncEventDispatcher")
     , mTarget(aTarget)
     , mEvent(aEvent)
     , mEventMessage(eUnidentifiedEvent)
   {
+    MOZ_ASSERT(aEvent->IsSafeToBeDispatchedAsynchronously(),
+      "The DOM event should be created without Widget*Event and Internal*Event "
+      "because if it needs to be safe to be dispatched asynchronously");
   }
 
   AsyncEventDispatcher(dom::EventTarget* aTarget, WidgetEvent& aEvent);
