@@ -1170,9 +1170,8 @@ class GeneratedFile(ContextDerived):
             '.inc',
             '.py',
             '.rs',
-            'new', 
         )
-        self.required_for_compile = [f for f in self.outputs if f.endswith(suffixes)]
+        self.required_for_compile = [f for f in self.outputs if f.endswith(suffixes) or 'stl_wrappers/' in f]
 
 
 class ChromeManifestEntry(ContextDerived):
