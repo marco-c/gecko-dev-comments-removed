@@ -52,6 +52,7 @@ TransportSecurityInfo::TransportSecurityInfo()
   , mHasIsEVStatus(false)
   , mHaveCipherSuiteAndProtocol(false)
   , mHaveCertErrorBits(false)
+  , mCanceled(false)
   , mMutex("TransportSecurityInfo::mMutex")
   , mSecurityState(nsIWebProgressListener::STATE_IS_INSECURE)
   , mErrorCode(0)
@@ -84,10 +85,21 @@ TransportSecurityInfo::SetOriginAttributes(
   mOriginAttributes = aOriginAttributes;
 }
 
+
+
 NS_IMETHODIMP
 TransportSecurityInfo::GetErrorCode(int32_t* state)
 {
   MutexAutoLock lock(mMutex);
+
+  
+  
+  MOZ_ASSERT(!((mCanceled && mErrorCode == 0) ||
+              (!mCanceled && mErrorCode != 0)));
+  if ((mCanceled && mErrorCode == 0) || (!mCanceled && mErrorCode != 0)) {
+    mCanceled = true;
+    mErrorCode = SEC_ERROR_LIBRARY_FAILURE;
+  }
 
   *state = mErrorCode;
   return NS_OK;
@@ -96,9 +108,20 @@ TransportSecurityInfo::GetErrorCode(int32_t* state)
 void
 TransportSecurityInfo::SetCanceled(PRErrorCode errorCode)
 {
-  MutexAutoLock lock(mMutex);
+  MOZ_ASSERT(errorCode != 0);
+  if (errorCode == 0) {
+    errorCode = SEC_ERROR_LIBRARY_FAILURE;
+  }
 
+  MutexAutoLock lock(mMutex);
   mErrorCode = errorCode;
+  mCanceled = true;
+}
+
+bool
+TransportSecurityInfo::IsCanceled()
+{
+  return mCanceled;
 }
 
 NS_IMETHODIMP
@@ -391,6 +414,11 @@ TransportSecurityInfo::Read(nsIObjectInputStream* aStream)
   }
   
   mErrorCode = static_cast<PRErrorCode>(errorCode);
+  
+  
+  if (mErrorCode != 0) {
+    mCanceled = true;
+  }
 
   
   

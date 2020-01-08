@@ -426,15 +426,15 @@ nsNSSSocketInfo::DriveHandshake()
   if (!mFd) {
     return NS_ERROR_FAILURE;
   }
-  PRErrorCode errorCode = GetErrorCode();
-  if (errorCode) {
+  if (IsCanceled()) {
+    PRErrorCode errorCode = GetErrorCode();
     return GetXPCOMFromNSSError(errorCode);
   }
 
   SECStatus rv = SSL_ForceHandshake(mFd);
 
   if (rv != SECSuccess) {
-    errorCode = PR_GetError();
+    PRErrorCode errorCode = PR_GetError();
     if (errorCode == PR_WOULD_BLOCK_ERROR) {
       return NS_BASE_STREAM_WOULD_BLOCK;
     }
@@ -719,29 +719,6 @@ void nsSSLIOLayerHelpers::Cleanup()
   mInsecureFallbackSites.Clear();
 }
 
-static void
-nsHandleSSLError(nsNSSSocketInfo* socketInfo,
-                 PRErrorCode err)
-{
-  if (!NS_IsMainThread()) {
-    NS_ERROR("nsHandleSSLError called off the main thread");
-    return;
-  }
-
-  
-  
-  
-  
-  if (socketInfo->GetErrorCode()) {
-    
-    
-    return;
-  }
-
-  
-  socketInfo->SetCanceled(err);
-}
-
 namespace {
 
 enum Operation { reading, writing, not_reading_or_writing };
@@ -762,7 +739,7 @@ getSocketInfoIfRunning(PRFileDesc* fd, Operation op)
 
   nsNSSSocketInfo* socketInfo = (nsNSSSocketInfo*) fd->secret;
 
-  if (socketInfo->GetErrorCode()) {
+  if (socketInfo->IsCanceled()) {
     PRErrorCode err = socketInfo->GetErrorCode();
     PR_SetError(err, 0);
     if (op == reading || op == writing) {
@@ -1127,25 +1104,6 @@ nsDumpBuffer(unsigned char* buf, int len)
 #define DEBUG_DUMP_BUFFER(buf,len)
 #endif
 
-class SSLErrorRunnable : public SyncRunnableBase
-{
- public:
-  SSLErrorRunnable(nsNSSSocketInfo* infoObject,
-                   PRErrorCode errorCode)
-    : mInfoObject(infoObject)
-    , mErrorCode(errorCode)
-  {
-  }
-
-  virtual void RunOnTargetThread() override
-  {
-    nsHandleSSLError(mInfoObject, mErrorCode);
-  }
-
-  RefPtr<nsNSSSocketInfo> mInfoObject;
-  const PRErrorCode mErrorCode;
-};
-
 namespace {
 
 uint32_t tlsIntoleranceTelemetryBucket(PRErrorCode err)
@@ -1351,13 +1309,9 @@ checkHandshake(int32_t bytesTransfered, bool wasReading,
     
     
     
-    
-    
     if (!wantRetry && mozilla::psm::IsNSSErrorCode(err) &&
-        !socketInfo->GetErrorCode()) {
-      RefPtr<SyncRunnableBase> runnable(
-        new SSLErrorRunnable(socketInfo, err));
-      (void) runnable->DispatchToMainThreadAndWait();
+        !socketInfo->IsCanceled()) {
+      socketInfo->SetCanceled(err);
     }
   } else if (wasReading && 0 == bytesTransfered) {
     
@@ -1393,7 +1347,7 @@ checkHandshake(int32_t bytesTransfered, bool wasReading,
     
     
     
-    if (originalError != PR_WOULD_BLOCK_ERROR && !socketInfo->GetErrorCode()) {
+    if (originalError != PR_WOULD_BLOCK_ERROR && !socketInfo->IsCanceled()) {
       socketInfo->SetCanceled(originalError);
     }
     PR_SetError(err, 0);
