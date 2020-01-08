@@ -66,30 +66,6 @@ function promiseNewLocationAndHistoryEntryReplaced(browser, snippet) {
   });
 }
 
-function promiseHistoryEntryReplacedNonRemote(browser) {
-  let {listeners} = promiseHistoryEntryReplacedNonRemote;
-
-  return new Promise(resolve => {
-    let shistory = browser.webNavigation.sessionHistory.legacySHistory;
-
-    let listener = {
-      OnHistoryReplaceEntry() {
-        shistory.removeSHistoryListener(this);
-        executeSoon(resolve);
-      },
-
-      QueryInterface: ChromeUtils.generateQI([
-        Ci.nsISHistoryListener,
-        Ci.nsISupportsWeakReference
-      ])
-    };
-
-    shistory.addSHistoryListener(listener);
-    listeners.set(browser, listener);
-  });
-}
-promiseHistoryEntryReplacedNonRemote.listeners = new WeakMap();
-
 add_task(async function dont_save_empty_tabs() {
   let {tab, r} = await createTabWithRandomValue("about:blank");
 
@@ -169,7 +145,9 @@ add_task(async function save_worthy_tabs_nonremote_final() {
   ok(!browser.isRemoteBrowser, "browser is not remote anymore");
 
   
-  await promiseHistoryEntryReplacedNonRemote(browser);
+  
+  
+  await promiseTabRestored(tab);
 
   
   let promise = promiseRemoveTabAndSessionState(tab);
