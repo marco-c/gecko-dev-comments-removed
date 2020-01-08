@@ -1705,13 +1705,15 @@ StartRemoteClient(const char* aDesktopStartupID,
 #if defined(MOZ_ENABLE_DBUS)
   if (!useX11Remote) {
     client = new DBusRemoteClient();
-  } else
+  }
 #endif
-  {
+  if (useX11Remote) {
     client = new XRemoteClient();
   }
 
-  nsresult rv = client->Init();
+  
+  
+  nsresult rv = client ? client->Init() : NS_ERROR_FAILURE;
   if (NS_FAILED(rv))
     return REMOTE_NOT_FOUND;
 
