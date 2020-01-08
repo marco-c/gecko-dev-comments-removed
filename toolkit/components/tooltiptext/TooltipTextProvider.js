@@ -10,10 +10,9 @@ function TooltipTextProvider() {}
 TooltipTextProvider.prototype = {
   getNodeText(tipElement, textOut, directionOut) {
     
+    
     if (!tipElement || !tipElement.ownerDocument ||
-        tipElement.localName == "browser" ||
-        (tipElement.ownerDocument.compareDocumentPosition(tipElement) &
-         tipElement.ownerDocument.DOCUMENT_POSITION_DISCONNECTED)) {
+        tipElement.localName == "browser") {
       return false;
     }
 
@@ -123,7 +122,18 @@ TooltipTextProvider.prototype = {
         usedTipElement = tipElement;
       }
 
-      tipElement = tipElement.parentNode;
+      let parent = tipElement.parentNode;
+      if (defView.ShadowRoot &&
+          parent instanceof defView.ShadowRoot) {
+        tipElement = parent.host;
+      } else {
+        let slot = tipElement.openOrClosedAssignedSlot;
+        if (slot) {
+          tipElement = slot;
+        } else {
+          tipElement = parent;
+        }
+      }
     }
 
     return [titleText, XLinkTitleText, SVGTitleText, XULtooltiptextText].some(function(t) {

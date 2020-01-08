@@ -102,7 +102,13 @@ nsXULTooltipListener::MouseOut(Event* aEvent)
   
   if (currentTooltip) {
     
-    nsCOMPtr<nsINode> targetNode = do_QueryInterface(aEvent->GetTarget());
+    EventTarget* eventTarget = aEvent->GetComposedTarget();
+    nsCOMPtr<nsIContent> content = do_QueryInterface(eventTarget);
+    if (content && !content->GetContainingShadow()) {
+      eventTarget = aEvent->GetTarget();
+    }
+
+    nsCOMPtr<nsINode> targetNode = do_QueryInterface(eventTarget);
 
     nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
     if (pm) {
@@ -173,7 +179,11 @@ nsXULTooltipListener::MouseMove(Event* aEvent)
   
   
   if (!currentTooltip && !mTooltipShownOnce) {
-    nsCOMPtr<EventTarget> eventTarget = aEvent->GetTarget();
+    nsCOMPtr<EventTarget> eventTarget = aEvent->GetComposedTarget();
+    nsCOMPtr<nsIContent> content = do_QueryInterface(eventTarget);
+    if (content && !content->GetContainingShadow()) {
+      eventTarget = aEvent->GetTarget();
+    }
 
     
     
@@ -400,7 +410,7 @@ nsXULTooltipListener::ShowTooltip()
 
   
   if (tooltipNode->GetComposedDoc() &&
-      nsContentUtils::IsChromeDoc(tooltipNode->GetComposedDoc())) {
+      tooltipNode->GetComposedDoc()->IsXULDocument()) {
     
     
     if (sourceNode->IsInComposedDoc()) {
@@ -576,18 +586,6 @@ nsXULTooltipListener::FindTooltip(nsIContent* aTarget, nsIContent** aTooltip)
 
   if (window->Closed()) {
     return NS_OK;
-  }
-
-  
-  if (!document->IsXULDocument()) {
-    nsIPopupContainer* popupContainer =
-      nsIPopupContainer::GetPopupContainer(document->GetShell());
-    NS_ENSURE_STATE(popupContainer);
-    if (RefPtr<Element> tooltip = popupContainer->GetDefaultTooltip()) {
-      tooltip.forget(aTooltip);
-      return NS_OK;
-    }
-    return NS_ERROR_FAILURE;
   }
 
   nsAutoString tooltipText;

@@ -1218,7 +1218,7 @@ ChromeTooltipListener::MouseMove(Event* aMouseEvent)
   if (!mShowingTooltip && !mTooltipShownOnce) {
     nsIEventTarget* target = nullptr;
 
-    nsCOMPtr<EventTarget> eventTarget = aMouseEvent->GetTarget();
+    nsCOMPtr<EventTarget> eventTarget = aMouseEvent->GetComposedTarget();
     if (eventTarget) {
       mPossibleTooltipNode = do_QueryInterface(eventTarget);
       nsCOMPtr<nsIGlobalObject> global(eventTarget->GetOwnerGlobal());
@@ -1317,6 +1317,12 @@ ChromeTooltipListener::sTooltipCallback(nsITimer* aTimer,
 {
   auto self = static_cast<ChromeTooltipListener*>(aChromeTooltipListener);
   if (self && self->mPossibleTooltipNode) {
+    if (!self->mPossibleTooltipNode->IsInComposedDoc()) {
+      
+      self->mPossibleTooltipNode = nullptr;
+      return;
+    }
+
     
     
     
