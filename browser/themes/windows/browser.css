@@ -959,7 +959,7 @@ notification[value="translation"] {
 
 
 
-#TabsToolbar > .titlebar-item {
+#TabsToolbar > .titlebar-buttonbox-container {
   margin-bottom: @navbarTabsShadowSize@;
 }
 
