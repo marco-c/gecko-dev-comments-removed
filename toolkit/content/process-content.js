@@ -7,7 +7,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/RemotePageManager.jsm");
+ChromeUtils.import("resource://gre/modules/remotepagemanager/RemotePageManagerChild.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const gInContentProcess = Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;

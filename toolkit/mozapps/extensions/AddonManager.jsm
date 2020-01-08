@@ -821,7 +821,8 @@ var AddonManagerInternal = {
 
       
       
-      let { RemotePages } = ChromeUtils.import("resource://gre/modules/RemotePageManager.jsm", {});
+      let { RemotePages } =
+        ChromeUtils.import("resource://gre/modules/remotepagemanager/RemotePageManagerParent.jsm", {});
 
       gPluginPageListener = new RemotePages("about:plugins");
       gPluginPageListener.addMessageListener("RequestPlugins", this.requestPlugins);
