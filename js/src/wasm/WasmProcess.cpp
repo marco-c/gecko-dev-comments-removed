@@ -43,6 +43,18 @@ typedef Vector<const CodeSegment*, 0, SystemAllocPolicy> CodeSegmentVector;
 
 Atomic<bool> wasm::CodeExists(false);
 
+
+
+
+
+
+
+
+
+
+static Atomic<size_t> sNumObservers(0);
+static Atomic<bool> sShuttingDown(false);
+
 class ProcessCodeSegmentMap
 {
     
@@ -52,17 +64,6 @@ class ProcessCodeSegmentMap
 
     CodeSegmentVector segments1_;
     CodeSegmentVector segments2_;
-
-    
-    
-    
-    
-    
-    
-    
-    
-
-    Atomic<size_t> observers_;
 
     
     
@@ -110,13 +111,12 @@ class ProcessCodeSegmentMap
         
         
 
-        while (observers_);
+        while (sNumObservers > 0) {}
     }
 
   public:
     ProcessCodeSegmentMap()
       : mutatorsMutex_(mutexid::WasmCodeSegmentMap),
-        observers_(0),
         mutableCodeSegments_(&segments1_),
         readonlyCodeSegments_(&segments2_)
     {
@@ -192,13 +192,6 @@ class ProcessCodeSegmentMap
     }
 
     const CodeSegment* lookup(const void* pc) {
-        auto decObserver = mozilla::MakeScopeExit([&] {
-            observers_--;
-        });
-        observers_++;
-
-        
-        
         const CodeSegmentVector* readonly = readonlyCodeSegments_;
 
         size_t index;
@@ -213,25 +206,44 @@ class ProcessCodeSegmentMap
     }
 };
 
-static ProcessCodeSegmentMap processCodeSegmentMap;
+static ProcessCodeSegmentMap sProcessCodeSegmentMap;
 
 bool
 wasm::RegisterCodeSegment(const CodeSegment* cs)
 {
     MOZ_ASSERT(cs->codeTier().code().initialized());
-    return processCodeSegmentMap.insert(cs);
+    return sProcessCodeSegmentMap.insert(cs);
 }
 
 void
 wasm::UnregisterCodeSegment(const CodeSegment* cs)
 {
-    processCodeSegmentMap.remove(cs);
+    sProcessCodeSegmentMap.remove(cs);
 }
 
 const CodeSegment*
 wasm::LookupCodeSegment(const void* pc, const CodeRange** codeRange )
 {
-    if (const CodeSegment* found = processCodeSegmentMap.lookup(pc)) {
+    
+    
+    
+    if (!CodeExists)
+        return nullptr;
+
+    
+    
+    auto decObserver = mozilla::MakeScopeExit([&] {
+        MOZ_ASSERT(sNumObservers > 0);
+        sNumObservers--;
+    });
+    sNumObservers++;
+
+    
+    
+    if (sShuttingDown)
+        return nullptr;
+
+    if (const CodeSegment* found = sProcessCodeSegmentMap.lookup(pc)) {
         if (codeRange) {
             *codeRange = found->isModule()
                        ? found->asModule()->lookupRange(pc)
@@ -239,8 +251,10 @@ wasm::LookupCodeSegment(const void* pc, const CodeRange** codeRange )
         }
         return found;
     }
+
     if (codeRange)
         *codeRange = nullptr;
+
     return nullptr;
 }
 
@@ -261,6 +275,10 @@ wasm::ShutDown()
     if (JSRuntime::hasLiveRuntimes())
         return;
 
+    
+    sShuttingDown = true;
+    while (sNumObservers > 0) {}
+
     ReleaseBuiltinThunks();
-    processCodeSegmentMap.freeAll();
+    sProcessCodeSegmentMap.freeAll();
 }
