@@ -797,6 +797,8 @@ protected:
     virtual void TraverseExtendedSlots(nsCycleCollectionTraversalCallback&);
     virtual void UnlinkExtendedSlots();
 
+    virtual size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+
     
 
 
@@ -861,6 +863,8 @@ protected:
       }
     }
 
+    
+    
     bool OwnsExtendedSlots() const
     {
       return !(mExtendedSlots & sNonOwningExtendedSlotsFlag);

@@ -174,6 +174,8 @@ public:
     void TraverseExtendedSlots(nsCycleCollectionTraversalCallback&) final;
     void UnlinkExtendedSlots() final;
 
+    size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const final;
+
     
 
 

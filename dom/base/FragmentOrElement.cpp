@@ -674,6 +674,14 @@ nsIContent::nsExtendedContentSlots::nsExtendedContentSlots()
 
 nsIContent::nsExtendedContentSlots::~nsExtendedContentSlots() = default;
 
+size_t
+nsIContent::nsExtendedContentSlots::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
+{
+  
+  
+  return 0;
+}
+
 FragmentOrElement::nsDOMSlots::nsDOMSlots()
   : nsIContent::nsContentSlots(),
     mDataset(nullptr)
@@ -725,8 +733,14 @@ size_t
 FragmentOrElement::nsDOMSlots::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 {
   size_t n = aMallocSizeOf(this);
-  if (OwnsExtendedSlots()) {
-    n += aMallocSizeOf(GetExtendedContentSlots());
+
+  nsExtendedContentSlots* extendedSlots = GetExtendedContentSlots();
+  if (extendedSlots) {
+    if (OwnsExtendedSlots()) {
+      n += aMallocSizeOf(extendedSlots);
+    }
+
+    n += extendedSlots->SizeOfExcludingThis(aMallocSizeOf);
   }
 
   if (mAttributeMap) {
@@ -798,6 +812,49 @@ FragmentOrElement::nsExtendedDOMSlots::TraverseExtendedSlots(nsCycleCollectionTr
   if (mCustomElementData) {
     mCustomElementData->Traverse(aCb);
   }
+}
+
+size_t
+FragmentOrElement::nsExtendedDOMSlots::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
+{
+  size_t n = nsIContent::nsExtendedContentSlots::SizeOfExcludingThis(aMallocSizeOf);
+
+  
+  
+  
+  if (mSMILOverrideStyle) {
+    n += aMallocSizeOf(mSMILOverrideStyle);
+  }
+
+  
+  
+
+  
+  
+  if (mControllers) {
+    n += aMallocSizeOf(mControllers);
+  }
+
+  
+  
+  if (mLabelsList) {
+    n += aMallocSizeOf(mLabelsList);
+  }
+
+  
+  
+
+  
+  
+  if (mXBLBinding) {
+    n += aMallocSizeOf(mXBLBinding);
+  }
+
+  if (mCustomElementData) {
+    n += mCustomElementData->SizeOfIncludingThis(aMallocSizeOf);
+  }
+
+  return n;
 }
 
 FragmentOrElement::FragmentOrElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)

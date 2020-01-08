@@ -42,6 +42,13 @@ public:
     aCb.NoteNativeChild(mDefinition,
       NS_CYCLE_COLLECTION_PARTICIPANT(CustomElementDefinition));
   }
+
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override
+  {
+    
+    return aMallocSizeOf(this);
+  }
+
 private:
   virtual void Invoke(Element* aElement, ErrorResult& aRv) override
   {
@@ -67,6 +74,15 @@ class CustomElementCallbackReaction final : public CustomElementReaction
       mCustomElementCallback->Traverse(aCb);
     }
 
+    size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override
+    {
+      size_t n = aMallocSizeOf(this);
+
+      n += mCustomElementCallback->SizeOfIncludingThis(aMallocSizeOf);
+
+      return n;
+    }
+
   private:
     virtual void Invoke(Element* aElement, ErrorResult& aRv) override
     {
@@ -78,6 +94,16 @@ class CustomElementCallbackReaction final : public CustomElementReaction
 
 
 
+
+size_t
+LifecycleCallbackArgs::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
+{
+  size_t n = name.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+  n += oldValue.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+  n += newValue.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+  n += namespaceURI.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+  return n;
+}
 
 void
 CustomElementCallback::Call()
@@ -111,6 +137,24 @@ CustomElementCallback::Traverse(nsCycleCollectionTraversalCallback& aCb) const
 
   NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(aCb, "mCallback");
   aCb.NoteXPCOMChild(mCallback);
+}
+
+size_t
+CustomElementCallback::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
+{
+  size_t n = aMallocSizeOf(this);
+
+  
+
+  
+  
+  n += aMallocSizeOf(mCallback);
+
+  n += mArgs.SizeOfExcludingThis(aMallocSizeOf);
+
+  
+
+  return n;
 }
 
 CustomElementCallback::CustomElementCallback(Element* aThisObject,
@@ -212,6 +256,20 @@ CustomElementData::Unlink()
 {
   mReactionQueue.Clear();
   mCustomElementDefinition = nullptr;
+}
+
+size_t
+CustomElementData::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
+{
+  size_t n = aMallocSizeOf(this);
+
+  n += mReactionQueue.ShallowSizeOfExcludingThis(aMallocSizeOf);
+
+  for (auto& reaction : mReactionQueue) {
+    n += reaction->SizeOfIncludingThis(aMallocSizeOf);
+  }
+
+  return n;
 }
 
 
