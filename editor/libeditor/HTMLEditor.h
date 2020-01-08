@@ -1568,6 +1568,26 @@ protected:
 
 
 
+
+
+  nsresult
+  DeleteSelectedTableColumnsWithTransaction(int32_t aNumberOfColumnsToDelete);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   nsresult
   DeleteSelectedTableRowsWithTransaction(int32_t aNumberOfRowsToDelete);
 

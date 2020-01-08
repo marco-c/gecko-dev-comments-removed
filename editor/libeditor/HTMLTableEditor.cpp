@@ -1082,7 +1082,19 @@ HTMLEditor::DeleteCellContents(Element* aCell)
 }
 
 NS_IMETHODIMP
-HTMLEditor::DeleteTableColumn(int32_t aNumber)
+HTMLEditor::DeleteTableColumn(int32_t aNumberOfColumnsToDelete)
+{
+  nsresult rv =
+    DeleteSelectedTableColumnsWithTransaction(aNumberOfColumnsToDelete);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
+
+nsresult
+HTMLEditor::DeleteSelectedTableColumnsWithTransaction(
+              int32_t aNumberOfColumnsToDelete)
 {
   RefPtr<Selection> selection;
   RefPtr<Element> table;
@@ -1096,9 +1108,9 @@ HTMLEditor::DeleteTableColumn(int32_t aNumber)
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-  if (NS_WARN_IF(!table) || NS_WARN_IF(!cell)) {
+  if (NS_WARN_IF(!selection) || NS_WARN_IF(!table) || NS_WARN_IF(!cell)) {
     
-    return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
+    return NS_OK;
   }
 
   ErrorResult error;
@@ -1110,10 +1122,12 @@ HTMLEditor::DeleteTableColumn(int32_t aNumber)
   AutoPlaceholderBatch beginBatching(this);
 
   
-  if (!startColIndex && aNumber >= tableSize.mColumnCount) {
-    if (NS_WARN_IF(!selection)) {
-      return NS_ERROR_FAILURE;
-    }
+  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+                                      *this, EditSubAction::eDeleteNode,
+                                      nsIEditor::eNext);
+
+  
+  if (!startColIndex && aNumberOfColumnsToDelete >= tableSize.mColumnCount) {
     rv = DeleteTableElementAndChildrenWithTransaction(*selection, *table);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
@@ -1121,13 +1135,6 @@ HTMLEditor::DeleteTableColumn(int32_t aNumber)
     return NS_OK;
   }
 
-  
-  aNumber = std::min(aNumber, (tableSize.mColumnCount - startColIndex));
-
-  
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::eDeleteNode,
-                                      nsIEditor::eNext);
 
   
   RefPtr<Element> firstSelectedCellElement =
@@ -1136,9 +1143,9 @@ HTMLEditor::DeleteTableColumn(int32_t aNumber)
     return error.StealNSResult();
   }
 
-  uint32_t rangeCount = selection->RangeCount();
+  MOZ_ASSERT(selection->RangeCount());
 
-  if (firstSelectedCellElement && rangeCount > 1) {
+  if (firstSelectedCellElement && selection->RangeCount() > 1) {
     CellIndexes firstCellIndexes(*firstSelectedCellElement, error);
     if (NS_WARN_IF(error.Failed())) {
       return error.StealNSResult();
@@ -1146,49 +1153,59 @@ HTMLEditor::DeleteTableColumn(int32_t aNumber)
     startRowIndex = firstCellIndexes.mRow;
     startColIndex = firstCellIndexes.mColumn;
   }
+
   
   AutoSelectionSetterAfterTableEdit setCaret(*this, table, startRowIndex,
                                              startColIndex, ePreviousRow,
                                              false);
 
-  if (firstSelectedCellElement && rangeCount > 1) {
-    
-    cell = firstSelectedCellElement;
-
-    while (cell) {
-      if (cell != firstSelectedCellElement) {
-        CellIndexes cellIndexes(*cell, error);
-        if (NS_WARN_IF(error.Failed())) {
-          return error.StealNSResult();
-        }
-        startRowIndex = cellIndexes.mRow;
-        startColIndex = cellIndexes.mColumn;
-      }
-      
-      
-      int32_t nextCol = startColIndex;
-      while (nextCol == startColIndex) {
-        cell = GetNextSelectedTableCellElement(*selection, error);
-        if (NS_WARN_IF(error.Failed())) {
-          return error.StealNSResult();
-        }
-        if (!cell) {
-          break;
-        }
-        CellIndexes cellIndexes(*cell, error);
-        if (NS_WARN_IF(error.Failed())) {
-          return error.StealNSResult();
-        }
-        startRowIndex = cellIndexes.mRow;
-        nextCol = cellIndexes.mColumn;
-      }
+  
+  
+  if (!firstSelectedCellElement || selection->RangeCount() == 1) {
+    int32_t columnCountToRemove =
+      std::min(aNumberOfColumnsToDelete,
+               tableSize.mColumnCount - startColIndex);
+    for (int32_t i = 0; i < columnCountToRemove; i++) {
       rv = DeleteColumn(table, startColIndex);
-      NS_ENSURE_SUCCESS(rv, rv);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
-  } else {
-    for (int32_t i = 0; i < aNumber; i++) {
-      rv = DeleteColumn(table, startColIndex);
-      NS_ENSURE_SUCCESS(rv, rv);
+    return NS_OK;
+  }
+
+  
+  
+  for (cell = firstSelectedCellElement; cell;) {
+    if (cell != firstSelectedCellElement) {
+      CellIndexes cellIndexes(*cell, error);
+      if (NS_WARN_IF(error.Failed())) {
+        return error.StealNSResult();
+      }
+      startRowIndex = cellIndexes.mRow;
+      startColIndex = cellIndexes.mColumn;
+    }
+    
+    
+    int32_t nextCol = startColIndex;
+    while (nextCol == startColIndex) {
+      cell = GetNextSelectedTableCellElement(*selection, error);
+      if (NS_WARN_IF(error.Failed())) {
+        return error.StealNSResult();
+      }
+      if (!cell) {
+        break;
+      }
+      CellIndexes cellIndexes(*cell, error);
+      if (NS_WARN_IF(error.Failed())) {
+        return error.StealNSResult();
+      }
+      startRowIndex = cellIndexes.mRow;
+      nextCol = cellIndexes.mColumn;
+    }
+    rv = DeleteColumn(table, startColIndex);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
   }
   return NS_OK;
