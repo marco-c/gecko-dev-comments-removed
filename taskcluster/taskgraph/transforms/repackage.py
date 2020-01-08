@@ -20,14 +20,14 @@ from taskgraph.util.schema import (
 from taskgraph.util.taskcluster import get_artifact_prefix
 from taskgraph.util.platforms import archive_format, executable_extension
 from taskgraph.util.workertypes import worker_type_implementation
-from taskgraph.transforms.task import task_description_schema
+from taskgraph.transforms.job import job_description_schema
 from voluptuous import Any, Required, Optional
 
 transforms = TransformSequence()
 
 
 
-task_description_schema = {str(k): v for k, v in task_description_schema.schema.iteritems()}
+job_description_schema = {str(k): v for k, v in job_description_schema.schema.iteritems()}
 
 
 
@@ -45,7 +45,7 @@ packaging_description_schema = schema.extend({
     
     
     
-    Optional('treeherder'): task_description_schema['treeherder'],
+    Optional('treeherder'): job_description_schema['treeherder'],
 
     
     Optional('locale'): basestring,
@@ -54,11 +54,14 @@ packaging_description_schema = schema.extend({
     Optional('routes'): [basestring],
 
     
-    Optional('extra'): task_description_schema['extra'],
+    Optional('extra'): job_description_schema['extra'],
 
     
-    Optional('shipping-product'): task_description_schema['shipping-product'],
-    Optional('shipping-phase'): task_description_schema['shipping-phase'],
+    Optional('fetches'): job_description_schema['fetches'],
+
+    
+    Optional('shipping-product'): job_description_schema['shipping-product'],
+    Optional('shipping-phase'): job_description_schema['shipping-phase'],
 
     Required('package-formats'): optionally_keyed_by('build-platform', 'project', [basestring]),
 
@@ -104,6 +107,18 @@ PACKAGE_FORMATS = {
         },
         'output': "target.bz2.complete.mar",
     },
+    'msi': {
+        'args': ['msi', '--wsx', '{wsx-stub}',
+                 '--version', '{version_display}',
+                 '--locale', '{_locale}',
+                 '--arch', '{_arch}',
+                 '--candle', '{fetch-dir}/candle.exe',
+                 '--light', '{fetch-dir}/light.exe'],
+        'inputs': {
+            'setupexe': 'target.installer.exe',
+        },
+        'output': 'target.installer.msi',
+    },
     'dmg': {
         'args': ['dmg'],
         'inputs': {
@@ -136,6 +151,10 @@ PACKAGE_FORMATS = {
         'output': 'target.stub-installer.exe',
     },
 }
+MOZHARNESS_EXPANSIONS = [
+    'package-name', 'installer-tag', 'fetch-dir',
+    'stub-installer-tag', 'sfx-stub', 'wsx-stub',
+]
 
 
 @transforms.add
@@ -192,7 +211,8 @@ def make_job_description(config, jobs):
     for job in jobs:
         dep_job = job['primary-dependency']
         dependencies = {dep_job.attributes.get('kind'): dep_job.label}
-        if len(dep_job.dependencies) > 1:
+        if len(dep_job.dependencies) > 1 and not config.kind == 'repackage-msi':
+            
             raise NotImplementedError(
                 "Can't repackage a signing task with multiple dependencies")
         signing_dependencies = dep_job.dependencies
@@ -217,14 +237,22 @@ def make_job_description(config, jobs):
         treeherder.setdefault('platform', "{}/opt".format(dep_th_platform))
         treeherder.setdefault('tier', 1)
         treeherder.setdefault('kind', 'build')
+
+        if config.kind == 'repackage-msi':
+            treeherder['symbol'] = 'MSI({})'.format(locale or 'N')
+
         build_task = None
         signing_task = None
+        repackage_signing_task = None
         for dependency in dependencies.keys():
-            if 'signing' in dependency:
+            if 'repackage-signing' in dependency:
+                repackage_signing_task = dependency
+            elif 'signing' in dependency:
                 signing_task = dependency
             else:
                 build_task = dependency
 
+        _fetch_subst_locale = 'en-US'
         if locale:
             
             
@@ -233,6 +261,7 @@ def make_job_description(config, jobs):
             dependencies['build'] = "build-{}/opt".format(
                 dependencies[build_task][13:dependencies[build_task].rfind('-')])
             build_task = 'build'
+            _fetch_subst_locale = locale
 
         level = config.params['level']
         build_platform = attributes['build_platform']
@@ -241,18 +270,30 @@ def make_job_description(config, jobs):
 
         repackage_config = []
         package_formats = job.get('package-formats')
-        if use_stub:
+        if use_stub and not repackage_signing_task:
+            
             package_formats += ['installer-stub']
+        _fetch_subst_arch = 'x86' if 'win32' in build_platform else 'x64'
         for format in package_formats:
             command = copy.deepcopy(PACKAGE_FORMATS[format])
             substs = {
                 'archive_format': archive_format(build_platform),
                 'executable_extension': executable_extension(build_platform),
+                '_locale': _fetch_subst_locale,
+                '_arch': _fetch_subst_arch,
+                'version_display': config.params['version'],
             }
+            
+            
+            substs.update({name: '{{{}}}'.format(name)
+                           for name in MOZHARNESS_EXPANSIONS})
             command['inputs'] = {
                 name: filename.format(**substs)
                 for name, filename in command['inputs'].items()
             }
+            command['args'] = [
+                arg.format(**substs) for arg in command['args']
+            ]
             repackage_config.append(command)
 
         run = job.get('mozharness', {})
@@ -320,8 +361,10 @@ def make_job_description(config, jobs):
             'worker': worker,
             'run': run,
             'fetches': _generate_download_config(dep_job, build_platform, build_task,
-                                                 signing_task, locale=locale,
-                                                 project=config.params["project"]),
+                                                 signing_task, repackage_signing_task,
+                                                 locale=locale,
+                                                 project=config.params["project"],
+                                                 existing_fetch=job.get('fetches')),
             'release-artifacts': [artifact['name'] for artifact in worker['artifacts']]
         }
 
@@ -334,12 +377,22 @@ def make_job_description(config, jobs):
         yield task
 
 
-def _generate_download_config(task, build_platform, build_task, signing_task, locale=None,
-                              project=None):
+def _generate_download_config(task, build_platform, build_task, signing_task,
+                              repackage_signing_task, locale=None, project=None,
+                              existing_fetch=None):
     locale_path = '{}/'.format(locale) if locale else ''
+    fetch = {}
+    if existing_fetch:
+        fetch.update(existing_fetch)
 
-    if build_platform.startswith('linux') or build_platform.startswith('macosx'):
-        return {
+    if repackage_signing_task and build_platform.startswith('win'):
+        fetch.update({
+            repackage_signing_task: [
+                '{}target.installer.exe'.format(locale_path)
+            ],
+        })
+    elif build_platform.startswith('linux') or build_platform.startswith('macosx'):
+        fetch.update({
             signing_task: [
                 {
                     'artifact': '{}target{}'.format(locale_path, archive_format(build_platform)),
@@ -349,9 +402,9 @@ def _generate_download_config(task, build_platform, build_task, signing_task, lo
             build_task: [
                 'host/bin/mar',
             ],
-        }
+        })
     elif build_platform.startswith('win'):
-        fetch_config = {
+        fetch.update({
             signing_task: [
                 {
                     'artifact': '{}target.zip'.format(locale_path),
@@ -362,13 +415,14 @@ def _generate_download_config(task, build_platform, build_task, signing_task, lo
             build_task: [
                 'host/bin/mar.exe',
             ],
-        }
+        })
 
         use_stub = task.attributes.get('stub-installer')
         if use_stub:
-            fetch_config[signing_task].append('{}setup-stub.exe'.format(locale_path))
+            fetch[signing_task].append('{}setup-stub.exe'.format(locale_path))
 
-        return fetch_config
+    if fetch:
+        return fetch
 
     raise NotImplementedError('Unsupported build_platform: "{}"'.format(build_platform))
 
