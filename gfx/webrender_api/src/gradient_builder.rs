@@ -36,6 +36,11 @@ impl GradientBuilder {
     }
 
     
+    pub fn into_stops(self) -> Vec<GradientStop> {
+        self.stops
+    }
+
+    
     pub fn gradient(
         &mut self,
         start_point: LayoutPoint,
