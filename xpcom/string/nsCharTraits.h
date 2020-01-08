@@ -9,6 +9,7 @@
 
 #include <ctype.h> 
 #include <string.h> 
+#include "mozilla/MemoryChecking.h"
 
 
 
@@ -146,6 +147,14 @@ struct nsCharTraits<char16_t>
   {
     return static_cast<char_type*>(memcpy(aStr1, aStr2,
                                           aN * sizeof(char_type)));
+  }
+
+  static void uninitialize(char_type* aStr, size_t aN)
+  {
+#ifdef DEBUG
+    memset(aStr, 0xE4, aN * sizeof(char_type));
+#endif
+    MOZ_MAKE_MEM_UNDEFINED(aStr, aN * sizeof(char_type));
   }
 
   static char_type*
@@ -354,6 +363,14 @@ struct nsCharTraits<char>
   {
     return static_cast<char_type*>(memcpy(aStr1, aStr2,
                                           aN * sizeof(char_type)));
+  }
+
+  static void uninitialize(char_type* aStr, size_t aN)
+  {
+#ifdef DEBUG
+    memset(aStr, 0xE4, aN * sizeof(char_type));
+#endif
+    MOZ_MAKE_MEM_UNDEFINED(aStr, aN * sizeof(char_type));
   }
 
   static char_type*
