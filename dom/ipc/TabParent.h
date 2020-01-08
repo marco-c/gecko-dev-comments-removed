@@ -67,7 +67,6 @@ class DataSourceSurface;
 
 namespace dom {
 
-class ChromeBrowsingContext;
 class ClonedMessageData;
 class nsIContentParent;
 class Element;
@@ -130,8 +129,6 @@ public:
   already_AddRefed<nsIWidget> GetTopLevelWidget();
 
   nsIXULBrowserWindow* GetXULBrowserWindow();
-
-  ChromeBrowsingContext* GetBrowsingContext() { return mBrowsingContext; }
 
   void Destroy();
 
@@ -329,16 +326,6 @@ public:
 
 
   a11y::DocAccessibleParent* GetTopLevelDocAccessible() const;
-
-  virtual PWindowGlobalParent*
-  AllocPWindowGlobalParent(const WindowGlobalInit& aInit) override;
-
-  virtual bool
-  DeallocPWindowGlobalParent(PWindowGlobalParent* aActor) override;
-
-  virtual mozilla::ipc::IPCResult
-  RecvPWindowGlobalConstructor(PWindowGlobalParent* aActor,
-                               const WindowGlobalInit& aInit) override;
 
   void LoadURL(nsIURI* aURI);
 
@@ -636,8 +623,6 @@ protected:
 
   virtual mozilla::ipc::IPCResult RecvShowCanvasPermissionPrompt(const nsCString& aFirstPartyURI) override;
 
-  virtual mozilla::ipc::IPCResult RecvRootBrowsingContext(const BrowsingContextId& aId) override;
-
   mozilla::ipc::IPCResult
   RecvSetSystemFont(const nsCString& aFontName) override;
   mozilla::ipc::IPCResult
@@ -712,9 +697,6 @@ private:
   
   
   RefPtr<nsFrameLoader> mFrameLoader;
-
-  
-  RefPtr<ChromeBrowsingContext> mBrowsingContext;
 
   TabId mTabId;
 

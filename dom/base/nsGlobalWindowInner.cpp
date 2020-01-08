@@ -258,8 +258,6 @@
 #include "mozilla/dom/ClientSource.h"
 #include "mozilla/dom/ClientState.h"
 
-#include "mozilla/dom/WindowGlobalChild.h"
-
 
 #ifdef check
 class nsIScriptTimeoutHandler;
@@ -1348,11 +1346,6 @@ nsGlobalWindowInner::FreeInnerObjects(bool aForDocumentOpen)
     }
   }
 
-  if (mWindowGlobalChild && !mWindowGlobalChild->IsClosed()) {
-    mWindowGlobalChild->Send__delete__(mWindowGlobalChild);
-  }
-  mWindowGlobalChild = nullptr;
-
   mIntlUtils = nullptr;
 }
 
@@ -1742,15 +1735,6 @@ nsGlobalWindowInner::InnerSetNewDocument(JSContext* aCx, nsIDocument* aDocument)
   
   
   ClearDocumentDependentSlots(aCx);
-
-  
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(!mWindowGlobalChild,
-                        "Shouldn't have created WindowGlobalChild yet!");
-  if (XRE_IsParentProcess() || mTabChild) {
-    mWindowGlobalChild = WindowGlobalChild::Create(this);
-  }
 
 #ifdef DEBUG
   mLastOpenedURI = aDocument->GetDocumentURI();
@@ -7867,9 +7851,8 @@ nsGlobalWindowInner::FireOnNewGlobalObject()
   JS_FireOnNewGlobalObject(aes.cx(), global);
 }
 
-#if defined(_WINDOWS_) && !defined(MOZ_WRAPPED_WINDOWS_H)
-#pragma message("wrapper failure reason: " MOZ_WINDOWS_WRAPPER_DISABLED_REASON)
-#error "Never include unwrapped windows.h in this file!"
+#ifdef _WINDOWS_
+#error "Never include windows.h in this file!"
 #endif
 
 already_AddRefed<Promise>

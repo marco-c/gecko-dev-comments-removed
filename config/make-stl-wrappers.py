@@ -5,8 +5,25 @@ from __future__ import print_function
 import os
 import string
 from mozbuild.util import FileAvoidWrite
-from system_header_util import header_path
 
+
+def find_in_path(file, searchpath):
+    for dir in searchpath.split(os.pathsep):
+        f = os.path.join(dir, file)
+        if os.path.exists(f):
+            return f
+    return ''
+
+
+def header_path(header, compiler):
+    if compiler == 'gcc':
+        
+        return header
+    elif compiler == 'msvc':
+        return find_in_path(header, os.environ.get('INCLUDE', ''))
+    else:
+        
+        raise NotImplementedError(compiler)
 
 
 
