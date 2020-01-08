@@ -5,7 +5,6 @@
 "use strict";
 
 const { throttle } = require("devtools/client/inspector/shared/utils");
-const flags = require("devtools/shared/flags");
 
 const {
   clearFlexbox,
@@ -63,16 +62,10 @@ class FlexboxInspector {
       return;
     }
 
-    if (flags.testing) {
-      
+    this.document.addEventListener("mousemove", () => {
       this.highlighters.on("flexbox-highlighter-hidden", this.onHighlighterHidden);
       this.highlighters.on("flexbox-highlighter-shown", this.onHighlighterShown);
-    } else {
-      this.document.addEventListener("mousemove", () => {
-        this.highlighters.on("flexbox-highlighter-hidden", this.onHighlighterHidden);
-        this.highlighters.on("flexbox-highlighter-shown", this.onHighlighterShown);
-      }, { once: true });
-    }
+    }, { once: true });
 
     this.inspector.sidebar.on("select", this.onSidebarSelect);
 
@@ -311,77 +304,99 @@ class FlexboxInspector {
   async update(flexboxFront) {
     
     
-    if (!this.inspector ||
-        !this.store ||
-        !this.inspector.selection.nodeFront ||
-        !this.hasGetCurrentFlexbox) {
+    if (!this.inspector || !this.store || !this.inspector.selection.nodeFront) {
       return;
     }
 
-    try {
-      
-      if (!flexboxFront) {
-        flexboxFront = await this.layoutInspector.getCurrentFlexbox(
-          this.inspector.selection.nodeFront);
-      }
-
-      
-      
-      if (!flexboxFront) {
-        this.store.dispatch(clearFlexbox());
-        return;
-      }
-
-      
-      
-      
-      let containerNodeFront = flexboxFront.containerNodeFront;
-      if (!containerNodeFront) {
-        containerNodeFront = await this.walker.getNodeFromActor(flexboxFront.actorID,
-          ["containerEl"]);
-      }
-
-      
-      const flexItems = [];
-      const flexItemFronts = await flexboxFront.getFlexItems();
-
-      for (const flexItemFront of flexItemFronts) {
-        let itemNodeFront = flexItemFront.nodeFront;
-        if (!itemNodeFront) {
-          itemNodeFront = await this.walker.getNodeFromActor(flexItemFront.actorID,
-            ["element"]);
+    
+    if (!flexboxFront) {
+      try {
+        if (!this.hasGetCurrentFlexbox) {
+          return;
         }
 
-        flexItems.push({
-          actorID: flexItemFront.actorID,
-          shown: false,
-          flexItemSizing: flexItemFront.flexItemSizing,
-          nodeFront: itemNodeFront,
-          properties: flexItemFront.properties,
-        });
+        flexboxFront = await this.layoutInspector.getCurrentFlexbox(
+          this.inspector.selection.nodeFront);
+      } catch (e) {
+        
+        
+        return;
+      }
+    }
+
+    
+    
+    if (!flexboxFront) {
+      try {
+        this.store.dispatch(clearFlexbox());
+      } catch (e) {
+        
+        
+      }
+      return;
+    }
+
+    let containerNodeFront = flexboxFront.containerNodeFront;
+
+    
+    
+    
+    if (!containerNodeFront) {
+      try {
+        containerNodeFront = await this.walker.getNodeFromActor(flexboxFront.actorID,
+          ["containerEl"]);
+      } catch (e) {
+        
+        
+        return;
+      }
+    }
+
+    const highlighted = this._highlighters &&
+      containerNodeFront == this.highlighters.flexboxHighlighterShown;
+
+    
+    const flexItems = [];
+    const flexItemFronts = await flexboxFront.getFlexItems();
+
+    for (const flexItemFront of flexItemFronts) {
+      let itemNodeFront = flexItemFront.nodeFront;
+
+      if (!itemNodeFront) {
+        try {
+          itemNodeFront = await this.walker.getNodeFromActor(flexItemFront.actorID,
+            ["element"]);
+        } catch (e) {
+          
+          
+          return;
+        }
       }
 
-      const highlighted = this._highlighters &&
-        containerNodeFront == this.highlighters.flexboxHighlighterShown;
-      const currentUrl = this.inspector.target.url;
-      
-      
-      const hostname = parseURL(currentUrl).hostname || parseURL(currentUrl).protocol;
-      const customColors = await this.getCustomFlexboxColors();
-      const color = customColors[hostname] ? customColors[hostname] : FLEXBOX_COLOR;
-
-      this.store.dispatch(updateFlexbox({
-        actorID: flexboxFront.actorID,
-        color,
-        flexItems,
-        highlighted,
-        nodeFront: containerNodeFront,
-        properties: flexboxFront.properties,
-      }));
-    } catch (e) {
-      
-      
+      flexItems.push({
+        actorID: flexItemFront.actorID,
+        shown: false,
+        flexItemSizing: flexItemFront.flexItemSizing,
+        nodeFront: itemNodeFront,
+        properties: flexItemFront.properties,
+      });
     }
+
+    const currentUrl = this.inspector.target.url;
+    
+    
+    const hostname = parseURL(currentUrl).hostname || parseURL(currentUrl).protocol;
+    const customColors = await this.getCustomFlexboxColors();
+    const color = customColors[hostname] ? customColors[hostname] : FLEXBOX_COLOR;
+
+    this.store.dispatch(updateFlexbox({
+      actorID: flexboxFront.actorID,
+      color,
+      flexItems,
+      highlighted,
+      nodeFront: containerNodeFront,
+      properties: flexboxFront.properties,
+    }));
   }
 }
 

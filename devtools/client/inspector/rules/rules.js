@@ -8,7 +8,6 @@
 
 const promise = require("promise");
 const Services = require("Services");
-const flags = require("devtools/shared/flags");
 const {l10n} = require("devtools/shared/inspector/css-logic");
 const {ELEMENT_STYLE} = require("devtools/shared/specs/styles");
 const OutputParser = require("devtools/client/shared/output-parser");
@@ -152,6 +151,9 @@ function CssRuleView(inspector, document, store, pageStyle) {
   this.shortcuts.on("CmdOrCtrl+F", event => this._onShortcut("CmdOrCtrl+F", event));
   this.element.addEventListener("copy", this._onCopy);
   this.element.addEventListener("contextmenu", this._onContextMenu);
+  this.element.addEventListener("mousemove", () => {
+    this.addHighlightersToView();
+  }, { once: true });
   this.addRuleButton.addEventListener("click", this._onAddRule);
   this.searchField.addEventListener("input", this._onFilterStyles);
   this.searchClearButton.addEventListener("click", this._onClearSearch);
@@ -160,15 +162,6 @@ function CssRuleView(inspector, document, store, pageStyle) {
   this.hoverCheckbox.addEventListener("click", this._onTogglePseudoClass);
   this.activeCheckbox.addEventListener("click", this._onTogglePseudoClass);
   this.focusCheckbox.addEventListener("click", this._onTogglePseudoClass);
-
-  if (flags.testing) {
-    
-    this.highlighters.addToView(this);
-  } else {
-    this.element.addEventListener("mousemove", () => {
-      this.highlighters.addToView(this);
-    }, { once: true });
-  }
 
   this._handlePrefChange = this._handlePrefChange.bind(this);
   this._handleUAStylePrefChange = this._handleUAStylePrefChange.bind(this);
@@ -1643,6 +1636,14 @@ CssRuleView.prototype = {
       event.preventDefault();
       event.stopPropagation();
     }
+  },
+
+  
+
+
+
+  addHighlightersToView() {
+    this.highlighters.addToView(this);
   },
 };
 
