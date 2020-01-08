@@ -1281,6 +1281,7 @@ impl ZoomFactor {
     }
 }
 
+#[repr(C)]
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, Eq, Hash)]
 pub struct PropertyBindingId {
     namespace: IdNamespace,
@@ -1298,6 +1299,7 @@ impl PropertyBindingId {
 
 
 
+#[repr(C)]
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct PropertyBindingKey<T> {
     pub id: PropertyBindingId,
@@ -1326,6 +1328,7 @@ impl<T> PropertyBindingKey<T> {
 
 
 
+#[repr(C)]
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub enum PropertyBinding<T> {
     Value(T),
