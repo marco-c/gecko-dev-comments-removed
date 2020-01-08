@@ -375,13 +375,10 @@ public class GeckoApplication extends Application
         super.attachBaseContext(base);
 
         
-        final boolean isLocalBuild = BuildConfig.FLAVOR_audience.equals("local");
-
-        
         
         final boolean isMultidexLibNeeded = BuildConfig.FLAVOR_minApi.equals("noMinApi");
 
-        if (isLocalBuild && isMultidexLibNeeded) {
+        if (isMultidexLibNeeded) {
             MultiDex.install(this);
         }
     }
