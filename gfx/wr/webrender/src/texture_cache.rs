@@ -955,6 +955,12 @@ impl TextureCache {
 
         
         
+        if descriptor.format == ImageFormat::RGBA8 {
+            allowed_in_shared_cache = false;
+        }
+
+        
+        
         
         if filter == TextureFilter::Nearest &&
            descriptor.format != ImageFormat::BGRA8 {
