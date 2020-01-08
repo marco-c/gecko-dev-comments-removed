@@ -354,7 +354,7 @@ class EditCreditCard extends EditAutofillForm {
     
     this._record = record;
     this._addresses = addresses;
-    this.generateBillingAddressOptions();
+    this.generateBillingAddressOptions(preserveFieldValues);
     if (!preserveFieldValues) {
       
       this.populateNetworks();
@@ -412,8 +412,13 @@ class EditCreditCard extends EditAutofillForm {
     this._elements.ccType.appendChild(frag);
   }
 
-  generateBillingAddressOptions() {
-    let billingAddressGUID = this._record && this._record.billingAddressGUID;
+  generateBillingAddressOptions(preserveFieldValues) {
+    let billingAddressGUID;
+    if (preserveFieldValues && this._elements.billingAddress.value) {
+      billingAddressGUID = this._elements.billingAddress.value;
+    } else if (this._record) {
+      billingAddressGUID = this._record.billingAddressGUID;
+    }
 
     this._elements.billingAddress.textContent = "";
 
