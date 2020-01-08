@@ -2328,8 +2328,14 @@ const nsAString& NonNullHelper(const binding_detail::FakeString& aArg) {
 
 
 
-void ReparentWrapper(JSContext* aCx, JS::Handle<JSObject*> aObj,
-                     ErrorResult& aError);
+
+
+
+
+
+
+void UpdateReflectorGlobal(JSContext* aCx, JS::Handle<JSObject*> aObj,
+                           ErrorResult& aError);
 
 
 
