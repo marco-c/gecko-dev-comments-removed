@@ -45,9 +45,12 @@ async function testURL(url, loadFunc, endFunc) {
   let browser = tab.linkedBrowser;
 
   let pagePrincipal = gBrowser.contentPrincipal;
+  
+  
+  
+  let pageShowPromise = BrowserTestUtils.waitForContentEvent(browser, "pageshow");
   loadFunc(url);
-
-  await BrowserTestUtils.waitForContentEvent(browser, "pageshow");
+  await pageShowPromise;
 
   await ContentTask.spawn(browser, { isRemote: gMultiProcessBrowser },
     async function(arg) {
