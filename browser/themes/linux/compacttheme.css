@@ -4,14 +4,3 @@
 
 %include ../shared/compacttheme.inc.css
 
-
-#TabsToolbar,
-#toolbar-menubar {
-  -moz-appearance: none !important;
-}
-
-#main-menubar > menu:not([open]) {
-  color: inherit;
-}
-
-
