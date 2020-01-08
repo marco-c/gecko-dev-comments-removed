@@ -7,5 +7,3 @@ function TestGC2(m) {
   for (key = head; key != undefined; key = m.get(key)) {}
 }
 TestGC2(new WeakMap);
-
-reportCompare(true, true, "deep weakmaps");
