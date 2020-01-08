@@ -658,6 +658,8 @@ class LSafepoint;
 class LInstruction;
 class LElementVisitor;
 
+constexpr size_t MaxNumLInstructionOperands = 63;
+
 
 class LNode
 {
@@ -672,9 +674,12 @@ class LNode
     
     uint32_t op_ : 10;
     uint32_t isCall_ : 1;
+
     
     
     uint32_t nonPhiNumOperands_ : 6;
+    static_assert((1 << 6) - 1 == MaxNumLInstructionOperands, "packing constraints");
+
     
     
     uint32_t nonPhiOperandsOffset_ : 5;
