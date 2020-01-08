@@ -493,14 +493,20 @@ class MacroAssemblerARM : public Assembler
     
     
     
-    void emitUnalignedLoad(bool isSigned, unsigned byteSize, Register ptr, Register tmp,
+    
+    
+    void emitUnalignedLoad(const wasm::MemoryAccessDesc* access,
+                           bool isSigned, unsigned byteSize, Register ptr, Register tmp,
                            Register dest, unsigned offset = 0);
 
     
     
     
     
-    void emitUnalignedStore(unsigned byteSize, Register ptr, Register val, unsigned offset = 0);
+    
+    
+    void emitUnalignedStore(const wasm::MemoryAccessDesc* access,
+                            unsigned byteSize, Register ptr, Register val, unsigned offset = 0);
 
     
     
