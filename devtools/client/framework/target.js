@@ -20,7 +20,6 @@ const promiseTargets = new WeakMap();
 
 
 const TargetFactory = exports.TargetFactory = {
-
   
 
 
@@ -28,74 +27,13 @@ const TargetFactory = exports.TargetFactory = {
 
 
 
-
-
-  forTab: async function(tab) {
+  forTab: function(tab) {
     let target = targets.get(tab);
-    if (target) {
-      return target;
+    if (target == null) {
+      target = new TabTarget(tab);
+      targets.set(tab, target);
     }
-    const promise = this.createTargetForTab(tab);
-    
-    targets.set(tab, promise);
-    target = await promise;
-    
-    targets.set(tab, target);
     return target;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async createTargetForTab(tab) {
-    function createLocalServer() {
-      
-      
-      DebuggerServer.init();
-
-      
-      
-      
-      
-      
-      
-      DebuggerServer.registerAllActors();
-      
-      DebuggerServer.allowChromeProcess = true;
-    }
-
-    function createLocalClient() {
-      return new DebuggerClient(DebuggerServer.connectPipe());
-    }
-
-    createLocalServer();
-    const client = createLocalClient();
-
-    
-    await client.connect();
-
-    
-    const response = await client.getTab({ tab });
-
-    return new TabTarget({
-      client,
-      form: response.tab,
-      
-      chrome: false,
-      isBrowsingContext: true,
-      tab,
-    });
   },
 
   
@@ -115,7 +53,7 @@ const TargetFactory = exports.TargetFactory = {
     let targetPromise = promiseTargets.get(options);
     if (targetPromise == null) {
       const target = new TabTarget(options);
-      targetPromise = target.attach().then(() => target);
+      targetPromise = target.makeRemote().then(() => target);
       promiseTargets.set(options, targetPromise);
     }
     return targetPromise;
@@ -176,49 +114,29 @@ const TargetFactory = exports.TargetFactory = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function TabTarget({ form, client, chrome, isBrowsingContext = true, tab = null }) {
+function TabTarget(tab) {
   EventEmitter.decorate(this);
   this.destroy = this.destroy.bind(this);
   this.activeTab = this.activeConsole = null;
-
-  this._form = form;
-  this._url = form.url;
-  this._title = form.title;
-
-  this._client = client;
-  this._chrome = chrome;
-
   
   
-  
-  
-  if (tab) {
+  if (tab && !["client", "form", "chrome"].every(tab.hasOwnProperty, tab)) {
     this._tab = tab;
     this._setupListeners();
+  } else {
+    this._form = tab.form;
+    this._url = this._form.url;
+    this._title = this._form.title;
+
+    this._client = tab.client;
+    this._chrome = tab.chrome;
   }
-
   
-  this._isBrowsingContext = isBrowsingContext;
-
+  if (typeof tab.isBrowsingContext == "boolean") {
+    this._isBrowsingContext = tab.isBrowsingContext;
+  } else {
+    this._isBrowsingContext = true;
+  }
   
   
   this.fronts = new Map();
@@ -466,64 +384,101 @@ TabTarget.prototype = {
 
 
 
-
-
-
-  attach() {
-    if (this._attach) {
-      return this._attach;
+  makeRemote: async function() {
+    if (this._remote) {
+      return this._remote;
     }
 
-    
-    const attachTarget = async () => {
-      const [response, tabClient] = await this._client.attachTarget(this._form.actor);
-      this.activeTab = tabClient;
-      this.threadActor = response.threadActor;
-    };
+    if (this.isLocalTab) {
+      
+      
+      DebuggerServer.init();
 
-    
-    const attachConsole = async () => {
-      const [, consoleClient] = await this._client.attachConsole(
-        this._form.consoleActor, []);
-      this.activeConsole = consoleClient;
+      
+      
+      
+      
+      
+      
+      DebuggerServer.registerAllActors();
+      
+      DebuggerServer.allowChromeProcess = true;
 
-      this._onInspectObject = packet => this.emit("inspect-object", packet);
-      this.activeConsole.on("inspectObject", this._onInspectObject);
-    };
-
-    this._attach = (async () => {
-      if (this._form.isWebExtension &&
+      this._client = new DebuggerClient(DebuggerServer.connectPipe());
+      
+      this._chrome = false;
+    } else if (this._form.isWebExtension &&
           this.client.mainRoot.traits.webExtensionAddonConnect) {
-        
-        
-        
-        
-        
-        
-        
-        const {form} = await this._client.request({
-          to: this._form.actor, type: "connect",
-        });
+      
+      
+      
+      
+      
+      
+      
+      const {form} = await this._client.request({
+        to: this._form.actor, type: "connect",
+      });
 
-        this._form = form;
-        this._url = form.url;
-        this._title = form.title;
+      this._form = form;
+      this._url = form.url;
+      this._title = form.title;
+    }
+
+    this._setupRemoteListeners();
+
+    this._remote = new Promise((resolve, reject) => {
+      const attachTab = async () => {
+        try {
+          const [response, tabClient] = await this._client.attachTab(this._form.actor);
+          this.activeTab = tabClient;
+          this.threadActor = response.threadActor;
+        } catch (e) {
+          reject("Unable to attach to the tab: " + e);
+          return;
+        }
+        attachConsole();
+      };
+
+      const onConsoleAttached = ([response, consoleClient]) => {
+        this.activeConsole = consoleClient;
+
+        this._onInspectObject = packet => this.emit("inspect-object", packet);
+        this.activeConsole.on("inspectObject", this._onInspectObject);
+
+        resolve(null);
+      };
+
+      const attachConsole = () => {
+        this._client.attachConsole(this._form.consoleActor, [])
+          .then(onConsoleAttached, response => {
+            reject(
+              `Unable to attach to the console [${response.error}]: ${response.message}`);
+          });
+      };
+
+      if (this.isLocalTab) {
+        this._client.connect()
+          .then(() => this._client.getTab({tab: this.tab}))
+          .then(response => {
+            this._form = response.tab;
+            this._url = this._form.url;
+            this._title = this._form.title;
+
+            attachTab();
+          }, e => reject(e));
+      } else if (this.isBrowsingContext) {
+        
+        
+        attachTab();
+      } else {
+        
+        
+        attachConsole();
       }
+    });
 
-      this._setupRemoteListeners();
-
-      
-      
-      
-      if (this.isBrowsingContext) {
-        await attachTarget();
-      }
-
-      
-      return attachConsole();
-    })();
-
-    return this._attach;
+    return this._remote;
   },
 
   
@@ -539,9 +494,7 @@ TabTarget.prototype = {
 
 
   _teardownListeners: function() {
-    if (this._tab.ownerDocument.defaultView) {
-      this._tab.ownerDocument.defaultView.removeEventListener("unload", this);
-    }
+    this._tab.ownerDocument.defaultView.removeEventListener("unload", this);
     this._tab.removeEventListener("TabClose", this);
     this._tab.removeEventListener("TabRemotenessChange", this);
   },
@@ -645,14 +598,14 @@ TabTarget.prototype = {
 
     
     const tab = this._tab;
-    const onToolboxDestroyed = async (target) => {
+    const onToolboxDestroyed = target => {
       if (target != this) {
         return;
       }
       gDevTools.off("toolbox-destroyed", target);
 
       
-      const newTarget = await TargetFactory.forTab(tab);
+      const newTarget = TargetFactory.forTab(tab);
       gDevTools.showToolbox(newTarget);
     };
     gDevTools.on("toolbox-destroyed", onToolboxDestroyed);
@@ -728,7 +681,7 @@ TabTarget.prototype = {
     this._client = null;
     this._tab = null;
     this._form = null;
-    this._attach = null;
+    this._remote = null;
     this._root = null;
     this._title = null;
     this._url = null;
@@ -842,7 +795,7 @@ WorkerTarget.prototype = {
     return undefined;
   },
 
-  attach: function() {
+  makeRemote: function() {
     return Promise.resolve();
   },
 

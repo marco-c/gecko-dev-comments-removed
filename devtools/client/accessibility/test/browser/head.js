@@ -156,7 +156,7 @@ async function disableAccessibilityInspector(env) {
 
 
 async function initAccessibilityPanel(tab = gBrowser.selectedTab) {
-  const target = await TargetFactory.forTab(tab);
+  const target = TargetFactory.forTab(tab);
   const toolbox = await gDevTools.showToolbox(target, "accessibility");
   return toolbox.getCurrentPanel();
 }

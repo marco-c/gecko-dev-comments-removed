@@ -36,7 +36,7 @@ add_task(async function() {
 
   
   await tabs[2].toolbox.destroy();
-  tabs[2].target = await TargetFactory.forTab(tabs[2].tab);
+  tabs[2].target = TargetFactory.forTab(tabs[2].tab);
   await checkCacheEnabled(tabs[2], true);
 
   

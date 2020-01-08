@@ -58,8 +58,8 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
   
-  async toggleToolboxCommand(gBrowser, startTime) {
-    const target = await TargetFactory.forTab(gBrowser.selectedTab);
+  toggleToolboxCommand(gBrowser, startTime) {
+    const target = TargetFactory.forTab(gBrowser.selectedTab);
     const toolbox = gDevTools.getToolbox(target);
 
     
@@ -202,8 +202,8 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
   
   
-  async selectToolCommand(gBrowser, toolId, startTime) {
-    const target = await TargetFactory.forTab(gBrowser.selectedTab);
+  selectToolCommand(gBrowser, toolId, startTime) {
+    const target = TargetFactory.forTab(gBrowser.selectedTab);
     const toolbox = gDevTools.getToolbox(target);
     const toolDefinition = gDevTools.getToolDefinition(toolId);
 
@@ -243,17 +243,17 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
 
-  async onKeyShortcut(window, key, startTime) {
+  onKeyShortcut(window, key, startTime) {
     
     if (key.toolId) {
-      await gDevToolsBrowser.selectToolCommand(window.gBrowser, key.toolId, startTime);
+      gDevToolsBrowser.selectToolCommand(window.gBrowser, key.toolId, startTime);
       return;
     }
     
     switch (key.id) {
       case "toggleToolbox":
       case "toggleToolboxF12":
-        await gDevToolsBrowser.toggleToolboxCommand(window.gBrowser, startTime);
+        gDevToolsBrowser.toggleToolboxCommand(window.gBrowser, startTime);
         break;
       case "webide":
         gDevToolsBrowser.openWebIDE();
@@ -274,7 +274,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
         ScratchpadManager.openScratchpad();
         break;
       case "inspectorMac":
-        await gDevToolsBrowser.selectToolCommand(window.gBrowser, "inspector", startTime);
+        gDevToolsBrowser.selectToolCommand(window.gBrowser, "inspector", startTime);
         break;
     }
   },
@@ -481,8 +481,8 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     const debugService = Cc["@mozilla.org/dom/slow-script-debug;1"]
                          .getService(Ci.nsISlowScriptDebug);
 
-    async function slowScriptDebugHandler(tab, callback) {
-      const target = await TargetFactory.forTab(tab);
+    function slowScriptDebugHandler(tab, callback) {
+      const target = TargetFactory.forTab(tab);
 
       gDevTools.showToolbox(target, "jsdebugger").then(toolbox => {
         const threadClient = toolbox.threadClient;
@@ -544,7 +544,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
       slowScriptDebugHandler(tab, function() {
         callback.finishDebuggerStartup();
-      }).catch(console.error);
+      });
     };
   },
 

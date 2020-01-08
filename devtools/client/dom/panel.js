@@ -46,7 +46,7 @@ DomPanel.prototype = {
 
     
     if (!this.target.isRemote) {
-      await this.target.attach();
+      await this.target.makeRemote();
     }
 
     this.initialize();

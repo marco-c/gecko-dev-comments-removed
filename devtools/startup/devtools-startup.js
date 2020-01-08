@@ -582,22 +582,18 @@ DevToolsStartup.prototype = {
     mainKeyset.parentNode.insertBefore(keyset, mainKeyset);
   },
 
-  async onKey(window, key) {
-    try {
-      if (!Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF)) {
-        const id = key.toolId || key.id;
-        this.openInstallPage("KeyShortcut", id);
-      } else {
-        
-        
-        
-        const startTime = Cu.now();
-        const require = this.initDevTools("KeyShortcut", key);
-        const { gDevToolsBrowser } = require("devtools/client/framework/devtools-browser");
-        await gDevToolsBrowser.onKeyShortcut(window, key, startTime);
-      }
-    } catch (e) {
-      console.error(`Exception while trigerring key ${key}: ${e}\n${e.stack}`);
+  onKey(window, key) {
+    if (!Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF)) {
+      const id = key.toolId || key.id;
+      this.openInstallPage("KeyShortcut", id);
+    } else {
+      
+      
+      
+      const startTime = Cu.now();
+      const require = this.initDevTools("KeyShortcut", key);
+      const { gDevToolsBrowser } = require("devtools/client/framework/devtools-browser");
+      gDevToolsBrowser.onKeyShortcut(window, key, startTime);
     }
   },
 
@@ -713,11 +709,11 @@ DevToolsStartup.prototype = {
   },
 
   
-  handleDevToolsFlag: async function(window) {
+  handleDevToolsFlag: function(window) {
     const require = this.initDevTools("CommandLine");
     const {gDevTools} = require("devtools/client/framework/devtools");
     const {TargetFactory} = require("devtools/client/framework/target");
-    const target = await TargetFactory.forTab(window.gBrowser.selectedTab);
+    const target = TargetFactory.forTab(window.gBrowser.selectedTab);
     gDevTools.showToolbox(target);
   },
 
