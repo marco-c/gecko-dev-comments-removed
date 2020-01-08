@@ -1313,6 +1313,12 @@ nsBaseWidget::CreateCompositorSession(int aWidth,
   do {
     CreateCompositorVsyncDispatcher();
 
+    gfx::GPUProcessManager* gpu = gfx::GPUProcessManager::Get();
+    
+    
+    
+    gpu->EnsureGPUReady();
+
     
     
     
@@ -1338,7 +1344,6 @@ nsBaseWidget::CreateCompositorSession(int aWidth,
     }
 
     bool retry = false;
-    gfx::GPUProcessManager* gpu = gfx::GPUProcessManager::Get();
     mCompositorSession = gpu->CreateTopLevelCompositor(
       this,
       lm,
