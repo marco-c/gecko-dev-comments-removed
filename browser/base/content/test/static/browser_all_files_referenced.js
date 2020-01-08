@@ -41,6 +41,9 @@ var gExceptionPaths = [
 
   
   "resource://search-plugins/",
+
+  
+  "chrome://browser/content/aboutconfig/",
 ];
 
 
