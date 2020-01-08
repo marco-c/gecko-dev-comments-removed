@@ -3913,28 +3913,49 @@ class BookmarkMerger {
 
   async mergeChildListsIntoMergedNode(mergedNode, localNode, remoteNode) {
     if (localNode && remoteNode) {
-      if (localNode.newerThan(remoteNode)) {
+      if (localNode.needsMerge && remoteNode.needsMerge) {
         
         
         
-        await this.mergeLocalChildrenIntoMergedNode(mergedNode, localNode);
-        await this.mergeRemoteChildrenIntoMergedNode(mergedNode, remoteNode);
-      } else {
-        
-        
-        await this.mergeRemoteChildrenIntoMergedNode(mergedNode, remoteNode);
-        await this.mergeLocalChildrenIntoMergedNode(mergedNode, localNode);
+        if (localNode.newerThan(remoteNode)) {
+          await this.mergeLocalChildrenIntoMergedNode(mergedNode, localNode);
+          await this.mergeRemoteChildrenIntoMergedNode(mergedNode, remoteNode);
+        } else {
+          await this.mergeRemoteChildrenIntoMergedNode(mergedNode, remoteNode);
+          await this.mergeLocalChildrenIntoMergedNode(mergedNode, localNode);
+        }
+        return;
       }
-    } else if (localNode) {
+
+      if (remoteNode.needsMerge) {
+        
+        
+        await this.mergeRemoteChildrenIntoMergedNode(mergedNode, remoteNode);
+        await this.mergeLocalChildrenIntoMergedNode(mergedNode, localNode);
+        return;
+      }
+
+      
       
       await this.mergeLocalChildrenIntoMergedNode(mergedNode, localNode);
-    } else if (remoteNode) {
+      await this.mergeRemoteChildrenIntoMergedNode(mergedNode, remoteNode);
+      return;
+    }
+
+    if (localNode) {
+      
+      await this.mergeLocalChildrenIntoMergedNode(mergedNode, localNode);
+      return;
+    }
+
+    if (remoteNode) {
       
       await this.mergeRemoteChildrenIntoMergedNode(mergedNode, remoteNode);
-    } else {
-      
-      throw new TypeError("Can't merge children for two nonexistent nodes");
+      return;
     }
+
+    
+    throw new TypeError("Can't merge children for two nonexistent nodes");
   }
 
   
@@ -4182,6 +4203,11 @@ class BookmarkMerger {
   async relocateRemoteOrphansToMergedNode(mergedNode, remoteNode) {
     let remoteOrphanNodes = [];
     for await (let remoteChildNode of yieldingIterator(remoteNode.children)) {
+      if (this.mergedGuids.has(remoteChildNode.guid)) {
+        MirrorLog.trace("Remote child ${remoteChildNode} can't be an orphan; " +
+                        "already merged", { remoteChildNode });
+        continue;
+      }
       let structureChange = await this.checkForLocalStructureChangeOfRemoteNode(
         mergedNode, remoteNode, remoteChildNode);
       if (structureChange == BookmarkMerger.STRUCTURE.MOVED ||
@@ -4226,6 +4252,11 @@ class BookmarkMerger {
   async relocateLocalOrphansToMergedNode(mergedNode, localNode) {
     let localOrphanNodes = [];
     for await (let localChildNode of yieldingIterator(localNode.children)) {
+      if (this.mergedGuids.has(localChildNode.guid)) {
+        MirrorLog.trace("Local child ${localChildNode} can't be an orphan; " +
+                        "already merged", { localChildNode });
+        continue;
+      }
       let structureChange = await this.checkForRemoteStructureChangeOfLocalNode(
         mergedNode, localNode, localChildNode);
       if (structureChange == BookmarkMerger.STRUCTURE.MOVED ||
