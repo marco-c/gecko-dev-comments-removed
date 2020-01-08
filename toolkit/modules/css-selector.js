@@ -6,7 +6,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["findCssSelector"];
+var EXPORTED_SYMBOLS = ["findAllCssSelectors", "findCssSelector"];
 
 
 
@@ -20,15 +20,42 @@ var EXPORTED_SYMBOLS = ["findCssSelector"];
 
 
 function getRootBindingParent(node) {
-  let parent;
   let doc = node.ownerDocument;
   if (!doc) {
     return node;
   }
+
+  if (getShadowRoot(node)) {
+    
+    
+    
+    return node;
+  }
+
+  let parent;
   while ((parent = doc.getBindingParent(node))) {
     node = parent;
   }
   return node;
+}
+
+
+
+
+
+function getShadowRoot(node) {
+  let doc = node.ownerDocument;
+  if (!doc) {
+    return null;
+  }
+
+  const parent = doc.getBindingParent(node);
+  const shadowRoot = parent && parent.openOrClosedShadowRoot;
+  if (shadowRoot) {
+    return shadowRoot;
+  }
+
+  return null;
 }
 
 
@@ -49,10 +76,28 @@ function positionInNodeList(element, nodeList) {
 
 
 
+function getDocumentOrShadowRoot(node) {
+  const shadowRoot = getShadowRoot(node);
+  if (shadowRoot) {
+    
+    
+    return shadowRoot;
+  }
+
+  
+  return node.ownerDocument;
+}
+
+
+
+
+
+
 const findCssSelector = function(ele) {
   ele = getRootBindingParent(ele);
-  let document = ele.ownerDocument;
-  if (!document || !document.contains(ele)) {
+
+  let containingDocOrShadow = getDocumentOrShadowRoot(ele);
+  if (!containingDocOrShadow || !containingDocOrShadow.contains(ele)) {
     
     return "";
   }
@@ -61,7 +106,7 @@ const findCssSelector = function(ele) {
 
   
   if (ele.id &&
-      document.querySelectorAll("#" + cssEscape(ele.id)).length === 1) {
+      containingDocOrShadow.querySelectorAll("#" + cssEscape(ele.id)).length === 1) {
     return "#" + cssEscape(ele.id);
   }
 
@@ -79,37 +124,77 @@ const findCssSelector = function(ele) {
 
   
   let selector, index, matches;
-  if (ele.classList.length > 0) {
-    for (let i = 0; i < ele.classList.length; i++) {
-      
-      selector = "." + cssEscape(ele.classList.item(i));
-      matches = document.querySelectorAll(selector);
-      if (matches.length === 1) {
-        return selector;
-      }
-      
-      selector = cssEscape(tagName) + selector;
-      matches = document.querySelectorAll(selector);
-      if (matches.length === 1) {
-        return selector;
-      }
-      
-      index = positionInNodeList(ele, ele.parentNode.children) + 1;
-      selector = selector + ":nth-child(" + index + ")";
-      matches = document.querySelectorAll(selector);
-      if (matches.length === 1) {
-        return selector;
-      }
+  for (let i = 0; i < ele.classList.length; i++) {
+    
+    selector = "." + cssEscape(ele.classList.item(i));
+    matches = containingDocOrShadow.querySelectorAll(selector);
+    if (matches.length === 1) {
+      return selector;
+    }
+    
+    selector = cssEscape(tagName) + selector;
+    matches = containingDocOrShadow.querySelectorAll(selector);
+    if (matches.length === 1) {
+      return selector;
+    }
+    
+    index = positionInNodeList(ele, ele.parentNode.children) + 1;
+    selector = selector + ":nth-child(" + index + ")";
+    matches = containingDocOrShadow.querySelectorAll(selector);
+    if (matches.length === 1) {
+      return selector;
     }
   }
 
   
-  
-  if (ele.parentNode !== document) {
-    index = positionInNodeList(ele, ele.parentNode.children) + 1;
-    selector = findCssSelector(ele.parentNode) + " > " +
-      cssEscape(tagName) + ":nth-child(" + index + ")";
+  index = positionInNodeList(ele, ele.parentNode.children) + 1;
+  selector = cssEscape(tagName) + ":nth-child(" + index + ")";
+  if (ele.parentNode !== containingDocOrShadow) {
+    selector = findCssSelector(ele.parentNode) + " > " + selector;
+  }
+  return selector;
+};
+
+
+
+
+
+function getSelectorParent(node) {
+  const shadowRoot = getShadowRoot(node);
+  if (shadowRoot) {
+    
+    return shadowRoot.host;
   }
 
-  return selector;
+  
+  return node.ownerGlobal.frameElement;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const findAllCssSelectors = function(node) {
+  let selectors = [];
+  while (node) {
+    selectors.unshift(findCssSelector(node));
+    node = getSelectorParent(node);
+  }
+
+  return selectors;
 };

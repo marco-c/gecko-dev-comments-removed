@@ -740,6 +740,13 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       }
 
       
+      
+      
+      if (isShadowRoot(start)) {
+        start = firstChild;
+      }
+
+      
       const backwardWalker = getFilteredWalker(start);
       if (backwardWalker.currentNode != firstChild && options.center) {
         backwardWalker.previousSibling();
