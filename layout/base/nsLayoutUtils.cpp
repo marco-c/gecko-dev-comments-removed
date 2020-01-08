@@ -9226,8 +9226,6 @@ static void UpdateDisplayPortMarginsForPendingMetrics(
     return;
   }
 
-  MOZ_ASSERT(aMetrics.GetUseDisplayPortMargins());
-
   if (gfxPrefs::APZAllowZooming() && aMetrics.IsRootContent()) {
     
     float presShellResolution = shell->GetResolution();

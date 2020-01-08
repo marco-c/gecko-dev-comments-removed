@@ -288,8 +288,6 @@ void APZCCallbackHelper::UpdateRootFrame(const RepaintRequest& aRequest) {
     return;
   }
 
-  MOZ_ASSERT(aRequest.GetUseDisplayPortMargins());
-
   if (gfxPrefs::APZAllowZooming() && aRequest.GetScrollOffsetUpdated()) {
     
     
@@ -339,8 +337,6 @@ void APZCCallbackHelper::UpdateSubFrame(const RepaintRequest& aRequest) {
   if (!content) {
     return;
   }
-
-  MOZ_ASSERT(aRequest.GetUseDisplayPortMargins());
 
   
   
