@@ -53,6 +53,8 @@ module.exports = {
     "MatchPatternSet": false,
     "MenuBoxObject": false,
     
+    "PlacesBookmarkAddition": false,
+    "PlacesEvent": false,
     "PlacesObservers": false,
     "PlacesWeakCallbackWrapper": false,
     "PrioEncoder": false,

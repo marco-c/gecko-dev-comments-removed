@@ -628,6 +628,15 @@ public:
 
   NS_DECL_BOOKMARK_HISTORY_OBSERVER_INTERNAL
 
+  nsresult OnItemAdded(int64_t aItemId,
+                       int64_t aParentId,
+                       int32_t aIndex,
+                       uint16_t aItemType,
+                       nsIURI* aURI,
+                       PRTime aDateAdded,
+                       const nsACString& aGUID,
+                       const nsACString& aParentGUID,
+                       uint16_t aSource);
   
   
   
@@ -705,6 +714,16 @@ public:
   
   
   NS_DECL_NSINAVBOOKMARKOBSERVER
+
+  nsresult OnItemAdded(int64_t aItemId,
+                       int64_t aParentId,
+                       int32_t aIndex,
+                       uint16_t aItemType,
+                       nsIURI* aURI,
+                       PRTime aDateAdded,
+                       const nsACString& aGUID,
+                       const nsACString& aParentGUID,
+                       uint16_t aSource);
 
   virtual void OnRemoving() override;
 

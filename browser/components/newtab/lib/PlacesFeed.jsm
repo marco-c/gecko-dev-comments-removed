@@ -90,46 +90,6 @@ class BookmarksObserver extends Observer {
 
 
 
-
-
-
-
-
-  onItemAdded(id, folderId, index, type, uri, bookmarkTitle, dateAdded, bookmarkGuid, parentGuid, source) { 
-    
-    
-    if (type !== PlacesUtils.bookmarks.TYPE_BOOKMARK ||
-        source === PlacesUtils.bookmarks.SOURCES.IMPORT ||
-        source === PlacesUtils.bookmarks.SOURCES.RESTORE ||
-        source === PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP ||
-        source === PlacesUtils.bookmarks.SOURCES.SYNC ||
-        (uri.scheme !== "http" && uri.scheme !== "https")) {
-      return;
-    }
-
-    this.dispatch({type: at.PLACES_LINKS_CHANGED});
-    this.dispatch({
-      type: at.PLACES_BOOKMARK_ADDED,
-      data: {
-        bookmarkGuid,
-        bookmarkTitle,
-        dateAdded,
-        url: uri.spec,
-      },
-    });
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
   onItemRemoved(id, folderId, index, type, uri, guid, parentGuid, source) { 
     if (type === PlacesUtils.bookmarks.TYPE_BOOKMARK &&
         source !== PlacesUtils.bookmarks.SOURCES.IMPORT &&
@@ -158,12 +118,50 @@ class BookmarksObserver extends Observer {
   onItemChanged() {}
 }
 
+
+
+
+class PlacesObserver extends Observer {
+  constructor(dispatch) {
+    super(dispatch, Ci.nsINavBookmarkObserver);
+    this.handlePlacesEvent = this.handlePlacesEvent.bind(this);
+  }
+
+  handlePlacesEvent(events) {
+    for (let {itemType, source, dateAdded, guid, title, url, isTagging} of events) {
+      
+      
+      if (isTagging ||
+          itemType !== PlacesUtils.bookmarks.TYPE_BOOKMARK ||
+          source === PlacesUtils.bookmarks.SOURCES.IMPORT ||
+          source === PlacesUtils.bookmarks.SOURCES.RESTORE ||
+          source === PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP ||
+          source === PlacesUtils.bookmarks.SOURCES.SYNC ||
+          (!url.startsWith("http://") && !url.startsWith("https://"))) {
+        return;
+      }
+
+      this.dispatch({type: at.PLACES_LINKS_CHANGED});
+      this.dispatch({
+        type: at.PLACES_BOOKMARK_ADDED,
+        data: {
+          bookmarkGuid: guid,
+          bookmarkTitle: title,
+          dateAdded: dateAdded * 1000,
+          url
+        }
+      });
+    }
+  }
+}
+
 class PlacesFeed {
   constructor() {
     this.placesChangedTimer = null;
     this.customDispatch = this.customDispatch.bind(this);
     this.historyObserver = new HistoryObserver(this.customDispatch);
     this.bookmarksObserver = new BookmarksObserver(this.customDispatch);
+    this.placesObserver = new PlacesObserver(this.customDispatch);
   }
 
   addObservers() {
@@ -174,6 +172,8 @@ class PlacesFeed {
     Cc["@mozilla.org/browser/nav-bookmarks-service;1"]
       .getService(Ci.nsINavBookmarksService)
       .addObserver(this.bookmarksObserver, true);
+    PlacesUtils.observers.addListener(["bookmark-added"],
+                                      this.placesObserver.handlePlacesEvent);
 
     Services.obs.addObserver(this, LINK_BLOCKED_EVENT);
   }
@@ -214,6 +214,8 @@ class PlacesFeed {
     }
     PlacesUtils.history.removeObserver(this.historyObserver);
     PlacesUtils.bookmarks.removeObserver(this.bookmarksObserver);
+    PlacesUtils.observers.removeListener(["bookmark-added"],
+                                         this.placesObserver.handlePlacesEvent);
     Services.obs.removeObserver(this, LINK_BLOCKED_EVENT);
   }
 

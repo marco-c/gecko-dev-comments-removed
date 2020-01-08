@@ -13,8 +13,11 @@ const TOPIC_SHUTDOWN = "places-shutdown";
 
 
 function TaggingService() {
+  this.handlePlacesEvents = this.handlePlacesEvents.bind(this);
+
   
   PlacesUtils.bookmarks.addObserver(this);
+  PlacesUtils.observers.addListener(["bookmark-added"], this.handlePlacesEvents);
 
   
   Services.obs.addObserver(this, TOPIC_SHUTDOWN);
@@ -293,6 +296,7 @@ TaggingService.prototype = {
   observe: function TS_observe(aSubject, aTopic, aData) {
     if (aTopic == TOPIC_SHUTDOWN) {
       PlacesUtils.bookmarks.removeObserver(this);
+      PlacesUtils.observers.removeListener(["bookmark-added"], this.handlePlacesEvents);
       Services.obs.removeObserver(this, TOPIC_SHUTDOWN);
     }
   },
@@ -339,17 +343,18 @@ TaggingService.prototype = {
     return isBookmarked ? [] : itemIds;
   },
 
-  
-  onItemAdded: function TS_onItemAdded(aItemId, aFolderId, aIndex, aItemType,
-                                       aURI, aTitle) {
-    
-    if (aFolderId != PlacesUtils.tagsFolderId ||
-        aItemType != PlacesUtils.bookmarks.TYPE_FOLDER)
-      return;
+  handlePlacesEvents(events) {
+    for (let event of events) {
+      if (!event.isTagging ||
+          event.itemType != PlacesUtils.bookmarks.TYPE_FOLDER) {
+        continue;
+      }
 
-    this._tagFolders[aItemId] = aTitle;
+      this._tagFolders[event.id] = event.title;
+    }
   },
 
+  
   onItemRemoved: function TS_onItemRemoved(aItemId, aFolderId, aIndex,
                                            aItemType, aURI, aGuid, aParentGuid,
                                            aSource) {
