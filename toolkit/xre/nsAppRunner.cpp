@@ -1862,6 +1862,9 @@ static nsresult LaunchChild(nsINativeAppSupport* aNative,
   }
 
   SaveToEnv("MOZ_LAUNCHED_CHILD=1");
+#if defined(MOZ_LAUNCHER_PROCESS)
+  SaveToEnv("MOZ_LAUNCHER_PROCESS=1");
+#endif 
 
 #if !defined(MOZ_WIDGET_ANDROID) 
 #if defined(XP_MACOSX)
