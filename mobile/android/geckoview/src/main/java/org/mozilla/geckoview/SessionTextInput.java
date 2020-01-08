@@ -499,6 +499,7 @@ public final class SessionTextInput {
 
 
     @TargetApi(23)
+    @UiThread
     public void onProvideAutofillVirtualStructure(@NonNull final ViewStructure structure,
                                                   final int flags) {
         final View view = getView();
@@ -532,6 +533,7 @@ public final class SessionTextInput {
 
 
 
+    @UiThread
     public void autofill(final SparseArray<CharSequence> values) {
         if (mAutoFillRoots == null) {
             return;

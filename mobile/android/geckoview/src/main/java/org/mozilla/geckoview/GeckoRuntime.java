@@ -16,6 +16,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.content.Context;
 import android.os.Process;
+import android.support.annotation.AnyThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
@@ -123,7 +124,9 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
+    @UiThread
     public void attachTo(final @NonNull Context context) {
+        ThreadUtils.assertOnUiThread();
         if (DEBUG) {
             Log.d(LOGTAG, "attachTo " + context.getApplicationContext());
         }
@@ -252,6 +255,7 @@ public final class GeckoRuntime implements Parcelable {
 
     @UiThread
     public static @NonNull GeckoRuntime create(final @NonNull Context context) {
+        ThreadUtils.assertOnUiThread();
         return create(context, new GeckoRuntimeSettings());
     }
 
@@ -288,6 +292,7 @@ public final class GeckoRuntime implements Parcelable {
     
 
 
+    @AnyThread
     public void shutdown() {
         if (DEBUG) {
             Log.d(LOGTAG, "shutdown");
@@ -311,7 +316,9 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
+    @UiThread
     public void setDelegate(final Delegate delegate) {
+        ThreadUtils.assertOnUiThread();
         mDelegate = delegate;
     }
 
@@ -320,10 +327,12 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
+    @UiThread
     public @Nullable Delegate getDelegate() {
         return mDelegate;
     }
 
+    @AnyThread
     public GeckoRuntimeSettings getSettings() {
         return mSettings;
     }
@@ -359,14 +368,18 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
-    @NonNull public File getProfileDir() {
+    @UiThread
+    public File getProfileDir() {
+        ThreadUtils.assertOnUiThread();
         return GeckoThread.getActiveProfile().getDir();
     }
 
     
 
 
+    @UiThread
     public void orientationChanged() {
+        ThreadUtils.assertOnUiThread();
         GeckoScreenOrientation.getInstance().update();
     }
 
@@ -375,21 +388,26 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
+    @UiThread
     public void orientationChanged(int newOrientation) {
+        ThreadUtils.assertOnUiThread();
         GeckoScreenOrientation.getInstance().update(newOrientation);
     }
 
     @Override 
+    @AnyThread
     public int describeContents() {
         return 0;
     }
 
     @Override 
+    @AnyThread
     public void writeToParcel(Parcel out, int flags) {
         out.writeParcelable(mSettings, flags);
     }
 
     
+    @AnyThread
     public void readFromParcel(final Parcel source) {
         mSettings = source.readParcelable(getClass().getClassLoader());
     }
@@ -397,6 +415,7 @@ public final class GeckoRuntime implements Parcelable {
     public static final Parcelable.Creator<GeckoRuntime> CREATOR
         = new Parcelable.Creator<GeckoRuntime>() {
         @Override
+        @AnyThread
         public GeckoRuntime createFromParcel(final Parcel in) {
             final GeckoRuntime runtime = new GeckoRuntime();
             runtime.readFromParcel(in);
@@ -404,6 +423,7 @@ public final class GeckoRuntime implements Parcelable {
         }
 
         @Override
+        @AnyThread
         public GeckoRuntime[] newArray(final int size) {
             return new GeckoRuntime[size];
         }

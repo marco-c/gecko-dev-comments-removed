@@ -11,6 +11,7 @@ import org.mozilla.geckoview.GeckoSession.FinderFindFlags;
 import org.mozilla.geckoview.GeckoSession.FinderDisplayFlags;
 import org.mozilla.geckoview.GeckoSession.FinderResult;
 
+import android.support.annotation.AnyThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Pair;
@@ -22,6 +23,7 @@ import java.util.List;
 
 
 
+@AnyThread
 public final class SessionFinder {
     private static final String LOGTAG = "GeckoSessionFinder";
 

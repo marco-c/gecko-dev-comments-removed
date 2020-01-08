@@ -8,6 +8,7 @@ package org.mozilla.geckoview;
 
 import org.mozilla.gecko.annotation.WrapForJNI;
 
+import android.support.annotation.AnyThread;
 import android.support.annotation.NonNull;
 
 import java.nio.ByteBuffer;
@@ -17,6 +18,7 @@ import java.nio.ByteBuffer;
 
 
 @WrapForJNI
+@AnyThread
 public class WebResponse extends WebMessage {
     
 
@@ -39,6 +41,7 @@ public class WebResponse extends WebMessage {
 
 
     @WrapForJNI
+    @AnyThread
     public static class Builder extends WebMessage.Builder {
          int mStatusCode;
          boolean mRedirected;

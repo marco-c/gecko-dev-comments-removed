@@ -6,6 +6,8 @@
 
 package org.mozilla.geckoview;
 
+import android.support.annotation.AnyThread;
+
 
 
 
@@ -15,5 +17,6 @@ public interface GeckoResponse<T> {
 
 
 
+    @AnyThread
     void respond(T value);
 }

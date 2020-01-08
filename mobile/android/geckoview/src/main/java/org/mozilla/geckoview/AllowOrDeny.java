@@ -6,9 +6,12 @@
 
 package org.mozilla.geckoview;
 
+import android.support.annotation.AnyThread;
 
 
 
+
+@AnyThread
 public enum AllowOrDeny {
     ALLOW, DENY;
 }

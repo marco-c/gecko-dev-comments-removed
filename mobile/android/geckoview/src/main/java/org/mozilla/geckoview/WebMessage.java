@@ -8,6 +8,7 @@ package org.mozilla.geckoview;
 
 import org.mozilla.gecko.annotation.WrapForJNI;
 
+import android.support.annotation.AnyThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -22,6 +23,7 @@ import java.util.Map;
 
 
 @WrapForJNI
+@AnyThread
 public abstract class WebMessage {
 
     
@@ -68,6 +70,7 @@ public abstract class WebMessage {
     
 
 
+    @AnyThread
     public static abstract class Builder {
          String mUri;
          Map<String, String> mHeaders = new ArrayMap<>();

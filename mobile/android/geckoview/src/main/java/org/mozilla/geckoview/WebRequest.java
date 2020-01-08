@@ -8,6 +8,7 @@ package org.mozilla.geckoview;
 
 import org.mozilla.gecko.annotation.WrapForJNI;
 
+import android.support.annotation.AnyThread;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -22,6 +23,7 @@ import java.nio.ByteBuffer;
 
 
 @WrapForJNI
+@AnyThread
 public class WebRequest extends WebMessage {
     
 
@@ -107,6 +109,7 @@ public class WebRequest extends WebMessage {
     
 
 
+    @AnyThread
     public static class Builder extends WebMessage.Builder {
          String mMethod = "GET";
          int mCacheMode = CACHE_MODE_DEFAULT;
