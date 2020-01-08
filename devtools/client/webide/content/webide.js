@@ -57,7 +57,10 @@ window.addEventListener("unload", function() {
 var UI = {
   init: function() {
     this._telemetry = new Telemetry();
-    this._telemetry.toolOpened("webide");
+
+    
+    
+    this._telemetry.toolOpened("webide", -1, this);
 
     AppManager.init();
 
@@ -102,7 +105,10 @@ var UI = {
     AppManager.off("app-manager-update", this.appManagerUpdate);
     AppManager.destroy();
     this.updateConnectionTelemetry();
-    this._telemetry.toolClosed("webide");
+
+    
+    
+    this._telemetry.toolClosed("webide", -1, this);
   },
 
   onfocus: function() {

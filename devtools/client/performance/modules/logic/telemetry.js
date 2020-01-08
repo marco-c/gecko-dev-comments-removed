@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const Telemetry = require("devtools/client/shared/telemetry");
@@ -35,7 +36,7 @@ function PerformanceTelemetry(emitter) {
 PerformanceTelemetry.prototype.destroy = function() {
   if (this._previousView) {
     this._telemetry.finishKeyed(
-      SELECTED_VIEW_HISTOGRAM_NAME, this._previousView, this);
+      SELECTED_VIEW_HISTOGRAM_NAME, this._previousView, this, false);
   }
 
   for (const [event] of EVENT_MAP_FLAGS) {
@@ -79,7 +80,7 @@ PerformanceTelemetry.prototype.onRecordingStateChange = function(status, model) 
 PerformanceTelemetry.prototype.onViewSelected = function(viewName) {
   if (this._previousView) {
     this._telemetry.finishKeyed(
-      SELECTED_VIEW_HISTOGRAM_NAME, this._previousView, this);
+      SELECTED_VIEW_HISTOGRAM_NAME, this._previousView, this, false);
   }
   this._previousView = viewName;
   this._telemetry.startKeyed(SELECTED_VIEW_HISTOGRAM_NAME, viewName, this);

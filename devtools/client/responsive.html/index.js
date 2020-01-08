@@ -36,7 +36,9 @@ const bootstrap = {
   store: null,
 
   async init() {
-    this.telemetry.toolOpened("responsive");
+    
+    
+    this.telemetry.toolOpened("responsive", -1, this);
 
     const store = this.store = Store();
     const provider = createElement(Provider, { store }, App());
@@ -46,7 +48,10 @@ const bootstrap = {
 
   destroy() {
     this.store = null;
-    this.telemetry.toolClosed("responsive");
+
+    
+    
+    this.telemetry.toolClosed("responsive", -1, this);
     this.telemetry = null;
   },
 

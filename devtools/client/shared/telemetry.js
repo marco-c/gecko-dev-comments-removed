@@ -14,10 +14,13 @@ const Services = require("Services");
 const { TelemetryStopwatch } = require("devtools/client/shared/TelemetryStopwatch.jsm");
 const { getNthPathExcluding } = require("devtools/shared/platform/stack");
 const { TelemetryEnvironment } = require("resource://gre/modules/TelemetryEnvironment.jsm");
+const WeakMapMap = require("devtools/client/shared/WeakMapMap");
+
+const CATEGORY = "devtools.main";
 
 
-const PENDING_EVENTS = new Map();
-const PENDING_EVENT_PROPERTIES = new Map();
+const PENDING_EVENT_PROPERTIES = new WeakMapMap();
+const PENDING_EVENTS = new WeakMapMap();
 
 class Telemetry {
   constructor() {
@@ -33,6 +36,7 @@ class Telemetry {
     this.setEventRecordingEnabled = this.setEventRecordingEnabled.bind(this);
     this.preparePendingEvent = this.preparePendingEvent.bind(this);
     this.addEventProperty = this.addEventProperty.bind(this);
+    this.addEventProperties = this.addEventProperties.bind(this);
     this.toolOpened = this.toolOpened.bind(this);
     this.toolClosed = this.toolClosed.bind(this);
   }
@@ -85,14 +89,11 @@ class Telemetry {
 
 
 
-
-
   start(histogramId, obj) {
     return TelemetryStopwatch.start(histogramId, obj);
   }
 
   
-
 
 
 
@@ -136,19 +137,13 @@ class Telemetry {
 
 
 
+
   finish(histogramId, obj, canceledOkay) {
-    
-    this.ignoreStopwatchErrors(true);
-
-    const result = TelemetryStopwatch.finish(histogramId, obj, canceledOkay);
-
-    
-    this.ignoreStopwatchErrors(false);
-
-    return result;
+    return TelemetryStopwatch.finish(histogramId, obj, canceledOkay);
   }
 
   
+
 
 
 
@@ -170,28 +165,7 @@ class Telemetry {
 
 
   finishKeyed(histogramId, key, obj, canceledOkay) {
-    
-    this.ignoreStopwatchErrors(true);
-
-    const result = TelemetryStopwatch.finishKeyed(histogramId, key, obj, canceledOkay);
-
-    
-    this.ignoreStopwatchErrors(false);
-
-    return result;
-  }
-
-  
-
-
-
-
-
-  ignoreStopwatchErrors(testing) {
-    
-    
-    
-    TelemetryStopwatch.setTestModeEnabled(testing);
+    return TelemetryStopwatch.finishKeyed(histogramId, key, obj, canceledOkay);
   }
 
   
@@ -372,10 +346,8 @@ class Telemetry {
 
 
 
-
-
-  setEventRecordingEnabled(category, enabled) {
-    return Services.telemetry.setEventRecordingEnabled(category, enabled);
+  setEventRecordingEnabled(enabled) {
+    return Services.telemetry.setEventRecordingEnabled(CATEGORY, enabled);
   }
 
   
@@ -408,8 +380,9 @@ class Telemetry {
 
 
 
-  preparePendingEvent(category, method, object, value, expected = []) {
-    const sig = `${category},${method},${object},${value}`;
+
+  preparePendingEvent(obj, method, object, value, expected = []) {
+    const sig = `${method},${object},${value}`;
 
     if (expected.length === 0) {
       throw new Error(`preparePendingEvent() was called without any expected ` +
@@ -417,17 +390,19 @@ class Telemetry {
                       `CALLER: ${getCaller()}`);
     }
 
-    PENDING_EVENTS.set(sig, {
+    const data = {
       extra: {},
       expected: new Set(expected)
-    });
+    };
 
-    const props = PENDING_EVENT_PROPERTIES.get(sig);
+    PENDING_EVENTS.set(obj, sig, data);
+
+    const props = PENDING_EVENT_PROPERTIES.get(obj, sig);
     if (props) {
       for (const [name, val] of Object.entries(props)) {
-        this.addEventProperty(category, method, object, value, name, val);
+        this.addEventProperty(obj, method, object, value, name, val);
       }
-      PENDING_EVENT_PROPERTIES.delete(sig);
+      PENDING_EVENT_PROPERTIES.delete(obj, sig);
     }
   }
 
@@ -453,31 +428,33 @@ class Telemetry {
 
 
 
-  addEventProperty(category, method, object, value, pendingPropName, pendingPropValue) {
-    const sig = `${category},${method},${object},${value}`;
+
+  addEventProperty(obj, method, object, value, pendingPropName, pendingPropValue) {
+    const sig = `${method},${object},${value}`;
+    const events = PENDING_EVENTS.get(obj, sig);
 
     
     
-    if (!PENDING_EVENTS.has(sig)) {
-      const props = PENDING_EVENT_PROPERTIES.get(sig);
+    if (!events) {
+      const props = PENDING_EVENT_PROPERTIES.get(obj, sig);
 
       if (props) {
         props[pendingPropName] = pendingPropValue;
       } else {
-        PENDING_EVENT_PROPERTIES.set(sig, {
+        PENDING_EVENT_PROPERTIES.set(obj, sig, {
           [pendingPropName]: pendingPropValue
         });
       }
       return;
     }
 
-    const { expected, extra } = PENDING_EVENTS.get(sig);
+    const { expected, extra } = events;
 
     if (expected.has(pendingPropName)) {
       extra[pendingPropName] = pendingPropValue;
 
       if (expected.size === Object.keys(extra).length) {
-        this._sendPendingEvent(category, method, object, value);
+        this._sendPendingEvent(obj, method, object, value);
       }
     } else {
       
@@ -509,9 +486,10 @@ class Telemetry {
 
 
 
-  addEventProperties(category, method, object, value, pendingObject) {
+
+  addEventProperties(obj, method, object, value, pendingObject) {
     for (const [key, val] of Object.entries(pendingObject)) {
-      this.addEventProperty(category, method, object, value, key, val);
+      this.addEventProperty(obj, method, object, value, key, val);
     }
   }
 
@@ -533,13 +511,14 @@ class Telemetry {
 
 
 
-  _sendPendingEvent(category, method, object, value) {
-    const sig = `${category},${method},${object},${value}`;
-    const { extra } = PENDING_EVENTS.get(sig);
 
-    PENDING_EVENTS.delete(sig);
-    PENDING_EVENT_PROPERTIES.delete(sig);
-    this.recordEvent(category, method, object, value, extra);
+  _sendPendingEvent(obj, method, object, value) {
+    const sig = `${method},${object},${value}`;
+    const { extra } = PENDING_EVENTS.get(obj, sig);
+
+    PENDING_EVENTS.delete(obj, sig);
+    PENDING_EVENT_PROPERTIES.delete(obj, sig);
+    this.recordEvent(method, object, value, extra);
   }
 
   
@@ -562,10 +541,7 @@ class Telemetry {
 
 
 
-
-
-
-  recordEvent(category, method, object, value = null, extra = null) {
+  recordEvent(method, object, value = null, extra = null) {
     
     if (extra) {
       for (let [name, val] of Object.entries(extra)) {
@@ -573,7 +549,7 @@ class Telemetry {
         extra[name] = val;
 
         if (val.length > 80) {
-          const sig = `${category},${method},${object},${value}`;
+          const sig = `${method},${object},${value}`;
 
           throw new Error(`The property "${name}" was added to a telemetry ` +
                           `event with the signature ${sig} but it's value ` +
@@ -583,7 +559,7 @@ class Telemetry {
         }
       }
     }
-    Services.telemetry.recordEvent(category, method, object, value, extra);
+    Services.telemetry.recordEvent(CATEGORY, method, object, value, extra);
   }
 
   
@@ -596,7 +572,18 @@ class Telemetry {
 
 
 
-  toolOpened(id) {
+
+
+
+
+
+
+
+  toolOpened(id, sessionId, obj) {
+    if (typeof sessionId === "undefined") {
+      throw new Error(`toolOpened called without a sessionId parameter.`);
+    }
+
     const charts = getChartsFromToolId(id);
 
     if (!charts) {
@@ -604,16 +591,16 @@ class Telemetry {
     }
 
     if (charts.useTimedEvent) {
-      this.preparePendingEvent("devtools.main", "tool_timer", id, null, [
+      this.preparePendingEvent(obj, "tool_timer", id, null, [
         "os",
         "time_open",
         "session_id"
       ]);
-      this.addEventProperty("devtools.main", "tool_timer", id, null,
+      this.addEventProperty(obj, "tool_timer", id, null,
                             "time_open", this.msSystemNow());
     }
     if (charts.timerHist) {
-      this.start(charts.timerHist, this);
+      this.start(charts.timerHist, obj);
     }
     if (charts.countHist) {
       this.getHistogramById(charts.countHist).add(true);
@@ -636,7 +623,14 @@ class Telemetry {
 
 
 
-  toolClosed(id, sessionId) {
+
+
+
+  toolClosed(id, sessionId, obj) {
+    if (typeof sessionId === "undefined") {
+      throw new Error(`toolClosed called without a sessionId parameter.`);
+    }
+
     const charts = getChartsFromToolId(id);
 
     if (!charts) {
@@ -644,18 +638,11 @@ class Telemetry {
     }
 
     if (charts.useTimedEvent) {
-      const sig = `devtools.main,tool_timer,${id},null`;
-      const event = PENDING_EVENTS.get(sig);
-
-      if (!event) {
-        
-        
-        return;
-      }
-
+      const sig = `tool_timer,${id},null`;
+      const event = PENDING_EVENTS.get(obj, sig);
       const time = this.msSystemNow() - event.extra.time_open;
 
-      this.addEventProperties("devtools.main", "tool_timer", id, null, {
+      this.addEventProperties(obj, "tool_timer", id, null, {
         "time_open": time,
         "os": this.osNameAndVersion,
         "session_id": sessionId
@@ -663,7 +650,7 @@ class Telemetry {
     }
 
     if (charts.timerHist) {
-      this.finish(charts.timerHist, this);
+      this.finish(charts.timerHist, obj, false);
     }
   }
 }

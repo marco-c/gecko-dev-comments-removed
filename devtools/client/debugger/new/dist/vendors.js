@@ -7513,9 +7513,7 @@ class Telemetry {
 
 
 
-
-
-  setEventRecordingEnabled(category, enabled) {
+  setEventRecordingEnabled(enabled) {
     return enabled;
   }
 
@@ -7549,74 +7547,8 @@ class Telemetry {
 
 
 
-  preparePendingEvent(category, method, object, value, expected = []) {}
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  addEventProperty(category, method, object, value, pendingPropName, pendingPropValue) {}
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  addEventProperties(category, method, object, value, pendingObject) {}
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _sendPendingEvent(category, method, object, value) {}
+  preparePendingEvent(obj, method, object, value, expected = []) {}
 
   
 
@@ -7641,7 +7573,7 @@ class Telemetry {
 
 
 
-  recordEvent(category, method, object, value, extra) {}
+  addEventProperty(obj, method, object, value, pendingPropName, pendingPropValue) {}
 
   
 
@@ -7649,7 +7581,23 @@ class Telemetry {
 
 
 
-  toolOpened(id) {}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  addEventProperties(obj, method, object, value, pendingObject) {}
 
   
 
@@ -7657,7 +7605,65 @@ class Telemetry {
 
 
 
-  toolClosed(id) {}
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _sendPendingEvent(obj, method, object, value) {}
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  recordEvent(method, object, value, extra) {}
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  toolOpened(id, sessionId, obj) {}
+
+  
+
+
+
+
+
+  toolClosed(id, sessionId, obj) {}
 }
 
 module.exports = Telemetry;

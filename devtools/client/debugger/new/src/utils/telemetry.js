@@ -75,7 +75,7 @@ function recordEvent(eventName, fields = {}) {
   
 
 
-  telemetry.recordEvent("devtools.main", eventName, "debugger", null, {
+  telemetry.recordEvent(eventName, "debugger", null, {
     session_id: sessionId,
     ...fields
   });

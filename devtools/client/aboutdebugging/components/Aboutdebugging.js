@@ -70,12 +70,18 @@ class AboutDebuggingApp extends Component {
   componentDidMount() {
     window.addEventListener("hashchange", this.onHashChange);
     this.onHashChange();
-    this.props.telemetry.toolOpened("aboutdebugging");
+
+    
+    
+    this.props.telemetry.toolOpened("aboutdebugging", -1, this);
   }
 
   componentWillUnmount() {
     window.removeEventListener("hashchange", this.onHashChange);
-    this.props.telemetry.toolClosed("aboutdebugging");
+
+    
+    
+    this.props.telemetry.toolClosed("aboutdebugging", -1, this);
   }
 
   onHashChange() {
