@@ -73,11 +73,8 @@ CleanupManager.addCleanupHandler(() => {
 
 
 
-
-
-
 var Heartbeat = class {
-  constructor(chromeWindow, sandboxManager, options) {
+  constructor(chromeWindow, options) {
     if (typeof options.flowId !== "string") {
       throw new Error("flowId must be a string");
     }
@@ -92,10 +89,6 @@ var Heartbeat = class {
 
     if (!options.message) {
       throw new Error("message must not be an empty string");
-    }
-
-    if (!sandboxManager) {
-      throw new Error("sandboxManager must be provided");
     }
 
     if (options.postAnswerUrl) {
@@ -113,8 +106,7 @@ var Heartbeat = class {
     }
 
     this.chromeWindow = chromeWindow;
-    this.eventEmitter = new EventEmitter(sandboxManager);
-    this.sandboxManager = sandboxManager;
+    this.eventEmitter = new EventEmitter();
     this.options = options;
     this.surveyResults = {};
     this.buttons = null;
@@ -237,13 +229,12 @@ var Heartbeat = class {
       this.close();
     }, surveyDuration);
 
-    this.sandboxManager.addHold("heartbeat");
     CleanupManager.addCleanupHandler(this.close);
   }
 
   maybeNotifyHeartbeat(name, data = {}) {
     if (this.pingSent) {
-      log.warn("Heartbeat event recieved after Telemetry ping sent. name:", name, "data:", data);
+      log.warn("Heartbeat event received after Telemetry ping sent. name:", name, "data:", data);
       return;
     }
 
@@ -374,8 +365,6 @@ var Heartbeat = class {
     
     this.endTimerIfPresent("surveyEndTimer");
     this.endTimerIfPresent("engagementCloseTimer");
-
-    this.sandboxManager.removeHold("heartbeat");
     
     this.chromeWindow.removeEventListener("SSWindowClosing", this.handleWindowClosed);
     
@@ -386,7 +375,6 @@ var Heartbeat = class {
     this.rightSpacer = null;
     this.learnMore = null;
     this.eventEmitter = null;
-    this.sandboxManager = null;
     
     CleanupManager.removeCleanupHandler(this.close);
   }
