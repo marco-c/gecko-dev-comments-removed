@@ -1141,8 +1141,10 @@ GetPropIRGenerator::tryAttachCrossCompartmentWrapper(HandleObject obj, ObjOperan
     
     
     RootedObject wrappedTargetGlobal(cx_, &unwrapped->nonCCWGlobal());
-    if (!cx_->compartment()->wrap(cx_, &wrappedTargetGlobal))
+    if (!cx_->compartment()->wrap(cx_, &wrappedTargetGlobal)) {
+        cx_->clearPendingException();
         return false;
+    }
 
     bool isWindowProxy = false;
     RootedShape shape(cx_);
