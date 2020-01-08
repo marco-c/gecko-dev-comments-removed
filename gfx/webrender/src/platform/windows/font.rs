@@ -145,6 +145,18 @@ impl FontContext {
         }
     }
 
+    pub fn delete_font_instance(&mut self, instance: &FontInstance) {
+        
+        if !instance.variations.is_empty() {
+            let sims = if instance.flags.contains(FontInstanceFlags::SYNTHETIC_BOLD) {
+                dwrote::DWRITE_FONT_SIMULATIONS_BOLD
+            } else {
+                dwrote::DWRITE_FONT_SIMULATIONS_NONE
+            };
+            self.variations.remove(&(instance.font_key, sims, instance.variations.clone()));
+        }
+    }
+
     
     
     #[allow(dead_code)]

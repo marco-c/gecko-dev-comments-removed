@@ -4,7 +4,7 @@
 
 #[cfg(feature = "pathfinder")]
 use api::DeviceIntPoint;
-use glyph_rasterizer::{FontInstance, GlyphFormat, GlyphKey};
+use glyph_rasterizer::{FontInstance, GlyphFormat, GlyphKey, GlyphRasterizer};
 use internal_types::FastHashMap;
 use render_task::RenderTaskCache;
 #[cfg(feature = "pathfinder")]
@@ -143,10 +143,13 @@ impl GlyphCache {
 
     
     
-    fn clear_evicted(&mut self,
-                     texture_cache: &TextureCache,
-                     render_task_cache: &RenderTaskCache) {
-        self.glyph_key_caches.retain(|_, cache| {
+    fn clear_evicted(
+        &mut self,
+        texture_cache: &TextureCache,
+        render_task_cache: &RenderTaskCache,
+        glyph_rasterizer: &mut GlyphRasterizer,
+    ) {
+        self.glyph_key_caches.retain(|key, cache| {
             
             if cache.eviction_notice().check() {
                 
@@ -157,6 +160,9 @@ impl GlyphCache {
                     keep_cache |= keep_glyph;
                     keep_glyph
                 });
+                if !keep_cache {
+                    glyph_rasterizer.delete_font_instance(key);
+                }
                 
                 keep_cache
             } else {
@@ -167,7 +173,8 @@ impl GlyphCache {
 
     pub fn begin_frame(&mut self,
                        texture_cache: &TextureCache,
-                       render_task_cache: &RenderTaskCache) {
-        self.clear_evicted(texture_cache, render_task_cache);
+                       render_task_cache: &RenderTaskCache,
+                       glyph_rasterizer: &mut GlyphRasterizer) {
+        self.clear_evicted(texture_cache, render_task_cache, glyph_rasterizer);
     }
 }

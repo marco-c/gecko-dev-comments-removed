@@ -251,10 +251,15 @@ impl SpatialNode {
             SpatialNodeType::ReferenceFrame(ref mut info) => {
                 
                 let source_transform = scene_properties.resolve_layout_transform(&info.source_transform);
+                
+                
+                let scrolled_perspective = info.source_perspective
+                    .pre_translate(&state.parent_accumulated_scroll_offset)
+                    .post_translate(-state.parent_accumulated_scroll_offset);
                 info.resolved_transform =
                     LayoutFastTransform::with_vector(info.origin_in_parent_reference_frame)
                     .pre_mul(&source_transform.into())
-                    .pre_mul(&info.source_perspective);
+                    .pre_mul(&scrolled_perspective);
 
                 
                 
