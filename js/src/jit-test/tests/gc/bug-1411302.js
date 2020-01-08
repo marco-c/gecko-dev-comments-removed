@@ -1,5 +1,4 @@
-if (!('oomTest' in this))
-    quit();
+
 
 let lfPreamble = `
     value:{

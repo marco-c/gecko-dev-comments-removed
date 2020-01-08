@@ -1,5 +1,5 @@
-if (helperThreadCount() === 0)
-    quit();
+
+
 gcparam('allocationThreshold', 1);
 setGCCallback({
     action: "majorGC",

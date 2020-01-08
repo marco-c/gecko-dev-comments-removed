@@ -1,8 +1,5 @@
 
 
-if (helperThreadCount() == 0 || !('oomAfterAllocations' in this))
-    quit();
-
 var lfcode = new Array();
 lfcode.push("5");
 lfcode.push(`

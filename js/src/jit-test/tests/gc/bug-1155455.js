@@ -1,6 +1,4 @@
 
-if (!("gczeal" in this))
-    quit();
 var g = newGlobal();
 gczeal(10, 2)
 var dbg = Debugger(g);

@@ -1,5 +1,4 @@
-if (!('oomTest' in this))
-    quit();
+
 
 oomTest(() => byteSize({}));
 oomTest(() => byteSize({ w: 1, x: 2, y: 3 }));

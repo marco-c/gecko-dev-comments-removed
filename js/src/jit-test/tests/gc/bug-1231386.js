@@ -1,8 +1,5 @@
 
 
-if (!('oomTest' in this))
-    quit();
-
 function f1() {}
 function f2() {}
 r = [function() {}, function() {}, [], function() {}, f1, function() {}, f2];

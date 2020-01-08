@@ -1,5 +1,4 @@
-if (!('oomTest' in this))
-    quit();
+
 
 let runCount = 0;
 oomTest(() => {

@@ -1,8 +1,7 @@
 
 
 
-if (!this.hasOwnProperty("TypedObject"))
-  quit();
+
 
 function foo() {
     enableTrackAllocations();

@@ -1,5 +1,4 @@
-if (!('oomTest' in this))
-    quit();
+
 
 function parseAsmJS() {
     eval(`function m(stdlib)

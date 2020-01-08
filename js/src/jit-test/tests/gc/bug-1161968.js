@@ -1,7 +1,6 @@
 
 
-if (!'gczeal' in this)
-    quit();
+
 
 gczeal(2,21);
 

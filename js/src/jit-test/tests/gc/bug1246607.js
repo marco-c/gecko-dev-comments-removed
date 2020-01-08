@@ -1,5 +1,4 @@
-if (typeof oomTest !== 'function' || typeof Intl !== 'object')
-    quit();
+
 
 oomTest(() => {
     try {

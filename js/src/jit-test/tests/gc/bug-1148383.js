@@ -1,7 +1,5 @@
 
 
-if (!("getJitCompilerOptions" in this))
-  quit();
 opts = getJitCompilerOptions();
 if (!opts['ion.enable'] || !opts['baseline.enable'])
   quit();

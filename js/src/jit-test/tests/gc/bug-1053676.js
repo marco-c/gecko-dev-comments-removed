@@ -1,5 +1,4 @@
 
-if (typeof Symbol !== "function") quit(0);
 
 var x
 (function() {

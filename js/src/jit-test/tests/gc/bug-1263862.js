@@ -1,5 +1,4 @@
-if (!('oomTest' in this))
-    quit();
+
 
 function loadFile(lfVarx) {
   oomTest(() => eval(lfVarx));

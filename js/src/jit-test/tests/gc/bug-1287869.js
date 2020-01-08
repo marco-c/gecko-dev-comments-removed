@@ -1,5 +1,4 @@
-if (!('gczeal' in this))
-    quit();
+
 
 gczeal(16);
 let a = [];

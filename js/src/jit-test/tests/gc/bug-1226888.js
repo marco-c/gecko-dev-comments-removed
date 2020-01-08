@@ -1,5 +1,4 @@
-if (!this.hasOwnProperty("TypedObject"))
-  quit();
+
 
 setJitCompilerOption('ion.forceinlineCaches', 1);
 

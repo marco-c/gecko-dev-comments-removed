@@ -1,8 +1,5 @@
 
 
-if (!('gczeal' in this && 'oomAfterAllocations' in this))
-    quit();
-
 var lfcode = new Array();
 gczeal(14);
 loadFile(`

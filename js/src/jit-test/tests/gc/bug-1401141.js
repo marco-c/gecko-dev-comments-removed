@@ -1,7 +1,4 @@
-if (!('gczeal' in this))
-    quit();
-if (helperThreadCount() == 0)
-    quit();
+
 
 gczeal(15,1);
 setGCCallback({

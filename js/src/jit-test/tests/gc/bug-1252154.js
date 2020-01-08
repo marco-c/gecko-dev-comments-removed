@@ -1,8 +1,7 @@
 
 
 
-if (!this.hasOwnProperty("TypedObject"))
-  quit();
+
 
 gczeal(7,1);
 enableShellAllocationMetadataBuilder();

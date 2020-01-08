@@ -1,5 +1,4 @@
-if (!('oomTest' in this))
-    quit();
+
 
 oomTest(function() {
     grayRoot().x = Object.create((obj[name]++));

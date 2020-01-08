@@ -1,8 +1,7 @@
 
 
 
-if (!("gcstate" in this && "gczeal" in this))
-    quit();
+
 
 gczeal(0);
 

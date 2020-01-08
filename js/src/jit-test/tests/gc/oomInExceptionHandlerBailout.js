@@ -1,5 +1,3 @@
-if (!('oomTest' in this))
-    quit();
 
 oomTest(() => {
     let x = 0;

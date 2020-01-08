@@ -1,5 +1,4 @@
-if (!('oomTest' in this))
-    quit();
+
 
 let g = newGlobal();
 let dbg = new Debugger;

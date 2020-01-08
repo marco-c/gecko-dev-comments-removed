@@ -1,6 +1,5 @@
 
-if (!('oomAfterAllocations' in this))
-    quit();
+
 s = newGlobal();
 evalcx("\
     gczeal(10, 2);\

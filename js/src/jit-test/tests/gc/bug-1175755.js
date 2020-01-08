@@ -1,8 +1,5 @@
 
 
-if (!('oomAfterAllocations' in this))
-    quit();
-
 setGCCallback({
     action: "majorGC",
 });

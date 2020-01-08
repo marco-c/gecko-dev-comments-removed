@@ -1,8 +1,5 @@
 
 
-if (!('gcstate' in this))
-    quit();
-
 gczeal(0);
 
 
