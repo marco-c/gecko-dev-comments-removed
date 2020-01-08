@@ -1700,6 +1700,10 @@ JSFunction*
 AllocNewFunction(JSContext* cx, HandleAtom atom, FunctionSyntaxKind kind, GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
                  HandleObject proto, bool isSelfHosting = false, bool inFunctionBox = false);
 
+
+bool
+DeclarationKindIsVar(DeclarationKind kind);
+
 } 
 } 
 
