@@ -4808,6 +4808,10 @@ EditorBase::ReinitializeSelection(Element& aElement)
 
   OnFocus(&aElement);
 
+  
+  
+  SyncRealTimeSpell();
+
   nsPresContext* context = GetPresContext();
   if (NS_WARN_IF(!context)) {
     return;
