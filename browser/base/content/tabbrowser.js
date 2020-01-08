@@ -1094,7 +1094,9 @@ window._gBrowser = {
         newBrowser._urlbarFocused &&
         gURLBar &&
         gURLBar.focused;
-      if (!keepFocusOnUrlBar) {
+      
+      
+      if (!keepFocusOnUrlBar && document.activeElement) {
         
         
         document.activeElement.blur();
