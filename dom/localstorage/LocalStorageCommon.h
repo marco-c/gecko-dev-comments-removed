@@ -187,6 +187,9 @@ namespace dom {
 bool
 NextGenLocalStorageEnabled();
 
+bool
+CachedNextGenLocalStorageEnabled();
+
 } 
 } 
 

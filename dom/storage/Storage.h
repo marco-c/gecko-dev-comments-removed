@@ -138,6 +138,10 @@ protected:
   
   bool CanUseStorage(nsIPrincipal& aSubjectPrincipal);
 
+  virtual void
+  LastRelease()
+  { }
+
 private:
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   nsCOMPtr<nsIPrincipal> mPrincipal;

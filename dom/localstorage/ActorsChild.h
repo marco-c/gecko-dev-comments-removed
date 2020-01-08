@@ -55,6 +55,9 @@ private:
   
   void
   ActorDestroy(ActorDestroyReason aWhy) override;
+
+  mozilla::ipc::IPCResult
+  RecvRequestAllowToClose() override;
 };
 
 class LSRequestChild final
