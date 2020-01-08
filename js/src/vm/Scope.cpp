@@ -144,7 +144,7 @@ CreateEnvironmentShape(JSContext* cx, BindingIter& bi, const Class* cls,
 
 template <typename ConcreteScope>
 static UniquePtr<typename ConcreteScope::Data>
-CopyScopeData(JSContext* cx, Handle<typename ConcreteScope::Data*> data)
+CopyScopeData(JSContext* cx, typename ConcreteScope::Data* data)
 {
     
     
@@ -302,10 +302,10 @@ Scope::create(JSContext* cx, ScopeKind kind, HandleScope enclosing, HandleShape 
     return scope;
 }
 
-template <typename T, typename D>
- Scope*
+template <typename ConcreteScope>
+ ConcreteScope*
 Scope::create(JSContext* cx, ScopeKind kind, HandleScope enclosing,
-              HandleShape envShape, mozilla::UniquePtr<T, D> data)
+              HandleShape envShape, MutableHandle<UniquePtr<typename ConcreteScope::Data>> data)
 {
     Scope* scope = create(cx, kind, enclosing, envShape);
     if (!scope)
@@ -314,9 +314,17 @@ Scope::create(JSContext* cx, ScopeKind kind, HandleScope enclosing,
     
     
     MOZ_ASSERT(data);
-    scope->initData(std::move(data));
+    scope->initData<ConcreteScope>(data);
 
-    return scope;
+    return &scope->as<ConcreteScope>();
+}
+
+template <typename ConcreteScope>
+inline void
+Scope::initData(MutableHandle<UniquePtr<typename ConcreteScope::Data>> data)
+{
+    MOZ_ASSERT(!data_);
+    data_ = data.get().release();
 }
 
 uint32_t
@@ -378,11 +386,11 @@ Scope::clone(JSContext* cx, HandleScope scope, HandleScope enclosing)
 
       case ScopeKind::FunctionBodyVar:
       case ScopeKind::ParameterExpressionVar: {
-        Rooted<VarScope::Data*> original(cx, &scope->as<VarScope>().data());
-        UniquePtr<VarScope::Data> dataClone = CopyScopeData<VarScope>(cx, original);
+        Rooted<UniquePtr<VarScope::Data>> dataClone(cx);
+        dataClone = CopyScopeData<VarScope>(cx, &scope->as<VarScope>().data());
         if (!dataClone)
             return nullptr;
-        return create(cx, scope->kind_, enclosing, envShape, std::move(dataClone));
+        return create<VarScope>(cx, scope->kind_, enclosing, envShape, &dataClone);
       }
 
       case ScopeKind::Lexical:
@@ -390,23 +398,23 @@ Scope::clone(JSContext* cx, HandleScope scope, HandleScope enclosing)
       case ScopeKind::Catch:
       case ScopeKind::NamedLambda:
       case ScopeKind::StrictNamedLambda: {
-        Rooted<LexicalScope::Data*> original(cx, &scope->as<LexicalScope>().data());
-        UniquePtr<LexicalScope::Data> dataClone = CopyScopeData<LexicalScope>(cx, original);
+        Rooted<UniquePtr<LexicalScope::Data>> dataClone(cx);
+        dataClone = CopyScopeData<LexicalScope>(cx, &scope->as<LexicalScope>().data());
         if (!dataClone)
             return nullptr;
-        return create(cx, scope->kind_, enclosing, envShape, std::move(dataClone));
+        return create<LexicalScope>(cx, scope->kind_, enclosing, envShape, &dataClone);
       }
 
       case ScopeKind::With:
-        return create(cx, scope->kind_, enclosing, envShape);
+          return create(cx, scope->kind_, enclosing, envShape);
 
       case ScopeKind::Eval:
       case ScopeKind::StrictEval: {
-        Rooted<EvalScope::Data*> original(cx, &scope->as<EvalScope>().data());
-        UniquePtr<EvalScope::Data> dataClone = CopyScopeData<EvalScope>(cx, original);
+        Rooted<UniquePtr<EvalScope::Data>> dataClone(cx);
+        dataClone = CopyScopeData<EvalScope>(cx, &scope->as<EvalScope>().data());
         if (!dataClone)
             return nullptr;
-        return create(cx, scope->kind_, enclosing, envShape, std::move(dataClone));
+        return create<EvalScope>(cx, scope->kind_, enclosing, envShape, &dataClone);
       }
 
       case ScopeKind::Global:
@@ -551,11 +559,12 @@ LexicalScope::createWithData(JSContext* cx, ScopeKind kind, MutableHandle<Unique
         return nullptr;
     }
 
-    Scope* scope = Scope::create(cx, kind, enclosing, envShape, std::move(data.get()));
+    auto scope = Scope::create<LexicalScope>(cx, kind, enclosing, envShape, data);
     if (!scope)
         return nullptr;
-    MOZ_ASSERT(scope->as<LexicalScope>().firstFrameSlot() == firstFrameSlot);
-    return &scope->as<LexicalScope>();
+
+    MOZ_ASSERT(scope->firstFrameSlot() == firstFrameSlot);
+    return scope;
 }
 
  Shape*
@@ -653,43 +662,33 @@ FunctionScope::createWithData(JSContext* cx, MutableHandle<UniquePtr<Data>> data
 
     
     
-    Rooted<FunctionScope*> funScope(cx);
 
+    RootedShape envShape(cx);
+
+    BindingIter bi(*data, hasParameterExprs);
+    uint32_t shapeFlags = FunctionScopeEnvShapeFlags(hasParameterExprs);
+    if (!PrepareScopeData<FunctionScope>(cx, bi, data, &CallObject::class_, shapeFlags,
+                                         &envShape))
     {
-        RootedShape envShape(cx);
-
-        BindingIter bi(*data, hasParameterExprs);
-        uint32_t shapeFlags = FunctionScopeEnvShapeFlags(hasParameterExprs);
-        if (!PrepareScopeData<FunctionScope>(cx, bi, data, &CallObject::class_, shapeFlags,
-                                             &envShape))
-        {
-            return nullptr;
-        }
-
-        data->hasParameterExprs = hasParameterExprs;
-        data->canonicalFunction.init(fun);
-
-        
-        
-        
-        
-        
-        
-        if (!envShape && needsEnvironment) {
-            envShape = getEmptyEnvironmentShape(cx, hasParameterExprs);
-            if (!envShape)
-                return nullptr;
-        }
-
-        Scope* scope = Scope::create(cx, ScopeKind::Function, enclosing, envShape);
-        if (!scope)
-            return nullptr;
-
-        funScope = &scope->as<FunctionScope>();
-        funScope->initData(std::move(data.get()));
+        return nullptr;
     }
 
-    return funScope;
+    data->hasParameterExprs = hasParameterExprs;
+    data->canonicalFunction.init(fun);
+
+    
+    
+    
+    
+    
+    
+    if (!envShape && needsEnvironment) {
+        envShape = getEmptyEnvironmentShape(cx, hasParameterExprs);
+        if (!envShape)
+            return nullptr;
+    }
+
+    return Scope::create<FunctionScope>(cx, ScopeKind::Function, enclosing, envShape, data);
 }
 
 JSScript*
@@ -722,32 +721,22 @@ FunctionScope::clone(JSContext* cx, Handle<FunctionScope*> scope, HandleFunction
 
     
     
-    Rooted<FunctionScope*> funScopeClone(cx);
 
-    {
-        RootedShape envShape(cx);
-        if (scope->environmentShape()) {
-            envShape = scope->maybeCloneEnvironmentShape(cx);
-            if (!envShape)
-                return nullptr;
-        }
-
-        Rooted<Data*> dataOriginal(cx, &scope->as<FunctionScope>().data());
-        Rooted<UniquePtr<Data>> dataClone(cx, CopyScopeData<FunctionScope>(cx, dataOriginal));
-        if (!dataClone)
+    RootedShape envShape(cx);
+    if (scope->environmentShape()) {
+        envShape = scope->maybeCloneEnvironmentShape(cx);
+        if (!envShape)
             return nullptr;
-
-        dataClone->canonicalFunction.init(fun);
-
-        Scope* scopeClone = Scope::create(cx, scope->kind(), enclosing, envShape);
-        if (!scopeClone)
-            return nullptr;
-
-        funScopeClone = &scopeClone->as<FunctionScope>();
-        funScopeClone->initData(std::move(dataClone.get()));
     }
 
-    return funScopeClone;
+    Rooted<Data*> dataOriginal(cx, &scope->as<FunctionScope>().data());
+    Rooted<UniquePtr<Data>> dataClone(cx, CopyScopeData<FunctionScope>(cx, dataOriginal));
+    if (!dataClone)
+        return nullptr;
+
+    dataClone->canonicalFunction.init(fun);
+
+    return Scope::create<FunctionScope>(cx, scope->kind(), enclosing, envShape, &dataClone);
 }
 
 template <XDRMode mode>
@@ -859,10 +848,7 @@ VarScope::createWithData(JSContext* cx, ScopeKind kind, MutableHandle<UniquePtr<
             return nullptr;
     }
 
-    Scope* scope = Scope::create(cx, kind, enclosing, envShape, std::move(data.get()));
-    if (!scope)
-        return nullptr;
-    return &scope->as<VarScope>();
+    return Scope::create<VarScope>(cx, kind, enclosing, envShape, data);
 }
 
  Shape*
@@ -956,10 +942,7 @@ GlobalScope::createWithData(JSContext* cx, ScopeKind kind, MutableHandle<UniqueP
     
     
     
-    Scope* scope = Scope::create(cx, kind, nullptr, nullptr, std::move(data.get()));
-    if (!scope)
-        return nullptr;
-    return &scope->as<GlobalScope>();
+    return Scope::create<GlobalScope>(cx, kind, nullptr, nullptr, data);
 }
 
  GlobalScope*
@@ -970,10 +953,7 @@ GlobalScope::clone(JSContext* cx, Handle<GlobalScope*> scope, ScopeKind kind)
     if (!dataClone)
         return nullptr;
 
-    Scope* scopeClone = Scope::create(cx, kind, nullptr, nullptr, std::move(dataClone.get()));
-    if (!scopeClone)
-        return nullptr;
-    return &scopeClone->as<GlobalScope>();
+    return Scope::create<GlobalScope>(cx, kind, nullptr, nullptr, &dataClone);
 }
 
 template <XDRMode mode>
@@ -1065,10 +1045,7 @@ EvalScope::createWithData(JSContext* cx, ScopeKind scopeKind, MutableHandle<Uniq
             return nullptr;
     }
 
-    Scope* scope = Scope::create(cx, scopeKind, enclosing, envShape, std::move(data.get()));
-    if (!scope)
-        return nullptr;
-    return &scope->as<EvalScope>();
+    return Scope::create<EvalScope>(cx, scopeKind, enclosing, envShape, data);
 }
 
  Scope*
@@ -1164,37 +1141,27 @@ ModuleScope::createWithData(JSContext* cx, MutableHandle<UniquePtr<Data>> data,
 
     
     
-    Rooted<ModuleScope*> moduleScope(cx);
 
+    
+    
+    RootedShape envShape(cx);
+    BindingIter bi(*data);
+    if (!PrepareScopeData<ModuleScope>(cx, bi, data, &ModuleEnvironmentObject::class_,
+                                       ModuleScopeEnvShapeFlags, &envShape))
     {
-        
-        
-        RootedShape envShape(cx);
-        BindingIter bi(*data);
-        if (!PrepareScopeData<ModuleScope>(cx, bi, data, &ModuleEnvironmentObject::class_,
-                                           ModuleScopeEnvShapeFlags, &envShape))
-        {
-            return nullptr;
-        }
-
-        
-        if (!envShape) {
-            envShape = getEmptyEnvironmentShape(cx);
-            if (!envShape)
-                return nullptr;
-        }
-
-        Scope* scope = Scope::create(cx, ScopeKind::Module, enclosing, envShape);
-        if (!scope)
-            return nullptr;
-
-        data->module.init(module);
-
-        moduleScope = &scope->as<ModuleScope>();
-        moduleScope->initData(std::move(data.get()));
+        return nullptr;
     }
 
-    return moduleScope;
+    
+    if (!envShape) {
+        envShape = getEmptyEnvironmentShape(cx);
+        if (!envShape)
+            return nullptr;
+    }
+
+    data->module.init(module);
+
+    return Scope::create<ModuleScope>(cx, ScopeKind::Module, enclosing, envShape, data);
 }
 
  Shape*
@@ -1232,55 +1199,46 @@ WasmInstanceScope::create(JSContext* cx, WasmInstanceObject* instance)
 {
     
     
-    Rooted<WasmInstanceScope*> wasmInstanceScope(cx);
 
-    {
-        size_t namesCount = 0;
-        if (instance->instance().memory()) {
-            namesCount++;
-        }
-        size_t globalsStart = namesCount;
-        size_t globalsCount = instance->instance().metadata().globals.length();
-        namesCount += globalsCount;
-
-        Rooted<UniquePtr<Data>> data(cx, NewEmptyScopeData<WasmInstanceScope>(cx, namesCount));
-        if (!data)
-            return nullptr;
-
-        size_t nameIndex = 0;
-        RootedAtom name(cx);
-        if (instance->instance().memory()) {
-            name = GenerateWasmName(cx, "memory",  0);
-            if (!name)
-                return nullptr;
-            new (&data->trailingNames[nameIndex]) BindingName(name, false);
-            nameIndex++;
-        }
-        for (size_t i = 0; i < globalsCount; i++) {
-            name = GenerateWasmName(cx, "global", i);
-            if (!name)
-                return nullptr;
-            new (&data->trailingNames[nameIndex]) BindingName(name, false);
-            nameIndex++;
-        }
-        MOZ_ASSERT(nameIndex == namesCount);
-
-        data->instance.init(instance);
-        data->memoriesStart = 0;
-        data->globalsStart = globalsStart;
-        data->length = namesCount;
-
-        Rooted<Scope*> enclosingScope(cx, &cx->global()->emptyGlobalScope());
-
-        Scope* scope = Scope::create(cx, ScopeKind::WasmInstance, enclosingScope,  nullptr);
-        if (!scope)
-            return nullptr;
-
-        wasmInstanceScope = &scope->as<WasmInstanceScope>();
-        wasmInstanceScope->initData(std::move(data.get()));
+    size_t namesCount = 0;
+    if (instance->instance().memory()) {
+        namesCount++;
     }
+    size_t globalsStart = namesCount;
+    size_t globalsCount = instance->instance().metadata().globals.length();
+    namesCount += globalsCount;
 
-    return wasmInstanceScope;
+    Rooted<UniquePtr<Data>> data(cx, NewEmptyScopeData<WasmInstanceScope>(cx, namesCount));
+    if (!data)
+        return nullptr;
+
+    size_t nameIndex = 0;
+    RootedAtom name(cx);
+    if (instance->instance().memory()) {
+        name = GenerateWasmName(cx, "memory",  0);
+        if (!name)
+            return nullptr;
+        new (&data->trailingNames[nameIndex]) BindingName(name, false);
+        nameIndex++;
+    }
+    for (size_t i = 0; i < globalsCount; i++) {
+        name = GenerateWasmName(cx, "global", i);
+        if (!name)
+            return nullptr;
+        new (&data->trailingNames[nameIndex]) BindingName(name, false);
+        nameIndex++;
+    }
+    MOZ_ASSERT(nameIndex == namesCount);
+
+    data->instance.init(instance);
+    data->memoriesStart = 0;
+    data->globalsStart = globalsStart;
+    data->length = namesCount;
+
+    Rooted<Scope*> enclosingScope(cx, &cx->global()->emptyGlobalScope());
+
+    return Scope::create<WasmInstanceScope>(cx, ScopeKind::WasmInstance, enclosingScope,
+                                             nullptr, &data);
 }
 
  Shape*
@@ -1325,14 +1283,8 @@ WasmFunctionScope::create(JSContext* cx, HandleScope enclosing, uint32_t funcInd
         new (&data->trailingNames[i]) BindingName(name, false);
     }
 
-    Scope* scope = Scope::create(cx, ScopeKind::WasmFunction, enclosing,  nullptr);
-    if (!scope)
-        return nullptr;
-
-    wasmFunctionScope = &scope->as<WasmFunctionScope>();
-    wasmFunctionScope->initData(std::move(data.get()));
-
-    return wasmFunctionScope;
+    return Scope::create<WasmFunctionScope>(cx, ScopeKind::WasmFunction, enclosing,
+                                             nullptr, &data);
 }
 
  Shape*
