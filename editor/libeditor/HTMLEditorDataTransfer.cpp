@@ -2007,33 +2007,40 @@ HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
 
   if (aAddCites) {
     rv = InsertWithQuotationsAsSubAction(aQuotedText);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-      "Failed to insert the text with quotations");
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   } else {
     rv = InsertTextAsSubAction(aQuotedText);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-      "Failed to insert the quoted text as plain text");
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
-  
-  
-  
 
-  if (aNodeInserted && NS_SUCCEEDED(rv)) {
+  if (!newNode) {
+    return NS_OK;
+  }
+
+  
+  EditorRawDOMPoint afterNewNode(newNode);
+  bool advanced = afterNewNode.AdvanceOffset();
+  NS_WARNING_ASSERTION(advanced,
+    "Failed to advance offset to after the new <span> element");
+  if (advanced) {
+    DebugOnly<nsresult> rvIgnored = selection->Collapse(afterNewNode);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+      "Failed to collapse after the new node");
+  }
+
+  
+  
+  
+  if (aNodeInserted) {
     newNode.forget(aNodeInserted);
   }
 
   
-  if (NS_SUCCEEDED(rv) && newNode) {
-    EditorRawDOMPoint afterNewNode(newNode);
-    if (afterNewNode.AdvanceOffset()) {
-      DebugOnly<nsresult> rv = selection->Collapse(afterNewNode);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-        "Failed to collapse after the new node");
-    }
-  }
-
-  
-  return rv;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -2159,24 +2166,36 @@ HTMLEditor::InsertAsCitedQuotationInternal(const nsAString& aQuotedText,
 
   if (aInsertHTML) {
     rv = LoadHTML(aQuotedText);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   } else {
     rv = InsertTextAsSubAction(aQuotedText);  
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to insert the quoted text");
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
-  if (aNodeInserted && NS_SUCCEEDED(rv)) {
-    *aNodeInserted = newNode;
-    NS_IF_ADDREF(*aNodeInserted);
+  if (!newNode) {
+    return NS_OK;
   }
 
   
-  if (NS_SUCCEEDED(rv) && newNode) {
-    EditorRawDOMPoint afterNewNode(newNode);
-    if (afterNewNode.AdvanceOffset()) {
-      selection->Collapse(afterNewNode);
-    }
+  EditorRawDOMPoint afterNewNode(newNode);
+  bool advanced = afterNewNode.AdvanceOffset();
+  NS_WARNING_ASSERTION(advanced,
+    "Failed advance offset to after the new <blockquote> element");
+  if (advanced) {
+    DebugOnly<nsresult> rvIgnored = selection->Collapse(afterNewNode);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+      "Failed to collapse after the new node");
   }
-  return rv;
+
+  if (aNodeInserted) {
+    newNode.forget(aNodeInserted);
+  }
+
+  return NS_OK;
 }
 
 
