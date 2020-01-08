@@ -182,7 +182,7 @@ JSContext::checkImpl(int argIndex, const T1& t1)
 {
     
     
-    if (JS::RuntimeHeapIsCollecting())
+    if (JS::RuntimeHeapIsCollecting(runtime()->heapState()))
         return;
     js::ContextChecks(this).check(t1, argIndex);
 }
