@@ -184,7 +184,7 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
 
 
 
-  setStateFromParent(state) {
+  async setStateFromParent(state) {
     let oldAddresses = paymentRequest.getAddresses(this.requestStore.getState());
     if (state.request) {
       state = this._updateCompleteStatus(state);

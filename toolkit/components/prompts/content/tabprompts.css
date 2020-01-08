@@ -3,6 +3,7 @@
 
 
 
+.tabModalBackground,
 tabmodalprompt {
   width: 100%;
   height: 100%;
@@ -32,4 +33,35 @@ tabmodalprompt {
 
 tabmodalprompt label[value=""] {
   visibility: collapse;
+}
+
+
+.paymentDialogContainer:not([hidden]) {
+  
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+}
+
+.paymentDialogContainerFrame {
+  align-self: center;
+  box-sizing: border-box;
+  height: 500px;
+  
+
+
+  left: auto;
+  
+
+
+  max-height: 75vh;
+  
+
+
+  max-width: calc(100vw - 16px - 16px);
+  position: absolute;
+  right: auto;
+  
+  top: -3px;
+  width: 600px;
 }
