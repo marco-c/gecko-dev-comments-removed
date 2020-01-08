@@ -195,7 +195,7 @@ class UrlbarInput {
   
 
   _updateTextOverflow() {
-    if (!this._inOverflow) {
+    if (!this._overflowing) {
       this.removeAttribute("textoverflow");
       return;
     }
@@ -203,7 +203,7 @@ class UrlbarInput {
     this.window.promiseDocumentFlushed(() => {
       
       let input = this.inputField;
-      if (input && this._inOverflow) {
+      if (input && this._overflowing) {
         let side = input.scrollLeft &&
                    input.scrollLeft == input.scrollLeftMax ? "start" : "end";
         this.setAttribute("textoverflow", side);
@@ -212,7 +212,7 @@ class UrlbarInput {
   }
 
   _updateUrlTooltip() {
-    if (this.focused || !this._inOverflow) {
+    if (this.focused || !this._overflowing) {
       this.inputField.removeAttribute("title");
     } else {
       this.inputField.setAttribute("title", this.value);
@@ -392,7 +392,7 @@ class UrlbarInput {
     if (targetIsPlaceholder) {
       return;
     }
-    this._inOverflow = true;
+    this._overflowing = true;
     this._updateTextOverflow();
   }
 
@@ -404,7 +404,7 @@ class UrlbarInput {
     if (targetIsPlaceholder) {
       return;
     }
-    this._inOverflow = false;
+    this._overflowing = false;
 
     this._updateTextOverflow();
 
