@@ -1513,7 +1513,8 @@ TextNodeCorrespondenceRecorder::TraverseAndRecord(nsIFrame* aFrame)
     }
     
     
-    while (mNodeIterator.Current() != node) {
+    while (mNodeIterator.Current() &&
+           mNodeIterator.Current() != node) {
       undisplayed += mNodeIterator.Current()->TextLength();
       NextNode();
     }
