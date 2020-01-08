@@ -811,11 +811,11 @@ var interfaceNamesInGlobalScope =
 
     {name: "PublicKeyCredential"},
 
-    {name: "PushManager", insecureContext: true},
+    {name: "PushManager", insecureContext: true, android: false },
 
-    {name: "PushSubscription", insecureContext: true},
+    {name: "PushSubscription", insecureContext: true, android: false },
 
-    {name: "PushSubscriptionOptions", insecureContext: true},
+    {name: "PushSubscriptionOptions", insecureContext: true, android: false },
 
     {name: "RadioNodeList", insecureContext: true},
 
