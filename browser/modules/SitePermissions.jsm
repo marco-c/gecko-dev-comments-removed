@@ -20,7 +20,7 @@ var gStringBundle =
 
 
 
-const TemporaryBlockedPermissions = {
+const TemporaryPermissions = {
   
   
   
@@ -38,20 +38,20 @@ const TemporaryBlockedPermissions = {
 
   
   
-  _get(entry, prePath, id, timeStamp) {
-    if (timeStamp == null) {
+  _get(entry, prePath, id, permission) {
+    if (permission == null || permission.timeStamp == null) {
       delete entry[prePath][id];
       return null;
     }
-    if (timeStamp + SitePermissions.temporaryPermissionExpireTime < Date.now()) {
+    if (permission.timeStamp + SitePermissions.temporaryPermissionExpireTime < Date.now()) {
       delete entry[prePath][id];
       return null;
     }
-    return {id, state: SitePermissions.BLOCK, scope: SitePermissions.SCOPE_TEMPORARY};
+    return {id, state: permission.state, scope: SitePermissions.SCOPE_TEMPORARY};
   },
 
   
-  set(browser, id) {
+  set(browser, id, state) {
     if (!browser) {
       return;
     }
@@ -63,7 +63,7 @@ const TemporaryBlockedPermissions = {
     if (!entry[prePath]) {
       entry[prePath] = {};
     }
-    entry[prePath][id] = Date.now();
+    entry[prePath][id] = {timeStamp: Date.now(), state};
   },
 
   
@@ -292,7 +292,7 @@ var SitePermissions = {
   getAllForBrowser(browser) {
     let permissions = {};
 
-    for (let permission of TemporaryBlockedPermissions.getAll(browser)) {
+    for (let permission of TemporaryPermissions.getAll(browser)) {
       permission.scope = this.SCOPE_TEMPORARY;
       permissions[permission.id] = permission;
     }
@@ -426,6 +426,23 @@ var SitePermissions = {
 
 
 
+  permitTemporaryAllow(permissionID) {
+    if (permissionID in gPermissionObject &&
+        gPermissionObject[permissionID].permitTemporaryAllow)
+      return gPermissionObject[permissionID].permitTemporaryAllow;
+
+    return false;
+  },
+
+  
+
+
+
+
+
+
+
+
 
 
 
@@ -461,7 +478,7 @@ var SitePermissions = {
     if (result.state == defaultState) {
       
       
-      let value = TemporaryBlockedPermissions.get(browser, permissionID);
+      let value = TemporaryPermissions.get(browser, permissionID);
 
       if (value) {
         result.state = value.state;
@@ -522,7 +539,7 @@ var SitePermissions = {
       
       
       
-      if (state != this.BLOCK) {
+      if (state != this.BLOCK && !this.permitTemporaryAllow(permissionID)) {
         throw "'Block' is the only permission we can save temporarily on a browser";
       }
 
@@ -530,7 +547,7 @@ var SitePermissions = {
         throw "TEMPORARY scoped permissions require a browser object";
       }
 
-      TemporaryBlockedPermissions.set(browser, permissionID);
+      TemporaryPermissions.set(browser, permissionID, state);
 
       browser.dispatchEvent(new browser.ownerGlobal
                                        .CustomEvent("PermissionStateChange"));
@@ -563,9 +580,9 @@ var SitePermissions = {
       Services.perms.remove(uri, permissionID);
 
     
-    if (TemporaryBlockedPermissions.get(browser, permissionID)) {
+    if (TemporaryPermissions.get(browser, permissionID)) {
       
-      TemporaryBlockedPermissions.remove(browser, permissionID);
+      TemporaryPermissions.remove(browser, permissionID);
       
       browser.dispatchEvent(new browser.ownerGlobal
                                        .CustomEvent("PermissionStateChange"));
@@ -579,7 +596,7 @@ var SitePermissions = {
 
 
   clearTemporaryPermissions(browser) {
-    TemporaryBlockedPermissions.clear(browser);
+    TemporaryPermissions.clear(browser);
   },
 
   
@@ -592,7 +609,7 @@ var SitePermissions = {
 
 
   copyTemporaryPermissions(browser, newBrowser) {
-    TemporaryBlockedPermissions.copy(browser, newBrowser);
+    TemporaryPermissions.copy(browser, newBrowser);
   },
 
   
@@ -702,6 +719,7 @@ var gPermissionObject = {
   "autoplay-media": {
     exactHostMatch: true,
     showGloballyBlocked: true,
+    permitTemporaryAllow: true,
     getDefault() {
       let state = Services.prefs.getIntPref("media.autoplay.default",
                                             Ci.nsIAutoplay.PROMPT);

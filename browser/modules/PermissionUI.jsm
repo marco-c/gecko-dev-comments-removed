@@ -337,7 +337,9 @@ var PermissionPromptPrototype = {
                                   this.permissionKey,
                                   promptAction.action,
                                   scope);
-            } else if (promptAction.action == SitePermissions.BLOCK) {
+            } else if (promptAction.action == SitePermissions.BLOCK ||
+                       SitePermissions.permitTemporaryAllow(this.permissionKey)) {
+              
               
               
               
