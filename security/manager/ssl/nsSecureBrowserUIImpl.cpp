@@ -205,10 +205,6 @@ nsSecureBrowserUIImpl::CheckForBlockedContent()
   if (docShell->GetHasAllCookiesBeenBlocked()) {
     mState |= STATE_COOKIES_BLOCKED_ALL;
   }
-
-  if (docShell->GetHasCookiesLoaded()) {
-    mState |= STATE_COOKIES_LOADED;
-  }
 }
 
 
