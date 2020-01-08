@@ -46,12 +46,6 @@ Services.scriptloader.loadSubScript(
 const EXAMPLE_URL =
   "http://example.com/browser/devtools/client/debugger/new/test/mochitest/examples/";
 
-Services.prefs.setBoolPref("devtools.debugger.new-debugger-frontend", true);
-
-registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("devtools.debugger.new-debugger-frontend");
-});
-
 
 async function takeScreenshot(dbg) {
   let canvas = dbg.win.document.createElementNS(

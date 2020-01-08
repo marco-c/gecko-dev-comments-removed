@@ -1,8 +1,6 @@
 
 
 
-pref("devtools.debugger.new-debugger-frontend", true);
-
 
 pref("devtools.debugger.enabled", true);
 pref("devtools.debugger.chrome-debugging-host", "localhost");
