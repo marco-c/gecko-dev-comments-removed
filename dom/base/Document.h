@@ -3296,6 +3296,9 @@ class Document : public nsINode,
   void NotifyUserGestureActivation();
 
   
+  void ClearUserGestureActivation();
+
+  
   
   bool HasBeenUserGestureActivated();
 
