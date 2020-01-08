@@ -4331,12 +4331,7 @@ SearchService.prototype = {
   },
 
   parseSubmissionURL: function SRCH_SVC_parseSubmissionURL(aURL) {
-    if (!gInitialized) {
-      
-      
-      
-      return gEmptyParseSubmissionResult;
-    }
+    this._ensureInitialized();
     LOG("parseSubmissionURL: Parsing \"" + aURL + "\".");
 
     if (!this._parseSubmissionMap) {
