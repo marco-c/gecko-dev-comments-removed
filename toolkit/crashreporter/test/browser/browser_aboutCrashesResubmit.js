@@ -16,22 +16,11 @@ function cleanup_and_finish() {
 
 
 function check_crash_list(crashes) {
-  let doc = content.document;
-  let crashlinks = doc.getElementsByClassName("crashReport");
-  Assert.equal(crashlinks.length, crashes.length,
-    "about:crashes lists correct number of crash reports");
-  
-  if (crashlinks.length == crashes.length) {
-    for (let i = 0; i < crashes.length; i++) {
-      Assert.equal(crashlinks[i].id, crashes[i].id, i + ": crash ID is correct");
-      if (crashes[i].pending) {
-        
-        Assert.equal(crashlinks[i].getAttribute("href"),
-          "http://example.com/browser/toolkit/crashreporter/about/throttling",
-          "pending URL links to the correct static page");
-      }
-    }
-  }
+  const doc = content.document;
+  const crashIdNodes = Array.from(doc.getElementsByClassName("crash-id"));
+  const pageCrashIds = new Set(crashIdNodes.map(node => node.textContent));
+  const crashIds = new Set(crashes.map(crash => crash.id));
+  Assert.deepEqual(pageCrashIds, crashIds, "about:crashes lists the correct crash reports.");
 }
 
 
@@ -43,10 +32,16 @@ function check_crash_list(crashes) {
 
 
 function check_submit_pending(tab, crashes) {
-  let browser = gBrowser.getBrowserForTab(tab);
+  const browser = gBrowser.getBrowserForTab(tab);
   let SubmittedCrash = null;
   let CrashID = null;
   let CrashURL = null;
+  function csp_onsuccess() {
+    const crashLinks = content.document.getElementsByClassName("crash-link");
+    
+    const link = crashLinks[crashLinks.length - 1];
+    link.click();
+  }
   function csp_onload() {
     
     ok(true, "got submission onload");
@@ -99,47 +94,50 @@ function check_submit_pending(tab, crashes) {
     ok(false, "failed to submit crash report!");
     cleanup_and_finish();
   }
+  browser.addEventListener("CrashSubmitSucceeded", csp_onsuccess, true);
   browser.addEventListener("CrashSubmitFailed", csp_fail, true);
   BrowserTestUtils.browserLoaded(browser, false, (url) => url !== "about:crashes").then(csp_onload);
   function csp_pageshow() {
     ContentTask.spawn(browser, { CrashID, CrashURL }, function({ CrashID, CrashURL }) {
                   Assert.equal(content.location.href, "about:crashes", "navigated back successfully");
-                  let link = content.document.getElementById(CrashID);
+                  const link = content.document.getElementById(CrashID).getElementsByClassName("crash-link")[0];
                   Assert.notEqual(link, null, "crash report link changed correctly");
-                  if (link)
+                  if (link) {
                     Assert.equal(link.href, CrashURL, "crash report link points to correct href");
+                  }
                 }).then(cleanup_and_finish);
   }
 
   
-  for (let crash of crashes) {
+  for (const crash of crashes) {
     if (crash.pending) {
       SubmittedCrash = crash;
       break;
     }
   }
 
-  ContentTask.spawn(browser, SubmittedCrash.id, function(id) {
-    let link = content.document.getElementById(id);
-    link.click();
+  ContentTask.spawn(browser, SubmittedCrash.id, id => {
+    const submitButton = content.document.getElementById(id).getElementsByClassName("submit-button")[0];
+    submitButton.click();
   });
 }
 
 function test() {
   waitForExplicitFinish();
-  let appD = make_fake_appdir();
-  let crD = appD.clone();
+  const appD = make_fake_appdir();
+  const crD = appD.clone();
   crD.append("Crash Reports");
-  let crashes = add_fake_crashes(crD, 1);
+  const crashes = add_fake_crashes(crD, 1);
   
-  crashes.push(addPendingCrashreport(crD,
-                                     crashes[crashes.length - 1].date + 60000,
-                                     {"ServerURL": "http://example.com/browser/toolkit/crashreporter/test/browser/crashreport.sjs",
-                                      "ProductName": "Test App",
-                                      
-                                      
-                                      "Foo": "ABC=XYZ",
-                                     }));
+  crashes.push(addPendingCrashreport(
+    crD,
+    crashes[crashes.length - 1].date + 60000,
+    {
+      "ServerURL": "http://example.com/browser/toolkit/crashreporter/test/browser/crashreport.sjs",
+      "ProductName": "Test App",
+      "Foo": "ABC=XYZ", 
+    },
+  ));
   crashes.sort((a, b) => b.date - a.date);
 
   
