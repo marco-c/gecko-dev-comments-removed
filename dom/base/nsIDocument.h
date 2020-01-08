@@ -1114,6 +1114,26 @@ public:
   
 
 
+  void SetHasCookiesLoaded(bool aHasCookiesLoaded,
+                           const nsAString& aOriginLoaded)
+  {
+    RecordContentBlockingLog(aOriginLoaded,
+                             nsIWebProgressListener::STATE_COOKIES_LOADED,
+                             aHasCookiesLoaded);
+  }
+
+  
+
+
+  bool GetHasCookiesLoaded()
+  {
+    return mContentBlockingLog.HasBlockedAnyOfType(
+        nsIWebProgressListener::STATE_COOKIES_LOADED);
+  }
+
+  
+
+
   bool GetHasTrackingContentLoaded()
   {
     return mContentBlockingLog.HasBlockedAnyOfType(

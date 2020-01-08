@@ -832,12 +832,18 @@ nsHttpChannel::ConnectOnTailUnblock()
     LOG(("nsHttpChannel::ConnectOnTailUnblock [this=%p]\n", this));
 
     bool isTrackingResource = mIsThirdPartyTrackingResource; 
-    if (isTrackingResource && CheckFastBlocked()) {
-        AntiTrackingCommon::NotifyRejection(this,
-                                            nsIWebProgressListener::STATE_BLOCKED_SLOW_TRACKING_CONTENT);
-        Unused << AsyncAbort(NS_ERROR_TRACKING_ANNOTATION_URI);
-        CloseCacheEntry(false);
-        return NS_OK;
+    if (isTrackingResource) {
+        bool engageFastBlock = CheckFastBlocked();
+        AntiTrackingCommon::NotifyBlockingDecision(this,
+                                                   engageFastBlock ?
+                                                     AntiTrackingCommon::BlockingDecision::eBlock :
+                                                     AntiTrackingCommon::BlockingDecision::eAllow,
+                                                   nsIWebProgressListener::STATE_BLOCKED_SLOW_TRACKING_CONTENT);
+        if (engageFastBlock) {
+          Unused << AsyncAbort(NS_ERROR_TRACKING_ANNOTATION_URI);
+          CloseCacheEntry(false);
+          return NS_OK;
+        }
     }
 
     
@@ -7772,16 +7778,10 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
             return NS_OK;
         }
 
-        bool upgradeWebsocket = mUpgradeProtocolCallback && stickyConn &&
+        if (mUpgradeProtocolCallback && stickyConn &&
             mResponseHead &&
             ((mResponseHead->Status() == 101 && mResponseHead->Version() == HttpVersion::v1_1) ||
-             (mResponseHead->Status() == 200 && mResponseHead->Version() == HttpVersion::v2_0));
-
-        bool upgradeConnect = mUpgradeProtocolCallback && stickyConn &&
-            (mCaps & NS_HTTP_CONNECT_ONLY) && mResponseHead &&
-            mResponseHead->Status() == 200;
-
-        if (upgradeWebsocket || upgradeConnect) {
+             (mResponseHead->Status() == 200 && mResponseHead->Version() == HttpVersion::v2_0))) {
             nsresult rv =
                 gHttpHandler->ConnMgr()->CompleteUpgrade(stickyConn,
                                                          mUpgradeProtocolCallback);
