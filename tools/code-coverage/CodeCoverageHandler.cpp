@@ -4,7 +4,10 @@
 
 
 #include <stdio.h>
-#ifndef XP_WIN
+#ifdef XP_WIN
+#include <process.h>
+#define getpid _getpid
+#else
 #include <signal.h>
 #include <unistd.h>
 #endif
