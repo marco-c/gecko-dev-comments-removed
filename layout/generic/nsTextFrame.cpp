@@ -435,6 +435,10 @@ class nsTextPaintStyle {
   nsSelectionStyle* GetSelectionStyle(int32_t aIndex);
   void InitSelectionStyle(int32_t aIndex);
 
+  
+  
+  
+  
   bool EnsureSufficientContrast(nscolor* aForeColor, nscolor* aBackColor);
 
   nscolor GetResolvedForeColor(nscolor aColor, nscolor aDefaultForeColor,
@@ -4018,6 +4022,7 @@ bool nsTextPaintStyle::InitSelectionColorsAndShadow() {
       LookAndFeel::GetColor(LookAndFeel::eColorID_TextSelectForeground);
 
   if (mResolveColors) {
+    
     
     if (mSelectionTextColor == NS_DONT_CHANGE_COLOR) {
       nscolor frameColor =
