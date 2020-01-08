@@ -272,6 +272,12 @@ pref("browser.urlbar.doubleClickSelectsAll", false);
 #endif
 
 
+
+
+
+pref("browser.urlbar.ctrlCanonizesURLs", true);
+
+
 pref("browser.urlbar.autoFill", true);
 pref("browser.urlbar.speculativeConnect.enabled", true);
 
