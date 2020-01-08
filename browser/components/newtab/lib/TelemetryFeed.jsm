@@ -364,6 +364,12 @@ this.TelemetryFeed = class TelemetryFeed {
     );
   }
 
+  
+
+
+
+
+
   createASRouterEvent(action) {
     const ping = {
       client_id: "n/a",
@@ -371,6 +377,12 @@ this.TelemetryFeed = class TelemetryFeed {
       locale: Services.locale.getAppLocaleAsLangTag(),
       impression_id: this._impressionId
     };
+    if (action.data.includeClientID) {
+      
+      delete ping.client_id;
+      delete action.data.includeClientID;
+      ping.impression_id = "n/a";
+    }
     return Object.assign(ping, action.data);
   }
 

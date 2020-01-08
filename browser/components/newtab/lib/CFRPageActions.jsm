@@ -34,10 +34,14 @@ class PageAction {
     this.button = win.document.getElementById("cfr-button");
     this.label = win.document.getElementById("cfr-label");
 
+    
+    
     this._dispatchToASRouter = dispatchToASRouter;
+
     this._popupStateChange = this._popupStateChange.bind(this);
     this._collapse = this._collapse.bind(this);
     this._handleClick = this._handleClick.bind(this);
+    this.dispatchUserAction = this.dispatchUserAction.bind(this);
 
     
     this.stateTransitionTimeoutIDs = [];
@@ -72,6 +76,13 @@ class PageAction {
     this.container.hidden = true;
     this._clearScheduledStateChanges();
     this.urlbar.removeAttribute("cfr-recommendation-state");
+  }
+
+  dispatchUserAction(action) {
+    this._dispatchToASRouter(
+      {type: "USER_ACTION", data: action},
+      {browser: this.window.gBrowser.selectedBrowser}
+    );
   }
 
   _expand(delay = 0) {
@@ -144,7 +155,7 @@ class PageAction {
     const mainAction = {
       label: primary.label,
       accessKey: primary.accessKey,
-      callback: () => this._dispatchToASRouter(primary.action)
+      callback: () => this.dispatchUserAction(primary.action)
     };
 
     const secondaryActions = [{
@@ -216,11 +227,29 @@ const CFRPageActions = {
 
 
 
+  async forceRecommendation(browser, recommendation, dispatchToASRouter) {
+    
+    const win = browser.browser.ownerGlobal;
+    const {id, content} = recommendation;
+    RecommendationMap.set(browser.browser, {id, content});
+    if (!PageActionMap.has(win)) {
+      PageActionMap.set(win, new PageAction(win, dispatchToASRouter));
+    }
+    await PageActionMap.get(win).show(recommendation.content.notification_text, true);
+    return true;
+  },
+
+  
 
 
-  async addRecommendation(browser, host, recommendation, dispatchToASRouter, force = false) {
+
+
+
+
+
+  async addRecommendation(browser, host, recommendation, dispatchToASRouter) {
     const win = browser.ownerGlobal;
-    if (browser !== win.gBrowser.selectedBrowser || !(force || isHostMatch(browser, host))) {
+    if (browser !== win.gBrowser.selectedBrowser || !isHostMatch(browser, host)) {
       return false;
     }
     const {id, content} = recommendation;
@@ -243,5 +272,6 @@ const CFRPageActions = {
     RecommendationMap.clear();
   }
 };
+this.CFRPageActions = CFRPageActions;
 
 const EXPORTED_SYMBOLS = ["CFRPageActions"];
