@@ -582,11 +582,22 @@ pref("media.autoplay.block-webaudio", false);
 pref("media.autoplay.allow-muted", true);
 
 
+pref("media.autoplay.allow-extension-background-pages", true);
+
+
 
 
 
 #ifdef NIGHTLY_BUILD
 pref("media.autoplay.enabled.user-gestures-needed", false);
+#endif
+
+
+
+#ifdef NIGHTLY_BUILD
+pref("media.allowed-to-play.enabled", true);
+#else
+pref("media.allowed-to-play.enabled", false);
 #endif
 
 
@@ -5389,6 +5400,8 @@ pref("urlclassifier.downloadBlockTable", "goog-badbinurl-proto");
 pref("urlclassifier.passwordAllowTable", "goog-passwordwhite-proto");
 
 
+pref("urlclassifier.trackingAnnotationTable", "test-track-simple,base-track-digest256");
+pref("urlclassifier.trackingAnnotationWhitelistTable", "test-trackwhite-simple,mozstd-trackwhite-digest256");
 pref("urlclassifier.trackingTable", "test-track-simple,base-track-digest256");
 pref("urlclassifier.trackingWhitelistTable", "test-trackwhite-simple,mozstd-trackwhite-digest256");
 
