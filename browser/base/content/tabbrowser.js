@@ -5437,8 +5437,8 @@ var TabContextMenu = {
     contextMoveTabToStart.disabled = selectedTabs[0]._tPos == 0 && allSelectedTabsAdjacent;
 
     
-    let contextDuplicateTab = document.getElementById("context_duplicateTab");
-    contextDuplicateTab.hidden = multiselectionContext;
+    document.getElementById("context_duplicateTab").hidden = multiselectionContext;
+    document.getElementById("context_duplicateTabs").hidden = !multiselectionContext;
 
     
     
