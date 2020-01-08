@@ -737,6 +737,15 @@ public:
 
 
 
+  static ReferenceState
+  GetFiltersIfObserving(nsIFrame* aFilteredFrame,
+                        nsTArray<nsSVGFilterFrame*>* aFilterFrames);
+
+  
+
+
+
+
 
 
 
