@@ -5981,29 +5981,6 @@ SetBuildIdOp(JSContext* cx, BuildIdOp buildIdOp);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class WasmModuleListener
 {
   protected:
@@ -6023,19 +6000,6 @@ class WasmModuleListener
 struct WasmModule : js::AtomicRefCounted<WasmModule>
 {
     virtual ~WasmModule() {}
-
-    virtual size_t bytecodeSerializedSize() const = 0;
-    virtual void bytecodeSerialize(uint8_t* bytecodeBegin, size_t bytecodeSize) const = 0;
-
-    
-    
-    
-    
-    virtual bool compilationComplete() const = 0;
-    virtual bool notifyWhenCompilationComplete(WasmModuleListener* listener) = 0;
-    virtual size_t compiledSerializedSize() const = 0;
-    virtual void compiledSerialize(uint8_t* compiledBegin, size_t compiledSize) const = 0;
-
     virtual JSObject* createObject(JSContext* cx) = 0;
 };
 
@@ -6045,11 +6009,8 @@ IsWasmModuleObject(HandleObject obj);
 extern JS_PUBLIC_API(RefPtr<WasmModule>)
 GetWasmModule(HandleObject obj);
 
-extern JS_PUBLIC_API(bool)
-CompiledWasmModuleAssumptionsMatch(PRFileDesc* compiled, BuildIdCharVector&& buildId);
-
 extern JS_PUBLIC_API(RefPtr<WasmModule>)
-DeserializeWasmModule(PRFileDesc* bytecode, PRFileDesc* maybeCompiled, BuildIdCharVector&& buildId,
+DeserializeWasmModule(PRFileDesc* bytecode, BuildIdCharVector&& buildId,
                       JS::UniqueChars filename, unsigned line);
 
 

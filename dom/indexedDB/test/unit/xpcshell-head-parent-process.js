@@ -646,7 +646,3 @@ var SpecialPowers = {
     }
   },
 };
-
-
-if (SpecialPowers.isMainProcess())
-  SpecialPowers.setBoolPref("javascript.options.wasm_baselinejit", true);

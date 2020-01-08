@@ -223,19 +223,23 @@ class Module : public JS::WasmModule
     void blockOnTier2Complete() const;
 
     
+    
 
-    size_t bytecodeSerializedSize() const override;
-    void bytecodeSerialize(uint8_t* bytecodeBegin, size_t bytecodeSize) const override;
-    bool compilationComplete() const override;
-    bool notifyWhenCompilationComplete(JS::WasmModuleListener* listener) override;
-    size_t compiledSerializedSize() const override;
-    void compiledSerialize(uint8_t* compiledBegin, size_t compiledSize) const override;
+    size_t bytecodeSerializedSize() const;
+    void bytecodeSerialize(uint8_t* bytecodeBegin, size_t bytecodeSize) const;
+    bool compilationComplete() const;
+    bool notifyWhenCompilationComplete(JS::WasmModuleListener* listener);
+    size_t compiledSerializedSize() const;
+    void compiledSerialize(uint8_t* compiledBegin, size_t compiledSize) const;
 
     static bool assumptionsMatch(const Assumptions& current, const uint8_t* compiledBegin,
                                  size_t remain);
     static RefPtr<Module> deserialize(const uint8_t* bytecodeBegin, size_t bytecodeSize,
                                       const uint8_t* compiledBegin, size_t compiledSize,
                                       Metadata* maybeMetadata = nullptr);
+
+    
+
     JSObject* createObject(JSContext* cx) override;
 
     
@@ -255,12 +259,9 @@ typedef RefPtr<Module> SharedModule;
 
 
 
-bool
-CompiledModuleAssumptionsMatch(PRFileDesc* compiled, JS::BuildIdCharVector&& buildId);
-
 SharedModule
-DeserializeModule(PRFileDesc* bytecode, PRFileDesc* maybeCompiled, JS::BuildIdCharVector&& buildId,
-                  UniqueChars filename, unsigned line);
+DeserializeModule(PRFileDesc* bytecode, JS::BuildIdCharVector&& buildId, UniqueChars filename,
+                  unsigned line);
 
 } 
 } 

@@ -54,19 +54,6 @@ function* testSteps()
     info("not storing crypto key");
   }
 
-  if (isWasmSupported()) {
-    info("creating wasm");
-    getWasmBinary("(module (func (nop)))");
-    let binary = yield undefined;
-    allData.push({
-      id: 2,
-      what: "wasm",
-      data: getWasmModule(binary)
-    });
-  } else {
-    info("not storing wasm");
-  }
-
   
   info("opening initial database");
   let request = indexedDB.open(this.window ? window.location.pathname : "Splendid Test", 1);
