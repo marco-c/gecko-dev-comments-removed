@@ -179,6 +179,13 @@ enum class StyleImageOrientation : uint8_t {
 };
 
 
+enum class StyleScrollbarWidth : uint8_t {
+  Auto,
+  Thin,
+  None,
+};
+
+
 enum class StyleShapeRadius : uint8_t {
   ClosestSide,
   FarthestSide,
