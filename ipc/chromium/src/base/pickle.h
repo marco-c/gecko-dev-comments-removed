@@ -78,6 +78,8 @@ class Pickle {
 
   Pickle& operator=(Pickle&& other);
 
+  void CopyFrom(const Pickle& other);
+
   
   uint32_t size() const { return header_size_ + header_->payload_size; }
 

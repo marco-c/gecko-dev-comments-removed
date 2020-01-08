@@ -213,6 +213,8 @@ class Message : public Pickle {
   Message& operator=(const Message& other) = delete;
   Message& operator=(Message&& other);
 
+  void CopyFrom(const Message& other);
+
   
   
   
