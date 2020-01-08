@@ -1778,7 +1778,7 @@ protected:
 
   already_AddRefed<nsINode> GetFocusedNode();
 
-  virtual already_AddRefed<nsIContent> GetInputEventTargetContent() override;
+  virtual already_AddRefed<Element> GetInputEventTargetElement() override;
 
   
 

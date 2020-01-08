@@ -123,6 +123,7 @@ class Dispatcher;
 class ErrorResult;
 class EventListenerManager;
 class HTMLEditor;
+class TextEditor;
 
 namespace dom {
 class ContentFrameMessageManager;
@@ -1390,6 +1391,9 @@ public:
 
 
 
+
+
+
   static nsresult DispatchTrustedEvent(nsIDocument* aDoc,
                                        nsISupports* aTarget,
                                        const nsAString& aEventName,
@@ -1437,6 +1441,26 @@ public:
                          aCanBubble, aCancelable, Trusted::eYes,
                          aDefaultAction, aOnlyChromeDispatch);
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT
+  static nsresult DispatchInputEvent(Element* aEventTarget);
+  MOZ_CAN_RUN_SCRIPT
+  static nsresult DispatchInputEvent(Element* aEventTarget,
+                                     mozilla::TextEditor* aTextEditor);
 
   
 

@@ -64,7 +64,9 @@ public:
 
   
   
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   NS_IMETHOD Undo(uint32_t aCount) final;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   NS_IMETHOD Redo(uint32_t aCount) final;
 
   NS_IMETHOD Cut() override;
@@ -205,6 +207,7 @@ public:
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult
   OnCompositionChange(WidgetCompositionEvent& aCompositionChangeEvent);
 
@@ -213,6 +216,7 @@ public:
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   void OnCompositionEnd(WidgetCompositionEvent& aCompositionEndEvent);
 
   
@@ -530,7 +534,7 @@ protected:
 
   bool EnsureComposition(WidgetCompositionEvent& aCompositionEvent);
 
-  virtual already_AddRefed<nsIContent> GetInputEventTargetContent() override;
+  virtual already_AddRefed<Element> GetInputEventTargetElement() override;
 
 protected:
   mutable nsCOMPtr<nsIDocumentEncoder> mCachedDocumentEncoder;

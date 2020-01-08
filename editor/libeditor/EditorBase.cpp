@@ -2142,56 +2142,6 @@ EditorBase::NotifySelectionChanged(nsIDocument* aDocument,
   return NS_OK;
 }
 
-class EditorInputEventDispatcher final : public Runnable
-{
-public:
-  EditorInputEventDispatcher(EditorBase* aEditorBase,
-                             nsIContent* aTarget,
-                             bool aIsComposing)
-    : Runnable("EditorInputEventDispatcher")
-    , mEditorBase(aEditorBase)
-    , mTarget(aTarget)
-    , mIsComposing(aIsComposing)
-  {
-  }
-
-  NS_IMETHOD Run() override
-  {
-    
-    
-
-    if (!mTarget->IsInComposedDoc()) {
-      return NS_OK;
-    }
-
-    nsCOMPtr<nsIPresShell> ps = mEditorBase->GetPresShell();
-    if (!ps) {
-      return NS_OK;
-    }
-
-    nsCOMPtr<nsIWidget> widget = mEditorBase->GetWidget();
-    if (!widget) {
-      return NS_OK;
-    }
-
-    
-    
-    InternalEditorInputEvent inputEvent(true, eEditorInput, widget);
-    inputEvent.mTime = static_cast<uint64_t>(PR_Now() / 1000);
-    inputEvent.mIsComposing = mIsComposing;
-    nsEventStatus status = nsEventStatus_eIgnore;
-    nsresult rv =
-      ps->HandleEventWithTarget(&inputEvent, nullptr, mTarget, &status);
-    NS_ENSURE_SUCCESS(rv, NS_OK); 
-    return NS_OK;
-  }
-
-private:
-  RefPtr<EditorBase> mEditorBase;
-  nsCOMPtr<nsIContent> mTarget;
-  bool mIsComposing;
-};
-
 void
 EditorBase::NotifyEditorObservers(NotificationForEditorObservers aNotification)
 {
@@ -2252,19 +2202,15 @@ EditorBase::NotifyEditorObservers(NotificationForEditorObservers aNotification)
 void
 EditorBase::FireInputEvent()
 {
-  
-  
-  
-  
-
-  nsCOMPtr<nsIContent> target = GetInputEventTargetContent();
-  NS_ENSURE_TRUE_VOID(target);
-
-  
-  
-  
-  nsContentUtils::AddScriptRunner(
-    new EditorInputEventDispatcher(this, target, !!GetComposition()));
+  RefPtr<Element> targetElement = GetInputEventTargetElement();
+  if (NS_WARN_IF(!targetElement)) {
+    return;
+  }
+  RefPtr<TextEditor> textEditor = AsTextEditor();
+  DebugOnly<nsresult> rvIgnored =
+    nsContentUtils::DispatchInputEvent(targetElement, textEditor);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+    "Failed to dispatch input event");
 }
 
 NS_IMETHODIMP

@@ -103,7 +103,11 @@ public:
 
 
 
+
+
+
   NS_IMETHOD_(mozilla::TextEditor*) GetTextEditor() = 0;
+  NS_IMETHOD_(mozilla::TextEditor*) GetTextEditorWithoutCreation() = 0;
 
   
 

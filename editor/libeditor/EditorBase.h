@@ -356,6 +356,7 @@ public:
   
 
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult ToggleTextDirection();
 
   
@@ -367,6 +368,7 @@ public:
     eLTR,
     eRTL,
   };
+  MOZ_CAN_RUN_SCRIPT
   void SwitchTextDirectionTo(TextDirection aTextDirection);
 
   
@@ -1732,7 +1734,9 @@ protected:
 
 
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void BeginPlaceholderTransaction(nsAtom* aTransactionName);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void EndPlaceholderTransaction();
 
   void BeginUpdateViewBatch();
@@ -1768,6 +1772,8 @@ protected:
   virtual nsresult SelectAllInternal();
 
   nsresult DetermineCurrentDirection();
+
+  MOZ_CAN_RUN_SCRIPT
   void FireInputEvent();
 
   
@@ -1888,7 +1894,7 @@ protected:
   
 
 
-  virtual already_AddRefed<nsIContent> GetInputEventTargetContent() = 0;
+  virtual already_AddRefed<Element> GetInputEventTargetElement() = 0;
 
   
 
@@ -1950,6 +1956,7 @@ protected:
     eNotifyEditorObserversOfBefore,
     eNotifyEditorObserversOfCancel
   };
+  MOZ_CAN_RUN_SCRIPT
   void NotifyEditorObservers(NotificationForEditorObservers aNotification);
 
 private:

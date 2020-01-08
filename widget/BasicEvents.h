@@ -510,7 +510,8 @@ private:
         mFlags.mBubbles = true;
         break;
       default:
-        if (mMessage == eResize) {
+        if (mMessage == eResize ||
+            mMessage == eEditorInput) {
           mFlags.mCancelable = false;
         } else {
           mFlags.mCancelable = true;
@@ -612,6 +613,7 @@ public:
   
   BaseEventFlags mFlags;
 
+  
   
   
   
