@@ -432,11 +432,6 @@ public:
 #endif
   void SetAudioOutputVolumeImpl(void* aKey, float aVolume);
   void AddAudioOutputImpl(void* aKey);
-  
-  bool HasAudioOutput() const
-  {
-    return !mAudioOutputs.IsEmpty();
-  }
   void RemoveAudioOutputImpl(void* aKey);
   void AddVideoOutputImpl(already_AddRefed<MediaStreamVideoSink> aSink,
                           TrackID aID);
