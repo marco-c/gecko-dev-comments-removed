@@ -237,7 +237,8 @@ private:
 
     
     nsresult    UpdatePrefs();
-    void        UpdateSendBufferPref(nsIPrefBranch *);
+    static void PrefCallback(const char* aPref, nsSocketTransportService* aSelf);
+    void        UpdateSendBufferPref();
     int32_t     mSendBufferSize;
     
     int32_t     mKeepaliveIdleTimeS;
