@@ -49,7 +49,7 @@ async function assertTelemetry(expectedHistograms, expectedScalars) {
     histSnapshot = searchCounts.snapshot();
     return Object.getOwnPropertyNames(histSnapshot).length ==
       Object.getOwnPropertyNames(expectedHistograms).length;
-  });
+  }, "should have the correct number of histograms");
 
   if (Object.entries(expectedScalars).length > 0) {
     await TestUtils.waitForCondition(() => {
@@ -57,7 +57,7 @@ async function assertTelemetry(expectedHistograms, expectedScalars) {
         "main", false).parent || {};
       return Object.getOwnPropertyNames(expectedScalars)[0] in
         scalars;
-    });
+    }, "should have the expected keyed scalars");
   }
 
   Assert.equal(Object.getOwnPropertyNames(histSnapshot).length,
@@ -84,14 +84,25 @@ async function assertTelemetry(expectedHistograms, expectedScalars) {
   }
 }
 
+
+
+
+async function waitForIdle() {
+  for (let i = 0; i < 10; i++) {
+    await new Promise(resolve => Services.tm.idleDispatchToMainThread(resolve));
+  }
+}
+
 add_task(async function setup() {
   SearchTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO);
+  await waitForIdle();
   
   let oldCanRecord = Services.telemetry.canRecordExtended;
   Services.telemetry.canRecordExtended = true;
   Services.prefs.setBoolPref("browser.search.log", true);
 
   registerCleanupFunction(async () => {
+    Services.prefs.clearUserPref("browser.search.log");
     SearchTelemetry.overrideSearchTelemetryForTests();
     Services.telemetry.canRecordExtended = oldCanRecord;
     Services.telemetry.clearScalars();
