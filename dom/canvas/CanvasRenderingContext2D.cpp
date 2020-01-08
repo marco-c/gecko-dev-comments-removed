@@ -1262,9 +1262,11 @@ bool CanvasRenderingContext2D::AllowOpenGLCanvas() const {
   
   
   
+  
+  
+  
 
-  return (mCompositorBackend == LayersBackend::LAYERS_OPENGL ||
-          mCompositorBackend == LayersBackend::LAYERS_WR) &&
+  return (mCompositorBackend == LayersBackend::LAYERS_OPENGL) &&
          gfxPlatform::GetPlatform()->AllowOpenGLCanvas();
 }
 
