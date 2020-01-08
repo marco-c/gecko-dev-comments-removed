@@ -33,10 +33,12 @@ var SiteDataTestUtils = {
 
 
 
-  addToIndexedDB(origin, key = "foo", value = "bar") {
+
+  addToIndexedDB(origin, key = "foo", value = "bar", originAttributes = {}) {
     return new Promise(resolve => {
       let uri = Services.io.newURI(origin);
-      let principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
+      let principal =
+        Services.scriptSecurityManager.createCodebasePrincipal(uri, originAttributes);
       let request = indexedDB.openForPrincipal(principal, "TestDatabase", 1);
       request.onupgradeneeded = function(e) {
         let db = e.target.result;
