@@ -2,40 +2,224 @@
 
 
 
-
-
 "use strict";
+
+
 
 {
 
-class SearchOneOffs {
-  constructor(container) {
-    this.container = container;
+let sharedFragment;
+function getFragment() {
+  if (!sharedFragment) {
+    sharedFragment = MozXULElement.parseXULToFragment(`
+    <deck class="search-panel-one-offs-header search-panel-header search-panel-current-input">
+      <label class="searchbar-oneoffheader-search" value="&searchWithHeader.label;"></label>
+      <hbox class="search-panel-searchforwith search-panel-current-input">
+        <label value="&searchFor.label;"></label>
+        <label class="searchbar-oneoffheader-searchtext search-panel-input-value" flex="1" crop="end"></label>
+        <label flex="10000" value="&searchWith.label;"></label>
+      </hbox>
+      <hbox class="search-panel-searchonengine search-panel-current-input">
+        <label value="&search.label;"></label>
+        <label class="searchbar-oneoffheader-engine search-panel-input-value" flex="1" crop="end"></label>
+        <label flex="10000" value="&searchAfter.label;"></label>
+      </hbox>
+    </deck>
+    <description role="group" class="search-panel-one-offs">
+      <button oncommand="showSettings();" class="searchbar-engine-one-off-item search-setting-button-compact" tooltiptext="&changeSearchSettings.tooltip;"></button>
+    </description>
+    <vbox class="search-add-engines"></vbox>
+    <button oncommand="showSettings();" class="search-setting-button search-panel-header" label="&changeSearchSettings.button;"></button>
+    <menupopup class="search-one-offs-context-menu">
+      <menuitem class="search-one-offs-context-open-in-new-tab" label="&searchInNewTab.label;" accesskey="&searchInNewTab.accesskey;"></menuitem>
+      <menuitem class="search-one-offs-context-set-default" label="&searchSetAsDefault.label;" accesskey="&searchSetAsDefault.accesskey;"></menuitem>
+    </menupopup>
+    `, ["chrome://browser/locale/browser.dtd"]);
+  }
 
-    this.container.appendChild(MozXULElement.parseXULToFragment(`
-      <deck class="search-panel-one-offs-header search-panel-header search-panel-current-input">
-        <label class="searchbar-oneoffheader-search" value="&searchWithHeader.label;"/>
-        <hbox class="search-panel-searchforwith search-panel-current-input">
-          <label value="&searchFor.label;"/>
-          <label class="searchbar-oneoffheader-searchtext search-panel-input-value" flex="1" crop="end"/>
-          <label flex="10000" value="&searchWith.label;"/>
-        </hbox>
-        <hbox class="search-panel-searchonengine search-panel-current-input">
-          <label value="&search.label;"/>
-          <label class="searchbar-oneoffheader-engine search-panel-input-value" flex="1" crop="end"/>
-          <label flex="10000" value="&searchAfter.label;"/>
-        </hbox>
-      </deck>
-      <description role="group" class="search-panel-one-offs">
-        <button class="searchbar-engine-one-off-item search-setting-button-compact" tooltiptext="&changeSearchSettings.tooltip;"/>
-      </description>
-      <vbox class="search-add-engines"/>
-      <button class="search-setting-button search-panel-header" label="&changeSearchSettings.button;"/>
-      <menupopup class="search-one-offs-context-menu">
-        <menuitem class="search-one-offs-context-open-in-new-tab" label="&searchInNewTab.label;" accesskey="&searchInNewTab.accesskey;"/>
-        <menuitem class="search-one-offs-context-set-default" label="&searchSetAsDefault.label;" accesskey="&searchSetAsDefault.accesskey;"/>
-      </menupopup>
-      `, ["chrome://browser/locale/browser.dtd"]));
+  return document.importNode(sharedFragment, true);
+}
+
+class MozSearchOneOffs extends MozXULElement {
+  constructor() {
+    super();
+
+    this.addEventListener("mousedown", event => {
+      let target = event.originalTarget;
+      if (target.classList.contains("addengine-menu-button")) {
+        return;
+      }
+      
+      event.preventDefault();
+    });
+
+    this.addEventListener("mousemove", event => {
+      let target = event.originalTarget;
+
+      
+      if ((target.localName == "menuitem" && target.classList.contains("addengine-item")) ||
+          target.classList.contains("addengine-menu-button")) {
+        let menuButton = this.querySelector(".addengine-menu-button");
+        this._updateStateForButton(menuButton);
+        this._addEngineMenuShouldBeOpen = true;
+        this._resetAddEngineMenuTimeout();
+        return;
+      }
+
+      if (target.localName != "button") {
+        return;
+      }
+
+      
+      if (this._ignoreMouseEvents) {
+        return;
+      }
+
+      let isOneOff =
+        target.classList.contains("searchbar-engine-one-off-item") &&
+        !target.classList.contains("dummy");
+      if (isOneOff ||
+          target.classList.contains("addengine-item") ||
+          target.classList.contains("search-setting-button")) {
+        this._updateStateForButton(target);
+      }
+    });
+
+    this.addEventListener("mouseout", event => {
+      let target = event.originalTarget;
+
+      
+      if ((target.localName == "menuitem" && target.classList.contains("addengine-item")) ||
+          target.classList.contains("addengine-menu-button")) {
+        this._updateStateForButton(null);
+        this._addEngineMenuShouldBeOpen = false;
+        this._resetAddEngineMenuTimeout();
+        return;
+      }
+
+      if (target.localName != "button") {
+        return;
+      }
+
+      
+      if (this._ignoreMouseEvents) {
+        return;
+      }
+
+      this._updateStateForButton(null);
+    });
+
+    this.addEventListener("click", event => {
+      if (event.button == 2) {
+        return; 
+      }
+
+      let button = event.originalTarget;
+      let engine = button.engine;
+
+      if (!engine) {
+        return;
+      }
+
+      
+      
+      this.selectedButton = button;
+      this.handleSearchCommand(event, engine);
+    });
+
+    this.addEventListener("command", event => {
+      let target = event.originalTarget;
+      if (target.classList.contains("addengine-item")) {
+        
+        
+        let installCallback = {
+          onSuccess: engine => {
+            this._rebuild();
+          },
+          onError(errorCode) {
+            if (errorCode != Ci.nsISearchInstallCallback.ERROR_DUPLICATE_ENGINE) {
+              
+              return;
+            }
+            const kSearchBundleURI =
+              "chrome://global/locale/search/search.properties";
+            let searchBundle = Services.strings.createBundle(kSearchBundleURI);
+            let brandBundle = document.getElementById("bundle_brand");
+            let brandName = brandBundle.getString("brandShortName");
+            let title = searchBundle.GetStringFromName(
+              "error_invalid_engine_title"
+            );
+            let text = searchBundle.formatStringFromName(
+              "error_duplicate_engine_msg",
+              [brandName, target.getAttribute("uri")],
+              2
+            );
+            Services.prompt.QueryInterface(Ci.nsIPromptFactory);
+            let prompt = Services.prompt.getPrompt(
+              gBrowser.contentWindow,
+              Ci.nsIPrompt
+            );
+            prompt.QueryInterface(Ci.nsIWritablePropertyBag2);
+            prompt.setPropertyAsBool("allowTabModal", true);
+            prompt.alert(title, text);
+          },
+        };
+        Services.search.addEngine(target.getAttribute("uri"),
+                                  target.getAttribute("image"), false,
+                                  installCallback);
+      }
+      if (target.classList.contains("search-one-offs-context-open-in-new-tab")) {
+        
+        
+        this.selectedButton = this._buttonForEngine(this._contextEngine);
+        this.handleSearchCommand(event, this._contextEngine, true);
+      }
+      if (target.classList.contains("search-one-offs-context-set-default")) {
+        let currentEngine = Services.search.defaultEngine;
+
+        if (!this.getAttribute("includecurrentengine")) {
+          
+          
+          
+          let button = this._buttonForEngine(this._contextEngine);
+          button.id = this._buttonIDForEngine(currentEngine);
+          let uri = "chrome://browser/skin/search-engine-placeholder.png";
+          if (currentEngine.iconURI) {
+            uri = currentEngine.iconURI.spec;
+          }
+          button.setAttribute("image", uri);
+          button.setAttribute("tooltiptext", currentEngine.name);
+          button.engine = currentEngine;
+        }
+
+        Services.search.defaultEngine = this._contextEngine;
+      }
+    });
+
+    this.addEventListener("contextmenu", event => {
+      let target = event.originalTarget;
+      
+      if (!target.classList.contains("searchbar-engine-one-off-item") ||
+          target.classList.contains("dummy")) {
+        event.preventDefault();
+        return;
+      }
+      this.querySelector(".search-one-offs-context-set-default")
+          .setAttribute("disabled", target.engine == Services.search.defaultEngine);
+
+      this.contextMenuPopup.openPopupAtScreen(event.screenX, event.screenY, true);
+      event.preventDefault();
+
+      this._contextEngine = target.engine;
+    });
+  }
+
+  connectedCallback() {
+    if (this.delayConnectedCallback()) {
+      return;
+    }
+
+    this.appendChild(getFragment());
 
     this._popup = null;
 
@@ -93,15 +277,6 @@ class SearchOneOffs {
 
     this._addEngineMenuShouldBeOpen = false;
 
-    this.addEventListener("mousedown", this);
-    this.addEventListener("mousemove", this);
-    this.addEventListener("mouseout", this);
-    this.addEventListener("click", this);
-    this.addEventListener("command", this);
-    this.addEventListener("contextmenu", this);
-    this.settingsButton.addEventListener("command", this);
-    this.settingsButtonCompact.addEventListener("command", this);
-
     
     
     let listener = aEvent => aEvent.stopPropagation();
@@ -117,49 +292,14 @@ class SearchOneOffs {
     });
 
     
-    Services.prefs.addObserver("browser.search.hiddenOneOffs", this);
-    Services.obs.addObserver(this, "browser-search-engine-modified");
-    Services.obs.addObserver(this, "browser-search-service");
+    Services.prefs.addObserver("browser.search.hiddenOneOffs", this, true);
+    Services.obs.addObserver(this, "browser-search-engine-modified", true);
+    Services.obs.addObserver(this, "browser-search-service", true);
 
     
     
     
-    Services.obs.addObserver(this, "lightweight-theme-changed");
-
-    window.addEventListener("unload", this);
-  }
-
-  addEventListener(...args) {
-    this.container.addEventListener(...args);
-  }
-
-  removeEventListener(...args) {
-    this.container.removeEventListener(...args);
-  }
-
-  dispatchEvent(...args) {
-    this.container.dispatchEvent(...args);
-  }
-
-  getAttribute(...args) {
-    return this.container.getAttribute(...args);
-  }
-
-  setAttribute(...args) {
-    this.container.setAttribute(...args);
-  }
-
-  querySelector(...args) {
-    return this.container.querySelector(...args);
-  }
-
-  handleEvent(event) {
-    let methodName = "_on_" + event.type;
-    if (methodName in this) {
-      this[methodName](event);
-    } else {
-      throw "Unrecognized search-one-offs event: " + event.type;
-    }
+    Services.obs.addObserver(this, "lightweight-theme-changed", true);
   }
 
   
@@ -198,14 +338,12 @@ class SearchOneOffs {
     if (val && val.state != "closed") {
       this._rebuild();
     }
-
     return val;
   }
 
   get popup() {
     return this._popup;
   }
-
   
 
 
@@ -222,14 +360,9 @@ class SearchOneOffs {
     return this._textbox = val;
   }
 
-  get style() {
-    return this.container.style;
-  }
-
   get textbox() {
     return this._textbox;
   }
-
   
 
 
@@ -333,9 +466,42 @@ class SearchOneOffs {
     return this._engines;
   }
 
+  
+
+
+
+  handleEvent(event) {
+    switch (event.type) {
+      case "input":
+        
+        
+        
+        
+        this.query = event.target.oneOffSearchQuery || event.target.value;
+        break;
+      case "popupshowing":
+        this._rebuild();
+        break;
+      case "popuphidden":
+        Services.tm.dispatchToMainThread(() => {
+          this.selectedButton = null;
+          this._contextEngine = null;
+        });
+        break;
+    }
+  }
+
   observe(aEngine, aTopic, aData) {
     
     this._engines = null;
+  }
+
+  showSettings() {
+    openPreferences("paneSearch", { origin: "contentSearch" });
+
+    
+    
+    this.popup.hidePopup();
   }
 
   
@@ -1031,219 +1197,9 @@ class SearchOneOffs {
       button.open = this._addEngineMenuShouldBeOpen;
     }, this._addEngineMenuTimeoutMs);
   }
-
-  
-
-  _on_mousedown(event) {
-    let target = event.originalTarget;
-    if (target.classList.contains("addengine-menu-button")) {
-      return;
-    }
-    
-    event.preventDefault();
-  }
-
-  _on_mousemove(event) {
-    let target = event.originalTarget;
-
-    
-    if ((target.localName == "menuitem" && target.classList.contains("addengine-item")) ||
-        target.classList.contains("addengine-menu-button")) {
-      let menuButton = this.querySelector(".addengine-menu-button");
-      this._updateStateForButton(menuButton);
-      this._addEngineMenuShouldBeOpen = true;
-      this._resetAddEngineMenuTimeout();
-      return;
-    }
-
-    if (target.localName != "button") {
-      return;
-    }
-
-    
-    if (this._ignoreMouseEvents) {
-      return;
-    }
-
-    let isOneOff =
-      target.classList.contains("searchbar-engine-one-off-item") &&
-      !target.classList.contains("dummy");
-    if (isOneOff ||
-        target.classList.contains("addengine-item") ||
-        target.classList.contains("search-setting-button")) {
-      this._updateStateForButton(target);
-    }
-  }
-
-  _on_mouseout(event) {
-    let target = event.originalTarget;
-
-    
-    if ((target.localName == "menuitem" && target.classList.contains("addengine-item")) ||
-        target.classList.contains("addengine-menu-button")) {
-      this._updateStateForButton(null);
-      this._addEngineMenuShouldBeOpen = false;
-      this._resetAddEngineMenuTimeout();
-      return;
-    }
-
-    if (target.localName != "button") {
-      return;
-    }
-
-    
-    if (this._ignoreMouseEvents) {
-      return;
-    }
-
-    this._updateStateForButton(null);
-  }
-
-  _on_click(event) {
-    if (event.button == 2) {
-      return; 
-    }
-
-    let button = event.originalTarget;
-    let engine = button.engine;
-
-    if (!engine) {
-      return;
-    }
-
-    
-    
-    this.selectedButton = button;
-    this.handleSearchCommand(event, engine);
-  }
-
-  _on_command(event) {
-    let target = event.target;
-
-    if (target == this.settingsButton ||
-        target == this.settingsButtonCompact) {
-      openPreferences("paneSearch", { origin: "contentSearch" });
-
-      
-      
-      this.popup.hidePopup();
-      return;
-    }
-
-    if (target.classList.contains("addengine-item")) {
-      
-      
-      let installCallback = {
-        onSuccess: engine => {
-          this._rebuild();
-        },
-        onError(errorCode) {
-          if (errorCode != Ci.nsISearchInstallCallback.ERROR_DUPLICATE_ENGINE) {
-            
-            return;
-          }
-          const kSearchBundleURI =
-            "chrome://global/locale/search/search.properties";
-          let searchBundle = Services.strings.createBundle(kSearchBundleURI);
-          let brandBundle = document.getElementById("bundle_brand");
-          let brandName = brandBundle.getString("brandShortName");
-          let title = searchBundle.GetStringFromName(
-            "error_invalid_engine_title"
-          );
-          let text = searchBundle.formatStringFromName(
-            "error_duplicate_engine_msg",
-            [brandName, target.getAttribute("uri")],
-            2
-          );
-          Services.prompt.QueryInterface(Ci.nsIPromptFactory);
-          let prompt = Services.prompt.getPrompt(
-            gBrowser.contentWindow,
-            Ci.nsIPrompt
-          );
-          prompt.QueryInterface(Ci.nsIWritablePropertyBag2);
-          prompt.setPropertyAsBool("allowTabModal", true);
-          prompt.alert(title, text);
-        },
-      };
-      Services.search.addEngine(target.getAttribute("uri"),
-                                target.getAttribute("image"), false,
-                                installCallback);
-    }
-
-    if (target.classList.contains("search-one-offs-context-open-in-new-tab")) {
-      
-      
-      this.selectedButton = this._buttonForEngine(this._contextEngine);
-      this.handleSearchCommand(event, this._contextEngine, true);
-    }
-
-    if (target.classList.contains("search-one-offs-context-set-default")) {
-      let currentEngine = Services.search.defaultEngine;
-
-      if (!this.getAttribute("includecurrentengine")) {
-        
-        
-        
-        let button = this._buttonForEngine(this._contextEngine);
-        button.id = this._buttonIDForEngine(currentEngine);
-        let uri = "chrome://browser/skin/search-engine-placeholder.png";
-        if (currentEngine.iconURI) {
-          uri = currentEngine.iconURI.spec;
-        }
-        button.setAttribute("image", uri);
-        button.setAttribute("tooltiptext", currentEngine.name);
-        button.engine = currentEngine;
-      }
-
-      Services.search.defaultEngine = this._contextEngine;
-    }
-  }
-
-  _on_contextmenu(event) {
-    let target = event.originalTarget;
-    
-    if (!target.classList.contains("searchbar-engine-one-off-item") ||
-        target.classList.contains("dummy")) {
-      event.preventDefault();
-      return;
-    }
-    this.querySelector(".search-one-offs-context-set-default")
-        .setAttribute("disabled", target.engine == Services.search.defaultEngine);
-
-    this.contextMenuPopup.openPopupAtScreen(event.screenX, event.screenY, true);
-    event.preventDefault();
-
-    this._contextEngine = target.engine;
-  }
-
-  _on_input(event) {
-    
-    
-    
-    
-    this.query = event.target.oneOffSearchQuery || event.target.value;
-  }
-
-  _on_popupshowing() {
-    this._rebuild();
-  }
-
-  _on_popuphidden() {
-    Services.tm.dispatchToMainThread(() => {
-      this.selectedButton = null;
-      this._contextEngine = null;
-    });
-  }
-
-  _on_unload() {
-    Services.prefs.removeObserver("browser.search.hiddenOneOffs", this);
-    Services.obs.removeObserver(this, "browser-search-engine-modified");
-    Services.obs.removeObserver(this, "browser-search-service");
-    Services.obs.removeObserver(this, "lightweight-theme-changed");
-  }
 }
 
-window.SearchOneOffs = SearchOneOffs;
+MozXULElement.implementCustomInterface(MozSearchOneOffs, [Ci.nsIObserver, Ci.nsIWeakReference]);
+customElements.define("search-one-offs", MozSearchOneOffs);
 
 }
-
