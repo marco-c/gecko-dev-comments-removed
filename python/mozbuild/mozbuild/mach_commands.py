@@ -9,6 +9,7 @@ import hashlib
 import itertools
 import json
 import logging
+import ntpath
 import operator
 import os
 import re
@@ -2856,7 +2857,7 @@ class StaticAnalysis(MachCommandBase):
                 
                 
                 original_path = l[0]
-                local_path = original_path.replace(self.topsrcdir, ".")
+                local_path = ntpath.basename(original_path)
                 target_file = os.path.join(tmpdir, local_path)
                 faketmpdir = os.path.dirname(target_file)
                 if not os.path.isdir(faketmpdir):
