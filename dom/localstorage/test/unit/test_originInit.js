@@ -3,8 +3,9 @@
 
 
 
-async function testSteps() {
-  const principal = getPrincipal("http://example.com");
+async function testSteps()
+{
+  const principal = getPrincipal("http://example.com")
 
   const dataFile =
     getRelativeFile("storage/default/http+++example.com/ls/data.sqlite");
@@ -60,6 +61,9 @@ async function testSteps() {
       reader.readAsArrayBuffer(file);
     });
 
+    
+    
+    
     let view = new DataView(buffer, 8, 4);
     return view.getUint32();
   }
@@ -89,7 +93,7 @@ async function testSteps() {
     }
 
     let usage = await readUsageFromUsageFile();
-    ok(usage == data.usage, "Correct usage");
+    ok (usage == data.usage, "Correct usage");
   }
 
   async function clearTestOrigin() {
