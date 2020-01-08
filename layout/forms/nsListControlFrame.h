@@ -36,6 +36,7 @@ namespace mozilla {
 namespace dom {
 class Event;
 class HTMLOptionElement;
+class HTMLSelectElement;
 class HTMLOptionsCollection;
 } 
 } 
@@ -272,7 +273,17 @@ protected:
 
   void DropDownToggleKey(mozilla::dom::Event* aKeyEvent);
 
-  nsresult   IsOptionDisabled(int32_t anIndex, bool &aIsDisabled);
+  
+
+
+  bool IsOptionInteractivelySelectable(int32_t aIndex) const;
+  
+
+
+  static bool
+  IsOptionInteractivelySelectable(mozilla::dom::HTMLSelectElement* aSelect,
+                                  mozilla::dom::HTMLOptionElement* aOption);
+
   
 
 
