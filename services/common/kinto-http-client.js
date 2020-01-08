@@ -20,14 +20,13 @@
 
 const global = this;
 
-var EXPORTED_SYMBOLS = ["KintoHttpClient"];
+this.EXPORTED_SYMBOLS = ["KintoHttpClient"];
 
 
 
 
 
-(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.KintoHttpClient = f()}})(function(){var define,module,exports;return (function(){function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s}return e})()({1:[function(require,module,exports){
-
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.KintoHttpClient = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 
 
 
@@ -47,37 +46,37 @@ var EXPORTED_SYMBOLS = ["KintoHttpClient"];
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = undefined;
+exports.default = void 0;
 
-var _base = require("../src/base");
+var _base = _interopRequireDefault(require("../src/base"));
 
-var _base2 = _interopRequireDefault(_base);
+var errors = _interopRequireWildcard(require("../src/errors"));
 
-var _errors = require("../src/errors");
-
-var errors = _interopRequireWildcard(_errors);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 ChromeUtils.import("resource://gre/modules/Timer.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyGlobalGetters(global, ["fetch"]);
-const { EventEmitter } = ChromeUtils.import("resource://gre/modules/EventEmitter.jsm", {});
+const {
+  EventEmitter
+} = ChromeUtils.import("resource://gre/modules/EventEmitter.jsm", {});
 
-let KintoHttpClient = class KintoHttpClient extends _base2.default {
+class KintoHttpClient extends _base.default {
   constructor(remote, options = {}) {
     const events = {};
     EventEmitter.decorate(events);
-    super(remote, { events, ...options });
+    super(remote, {
+      events,
+      ...options
+    });
   }
-};
+
+}
+
 exports.default = KintoHttpClient;
-
-
-KintoHttpClient.errors = errors;
-
+KintoHttpClient.errors = errors; 
 
 
 if (typeof module === "object") {
@@ -301,68 +300,33 @@ module.exports = v4;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = exports.SUPPORTED_PROTOCOL_VERSION = undefined;
-
-var _dec, _dec2, _dec3, _dec4, _dec5, _dec6, _dec7, _desc, _value, _class;
+exports.default = exports.SUPPORTED_PROTOCOL_VERSION = void 0;
 
 var _utils = require("./utils");
 
-var _http = require("./http");
+var _http = _interopRequireDefault(require("./http"));
 
-var _http2 = _interopRequireDefault(_http);
+var _endpoint = _interopRequireDefault(require("./endpoint"));
 
-var _endpoint = require("./endpoint");
-
-var _endpoint2 = _interopRequireDefault(_endpoint);
-
-var _requests = require("./requests");
-
-var requests = _interopRequireWildcard(_requests);
+var requests = _interopRequireWildcard(require("./requests"));
 
 var _batch = require("./batch");
 
-var _bucket = require("./bucket");
+var _bucket = _interopRequireDefault(require("./bucket"));
 
-var _bucket2 = _interopRequireDefault(_bucket);
+var _dec, _dec2, _dec3, _dec4, _dec5, _dec6, _dec7, _class;
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
-  var desc = {};
-  Object['ke' + 'ys'](descriptor).forEach(function (key) {
-    desc[key] = descriptor[key];
-  });
-  desc.enumerable = !!desc.enumerable;
-  desc.configurable = !!desc.configurable;
-
-  if ('value' in desc || desc.initializer) {
-    desc.writable = true;
-  }
-
-  desc = decorators.slice().reverse().reduce(function (desc, decorator) {
-    return decorator(target, property, desc) || desc;
-  }, desc);
-
-  if (context && desc.initializer !== void 0) {
-    desc.value = desc.initializer ? desc.initializer.call(context) : void 0;
-    desc.initializer = undefined;
-  }
-
-  if (desc.initializer === void 0) {
-    Object['define' + 'Property'](target, property, desc);
-    desc = null;
-  }
-
-  return desc;
-}
+function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) { var desc = {}; Object['ke' + 'ys'](descriptor).forEach(function (key) { desc[key] = descriptor[key]; }); desc.enumerable = !!desc.enumerable; desc.configurable = !!desc.configurable; if ('value' in desc || desc.initializer) { desc.writable = true; } desc = decorators.slice().reverse().reduce(function (desc, decorator) { return decorator(target, property, desc) || desc; }, desc); if (context && desc.initializer !== void 0) { desc.value = desc.initializer ? desc.initializer.call(context) : void 0; desc.initializer = undefined; } if (desc.initializer === void 0) { Object['define' + 'Property'](target, property, desc); desc = null; } return desc; }
 
 
 
 
 
-const SUPPORTED_PROTOCOL_VERSION = exports.SUPPORTED_PROTOCOL_VERSION = "v1";
+const SUPPORTED_PROTOCOL_VERSION = "v1";
 
 
 
@@ -375,6 +339,7 @@ const SUPPORTED_PROTOCOL_VERSION = exports.SUPPORTED_PROTOCOL_VERSION = "v1";
 
 
 
+exports.SUPPORTED_PROTOCOL_VERSION = SUPPORTED_PROTOCOL_VERSION;
 let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec2 = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec3 = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec4 = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec5 = (0, _utils.nobatch)("Can't use batch within a batch!"), _dec6 = (0, _utils.capable)(["permissions_endpoint"]), _dec7 = (0, _utils.support)("1.4", "2.0"), (_class = class KintoClientBase {
   
 
@@ -393,24 +358,26 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
     if (typeof remote !== "string" || !remote.length) {
       throw new Error("Invalid remote URL: " + remote);
     }
+
     if (remote[remote.length - 1] === "/") {
       remote = remote.slice(0, -1);
     }
-    this._backoffReleaseTime = null;
 
+    this._backoffReleaseTime = null;
     this._requests = [];
     this._isBatch = !!options.batch;
     this._retry = options.retry || 0;
     this._safe = !!options.safe;
-    this._headers = options.headers || {};
+    this._headers = options.headers || {}; 
 
     
-    
+
 
 
 
     this.remote = remote;
     
+
 
 
 
@@ -422,19 +389,28 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
 
-    this.events = options.events;
 
-    const { requestMode, timeout } = options;
+    this.events = options.events;
+    const {
+      requestMode,
+      timeout
+    } = options;
     
 
 
 
 
-    this.http = new _http2.default(this.events, { requestMode, timeout });
+
+    this.http = new _http.default(this.events, {
+      requestMode,
+      timeout
+    });
+
     this._registerHTTPEvents();
   }
-
   
+
+
 
 
 
@@ -442,33 +418,39 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
   get remote() {
     return this._remote;
   }
-
   
+
+
 
 
   set remote(url) {
     let version;
+
     try {
       version = url.match(/\/(v\d+)\/?$/)[1];
     } catch (err) {
       throw new Error("The remote URL must contain the version: " + url);
     }
+
     if (version !== SUPPORTED_PROTOCOL_VERSION) {
       throw new Error(`Unsupported protocol version: ${version}`);
     }
+
     this._remote = url;
     this._version = version;
   }
-
   
+
+
 
 
 
   get version() {
     return this._version;
   }
-
   
+
+
 
 
 
@@ -476,13 +458,16 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
   get backoff() {
     const currentTime = new Date().getTime();
+
     if (this._backoffReleaseTime && currentTime < this._backoffReleaseTime) {
       return this._backoffReleaseTime - currentTime;
     }
+
     return 0;
   }
-
   
+
+
 
 
 
@@ -494,8 +479,9 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
       });
     }
   }
-
   
+
+
 
 
 
@@ -506,28 +492,29 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
   bucket(name, options = {}) {
-    return new _bucket2.default(this, name, {
+    return new _bucket.default(this, name, {
       batch: this._isBatch,
       headers: this._getHeaders(options),
       safe: this._getSafe(options),
       retry: this._getRetry(options)
     });
   }
-
   
+
+
 
 
 
 
   setHeaders(headers) {
-    this._headers = {
-      ...this._headers,
+    this._headers = { ...this._headers,
       ...headers
     };
     this.serverInfo = null;
   }
-
   
+
+
 
 
 
@@ -539,13 +526,13 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
   _getHeaders(options) {
-    return {
-      ...this._headers,
+    return { ...this._headers,
       ...options.headers
     };
   }
-
   
+
+
 
 
 
@@ -555,19 +542,27 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
   _getSafe(options) {
-    return { safe: this._safe, ...options }.safe;
+    return {
+      safe: this._safe,
+      ...options
+    }.safe;
   }
-
   
+
+
 
 
 
 
   _getRetry(options) {
-    return { retry: this._retry, ...options }.retry;
+    return {
+      retry: this._retry,
+      ...options
+    }.retry;
   }
-
   
+
+
 
 
 
@@ -581,12 +576,19 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
   async _getHello(options = {}) {
-    const path = this.remote + (0, _endpoint2.default)("root");
-    const { json } = await this.http.request(path, { headers: this._getHeaders(options) }, { retry: this._getRetry(options) });
+    const path = this.remote + (0, _endpoint.default)("root");
+    const {
+      json
+    } = await this.http.request(path, {
+      headers: this._getHeaders(options)
+    }, {
+      retry: this._getRetry(options)
+    });
     return json;
   }
-
   
+
+
 
 
 
@@ -599,11 +601,14 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
     if (this.serverInfo) {
       return this.serverInfo;
     }
-    this.serverInfo = await this._getHello({ retry: this._getRetry(options) });
+
+    this.serverInfo = await this._getHello({
+      retry: this._getRetry(options)
+    });
     return this.serverInfo;
   }
-
   
+
 
 
 
@@ -613,11 +618,13 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
   async fetchServerSettings(options) {
-    const { settings } = await this.fetchServerInfo(options);
+    const {
+      settings
+    } = await this.fetchServerInfo(options);
     return settings;
   }
-
   
+
 
 
 
@@ -627,11 +634,13 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
   async fetchServerCapabilities(options = {}) {
-    const { capabilities } = await this.fetchServerInfo(options);
+    const {
+      capabilities
+    } = await this.fetchServerInfo(options);
     return capabilities;
   }
-
   
+
 
 
 
@@ -643,11 +652,13 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
   async fetchUser(options = {}) {
-    const { user } = await this._getHello(options);
+    const {
+      user
+    } = await this._getHello(options);
     return user;
   }
-
   
+
 
 
 
@@ -657,11 +668,14 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
   async fetchHTTPApiVersion(options = {}) {
-    const { http_api_version } = await this.fetchServerInfo(options);
+    const {
+      http_api_version
+    } = await this.fetchServerInfo(options);
     return http_api_version;
   }
-
   
+
+
 
 
 
@@ -671,32 +685,42 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
   async _batchRequests(requests, options = {}) {
     const headers = this._getHeaders(options);
+
     if (!requests.length) {
       return [];
     }
+
     const serverSettings = await this.fetchServerSettings({
       retry: this._getRetry(options)
     });
     const maxRequests = serverSettings["batch_max_requests"];
+
     if (maxRequests && requests.length > maxRequests) {
       const chunks = (0, _utils.partition)(requests, maxRequests);
       return (0, _utils.pMap)(chunks, chunk => this._batchRequests(chunk, options));
     }
-    const { responses } = await this.execute({
+
+    const {
+      responses
+    } = await this.execute({
       
       
       headers,
-      path: (0, _endpoint2.default)("batch"),
+      path: (0, _endpoint.default)("batch"),
       method: "POST",
       body: {
-        defaults: { headers },
+        defaults: {
+          headers
+        },
         requests
       }
-    }, { retry: this._getRetry(options) });
+    }, {
+      retry: this._getRetry(options)
+    });
     return responses;
   }
-
   
+
 
 
 
@@ -721,23 +745,28 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
       retry: this._getRetry(options)
     });
     let bucketBatch, collBatch;
+
     if (options.bucket) {
       bucketBatch = rootBatch.bucket(options.bucket);
+
       if (options.collection) {
         collBatch = bucketBatch.collection(options.collection);
       }
     }
+
     const batchClient = collBatch || bucketBatch || rootBatch;
     fn(batchClient);
     const responses = await this._batchRequests(rootBatch._requests, options);
+
     if (options.aggregate) {
       return (0, _batch.aggregate)(responses, rootBatch._requests);
     } else {
       return responses;
     }
   }
-
   
+
+
 
 
 
@@ -757,15 +786,26 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
   async execute(request, options = {}) {
-    const { raw = false, stringify = true } = options;
-    
+    const {
+      raw = false,
+      stringify = true
+    } = options; 
+
     if (this._isBatch) {
-      this._requests.push(request);
+      this._requests.push(request); 
       
-      
+
+
       const msg = "This result is generated from within a batch " + "operation and should not be consumed.";
-      return raw ? { json: msg, headers: { get() {} } } : msg;
+      return raw ? {
+        json: msg,
+        headers: {
+          get() {}
+
+        }
+      } : msg;
     }
+
     const result = await this.http.request(this.remote + request.path, (0, _utils.cleanUndefinedProperties)({
       
       
@@ -775,11 +815,14 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
       method: request.method,
       headers: request.headers,
       body: stringify ? JSON.stringify(request.body) : request.body
-    }), { retry: this._getRetry(options) });
+    }), {
+      retry: this._getRetry(options)
+    });
     return raw ? result : result.json;
   }
-
   
+
+
 
 
 
@@ -813,17 +856,22 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
     
     
     
-    const { sort, filters, limit, pages, since } = {
+    const {
+      sort,
+      filters,
+      limit,
+      pages,
+      since
+    } = {
       sort: "-last_modified",
       ...params
-    };
-    
+    }; 
+
     if (since && typeof since !== "string") {
       throw new Error(`Invalid value for since (${since}), should be ETag value.`);
     }
 
-    const querystring = (0, _utils.qsify)({
-      ...filters,
+    const querystring = (0, _utils.qsify)({ ...filters,
       _sort: sort,
       _limit: limit,
       _since: since
@@ -835,12 +883,17 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
       if (!nextPage) {
         throw new Error("Pagination exhausted.");
       }
+
       return processNextPage(nextPage);
     };
 
     const processNextPage = async nextPage => {
-      const { headers } = options;
-      return handleResponse((await this.http.request(nextPage, { headers })));
+      const {
+        headers
+      } = options;
+      return handleResponse((await this.http.request(nextPage, {
+        headers
+      })));
     };
 
     const pageResults = (results, nextPage, etag, totalRecords) => {
@@ -855,37 +908,47 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
       };
     };
 
-    const handleResponse = async function ({ headers, json }) {
+    const handleResponse = async function ({
+      headers,
+      json
+    }) {
       const nextPage = headers.get("Next-Page");
       const etag = headers.get("ETag");
       const totalRecords = parseInt(headers.get("Total-Records"), 10);
 
       if (!pages) {
         return pageResults(json.data, nextPage, etag, totalRecords);
-      }
-      
+      } 
+
+
       results = results.concat(json.data);
       current += 1;
+
       if (current >= pages || !nextPage) {
         
         return pageResults(results, nextPage, etag, totalRecords);
-      }
-      
+      } 
+
+
       return processNextPage(nextPage);
     };
 
-    return handleResponse((await this.execute(
+    return handleResponse((await this.execute( 
     
     
+    {
+      headers: options.headers,
+      path: path + "?" + querystring
+    }, 
     
-    { headers: options.headers, path: path + "?" + querystring },
     
-    
-    
-    { raw: true, retry: options.retry || 0 })));
+    {
+      raw: true,
+      retry: options.retry || 0
+    })));
   }
-
   
+
 
 
 
@@ -897,17 +960,21 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
   async listPermissions(options = {}) {
-    const path = (0, _endpoint2.default)("permissions");
+    const path = (0, _endpoint.default)("permissions"); 
     
-    
-    const paginationOptions = { sort: "id", ...options };
+
+    const paginationOptions = {
+      sort: "id",
+      ...options
+    };
     return this.paginatedList(path, paginationOptions, {
       headers: this._getHeaders(options),
       retry: this._getRetry(options)
     });
   }
-
   
+
+
 
 
 
@@ -918,14 +985,15 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
   async listBuckets(options = {}) {
-    const path = (0, _endpoint2.default)("bucket");
+    const path = (0, _endpoint.default)("bucket");
     return this.paginatedList(path, options, {
       headers: this._getHeaders(options),
       retry: this._getRetry(options)
     });
   }
-
   
+
+
 
 
 
@@ -938,18 +1006,29 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
   async createBucket(id, options = {}) {
-    const { data = {}, permissions } = options;
+    const {
+      data = {},
+      permissions
+    } = options;
+
     if (id != null) {
       data.id = id;
     }
-    const path = data.id ? (0, _endpoint2.default)("bucket", data.id) : (0, _endpoint2.default)("bucket");
-    return this.execute(requests.createRequest(path, { data, permissions }, {
+
+    const path = data.id ? (0, _endpoint.default)("bucket", data.id) : (0, _endpoint.default)("bucket");
+    return this.execute(requests.createRequest(path, {
+      data,
+      permissions
+    }, {
       headers: this._getHeaders(options),
       safe: this._getSafe(options)
-    }), { retry: this._getRetry(options) });
+    }), {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
+
 
 
 
@@ -964,18 +1043,25 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
   async deleteBucket(bucket, options = {}) {
     const bucketObj = (0, _utils.toDataBody)(bucket);
+
     if (!bucketObj.id) {
       throw new Error("A bucket id is required.");
     }
-    const path = (0, _endpoint2.default)("bucket", bucketObj.id);
-    const { last_modified } = { ...bucketObj, ...options };
+
+    const path = (0, _endpoint.default)("bucket", bucketObj.id);
+    const {
+      last_modified
+    } = { ...bucketObj,
+      ...options
+    };
     return this.execute(requests.deleteRequest(path, {
       last_modified,
       headers: this._getHeaders(options),
       safe: this._getSafe(options)
-    }), { retry: this._getRetry(options) });
+    }), {
+      retry: this._getRetry(options)
+    });
   }
-
   
 
 
@@ -987,14 +1073,18 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
 
+
   async deleteBuckets(options = {}) {
-    const path = (0, _endpoint2.default)("bucket");
+    const path = (0, _endpoint.default)("bucket");
     return this.execute(requests.deleteRequest(path, {
       last_modified: options.last_modified,
       headers: this._getHeaders(options),
       safe: this._getSafe(options)
-    }), { retry: this._getRetry(options) });
+    }), {
+      retry: this._getRetry(options)
+    });
   }
+
 }, (_applyDecoratedDescriptor(_class.prototype, "fetchServerSettings", [_dec], Object.getOwnPropertyDescriptor(_class.prototype, "fetchServerSettings"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "fetchServerCapabilities", [_dec2], Object.getOwnPropertyDescriptor(_class.prototype, "fetchServerCapabilities"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "fetchUser", [_dec3], Object.getOwnPropertyDescriptor(_class.prototype, "fetchUser"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "fetchHTTPApiVersion", [_dec4], Object.getOwnPropertyDescriptor(_class.prototype, "fetchHTTPApiVersion"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "batch", [_dec5], Object.getOwnPropertyDescriptor(_class.prototype, "batch"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "listPermissions", [_dec6], Object.getOwnPropertyDescriptor(_class.prototype, "listPermissions"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "deleteBuckets", [_dec7], Object.getOwnPropertyDescriptor(_class.prototype, "deleteBuckets"), _class.prototype)), _class));
 exports.default = KintoClientBase;
 
@@ -1013,10 +1103,12 @@ exports.aggregate = aggregate;
 
 
 
+
 function aggregate(responses = [], requests = []) {
   if (responses.length !== requests.length) {
     throw new Error("Responses length should match requests one.");
   }
+
   const results = {
     errors: [],
     published: [],
@@ -1024,8 +1116,11 @@ function aggregate(responses = [], requests = []) {
     skipped: []
   };
   return responses.reduce((acc, response, index) => {
-    const { status } = response;
+    const {
+      status
+    } = response;
     const request = requests[index];
+
     if (status >= 200 && status < 400) {
       acc.published.push(response.body);
     } else if (status === 404) {
@@ -1052,6 +1147,7 @@ function aggregate(responses = [], requests = []) {
         error: response.body
       });
     }
+
     return acc;
   }, results);
 }
@@ -1062,56 +1158,23 @@ function aggregate(responses = [], requests = []) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = undefined;
-
-var _dec, _desc, _value, _class;
+exports.default = void 0;
 
 var _utils = require("./utils");
 
-var _collection = require("./collection");
+var _collection = _interopRequireDefault(require("./collection"));
 
-var _collection2 = _interopRequireDefault(_collection);
+var requests = _interopRequireWildcard(require("./requests"));
 
-var _requests = require("./requests");
+var _endpoint = _interopRequireDefault(require("./endpoint"));
 
-var requests = _interopRequireWildcard(_requests);
+var _dec, _class;
 
-var _endpoint = require("./endpoint");
-
-var _endpoint2 = _interopRequireDefault(_endpoint);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
-  var desc = {};
-  Object['ke' + 'ys'](descriptor).forEach(function (key) {
-    desc[key] = descriptor[key];
-  });
-  desc.enumerable = !!desc.enumerable;
-  desc.configurable = !!desc.configurable;
-
-  if ('value' in desc || desc.initializer) {
-    desc.writable = true;
-  }
-
-  desc = decorators.slice().reverse().reduce(function (desc, decorator) {
-    return decorator(target, property, desc) || desc;
-  }, desc);
-
-  if (context && desc.initializer !== void 0) {
-    desc.value = desc.initializer ? desc.initializer.call(context) : void 0;
-    desc.initializer = undefined;
-  }
-
-  if (desc.initializer === void 0) {
-    Object['define' + 'Property'](target, property, desc);
-    desc = null;
-  }
-
-  return desc;
-}
+function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) { var desc = {}; Object['ke' + 'ys'](descriptor).forEach(function (key) { desc[key] = descriptor[key]; }); desc.enumerable = !!desc.enumerable; desc.configurable = !!desc.configurable; if ('value' in desc || desc.initializer) { desc.writable = true; } desc = decorators.slice().reverse().reduce(function (desc, decorator) { return decorator(target, property, desc) || desc; }, desc); if (context && desc.initializer !== void 0) { desc.value = desc.initializer ? desc.initializer.call(context) : void 0; desc.initializer = undefined; } if (desc.initializer === void 0) { Object['define' + 'Property'](target, property, desc); desc = null; } return desc; }
 
 
 
@@ -1137,33 +1200,37 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
 
+
     this.name = name;
     
+
 
 
     this._isBatch = !!options.batch;
     
 
 
+
     this._headers = options.headers || {};
     this._retry = options.retry || 0;
     this._safe = !!options.safe;
   }
-
   
+
+
 
 
 
 
 
   _getHeaders(options) {
-    return {
-      ...this._headers,
+    return { ...this._headers,
       ...options.headers
     };
   }
-
   
+
+
 
 
 
@@ -1173,19 +1240,27 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
   _getSafe(options) {
-    return { safe: this._safe, ...options }.safe;
+    return {
+      safe: this._safe,
+      ...options
+    }.safe;
   }
-
   
+
+
 
 
 
 
   _getRetry(options) {
-    return { retry: this._retry, ...options }.retry;
+    return {
+      retry: this._retry,
+      ...options
+    }.retry;
   }
-
   
+
+
 
 
 
@@ -1195,15 +1270,16 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
   collection(name, options = {}) {
-    return new _collection2.default(this.client, this, name, {
+    return new _collection.default(this.client, this, name, {
       batch: this._isBatch,
       headers: this._getHeaders(options),
       retry: this._getRetry(options),
       safe: this._getSafe(options)
     });
   }
-
   
+
+
 
 
 
@@ -1215,15 +1291,18 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
   async getData(options = {}) {
     const request = {
       headers: this._getHeaders(options),
-      path: (0, _endpoint2.default)("bucket", this.name)
+      path: (0, _endpoint.default)("bucket", this.name)
     };
-    const { data } = await this.client.execute(request, {
+    const {
+      data
+    } = await this.client.execute(request, {
       retry: this._getRetry(options)
     });
     return data;
   }
-
   
+
+
 
 
 
@@ -1240,28 +1319,42 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
       throw new Error("A bucket object is required.");
     }
 
-    const bucket = { ...data, id: this.name };
+    const bucket = { ...data,
+      id: this.name
+    }; 
+    
 
-    
-    
     const bucketId = bucket.id;
+
     if (bucket.id === "default") {
       delete bucket.id;
     }
 
-    const path = (0, _endpoint2.default)("bucket", bucketId);
-    const { patch, permissions } = options;
-    const { last_modified } = { ...data, ...options };
-    const request = requests.updateRequest(path, { data: bucket, permissions }, {
+    const path = (0, _endpoint.default)("bucket", bucketId);
+    const {
+      patch,
+      permissions
+    } = options;
+    const {
+      last_modified
+    } = { ...data,
+      ...options
+    };
+    const request = requests.updateRequest(path, {
+      data: bucket,
+      permissions
+    }, {
       last_modified,
       patch,
       headers: this._getHeaders(options),
       safe: this._getSafe(options)
     });
-    return this.client.execute(request, { retry: this._getRetry(options) });
+    return this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
 
 
 
@@ -1272,14 +1365,15 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
   async listHistory(options = {}) {
-    const path = (0, _endpoint2.default)("history", this.name);
+    const path = (0, _endpoint.default)("history", this.name);
     return this.client.paginatedList(path, options, {
       headers: this._getHeaders(options),
       retry: this._getRetry(options)
     });
   }
-
   
+
+
 
 
 
@@ -1289,14 +1383,15 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
   async listCollections(options = {}) {
-    const path = (0, _endpoint2.default)("collection", this.name);
+    const path = (0, _endpoint.default)("collection", this.name);
     return this.client.paginatedList(path, options, {
       headers: this._getHeaders(options),
       retry: this._getRetry(options)
     });
   }
-
   
+
+
 
 
 
@@ -1310,17 +1405,26 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
   async createCollection(id, options = {}) {
-    const { permissions, data = {} } = options;
+    const {
+      permissions,
+      data = {}
+    } = options;
     data.id = id;
-    const path = (0, _endpoint2.default)("collection", this.name, id);
-    const request = requests.createRequest(path, { data, permissions }, {
+    const path = (0, _endpoint.default)("collection", this.name, id);
+    const request = requests.createRequest(path, {
+      data,
+      permissions
+    }, {
       headers: this._getHeaders(options),
       safe: this._getSafe(options)
     });
-    return this.client.execute(request, { retry: this._getRetry(options) });
+    return this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
+
 
 
 
@@ -1334,21 +1438,32 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
   async deleteCollection(collection, options = {}) {
     const collectionObj = (0, _utils.toDataBody)(collection);
+
     if (!collectionObj.id) {
       throw new Error("A collection id is required.");
     }
-    const { id } = collectionObj;
-    const { last_modified } = { ...collectionObj, ...options };
-    const path = (0, _endpoint2.default)("collection", this.name, id);
+
+    const {
+      id
+    } = collectionObj;
+    const {
+      last_modified
+    } = { ...collectionObj,
+      ...options
+    };
+    const path = (0, _endpoint.default)("collection", this.name, id);
     const request = requests.deleteRequest(path, {
       last_modified,
       headers: this._getHeaders(options),
       safe: this._getSafe(options)
     });
-    return this.client.execute(request, { retry: this._getRetry(options) });
+    return this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
+
 
 
 
@@ -1358,14 +1473,15 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
   async listGroups(options = {}) {
-    const path = (0, _endpoint2.default)("group", this.name);
+    const path = (0, _endpoint.default)("group", this.name);
     return this.client.paginatedList(path, options, {
       headers: this._getHeaders(options),
       retry: this._getRetry(options)
     });
   }
-
   
+
+
 
 
 
@@ -1378,12 +1494,15 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
   async getGroup(id, options = {}) {
     const request = {
       headers: this._getHeaders(options),
-      path: (0, _endpoint2.default)("group", this.name, id)
+      path: (0, _endpoint.default)("group", this.name, id)
     };
-    return this.client.execute(request, { retry: this._getRetry(options) });
+    return this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
+
 
 
 
@@ -1398,21 +1517,28 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
   async createGroup(id, members = [], options = {}) {
-    const data = {
-      ...options.data,
+    const data = { ...options.data,
       id,
       members
     };
-    const path = (0, _endpoint2.default)("group", this.name, id);
-    const { permissions } = options;
-    const request = requests.createRequest(path, { data, permissions }, {
+    const path = (0, _endpoint.default)("group", this.name, id);
+    const {
+      permissions
+    } = options;
+    const request = requests.createRequest(path, {
+      data,
+      permissions
+    }, {
       headers: this._getHeaders(options),
       safe: this._getSafe(options)
     });
-    return this.client.execute(request, { retry: this._getRetry(options) });
+    return this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
+
 
 
 
@@ -1430,26 +1556,40 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
     if (!(0, _utils.isObject)(group)) {
       throw new Error("A group object is required.");
     }
+
     if (!group.id) {
       throw new Error("A group id is required.");
     }
-    const data = {
-      ...options.data,
+
+    const data = { ...options.data,
       ...group
     };
-    const path = (0, _endpoint2.default)("group", this.name, group.id);
-    const { patch, permissions } = options;
-    const { last_modified } = { ...data, ...options };
-    const request = requests.updateRequest(path, { data, permissions }, {
+    const path = (0, _endpoint.default)("group", this.name, group.id);
+    const {
+      patch,
+      permissions
+    } = options;
+    const {
+      last_modified
+    } = { ...data,
+      ...options
+    };
+    const request = requests.updateRequest(path, {
+      data,
+      permissions
+    }, {
       last_modified,
       patch,
       headers: this._getHeaders(options),
       safe: this._getSafe(options)
     });
-    return this.client.execute(request, { retry: this._getRetry(options) });
+    return this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
+
 
 
 
@@ -1463,18 +1603,27 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
   async deleteGroup(group, options = {}) {
     const groupObj = (0, _utils.toDataBody)(group);
-    const { id } = groupObj;
-    const { last_modified } = { ...groupObj, ...options };
-    const path = (0, _endpoint2.default)("group", this.name, id);
+    const {
+      id
+    } = groupObj;
+    const {
+      last_modified
+    } = { ...groupObj,
+      ...options
+    };
+    const path = (0, _endpoint.default)("group", this.name, id);
     const request = requests.deleteRequest(path, {
       last_modified,
       headers: this._getHeaders(options),
       safe: this._getSafe(options)
     });
-    return this.client.execute(request, { retry: this._getRetry(options) });
+    return this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
+
 
 
 
@@ -1486,15 +1635,18 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
   async getPermissions(options = {}) {
     const request = {
       headers: this._getHeaders(options),
-      path: (0, _endpoint2.default)("bucket", this.name)
+      path: (0, _endpoint.default)("bucket", this.name)
     };
-    const { permissions } = await this.client.execute(request, {
+    const {
+      permissions
+    } = await this.client.execute(request, {
       retry: this._getRetry(options)
     });
     return permissions;
   }
-
   
+
+
 
 
 
@@ -1510,17 +1662,28 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
     if (!(0, _utils.isObject)(permissions)) {
       throw new Error("A permissions object is required.");
     }
-    const path = (0, _endpoint2.default)("bucket", this.name);
-    const { last_modified } = options;
-    const data = { last_modified };
-    const request = requests.updateRequest(path, { data, permissions }, {
+
+    const path = (0, _endpoint.default)("bucket", this.name);
+    const {
+      last_modified
+    } = options;
+    const data = {
+      last_modified
+    };
+    const request = requests.updateRequest(path, {
+      data,
+      permissions
+    }, {
       headers: this._getHeaders(options),
       safe: this._getSafe(options)
     });
-    return this.client.execute(request, { retry: this._getRetry(options) });
+    return this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
+
 
 
 
@@ -1536,17 +1699,23 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
     if (!(0, _utils.isObject)(permissions)) {
       throw new Error("A permissions object is required.");
     }
-    const path = (0, _endpoint2.default)("bucket", this.name);
-    const { last_modified } = options;
+
+    const path = (0, _endpoint.default)("bucket", this.name);
+    const {
+      last_modified
+    } = options;
     const request = requests.jsonPatchPermissionsRequest(path, permissions, "add", {
       last_modified,
       headers: this._getHeaders(options),
       safe: this._getSafe(options)
     });
-    return this.client.execute(request, { retry: this._getRetry(options) });
+    return this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
+
 
 
 
@@ -1562,17 +1731,23 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
     if (!(0, _utils.isObject)(permissions)) {
       throw new Error("A permissions object is required.");
     }
-    const path = (0, _endpoint2.default)("bucket", this.name);
-    const { last_modified } = options;
+
+    const path = (0, _endpoint.default)("bucket", this.name);
+    const {
+      last_modified
+    } = options;
     const request = requests.jsonPatchPermissionsRequest(path, permissions, "remove", {
       last_modified,
       headers: this._getHeaders(options),
       safe: this._getSafe(options)
     });
-    return this.client.execute(request, { retry: this._getRetry(options) });
+    return this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
+
 
 
 
@@ -1592,6 +1767,7 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
       aggregate: !!options.aggregate
     });
   }
+
 }, (_applyDecoratedDescriptor(_class.prototype, "listHistory", [_dec], Object.getOwnPropertyDescriptor(_class.prototype, "listHistory"), _class.prototype)), _class));
 exports.default = Bucket;
 
@@ -1601,54 +1777,23 @@ exports.default = Bucket;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = undefined;
-
-var _dec, _dec2, _dec3, _desc, _value, _class;
+exports.default = void 0;
 
 var _uuid = require("uuid");
 
 var _utils = require("./utils");
 
-var _requests = require("./requests");
+var requests = _interopRequireWildcard(require("./requests"));
 
-var requests = _interopRequireWildcard(_requests);
+var _endpoint = _interopRequireDefault(require("./endpoint"));
 
-var _endpoint = require("./endpoint");
-
-var _endpoint2 = _interopRequireDefault(_endpoint);
+var _dec, _dec2, _dec3, _class;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
-function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
-  var desc = {};
-  Object['ke' + 'ys'](descriptor).forEach(function (key) {
-    desc[key] = descriptor[key];
-  });
-  desc.enumerable = !!desc.enumerable;
-  desc.configurable = !!desc.configurable;
-
-  if ('value' in desc || desc.initializer) {
-    desc.writable = true;
-  }
-
-  desc = decorators.slice().reverse().reduce(function (desc, decorator) {
-    return decorator(target, property, desc) || desc;
-  }, desc);
-
-  if (context && desc.initializer !== void 0) {
-    desc.value = desc.initializer ? desc.initializer.call(context) : void 0;
-    desc.initializer = undefined;
-  }
-
-  if (desc.initializer === void 0) {
-    Object['define' + 'Property'](target, property, desc);
-    desc = null;
-  }
-
-  return desc;
-}
+function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) { var desc = {}; Object['ke' + 'ys'](descriptor).forEach(function (key) { desc[key] = descriptor[key]; }); desc.enumerable = !!desc.enumerable; desc.configurable = !!desc.configurable; if ('value' in desc || desc.initializer) { desc.writable = true; } desc = decorators.slice().reverse().reduce(function (desc, decorator) { return decorator(target, property, desc) || desc; }, desc); if (context && desc.initializer !== void 0) { desc.value = desc.initializer ? desc.initializer.call(context) : void 0; desc.initializer = undefined; } if (desc.initializer === void 0) { Object['define' + 'Property'](target, property, desc); desc = null; } return desc; }
 
 
 
@@ -1676,45 +1821,47 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
     
 
 
+
     this.bucket = bucket;
     
 
 
 
-    this.name = name;
 
+    this.name = name;
     
+
 
 
     this._isBatch = !!options.batch;
-
     
+
 
 
     this._retry = options.retry || 0;
-    this._safe = !!options.safe;
+    this._safe = !!options.safe; 
     
-    
-    this._headers = {
-      ...this.bucket._headers,
+
+    this._headers = { ...this.bucket._headers,
       ...options.headers
     };
   }
-
   
+
+
 
 
 
 
 
   _getHeaders(options) {
-    return {
-      ...this._headers,
+    return { ...this._headers,
       ...options.headers
     };
   }
-
   
+
+
 
 
 
@@ -1724,19 +1871,27 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
   _getSafe(options) {
-    return { safe: this._safe, ...options }.safe;
+    return {
+      safe: this._safe,
+      ...options
+    }.safe;
   }
-
   
+
+
 
 
 
 
   _getRetry(options) {
-    return { retry: this._retry, ...options }.retry;
+    return {
+      retry: this._retry,
+      ...options
+    }.retry;
   }
-
   
+
+
 
 
 
@@ -1746,20 +1901,26 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
   async getTotalRecords(options = {}) {
-    const path = (0, _endpoint2.default)("record", this.bucket.name, this.name);
+    const path = (0, _endpoint.default)("record", this.bucket.name, this.name);
     const request = {
       headers: this._getHeaders(options),
       path,
       method: "HEAD"
     };
-    const { headers } = await this.client.execute(request, {
+    const {
+      headers
+    } = await this.client.execute(request, {
       raw: true,
       retry: this._getRetry(options)
     });
     return parseInt(headers.get("Total-Records"), 10);
   }
-
   
+
+
+
+
+
 
 
 
@@ -1769,15 +1930,27 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
   async getData(options = {}) {
-    const path = (0, _endpoint2.default)("collection", this.bucket.name, this.name);
-    const request = { headers: this._getHeaders(options), path };
-    const { data } = await this.client.execute(request, {
+    let path = (0, _endpoint.default)("collection", this.bucket.name, this.name);
+
+    if (options.query) {
+      const querystring = (0, _utils.qsify)(options.query);
+      path = path + "?" + querystring;
+    }
+
+    const request = {
+      headers: this._getHeaders(options),
+      path
+    };
+    const {
+      data
+    } = await this.client.execute(request, {
       retry: this._getRetry(options)
     });
     return data;
   }
-
   
+
+
 
 
 
@@ -1793,20 +1966,33 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
     if (!(0, _utils.isObject)(data)) {
       throw new Error("A collection object is required.");
     }
-    const { patch, permissions } = options;
-    const { last_modified } = { ...data, ...options };
 
-    const path = (0, _endpoint2.default)("collection", this.bucket.name, this.name);
-    const request = requests.updateRequest(path, { data, permissions }, {
+    const {
+      patch,
+      permissions
+    } = options;
+    const {
+      last_modified
+    } = { ...data,
+      ...options
+    };
+    const path = (0, _endpoint.default)("collection", this.bucket.name, this.name);
+    const request = requests.updateRequest(path, {
+      data,
+      permissions
+    }, {
       last_modified,
       patch,
       headers: this._getHeaders(options),
       safe: this._getSafe(options)
     });
-    return this.client.execute(request, { retry: this._getRetry(options) });
+    return this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
+
 
 
 
@@ -1816,15 +2002,21 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
   async getPermissions(options = {}) {
-    const path = (0, _endpoint2.default)("collection", this.bucket.name, this.name);
-    const request = { headers: this._getHeaders(options), path };
-    const { permissions } = await this.client.execute(request, {
+    const path = (0, _endpoint.default)("collection", this.bucket.name, this.name);
+    const request = {
+      headers: this._getHeaders(options),
+      path
+    };
+    const {
+      permissions
+    } = await this.client.execute(request, {
       retry: this._getRetry(options)
     });
     return permissions;
   }
-
   
+
+
 
 
 
@@ -1840,16 +2032,25 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
     if (!(0, _utils.isObject)(permissions)) {
       throw new Error("A permissions object is required.");
     }
-    const path = (0, _endpoint2.default)("collection", this.bucket.name, this.name);
-    const data = { last_modified: options.last_modified };
-    const request = requests.updateRequest(path, { data, permissions }, {
+
+    const path = (0, _endpoint.default)("collection", this.bucket.name, this.name);
+    const data = {
+      last_modified: options.last_modified
+    };
+    const request = requests.updateRequest(path, {
+      data,
+      permissions
+    }, {
       headers: this._getHeaders(options),
       safe: this._getSafe(options)
     });
-    return this.client.execute(request, { retry: this._getRetry(options) });
+    return this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
+
 
 
 
@@ -1865,17 +2066,23 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
     if (!(0, _utils.isObject)(permissions)) {
       throw new Error("A permissions object is required.");
     }
-    const path = (0, _endpoint2.default)("collection", this.bucket.name, this.name);
-    const { last_modified } = options;
+
+    const path = (0, _endpoint.default)("collection", this.bucket.name, this.name);
+    const {
+      last_modified
+    } = options;
     const request = requests.jsonPatchPermissionsRequest(path, permissions, "add", {
       last_modified,
       headers: this._getHeaders(options),
       safe: this._getSafe(options)
     });
-    return this.client.execute(request, { retry: this._getRetry(options) });
+    return this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
+
 
 
 
@@ -1891,17 +2098,23 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
     if (!(0, _utils.isObject)(permissions)) {
       throw new Error("A permissions object is required.");
     }
-    const path = (0, _endpoint2.default)("collection", this.bucket.name, this.name);
-    const { last_modified } = options;
+
+    const path = (0, _endpoint.default)("collection", this.bucket.name, this.name);
+    const {
+      last_modified
+    } = options;
     const request = requests.jsonPatchPermissionsRequest(path, permissions, "remove", {
       last_modified,
       headers: this._getHeaders(options),
       safe: this._getSafe(options)
     });
-    return this.client.execute(request, { retry: this._getRetry(options) });
+    return this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
+
 
 
 
@@ -1914,16 +2127,23 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
   async createRecord(record, options = {}) {
-    const { permissions } = options;
-    const path = (0, _endpoint2.default)("record", this.bucket.name, this.name, record.id);
-    const request = requests.createRequest(path, { data: record, permissions }, {
+    const {
+      permissions
+    } = options;
+    const path = (0, _endpoint.default)("record", this.bucket.name, this.name, record.id);
+    const request = requests.createRequest(path, {
+      data: record,
+      permissions
+    }, {
       headers: this._getHeaders(options),
       safe: this._getSafe(options)
     });
-    return this.client.execute(request, { retry: this._getRetry(options) });
+    return this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
 
 
 
@@ -1941,11 +2161,22 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
   async addAttachment(dataURI, record = {}, options = {}) {
-    const { permissions } = options;
+    const {
+      permissions
+    } = options;
+
     const id = record.id || _uuid.v4.v4();
-    const path = (0, _endpoint2.default)("attachment", this.bucket.name, this.name, id);
-    const { last_modified } = { ...record, ...options };
-    const addAttachmentRequest = requests.addAttachmentRequest(path, dataURI, { data: record, permissions }, {
+
+    const path = (0, _endpoint.default)("attachment", this.bucket.name, this.name, id);
+    const {
+      last_modified
+    } = { ...record,
+      ...options
+    };
+    const addAttachmentRequest = requests.addAttachmentRequest(path, dataURI, {
+      data: record,
+      permissions
+    }, {
       last_modified,
       filename: options.filename,
       gzipped: options.gzipped,
@@ -1958,8 +2189,8 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
     });
     return this.getRecord(id);
   }
-
   
+
 
 
 
@@ -1972,17 +2203,22 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
   async removeAttachment(recordId, options = {}) {
-    const { last_modified } = options;
-    const path = (0, _endpoint2.default)("attachment", this.bucket.name, this.name, recordId);
+    const {
+      last_modified
+    } = options;
+    const path = (0, _endpoint.default)("attachment", this.bucket.name, this.name, recordId);
     const request = requests.deleteRequest(path, {
       last_modified,
       headers: this._getHeaders(options),
       safe: this._getSafe(options)
     });
-    return this.client.execute(request, { retry: this._getRetry(options) });
+    return this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
+
 
 
 
@@ -1999,22 +2235,36 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
     if (!(0, _utils.isObject)(record)) {
       throw new Error("A record object is required.");
     }
+
     if (!record.id) {
       throw new Error("A record id is required.");
     }
-    const { permissions } = options;
-    const { last_modified } = { ...record, ...options };
-    const path = (0, _endpoint2.default)("record", this.bucket.name, this.name, record.id);
-    const request = requests.updateRequest(path, { data: record, permissions }, {
+
+    const {
+      permissions
+    } = options;
+    const {
+      last_modified
+    } = { ...record,
+      ...options
+    };
+    const path = (0, _endpoint.default)("record", this.bucket.name, this.name, record.id);
+    const request = requests.updateRequest(path, {
+      data: record,
+      permissions
+    }, {
       headers: this._getHeaders(options),
       safe: this._getSafe(options),
       last_modified,
       patch: !!options.patch
     });
-    return this.client.execute(request, { retry: this._getRetry(options) });
+    return this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
+
 
 
 
@@ -2028,21 +2278,32 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
   async deleteRecord(record, options = {}) {
     const recordObj = (0, _utils.toDataBody)(record);
+
     if (!recordObj.id) {
       throw new Error("A record id is required.");
     }
-    const { id } = recordObj;
-    const { last_modified } = { ...recordObj, ...options };
-    const path = (0, _endpoint2.default)("record", this.bucket.name, this.name, id);
+
+    const {
+      id
+    } = recordObj;
+    const {
+      last_modified
+    } = { ...recordObj,
+      ...options
+    };
+    const path = (0, _endpoint.default)("record", this.bucket.name, this.name, id);
     const request = requests.deleteRequest(path, {
       last_modified,
       headers: this._getHeaders(options),
       safe: this._getSafe(options)
     });
-    return this.client.execute(request, { retry: this._getRetry(options) });
+    return this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
+
 
 
 
@@ -2053,12 +2314,18 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
   async getRecord(id, options = {}) {
-    const path = (0, _endpoint2.default)("record", this.bucket.name, this.name, id);
-    const request = { headers: this._getHeaders(options), path };
-    return this.client.execute(request, { retry: this._getRetry(options) });
+    const path = (0, _endpoint.default)("record", this.bucket.name, this.name, id);
+    const request = {
+      headers: this._getHeaders(options),
+      path
+    };
+    return this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
   }
-
   
+
+
 
 
 
@@ -2094,7 +2361,8 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
   async listRecords(options = {}) {
-    const path = (0, _endpoint2.default)("record", this.bucket.name, this.name);
+    const path = (0, _endpoint.default)("record", this.bucket.name, this.name);
+
     if (options.hasOwnProperty("at")) {
       return this.getSnapshot(options.at);
     } else {
@@ -2104,14 +2372,17 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
       });
     }
   }
-
   
+
+
 
 
   async isHistoryComplete() {
     
     
-    const { data: [oldestHistoryEntry] } = await this.bucket.listHistory({
+    const {
+      data: [oldestHistoryEntry]
+    } = await this.bucket.listHistory({
       limit: 1,
       filters: {
         action: "create",
@@ -2121,8 +2392,9 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
     });
     return !!oldestHistoryEntry;
   }
-
   
+
+
 
 
   async listChangesBackTo(at) {
@@ -2131,40 +2403,54 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
     if (!(await this.isHistoryComplete())) {
       throw new Error("Computing a snapshot is only possible when the full history for a " + "collection is available. Here, the history plugin seems to have " + "been enabled after the creation of the collection.");
     }
-    const { data: changes } = await this.bucket.listHistory({
-      pages: Infinity, 
+
+    const {
+      data: changes
+    } = await this.bucket.listHistory({
+      pages: Infinity,
+      
       sort: "-target.data.last_modified",
       filters: {
         resource_name: "record",
         collection_id: this.name,
         "max_target.data.last_modified": String(at) 
+
       }
     });
     return changes;
   }
-
   
+
 
 
 
   async getSnapshot(at) {
     if (!Number.isInteger(at) || at <= 0) {
       throw new Error("Invalid argument, expected a positive integer.");
-    }
-    
-    const changes = await this.listChangesBackTo(at);
-    
+    } 
+
+
+    const changes = await this.listChangesBackTo(at); 
+
     const seenIds = new Set();
     let snapshot = [];
-    for (const { action, target: { data: record } } of changes) {
+
+    for (const {
+      action,
+      target: {
+        data: record
+      }
+    } of changes) {
       if (action == "delete") {
         seenIds.add(record.id); 
+
         snapshot = snapshot.filter(r => r.id !== record.id);
       } else if (!seenIds.has(record.id)) {
         seenIds.add(record.id);
         snapshot.push(record);
       }
     }
+
     return {
       last_modified: String(at),
       data: snapshot.sort((a, b) => b.last_modified - a.last_modified),
@@ -2175,8 +2461,9 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
       totalRecords: snapshot.length
     };
   }
-
   
+
+
 
 
 
@@ -2197,6 +2484,7 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
       aggregate: !!options.aggregate
     });
   }
+
 }, (_applyDecoratedDescriptor(_class.prototype, "addAttachment", [_dec], Object.getOwnPropertyDescriptor(_class.prototype, "addAttachment"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "removeAttachment", [_dec2], Object.getOwnPropertyDescriptor(_class.prototype, "removeAttachment"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "getSnapshot", [_dec3], Object.getOwnPropertyDescriptor(_class.prototype, "getSnapshot"), _class.prototype)), _class));
 exports.default = Collection;
 
@@ -2207,6 +2495,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = endpoint;
+
 
 
 
@@ -2241,6 +2530,8 @@ function endpoint(name, ...args) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.UnparseableResponseError = exports.ServerResponse = exports.NetworkTimeoutError = exports.default = void 0;
+
 
 
 
@@ -2266,9 +2557,10 @@ const ERROR_CODES = {
   202: "Service deprecated",
   999: "Internal Server Error"
 };
+var _default = ERROR_CODES;
+exports.default = _default;
 
-exports.default = ERROR_CODES;
-let NetworkTimeoutError = class NetworkTimeoutError extends Error {
+class NetworkTimeoutError extends Error {
   constructor(url, options) {
     super(`Timeout while trying to access ${url} with ${JSON.stringify(options)}`);
 
@@ -2279,11 +2571,16 @@ let NetworkTimeoutError = class NetworkTimeoutError extends Error {
     this.url = url;
     this.options = options;
   }
-};
-let UnparseableResponseError = class UnparseableResponseError extends Error {
-  constructor(response, body, error) {
-    const { status } = response;
 
+}
+
+exports.NetworkTimeoutError = NetworkTimeoutError;
+
+class UnparseableResponseError extends Error {
+  constructor(response, body, error) {
+    const {
+      status
+    } = response;
     super(`Response from server unparseable (HTTP ${status || 0}; ${error}): ${body}`);
 
     if (Error.captureStackTrace) {
@@ -2295,7 +2592,8 @@ let UnparseableResponseError = class UnparseableResponseError extends Error {
     this.stack = error.stack;
     this.error = error;
   }
-};
+
+}
 
 
 
@@ -2309,36 +2607,43 @@ let UnparseableResponseError = class UnparseableResponseError extends Error {
 
 
 
-let ServerResponse = class ServerResponse extends Error {
+exports.UnparseableResponseError = UnparseableResponseError;
+
+class ServerResponse extends Error {
   constructor(response, json) {
-    const { status } = response;
-    let { statusText } = response;
+    const {
+      status
+    } = response;
+    let {
+      statusText
+    } = response;
     let errnoMsg;
 
     if (json) {
       
-      statusText = json.error || statusText;
+      statusText = json.error || statusText; 
 
-      
       if (json.errno && json.errno in ERROR_CODES) {
         errnoMsg = ERROR_CODES[json.errno];
       } else if (json.message) {
         errnoMsg = json.message;
-      }
+      } 
+      
 
-      
-      
+
       if (errnoMsg && json.message && json.message !== errnoMsg) {
         errnoMsg += ` (${json.message})`;
       }
     }
 
     let message = `HTTP ${status} ${statusText}`;
+
     if (errnoMsg) {
       message += `: ${errnoMsg}`;
     }
 
     super(message.trim());
+
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, ServerResponse);
     }
@@ -2346,10 +2651,10 @@ let ServerResponse = class ServerResponse extends Error {
     this.response = response;
     this.data = json;
   }
-};
-exports.NetworkTimeoutError = NetworkTimeoutError;
+
+}
+
 exports.ServerResponse = ServerResponse;
-exports.UnparseableResponseError = UnparseableResponseError;
 
 },{}],13:[function(require,module,exports){
 "use strict";
@@ -2357,7 +2662,7 @@ exports.UnparseableResponseError = UnparseableResponseError;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = undefined;
+exports.default = void 0;
 
 var _utils = require("./utils");
 
@@ -2367,7 +2672,7 @@ var _errors = require("./errors");
 
 
 
-let HTTP = class HTTP {
+class HTTP {
   
 
 
@@ -2379,17 +2684,22 @@ let HTTP = class HTTP {
       "Content-Type": "application/json"
     };
   }
-
   
+
+
 
 
 
 
   static get defaultOptions() {
-    return { timeout: null, requestMode: "cors" };
+    return {
+      timeout: null,
+      requestMode: "cors"
+    };
   }
-
   
+
+
 
 
 
@@ -2399,6 +2709,7 @@ let HTTP = class HTTP {
 
   constructor(events, options = {}) {
     
+
     
 
 
@@ -2406,23 +2717,25 @@ let HTTP = class HTTP {
     if (!events) {
       throw new Error("No events handler provided");
     }
-    this.events = events;
 
+    this.events = events;
     
+
 
 
 
 
     this.requestMode = options.requestMode || HTTP.defaultOptions.requestMode;
-
     
+
 
 
 
     this.timeout = options.timeout || HTTP.defaultOptions.timeout;
   }
-
   
+
+
 
 
   timedFetch(url, options) {
@@ -2430,34 +2743,43 @@ let HTTP = class HTTP {
     return new Promise((resolve, reject) => {
       
       let _timeoutId;
+
       if (this.timeout) {
         _timeoutId = setTimeout(() => {
           hasTimedout = true;
           reject(new _errors.NetworkTimeoutError(url, options));
         }, this.timeout);
       }
+
       function proceedWithHandler(fn) {
         return arg => {
           if (!hasTimedout) {
             if (_timeoutId) {
               clearTimeout(_timeoutId);
             }
+
             fn(arg);
           }
         };
       }
+
       fetch(url, options).then(proceedWithHandler(resolve)).catch(proceedWithHandler(reject));
     });
   }
-
   
 
 
+
+
   async processResponse(response) {
-    const { status, headers } = response;
-    const text = await response.text();
-    
+    const {
+      status,
+      headers
+    } = response;
+    const text = await response.text(); 
+
     let json;
+
     if (text.length !== 0) {
       try {
         json = JSON.parse(text);
@@ -2465,20 +2787,28 @@ let HTTP = class HTTP {
         throw new _errors.UnparseableResponseError(response, text, err);
       }
     }
+
     if (status >= 400) {
       throw new _errors.ServerResponse(response, json);
     }
-    return { status, json, headers };
-  }
 
+    return {
+      status,
+      json,
+      headers
+    };
+  }
   
+
+
 
 
   async retry(url, retryAfter, request, options) {
     await (0, _utils.delay)(retryAfter);
-    return this.request(url, request, { ...options, retry: options.retry - 1 });
+    return this.request(url, request, { ...options,
+      retry: options.retry - 1
+    });
   }
-
   
 
 
@@ -2496,25 +2826,38 @@ let HTTP = class HTTP {
 
 
 
-  async request(url, request = { headers: {} }, options = { retry: 0 }) {
+
+
+  async request(url, request = {
+    headers: {}
+  }, options = {
+    retry: 0
+  }) {
     
-    request.headers = { ...HTTP.DEFAULT_REQUEST_HEADERS, ...request.headers };
+    request.headers = { ...HTTP.DEFAULT_REQUEST_HEADERS,
+      ...request.headers
+    }; 
     
-    
+
     if (request.body && typeof request.body.append === "function") {
       delete request.headers["Content-Type"];
     }
-    request.mode = this.requestMode;
 
+    request.mode = this.requestMode;
     const response = await this.timedFetch(url, request);
-    const { status, headers } = response;
+    const {
+      status,
+      headers
+    } = response;
 
     this._checkForDeprecationHeader(headers);
-    this._checkForBackoffHeader(status, headers);
 
-    
-    const retryAfter = this._checkForRetryAfterHeader(status, headers);
-    
+    this._checkForBackoffHeader(status, headers); 
+
+
+    const retryAfter = this._checkForRetryAfterHeader(status, headers); 
+
+
     if (retryAfter && options.retry > 0) {
       return this.retry(url, retryAfter, request, options);
     } else {
@@ -2524,16 +2867,20 @@ let HTTP = class HTTP {
 
   _checkForDeprecationHeader(headers) {
     const alertHeader = headers.get("Alert");
+
     if (!alertHeader) {
       return;
     }
+
     let alert;
+
     try {
       alert = JSON.parse(alertHeader);
     } catch (err) {
       console.warn("Unable to parse Alert header message", alertHeader);
       return;
     }
+
     console.warn(alert.message, alert.url);
     this.events.emit("deprecated", alert);
   }
@@ -2541,25 +2888,31 @@ let HTTP = class HTTP {
   _checkForBackoffHeader(status, headers) {
     let backoffMs;
     const backoffSeconds = parseInt(headers.get("Backoff"), 10);
+
     if (backoffSeconds > 0) {
       backoffMs = new Date().getTime() + backoffSeconds * 1000;
     } else {
       backoffMs = 0;
     }
+
     this.events.emit("backoff", backoffMs);
   }
 
   _checkForRetryAfterHeader(status, headers) {
     let retryAfter = headers.get("Retry-After");
+
     if (!retryAfter) {
       return;
     }
+
     const delay = parseInt(retryAfter, 10) * 1000;
     retryAfter = new Date().getTime() + delay;
     this.events.emit("retry-after", retryAfter);
     return delay;
   }
-};
+
+}
+
 exports.default = HTTP;
 
 },{"./errors":12,"./utils":15}],14:[function(require,module,exports){
@@ -2592,34 +2945,65 @@ function safeHeader(safe, last_modified) {
   if (!safe) {
     return {};
   }
+
   if (last_modified) {
-    return { "If-Match": `"${last_modified}"` };
+    return {
+      "If-Match": `"${last_modified}"`
+    };
   }
-  return { "If-None-Match": "*" };
+
+  return {
+    "If-None-Match": "*"
+  };
 }
 
 
 
 
-function createRequest(path, { data, permissions }, options = {}) {
-  const { headers, safe } = {
-    ...requestDefaults,
+
+function createRequest(path, {
+  data,
+  permissions
+}, options = {}) {
+  const {
+    headers,
+    safe
+  } = { ...requestDefaults,
     ...options
   };
   return {
     method: data && data.id ? "PUT" : "POST",
     path,
-    headers: { ...headers, ...safeHeader(safe) },
-    body: { data, permissions }
+    headers: { ...headers,
+      ...safeHeader(safe)
+    },
+    body: {
+      data,
+      permissions
+    }
   };
 }
 
 
 
 
-function updateRequest(path, { data, permissions }, options = {}) {
-  const { headers, safe, patch } = { ...requestDefaults, ...options };
-  const { last_modified } = { ...data, ...options };
+
+function updateRequest(path, {
+  data,
+  permissions
+}, options = {}) {
+  const {
+    headers,
+    safe,
+    patch
+  } = { ...requestDefaults,
+    ...options
+  };
+  const {
+    last_modified
+  } = { ...data,
+    ...options
+  };
 
   if (Object.keys((0, _utils.omit)(data, "id", "last_modified")).length === 0) {
     data = undefined;
@@ -2628,17 +3012,28 @@ function updateRequest(path, { data, permissions }, options = {}) {
   return {
     method: patch ? "PATCH" : "PUT",
     path,
-    headers: { ...headers, ...safeHeader(safe, last_modified) },
-    body: { data, permissions }
+    headers: { ...headers,
+      ...safeHeader(safe, last_modified)
+    },
+    body: {
+      data,
+      permissions
+    }
   };
 }
 
 
 
 
-function jsonPatchPermissionsRequest(path, permissions, opType, options = {}) {
-  const { headers, safe, last_modified } = { ...requestDefaults, ...options };
 
+function jsonPatchPermissionsRequest(path, permissions, opType, options = {}) {
+  const {
+    headers,
+    safe,
+    last_modified
+  } = { ...requestDefaults,
+    ...options
+  };
   const ops = [];
 
   for (const [type, principals] of Object.entries(permissions)) {
@@ -2653,8 +3048,7 @@ function jsonPatchPermissionsRequest(path, permissions, opType, options = {}) {
   return {
     method: "PATCH",
     path,
-    headers: {
-      ...headers,
+    headers: { ...headers,
       ...safeHeader(safe, last_modified),
       "Content-Type": "application/json-patch+json"
     },
@@ -2665,37 +3059,61 @@ function jsonPatchPermissionsRequest(path, permissions, opType, options = {}) {
 
 
 
+
 function deleteRequest(path, options = {}) {
-  const { headers, safe, last_modified } = {
-    ...requestDefaults,
+  const {
+    headers,
+    safe,
+    last_modified
+  } = { ...requestDefaults,
     ...options
   };
+
   if (safe && !last_modified) {
     throw new Error("Safe concurrency check requires a last_modified value.");
   }
+
   return {
     method: "DELETE",
     path,
-    headers: { ...headers, ...safeHeader(safe, last_modified) }
+    headers: { ...headers,
+      ...safeHeader(safe, last_modified)
+    }
   };
 }
 
 
 
 
-function addAttachmentRequest(path, dataURI, { data, permissions } = {}, options = {}) {
-  const { headers, safe, gzipped } = { ...requestDefaults, ...options };
-  const { last_modified } = { ...data, ...options };
 
-  const body = { data, permissions };
+function addAttachmentRequest(path, dataURI, {
+  data,
+  permissions
+} = {}, options = {}) {
+  const {
+    headers,
+    safe,
+    gzipped
+  } = { ...requestDefaults,
+    ...options
+  };
+  const {
+    last_modified
+  } = { ...data,
+    ...options
+  };
+  const body = {
+    data,
+    permissions
+  };
   const formData = (0, _utils.createFormData)(dataURI, body, options);
-
   let customPath = gzipped != null ? customPath = path + "?gzipped=" + (gzipped ? "true" : "false") : path;
-
   return {
     method: "POST",
     path: customPath,
-    headers: { ...headers, ...safeHeader(safe, last_modified) },
+    headers: { ...headers,
+      ...safeHeader(safe, last_modified)
+    },
     body: formData
   };
 }
@@ -2729,16 +3147,19 @@ exports.cleanUndefinedProperties = cleanUndefinedProperties;
 
 
 
+
 function partition(array, n) {
   if (n <= 0) {
     return array;
   }
+
   return array.reduce((acc, x, i) => {
     if (i === 0 || i % n === 0) {
       acc.push([x]);
     } else {
       acc[acc.length - 1].push(x);
     }
+
     return acc;
   }, []);
 }
@@ -2748,9 +3169,11 @@ function partition(array, n) {
 
 
 
+
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
 
 
 
@@ -2779,14 +3202,17 @@ async function pMap(list, fn) {
 
 
 
+
 function omit(obj, ...keys) {
   return Object.keys(obj).reduce((acc, key) => {
     if (!keys.includes(key)) {
       acc[key] = obj[key];
     }
+
     return acc;
   }, {});
 }
+
 
 
 
@@ -2799,9 +3225,13 @@ function toDataBody(resource) {
   if (isObject(resource)) {
     return resource;
   }
+
   if (typeof resource === "string") {
-    return { id: resource };
+    return {
+      id: resource
+    };
   }
+
   throw new Error("Invalid argument.");
 }
 
@@ -2812,12 +3242,16 @@ function toDataBody(resource) {
 
 
 
+
 function qsify(obj) {
   const encode = v => encodeURIComponent(typeof v === "boolean" ? String(v) : v);
+
   const stripUndefined = o => JSON.parse(JSON.stringify(o));
+
   const stripped = stripUndefined(obj);
   return Object.keys(stripped).map(k => {
     const ks = encode(k) + "=";
+
     if (Array.isArray(stripped[k])) {
       return ks + stripped[k].map(v => encode(v)).join(",");
     } else {
@@ -2834,16 +3268,20 @@ function qsify(obj) {
 
 
 
+
 function checkVersion(version, minVersion, maxVersion) {
   const extract = str => str.split(".").map(x => parseInt(x, 10));
+
   const [verMajor, verMinor] = extract(version);
   const [minMajor, minMinor] = extract(minVersion);
   const [maxMajor, maxMinor] = extract(maxVersion);
   const checks = [verMajor < minMajor, verMajor === minMajor && verMinor < minMinor, verMajor > maxMajor, verMajor === maxMajor && verMinor >= maxMinor];
+
   if (checks.some(x => x)) {
     throw new Error(`Version ${version} doesn't satisfy ${minVersion} <= x < ${maxVersion}`);
   }
 }
+
 
 
 
@@ -2858,12 +3296,14 @@ function support(min, max) {
     const fn = descriptor.value;
     return {
       configurable: true,
+
       get() {
         const wrappedMethod = (...args) => {
           
           const client = "client" in this ? this.client : this;
           return client.fetchHTTPApiVersion().then(version => checkVersion(version, min, max)).then(() => fn.apply(this, args));
         };
+
         Object.defineProperty(this, key, {
           value: wrappedMethod,
           configurable: true,
@@ -2871,9 +3311,11 @@ function support(min, max) {
         });
         return wrappedMethod;
       }
+
     };
   };
 }
+
 
 
 
@@ -2887,18 +3329,21 @@ function capable(capabilities) {
     const fn = descriptor.value;
     return {
       configurable: true,
+
       get() {
         const wrappedMethod = (...args) => {
           
           const client = "client" in this ? this.client : this;
           return client.fetchServerCapabilities().then(available => {
             const missing = capabilities.filter(c => !(c in available));
+
             if (missing.length > 0) {
               const missingStr = missing.join(", ");
               throw new Error(`Required capabilities ${missingStr} not present on server`);
             }
           }).then(() => fn.apply(this, args));
         };
+
         Object.defineProperty(this, key, {
           value: wrappedMethod,
           configurable: true,
@@ -2906,9 +3351,11 @@ function capable(capabilities) {
         });
         return wrappedMethod;
       }
+
     };
   };
 }
+
 
 
 
@@ -2922,14 +3369,17 @@ function nobatch(message) {
     const fn = descriptor.value;
     return {
       configurable: true,
+
       get() {
         const wrappedMethod = (...args) => {
           
           if (this._isBatch) {
             throw new Error(message);
           }
+
           return fn.apply(this, args);
         };
+
         Object.defineProperty(this, key, {
           value: wrappedMethod,
           configurable: true,
@@ -2937,9 +3387,11 @@ function nobatch(message) {
         });
         return wrappedMethod;
       }
+
     };
   };
 }
+
 
 
 
@@ -2955,21 +3407,30 @@ function isObject(thing) {
 
 
 
+
 function parseDataURL(dataURL) {
   const regex = /^data:(.*);base64,(.*)/;
   const match = dataURL.match(regex);
+
   if (!match) {
     throw new Error(`Invalid data-url: ${String(dataURL).substr(0, 32)}...`);
   }
+
   const props = match[1];
   const base64 = match[2];
   const [type, ...rawParams] = props.split(";");
   const params = rawParams.reduce((acc, param) => {
     const [key, value] = param.split("=");
-    return { ...acc, [key]: value };
+    return { ...acc,
+      [key]: value
+    };
   }, {});
-  return { ...params, type, base64 };
+  return { ...params,
+    type,
+    base64
+  };
 }
+
 
 
 
@@ -2977,15 +3438,27 @@ function parseDataURL(dataURL) {
 
 
 function extractFileInfo(dataURL) {
-  const { name, type, base64 } = parseDataURL(dataURL);
+  const {
+    name,
+    type,
+    base64
+  } = parseDataURL(dataURL);
   const binary = atob(base64);
   const array = [];
+
   for (let i = 0; i < binary.length; i++) {
     array.push(binary.charCodeAt(i));
   }
-  const blob = new Blob([new Uint8Array(array)], { type });
-  return { blob, name };
+
+  const blob = new Blob([new Uint8Array(array)], {
+    type
+  });
+  return {
+    blob,
+    name
+  };
 }
+
 
 
 
@@ -2997,15 +3470,22 @@ function extractFileInfo(dataURL) {
 
 
 function createFormData(dataURL, body, options = {}) {
-  const { filename = "untitled" } = options;
-  const { blob, name } = extractFileInfo(dataURL);
+  const {
+    filename = "untitled"
+  } = options;
+  const {
+    blob,
+    name
+  } = extractFileInfo(dataURL);
   const formData = new FormData();
   formData.append("attachment", blob, name || filename);
+
   for (const property in body) {
     if (typeof body[property] !== "undefined") {
       formData.append(property, JSON.stringify(body[property]));
     }
   }
+
   return formData;
 }
 
@@ -3013,15 +3493,19 @@ function createFormData(dataURL, body, options = {}) {
 
 
 
+
 function cleanUndefinedProperties(obj) {
   const result = {};
+
   for (const key in obj) {
     if (typeof obj[key] !== "undefined") {
       result[key] = obj[key];
     }
   }
+
   return result;
 }
 
 },{}]},{},[1])(1)
 });
+

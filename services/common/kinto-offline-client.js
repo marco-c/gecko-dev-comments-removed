@@ -2161,6 +2161,11 @@ class Collection {
 
 
 
+
+
+
+
+
   async pullChanges(client, syncResultObject, options = {}) {
     if (!syncResultObject.ok) {
       return syncResultObject;
@@ -2184,6 +2189,12 @@ class Collection {
       const exclude_id = options.exclude.slice(0, 50).map(r => r.id).join(",");
       filters = {
         exclude_id
+      };
+    }
+
+    if (options.expectedTimestamp) {
+      filters = { ...filters,
+        _expected: options.expectedTimestamp
       };
     } 
 
@@ -2255,6 +2266,11 @@ class Collection {
     }), payload);
   }
   
+
+
+
+
+
 
 
 
@@ -2427,6 +2443,7 @@ class Collection {
 
 
 
+
   async sync(options = {
     strategy: Collection.strategy.MANUAL,
     headers: {},
@@ -2434,7 +2451,8 @@ class Collection {
     ignoreBackoff: false,
     bucket: null,
     collection: null,
-    remote: null
+    remote: null,
+    expectedTimestamp: null
   }) {
     options = { ...options,
       bucket: options.bucket || this.bucket,

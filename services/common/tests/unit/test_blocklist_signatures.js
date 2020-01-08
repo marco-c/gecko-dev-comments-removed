@@ -102,7 +102,6 @@ add_task(async function test_check_signatures() {
       const key = `${request.method}:${request.path}?${request.queryString}`;
       const available = responses[key];
       const sampled = available.length > 1 ? available.shift() : available[0];
-
       if (!sampled) {
         do_throw(`unexpected ${request.method} request for ${request.path}?${request.queryString}`);
       }
@@ -285,9 +284,9 @@ add_task(async function test_check_signatures() {
   const emptyCollectionResponses = {
     "GET:/test_blocklist_signatures/test_cert_chain.pem?": [RESPONSE_CERT_CHAIN],
     "GET:/v1/?": [RESPONSE_SERVER_SETTINGS],
-    "GET:/v1/buckets/blocklists/collections/certificates/records?_sort=-last_modified":
+    "GET:/v1/buckets/blocklists/collections/certificates/records?_expected=1000&_sort=-last_modified":
       [RESPONSE_EMPTY_INITIAL],
-    "GET:/v1/buckets/blocklists/collections/certificates?":
+    "GET:/v1/buckets/blocklists/collections/certificates?_expected=1000":
       [RESPONSE_META_EMPTY_SIG],
   };
 
@@ -331,9 +330,9 @@ add_task(async function test_check_signatures() {
                      "RESPONSE_META_TWO_ITEMS_SIG");
 
   const twoItemsResponses = {
-    "GET:/v1/buckets/blocklists/collections/certificates/records?_sort=-last_modified&_since=1000":
+    "GET:/v1/buckets/blocklists/collections/certificates/records?_expected=3000&_sort=-last_modified&_since=1000":
       [RESPONSE_TWO_ADDED],
-    "GET:/v1/buckets/blocklists/collections/certificates?":
+    "GET:/v1/buckets/blocklists/collections/certificates?_expected=3000":
       [RESPONSE_META_TWO_ITEMS_SIG],
   };
   registerHandlers(twoItemsResponses);
@@ -363,9 +362,9 @@ add_task(async function test_check_signatures() {
                      "RESPONSE_META_THREE_ITEMS_SIG");
 
   const oneAddedOneRemovedResponses = {
-    "GET:/v1/buckets/blocklists/collections/certificates/records?_sort=-last_modified&_since=3000":
+    "GET:/v1/buckets/blocklists/collections/certificates/records?_expected=4000&_sort=-last_modified&_since=3000":
       [RESPONSE_ONE_ADDED_ONE_REMOVED],
-    "GET:/v1/buckets/blocklists/collections/certificates?":
+    "GET:/v1/buckets/blocklists/collections/certificates?_expected=4000":
       [RESPONSE_META_THREE_ITEMS_SIG],
   };
   registerHandlers(oneAddedOneRemovedResponses);
@@ -385,9 +384,9 @@ add_task(async function test_check_signatures() {
   };
 
   const noOpResponses = {
-    "GET:/v1/buckets/blocklists/collections/certificates/records?_sort=-last_modified&_since=4000":
+    "GET:/v1/buckets/blocklists/collections/certificates/records?_expected=4100&_sort=-last_modified&_since=4000":
       [RESPONSE_EMPTY_NO_UPDATE],
-    "GET:/v1/buckets/blocklists/collections/certificates?":
+    "GET:/v1/buckets/blocklists/collections/certificates?_expected=4100":
       [RESPONSE_META_THREE_ITEMS_SIG],
   };
   registerHandlers(noOpResponses);
@@ -428,12 +427,12 @@ add_task(async function test_check_signatures() {
     
     
     
-    "GET:/v1/buckets/blocklists/collections/certificates?":
+    "GET:/v1/buckets/blocklists/collections/certificates?_expected=5000":
       [RESPONSE_META_BAD_SIG, RESPONSE_META_THREE_ITEMS_SIG],
     
     
     
-    "GET:/v1/buckets/blocklists/collections/certificates/records?_sort=-last_modified&_since=4000":
+    "GET:/v1/buckets/blocklists/collections/certificates/records?_expected=5000&_sort=-last_modified&_since=4000":
       [RESPONSE_EMPTY_NO_UPDATE],
     
     
@@ -441,7 +440,7 @@ add_task(async function test_check_signatures() {
       [RESPONSE_COMPLETE_INITIAL],
     
     
-    "GET:/v1/buckets/blocklists/collections/certificates/records?_sort=id":
+    "GET:/v1/buckets/blocklists/collections/certificates/records?_expected=5000&_sort=id":
       [RESPONSE_COMPLETE_INITIAL_SORTED_BY_ID],
   };
 
@@ -471,17 +470,17 @@ add_task(async function test_check_signatures() {
     
     
     
-    "GET:/v1/buckets/blocklists/collections/certificates?":
+    "GET:/v1/buckets/blocklists/collections/certificates?_expected=5000":
       [RESPONSE_META_BAD_SIG, RESPONSE_META_EMPTY_SIG],
     
     
-    "GET:/v1/buckets/blocklists/collections/certificates/records?_sort=-last_modified&_since=4000":
+    "GET:/v1/buckets/blocklists/collections/certificates/records?_expected=5000&_sort=-last_modified&_since=4000":
       [RESPONSE_EMPTY_NO_UPDATE],
     
     
     
     
-    "GET:/v1/buckets/blocklists/collections/certificates/records?_sort=id":
+    "GET:/v1/buckets/blocklists/collections/certificates/records?_expected=5000&_sort=id":
       [RESPONSE_EMPTY_INITIAL],
   };
 
@@ -503,15 +502,15 @@ add_task(async function test_check_signatures() {
     
     
     
-    "GET:/v1/buckets/blocklists/collections/certificates?":
+    "GET:/v1/buckets/blocklists/collections/certificates?_expected=5000":
       [RESPONSE_META_BAD_SIG, RESPONSE_META_THREE_ITEMS_SIG],
     
     
-    "GET:/v1/buckets/blocklists/collections/certificates/records?_sort=-last_modified":
+    "GET:/v1/buckets/blocklists/collections/certificates/records?_expected=5000&_sort=-last_modified":
       [RESPONSE_COMPLETE_INITIAL],
     
     
-    "GET:/v1/buckets/blocklists/collections/certificates/records?_sort=id":
+    "GET:/v1/buckets/blocklists/collections/certificates/records?_expected=5000&_sort=id":
       [RESPONSE_COMPLETE_INITIAL_SORTED_BY_ID],
   };
 
@@ -544,16 +543,16 @@ add_task(async function test_check_signatures() {
 
   const allBadSigResponses = {
     
-    "GET:/v1/buckets/blocklists/collections/certificates?":
+    "GET:/v1/buckets/blocklists/collections/certificates?_expected=6000":
       [RESPONSE_META_BAD_SIG],
     
     
     
-    "GET:/v1/buckets/blocklists/collections/certificates/records?_sort=-last_modified&_since=4000":
+    "GET:/v1/buckets/blocklists/collections/certificates/records?_expected=6000&_sort=-last_modified&_since=4000":
       [RESPONSE_EMPTY_NO_UPDATE],
     
     
-    "GET:/v1/buckets/blocklists/collections/certificates/records?_sort=id":
+    "GET:/v1/buckets/blocklists/collections/certificates/records?_expected=6000&_sort=id":
       [RESPONSE_COMPLETE_INITIAL_SORTED_BY_ID],
   };
 
@@ -575,7 +574,7 @@ add_task(async function test_check_signatures() {
   const missingSigResponses = {
     
     
-    "GET:/v1/buckets/blocklists/collections/certificates?":
+    "GET:/v1/buckets/blocklists/collections/certificates?_expected=6000":
       [RESPONSE_META_NO_SIG],
   };
 
