@@ -549,18 +549,45 @@ struct DIGroup
             aData->mRect = transformedRect.Intersect(mImageBounds);
             InvalidateRect(aData->mRect);
             GP("UpdateContainerLayerPropertiesAndDetectChange change\n");
+          } else if (!aData->mImageRect.IsEqualEdges(mImageBounds)) {
+            
+            combined = clip.ApplyNonRoundedIntersection(geometry->ComputeInvalidationRegion());
+            IntRect transformedRect = ToDeviceSpace(combined.GetBounds(), aMatrix, appUnitsPerDevPixel, mLayerBounds.TopLeft());
+            
+            
+            MOZ_RELEASE_ASSERT(mInvalidRect.Contains(aData->mRect));
+            aData->mRect = transformedRect.Intersect(mImageBounds);
+            MOZ_RELEASE_ASSERT(mInvalidRect.Contains(aData->mRect));
+            GP("ContainerLayer image rect bounds change\n");
           } else {
             
             combined = clip.ApplyNonRoundedIntersection(geometry->ComputeInvalidationRegion());
+            IntRect transformedRect = ToDeviceSpace(combined.GetBounds(), aMatrix, appUnitsPerDevPixel, mLayerBounds.TopLeft());
+            auto rect = transformedRect.Intersect(mImageBounds);
             GP("Layer NoChange: %s %d %d %d %d\n", aItem->Name(),
                    aData->mRect.x, aData->mRect.y, aData->mRect.XMost(), aData->mRect.YMost());
+            MOZ_RELEASE_ASSERT(rect.IsEqualEdges(aData->mRect));
           }
+        } else if (!aData->mImageRect.IsEqualEdges(mImageBounds)) {
+          
+          UniquePtr<nsDisplayItemGeometry> geometry(aItem->AllocateGeometry(aBuilder));
+          combined = clip.ApplyNonRoundedIntersection(geometry->ComputeInvalidationRegion());
+          IntRect transformedRect = ToDeviceSpace(combined.GetBounds(), aMatrix, appUnitsPerDevPixel, mLayerBounds.TopLeft());
+          
+          
+          MOZ_RELEASE_ASSERT(mInvalidRect.Contains(aData->mRect));
+          aData->mRect = transformedRect.Intersect(mImageBounds);
+          MOZ_RELEASE_ASSERT(mInvalidRect.Contains(aData->mRect));
+          GP("image rect bounds change\n");
         } else {
           
           UniquePtr<nsDisplayItemGeometry> geometry(aItem->AllocateGeometry(aBuilder));
           combined = clip.ApplyNonRoundedIntersection(geometry->ComputeInvalidationRegion());
+          IntRect transformedRect = ToDeviceSpace(combined.GetBounds(), aMatrix, appUnitsPerDevPixel, mLayerBounds.TopLeft());
+          auto rect = transformedRect.Intersect(mImageBounds);
           GP("NoChange: %s %d %d %d %d\n", aItem->Name(),
                  aData->mRect.x, aData->mRect.y, aData->mRect.XMost(), aData->mRect.YMost());
+          MOZ_RELEASE_ASSERT(rect.IsEqualEdges(aData->mRect));
         }
       }
     }
