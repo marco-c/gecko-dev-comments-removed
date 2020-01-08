@@ -51,12 +51,24 @@ public:
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Promise)
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(Promise)
 
+  enum PropagateUserInteraction
+  {
+    eDontPropagateUserInteraction,
+    ePropagateUserInteraction
+  };
+
+  
+  
+  
   
   
   
   
   static already_AddRefed<Promise>
-  Create(nsIGlobalObject* aGlobal, ErrorResult& aRv);
+  Create(nsIGlobalObject* aGlobal,
+         ErrorResult& aRv,
+         PropagateUserInteraction aPropagateUserInteraction =
+           eDontPropagateUserInteraction);
 
   
   static void ReportRejectedPromise(JSContext* aCx, JS::HandleObject aPromise);
@@ -116,9 +128,15 @@ public:
   
   
   
+  
+  
+  
   static already_AddRefed<Promise>
   Resolve(nsIGlobalObject* aGlobal, JSContext* aCx,
-          JS::Handle<JS::Value> aValue, ErrorResult& aRv);
+          JS::Handle<JS::Value> aValue,
+          ErrorResult& aRv,
+          PropagateUserInteraction aPropagateUserInteraction =
+            eDontPropagateUserInteraction);
 
   
   
@@ -130,9 +148,14 @@ public:
   
   
   
+  
+  
+  
   static already_AddRefed<Promise>
   All(JSContext* aCx, const nsTArray<RefPtr<Promise>>& aPromiseList,
-      ErrorResult& aRv);
+      ErrorResult& aRv,
+      PropagateUserInteraction aPropagateUserInteraction =
+        eDontPropagateUserInteraction);
 
   void
   Then(JSContext* aCx,
@@ -193,9 +216,14 @@ public:
 
   
   
+  
+  
+  
   static already_AddRefed<Promise>
   CreateFromExisting(nsIGlobalObject* aGlobal,
-                     JS::Handle<JSObject*> aPromiseObj);
+                     JS::Handle<JSObject*> aPromiseObj,
+                     PropagateUserInteraction aPropagateUserInteraction =
+                       eDontPropagateUserInteraction);
 
   enum class PromiseState {
     Pending,
@@ -217,7 +245,13 @@ protected:
 
   
   
-  void CreateWrapper(JS::Handle<JSObject*> aDesiredProto, ErrorResult& aRv);
+  
+  
+  
+  void CreateWrapper(JS::Handle<JSObject*> aDesiredProto,
+                     ErrorResult& aRv,
+                     PropagateUserInteraction aPropagateUserInteraction =
+                       eDontPropagateUserInteraction);
 
 private:
   template <typename T>
@@ -237,6 +271,8 @@ private:
   }
 
   void HandleException(JSContext* aCx);
+
+  bool MaybePropagateUserInputEventHandling();
 
   RefPtr<nsIGlobalObject> mGlobal;
 
