@@ -4,9 +4,9 @@
 
 
 function getResolution() {
-  let resolution = { value: -1 }; 
-  SpecialPowers.getDOMWindowUtils(window).getResolution(resolution);
-  return resolution.value;
+  let resolution = -1; 
+  resolution = SpecialPowers.getDOMWindowUtils(window).getResolution();
+  return resolution;
 }
 
 function getPlatform() {

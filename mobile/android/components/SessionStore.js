@@ -936,11 +936,11 @@ SessionStore.prototype = {
     scrolldata = scrolldata || {};
 
     
-    let zoom = { value: 1 };
-    content.windowUtils.getResolution(zoom);
+    let zoom = 1;
+    zoom = content.windowUtils.getResolution();
     scrolldata.zoom = {};
-    scrolldata.zoom.resolution = zoom.value;
-    log("onTabScroll() zoom level: " + zoom.value);
+    scrolldata.zoom.resolution = zoom;
+    log("onTabScroll() zoom level: " + zoom);
 
     
     

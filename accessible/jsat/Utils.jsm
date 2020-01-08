@@ -178,9 +178,7 @@ var Utils = {
   },
 
   getContentResolution: function _getContentResolution(aAccessible) {
-    let res = { value: 1 };
-    aAccessible.document.window.windowUtils.getResolution(res);
-    return res.value;
+    return aAccessible.document.window.windowUtils.getResolution();
   },
 
   getBounds: function getBounds(aAccessible) {

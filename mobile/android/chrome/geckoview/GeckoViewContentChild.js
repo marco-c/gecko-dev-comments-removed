@@ -88,12 +88,12 @@ class GeckoViewContentChild extends GeckoViewChildModule {
     let [formdata, scrolldata] = this.Utils.mapFrameTree(content, FormData.collect, ssu.collectScrollPosition.bind(ssu));
 
     
-    let zoom = { value: 1 };
+    let zoom = 1;
     let domWindowUtils = content.windowUtils;
-    domWindowUtils.getResolution(zoom);
+    zoom = domWindowUtils.getResolution();
     scrolldata = scrolldata || {};
     scrolldata.zoom = {};
-    scrolldata.zoom.resolution = zoom.value;
+    scrolldata.zoom.resolution = zoom;
 
     
     
