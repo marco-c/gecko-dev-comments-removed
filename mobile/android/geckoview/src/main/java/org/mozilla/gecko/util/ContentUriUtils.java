@@ -24,7 +24,10 @@ import android.os.Build;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
+
+import java.io.File;
 
 
 
@@ -42,7 +45,7 @@ public class ContentUriUtils {
 
 
 
-    public static String getPath(final Context context, final Uri uri) {
+    public static @Nullable String getOriginalFilePathFromUri(final Context context, final Uri uri) throws IllegalArgumentException {
 
         final boolean isKitKat = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
 
@@ -125,29 +128,48 @@ public class ContentUriUtils {
 
 
 
+    public static @Nullable String getTempFilePathFromContentUri(Context context, Uri contentUri) {
+        
+        final String fileName = FileUtils.getFileNameFromContentUri(context, contentUri);
+        final File folder = new File(context.getCacheDir(), FileUtils.CONTENT_TEMP_DIRECTORY);
+        boolean success = true;
+        if (!folder.exists()) {
+            success = folder.mkdirs();
+        }
+
+        if (!TextUtils.isEmpty(fileName) && success) {
+                File copyFile = new File(folder.getPath(), fileName);
+                FileUtils.copy(context, contentUri, copyFile);
+                return copyFile.getAbsolutePath();
+        }
+        return null;
+    }
+
+    
+
+
+
+
+
+
 
 
 
 
     private static String getDataColumn(Context context, Uri uri, String selection,
-                                        String[] selectionArgs) {
+                                        String[] selectionArgs) throws IllegalArgumentException {
 
-        Cursor cursor = null;
         final String column = "_data";
         final String[] projection = {
                 column
         };
 
-        try {
-            cursor = context.getContentResolver().query(uri, projection, selection, selectionArgs,
-                    null);
+        try (Cursor cursor = context.getContentResolver().query(uri, projection, selection, selectionArgs,
+                null)) {
             if (cursor != null && cursor.moveToFirst()) {
                 final int column_index = cursor.getColumnIndexOrThrow(column);
                 return cursor.getString(column_index);
             }
-        } finally {
-            if (cursor != null)
-                cursor.close();
         }
         return null;
     }
