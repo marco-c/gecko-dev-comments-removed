@@ -6,6 +6,8 @@
 
 
 
+
+
 var { "classes": Cc, "interfaces": Ci, "utils": Cu } = Components;
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -49,8 +51,28 @@ if (!this.runTest) {
 
     Cu.importGlobalProperties(["indexedDB"]);
 
-    do_test_pending();
-    testGenerator.next();
+    
+    
+    
+    Assert.ok(typeof testSteps === "function",
+              "There should be a testSteps function");
+    if (testSteps.constructor.name === "AsyncFunction") {
+      
+      
+      registerCleanupFunction(resetTesting);
+
+      add_task(testSteps);
+
+      
+      
+      run_next_test();
+    } else {
+      Assert.ok(testSteps.constructor.name === "GeneratorFunction",
+                "Unsupported function type");
+
+      do_test_pending();
+      testGenerator.next();
+    }
   };
 }
 
@@ -532,6 +554,38 @@ function getPrincipal(url)
 {
   let uri = Services.io.newURI(url);
   return Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
+}
+
+function expectingSuccess(request) {
+  return new Promise(function(resolve, reject) {
+    request.onerror = function(event) {
+      ok(false, "indexedDB error, '" + event.target.error.name + "'");
+      reject(event);
+    };
+    request.onsuccess = function(event) {
+      resolve(event);
+    };
+    request.onupgradeneeded = function(event) {
+      ok(false, "Got upgrade, but did not expect it!");
+      reject(event);
+    };
+  });
+}
+
+function expectingUpgrade(request) {
+  return new Promise(function(resolve, reject) {
+    request.onerror = function(event) {
+      ok(false, "indexedDB error, '" + event.target.error.name + "'");
+      reject(event);
+    };
+    request.onupgradeneeded = function(event) {
+      resolve(event);
+    };
+    request.onsuccess = function(event) {
+      ok(false, "Got success, but did not expect it!");
+      reject(event);
+    };
+  });
 }
 
 var SpecialPowers = {
