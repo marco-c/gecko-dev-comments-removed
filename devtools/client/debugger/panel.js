@@ -134,7 +134,7 @@ DebuggerPanel.prototype = {
   getMappedExpression(expression) {
     
     
-    return expression;
+    return null;
   },
 
   isPaused() {
