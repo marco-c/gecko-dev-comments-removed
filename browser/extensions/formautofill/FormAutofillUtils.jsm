@@ -72,7 +72,12 @@ let AddressDataLoader = {
 
     if (extSandbox.addressDataExt) {
       for (let key in extSandbox.addressDataExt) {
-        Object.assign(sandbox.addressData[key], extSandbox.addressDataExt[key]);
+        let addressDataForKey = sandbox.addressData[key];
+        if (!addressDataForKey) {
+          addressDataForKey = sandbox.addressData[key] = {};
+        }
+
+        Object.assign(addressDataForKey, extSandbox.addressDataExt[key]);
       }
     }
     return sandbox;
@@ -270,6 +275,7 @@ this.FormAutofillUtils = {
     let fieldOrder = [
       "name",
       "-moz-street-address-one-line",  
+      "address-level3",  
       "address-level2",  
       "organization",    
       "address-level1",  
@@ -403,12 +409,18 @@ this.FormAutofillUtils = {
 
 
 
+
+
+
   getCountryAddressData(country, level1) {
     let metadata = this.getCountryAddressRawData(country, level1);
     return metadata && metadata.defaultLocale;
   },
 
   
+
+
+
 
 
 
@@ -464,6 +476,7 @@ this.FormAutofillUtils = {
       A: "street-address",
       S: "address-level1",
       C: "address-level2",
+      D: "address-level3",
       Z: "postal-code",
       n: "newLine",
     };
@@ -496,12 +509,20 @@ this.FormAutofillUtils = {
 
 
   identifyCountryCode(countryName, countrySpecified) {
-    let countries = countrySpecified ? [countrySpecified] : FormAutofill.supportedCountries;
+    let countries = countrySpecified ? [countrySpecified] : [...FormAutofill.countries.keys()];
 
     for (let country of countries) {
       let collators = this.getCollators(country);
-
       let metadata = this.getCountryAddressData(country);
+      if (country != metadata.key) {
+        
+        
+        metadata = {
+          id: `data/${country}`,
+          key: country,
+          name: FormAutofill.countries.get(country),
+        };
+      }
       let alternativeCountryNames = metadata.alternative_names || [metadata.name];
       let reAlternativeCountryNames = this._reAlternativeCountryNames[country];
       if (!reAlternativeCountryNames) {
@@ -781,13 +802,22 @@ this.FormAutofillUtils = {
 
 
 
+
+
+
   getFormFormat(country) {
     const dataset = this.getCountryAddressData(country);
     return {
-      "addressLevel1Label": dataset.state_name_type || "province",
-      "postalCodeLabel": dataset.zip_name_type || "postalCode",
-      "fieldsOrder": this.parseAddressFormat(dataset.fmt || "%N%n%O%n%A%n%C, %S %Z"),
-      "postalCodePattern": dataset.zip,
+      
+      
+      addressLevel3Label: dataset.sublocality_name_type || "suburb",
+      
+      
+      addressLevel2Label: dataset.locality_name_type || "city",
+      addressLevel1Label: dataset.state_name_type || "province",
+      postalCodeLabel: dataset.zip_name_type || "postalCode",
+      fieldsOrder: this.parseAddressFormat(dataset.fmt || "%N%n%O%n%A%n%C, %S %Z"),
+      postalCodePattern: dataset.zip,
     };
   },
 

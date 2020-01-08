@@ -10,6 +10,7 @@
 
 
 
+
 "use strict";
 
 ChromeUtils.import("resource://testing-common/LoginTestUtils.jsm", this);
@@ -97,6 +98,21 @@ const TEST_ADDRESS_DE_1 = {
   country: "DE",
   tel: "+4930983333000",
   email: "timbl@w3.org",
+};
+
+const TEST_ADDRESS_IE_1 = {
+  "given-name": "Bob",
+  "additional-name": "Z.",
+  "family-name": "Builder",
+  organization: "Best Co.",
+  "street-address": "123 Kilkenny St.",
+  "address-level3": "Some Townland",
+  "address-level2": "Dublin",
+  "address-level1": "Co. Dublin",
+  "postal-code": "A65 F4E2",
+  country: "IE",
+  tel: "+13534564947391",
+  email: "ie@example.com",
 };
 
 const TEST_CREDIT_CARD_1 = {

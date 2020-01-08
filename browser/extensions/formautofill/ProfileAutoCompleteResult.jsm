@@ -220,6 +220,7 @@ class AddressResult extends ProfileAutoCompleteResult {
     const secondaryLabelOrder = [
       "street-address",  
       "name",            
+      "address-level3",  
       "address-level2",  
       "organization",    
       "address-level1",  

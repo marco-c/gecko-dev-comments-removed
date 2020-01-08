@@ -27,6 +27,8 @@
 
   flex-basis: calc(50% - var(--grid-column-row-gap));
   flex-grow: 0;
+  
+  max-width: calc(50% - var(--grid-column-row-gap));
 }
 
 

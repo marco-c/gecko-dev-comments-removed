@@ -1685,7 +1685,6 @@ pref("extensions.formautofill.loglevel", "Warn");
 
 #ifdef NIGHTLY_BUILD
 
-
 pref("extensions.formautofill.supportedCountries", "US,CA,DE");
 pref("extensions.formautofill.supportRTL", true);
 #else

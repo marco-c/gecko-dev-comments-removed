@@ -121,6 +121,7 @@
 
 
 
+
 "use strict";
 
 
@@ -165,6 +166,7 @@ const VALID_ADDRESS_FIELDS = [
   "family-name",
   "organization",
   "street-address",
+  "address-level3",
   "address-level2",
   "address-level1",
   "postal-code",
@@ -1297,7 +1299,7 @@ class Addresses extends AutofillRecords {
   }
 
   _recordReadProcessor(address) {
-    if (address.country && !FormAutofill.supportedCountries.includes(address.country)) {
+    if (address.country && !FormAutofill.countries.has(address.country)) {
       delete address.country;
       delete address["country-name"];
     }
