@@ -10219,16 +10219,19 @@ nsLayoutUtils::StyleForScrollbar(nsIFrame* aScrollbarPart)
 {
   
   
-  
-  
-  
-  
   nsIContent* content = aScrollbarPart->GetContent();
   
   
   
+  
+  
   MOZ_ASSERT(content, "No content for the scrollbar part?");
-  while (content && content->IsInNativeAnonymousSubtree()) {
+  while (content && content->IsInNativeAnonymousSubtree() &&
+         content->IsAnyOfXULElements(nsGkAtoms::scrollbar,
+                                     nsGkAtoms::scrollbarbutton,
+                                     nsGkAtoms::scrollcorner,
+                                     nsGkAtoms::slider,
+                                     nsGkAtoms::thumb)) {
     content = content->GetParent();
   }
   MOZ_ASSERT(content, "Native anonymous element with no originating node?");
