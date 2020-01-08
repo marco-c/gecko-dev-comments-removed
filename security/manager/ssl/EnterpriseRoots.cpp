@@ -6,14 +6,19 @@
 
 #include "EnterpriseRoots.h"
 
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Unused.h"
+
+#ifdef XP_MACOSX
+#include <Security/Security.h>
+#endif 
 
 extern LazyLogModule gPIPNSSLog;
 
 using namespace mozilla;
 
 #ifdef XP_WIN
-
 const wchar_t* kWindowsDefaultRootStoreName = L"ROOT";
 NS_NAMED_LITERAL_CSTRING(kMicrosoftFamilySafetyCN, "Microsoft Family Safety");
 
@@ -118,6 +123,10 @@ GatherEnterpriseRootsForLocation(DWORD locationFlag, UniqueCERTCertList& roots)
         locationFlag == CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE)) {
     return;
   }
+  MOZ_ASSERT(roots, "roots unexpectedly NULL?");
+  if (!roots) {
+    return;
+  }
 
   DWORD flags = locationFlag |
                 CERT_STORE_OPEN_EXISTING_FLAG |
@@ -160,10 +169,6 @@ GatherEnterpriseRootsForLocation(DWORD locationFlag, UniqueCERTCertList& roots)
       MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("skipping Family Safety Root"));
       continue;
     }
-    MOZ_ASSERT(roots, "roots unexpectedly NULL?");
-    if (!roots) {
-      return;
-    }
     if (CERT_AddCertToListTail(roots.get(), nssCertificate.get())
           != SECSuccess) {
       MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("couldn't add cert to list"));
@@ -188,6 +193,105 @@ GatherEnterpriseRootsWindows(UniqueCERTCertList& roots)
 }
 #endif 
 
+#ifdef XP_MACOSX
+template<typename T>
+class ScopedCFType
+{
+public:
+  explicit ScopedCFType(T value)
+  : mValue(value)
+  {
+  }
+
+  ~ScopedCFType() { CFRelease((CFTypeRef)mValue); }
+
+  T get() { return mValue; }
+
+private:
+  T mValue;
+};
+
+OSStatus
+GatherEnterpriseRootsOSX(UniqueCERTCertList& roots)
+{
+  MOZ_ASSERT(roots, "roots unexpectedly NULL?");
+  if (!roots) {
+    return errSecBadReq;
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const CFStringRef keys[] = { kSecClass,
+                               kSecMatchLimit,
+                               kSecMatchPolicy,
+                               kSecMatchTrustedOnly };
+  
+  ScopedCFType<SecPolicyRef> sslPolicy(SecPolicyCreateSSL(true, nullptr));
+  const void* values[] = { kSecClassCertificate,
+                           kSecMatchLimitAll,
+                           sslPolicy.get(),
+                           kCFBooleanTrue };
+  static_assert(ArrayLength(keys) == ArrayLength(values),
+                "mismatched SecItemCopyMatching key/value array sizes");
+  
+  ScopedCFType<CFDictionaryRef> searchDictionary(
+    CFDictionaryCreate(nullptr, (const void**)&keys, (const void**)&values,
+                       ArrayLength(keys), &kCFTypeDictionaryKeyCallBacks,
+                       &kCFTypeDictionaryValueCallBacks));
+  CFTypeRef items;
+  
+  OSStatus rv = SecItemCopyMatching(searchDictionary.get(), &items);
+  if (rv != errSecSuccess) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("SecItemCopyMatching failed"));
+    return rv;
+  }
+  
+  
+  ScopedCFType<CFArrayRef> arr(reinterpret_cast<CFArrayRef>(items));
+  CFIndex count = CFArrayGetCount(arr.get());
+  uint32_t numImported = 0;
+  for (CFIndex i = 0; i < count; i++) {
+    const CFTypeRef c = CFArrayGetValueAtIndex(arr.get(), i);
+    
+    
+    const SecCertificateRef s = (const SecCertificateRef)c;
+    ScopedCFType<CFDataRef> der(SecCertificateCopyData(s));
+    const unsigned char* ptr = CFDataGetBytePtr(der.get());
+    unsigned int len = CFDataGetLength(der.get());
+    SECItem derItem = {
+      siBuffer,
+      const_cast<unsigned char*>(ptr),
+      len,
+    };
+    UniqueCERTCertificate cert(
+      CERT_NewTempCertificate(CERT_GetDefaultCertDB(), &derItem,
+                              nullptr, 
+                              false, 
+                              true)); 
+    if (!cert) {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("couldn't decode 3rd party root certificate"));
+      continue;
+    }
+    UniquePORTString subjectName(CERT_GetCommonName(&cert->subject));
+    if (CERT_AddCertToListTail(roots.get(), cert.get()) != SECSuccess) {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("couldn't add cert to list"));
+      continue;
+    }
+    numImported++;
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("Imported '%s'", subjectName.get()));
+    mozilla::Unused << cert.release(); 
+  }
+  MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("imported %u roots", numImported));
+  return errSecSuccess;
+}
+#endif 
+
 nsresult
 GatherEnterpriseRoots(UniqueCERTCertList& result)
 {
@@ -197,6 +301,12 @@ GatherEnterpriseRoots(UniqueCERTCertList& result)
   }
 #ifdef XP_WIN
   GatherEnterpriseRootsWindows(roots);
+#endif 
+#ifdef XP_MACOSX
+  OSStatus rv = GatherEnterpriseRootsOSX(roots);
+  if (rv != errSecSuccess) {
+    return NS_ERROR_FAILURE;
+  }
 #endif 
   result = std::move(roots);
   return NS_OK;
