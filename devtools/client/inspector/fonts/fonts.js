@@ -178,8 +178,6 @@ class FontInspector {
     let out = value;
     
     let computedStyle;
-    
-    let rawNode;
 
     if (unit === "in") {
       out = fromPx
@@ -233,36 +231,31 @@ class FontInspector {
         : value * parseFloat(computedStyle["font-size"].value);
     }
 
-    if (unit === "vh") {
-      rawNode = await node.rawNode();
-      out = fromPx
-        ? value * 100 / rawNode.ownerGlobal.innerHeight
-        : value / 100 * rawNode.ownerGlobal.innerHeight;
-    }
+    if (unit === "vh" || unit === "vw" || unit === "vmin" || unit === "vmax") {
+      const dim = await node.getOwnerGlobalDimensions();
 
-    if (unit === "vw") {
-      rawNode = await node.rawNode();
-      out = fromPx
-        ? value * 100 / rawNode.ownerGlobal.innerWidth
-        : value / 100 * rawNode.ownerGlobal.innerWidth;
-    }
-
-    if (unit === "vmin") {
-      rawNode = await node.rawNode();
-      out = fromPx
-        ? value * 100 / Math.min(
-          rawNode.ownerGlobal.innerWidth, rawNode.ownerGlobal.innerHeight)
-        : value / 100 * Math.min(
-          rawNode.ownerGlobal.innerWidth, rawNode.ownerGlobal.innerHeight);
-    }
-
-    if (unit === "vmax") {
-      rawNode = await node.rawNode();
-      out = fromPx
-        ? value * 100 / Math.max(
-          rawNode.ownerGlobal.innerWidth, rawNode.ownerGlobal.innerHeight)
-        : value / 100 * Math.max(
-          rawNode.ownerGlobal.innerWidth, rawNode.ownerGlobal.innerHeight);
+      
+      
+      
+      if (!dim || !dim.innerWidth || !dim.innerHeight) {
+        out = value;
+      } else if (unit === "vh") {
+        out = fromPx
+          ? value * 100 / dim.innerHeight
+          : value / 100 * dim.innerHeight;
+      } else if (unit === "vw") {
+        out = fromPx
+          ? value * 100 / dim.innerWidth
+          : value / 100 * dim.innerWidth;
+      } else if (unit === "vmin") {
+        out = fromPx
+          ? value * 100 / Math.min(dim.innerWidth, dim.innerHeight)
+          : value / 100 * Math.min(dim.innerWidth, dim.innerHeight);
+      } else if (unit === "vmax") {
+        out = fromPx
+          ? value * 100 / Math.max(dim.innerWidth, dim.innerHeight)
+          : value / 100 * Math.max(dim.innerWidth, dim.innerHeight);
+      }
     }
 
     
@@ -728,12 +721,8 @@ class FontInspector {
       let unit = fromUnit;
 
       if (toUnit && fromUnit) {
-        try {
-          value = await this.convertUnits(value, fromUnit, toUnit);
-          unit = toUnit;
-        } catch (err) {
-          
-        }
+        value = await this.convertUnits(value, fromUnit, toUnit);
+        unit = toUnit;
       }
 
       this.onFontPropertyUpdate(property, value, unit);
