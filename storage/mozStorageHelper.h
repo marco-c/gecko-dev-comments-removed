@@ -154,7 +154,7 @@ public:
 
     
     
-    nsresult rv = NS_OK;
+    nsresult rv;
     do {
       rv = mConnection->ExecuteSimpleSQL(NS_LITERAL_CSTRING("ROLLBACK"));
       if (rv == NS_ERROR_STORAGE_BUSY)
