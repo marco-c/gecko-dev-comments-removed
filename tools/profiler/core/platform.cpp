@@ -295,6 +295,23 @@ public:
       [&](UniquePtr<RegisteredThread>& rt) { return rt.get() == aRegisteredThread; });
   }
 
+  PS_GET(const nsTArray<BaseProfilerCount*>&, Counters)
+
+  static void AppendCounter(PSLockRef, BaseProfilerCount* aCounter)
+  {
+    
+    sInstance->mCounters.AppendElement(aCounter);
+  }
+
+  static void RemoveCounter(PSLockRef, BaseProfilerCount* aCounter)
+  {
+    
+    
+    if (sInstance) {
+      sInstance->mCounters.RemoveElement(aCounter);
+    }
+  }
+
 #ifdef USE_LUL_STACKWALK
   static lul::LUL* Lul(PSLockRef) { return sInstance->mLul.get(); }
   static void SetLul(PSLockRef, UniquePtr<lul::LUL> aLul)
@@ -313,6 +330,9 @@ private:
   
   
   nsTArray<UniquePtr<RegisteredThread>> mRegisteredThreads;
+
+  
+  nsTArray<BaseProfilerCount*> mCounters;
 
 #ifdef USE_LUL_STACKWALK
   
@@ -3300,6 +3320,24 @@ profiler_feature_active(uint32_t aFeature)
 
   
   return RacyFeatures::IsActiveWithFeature(aFeature);
+}
+
+void
+profiler_add_sampled_counter(BaseProfilerCount* aCounter)
+{
+  DEBUG_LOG("profiler_add_sampled_counter(%s)", aCounter->mLabel);
+  PSAutoLock lock(gPSMutex);
+  CorePS::AppendCounter(lock, aCounter);
+}
+
+void
+profiler_remove_sampled_counter(BaseProfilerCount* aCounter)
+{
+  DEBUG_LOG("profiler_remove_sampled_counter(%s)", aCounter->mLabel);
+  PSAutoLock lock(gPSMutex);
+  
+  
+  CorePS::RemoveCounter(lock, aCounter);
 }
 
 ProfilingStack*
