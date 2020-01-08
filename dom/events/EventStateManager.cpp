@@ -4994,62 +4994,76 @@ EventStateManager::CheckForAndDispatchClick(WidgetMouseEvent* aEvent,
                                             nsEventStatus* aStatus,
                                             nsIContent* aOverrideClickTarget)
 {
-  nsresult ret = NS_OK;
+  
+  
+  if (!aEvent->mClickCount) {
+    return NS_OK;
+  }
 
   
   
-  if (aEvent->mClickCount) {
-    
-    
-    if (aEvent->mWidget && !aEvent->mWidget->IsEnabled()) {
-      return ret;
-    }
-    
-    bool notDispatchToContents =
-     (aEvent->button == WidgetMouseEvent::eMiddleButton ||
-      aEvent->button == WidgetMouseEvent::eRightButton);
+  if (aEvent->mWidget && !aEvent->mWidget->IsEnabled()) {
+    return NS_OK;
+  }
 
-    bool fireAuxClick = notDispatchToContents;
+  
+  bool notDispatchToContents =
+   (aEvent->button == WidgetMouseEvent::eMiddleButton ||
+    aEvent->button == WidgetMouseEvent::eRightButton);
 
-    nsCOMPtr<nsIPresShell> presShell = mPresContext->GetPresShell();
-    if (presShell) {
-      nsCOMPtr<nsIContent> mouseContent = GetEventTargetContent(aEvent);
-      
-      
-      
-      
-      while (mouseContent && !mouseContent->IsElement()) {
-        mouseContent = mouseContent->GetFlattenedTreeParent();
-      }
+  bool fireAuxClick = notDispatchToContents;
 
-      if (!mouseContent && !mCurrentTarget && !aOverrideClickTarget) {
-        return NS_OK;
-      }
+  nsCOMPtr<nsIPresShell> presShell = mPresContext->GetPresShell();
+  if (!presShell) {
+    return NS_OK;
+  }
 
-      
-      AutoWeakFrame currentTarget = mCurrentTarget;
-      ret = InitAndDispatchClickEvent(aEvent, aStatus, eMouseClick,
-                                      presShell, mouseContent, currentTarget,
-                                      notDispatchToContents,
-                                      aOverrideClickTarget);
+  nsCOMPtr<nsIContent> mouseContent = GetEventTargetContent(aEvent);
+  
+  
+  
+  
+  while (mouseContent && !mouseContent->IsElement()) {
+    mouseContent = mouseContent->GetFlattenedTreeParent();
+  }
 
-      if (NS_SUCCEEDED(ret) && aEvent->mClickCount == 2 &&
-          mouseContent && mouseContent->IsInComposedDoc()) {
-        
-        ret = InitAndDispatchClickEvent(aEvent, aStatus, eMouseDoubleClick,
-                                        presShell, mouseContent, currentTarget,
-                                        notDispatchToContents,
-                                        aOverrideClickTarget);
-      }
-      if (NS_SUCCEEDED(ret) && mouseContent && fireAuxClick &&
-          mouseContent->IsInComposedDoc()) {
-        ret = InitAndDispatchClickEvent(aEvent, aStatus, eMouseAuxClick,
-                                        presShell, mouseContent, currentTarget,
-                                        false, aOverrideClickTarget);
-      }
+  if (!mouseContent && !mCurrentTarget && !aOverrideClickTarget) {
+    return NS_OK;
+  }
+
+  
+  AutoWeakFrame currentTarget = mCurrentTarget;
+  nsresult rv =
+    InitAndDispatchClickEvent(aEvent, aStatus, eMouseClick,
+                              presShell, mouseContent, currentTarget,
+                              notDispatchToContents,
+                              aOverrideClickTarget);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  if (aEvent->mClickCount == 2 &&
+      mouseContent && mouseContent->IsInComposedDoc()) {
+    rv = InitAndDispatchClickEvent(aEvent, aStatus, eMouseDoubleClick,
+                                   presShell, mouseContent, currentTarget,
+                                   notDispatchToContents,
+                                   aOverrideClickTarget);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
   }
-  return ret;
+
+  
+  if (fireAuxClick &&
+      mouseContent && mouseContent->IsInComposedDoc()) {
+    rv = InitAndDispatchClickEvent(aEvent, aStatus, eMouseAuxClick,
+                                   presShell, mouseContent, currentTarget,
+                                   false, aOverrideClickTarget);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to dispatch eMouseAuxClick");
+  }
+
+  return rv;
 }
 
 nsIFrame*
