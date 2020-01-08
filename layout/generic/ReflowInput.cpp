@@ -125,34 +125,35 @@ static bool CheckNextInFlowParenthood(nsIFrame* aFrame, nsIFrame* aParent)
 
 
 
-static  nscoord
+static nscoord
 FontSizeInflationListMarginAdjustment(const nsIFrame* aFrame)
 {
+  if (!aFrame->IsFrameOfType(nsIFrame::eBlockFrame)) {
+    return 0;
+  }
+
+  
+  const nsBlockFrame* blockFrame = static_cast<const nsBlockFrame*>(aFrame);
+  if (!blockFrame->HasBullet()) {
+    return 0;
+  }
+
   float inflation = nsLayoutUtils::FontSizeInflationFor(aFrame);
-  if (aFrame->IsFrameOfType(nsIFrame::eBlockFrame)) {
-    const nsBlockFrame* blockFrame = static_cast<const nsBlockFrame*>(aFrame);
+  if (inflation > 1.0f) {
 
-    
-    
-    if (inflation > 1.0f &&
-        blockFrame->HasBullet() &&
-        inflation > 1.0f) {
-
-      auto listStyleType = aFrame->StyleList()->mCounterStyle->GetStyle();
-      if (listStyleType != NS_STYLE_LIST_STYLE_NONE &&
-          listStyleType != NS_STYLE_LIST_STYLE_DISC &&
-          listStyleType != NS_STYLE_LIST_STYLE_CIRCLE &&
-          listStyleType != NS_STYLE_LIST_STYLE_SQUARE &&
-          listStyleType != NS_STYLE_LIST_STYLE_DISCLOSURE_CLOSED &&
-          listStyleType != NS_STYLE_LIST_STYLE_DISCLOSURE_OPEN) {
-        
-        
-        
-        
-        
-        return nsPresContext::CSSPixelsToAppUnits(40) * (inflation - 1);
-      }
-
+    auto listStyleType = aFrame->StyleList()->mCounterStyle->GetStyle();
+    if (listStyleType != NS_STYLE_LIST_STYLE_NONE &&
+        listStyleType != NS_STYLE_LIST_STYLE_DISC &&
+        listStyleType != NS_STYLE_LIST_STYLE_CIRCLE &&
+        listStyleType != NS_STYLE_LIST_STYLE_SQUARE &&
+        listStyleType != NS_STYLE_LIST_STYLE_DISCLOSURE_CLOSED &&
+        listStyleType != NS_STYLE_LIST_STYLE_DISCLOSURE_OPEN) {
+      
+      
+      
+      
+      
+      return nsPresContext::CSSPixelsToAppUnits(40) * (inflation - 1);
     }
   }
 
