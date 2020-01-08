@@ -4136,6 +4136,11 @@ public:
   
 
 
+  nsRect GetCompositorHitTestArea(nsDisplayListBuilder* aBuilder);
+
+  
+
+
 
 
 

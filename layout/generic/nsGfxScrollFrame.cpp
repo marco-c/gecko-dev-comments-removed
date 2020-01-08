@@ -3686,19 +3686,22 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       aBuilder->SetActiveScrolledRootForRootScrollframe(aBuilder->CurrentActiveScrolledRoot());
     }
 
-    if (mWillBuildScrollableLayer) {
+    if (mWillBuildScrollableLayer && aBuilder->BuildCompositorHitTestInfo()) {
       
       
       
       
-      if (aBuilder->BuildCompositorHitTestInfo()) {
-        CompositorHitTestInfo info = mScrolledFrame->GetCompositorHitTestInfo(aBuilder);
-        if (info != CompositorHitTestInvisibleToHit) {
-          nsDisplayCompositorHitTestInfo* hitInfo =
-              MakeDisplayItem<nsDisplayCompositorHitTestInfo>(aBuilder, mScrolledFrame, info, 1);
-          aBuilder->SetCompositorHitTestInfo(hitInfo);
-          scrolledContent.BorderBackground()->AppendToTop(hitInfo);
-        }
+      CompositorHitTestInfo info =
+        mScrolledFrame->GetCompositorHitTestInfo(aBuilder);
+
+      if (info != CompositorHitTestInvisibleToHit) {
+        auto* hitInfo = MakeDisplayItem<nsDisplayCompositorHitTestInfo>(
+          aBuilder, mScrolledFrame, info, 1);
+
+        aBuilder->SetCompositorHitTestInfo(
+          hitInfo->HitTestArea(), hitInfo->HitTestFlags());
+
+        scrolledContent.BorderBackground()->AppendToTop(hitInfo);
       }
     }
 
