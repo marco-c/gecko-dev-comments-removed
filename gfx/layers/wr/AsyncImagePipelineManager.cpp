@@ -71,6 +71,17 @@ AsyncImagePipelineManager::GetAndResetWillGenerateFrame()
   return ret;
 }
 
+wr::ExternalImageId
+AsyncImagePipelineManager::GetNextExternalImageId()
+{
+  static uint32_t sNextId = 0;
+  ++sNextId;
+  MOZ_RELEASE_ASSERT(sNextId != UINT32_MAX);
+  
+  
+  return wr::ToExternalImageId((uint64_t)sNextId);
+}
+
 void
 AsyncImagePipelineManager::AddPipeline(const wr::PipelineId& aPipelineId)
 {
