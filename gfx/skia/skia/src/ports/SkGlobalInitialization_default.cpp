@@ -6,6 +6,7 @@
 
 
 #include "SkFlattenablePriv.h"
+#include "SkMaskFilter.h"
 #include "../../src/effects/SkDashImpl.h"
 #include "SkGradientShader.h"
 
@@ -20,6 +21,9 @@
 void SkFlattenable::PrivateInitializer::InitEffects() {
     
     SkGradientShader::InitializeFlattenables();
+
+    
+    SkMaskFilter::InitializeFlattenables();
 
     
     SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkDashImpl)
