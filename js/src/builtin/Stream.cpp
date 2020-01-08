@@ -1187,11 +1187,13 @@ TeeReaderClosedHandler(JSContext* cx, unsigned argc, Value* vp)
         teeState->setClosedOrErrored();
 
         
+        
         Rooted<ReadableStreamDefaultController*> branch1(cx, teeState->branch1());
         if (!ReadableStreamDefaultControllerErrorIfNeeded(cx, branch1, reason)) {
             return false;
         }
 
+        
         
         Rooted<ReadableStreamDefaultController*> branch2(cx, teeState->branch2());
         if (!ReadableStreamDefaultControllerErrorIfNeeded(cx, branch2, reason)) {
@@ -1199,6 +1201,7 @@ TeeReaderClosedHandler(JSContext* cx, unsigned argc, Value* vp)
         }
     }
 
+    args.rval().setUndefined();
     return true;
 }
 
