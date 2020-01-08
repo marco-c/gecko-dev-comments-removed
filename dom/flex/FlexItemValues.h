@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_FlexItem_h
-#define mozilla_dom_FlexItem_h
+#ifndef mozilla_dom_FlexItemValues_h
+#define mozilla_dom_FlexItemValues_h
 
 #include "mozilla/dom/FlexBinding.h"
 #include "nsISupports.h"
@@ -16,24 +16,24 @@ struct ComputedFlexItemInfo;
 namespace mozilla {
 namespace dom {
 
-class FlexLine;
+class FlexLineValues;
 
-class FlexItem : public nsISupports
-               , public nsWrapperCache
+class FlexItemValues : public nsISupports
+                     , public nsWrapperCache
 {
 public:
-  explicit FlexItem(FlexLine* aParent,
-                    const ComputedFlexItemInfo* aItem);
+  explicit FlexItemValues(FlexLineValues* aParent,
+                          const ComputedFlexItemInfo* aItem);
 
 protected:
-  virtual ~FlexItem() = default;
+  virtual ~FlexItemValues() = default;
 
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(FlexItem)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(FlexItemValues)
 
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
-  FlexLine* GetParentObject()
+  FlexLineValues* GetParentObject()
   {
     return mParent;
   }
@@ -47,7 +47,7 @@ public:
   double CrossMaxSize() const;
 
 protected:
-  RefPtr<FlexLine> mParent;
+  RefPtr<FlexLineValues> mParent;
   RefPtr<nsINode> mNode;
 
   
