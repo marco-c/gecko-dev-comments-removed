@@ -1779,12 +1779,16 @@ PeerConnectionWrapper.prototype = {
 
   checkStats : function(stats, twoMachines) {
     
+    const isWin7 = navigator.userAgent.includes("Windows NT 6.1");
+    const clockDriftAllowance = isWin7 ? 1000 : 0;
+
+    
     var counters = {};
     for (let [key, res] of stats) {
       info("Checking stats for " + key + " : " + res);
       
       ok(res.id == key, "Coherent stats id");
-      var nowish = Date.now();
+      var nowish = Date.now() + clockDriftAllowance;
       var minimum = this.whenCreated;
       if (false) { 
       
