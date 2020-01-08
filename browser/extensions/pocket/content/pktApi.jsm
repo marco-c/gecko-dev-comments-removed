@@ -155,10 +155,8 @@ var pktApi = (function() {
 
 
     function getCookiesFromPocket() {
-        var pocketCookies = Services.cookies.getCookiesFromHost(pocketSiteHost, {});
         var cookies = {};
-        while (pocketCookies.hasMoreElements()) {
-            var cookie = pocketCookies.getNext().QueryInterface(Ci.nsICookie2);
+        for (let cookie of Services.cookies.getCookiesFromHost(pocketSiteHost, {})) {
             cookies[cookie.name] = cookie.value;
         }
         return cookies;
@@ -680,7 +678,7 @@ var pktApi = (function() {
 
 
     function getSignupPanelTabTestVariant() {
-        return getMultipleTestOption("panelSignUp", {control: 1, v1: 0, v2: 0 });
+        return getMultipleTestOption("panelSignUp", {control: 1, v1: 8, v2: 1 });
     }
 
     function getMultipleTestOption(testName, testOptions) {

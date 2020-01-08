@@ -44,7 +44,7 @@ const clearCookies = async function(options) {
 
   if (options.since || options.hostnames) {
     
-    for (const cookie of XPCOMUtils.IterSimpleEnumerator(cookieMgr.enumerator, Ci.nsICookie2)) {
+    for (const cookie of cookieMgr.enumerator) {
       if ((!options.since || cookie.creationTime >= PlacesUtils.toPRTime(options.since)) &&
           (!options.hostnames || options.hostnames.includes(cookie.host.replace(/^\./, "")))) {
         

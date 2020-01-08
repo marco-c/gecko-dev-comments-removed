@@ -351,9 +351,7 @@ var Sanitizer = {
         TelemetryStopwatch.start("FX_SANITIZE_FORMDATA", refObj);
         try {
           
-          let windows = Services.wm.getEnumerator("navigator:browser");
-          while (windows.hasMoreElements()) {
-            let currentWindow = windows.getNext();
+          for (let currentWindow of Services.wm.getEnumerator("navigator:browser")) {
             let currentDocument = currentWindow.document;
 
             
@@ -466,10 +464,8 @@ var Sanitizer = {
         let startDate = existingWindow.performance.now();
 
         
-        let windowEnumerator = Services.wm.getEnumerator("navigator:browser");
         let windowList = [];
-        while (windowEnumerator.hasMoreElements()) {
-          let someWin = windowEnumerator.getNext();
+        for (let someWin of Services.wm.getEnumerator("navigator:browser")) {
           windowList.push(someWin);
           
           if (!this._canCloseWindow(someWin)) {
@@ -690,9 +686,7 @@ async function sanitizeOnShutdown(progress) {
   await sanitizeSessionPrincipals();
 
   
-  let enumerator = Services.perms.enumerator;
-  while (enumerator.hasMoreElements()) {
-    let permission = enumerator.getNext().QueryInterface(Ci.nsIPermission);
+  for (let permission of Services.perms.enumerator) {
     if (permission.type == "cookie" && permission.capability == Ci.nsICookiePermission.ACCESS_SESSION) {
       await sanitizeSessionPrincipal(permission.principal);
     }

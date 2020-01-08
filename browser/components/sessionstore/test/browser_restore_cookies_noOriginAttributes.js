@@ -136,11 +136,8 @@ add_task(async function run_test() {
   
   await setWindowState(win, SESSION_DATA, true);
 
-  let enumerator = Services.cookies.getCookiesFromHost(TEST_HOST, {});
-  let cookie;
   let cookieCount = 0;
-  while (enumerator.hasMoreElements()) {
-    cookie = enumerator.getNext().QueryInterface(Ci.nsICookie);
+  for (var cookie of Services.cookies.getCookiesFromHost(TEST_HOST, {})) {
     cookieCount++;
   }
 
@@ -156,10 +153,8 @@ add_task(async function run_test() {
   
   await setWindowState(win, SESSION_DATA_OA, true);
 
-  enumerator = Services.cookies.getCookiesFromHost(TEST_HOST, {});
   cookieCount = 0;
-  while (enumerator.hasMoreElements()) {
-    cookie = enumerator.getNext().QueryInterface(Ci.nsICookie);
+  for (cookie of Services.cookies.getCookiesFromHost(TEST_HOST, {})) {
     cookieCount++;
   }
 

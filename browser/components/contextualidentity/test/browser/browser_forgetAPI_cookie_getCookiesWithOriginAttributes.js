@@ -72,9 +72,7 @@ add_task(async function test_cookie_getCookiesWithOriginAttributes() {
 
   
   
-  let enumerator = Services.cookies.getCookiesWithOriginAttributes(JSON.stringify({}), TEST_HOST);
-  while (enumerator.hasMoreElements()) {
-    let cookie = enumerator.getNext().QueryInterface(Ci.nsICookie);
+  for (let cookie of Services.cookies.getCookiesWithOriginAttributes(JSON.stringify({}), TEST_HOST)) {
     Services.cookies.remove(cookie.host, cookie.name, cookie.path, false, cookie.originAttributes);
   }
 

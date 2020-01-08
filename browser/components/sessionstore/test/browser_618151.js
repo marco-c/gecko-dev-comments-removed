@@ -26,10 +26,8 @@ function runNextTest() {
   if (tests.length) {
     
     
-    var windowsEnum = Services.wm.getEnumerator("navigator:browser");
     let closeWinPromises = [];
-    while (windowsEnum.hasMoreElements()) {
-      var currentWindow = windowsEnum.getNext();
+    for (let currentWindow of Services.wm.getEnumerator("navigator:browser")) {
       if (currentWindow != window) {
         closeWinPromises.push(BrowserTestUtils.closeWindow(currentWindow));
       }

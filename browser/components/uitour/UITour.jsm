@@ -238,7 +238,7 @@ var UITour = {
       query: (aDocument) => {
         aDocument.ownerGlobal.BrowserPageActions.placeLazyActionsInPanel();
         return aDocument.getElementById("pageAction-urlbar-screenshots") ||
-               aDocument.getElementById("pageAction-panel-screenshots");
+               aDocument.getElementById("pageAction-panel-screenshots_mozilla_org");
       },
     }]
   ]),
@@ -652,9 +652,7 @@ var UITour = {
       
       
       case "message-manager-close": {
-        let winEnum = Services.wm.getEnumerator("navigator:browser");
-        while (winEnum.hasMoreElements()) {
-          let window = winEnum.getNext();
+        for (let window of Services.wm.getEnumerator("navigator:browser")) {
           if (window.closed)
             continue;
 
@@ -1683,9 +1681,7 @@ var UITour = {
   },
 
   notify(eventName, params) {
-    let winEnum = Services.wm.getEnumerator("navigator:browser");
-    while (winEnum.hasMoreElements()) {
-      let window = winEnum.getNext();
+    for (let window of Services.wm.getEnumerator("navigator:browser")) {
       if (window.closed)
         continue;
 

@@ -50,9 +50,7 @@ XPCOMUtils.defineLazyGetter(this, "tabHidePopup", () => {
 });
 
 function showHiddenTabs(id) {
-  let windowsEnum = Services.wm.getEnumerator("navigator:browser");
-  while (windowsEnum.hasMoreElements()) {
-    let win = windowsEnum.getNext();
+  for (let win of Services.wm.getEnumerator("navigator:browser")) {
     if (win.closed || !win.gBrowser) {
       continue;
     }
@@ -705,21 +703,6 @@ this.tabs = class extends ExtensionAPI {
               tabbrowser.selectedTab = nativeTab;
             } else {
               
-            }
-          }
-          if (updateProperties.highlighted !== null) {
-            if (!gMultiSelectEnabled) {
-              throw new ExtensionError(`updateProperties.highlight is currently experimental and must be enabled with the ${MULTISELECT_PREFNAME} preference.`);
-            }
-            if (updateProperties.highlighted) {
-              if (!nativeTab.selected && !nativeTab.multiselected) {
-                tabbrowser.addToMultiSelectedTabs(nativeTab, false);
-                
-                tabbrowser.lockClearMultiSelectionOnce();
-                tabbrowser.selectedTab = nativeTab;
-              }
-            } else {
-              tabbrowser.removeFromMultiSelectedTabs(nativeTab, true);
             }
           }
           if (updateProperties.muted !== null) {

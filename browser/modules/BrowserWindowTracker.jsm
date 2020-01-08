@@ -169,19 +169,15 @@ var WindowHelper = {
       
       if (win && !isSuitableBrowserWindow(win)) {
         win = null;
-        let windowList = Services.wm.getEnumerator("navigator:browser");
         
-        while (windowList.hasMoreElements()) {
-          let nextWin = windowList.getNext();
+        for (let nextWin of Services.wm.getEnumerator("navigator:browser")) {
           if (isSuitableBrowserWindow(nextWin))
             win = nextWin;
         }
       }
       return win;
     }
-    let windowList = Services.wm.getZOrderDOMWindowEnumerator("navigator:browser", true);
-    while (windowList.hasMoreElements()) {
-      let win = windowList.getNext();
+    for (let win of Services.wm.getZOrderDOMWindowEnumerator("navigator:browser", true)) {
       if (isSuitableBrowserWindow(win))
         return win;
     }

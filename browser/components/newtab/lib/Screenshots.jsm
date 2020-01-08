@@ -66,9 +66,8 @@ this.Screenshots = {
 
 
   _shouldGetScreenshots() {
-    const windows = Services.wm.getEnumerator("navigator:browser");
-    while (windows.hasMoreElements()) {
-      if (!PrivateBrowsingUtils.isWindowPrivate(windows.getNext())) {
+    for (let win of Services.wm.getEnumerator("navigator:browser")) {
+      if (!PrivateBrowsingUtils.isWindowPrivate(win)) {
         
         return true;
       }

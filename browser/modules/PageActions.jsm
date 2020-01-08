@@ -1087,9 +1087,8 @@ var gBuiltInActions = [
   {
     id: "copyURL",
     title: "copyURL-title",
-    onBeforePlacedInWindow(browserWindow) {
-      browserPageActions(browserWindow).copyURL
-        .onBeforePlacedInWindow(browserWindow);
+    onPlacedInPanel(buttonNode) {
+      browserPageActions(buttonNode).copyURL.onPlacedInPanel(buttonNode);
     },
     onCommand(event, buttonNode) {
       browserPageActions(buttonNode).copyURL.onCommand(event, buttonNode);
@@ -1100,9 +1099,8 @@ var gBuiltInActions = [
   {
     id: "emailLink",
     title: "emailLink-title",
-    onBeforePlacedInWindow(browserWindow) {
-      browserPageActions(browserWindow).emailLink
-        .onBeforePlacedInWindow(browserWindow);
+    onPlacedInPanel(buttonNode) {
+      browserPageActions(buttonNode).emailLink.onPlacedInPanel(buttonNode);
     },
     onCommand(event, buttonNode) {
       browserPageActions(buttonNode).emailLink.onCommand(event, buttonNode);
@@ -1135,9 +1133,8 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
   {
     id: "sendToDevice",
     title: "sendToDevice-title",
-    onBeforePlacedInWindow(browserWindow) {
-      browserPageActions(browserWindow).sendToDevice
-        .onBeforePlacedInWindow(browserWindow);
+    onPlacedInPanel(buttonNode) {
+      browserPageActions(buttonNode).sendToDevice.onPlacedInPanel(buttonNode);
     },
     onLocationChange(browserWindow) {
       browserPageActions(browserWindow).sendToDevice.onLocationChange();
@@ -1163,9 +1160,8 @@ if (AppConstants.platform == "macosx") {
     onShowingInPanel(buttonNode) {
       browserPageActions(buttonNode).shareURL.onShowingInPanel(buttonNode);
     },
-    onBeforePlacedInWindow(browserWindow) {
-      browserPageActions(browserWindow).shareURL
-        .onBeforePlacedInWindow(browserWindow);
+    onPlacedInPanel(buttonNode) {
+      browserPageActions(buttonNode).shareURL.onPlacedInPanel(buttonNode);
     },
     wantsSubview: true,
     onSubviewShowing(panelViewNode) {
@@ -1204,10 +1200,7 @@ function* allBrowserWindows(browserWindow = null) {
     yield browserWindow;
     return;
   }
-  let windows = Services.wm.getEnumerator("navigator:browser");
-  while (windows.hasMoreElements()) {
-    yield windows.getNext();
-  }
+  yield* Services.wm.getEnumerator("navigator:browser");
 }
 
 

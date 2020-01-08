@@ -790,10 +790,8 @@ function isBidiEnabled() {
 }
 
 function openAboutDialog() {
-  var enumerator = Services.wm.getEnumerator("Browser:About");
-  while (enumerator.hasMoreElements()) {
+  for (let win of Services.wm.getEnumerator("Browser:About")) {
     
-    let win = enumerator.getNext();
     if (win.closed) {
       continue;
     }

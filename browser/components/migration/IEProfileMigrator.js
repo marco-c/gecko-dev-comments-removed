@@ -38,10 +38,8 @@ History.prototype = {
   migrate: function H_migrate(aCallback) {
     let pageInfos = [];
     let typedURLs = MSMigrationUtils.getTypedURLs("Software\\Microsoft\\Internet Explorer");
-    let historyEnumerator = Cc["@mozilla.org/profile/migrator/iehistoryenumerator;1"].
-                            createInstance(Ci.nsISimpleEnumerator);
-    while (historyEnumerator.hasMoreElements()) {
-      let entry = historyEnumerator.getNext().QueryInterface(Ci.nsIPropertyBag2);
+    for (let entry of Cc["@mozilla.org/profile/migrator/iehistoryenumerator;1"]
+            .createInstance(Ci.nsISimpleEnumerator)) {
       let url = entry.get("uri").QueryInterface(Ci.nsIURI);
       
       
@@ -115,11 +113,9 @@ IE7FormPasswords.prototype = {
   },
 
   async migrate(aCallback) {
-    let historyEnumerator = Cc["@mozilla.org/profile/migrator/iehistoryenumerator;1"].
-                            createInstance(Ci.nsISimpleEnumerator);
     let uris = []; 
-    while (historyEnumerator.hasMoreElements()) {
-      let entry = historyEnumerator.getNext().QueryInterface(Ci.nsIPropertyBag2);
+    for (let entry of Cc["@mozilla.org/profile/migrator/iehistoryenumerator;1"]
+            .createInstance(Ci.nsISimpleEnumerator)) {
       let uri = entry.get("uri").QueryInterface(Ci.nsIURI);
       
       
