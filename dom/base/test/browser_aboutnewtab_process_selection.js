@@ -54,7 +54,7 @@ add_task(async function(){
   is(ppmm.childCount, originalChildCount, "Preloaded browser should (still) not create a new content process.")
 
   
-  tab2.linkedBrowser.loadURI(TEST_URL);
+  BrowserTestUtils.loadURI(tab2.linkedBrowser, TEST_URL);
   await BrowserTestUtils.browserLoaded(tab2.linkedBrowser, false, TEST_URL);
   is(ppmm.childCount, originalChildCount + 1,
      "Navigating away from the preloaded browser (parent side) should create a new content process.")
@@ -97,7 +97,7 @@ add_task(async function preloaded_state_attribute() {
   is(preloadedTabState, PRELOADED_STATE, "The preloaded browser has the correct attribute");
 
   
-  gBrowser.selectedBrowser.loadURI(TEST_URL);
+  BrowserTestUtils.loadURI(gBrowser.selectedBrowser, TEST_URL);
   let navigatedTabHasState = gBrowser.selectedBrowser.hasAttribute("preloadedState");
   ok(!navigatedTabHasState, "Correctly removed the preloadState attribute when navigating away");
 
