@@ -92,18 +92,24 @@ nsTSubstring<T>::StartBulkWrite(size_type aCapacity,
   }
 
   
-  size_type curCapacity = Capacity();
+  const size_type curCapacity = Capacity();
+
+  bool shrinking = false;
 
   
   
   
   
 
-  if (!aAllowShrinking && aCapacity <= curCapacity) {
-    char_traits::move(this->mData + aNewSuffixStart,
-                      this->mData + aOldSuffixStart,
-                      aSuffixLength);
-    return curCapacity;
+  if (aCapacity <= curCapacity) {
+    if (aAllowShrinking) {
+      shrinking = true;
+    } else {
+      char_traits::move(this->mData + aNewSuffixStart,
+                        this->mData + aOldSuffixStart,
+                        aSuffixLength);
+      return curCapacity;
+    }
   }
 
   char_type* oldData = this->mData;
@@ -167,6 +173,7 @@ nsTSubstring<T>::StartBulkWrite(size_type aCapacity,
       MOZ_ASSERT(aAllowShrinking, "How come we didn't return earlier?");
       
       newData = oldData;
+      newCapacity = curCapacity;
     } else {
       size_type storageSize = (newCapacity + 1) * sizeof(char_type);
       
@@ -174,7 +181,18 @@ nsTSubstring<T>::StartBulkWrite(size_type aCapacity,
       
       nsStringBuffer* newHdr = nsStringBuffer::Alloc(storageSize).take();
       if (!newHdr) {
-        return mozilla::Err(NS_ERROR_OUT_OF_MEMORY); 
+        
+        if (shrinking) {
+          
+          
+          
+          
+          
+          newData = oldData;
+          newCapacity = curCapacity;
+        } else {
+          return mozilla::Err(NS_ERROR_OUT_OF_MEMORY);
+        }
       }
 
       newData = (char_type*)newHdr->Data();
