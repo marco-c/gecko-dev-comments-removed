@@ -464,8 +464,6 @@ nsFrameLoader::ReallyStartLoadingInternal()
             nsIWebNavigation::LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
   }
 
-  loadState->SetIsFromProcessingFrameAttributes();
-
   
   bool tmpState = mNeedsAsyncDestroy;
   mNeedsAsyncDestroy = true;
