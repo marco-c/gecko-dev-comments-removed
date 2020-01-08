@@ -3,7 +3,7 @@
 
 "use strict";
 
-const {Arg, RetVal, generateActorSpec} = require("devtools/shared/protocol");
+const {Option, Arg, RetVal, generateActorSpec} = require("devtools/shared/protocol");
 
 const workerTargetSpec = generateActorSpec({
   typeName: "workerTarget",
@@ -39,6 +39,7 @@ const workerTargetSpec = generateActorSpec({
     
     newSource: {
       type: "newSource",
+      source: Option(0, "json"),
     },
   },
 });
