@@ -594,6 +594,14 @@ pref("media.autoplay.enabled.user-gestures-needed", false);
 
 
 
+#ifdef NIGHTLY_BUILD
+pref("media.allowed-to-play.enabled", true);
+#else
+pref("media.allowed-to-play.enabled", false);
+#endif
+
+
+
 pref("media.video-queue.default-size", 10);
 
 
