@@ -129,8 +129,8 @@ def lint(paths, config, **lintargs):
         '--in-place', '--recursive',
     ]
 
-    if 'exclude' in lintargs:
-        fix_cmdargs.extend(['--exclude', ','.join(lintargs['exclude'])])
+    if config.get('exclude'):
+        fix_cmdargs.extend(['--exclude', ','.join(config['exclude'])])
 
     
     
