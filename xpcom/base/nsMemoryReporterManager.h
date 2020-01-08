@@ -206,7 +206,7 @@ private:
   static void TimeoutCallback(nsITimer* aTimer, void* aData);
   
   
-  static const uint32_t kTimeoutLengthMS = 50000;
+  static const uint32_t kTimeoutLengthMS = 180000;
 
   mozilla::Mutex mMutex;
   bool mIsRegistrationBlocked;
