@@ -60,11 +60,6 @@ const WebExtensionActor = protocol.ActorClassWithSpec(webExtensionSpec, {
     }
   },
 
-  setOptions() {
-    
-    
-  },
-
   reload() {
     return this.addon.reload().then(() => {
       return {};

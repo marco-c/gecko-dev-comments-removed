@@ -169,30 +169,6 @@ var DebuggerServer = {
     this.registerActors({ root: true, browser: true, target: true });
   },
 
-  
-
-
-
-
-
-
-
-
-  setAddonOptions(id, options) {
-    if (!this._initialized) {
-      return Promise.resolve();
-    }
-
-    const promises = [];
-
-    
-    for (const connID of Object.getOwnPropertyNames(this._connections)) {
-      promises.push(this._connections[connID].setAddonOptions(id, options));
-    }
-
-    return Promise.all(promises);
-  },
-
   get listeningSockets() {
     return this._listeners.length;
   },
@@ -1198,31 +1174,6 @@ DebuggerServerConnection.prototype = {
     });
 
     this._actorResponses.set(from, responsePromise);
-  },
-
-  
-
-
-
-
-
-
-
-
-  setAddonOptions(id, options) {
-    const addonList = this.rootActor._parameters.addonList;
-    if (!addonList) {
-      return Promise.resolve();
-    }
-    return addonList.getList().then((addonTargetActors) => {
-      for (const actor of addonTargetActors) {
-        if (actor.addonId != id) {
-          continue;
-        }
-        actor.setOptions(options);
-        return;
-      }
-    });
   },
 
   
