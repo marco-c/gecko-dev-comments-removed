@@ -287,7 +287,7 @@ class KeyframeEffect : public AnimationEffect {
     
     
     
-    result.mServo = mBaseStyleValuesForServo.GetWeak(aProperty, &hasProperty);
+    result.mServo = mBaseValues.GetWeak(aProperty, &hasProperty);
     MOZ_ASSERT(hasProperty || result.IsNull());
     return result;
   }
@@ -404,8 +404,7 @@ class KeyframeEffect : public AnimationEffect {
   
   
   
-  nsRefPtrHashtable<nsUint32HashKey, RawServoAnimationValue>
-      mBaseStyleValuesForServo;
+  nsRefPtrHashtable<nsUint32HashKey, RawServoAnimationValue> mBaseValues;
 
   
   
