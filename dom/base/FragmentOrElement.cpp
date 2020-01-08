@@ -747,9 +747,10 @@ FragmentOrElement::nsDOMSlots::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) c
     n += mAttributeMap->SizeOfIncludingThis(aMallocSizeOf);
   }
 
-  
-  
-  
+  if (mChildrenList) {
+    n += mChildrenList->SizeOfIncludingThis(aMallocSizeOf);
+  }
+
   
   
   
@@ -835,10 +836,8 @@ FragmentOrElement::nsExtendedDOMSlots::SizeOfExcludingThis(MallocSizeOf aMallocS
     n += aMallocSizeOf(mControllers);
   }
 
-  
-  
   if (mLabelsList) {
-    n += aMallocSizeOf(mLabelsList);
+    n += mLabelsList->SizeOfIncludingThis(aMallocSizeOf);
   }
 
   

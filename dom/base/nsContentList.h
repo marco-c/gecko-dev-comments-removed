@@ -27,6 +27,7 @@
 #include "nsWrapperCache.h"
 #include "nsHashKeys.h"
 #include "mozilla/HashFunctions.h"
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/NameSpaceConstants.h"
 
 namespace mozilla {
@@ -93,6 +94,11 @@ public:
   }
 
   virtual void LastRelease() {}
+
+  
+  
+  
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
 protected:
   virtual ~nsBaseContentList();
