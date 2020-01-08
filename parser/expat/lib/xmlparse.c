@@ -3934,6 +3934,14 @@ entityValueInitProcessor(XML_Parser parser,
       *nextPtr = next;
       return XML_ERROR_NONE;
     }
+    
+
+
+
+    else if (tok == XML_TOK_INSTANCE_START) {
+      *nextPtr = next;
+      return XML_ERROR_SYNTAX;
+    }
     start = next;
     eventPtr = start;
   }
