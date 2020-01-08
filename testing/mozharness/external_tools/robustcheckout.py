@@ -301,7 +301,7 @@ def robustcheckout(ui, url, dest, upstream=None, revision=None, branch=None,
 
         
         
-        if 'clone' in behaviors:
+        if 'clone' in behaviors and 'create-store' in behaviors:
             record_op('overall_clone')
 
             if 'sparse-update' in behaviors:
@@ -309,7 +309,7 @@ def robustcheckout(ui, url, dest, upstream=None, revision=None, branch=None,
             else:
                 record_op('overall_clone_fullcheckout')
 
-        elif 'pull' in behaviors:
+        elif 'pull' in behaviors or 'clone' in behaviors:
             record_op('overall_pull')
 
             if 'sparse-update' in behaviors:
@@ -609,6 +609,9 @@ def _docheckout(ui, url, dest, upstream, revision, branch, purge, sharebase,
         if upstream:
             ui.write('(cloning from upstream repo %s)\n' % upstream)
 
+        if not storevfs.exists():
+            behaviors.add('create-store')
+
         try:
             with timeit('clone', 'clone'):
                 shareopts = {'pool': sharebase, 'mode': 'identity'}
@@ -785,29 +788,6 @@ def _docheckout(ui, url, dest, upstream, revision, branch, purge, sharebase,
             raise error.Abort('error updating')
 
     ui.write('updated to %s\n' % checkoutrevision)
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if url in ('https://hg.mozilla.org/try',
-               'https://hg.mozilla.org/try-comm-central'):
-        if repo[checkoutrevision].phase() == phases.public:
-            ui.write(_('error: phase of revision is public; this is likely '
-                       'a manifestation of bug 1462323; the task will be '
-                       'retried\n'))
-            return EXIT_PURGE_CACHE
 
     return None
 
