@@ -29,6 +29,11 @@ class ByteBuf;
 
 namespace wr {
 
+
+
+
+typedef uintptr_t usize;
+
 typedef wr::WrWindowId WindowId;
 typedef wr::WrPipelineId PipelineId;
 typedef wr::WrImageKey ImageKey;

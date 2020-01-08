@@ -38,6 +38,8 @@ public:
   explicit WebRenderCommandBuilder(WebRenderLayerManager* aManager)
   : mManager(aManager)
   , mLastAsr(nullptr)
+  , mBuilderDumpIndex(0)
+  , mDumpIndent(0)
   , mDoGrouping(false)
   {}
 
@@ -114,6 +116,9 @@ public:
   void RemoveUnusedAndResetWebRenderUserData();
   void ClearCachedResources();
 
+  bool ShouldDumpDisplayList();
+  wr::usize GetBuilderDumpIndex() { return mBuilderDumpIndex; }
+
   
   
   
@@ -182,6 +187,8 @@ private:
   
   CanvasDataSet mLastCanvasDatas;
 
+  wr::usize mBuilderDumpIndex;
+  wr::usize mDumpIndent;
   
   
   bool mDoGrouping;
