@@ -4660,14 +4660,7 @@ nsINode::OwnerDocAsNode() const
 template<typename T>
 inline bool ShouldUseXBLScope(const T* aNode)
 {
-  
-  return aNode->IsInAnonymousSubtree() && !aNode->IsInSVGUseShadowTree();
-}
-
-template<typename T>
-inline bool ShouldUseUAWidgetScope(const T* aNode)
-{
-  return aNode->IsInUAWidget();
+  return aNode->IsInAnonymousSubtree();
 }
 
 inline mozilla::dom::ParentObject
@@ -4676,11 +4669,7 @@ nsINode::GetParentObject() const
   mozilla::dom::ParentObject p(OwnerDoc());
     
     
-  if (ShouldUseXBLScope(this)) {
-    p.mReflectionScope = mozilla::dom::ReflectionScope::XBL;
-  } else if (ShouldUseUAWidgetScope(this)) {
-    p.mReflectionScope = mozilla::dom::ReflectionScope::UAWidget;
-  }
+  p.mUseXBLScope = ShouldUseXBLScope(this);
   return p;
 }
 
