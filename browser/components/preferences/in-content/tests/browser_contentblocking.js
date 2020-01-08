@@ -11,6 +11,8 @@ const TP_LIST_PREF = "urlclassifier.trackingTable";
 const FB_PREF = "browser.fastblock.enabled";
 const NCB_PREF = "network.cookie.cookieBehavior";
 
+requestLongerTimeout(2);
+
 
 add_task(async function testContentBlockingToggle() {
   SpecialPowers.pushPrefEnv({set: [
