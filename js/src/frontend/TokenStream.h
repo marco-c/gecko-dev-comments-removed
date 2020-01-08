@@ -832,7 +832,45 @@ class TokenStreamAnyChars : public TokenStreamShared {
       return true;
     }
 
-    uint32_t lineNum(uint32_t offset) const;
+    
+
+
+
+
+
+
+
+
+    class LineToken {
+      uint32_t index;
+
+      friend class SourceCoords;
+
+     public:
+      explicit LineToken(uint32_t index, uint32_t offset) : index(index) {}
+
+      bool isFirstLine() const { return index == 0; }
+
+      bool isSameLine(LineToken other) const { return index == other.index; }
+    };
+
+    
+
+
+
+
+
+
+
+
+
+    LineToken lineToken(uint32_t offset) const;
+
+    
+    uint32_t lineNumber(LineToken lineToken) const {
+      return lineNumberFromIndex(lineToken.index);
+    }
+
     uint32_t columnIndex(uint32_t offset) const;
     void lineNumAndColumnIndex(uint32_t offset, uint32_t* lineNum,
                                uint32_t* column) const;
@@ -841,6 +879,16 @@ class TokenStreamAnyChars : public TokenStreamShared {
   SourceCoords srcCoords;
 
   JSContext* context() const { return cx; }
+
+  using LineToken = SourceCoords::LineToken;
+
+  LineToken lineToken(uint32_t offset) const {
+    return srcCoords.lineToken(offset);
+  }
+
+  uint32_t lineNumber(LineToken lineToken) const {
+    return srcCoords.lineNumber(lineToken);
+  }
 
   
 
@@ -1881,6 +1929,11 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
 
   void computeLineAndColumn(uint32_t offset, uint32_t* line,
                             uint32_t* column) const {
+    const TokenStreamAnyChars& anyChars = anyCharsAccess();
+
+    auto lineToken = anyChars.lineToken(offset);
+    *line = anyChars.lineNumber(lineToken);
+
     anyCharsAccess().srcCoords.lineNumAndColumnIndex(offset, line, column);
   }
 
@@ -2408,9 +2461,13 @@ class MOZ_STACK_CLASS TokenStreamSpecific
                     bool* onThisLine) const final {
     return anyCharsAccess().srcCoords.isOnThisLine(offset, lineNum, onThisLine);
   }
+
   uint32_t lineAt(size_t offset) const final {
-    return anyCharsAccess().srcCoords.lineNum(offset);
+    const auto& anyChars = anyCharsAccess();
+    auto lineToken = anyChars.lineToken(offset);
+    return anyChars.lineNumber(lineToken);
   }
+
   uint32_t columnAt(size_t offset) const final {
     return anyCharsAccess().srcCoords.columnIndex(offset);
   }
@@ -2639,13 +2696,18 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     if (!getToken(&tmp, modifier)) {
       return false;
     }
+
     const Token& next = anyChars.currentToken();
     anyChars.ungetToken();
 
-    const auto& srcCoords = anyChars.srcCoords;
-    *ttp = srcCoords.lineNum(curr.pos.end) == srcCoords.lineNum(next.pos.begin)
-               ? next.type
-               : TokenKind::Eol;
+    
+    
+
+    auto currentEndToken = anyChars.lineToken(curr.pos.end);
+    auto nextBeginToken = anyChars.lineToken(next.pos.begin);
+
+    *ttp =
+        currentEndToken.isSameLine(nextBeginToken) ? next.type : TokenKind::Eol;
     return true;
   }
 
