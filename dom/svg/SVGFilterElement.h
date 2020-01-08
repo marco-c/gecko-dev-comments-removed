@@ -42,9 +42,6 @@ public:
   NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
 
   
-  void Invalidate();
-
-  
   virtual bool HasValidDimensions() const override;
 
   

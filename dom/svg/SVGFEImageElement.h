@@ -76,9 +76,6 @@ public:
   already_AddRefed<DOMSVGAnimatedPreserveAspectRatio> PreserveAspectRatio();
 
 private:
-  
-  void Invalidate();
-
   nsresult LoadSVGImage(bool aForce, bool aNotify);
 
 protected:

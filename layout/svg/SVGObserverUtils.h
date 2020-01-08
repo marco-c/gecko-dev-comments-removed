@@ -290,10 +290,6 @@ protected:
   nsSVGFrameReferenceFromProperty mFrameReference;
 };
 
-#define NS_SVGFILTEROBSERVER_IID \
-{ 0x9744ee20, 0x1bcf, 0x4c62, \
- { 0x86, 0x7d, 0xd3, 0x7a, 0x91, 0x60, 0x3e, 0xef } }
-
 
 
 
@@ -327,7 +323,6 @@ public:
   nsSVGFilterFrame *GetFilterFrame();
 
   
-  NS_DECLARE_STATIC_IID_ACCESSOR(NS_SVGFILTEROBSERVER_IID)
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(SVGFilterObserver)
 
@@ -342,8 +337,6 @@ protected:
 private:
   SVGFilterObserverList* mFilterObserverList;
 };
-
-NS_DEFINE_STATIC_IID_ACCESSOR(SVGFilterObserver, NS_SVGFILTEROBSERVER_IID)
 
 
 
