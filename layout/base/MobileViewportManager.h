@@ -87,11 +87,11 @@ public:
                                       const nsViewportInfo& aViewportInfo) const;
 
   
-  mozilla::LayoutDeviceToLayerScale
-  ScaleResolutionWithDisplayWidth(const mozilla::LayoutDeviceToLayerScale& aRes,
-                                  const float& aDisplayWidthChangeRatio,
-                                  const mozilla::CSSSize& aNewViewport,
-                                  const mozilla::CSSSize& aOldViewport);
+  mozilla::CSSToScreenScale
+  ScaleZoomWithDisplayWidth(const mozilla::CSSToScreenScale& aZoom,
+                            const float& aDisplayWidthChangeRatio,
+                            const mozilla::CSSSize& aNewViewport,
+                            const mozilla::CSSSize& aOldViewport);
 
   
   mozilla::CSSToScreenScale UpdateResolution(const nsViewportInfo& aViewportInfo,
