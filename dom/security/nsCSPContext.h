@@ -171,6 +171,7 @@ class nsCSPContext : public nsIContentSecurityPolicy
     
     
     nsIPrincipal*                              mLoadingPrincipal;
+    nsCOMPtr<nsICSPEventListener>              mEventListener;
 
     
     

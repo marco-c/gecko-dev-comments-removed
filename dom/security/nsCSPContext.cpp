@@ -752,6 +752,13 @@ nsCSPContext::SetRequestContext(nsIDocument* aDocument,
 }
 
 NS_IMETHODIMP
+nsCSPContext::SetEventListener(nsICSPEventListener* aEventListener)
+{
+  mEventListener = aEventListener;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsCSPContext::EnsureEventTarget(nsIEventTarget* aEventTarget)
 {
   NS_ENSURE_ARG(aEventTarget);
@@ -1179,6 +1186,13 @@ nsCSPContext::FireViolationEvent(
 {
   if (!sViolationEventsEnabled) {
     return NS_OK;
+  }
+
+  if (mEventListener) {
+    nsAutoString json;
+    if (aViolationEventInit.ToJSON(json)) {
+      mEventListener->OnCSPViolationEvent(json);
+    }
   }
 
   
