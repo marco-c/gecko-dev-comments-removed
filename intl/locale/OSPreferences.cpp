@@ -333,11 +333,34 @@ OSPreferences::GetDateTimePattern(int32_t aDateFormatStyle,
     return NS_OK;
   }
 
-  if (!ReadDateTimePattern(dateStyle, timeStyle, aLocale, aRetVal)) {
-    if (!GetDateTimePatternForStyle(dateStyle, timeStyle, aLocale, aRetVal)) {
+  
+  nsAutoCString key(aLocale);
+  key.Append(':');
+  key.AppendInt(aDateFormatStyle);
+  key.Append(':');
+  key.AppendInt(aTimeFormatStyle);
+
+  nsString pattern;
+  if (mPatternCache.Get(key, &pattern)) {
+    aRetVal = pattern;
+    return NS_OK;
+  }
+
+  if (!ReadDateTimePattern(dateStyle, timeStyle, aLocale, pattern)) {
+    if (!GetDateTimePatternForStyle(dateStyle, timeStyle, aLocale, pattern)) {
       return NS_ERROR_FAILURE;
     }
   }
 
+  if (mPatternCache.Count() == kMaxCachedPatterns) {
+    
+    
+    
+    NS_WARNING("flushing DateTimePattern cache");
+    mPatternCache.Clear();
+  }
+  mPatternCache.Put(key, pattern);
+
+  aRetVal = pattern;
   return NS_OK;
 }
