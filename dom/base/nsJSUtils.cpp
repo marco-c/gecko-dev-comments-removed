@@ -411,6 +411,21 @@ nsJSUtils::ExecutionContext::DecodeBinASTAndExec(JS::CompileOptions& aCompileOpt
 #endif
 }
 
+static bool
+IsPromiseValue(JSContext* aCx, JS::Handle<JS::Value> aValue)
+{
+  if (!aValue.isObject()) {
+    return false;
+  }
+
+  JS::Rooted<JSObject*> obj(aCx, js::CheckedUnwrap(&aValue.toObject()));
+  if (!obj) {
+    return false;
+  }
+
+  return JS::IsPromiseObject(obj);
+}
+
 nsresult
 nsJSUtils::ExecutionContext::ExtractReturnValue(JS::MutableHandle<JS::Value> aRetValue)
 {
@@ -428,6 +443,15 @@ nsJSUtils::ExecutionContext::ExtractReturnValue(JS::MutableHandle<JS::Value> aRe
 #ifdef DEBUG
   mWantsReturnValue = false;
 #endif
+  if (mCoerceToString && IsPromiseValue(mCx, mRetValue)) {
+    
+    
+    
+    
+    
+    mRetValue.setUndefined();
+  }
+
   if (mCoerceToString && !mRetValue.isUndefined()) {
     JSString* str = JS::ToString(mCx, mRetValue);
     if (!str) {
