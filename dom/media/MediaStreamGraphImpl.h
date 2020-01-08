@@ -222,11 +222,6 @@ public:
 
 
 
-  bool AllFinishedStreamsNotified();
-  
-
-
-
 
   bool ShouldUpdateMainThread();
   
