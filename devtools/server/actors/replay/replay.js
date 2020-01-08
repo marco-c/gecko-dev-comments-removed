@@ -29,11 +29,13 @@ const CC = Components.Constructor;
 const sandbox = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")());
 Cu.evalInSandbox(
   "Components.utils.import('resource://gre/modules/jsdebugger.jsm');" +
+  "Components.utils.import('resource://gre/modules/Services.jsm');" +
   "addDebuggerToGlobal(this);",
   sandbox
 );
 const Debugger = sandbox.Debugger;
 const RecordReplayControl = sandbox.RecordReplayControl;
+const Services = sandbox.Services;
 
 const dbg = new Debugger();
 
@@ -172,6 +174,78 @@ dbg.onNewScript = function(script) {
   
   installPendingHandlers();
 };
+
+
+
+
+
+const gConsoleMessages = [];
+
+function newConsoleMessage(messageType, executionPoint, contents) {
+  
+  
+  RecordReplayControl.advanceProgressCounter();
+
+  if (!executionPoint) {
+    executionPoint =
+      RecordReplayControl.currentExecutionPoint({ kind: "ConsoleMessage" });
+  }
+
+  contents.messageType = messageType;
+  contents.executionPoint = executionPoint;
+  gConsoleMessages.push(contents);
+
+  hitGlobalHandler("ConsoleMessage");
+}
+
+function convertStack(stack) {
+  if (stack) {
+    const { source, line, column, functionDisplayName } = stack;
+    const parent = convertStack(stack.parent);
+    return { source, line, column, functionDisplayName, parent };
+  }
+  return null;
+}
+
+
+Services.console.registerListener({
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIConsoleListener]),
+
+  observe(message) {
+    if (message instanceof Ci.nsIScriptError) {
+      
+      
+      
+      let executionPoint;
+      if (message.timeWarpTarget) {
+        executionPoint =
+          RecordReplayControl.timeWarpTargetExecutionPoint(message.timeWarpTarget);
+      }
+
+      const contents = JSON.parse(JSON.stringify(message));
+      contents.stack = convertStack(message.stack);
+      newConsoleMessage("PageError", executionPoint, contents);
+    }
+  },
+});
+
+
+Services.obs.addObserver({
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
+
+  observe(message, topic, data) {
+    const apiMessage = message.wrappedJSObject;
+
+    const contents = {};
+    for (const id in apiMessage) {
+      if (id != "wrappedJSObject") {
+        contents[id] = JSON.parse(JSON.stringify(apiMessage[id]));
+      }
+    }
+
+    newConsoleMessage("ConsoleAPI", null, contents);
+  },
+}, "console-api-log-event");
 
 
 
@@ -570,6 +644,14 @@ const gRequestHandlers = {
 
   popFrameResult(request) {
     return gPopFrameResult ? convertCompletionValue(gPopFrameResult) : {};
+  },
+
+  findConsoleMessages(request) {
+    return gConsoleMessages;
+  },
+
+  getNewConsoleMessage(request) {
+    return gConsoleMessages[gConsoleMessages.length - 1];
   },
 };
 
