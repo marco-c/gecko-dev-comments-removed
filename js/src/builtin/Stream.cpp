@@ -216,10 +216,7 @@ ReturnPromiseRejectedWithPendingError(JSContext* cx, const CallArgs& args)
 inline static MOZ_MUST_USE bool
 SetNewList(JSContext* cx, HandleNativeObject unwrappedContainer, uint32_t slot)
 {
-    mozilla::Maybe<AutoRealm> ar;
-    if (unwrappedContainer->compartment() != cx->compartment()) {
-        ar.emplace(cx, unwrappedContainer);
-    }
+    AutoRealm ar(cx, unwrappedContainer);
     NativeObject* list = NewList(cx);
     if (!list) {
         return false;
@@ -1419,11 +1416,6 @@ ReadableStreamCloseInternal(JSContext* cx, Handle<ReadableStream*> stream)
     }
 
     
-    
-    
-    bool needsWrapping = reader->compartment() != cx->compartment();
-
-    
     if (reader->is<ReadableStreamDefaultReader>()) {
         
         
@@ -1436,7 +1428,7 @@ ReadableStreamCloseInternal(JSContext* cx, Handle<ReadableStream*> stream)
             
             
             readRequest = &readRequests->getDenseElement(i).toObject();
-            if (needsWrapping && !cx->compartment()->wrap(cx, &readRequest)) {
+            if (!cx->compartment()->wrap(cx, &readRequest)) {
                 return false;
             }
 
@@ -1457,7 +1449,7 @@ ReadableStreamCloseInternal(JSContext* cx, Handle<ReadableStream*> stream)
     
     
     RootedObject closedPromise(cx, reader->closedPromise());
-    if (needsWrapping && !cx->compartment()->wrap(cx, &closedPromise)) {
+    if (!cx->compartment()->wrap(cx, &closedPromise)) {
         return false;
     }
     if (!ResolvePromise(cx, closedPromise, UndefinedHandleValue)) {
@@ -2056,12 +2048,6 @@ ReadableStreamReaderGenericRelease(JSContext* cx, Handle<ReadableStreamReader*> 
 
     
     
-    
-    
-    mozilla::Maybe<AutoRealm> ar;
-
-    
-    
     if (stream->readable()) {
         Rooted<PromiseObject*> closedPromise(cx);
         if (!UnwrapInternalSlot(cx,
@@ -2071,11 +2057,10 @@ ReadableStreamReaderGenericRelease(JSContext* cx, Handle<ReadableStreamReader*> 
         {
             return false;
         }
-        if (closedPromise->compartment() != cx->compartment()) {
-            ar.emplace(cx, closedPromise);
-            if (!cx->compartment()->wrap(cx, &exn)) {
-                return false;
-            }
+
+        AutoRealm ar(cx, closedPromise);
+        if (!cx->compartment()->wrap(cx, &exn)) {
+            return false;
         }
         if (!PromiseObject::reject(cx, closedPromise, exn)) {
             return false;
@@ -2087,11 +2072,10 @@ ReadableStreamReaderGenericRelease(JSContext* cx, Handle<ReadableStreamReader*> 
         if (!closedPromise) {
             return false;
         }
-        if (reader->compartment() != cx->compartment()) {
-            ar.emplace(cx, reader);
-            if (!cx->compartment()->wrap(cx, &closedPromise)) {
-                return false;
-            }
+
+        AutoRealm ar(cx, reader);
+        if (!cx->compartment()->wrap(cx, &closedPromise)) {
+            return false;
         }
         reader->setClosedPromise(closedPromise);
     }
@@ -2628,16 +2612,12 @@ ReadableStreamControllerCancelSteps(JSContext* cx,
     }
 
     if (unwrappedController->hasExternalSource()) {
-        bool needsWrapping = unwrappedController->compartment() != cx->compartment();
         RootedValue rval(cx);
         {
             RootedValue wrappedReason(cx, reason);
-            mozilla::Maybe<AutoRealm> ar;
-            if (needsWrapping) {
-                ar.emplace(cx, unwrappedController);
-                if (!cx->compartment()->wrap(cx, &wrappedReason)) {
-                    return nullptr;
-                }
+            AutoRealm ar(cx, unwrappedController);
+            if (!cx->compartment()->wrap(cx, &wrappedReason)) {
+                return nullptr;
             }
             void* source = unwrappedUnderlyingSource.toPrivate();
 
@@ -2651,7 +2631,7 @@ ReadableStreamControllerCancelSteps(JSContext* cx,
                                                                wrappedReason);
         }
 
-        if (needsWrapping && !cx->compartment()->wrap(cx, &rval)) {
+        if (!cx->compartment()->wrap(cx, &rval)) {
             return nullptr;
         }
         return PromiseObject::unforgeableResolve(cx, rval);
@@ -3960,12 +3940,9 @@ EnqueueValueWithSize(JSContext* cx, Handle<ReadableStreamController*> container,
 
     RootedValue wrappedVal(cx, value);
     {
-        mozilla::Maybe<AutoRealm> ar;
-        if (container->compartment() != cx->compartment()) {
-            ar.emplace(cx, container);
-            if (!cx->compartment()->wrap(cx, &wrappedVal)) {
-                return false;
-            }
+        AutoRealm ar(cx, container);
+        if (!cx->compartment()->wrap(cx, &wrappedVal)) {
+            return false;
         }
 
         QueueEntry* entry = QueueEntry::create(cx, wrappedVal, size);
