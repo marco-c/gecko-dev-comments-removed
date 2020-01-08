@@ -1043,13 +1043,13 @@ pub enum Appearance {
     
     NumberInput,
     
-    Progressbar,
+    #[parse(aliases = "progressbar")]
+    ProgressBar,
     
+    #[parse(condition = "in_ua_or_chrome_sheet")]
     Progresschunk,
     
     ProgressbarVertical,
-    
-    ProgresschunkVertical,
     
     Checkbox,
     

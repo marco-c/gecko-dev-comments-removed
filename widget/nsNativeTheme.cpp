@@ -301,7 +301,7 @@ nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext, nsIFrame* aFrame,
 
 
   if (aAppearance == StyleAppearance::Progresschunk ||
-      aAppearance == StyleAppearance::Progressbar) {
+      aAppearance == StyleAppearance::ProgressBar) {
     nsProgressFrame* progressFrame =
       do_QueryFrame(aAppearance == StyleAppearance::Progresschunk
                       ? aFrame->GetParent() : aFrame);

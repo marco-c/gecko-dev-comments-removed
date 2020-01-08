@@ -275,7 +275,7 @@ nsProgressFrame::ShouldUseNativeStyle() const
   
   
   
-  return StyleDisplay()->mAppearance == StyleAppearance::Progressbar &&
+  return StyleDisplay()->mAppearance == StyleAppearance::ProgressBar &&
          !PresContext()->HasAuthorSpecifiedRules(this,
                                                  NS_AUTHOR_SPECIFIED_BORDER | NS_AUTHOR_SPECIFIED_BACKGROUND) &&
          barFrame &&
