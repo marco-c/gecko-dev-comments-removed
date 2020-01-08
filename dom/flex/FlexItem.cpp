@@ -20,6 +20,24 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(FlexItem)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
+
+
+
+
+
+
+
+
+
+static double
+ToPossiblyUnconstrainedPixels(nscoord aSize)
+{
+  if (aSize == NS_UNCONSTRAINEDSIZE) {
+    return std::numeric_limits<double>::infinity();
+  }
+  return nsPresContext::AppUnitsToDoubleCSSPixels(aSize);
+}
+
 FlexItem::FlexItem(FlexLine* aParent,
                    const ComputedFlexItemInfo* aItem)
   : mParent(aParent)
@@ -38,12 +56,10 @@ FlexItem::FlexItem(FlexLine* aParent,
     aItem->mMainDeltaSize);
   mMainMinSize = nsPresContext::AppUnitsToDoubleCSSPixels(
     aItem->mMainMinSize);
-  mMainMaxSize = nsPresContext::AppUnitsToDoubleCSSPixels(
-    aItem->mMainMaxSize);
+  mMainMaxSize = ToPossiblyUnconstrainedPixels(aItem->mMainMaxSize);
   mCrossMinSize = nsPresContext::AppUnitsToDoubleCSSPixels(
     aItem->mCrossMinSize);
-  mCrossMaxSize = nsPresContext::AppUnitsToDoubleCSSPixels(
-    aItem->mCrossMaxSize);
+  mCrossMaxSize = ToPossiblyUnconstrainedPixels(aItem->mCrossMaxSize);
 }
 
 JSObject*
