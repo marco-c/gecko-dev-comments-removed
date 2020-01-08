@@ -489,6 +489,8 @@ public class GeckoSession extends LayerSession
                         type = PermissionDelegate.PERMISSION_GEOLOCATION;
                     } else if ("desktop-notification".equals(typeString)) {
                         type = PermissionDelegate.PERMISSION_DESKTOP_NOTIFICATION;
+                    } else if ("autoplay-media".equals(typeString)) {
+                        type = PermissionDelegate.PERMISSION_AUTOPLAY_MEDIA;
                     } else {
                         throw new IllegalArgumentException("Unknown permission request: " + typeString);
                     }
@@ -3002,7 +3004,7 @@ public class GeckoSession extends LayerSession
 
 
     public interface PermissionDelegate {
-        @IntDef({PERMISSION_GEOLOCATION, PERMISSION_DESKTOP_NOTIFICATION})
+        @IntDef({PERMISSION_GEOLOCATION, PERMISSION_DESKTOP_NOTIFICATION, PERMISSION_AUTOPLAY_MEDIA})
          @interface Permission {}
 
         
@@ -3016,6 +3018,11 @@ public class GeckoSession extends LayerSession
 
 
         public static final int PERMISSION_DESKTOP_NOTIFICATION = 1;
+
+        
+
+
+        public static final int PERMISSION_AUTOPLAY_MEDIA = 2;
 
         
 
@@ -3049,6 +3056,7 @@ public class GeckoSession extends LayerSession
                                          Callback callback);
 
         
+
 
 
 
