@@ -756,6 +756,15 @@ var gMainPane = {
   },
 
   initBrowserLocale() {
+    
+    Services.telemetry.setEventRecordingEnabled("intl.ui.browserLanguage", true);
+
+    
+    let menulist = document.getElementById("defaultBrowserLanguage");
+    new SelectionChangedMenulist(menulist, event => {
+      gMainPane.onBrowserLanguageChange(event);
+    });
+
     gMainPane.setBrowserLocales(Services.locale.appLocaleAsBCP47);
   },
 
@@ -793,11 +802,6 @@ var gMainPane = {
     menupopup.textContent = "";
     menupopup.appendChild(fragment);
     menulist.value = selected;
-
-    
-    new SelectionChangedMenulist(menulist, event => {
-      gMainPane.onBrowserLanguageChange(event);
-    });
 
     document.getElementById("browserLanguagesBox").hidden = false;
   },
@@ -868,6 +872,9 @@ var gMainPane = {
     Services.locale.requestedLocales = locales;
 
     
+    gMainPane.recordBrowserLanguagesTelemetry("apply");
+
+    
     let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(Ci.nsISupportsPRBool);
     Services.obs.notifyObservers(cancelQuit, "quit-application-requested", "restart");
     if (!cancelQuit.data) {
@@ -886,6 +893,9 @@ var gMainPane = {
       this.hideConfirmLanguageChangeMessageBar();
       return;
     }
+
+    
+    gMainPane.recordBrowserLanguagesTelemetry("reorder");
 
     let locales = Array.from(new Set([
       locale,
@@ -1024,8 +1034,17 @@ var gMainPane = {
     gSubDialog.open("chrome://browser/content/preferences/languages.xul");
   },
 
+  recordBrowserLanguagesTelemetry(method, value = null) {
+    Services.telemetry.recordEvent("intl.ui.browserLanguage", method, "main", value);
+  },
+
   showBrowserLanguages({search}) {
-    let opts = {selected: gMainPane.selectedLocales, search};
+    
+    let telemetryId = parseInt(Services.telemetry.msSinceProcessStart(), 10).toString();
+    let method = search ? "search" : "manage";
+    gMainPane.recordBrowserLanguagesTelemetry(method, telemetryId);
+
+    let opts = {selected: gMainPane.selectedLocales, search, telemetryId};
     gSubDialog.open(
       "chrome://browser/content/preferences/browserLanguages.xul",
       null, opts, this.browserLanguagesClosed);
@@ -1033,8 +1052,10 @@ var gMainPane = {
 
   
   browserLanguagesClosed() {
-    let selected = this.gBrowserLanguagesDialog.selected;
+    let {accepted, selected} = this.gBrowserLanguagesDialog;
     let active = Services.locale.appLocalesAsBCP47;
+
+    this.gBrowserLanguagesDialog.recordTelemetry(accepted ? "accept" : "cancel");
 
     
     if (selected && selected.join(",") != active.join(",")) {

@@ -9,6 +9,7 @@ AddonTestUtils.initMochitest(this);
 
 const BROWSER_LANGUAGES_URL = "chrome://browser/content/preferences/browserLanguages.xul";
 const DICTIONARY_ID_PL = "pl@dictionaries.addons.mozilla.org";
+const TELEMETRY_CATEGORY = "intl.ui.browserLanguage";
 
 function langpackId(locale) {
   return `langpack-${locale}@firefox.mozilla.org`;
@@ -149,6 +150,26 @@ function assertAvailableLocales(list, locales) {
   is(items[0].getAttribute("class"), "label-item", "The first row is a label");
 }
 
+function getDialogId(dialogDoc) {
+  return dialogDoc.ownerGlobal.arguments[0].telemetryId;
+}
+
+function assertTelemetryRecorded(events) {
+  let snapshot = Services.telemetry.snapshotEvents(
+    Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, true);
+
+  
+  ok(snapshot.parent && snapshot.parent.length > 0, "Got parent telemetry events in the snapshot");
+
+  
+  let relatedEvents = snapshot.parent
+    .filter(([timestamp, category]) => category == TELEMETRY_CATEGORY)
+    .map(relatedEvent => relatedEvent.slice(2, 6));
+
+  
+  Assert.deepEqual(relatedEvents, events, "The events are recorded correctly");
+}
+
 function selectLocale(localeCode, available, dialogDoc) {
   let [locale] = Array.from(available.firstElementChild.children)
     .filter(item => item.value == localeCode);
@@ -248,8 +269,23 @@ add_task(async function testDisabledBrowserLanguages() {
   is(pl.userDisabled, false, "pl is now enabled");
   is(pl.version, "2.0", "pl is upgraded to version 2.0");
 
+  let dialogId = getDialogId(dialogDoc);
+  ok(dialogId, "There's a dialogId");
+  let {installId} = pl.install;
+  ok(installId, "There's an installId");
+
   await Promise.all(addons.map(addon => addon.uninstall()));
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
+
+  
+  assertTelemetryRecorded([
+    ["manage", "main", dialogId],
+    ["search", "dialog", dialogId],
+    ["add", "dialog", dialogId, {installId}],
+
+    
+    ["cancel", "dialog", dialogId],
+  ]);
 });
 
 add_task(async function testReorderingBrowserLanguages() {
@@ -277,6 +313,7 @@ add_task(async function testReorderingBrowserLanguages() {
 
   
   let {dialog, dialogDoc, selected} = await openDialog(doc);
+  let firstDialogId = getDialogId(dialogDoc);
 
   
   assertLocaleOrder(selected, "en-US,pl,he");
@@ -298,6 +335,7 @@ add_task(async function testReorderingBrowserLanguages() {
   let newDialog = await openDialog(doc);
   dialog = newDialog.dialog;
   dialogDoc = newDialog.dialogDoc;
+  let secondDialogId = getDialogId(dialogDoc);
   selected = newDialog.selected;
 
   
@@ -315,9 +353,22 @@ add_task(async function testReorderingBrowserLanguages() {
   await dialogClosed;
   is(messageBar.hidden, true, "The message bar is hidden again");
 
-  await Promise.all(addons.map(addon => addon.uninstall()));
+  ok(firstDialogId, "There was an id on the first dialog");
+  ok(secondDialogId, "There was an id on the second dialog");
+  ok(firstDialogId != secondDialogId, "The dialog ids are different");
+  ok(firstDialogId < secondDialogId, "The second dialog id is larger than the first");
 
+  await Promise.all(addons.map(addon => addon.uninstall()));
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
+
+  assertTelemetryRecorded([
+    ["manage", "main", firstDialogId],
+    ["reorder", "dialog", firstDialogId],
+    ["accept", "dialog", firstDialogId],
+    ["manage", "main", secondDialogId],
+    ["reorder", "dialog", secondDialogId],
+    ["accept", "dialog", secondDialogId],
+  ]);
 });
 
 add_task(async function testAddAndRemoveSelectedLanguages() {
@@ -344,6 +395,7 @@ add_task(async function testAddAndRemoveSelectedLanguages() {
 
   
   let {dialog, dialogDoc, available, selected} = await openDialog(doc);
+  let dialogId = getDialogId(dialogDoc);
 
   
   assertLocaleOrder(selected, "en-US");
@@ -382,8 +434,21 @@ add_task(async function testAddAndRemoveSelectedLanguages() {
     "The locales are set on the message bar button");
 
   await Promise.all(addons.map(addon => addon.uninstall()));
-
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
+
+  assertTelemetryRecorded([
+    ["manage", "main", dialogId],
+
+    
+    ["add", "dialog", dialogId],
+    ["add", "dialog", dialogId],
+
+    ["remove", "dialog", dialogId],
+    ["remove", "dialog", dialogId],
+
+    ["add", "dialog", dialogId],
+    ["accept", "dialog", dialogId],
+  ]);
 });
 
 add_task(async function testInstallFromAMO() {
@@ -414,6 +479,7 @@ add_task(async function testInstallFromAMO() {
 
   
   let {dialog, dialogDoc, available, selected} = await openDialog(doc, true);
+  let firstDialogId = getDialogId(dialogDoc);
 
   
   is(messageBar.hidden, true, "The message bar is still hidden after searching");
@@ -445,6 +511,12 @@ add_task(async function testInstallFromAMO() {
     {childList: true},
     target => selectedLocales.itemCount == 2);
 
+  let langpack = await AddonManager.getAddonByID(langpackId("pl"));
+  Assert.deepEqual(
+    langpack.installTelemetryInfo,
+    {source: "about:preferences"},
+    "The source is set to preferences");
+
   
   assertLocaleOrder(selected, "pl,en-US");
   assertAvailableLocales(available, ["fr", "he"]);
@@ -472,10 +544,12 @@ add_task(async function testInstallFromAMO() {
   await dialogClosed;
 
   
-  let langpack = await AddonManager.getAddonByID("langpack-pl@firefox.mozilla.org");
+  langpack = await AddonManager.getAddonByID("langpack-pl@firefox.mozilla.org");
+  let installId = langpack.install.installId;
   await langpack.disable();
 
   ({dialogDoc, available, selected} = await openDialog(doc, true));
+  let secondDialogId = getDialogId(dialogDoc);
 
   
   if (available.itemCount == 1) {
@@ -493,6 +567,22 @@ add_task(async function testInstallFromAMO() {
   await Promise.all(installs.map(item => item.uninstall()));
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
+
+  ok(installId, "The langpack has an installId");
+  
+  assertTelemetryRecorded([
+    
+    ["search", "main", firstDialogId],
+    
+    ["add", "dialog", firstDialogId, {installId}],
+    
+    ["reorder", "dialog", firstDialogId],
+    ["accept", "dialog", firstDialogId],
+
+    
+    ["search", "main", secondDialogId],
+    ["cancel", "dialog", secondDialogId],
+  ]);
 });
 
 let hasSearchOption = popup => Array.from(popup.children).some(el => el.value == "search");
@@ -536,4 +626,56 @@ add_task(async function testDownloadDisabled() {
   ok(!hasSearchOption(available.firstChild), "There's no search option in the dialog");
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+add_task(async function testReorderMainPane() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["intl.multilingual.enabled", true],
+      ["intl.multilingual.downloadEnabled", false],
+      ["intl.locale.requested", "en-US"],
+      ["extensions.langpacks.signatures.required", false],
+    ],
+  });
+
+  
+  Services.telemetry.clearEvents();
+
+  let langpacks = await createTestLangpacks();
+  let addons = await Promise.all(langpacks.map(async ([locale, file]) => {
+    let install = await AddonTestUtils.promiseInstallFile(file);
+    return install.addon;
+  }));
+
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+  let doc = gBrowser.contentDocument;
+
+  let messageBar = doc.getElementById("confirmBrowserLanguage");
+  is(messageBar.hidden, true, "The message bar is hidden at first");
+
+  let available = doc.getElementById("defaultBrowserLanguage");
+  let availableLocales = Array.from(available.firstElementChild.children);
+  let availableCodes = availableLocales.map(item => item.value).sort().join(",");
+  is(availableCodes, "en-US,fr,he,pl",
+     "All of the available locales are listed");
+
+  is(available.selectedItem.value, "en-US", "English is selected");
+
+  let hebrew = availableLocales[availableLocales.findIndex(item => item.value == "he")];
+  hebrew.click();
+  available.firstElementChild.hidePopup();
+
+  await BrowserTestUtils.waitForCondition(
+    () => !messageBar.hidden, "Wait for message bar to show");
+
+  is(messageBar.hidden, false, "The message bar is now shown");
+  is(messageBar.querySelector("button").getAttribute("locales"), "he,en-US",
+     "The locales are set on the message bar button");
+
+  await Promise.all(addons.map(addon => addon.uninstall()));
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+
+  assertTelemetryRecorded([
+    ["reorder", "main"],
+  ]);
 });
