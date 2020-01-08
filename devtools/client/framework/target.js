@@ -741,7 +741,11 @@ TabTarget.prototype = {
           
           
           
-          this.activeTab.detach();
+          try {
+            await this.activeTab.detach();
+          } catch (e) {
+            console.warn(`Error while detaching target: ${e.message}`);
+          }
           cleanupAndResolve();
         } else {
           cleanupAndResolve();

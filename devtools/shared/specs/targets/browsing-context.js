@@ -127,10 +127,17 @@ const browsingContextTargetSpecPrototype = {
       destroyAll: Option(0, "nullable:boolean")
     },
     tabDetached: {
-      type: "tabDetached"
+      type: "tabDetached",
+      
+      
+      from: Option(0, "string"),
     },
     workerListChanged: {
       type: "workerListChanged"
+    },
+    newSource: {
+      type: "newSource",
+      source: Option(0, "json")
     }
   }
 };

@@ -966,7 +966,7 @@ const browsingContextTargetPrototype = {
     
     Services.tm.dispatchToMainThread(DevToolsUtils.makeInfallible(() => {
       this.window.location = request.url;
-    }, "BrowsingContextTargetActor.prototype.navigateTo's delayed body"));
+    }, "BrowsingContextTargetActor.prototype.navigateTo's delayed body:" + request.url));
     return {};
   },
 
