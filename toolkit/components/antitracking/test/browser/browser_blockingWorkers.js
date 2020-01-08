@@ -79,7 +79,7 @@ AntiTracking.runTest("SharedWorkers and Storage Access API",
     await callRequestStorageAccess();
 
     
-    new SharedWorker("a.js", "foo");
+    new SharedWorker("a.js", "bar");
     ok(true, "SharedWorker is allowed");
   },
   async _ => {
