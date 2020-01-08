@@ -9,18 +9,15 @@ def fullscreen(session):
 def is_fullscreen(session):
     
     
-    return session.execute_script("return !!(window.fullScreen || document.webkitIsFullScreen)")
-
-
-
+    
+    
+    
+    return session.execute_script("""
+        return !!(window.fullScreen || document.webkitIsFullScreen)
+        """)
 
 
 def test_no_browsing_context(session, create_window):
-    """
-    1. If the current top-level browsing context is no longer open,
-    return error with error code no such window.
-
-    """
     session.window_handle = create_window()
     session.close()
     response = fullscreen(session)
@@ -28,11 +25,6 @@ def test_no_browsing_context(session, create_window):
 
 
 def test_fullscreen(session):
-    """
-    4. Call fullscreen an element with the current top-level browsing
-    context's active document's document element.
-
-    """
     response = fullscreen(session)
     assert_success(response)
 
@@ -40,36 +32,8 @@ def test_fullscreen(session):
 
 
 def test_payload(session):
-    """
-    5. Return success with the JSON serialization of the current top-level
-    browsing context's window rect.
-
-    [...]
-
-    A top-level browsing context's window rect is defined as a
-    dictionary of the screenX, screenY, width and height attributes of
-    the WindowProxy. Its JSON representation is the following:
-
-    "x"
-        WindowProxy's screenX attribute.
-
-    "y"
-        WindowProxy's screenY attribute.
-
-    "width"
-        Width of the top-level browsing context's outer dimensions,
-        including any browser chrome and externally drawn window
-        decorations in CSS reference pixels.
-
-    "height"
-        Height of the top-level browsing context's outer dimensions,
-        including any browser chrome and externally drawn window
-        decorations in CSS reference pixels.
-
-    """
     response = fullscreen(session)
 
-    
     assert response.status == 200
     assert isinstance(response.body["value"], dict)
 

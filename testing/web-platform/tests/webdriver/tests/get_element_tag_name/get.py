@@ -10,7 +10,6 @@ def get_element_tag_name(session, element_id):
 
 
 def test_no_browsing_context(session, create_window):
-    
     session.window_handle = create_window()
     session.close()
 
@@ -19,13 +18,11 @@ def test_no_browsing_context(session, create_window):
 
 
 def test_element_not_found(session):
-    
     result = get_element_tag_name(session, "foo")
     assert_error(result, "no such element")
 
 
 def test_element_stale(session):
-    
     session.url = inline("<input id=foo>")
     element = session.find.css("input", all=False)
     session.refresh()
@@ -35,7 +32,6 @@ def test_element_stale(session):
 
 
 def test_get_element_tag_name(session):
-    
     session.url = inline("<input id=foo>")
     element = session.find.css("input", all=False)
 

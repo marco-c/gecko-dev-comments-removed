@@ -17,37 +17,35 @@ def get_current_url(session):
         "GET", "session/{session_id}/url".format(**vars(session)))
 
 
-
-
-
 def test_get_current_url_no_browsing_context(session, create_window):
-    
     session.window_handle = create_window()
     session.close()
 
     result = get_current_url(session)
     assert_error(result, "no such window")
 
+
 def test_get_current_url_matches_location(session):
-    
     url = session.execute_script("return window.location.href")
 
     result = get_current_url(session)
     assert_success(result, url)
 
+
 def test_get_current_url_payload(session):
-    
     session.start()
 
     result = get_current_url(session)
     assert result.status == 200
     assert isinstance(result.body["value"], basestring)
 
+
 def test_get_current_url_special_pages(session):
     session.url = "about:blank"
 
     result = get_current_url(session)
     assert_success(result, "about:blank")
+
 
 
 def test_get_current_url_file_protocol(session):
@@ -57,6 +55,8 @@ def test_get_current_url_file_protocol(session):
 
     result = get_current_url(session)
     assert_success(result, "file:///")
+
+
 
 
 

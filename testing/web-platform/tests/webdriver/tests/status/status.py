@@ -12,26 +12,14 @@ def test_get_status_no_session(http):
         
         assert response.status == 200
 
-        
-        parsed_obj = json.loads(response.read().decode('utf-8'))
+        parsed_obj = json.loads(response.read().decode("utf-8"))
         value = parsed_obj["value"]
 
-        
-        
-        
         assert value["ready"] in [True, False]
-        
-        
-        
         assert isinstance(value["message"], basestring)
 
 
 def test_status_with_session_running_on_endpoint_node(session):
-    
-    
-    
-    
-
     response = get_status(session)
     value = assert_success(response)
     assert value["ready"] is False
@@ -39,9 +27,6 @@ def test_status_with_session_running_on_endpoint_node(session):
 
     session.end()
 
-    
-    
-    
     response = get_status(session)
     value = assert_success(response)
     assert value["ready"] is True

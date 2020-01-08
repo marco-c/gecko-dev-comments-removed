@@ -7,10 +7,7 @@ def get_alert_text(session):
         "GET", "session/{session_id}/alert/text".format(**vars(session)))
 
 
-
-
 def test_no_browsing_context(session, create_window):
-    
     session.window_handle = create_window()
     session.close()
 
@@ -19,13 +16,11 @@ def test_no_browsing_context(session, create_window):
 
 
 def test_no_user_prompt(session):
-    
     response = get_alert_text(session)
     assert_error(response, "no such alert")
 
 
 def test_get_alert_text(session):
-    
     session.url = inline("<script>window.alert('Hello');</script>")
     response = get_alert_text(session)
     assert_success(response)
@@ -37,7 +32,6 @@ def test_get_alert_text(session):
 
 
 def test_get_confirm_text(session):
-    
     session.url = inline("<script>window.confirm('Hello');</script>")
     response = get_alert_text(session)
     assert_success(response)
@@ -49,7 +43,6 @@ def test_get_confirm_text(session):
 
 
 def test_get_prompt_text(session):
-    
     session.url = inline("<script>window.prompt('Enter Your Name: ', 'Federer');</script>")
     response = get_alert_text(session)
     assert_success(response)

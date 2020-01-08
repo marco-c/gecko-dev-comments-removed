@@ -34,27 +34,6 @@ errors = {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def assert_error(response, error_code):
     """
     Verify that the provided webdriver.Response instance described
