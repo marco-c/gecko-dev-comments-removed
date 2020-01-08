@@ -1652,7 +1652,7 @@ ResolvePrototypeOrConstructor(JSContext* cx, JS::Handle<JSObject*> wrapper,
 {
   JS::Rooted<JSObject*> global(cx, JS::GetNonCCWObjectGlobal(obj));
   {
-    JSAutoRealmAllowCCW ar(cx, global);
+    JSAutoRealm ar(cx, global);
     ProtoAndIfaceCache& protoAndIfaceCache = *GetProtoAndIfaceCache(global);
     
     
@@ -2297,7 +2297,7 @@ ReparentWrapper(JSContext* aCx, JS::Handle<JSObject*> aObjArg, ErrorResult& aErr
                                   domClass->mGetAssociatedGlobal(aCx, aObj));
   MOZ_ASSERT(JS_IsGlobalObject(newParent));
 
-  JSAutoRealmAllowCCW oldAr(aCx, oldParent);
+  JSAutoRealm oldAr(aCx, oldParent);
 
   JS::Compartment* oldCompartment = js::GetObjectCompartment(oldParent);
   JS::Compartment* newCompartment = js::GetObjectCompartment(newParent);
@@ -2317,7 +2317,7 @@ ReparentWrapper(JSContext* aCx, JS::Handle<JSObject*> aObjArg, ErrorResult& aErr
     expandoObject = DOMProxyHandler::GetAndClearExpandoObject(aObj);
   }
 
-  JSAutoRealmAllowCCW newAr(aCx, newParent);
+  JSAutoRealm newAr(aCx, newParent);
 
   
   
@@ -3564,7 +3564,7 @@ GetMaplikeSetlikeBackingObject(JSContext* aCx, JS::Handle<JSObject*> aObj,
     
     
     {
-      JSAutoRealmAllowCCW ar(aCx, reflector);
+      JSAutoRealm ar(aCx, reflector);
       JS::Rooted<JSObject*> newBackingObj(aCx);
       newBackingObj.set(Method(aCx));
       if (NS_WARN_IF(!newBackingObj)) {
@@ -3787,7 +3787,7 @@ HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   
   
   {
-    JSAutoRealmAllowCCW ar(aCx, newTarget);
+    JSAutoRealm ar(aCx, newTarget);
     JS::Handle<JSObject*> constructor =
       GetPerInterfaceObjectHandle(aCx, aConstructorId, aCreator,
                                   true);
@@ -3815,42 +3815,31 @@ HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     ns = kNameSpaceID_XHTML;
   }
 
-  constructorGetterCallback cb = nullptr;
-  if (ns == kNameSpaceID_XUL) {
-    if (definition->mLocalName == nsGkAtoms::menupopup ||
-        definition->mLocalName == nsGkAtoms::popup ||
-        definition->mLocalName == nsGkAtoms::panel ||
-        definition->mLocalName == nsGkAtoms::tooltip) {
-      cb = XULPopupElement_Binding::GetConstructorObject;
-    } else if (definition->mLocalName == nsGkAtoms::iframe ||
-                definition->mLocalName == nsGkAtoms::browser ||
-                definition->mLocalName == nsGkAtoms::editor) {
-      cb = XULFrameElement_Binding::GetConstructorObject;
-    } else if (definition->mLocalName == nsGkAtoms::scrollbox) {
-      cb = XULScrollElement_Binding::GetConstructorObject;
-    } else {
-      cb = XULElement_Binding::GetConstructorObject;
-    }
-  }
-
   int32_t tag = eHTMLTag_userdefined;
   if (!definition->IsCustomBuiltIn()) {
     
     
     
-    if (!cb) {
-      cb = HTMLElement_Binding::GetConstructorObject;
+    
+    
+    JSAutoRealm ar(aCx, global.Get());
+
+    JS::Rooted<JSObject*> constructor(aCx);
+    if (ns == kNameSpaceID_XUL) {
+      constructor = XULElement_Binding::GetConstructorObject(aCx);
+    } else {
+      constructor = HTMLElement_Binding::GetConstructorObject(aCx);
     }
 
-    
-    
-    JSAutoRealmAllowCCW ar(aCx, global.Get());
-    JS::Rooted<JSObject*> constructor(aCx, cb(aCx));
+    if (!constructor) {
+      return false;
+    }
 
     if (constructor != js::CheckedUnwrap(callee)) {
       return ThrowErrorMessage(aCx, MSG_ILLEGAL_CONSTRUCTOR);
     }
   } else {
+    constructorGetterCallback cb;
     if (ns == kNameSpaceID_XHTML) {
       
       
@@ -3865,6 +3854,21 @@ HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
       
       
       cb = sConstructorGetterCallback[tag];
+    } else { 
+      if (definition->mLocalName == nsGkAtoms::menupopup ||
+          definition->mLocalName == nsGkAtoms::popup ||
+          definition->mLocalName == nsGkAtoms::panel ||
+          definition->mLocalName == nsGkAtoms::tooltip) {
+        cb = XULPopupElement_Binding::GetConstructorObject;
+      } else if (definition->mLocalName == nsGkAtoms::iframe ||
+                 definition->mLocalName == nsGkAtoms::browser ||
+                 definition->mLocalName == nsGkAtoms::editor) {
+        cb = XULFrameElement_Binding::GetConstructorObject;
+      } else if (definition->mLocalName == nsGkAtoms::scrollbox) {
+          cb = XULScrollElement_Binding::GetConstructorObject;
+      } else {
+        cb = XULElement_Binding::GetConstructorObject;
+      }
     }
 
     if (!cb) {
@@ -3873,7 +3877,7 @@ HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
 
     
     
-    JSAutoRealmAllowCCW ar(aCx, global.Get());
+    JSAutoRealm ar(aCx, global.Get());
     JS::Rooted<JSObject*> constructor(aCx, cb(aCx));
     if (!constructor) {
       return false;
@@ -3900,7 +3904,7 @@ HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     
     
     {
-      JSAutoRealmAllowCCW ar(aCx, newTarget);
+      JSAutoRealm ar(aCx, newTarget);
       desiredProto = GetPerInterfaceObjectHandle(aCx, aProtoId, aCreator, true);
       if (!desiredProto) {
           return false;
@@ -3925,7 +3929,7 @@ HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     
     
     
-    JSAutoRealmAllowCCW ar(aCx, global.Get());
+    JSAutoRealm ar(aCx, global.Get());
 
     RefPtr<NodeInfo> nodeInfo =
       doc->NodeInfoManager()->GetNodeInfo(definition->mLocalName,
@@ -3968,7 +3972,7 @@ HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     JS::Rooted<JSObject*> reflector(aCx, element->GetWrapper());
     if (reflector) {
       
-      JSAutoRealmAllowCCW ar(aCx, reflector);
+      JSAutoRealm ar(aCx, reflector);
       JS::Rooted<JSObject*> givenProto(aCx, desiredProto);
       if (!JS_WrapObject(aCx, &givenProto) ||
           !JS_SetPrototype(aCx, reflector, givenProto)) {
@@ -3983,7 +3987,7 @@ HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   
   
   
-  JSAutoRealmAllowCCW ar(aCx, global.Get());
+  JSAutoRealm ar(aCx, global.Get());
   if (!js::IsObjectInContextCompartment(desiredProto, aCx) &&
       !JS_WrapObject(aCx, &desiredProto)) {
     return false;
@@ -4005,7 +4009,7 @@ AssertReflectorHasGivenProto(JSContext* aCx, JSObject* aReflector,
   }
 
   JS::Rooted<JSObject*> reflector(aCx, aReflector);
-  JSAutoRealmAllowCCW ar(aCx, reflector);
+  JSAutoRealm ar(aCx, reflector);
   JS::Rooted<JSObject*> reflectorProto(aCx);
   bool ok = JS_GetPrototype(aCx, reflector, &reflectorProto);
   MOZ_ASSERT(ok);
