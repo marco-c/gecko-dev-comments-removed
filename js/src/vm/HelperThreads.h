@@ -359,6 +359,8 @@ struct HelperThread
 {
     mozilla::Maybe<Thread> thread;
 
+    mozilla::Maybe<JSContext> context_;
+
     
 
 
@@ -373,6 +375,10 @@ struct HelperThread
 
     
     mozilla::Maybe<HelperTaskUnion> currentTask;
+
+    JSContext* context() {
+        return context_.ptr();
+    }
 
     bool idle() const {
         return currentTask.isNothing();
@@ -460,7 +466,7 @@ struct HelperThread
         return nullptr;
     }
 
-    void maybeFreeUnusedMemory(JSContext* cx);
+    void maybeFreeUnusedMemory();
 
     void handleWasmWorkload(AutoLockHelperThreadState& locked, wasm::CompileMode mode);
 
@@ -473,6 +479,9 @@ struct HelperThread
     void handleParseWorkload(AutoLockHelperThreadState& locked);
     void handleCompressionWorkload(AutoLockHelperThreadState& locked);
     void handleGCParallelWorkload(AutoLockHelperThreadState& locked);
+
+    class AutoInitContext;
+    friend class AutoInitContext;
 };
 
 
