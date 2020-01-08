@@ -550,14 +550,8 @@ WindowGlobalOrNull(JSObject* aObj);
 nsGlobalWindowInner*
 CurrentWindowOrNull(JSContext* cx);
 
-class MOZ_RAII AutoScriptActivity
-{
-    bool mActive;
-    bool mOldValue;
-  public:
-    explicit AutoScriptActivity(bool aActive);
-    ~AutoScriptActivity();
-};
+void
+SimulateActivityCallback(bool aActive);
 
 
 
@@ -757,6 +751,13 @@ bool IsChromeOrXBLOrUAWidget(JSContext* cx, JSObject* );
 bool ThreadSafeIsChromeOrXBLOrUAWidget(JSContext* cx, JSObject* obj);
 
 } 
+
+
+
+
+bool
+GetBuildId(JS::BuildIdCharVector* aBuildID);
+
 } 
 
 #endif

@@ -4654,13 +4654,14 @@ SetAsmJSCacheOps(JSContext* cx, const AsmJSCacheOps* callbacks);
 
 
 
+
 typedef js::Vector<char, 0, js::SystemAllocPolicy> BuildIdCharVector;
 
 typedef bool
 (* BuildIdOp)(BuildIdCharVector* buildId);
 
 extern JS_PUBLIC_API(void)
-SetBuildIdOp(JSContext* cx, BuildIdOp buildIdOp);
+SetProcessBuildIdOp(BuildIdOp buildIdOp);
 
 
 

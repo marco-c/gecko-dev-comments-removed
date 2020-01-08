@@ -400,8 +400,6 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     void finishRoots();
 
   public:
-    js::UnprotectedData<JS::BuildIdOp> buildIdOp;
-
     
     js::UnprotectedData<JS::AsmJSCacheOps> asmJSCacheOps;
 
@@ -1192,6 +1190,9 @@ extern const JSSecurityCallbacks NullSecurityCallbacks;
 
 
 extern mozilla::Atomic<JS::LargeAllocationFailureCallback> OnLargeAllocationFailure;
+
+
+extern mozilla::Atomic<JS::BuildIdOp> GetBuildId;
 
 } 
 

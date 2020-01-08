@@ -427,9 +427,6 @@ inline bool AddToCCKind(JS::TraceKind aKind)
          aKind == JS::TraceKind::RegExpShared;
 }
 
-bool
-GetBuildId(JS::BuildIdCharVector* aBuildID);
-
 } 
 
 #endif 
