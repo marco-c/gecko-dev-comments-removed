@@ -118,11 +118,6 @@ using google_breakpad::PageAllocator;
 using namespace mozilla;
 using mozilla::ipc::CrashReporterClient;
 
-
-extern "C" {
-void install_rust_oom_hook();
-}
-
 namespace CrashReporter {
 
 #ifdef XP_WIN32
@@ -1614,8 +1609,6 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force ) {
   mozalloc_set_oom_abort_handler(AnnotateOOMAllocationSize);
 
   oldTerminateHandler = std::set_terminate(&TerminateHandler);
-
-  install_rust_oom_hook();
 
   InitThreadAnnotation();
 
