@@ -162,6 +162,49 @@ ConvertLegacyStyleToJustifyContent(const nsStyleXUL* aStyleXUL)
 }
 
 
+static nsIFrame*
+GetFirstNonAnonBoxDescendant(nsIFrame* aFrame)
+{
+  while (aFrame) {
+    nsAtom* pseudoTag = aFrame->Style()->GetPseudo();
+
+    
+    if (!pseudoTag ||                                 
+        !nsCSSAnonBoxes::IsAnonBox(pseudoTag) ||      
+        nsCSSAnonBoxes::IsNonElement(pseudoTag)) {    
+      break;
+    }
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+    if (MOZ_UNLIKELY(aFrame->IsTableWrapperFrame())) {
+      nsIFrame* captionDescendant =
+        GetFirstNonAnonBoxDescendant(aFrame->GetChildList(kCaptionList).FirstChild());
+      if (captionDescendant) {
+        return captionDescendant;
+      }
+    } else if (MOZ_UNLIKELY(aFrame->IsTableFrame())) {
+      nsIFrame* colgroupDescendant =
+        GetFirstNonAnonBoxDescendant(aFrame->GetChildList(kColGroupList).FirstChild());
+      if (colgroupDescendant) {
+        return colgroupDescendant;
+      }
+    }
+
+    
+    aFrame = aFrame->PrincipalChildList().FirstChild();
+  }
+  return aFrame;
+}
+
+
 
 static inline bool
 AxisGrowsInPositiveDirection(AxisOrientationType aAxis)
@@ -4785,22 +4828,35 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
         
         
         
-        
-        nsINode* node = nullptr;
+        nsIFrame* targetFrame = GetFirstNonAnonBoxDescendant(frame);
+        nsIContent* content = targetFrame->GetContent();
 
         
         
-        nsAtom* pseudoTag = frame->Style()->GetPseudo();
-        if (pseudoTag != nsCSSAnonBoxes::anonymousFlexItem()) {
-          node = frame->GetContent();
+        
+        while (content && content->TextIsOnlyWhitespace()) {
+          
+          targetFrame = targetFrame->GetNextSibling();
+          if (targetFrame) {
+            content = targetFrame->GetContent();
+          } else {
+            content = nullptr;
+          }
         }
 
-        ComputedFlexItemInfo* itemInfo = lineInfo->mItems.AppendElement();
-        itemInfo->mNode = node;
+        ComputedFlexItemInfo* itemInfo =
+          lineInfo->mItems.AppendElement();
+
+        itemInfo->mNode = content;
 
         
         
+
         
+        itemInfo->mMainMinSize = item->GetMainMinSize();
+        itemInfo->mMainMaxSize = item->GetMainMaxSize();
+        itemInfo->mCrossMinSize = item->GetCrossMinSize();
+        itemInfo->mCrossMaxSize = item->GetCrossMaxSize();
       }
     }
   }
@@ -5215,20 +5271,6 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
       lineInfo.mCrossSize = line->GetLineCrossSize();
       lineInfo.mFirstBaselineOffset = line->GetFirstBaselineOffset();
       lineInfo.mLastBaselineOffset = line->GetLastBaselineOffset();
-
-      uint32_t itemIndex = 0;
-      for (const FlexItem* item = line->GetFirstItem(); item;
-           item = item->getNext(), ++itemIndex) {
-        ComputedFlexItemInfo& itemInfo = lineInfo.mItems[itemIndex];
-        itemInfo.mMainPosition = item->GetMainPosition();
-        itemInfo.mMainSize = item->GetMainSize();
-        itemInfo.mMainMinSize = item->GetMainMinSize();
-        itemInfo.mMainMaxSize = item->GetMainMaxSize();
-        itemInfo.mCrossPosition = item->GetCrossPosition();
-        itemInfo.mCrossSize = item->GetCrossSize();
-        itemInfo.mCrossMinSize = item->GetCrossMinSize();
-        itemInfo.mCrossMaxSize = item->GetCrossMaxSize();
-      }
     }
   }
 }
