@@ -623,8 +623,7 @@ HTMLTableAccessible::CellAt(uint32_t aRowIdx, uint32_t aColIdx)
   
   
   if (cell && cell->IsTableRow()) {
-    Accessible* row = RowAt(aRowIdx);
-    return CellInRowAt(row, aColIdx);
+    return CellInRowAt(cell, aColIdx);
   }
 
   
