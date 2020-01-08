@@ -593,10 +593,17 @@ function createHighlightButton(highlighterName, id) {
       return highlighter.show({});
     },
     isChecked(toolbox) {
-      if (!toolbox.inspector) {
+      
+      
+      const inspectorFront = toolbox.target.getCachedFront("inspector");
+      if (!inspectorFront) {
+        
+        
+        
+        
         return false;
       }
-      const highlighter = toolbox.inspector.getKnownHighlighter(highlighterName);
+      const highlighter = inspectorFront.getKnownHighlighter(highlighterName);
       return highlighter && highlighter.isShown();
     },
   };
