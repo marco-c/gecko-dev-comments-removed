@@ -87,11 +87,11 @@ const TargetFactory = exports.TargetFactory = {
     await client.connect();
 
     
-    const response = await client.getTab({ tab });
+    const front = await client.mainRoot.getTab({ tab });
 
     return new Target({
       client,
-      form: response.tab,
+      activeTab: front,
       
       chrome: false,
       tab,

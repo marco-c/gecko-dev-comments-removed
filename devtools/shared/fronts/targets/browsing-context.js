@@ -22,10 +22,14 @@ class BrowsingContextTargetFront extends FrontClassWithSpec(browsingContextTarge
 
     
     this.client = client;
+  }
+
+  form(json) {
+    this.actorID = json.actor;
 
     
     
-    this.targetForm = form;
+    this.targetForm = json;
   }
 
   
