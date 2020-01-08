@@ -1,5 +1,7 @@
 
 
+ignoreUnhandledRejections();
+
 function test() {
   let controller;
   let stream = new ReadableStream({

@@ -86,3 +86,8 @@ if (!("setTimeout" in this)) {
 
   this.clearInterval = this.clearTimeout;
 }
+
+
+if ("ignoreUnhandledRejections" in this) {
+  ignoreUnhandledRejections();
+}

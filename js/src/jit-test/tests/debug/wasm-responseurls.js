@@ -2,6 +2,8 @@
 
 
 
+ignoreUnhandledRejections();
+
 try {
     WebAssembly.compileStreaming();
 } catch (err) {

@@ -1,5 +1,7 @@
 
 
+ignoreUnhandledRejections();
+
 (function () {
     g = newGlobal();
     g.parent = this;

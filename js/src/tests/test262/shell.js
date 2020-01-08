@@ -590,3 +590,8 @@ function $DONE(failure) {
     else
         reportCompare(0, 0);
 }
+
+
+if ("ignoreUnhandledRejections" in this) {
+  ignoreUnhandledRejections();
+}

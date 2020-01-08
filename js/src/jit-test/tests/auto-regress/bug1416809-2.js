@@ -4,6 +4,8 @@
 
 
 
+ignoreUnhandledRejections();
+
 var asyncIter = async function*(){ yield; }();
 asyncIter.next();
 

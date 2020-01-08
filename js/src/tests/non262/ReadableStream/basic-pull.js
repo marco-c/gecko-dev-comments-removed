@@ -1,5 +1,9 @@
 
 
+if ("ignoreUnhandledRejections" in this) {
+  ignoreUnhandledRejections();
+}
+
 
 let fibStream = new ReadableStream({
     start(controller) {

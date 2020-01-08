@@ -1,6 +1,8 @@
 
 
 
+ignoreUnhandledRejections();
+
 let g = newGlobal();
 g.hit2 = false;
 g.eval(`async function f(x) { await x; return "ponies"; }`);
