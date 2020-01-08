@@ -110,7 +110,6 @@ ARCHIVE_FILES = {
                 'awsy/**',
                 'web-platform/**',
                 'xpcshell/**',
-                'updater-dep/**',
             ],
         },
         {
@@ -520,21 +519,6 @@ ARCHIVE_FILES = {
             'dest': 'xpcshell',
         },
     ],
-    'updater-dep': [
-        {
-            'source': buildconfig.topobjdir,
-            'base': '_tests/updater-dep',
-            'pattern': '**',
-            'dest': 'updater-dep',
-        },
-        
-        {
-            'source': buildconfig.topobjdir,
-            'base': 'config/external/sqlite',
-            'pattern': 'libmozsqlite3.so',
-            'dest': 'updater-dep',
-        },
-    ],
 }
 
 if buildconfig.substs.get('MOZ_CODE_COVERAGE'):
@@ -642,7 +626,7 @@ def find_files(archive):
             '**/*.pyc',
         ])
 
-        if archive not in ('common', 'updater-dep') and base.startswith('_tests'):
+        if archive != 'common' and base.startswith('_tests'):
             
             for path in generated_harness_files:
                 if path.startswith(base):
