@@ -5299,16 +5299,6 @@ pref("io.activity.enabled", false);
 
 
 
-
-
-
-
-pref("io.activity.intervalMilliseconds", 0);
-
-
-
-
-
 pref("jsloader.shareGlobal", true);
 
 
