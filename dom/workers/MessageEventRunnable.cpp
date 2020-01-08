@@ -31,7 +31,7 @@ MessageEventRunnable::DispatchDOMEvent(JSContext* aCx,
                                        DOMEventTargetHelper* aTarget,
                                        bool aIsMainThread)
 {
-  nsCOMPtr<nsIGlobalObject> parent = do_QueryInterface(aTarget->GetParentObject());
+  nsCOMPtr<nsIGlobalObject> parent = aTarget->GetParentObject();
 
   
   

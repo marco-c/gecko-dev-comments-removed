@@ -231,7 +231,7 @@ nsContentBlocker::ShouldProcess(nsIURI           *aContentLocation,
   
   
   nsCOMPtr<nsIDocShellTreeItem> item =
-    do_QueryInterface(NS_CP_GetDocShellFromContext(requestingContext));
+    NS_CP_GetDocShellFromContext(requestingContext);
 
   if (item && item->ItemType() == nsIDocShellTreeItem::typeChrome) {
     *aDecision = nsIContentPolicy::ACCEPT;

@@ -67,8 +67,7 @@ FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
   
   
   
-  nsCOMPtr<nsIDocShellTreeItem> thisDocShellItem(
-    do_QueryInterface(static_cast<nsIDocShell*>(aDocShell)));
+  nsCOMPtr<nsIDocShellTreeItem> thisDocShellItem(aDocShell);
   nsCOMPtr<nsIDocShellTreeItem> parentDocShellItem;
   nsCOMPtr<nsIDocShellTreeItem> curDocShellItem = thisDocShellItem;
   nsCOMPtr<nsIDocument> topDoc;

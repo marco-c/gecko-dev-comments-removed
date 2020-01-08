@@ -2367,11 +2367,11 @@ nsFocusManager::UpdateCaret(bool aMoveCaretToFocus,
   
   
   nsCOMPtr<nsIDocShell> focusedDocShell = mFocusedWindow->GetDocShell();
-  nsCOMPtr<nsIDocShellTreeItem> dsti = do_QueryInterface(focusedDocShell);
-  if (!dsti)
+  if (!focusedDocShell) {
     return;
+  }
 
-  if (dsti->ItemType() == nsIDocShellTreeItem::typeChrome) {
+  if (focusedDocShell->ItemType() == nsIDocShellTreeItem::typeChrome) {
     return;  
   }
 

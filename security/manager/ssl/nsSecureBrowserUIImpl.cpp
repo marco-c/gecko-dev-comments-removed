@@ -137,7 +137,7 @@ nsSecureBrowserUIImpl::CheckForBlockedContent()
   
   
   if (docShell->ItemType() == nsIDocShellTreeItem::typeContent) {
-    nsCOMPtr<nsIDocShellTreeItem> docShellTreeItem(do_QueryInterface(docShell));
+    nsCOMPtr<nsIDocShellTreeItem> docShellTreeItem(docShell);
     nsCOMPtr<nsIDocShellTreeItem> sameTypeRoot;
     Unused << docShellTreeItem->GetSameTypeRootTreeItem(
       getter_AddRefs(sameTypeRoot));

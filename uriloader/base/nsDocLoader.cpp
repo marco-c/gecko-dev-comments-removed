@@ -1444,7 +1444,7 @@ NS_IMETHODIMP nsDocLoader::AsyncOnChannelRedirect(nsIChannel *aOldChannel,
       
       
       if (mDocumentRequest) {
-        nsCOMPtr<nsIRequest> request(do_QueryInterface(aOldChannel));
+        nsCOMPtr<nsIRequest> request(aOldChannel);
         NS_ASSERTION(request == mDocumentRequest, "Wrong Document Channel");
       }
 #endif 

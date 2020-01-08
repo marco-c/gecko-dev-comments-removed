@@ -490,7 +490,7 @@ HTMLEditor::FindSelectionRoot(nsINode* aNode)
   
   if (IsReadonly()) {
     
-    content = do_QueryInterface(GetRoot());
+    content = GetRoot();
     return content.forget();
   }
 

@@ -2262,7 +2262,7 @@ nsPresContext::FireDOMPaintEvent(nsTArray<nsRect>* aList,
     
     
     
-    dispatchTarget = do_QueryInterface(ourWindow->GetParentTarget());
+    dispatchTarget = ourWindow->GetParentTarget();
     if (!dispatchTarget) {
       return;
     }

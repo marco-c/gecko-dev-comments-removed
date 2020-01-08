@@ -2528,7 +2528,7 @@ nsRange::CloneContents(ErrorResult& aRv)
 
     
 
-    nsCOMPtr<nsINode> cloneNode = do_QueryInterface(clone);
+    nsCOMPtr<nsINode> cloneNode = clone;
     if (closestAncestor)
     {
       
@@ -2652,7 +2652,7 @@ nsRange::InsertNode(nsINode& aNode, ErrorResult& aRv)
       return;
     }
 
-    referenceNode = do_QueryInterface(secondPart);
+    referenceNode = secondPart;
   } else {
     tChildList = tStartContainer->ChildNodes();
 

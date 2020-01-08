@@ -358,7 +358,7 @@ ScreenOrientation::LockDeviceOrientation(hal::ScreenOrientation aOrientation,
     return false;
   }
 
-  nsCOMPtr<EventTarget> target = do_QueryInterface(GetOwner()->GetDoc());
+  nsCOMPtr<EventTarget> target = GetOwner()->GetDoc();
   
   
   
@@ -404,7 +404,7 @@ ScreenOrientation::UnlockDeviceOrientation()
   }
 
   
-  nsCOMPtr<EventTarget> target = do_QueryInterface(GetOwner()->GetDoc());
+  nsCOMPtr<EventTarget> target = GetOwner()->GetDoc();
   if (target) {
     target->RemoveSystemEventListener(NS_LITERAL_STRING("fullscreenchange"),
                                       mFullscreenListener,

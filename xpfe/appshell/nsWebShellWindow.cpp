@@ -186,7 +186,7 @@ nsresult nsWebShellWindow::Initialize(nsIXULWindow* aParent,
 
   
   
-  nsCOMPtr<nsIDocShellTreeItem> docShellAsItem(do_QueryInterface(mDocShell));
+  nsCOMPtr<nsIDocShellTreeItem> docShellAsItem(mDocShell);
   NS_ENSURE_TRUE(docShellAsItem, NS_ERROR_FAILURE);
   NS_ENSURE_SUCCESS(EnsureChromeTreeOwner(), NS_ERROR_FAILURE);
 

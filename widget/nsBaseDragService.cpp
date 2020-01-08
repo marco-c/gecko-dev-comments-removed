@@ -694,12 +694,11 @@ nsBaseDragService::DrawDrag(nsINode* aDOMNode,
     
     uint32_t renderFlags = mImage ? 0 : nsIPresShell::RENDER_AUTO_SCALE;
     if (renderFlags) {
-      nsCOMPtr<nsINode> dragINode = do_QueryInterface(dragNode);
       
-      if (dragINode->NodeName().LowerCaseEqualsLiteral("img")) {
+      if (dragNode->NodeName().LowerCaseEqualsLiteral("img")) {
         renderFlags = renderFlags | nsIPresShell::RENDER_IS_IMAGE;
       } else {
-        nsINodeList* childList = dragINode->ChildNodes();
+        nsINodeList* childList = dragNode->ChildNodes();
         uint32_t length = childList->Length();
         
         

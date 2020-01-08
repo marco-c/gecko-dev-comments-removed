@@ -1458,7 +1458,7 @@ nsFormFillController::GetIndexOfDocShell(nsIDocShell *aDocShell)
   }
 
   
-  nsCOMPtr<nsIDocShellTreeItem> treeItem = do_QueryInterface(aDocShell);
+  nsCOMPtr<nsIDocShellTreeItem> treeItem = aDocShell;
   nsCOMPtr<nsIDocShellTreeItem> parentItem;
   treeItem->GetParent(getter_AddRefs(parentItem));
   if (parentItem) {

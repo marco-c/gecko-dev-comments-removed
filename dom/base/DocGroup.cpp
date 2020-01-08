@@ -86,7 +86,7 @@ DocGroup::ReportPerformanceInfo()
 
   
   for (const auto& document : *this) {
-    nsCOMPtr<nsIDocument> doc = do_QueryInterface(document);
+    nsCOMPtr<nsIDocument> doc = document;
     MOZ_ASSERT(doc);
     nsCOMPtr<nsIURI> docURI = doc->GetDocumentURI();
     if (!docURI) {

@@ -449,7 +449,7 @@ nsIncrementalDownload::Init(nsIURI *uri, nsIFile *dest,
   
   NS_ENSURE_FALSE(mURI, NS_ERROR_ALREADY_INITIALIZED);
 
-  mDest = do_QueryInterface(dest);
+  mDest = dest;
   NS_ENSURE_ARG(mDest);
 
   mURI = uri;
