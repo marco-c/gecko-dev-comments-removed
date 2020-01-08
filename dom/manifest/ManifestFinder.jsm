@@ -4,7 +4,7 @@
 
 "use strict";
 const {
-  utils: Cu
+  utils: Cu,
 } = Components;
 ChromeUtils.import("resource://gre/modules/PromiseMessage.jsm");
 
@@ -36,7 +36,7 @@ var ManifestFinder = {
       const mm = aBrowser.messageManager;
       const reply = await PromiseMessage.send(mm, msgKey);
       return reply.data.result;
-    }
+    },
 };
 
 function isXULBrowser(aBrowser) {
@@ -61,5 +61,5 @@ function checkForManifest(aWindow) {
 }
 
 var EXPORTED_SYMBOLS = [
-  "ManifestFinder"
+  "ManifestFinder",
 ];

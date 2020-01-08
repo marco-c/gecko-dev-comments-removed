@@ -39,7 +39,7 @@ async function theTest(aBrowser) {
 add_task(async function() {
   await enableOnAppInstalledPref();
   let tabOptions = {
-    gBrowser: gBrowser,
+    gBrowser,
     url: testURL.href,
   };
   await BrowserTestUtils.withNewTab(

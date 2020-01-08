@@ -28,12 +28,12 @@
 const {
   utils: Cu,
   classes: Cc,
-  interfaces: Ci
+  interfaces: Ci,
 } = Components;
 ChromeUtils.import("resource://gre/modules/PromiseMessage.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/ManifestProcessor.jsm");
-ChromeUtils.defineModuleGetter(this, "BrowserUtils",  
+ChromeUtils.defineModuleGetter(this, "BrowserUtils", 
   "resource://gre/modules/BrowserUtils.jsm");
 
 var ManifestObtainer = { 
@@ -72,7 +72,7 @@ var ManifestObtainer = {
       throw err;
     }
     return manifest;
-  }
+  },
 };
 
 function toError(aErrorClone) {
@@ -115,7 +115,7 @@ const processResponse = async function(aResp, aContentWindow) {
   const args = {
     jsonText: text,
     manifestURL: aResp.url,
-    docURL: aContentWindow.location.href
+    docURL: aContentWindow.location.href,
   };
   const manifest = ManifestProcessor.process(args);
   return manifest;
@@ -139,7 +139,7 @@ const fetchManifest = async function(aWindow) {
   
   const manifestURL = new aWindow.URL(elem.href, elem.baseURI);
   const reqInit = {
-    mode: "cors"
+    mode: "cors",
   };
   if (elem.crossOrigin === "use-credentials") {
     reqInit.credentials = "include";

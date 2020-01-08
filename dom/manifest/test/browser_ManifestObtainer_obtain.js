@@ -1,10 +1,10 @@
 
 
-'use strict';
-const { ManifestObtainer } = ChromeUtils.import('resource://gre/modules/ManifestObtainer.jsm', {});
-const remoteURL = 'http://mochi.test:8888/browser/dom/manifest/test/resource.sjs';
-const defaultURL = new URL('http://example.org/browser/dom/manifest/test/resource.sjs');
-defaultURL.searchParams.set('Content-Type', 'text/html; charset=utf-8');
+"use strict";
+const { ManifestObtainer } = ChromeUtils.import("resource://gre/modules/ManifestObtainer.jsm", {});
+const remoteURL = "http://mochi.test:8888/browser/dom/manifest/test/resource.sjs";
+const defaultURL = new URL("http://example.org/browser/dom/manifest/test/resource.sjs");
+defaultURL.searchParams.set("Content-Type", "text/html; charset=utf-8");
 requestLongerTimeout(4);
 
 const tests = [
@@ -15,20 +15,20 @@ const tests = [
       <link rel="foo bar manifest bar test" href='resource.sjs?body={"name":"pass-1"}'>
       <link rel="manifest" href='resource.sjs?body={"name":"fail"}'>`,
     run(manifest) {
-      is(manifest.name, 'pass-1', 'Manifest is first `link` where @rel contains token manifest.');
-    }
+      is(manifest.name, "pass-1", "Manifest is first `link` where @rel contains token manifest.");
+    },
   }, {
     body: `
       <link rel="foo bar manifest bar test" href='resource.sjs?body={"name":"pass-2"}'>
       <link rel="manifest" href='resource.sjs?body={"name":"fail"}'>
       <link rel="manifest foo bar test" href='resource.sjs?body={"name":"fail"}'>`,
     run(manifest) {
-      is(manifest.name, 'pass-2', 'Manifest is first `link` where @rel contains token manifest.');
+      is(manifest.name, "pass-2", "Manifest is first `link` where @rel contains token manifest.");
     },
   }, {
     body: `<link rel="manifest" href='${remoteURL}?body={"name":"pass-3"}'>`,
     run(err) {
-      is(err.name, 'TypeError', 'By default, manifest cannot load cross-origin.');
+      is(err.name, "TypeError", "By default, manifest cannot load cross-origin.");
     },
   },
   
@@ -45,12 +45,12 @@ const tests = [
       return link;
     },
     run(manifest) {
-      is(manifest.name, 'pass-4', 'CORS enabled, manifest must be fetched.');
+      is(manifest.name, "pass-4", "CORS enabled, manifest must be fetched.");
     },
   }, {
     get body() {
       const body = 'body={"name": "fail"}';
-      const CORS = 'Access-Control-Allow-Origin=http://not-here';
+      const CORS = "Access-Control-Allow-Origin=http://not-here";
       const link =
         `<link
         crossorigin
@@ -59,31 +59,31 @@ const tests = [
       return link;
     },
     run(err) {
-      is(err.name, 'TypeError', 'Fetch blocked by CORS - origin does not match.');
+      is(err.name, "TypeError", "Fetch blocked by CORS - origin does not match.");
     },
   }, {
     body: `<link rel="manifest" href='about:whatever'>`,
     run(err) {
-      is(err.name, 'TypeError', 'Trying to load from about:whatever is TypeError.');
+      is(err.name, "TypeError", "Trying to load from about:whatever is TypeError.");
     },
   }, {
     body: `<link rel="manifest" href='file://manifest'>`,
     run(err) {
-      is(err.name, 'TypeError', 'Trying to load from file://whatever is a TypeError.');
+      is(err.name, "TypeError", "Trying to load from file://whatever is a TypeError.");
     },
   },
   
   {
     body: `<link rel="manifest" href='http://[12.1212.21.21.12.21.12]'>`,
     run(err) {
-      is(err.name, 'TypeError', 'Trying to load invalid URL is a TypeError.');
+      is(err.name, "TypeError", "Trying to load invalid URL is a TypeError.");
     },
   },
 ];
 
 function makeTestURL({ body }) {
   const url = new URL(defaultURL);
-  url.searchParams.set('body', encodeURIComponent(body));
+  url.searchParams.set("body", encodeURIComponent(body));
   return url.href;
 }
 
@@ -92,7 +92,7 @@ add_task(async function() {
     .map(test => ({
       gBrowser,
       testRunner: testObtainingManifest(test),
-      url: makeTestURL(test)
+      url: makeTestURL(test),
     }))
     .reduce((collector, tabOpts) => {
       const promise = BrowserTestUtils.withNewTab(tabOpts, tabOpts.testRunner);
@@ -120,7 +120,7 @@ add_task(async function() {
 
 
 add_task(async function() {
-  const defaultPath = '/browser/dom/manifest/test/manifestLoader.html';
+  const defaultPath = "/browser/dom/manifest/test/manifestLoader.html";
   const tabURLs = [
     `http://example.com:80${defaultPath}`,
     `http://example.org:80${defaultPath}`,
@@ -155,20 +155,20 @@ add_task(async function() {
   let browsers = tabURLs.map(url => BrowserTestUtils.addTab(gBrowser, url).linkedBrowser);
 
   
-  await Promise.all((function*() {
+  await Promise.all((function* () {
     for (let browser of browsers) {
       yield BrowserTestUtils.browserLoaded(browser);
     }
   })());
   
   
-  const results = await Promise.all((function*() {
+  const results = await Promise.all((function* () {
     for (let browser of randBrowsers(browsers, 50)) {
       yield ManifestObtainer.browserObtainManifest(browser);
     }
   })());
-  const pass = results.every(manifest => manifest.name === 'pass');
-  ok(pass, 'Expect every manifest to have name equal to `pass`.');
+  const pass = results.every(manifest => manifest.name === "pass");
+  ok(pass, "Expect every manifest to have name equal to `pass`.");
   
   browsers
     .map(browser => gBrowser.getTabForBrowser(browser))
