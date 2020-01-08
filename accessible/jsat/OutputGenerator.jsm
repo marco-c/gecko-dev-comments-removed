@@ -770,18 +770,30 @@ var UtteranceGenerator = {
     }
   },
 
-  
-
-
-
-
   _addState: function _addState(aOutput, aState, aRoleStr) {
+
     if (aState.contains(States.UNAVAILABLE)) {
       aOutput.push({string: "stateUnavailable"});
     }
 
     if (aState.contains(States.READONLY)) {
       aOutput.push({string: "stateReadonly"});
+    }
+
+    
+    
+    
+    
+    if ((Utils.AndroidSdkVersion < 16 || Utils.MozBuildApp === "browser") &&
+      aState.contains(States.CHECKABLE)) {
+      let checked = aState.contains(States.CHECKED);
+      let statetr;
+      if (aRoleStr === "switch") {
+        statetr = checked ? "stateOn" : "stateOff";
+      } else {
+        statetr = checked ? "stateChecked" : "stateNotChecked";
+      }
+      aOutput.push({string: statetr});
     }
 
     if (aState.contains(States.PRESSED)) {
@@ -804,6 +816,10 @@ var UtteranceGenerator = {
 
     if (aState.contains(States.HASPOPUP)) {
       aOutput.push({string: "stateHasPopup"});
+    }
+
+    if (aState.contains(States.SELECTED)) {
+      aOutput.push({string: "stateSelected"});
     }
   },
 

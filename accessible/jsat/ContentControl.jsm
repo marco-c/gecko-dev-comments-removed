@@ -186,6 +186,16 @@ this.ContentControl.prototype = {
       Logger.debug(() => {
         return ["activateAccessible", Logger.accessibleToString(aAccessible)];
       });
+      try {
+        if (aMessage.json.activateIfKey &&
+          !Utils.isActivatableOnFingerUp(aAccessible)) {
+          
+          return;
+        }
+      } catch (e) {
+        
+        return;
+      }
 
       if (aAccessible.actionCount > 0) {
         aAccessible.doAction(0);
@@ -219,9 +229,8 @@ this.ContentControl.prototype = {
         }
       }
 
-      
-      if (!Utils.getState(aAccessible).contains(States.CHECKABLE) &&
-          !Utils.getState(aAccessible).contains(States.SELECTABLE)) {
+      if (!Utils.isActivatableOnFingerUp(aAccessible)) {
+        
         this._contentScope.get().sendAsyncMessage("AccessFu:Present",
           Presentation.actionInvoked(aAccessible, "click"));
       }

@@ -102,34 +102,21 @@ class AndroidPresentor {
 
 
 
+  actionInvoked(aObject, aActionName) {
+    let state = Utils.getState(aObject);
 
-  checked(aAccessible) {
+    
+    
+    let text = null;
+    if (!state.contains(States.CHECKABLE)) {
+      text = Utils.localize(UtteranceGenerator.genForAction(aObject,
+        aActionName));
+    }
+
     return [{
       eventType: AndroidEvents.VIEW_CLICKED,
-      checked: Utils.getState(aAccessible).contains(States.CHECKED)
-    }];
-  }
-
-  
-
-
-
-  selected(aAccessible, aActionName) {
-    return [{
-      eventType: AndroidEvents.VIEW_CLICKED,
-      selected: Utils.getState(aAccessible).contains(States.SELECTED)
-    }];
-  }
-
-  
-
-
-
-
-  actionInvoked(aAccessible, aActionName) {
-    return [{
-      eventType: AndroidEvents.VIEW_CLICKED,
-      text: Utils.localize(UtteranceGenerator.genForAction(aAccessible, aActionName))
+      text,
+      checked: state.contains(States.CHECKED)
     }];
   }
 
@@ -305,7 +292,6 @@ class AndroidPresentor {
       checkable: state.contains(States.CHECKABLE),
       checked: state.contains(States.CHECKED),
       editable: state.contains(States.EDITABLE),
-      selected: state.contains(States.SELECTED)
     };
 
     if (EDIT_TEXT_ROLES.has(aContext.accessible.role)) {
