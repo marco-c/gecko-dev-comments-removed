@@ -194,15 +194,15 @@ var interfaceNamesInGlobalScope =
 
     "ProgressEvent",
 
-    "PushEvent",
+    { name: "PushEvent", fennecOrDesktop: true },
 
-    "PushManager",
+    { name: "PushManager", fennecOrDesktop: true },
 
-    "PushMessageData",
+    { name: "PushMessageData", fennecOrDesktop: true },
 
-    "PushSubscription",
+    { name: "PushSubscription", fennecOrDesktop: true },
 
-    "PushSubscriptionOptions",
+    { name: "PushSubscriptionOptions", fennecOrDesktop: true },
 
     "Request",
 
@@ -239,12 +239,7 @@ var interfaceNamesInGlobalScope =
   ];
 
 
-function createInterfaceMap(version, userAgent) {
-  var isNightly = version.endsWith("a1");
-  var isRelease = !version.includes("a");
-  var isDesktop = !/Mobile|Tablet/.test(userAgent);
-  var isAndroid = !!navigator.userAgent.includes("Android");
-
+function createInterfaceMap({ version, isNightly, isRelease, isDesktop, isAndroid, isInsecureContext, isFennec }) {
   var interfaceMap = {};
 
   function addInterfaces(interfaces)
@@ -259,6 +254,7 @@ function createInterfaceMap(version, userAgent) {
             (entry.nonReleaseAndroid === !(isAndroid && !isRelease) && isAndroid) ||
             (entry.desktop === !isDesktop) ||
             (entry.android === !isAndroid && !entry.nonReleaseAndroid && !entry.nightlyAndroid) ||
+            (entry.fennecOrDesktop === (isAndroid && !isFennec)) ||
             (entry.release === !isRelease) ||
             entry.disabled) {
           interfaceMap[entry.name] = false;
@@ -277,8 +273,8 @@ function createInterfaceMap(version, userAgent) {
   return interfaceMap;
 }
 
-function runTest(version, userAgent) {
-  var interfaceMap = createInterfaceMap(version, userAgent);
+function runTest(data) {
+  var interfaceMap = createInterfaceMap(data);
   for (var name of Object.getOwnPropertyNames(self)) {
     
     if (!/^[A-Z]/.test(name)) {
@@ -305,9 +301,7 @@ function runTest(version, userAgent) {
      "The following interface(s) are not enumerated: " + Object.keys(interfaceMap).join(", "));
 }
 
-workerTestGetVersion(function(version) {
-  workerTestGetUserAgent(function(userAgent) {
-    runTest(version, userAgent);
-    workerTestDone();
-  });
+workerTestGetHelperData(function(data) {
+  runTest(data);
+  workerTestDone();
 });

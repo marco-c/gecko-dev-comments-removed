@@ -36,6 +36,7 @@ const isWindows = /Windows/.test(navigator.oscpu);
 const isAndroid = navigator.userAgent.includes("Android");
 const isLinux = /Linux/.test(navigator.oscpu) && !isAndroid;
 const isInsecureContext = !window.isSecureContext;
+const isFennec = isAndroid && SpecialPowers.Cc["@mozilla.org/android/bridge;1"].getService(SpecialPowers.Ci.nsIAndroidBridge).isFennec;
 
 
 
@@ -817,11 +818,11 @@ var interfaceNamesInGlobalScope =
 
     {name: "PublicKeyCredential"},
 
-    {name: "PushManager", insecureContext: true},
+    {name: "PushManager", insecureContext: true, fennecOrDesktop: true },
 
-    {name: "PushSubscription", insecureContext: true},
+    {name: "PushSubscription", insecureContext: true, fennecOrDesktop: true },
 
-    {name: "PushSubscriptionOptions", insecureContext: true},
+    {name: "PushSubscriptionOptions", insecureContext: true, fennecOrDesktop: true },
 
     {name: "RadioNodeList", insecureContext: true},
 
@@ -1304,6 +1305,7 @@ function createInterfaceMap(isXBLScope) {
             (entry.mac === !isMac) ||
             (entry.linux === !isLinux) ||
             (entry.android === !isAndroid && !entry.nightlyAndroid) ||
+            (entry.fennecOrDesktop === (isAndroid && !isFennec)) ||
             (entry.release === !isRelease) ||
             (entry.releaseNonWindowsAndMac === !(isRelease && !isWindows && !isMac)) ||
             (entry.releaseNonWindows === !(isRelease && !isWindows)) ||
