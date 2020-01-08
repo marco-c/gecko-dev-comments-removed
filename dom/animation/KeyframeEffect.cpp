@@ -1242,23 +1242,18 @@ KeyframeEffect::CanThrottle() const
     return true;
   }
 
+  EffectSet* effectSet = nullptr;
   for (const AnimationProperty& property : mProperties) {
     if (!property.mIsRunningOnCompositor) {
       return false;
     }
-  }
 
-  EffectSet* effectSet = nullptr;
-  for (const LayerAnimationInfo::Record& record :
-        LayerAnimationInfo::sRecords) {
-    
-    
-    
-    
-    
-    if (!HasEffectiveAnimationOfProperty(record.mProperty)) {
-      continue;
-    }
+    MOZ_ASSERT(nsCSSPropertyIDSet::CompositorAnimatables()
+                 .HasProperty(property.mProperty),
+               "The property should be able to run on the compositor");
+    MOZ_ASSERT(HasEffectiveAnimationOfProperty(property.mProperty),
+               "There should be an effective animation of the property while "
+               "it is marked as being run on the compositor");
 
     if (!effectSet) {
       effectSet = EffectSet::GetEffectSet(mTarget->mElement,
@@ -1266,10 +1261,14 @@ KeyframeEffect::CanThrottle() const
       MOZ_ASSERT(effectSet, "CanThrottle should be called on an effect "
                             "associated with a target element");
     }
+
+    DisplayItemType displayItemType =
+      LayerAnimationInfo::GetDisplayItemTypeForProperty(property.mProperty);
+
     
     
     Maybe<uint64_t> generation = layers::AnimationInfo::GetGenerationFromFrame(
-        GetPrimaryFrame(), record.mDisplayItemType);
+        GetPrimaryFrame(), displayItemType);
     
     if (!generation || effectSet->GetAnimationGeneration() != *generation) {
       return false;

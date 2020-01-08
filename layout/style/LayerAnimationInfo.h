@@ -26,6 +26,13 @@ struct LayerAnimationInfo {
     nsChangeHint mChangeHint;
   };
 
+  
+  
+  
+  
+  static DisplayItemType
+  GetDisplayItemTypeForProperty(nsCSSPropertyID aProperty);
+
   static const size_t kRecords =
     nsCSSPropertyIDSet::CompositorAnimatableCount();
   static const Record sRecords[kRecords];
