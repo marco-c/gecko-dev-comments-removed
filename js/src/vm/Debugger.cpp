@@ -1543,18 +1543,20 @@ AdjustGeneratorResumptionValue(JSContext* cx, AbstractFramePtr frame,
         
         
         Rooted<GeneratorObject*> genObj(cx, GetGeneratorObjectForFrame(cx, frame));
-        if (genObj && !genObj->isBeforeInitialYield()) {
+        if (genObj) {
             
             
-            JSObject *pair = CreateIterResultObject(cx, vp, true);
-            if (!pair) {
-                
-                MOZ_ALWAYS_TRUE(cx->getPendingException(vp));
-                cx->clearPendingException();
-                resumeMode = ResumeMode::Throw;
-                return;
+            if (!genObj->isBeforeInitialYield()) {
+                JSObject *pair = CreateIterResultObject(cx, vp, true);
+                if (!pair) {
+                    
+                    MOZ_ALWAYS_TRUE(cx->getPendingException(vp));
+                    cx->clearPendingException();
+                    resumeMode = ResumeMode::Throw;
+                    return;
+                }
+                vp.setObject(*pair);
             }
-            vp.setObject(*pair);
 
             
             genObj->setClosed();
