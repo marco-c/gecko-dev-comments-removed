@@ -361,6 +361,9 @@ IsVP8CodecString(const nsAString& aCodec);
 bool
 IsVP9CodecString(const nsAString& aCodec);
 
+bool
+IsAV1CodecString(const nsAString& aCodec);
+
 
 UniquePtr<TrackInfo>
 CreateTrackInfoWithMIMEType(const nsACString& aCodecMIMEType);
