@@ -42,6 +42,11 @@ class AccessibilityStartup {
   initAccessibility() {
     if (!this._initAccessibility) {
       this._initAccessibility = (async function() {
+        await Promise.race([
+          this.toolbox.isOpen,
+          this.toolbox.once("accessibility-init"),
+        ]);
+
         this._accessibility = this.target.getFront("accessibility");
         
         
