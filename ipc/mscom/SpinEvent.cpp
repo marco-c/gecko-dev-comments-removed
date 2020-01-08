@@ -13,15 +13,6 @@
 #include "nsString.h"
 #include "nsSystemInfo.h"
 
-
-#if defined(_MSC_VER)
-#include <intrin.h>
-#pragma intrinsic(_mm_pause)
-#define CPU_PAUSE() _mm_pause()
-#elif defined(__GNUC__) || defined(__clang__)
-#define CPU_PAUSE() __builtin_ia32_pause()
-#endif
-
 namespace mozilla {
 namespace mscom {
 
@@ -68,10 +59,7 @@ SpinEvent::Wait(HANDLE aTargetThread)
       if (elapsed >= kMaxSpinTime) {
         break;
       }
-      
-      
-      
-      CPU_PAUSE();
+      YieldProcessor();
     }
     if (mDone) {
       return true;
