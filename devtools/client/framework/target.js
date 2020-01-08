@@ -390,6 +390,16 @@ Target.prototype = {
 
   
   
+  onFront(typeName, callback) {
+    const front = this.fronts.get(typeName);
+    if (front) {
+      return callback(front);
+    }
+    return this.on(typeName, callback);
+  },
+
+  
+  
   getFront(typeName) {
     let front = this.fronts.get(typeName);
     
@@ -397,6 +407,7 @@ Target.prototype = {
       return front;
     }
     front = getFront(this.client, typeName, this.form);
+    this.emit(typeName, front);
     this.fronts.set(typeName, front);
     return front;
   },
