@@ -4791,8 +4791,6 @@ pref("webgl.dxgl.needs-finish", false);
 
 pref("dom.webgpu.enable", false);
 
-pref("gfx.offscreencanvas.enabled", false);
-
 
 
 
