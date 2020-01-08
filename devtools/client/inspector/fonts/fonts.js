@@ -55,6 +55,10 @@ const REGISTERED_AXES_TO_FONT_PROPERTIES = {
 };
 const REGISTERED_AXES = Object.keys(REGISTERED_AXES_TO_FONT_PROPERTIES);
 
+const HISTOGRAM_N_FONT_AXES = "DEVTOOLS_FONTEDITOR_N_FONT_AXES";
+const HISTOGRAM_N_FONTS_RENDERED = "DEVTOOLS_FONTEDITOR_N_FONTS_RENDERED";
+const HISTOGRAM_FONT_TYPE_DISPLAYED = "DEVTOOLS_FONTEDITOR_FONT_TYPE_DISPLAYED";
+
 class FontInspector {
   constructor(inspector, window) {
     this.cssProperties = getCssProperties(inspector.toolbox);
@@ -604,6 +608,34 @@ class FontInspector {
   
 
 
+  logTelemetryProbesOnNewNode() {
+    const { fontData, fontEditor } = this.store.getState();
+    const { telemetry } = this.inspector;
+
+    
+    const nbOfFontsRendered = fontData.fonts.length;
+    if (nbOfFontsRendered) {
+      telemetry.getHistogramById(HISTOGRAM_N_FONTS_RENDERED).add(nbOfFontsRendered);
+    }
+
+    
+    
+    const editedFont = fontEditor.fonts[0];
+    if (!editedFont) {
+      return;
+    }
+
+    const nbOfAxes = editedFont.variationAxes ? editedFont.variationAxes.length : 0;
+    telemetry.getHistogramById(HISTOGRAM_FONT_TYPE_DISPLAYED).add(
+      !nbOfAxes ? "nonvariable" : "variable");
+    if (nbOfAxes) {
+      telemetry.getHistogramById(HISTOGRAM_N_FONT_AXES).add(nbOfAxes);
+    }
+  }
+
+  
+
+
 
 
 
@@ -686,8 +718,9 @@ class FontInspector {
   onNewNode() {
     this.ruleView.off("property-value-updated", this.onRulePropertyUpdated);
     if (this.isPanelVisible()) {
-      this.update();
-      this.refreshFontEditor();
+      Promise.all([this.update(), this.refreshFontEditor()]).then(() => {
+        this.logTelemetryProbesOnNewNode();
+      }).catch(e => console.error(e));
     }
   }
 
