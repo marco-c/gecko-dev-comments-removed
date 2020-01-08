@@ -1422,8 +1422,7 @@ public:
 
 
 
-  static bool
-  IsFirstContinuationOrIBSplitSibling(nsIFrame *aFrame);
+  static bool IsFirstContinuationOrIBSplitSibling(const nsIFrame *aFrame);
 
   
 

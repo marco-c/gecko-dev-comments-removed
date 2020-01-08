@@ -1797,11 +1797,11 @@ RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
 
   Maybe<nsCSSPropertyIDSet> effectiveAnimationProperties;
 
+  Maybe<uint64_t> generation;
   nsChangeHint hint = nsChangeHint(0);
-  for (auto displayItemType : LayerAnimationInfo::sDisplayItemTypes) {
-    Maybe<uint64_t> generation =
-      layers::AnimationInfo::GetGenerationFromFrame(aFrame, displayItemType);
-    if (generation && frameGeneration != *generation) {
+  auto maybeApplyChangeHint = [&](const Maybe<uint64_t>& aGeneration,
+                                  DisplayItemType aDisplayItemType) -> bool {
+    if (aGeneration && frameGeneration != *aGeneration) {
       
       
       
@@ -1821,7 +1821,7 @@ RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
       
       
       
-      if (displayItemType == DisplayItemType::TYPE_TRANSFORM &&
+      if (aDisplayItemType == DisplayItemType::TYPE_TRANSFORM &&
           !aFrame->StyleDisplay()->HasTransformStyle()) {
         
         
@@ -1830,9 +1830,9 @@ RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
                 aHintForThisFrame))) {
           hint |= nsChangeHint_ComprehensiveAddOrRemoveTransform;
         }
-        continue;
+        return true;
       }
-      hint |= LayerAnimationInfo::GetChangeHintFor(displayItemType);
+      hint |= LayerAnimationInfo::GetChangeHintFor(aDisplayItemType);
     }
 
     
@@ -1854,13 +1854,20 @@ RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
           nsLayoutUtils::GetAnimationPropertiesForCompositor(aFrame));
       }
       const nsCSSPropertyIDSet& propertiesForDisplayItem =
-        LayerAnimationInfo::GetCSSPropertiesFor(displayItemType);
+        LayerAnimationInfo::GetCSSPropertiesFor(aDisplayItemType);
       if (effectiveAnimationProperties->Intersects(propertiesForDisplayItem)) {
         hint |=
-          LayerAnimationInfo::GetChangeHintFor(displayItemType);
+          LayerAnimationInfo::GetChangeHintFor(aDisplayItemType);
       }
     }
-  }
+    return true;
+  };
+
+  AnimationInfo::EnumerateGenerationOnFrame(
+    aFrame,
+    aContent,
+    LayerAnimationInfo::sDisplayItemTypes,
+    maybeApplyChangeHint);
 
   if (hint) {
     aChangeListToProcess.AppendChange(aFrame, aContent, hint);

@@ -8,9 +8,12 @@
 #define GFX_ANIMATIONINFO_H
 
 #include "nsAutoPtr.h"
+#include "nsCSSPropertyIDSet.h"
 #include "nsDisplayItemTypes.h"
+#include "mozilla/Array.h"
 
 struct RawServoAnimationValue;
+class nsIContent;
 class nsIFrame;
 
 namespace mozilla {
@@ -74,6 +77,21 @@ public:
   
   static Maybe<uint64_t> GetGenerationFromFrame(nsIFrame* aFrame,
                                                 DisplayItemType aDisplayItemKey);
+
+  using CompositorAnimatableDisplayItemTypes =
+    Array<DisplayItemType, nsCSSPropertyIDSet::CompositorAnimatableCount()>;
+  using AnimationGenerationCallback =
+    std::function<bool(const Maybe<uint64_t>& aGeneration,
+                       DisplayItemType aDisplayItemType)>;
+  
+  
+  
+  
+  static void EnumerateGenerationOnFrame(
+    const nsIFrame* aFrame,
+    const nsIContent* aContent,
+    const CompositorAnimatableDisplayItemTypes& aDisplayItemTypes,
+    const AnimationGenerationCallback& aCallback);
 
 protected:
   AnimationArray mAnimations;

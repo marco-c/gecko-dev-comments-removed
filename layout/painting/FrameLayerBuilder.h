@@ -8,6 +8,7 @@
 #define FRAMELAYERBUILDER_H_
 
 #include "nsAutoPtr.h"
+#include "nsCSSPropertyIDSet.h"
 #include "nsTHashtable.h"
 #include "nsHashKeys.h"
 #include "nsTArray.h"
@@ -508,6 +509,24 @@ public:
 
   static Layer* GetDedicatedLayer(nsIFrame* aFrame,
                                   DisplayItemType aDisplayItemType);
+
+  using CompositorAnimatableDisplayItemTypes =
+    Array<DisplayItemType, nsCSSPropertyIDSet::CompositorAnimatableCount()>;
+  using AnimationGenerationCallback =
+    std::function<bool(const Maybe<uint64_t>& aGeneration,
+                       DisplayItemType aDisplayItemType)>;
+  
+
+
+
+
+
+
+
+  static void EnumerateGenerationForDedicatedLayers(
+    const nsIFrame* aFrame,
+    const CompositorAnimatableDisplayItemTypes& aDisplayItemTypes,
+    const AnimationGenerationCallback& aCallback);
 
   
 

@@ -5,9 +5,12 @@
 
 
 #include "AnimationInfo.h"
+#include "mozilla/LayerAnimationInfo.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/AnimationHelper.h"
 #include "mozilla/dom/Animation.h"
+#include "nsIContent.h"
+#include "PuppetWidget.h"
 
 namespace mozilla {
 namespace layers {
@@ -187,6 +190,65 @@ AnimationInfo::GetGenerationFromFrame(nsIFrame* aFrame,
   }
 
   return Nothing();
+}
+
+ void
+AnimationInfo::EnumerateGenerationOnFrame(
+  const nsIFrame* aFrame,
+  const nsIContent* aContent,
+  const CompositorAnimatableDisplayItemTypes& aDisplayItemTypes,
+  const AnimationGenerationCallback& aCallback)
+{
+  if (XRE_IsContentProcess()) {
+    if (nsIWidget* widget = nsContentUtils::WidgetForContent(aContent)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (widget->GetOwningTabChild() &&
+          !static_cast<widget::PuppetWidget*>(widget)->HasLayerManager()) {
+        for (auto displayItem : LayerAnimationInfo::sDisplayItemTypes) {
+          aCallback(Nothing(), displayItem);
+        }
+        return;
+      }
+    }
+  }
+
+  RefPtr<LayerManager> layerManager =
+    nsContentUtils::LayerManagerForContent(aContent);
+
+  if (layerManager &&
+      layerManager->GetBackendType() == layers::LayersBackend::LAYERS_WR) {
+    
+    
+    if (nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aFrame)) {
+      aFrame = nsLayoutUtils::LastContinuationOrIBSplitSibling(aFrame);
+    }
+
+    for (auto displayItem : LayerAnimationInfo::sDisplayItemTypes) {
+      RefPtr<WebRenderAnimationData> animationData =
+        GetWebRenderUserData<WebRenderAnimationData>(aFrame,
+                                                     (uint32_t)displayItem);
+      Maybe<uint64_t> generation;
+      if (animationData) {
+        generation = animationData->GetAnimationInfo().GetAnimationGeneration();
+      }
+      aCallback(generation, displayItem);
+    }
+    return;
+  }
+
+  FrameLayerBuilder::EnumerateGenerationForDedicatedLayers(
+    aFrame,
+    LayerAnimationInfo::sDisplayItemTypes,
+    aCallback);
 }
 
 } 
