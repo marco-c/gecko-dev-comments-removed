@@ -890,7 +890,14 @@ class nsWindow::LayerViewSupport final
     }
 
     MOZ_ASSERT(aNPZC);
-    MOZ_ASSERT(!mWindow->mNPZCSupport);
+
+    
+    
+    
+    
+    if (mWindow->mNPZCSupport) {
+      mWindow->mNPZCSupport.Detach(mWindow->mNPZCSupport->GetJavaNPZC());
+    }
 
     auto npzc = PanZoomController::LocalRef(
         jni::GetGeckoThreadEnv(), PanZoomController::Ref::From(aNPZC));
