@@ -434,9 +434,7 @@ NotifyVsyncObserver()
 
 
 
-
-
-static bool gHasActivePaint;
+static int32_t gNumPendingMainThreadPaints;
 
 bool
 OnVsync()
@@ -450,7 +448,7 @@ OnVsync()
   }
 
   
-  return !gHasActivePaint;
+  return gNumPendingMainThreadPaints == 0;
 }
 
 
@@ -536,12 +534,8 @@ NotifyPaintStart()
       !parent::InRepaintStressMode();
   }
 
-  
-  
-  MOZ_RELEASE_ASSERT(HasDivergedFromRecording() || !gHasActivePaint);
-
   gNumPendingPaints++;
-  gHasActivePaint = true;
+  gNumPendingMainThreadPaints++;
 
   CreateCheckpoint();
 }
@@ -551,12 +545,18 @@ PaintFromMainThread()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  
-  MOZ_RELEASE_ASSERT(!gNumPendingPaints);
+  gNumPendingMainThreadPaints--;
+
+  if (gNumPendingMainThreadPaints) {
+    
+    
+    
+    return;
+  }
 
   
-  MOZ_RELEASE_ASSERT(gHasActivePaint);
-  gHasActivePaint = false;
+  
+  MOZ_RELEASE_ASSERT(!gNumPendingPaints);
 
   if (IsActiveChild() && gDrawTargetBuffer) {
     memcpy(gGraphicsShmem, gDrawTargetBuffer, gDrawTargetBufferSize);
