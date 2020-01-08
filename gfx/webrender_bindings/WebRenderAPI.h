@@ -51,6 +51,18 @@ struct Line {
 };
 
 
+
+
+
+
+
+
+class NotificationHandler {
+public:
+  virtual void Notify(wr::Checkpoint aCheckpoint) = 0;
+  virtual ~NotificationHandler() = default;
+};
+
 class TransactionBuilder {
 public:
   explicit TransactionBuilder(bool aUseSceneBuilderThread = true);
@@ -147,6 +159,8 @@ public:
                        wr::Vec<uint8_t>& aVariations);
 
   void DeleteFontInstance(wr::FontInstanceKey aKey);
+
+  void Notify(wr::Checkpoint aWhen, UniquePtr<NotificationHandler> aHandler);
 
   void Clear();
 
