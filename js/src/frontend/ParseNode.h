@@ -820,6 +820,18 @@ class ParseNode {
 #endif
 };
 
+
+
+
+
+
+
+
+inline void ReplaceNode(ParseNode** pnp, ParseNode* pn) {
+  pn->pn_next = (*pnp)->pn_next;
+  *pnp = pn;
+}
+
 class NullaryNode : public ParseNode {
  public:
   NullaryNode(ParseNodeKind kind, const TokenPos& pos)
@@ -1413,6 +1425,8 @@ class NumericLiteral : public ParseNode {
   DecimalPoint decimalPoint() const { return pn_u.number.decimalPoint; }
 
   void setValue(double v) { pn_u.number.value = v; }
+
+  void setDecimalPoint(DecimalPoint d) { pn_u.number.decimalPoint = d; }
 };
 
 #ifdef ENABLE_BIGINT
