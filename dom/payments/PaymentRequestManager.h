@@ -69,6 +69,11 @@ public:
   nsresult ChangeShippingOption(PaymentRequest* aRequest,
                                 const nsAString& aOption);
 
+  nsresult ChangePayerDetail(PaymentRequest* aRequest,
+                             const nsAString& aPayerName,
+                             const nsAString& aPayerEmail,
+                             const nsAString& aPayerPhone);
+
   
   
   void RequestIPCOver(PaymentRequest* aRequest);
