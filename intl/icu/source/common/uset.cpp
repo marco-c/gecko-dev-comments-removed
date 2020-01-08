@@ -249,7 +249,7 @@ class USetAccess  {
 public:
     
     inline static int32_t getStringCount(const UnicodeSet& set) {
-        return set.getStringCount();
+        return set.stringsSize();
     }
     inline static const UnicodeString* getString(const UnicodeSet& set,
                                                  int32_t i) {

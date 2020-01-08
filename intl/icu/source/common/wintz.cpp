@@ -44,7 +44,7 @@ U_NAMESPACE_BEGIN
 
 
 
-U_CFUNC const char* U_EXPORT2
+U_INTERNAL const char* U_EXPORT2
 uprv_detectWindowsTimeZone()
 {
     UErrorCode status = U_ZERO_ERROR;
@@ -79,7 +79,7 @@ uprv_detectWindowsTimeZone()
 
     
     u_strToUTF8(dynamicTZKeyName, UPRV_LENGTHOF(dynamicTZKeyName), nullptr,
-        reinterpret_cast<const UChar*>(dynamicTZI.TimeZoneKeyName), UPRV_LENGTHOF(dynamicTZI.TimeZoneKeyName), &status);
+        reinterpret_cast<const UChar*>(dynamicTZI.TimeZoneKeyName), -1, &status);
 
     if (U_FAILURE(status)) {
         return nullptr;

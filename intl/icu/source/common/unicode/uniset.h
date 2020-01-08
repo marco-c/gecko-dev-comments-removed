@@ -27,7 +27,6 @@ U_NAMESPACE_BEGIN
 
 
 class BMPSet;
-class CharacterProperties;
 class ParsePosition;
 class RBBIRuleScanner;
 class SymbolTable;
@@ -276,14 +275,23 @@ class RuleCharacterIterator;
 
 
 class U_COMMON_API UnicodeSet U_FINAL : public UnicodeFilter {
+private:
+    
 
-    int32_t len; 
-    int32_t capacity; 
-    UChar32* list; 
-    BMPSet *bmpSet; 
-    UChar32* buffer; 
-    int32_t bufferCapacity; 
-    int32_t patLen;
+
+
+    static constexpr int32_t INITIAL_CAPACITY = 25;
+    
+    static constexpr uint8_t kIsBogus = 1;  
+
+    UChar32* list = stackList; 
+    int32_t capacity = INITIAL_CAPACITY; 
+    int32_t len = 1; 
+    uint8_t fFlags = 0;         
+
+    BMPSet *bmpSet = nullptr; 
+    UChar32* buffer = nullptr; 
+    int32_t bufferCapacity = 0; 
 
     
 
@@ -294,15 +302,19 @@ class U_COMMON_API UnicodeSet U_FINAL : public UnicodeFilter {
 
 
 
-    char16_t *pat;
-    UVector* strings; 
-    UnicodeSetStringSpan *stringSpan;
+    char16_t *pat = nullptr;
+    int32_t patLen = 0;
 
-private:
-    enum { 
-        kIsBogus = 1       
-    };
-    uint8_t fFlags;         
+    UVector* strings = nullptr; 
+    UnicodeSetStringSpan *stringSpan = nullptr;
+
+    
+
+
+
+
+    UChar32 stackList[INITIAL_CAPACITY];
+
 public:
     
 
@@ -1480,8 +1492,6 @@ private:
 
     friend class USetAccess;
 
-    int32_t getStringCount() const;
-
     const UnicodeString* getString(int32_t index) const;
 
     
@@ -1528,13 +1538,18 @@ private:
     
     
 
-    void ensureCapacity(int32_t newLen, UErrorCode& ec);
+    static int32_t nextCapacity(int32_t minCapacity);
 
-    void ensureBufferCapacity(int32_t newLen, UErrorCode& ec);
+    bool ensureCapacity(int32_t newLen);
+
+    bool ensureBufferCapacity(int32_t newLen);
 
     void swapBuffers(void);
 
     UBool allocateStrings(UErrorCode &status);
+    UBool hasStrings() const;
+    int32_t stringsSize() const;
+    UBool stringsContains(const UnicodeString &s) const;
 
     UnicodeString& _toPattern(UnicodeString& result,
                               UBool escapeUnprintable) const;
@@ -1614,7 +1629,6 @@ private:
                               UnicodeString& rebuiltPat,
                               UErrorCode& ec);
 
-    friend class CharacterProperties;
     static const UnicodeSet* getInclusions(int32_t src, UErrorCode &status);
 
     
@@ -1646,7 +1660,10 @@ private:
     
 
 
-    void setPattern(const UnicodeString& newPat);
+    void setPattern(const UnicodeString& newPat) {
+        setPattern(newPat.getBuffer(), newPat.length());
+    }
+    void setPattern(const char16_t *newPat, int32_t newPatLen);
     
 
 
