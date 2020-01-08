@@ -46,6 +46,9 @@ const MAX_DATA_URL_LENGTH = 40;
 
 const Services = require("Services");
 
+loader.lazyImporter(this, "findCssSelector", "resource://gre/modules/css-selector.js");
+loader.lazyImporter(this, "getCssPath", "resource://gre/modules/css-selector.js");
+loader.lazyImporter(this, "getXPath", "resource://gre/modules/css-selector.js");
 loader.lazyRequireGetter(this, "getCSSLexer", "devtools/shared/css/lexer", true);
 loader.lazyRequireGetter(this, "getTabPrefs", "devtools/shared/indentation", true);
 
@@ -358,6 +361,28 @@ function prettifyCSS(text, ruleCount) {
 }
 
 exports.prettifyCSS = prettifyCSS;
+
+
+
+
+
+
+exports.findCssSelector = findCssSelector;
+
+
+
+
+
+
+
+exports.getCssPath = getCssPath;
+
+
+
+
+
+
+exports.getXPath = getXPath;
 
 
 
