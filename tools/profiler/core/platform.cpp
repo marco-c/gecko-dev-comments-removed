@@ -105,9 +105,10 @@
 #endif
 
 
+
 #if defined(GP_PLAT_arm64_windows)
 #define HAVE_NATIVE_UNWIND
-#define USE_FRAME_POINTER_STACK_WALK
+#define USE_MOZ_STACK_WALK
 #endif
 
 
