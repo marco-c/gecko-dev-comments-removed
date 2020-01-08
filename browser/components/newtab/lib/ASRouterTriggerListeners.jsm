@@ -28,7 +28,26 @@ this.ASRouterTriggerListeners = new Map([
 
 
 
-    init(triggerHandler, hosts = []) {
+    async _checkStartupFinished(win) {
+      if (!win.gBrowserInit.delayedStartupFinished) {
+        await new Promise(resolve => {
+          let delayedStartupObserver = (subject, topic) => {
+            if (topic === "browser-delayed-startup-finished" && subject === win) {
+              Services.obs.removeObserver(delayedStartupObserver, "browser-delayed-startup-finished");
+              resolve();
+            }
+          };
+
+          Services.obs.addObserver(delayedStartupObserver, "browser-delayed-startup-finished");
+        });
+      }
+    },
+
+    
+
+
+
+    async init(triggerHandler, hosts = []) {
       if (!this._initialized) {
         this.onLocationChange = this.onLocationChange.bind(this);
 
@@ -40,6 +59,7 @@ this.ASRouterTriggerListeners = new Map([
           if (win.closed || PrivateBrowsingUtils.isWindowPrivate(win)) {
             continue;
           }
+          await this._checkStartupFinished(win);
           win.gBrowser.addTabsProgressListener(this);
         }
 

@@ -13,6 +13,7 @@ XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 
 const PREFERENCES_LOADED_EVENT = "home-pane-loaded";
+const DISCOVERY_STREAM_CONFIG_PREF_NAME = "browser.newtabpage.activity-stream.discoverystream.config";
 
 
 
@@ -66,6 +67,9 @@ const CUSTOM_CSS = `
   margin-top: 0;
   margin-bottom: 0;
 }
+#discoveryContentsGroup .contentDiscoveryButton {
+  margin-inline-start: 0;
+}
 `;
 
 this.AboutPreferences = class AboutPreferences {
@@ -97,7 +101,7 @@ this.AboutPreferences = class AboutPreferences {
 
   async observe(window) {
     this.renderPreferences(window, await this.strings, [...PREFS_BEFORE_SECTIONS,
-      ...this.store.getState().Sections, ...PREFS_AFTER_SECTIONS]);
+      ...this.store.getState().Sections, ...PREFS_AFTER_SECTIONS], this.store.getState().DiscoveryStream.config.enabled);
   }
 
   
@@ -125,7 +129,7 @@ this.AboutPreferences = class AboutPreferences {
 
 
 
-  renderPreferences({document, Preferences, gHomePane}, strings, prefStructure) {
+  renderPreferences({document, Preferences, gHomePane}, strings, prefStructure, discoveryStreamEnabled) {
     
     const createAppend = (tag, parent) => parent.appendChild(
       document.createXULElement(tag));
@@ -256,6 +260,31 @@ this.AboutPreferences = class AboutPreferences {
         linkPref(subcheck, nested.name, "bool");
       });
     });
+
+    if (discoveryStreamEnabled) {
+      
+      contentsGroup.style.visibility = "hidden";
+
+      const discoveryGroup = homeGroup.insertAdjacentElement("afterend", homeGroup.cloneNode());
+      discoveryGroup.id = "discoveryContentsGroup";
+      discoveryGroup.setAttribute("data-subcategory", "discovery");
+      createAppend("label", discoveryGroup)
+        .appendChild(document.createElementNS(HTML_NS, "h2"))
+        .textContent = formatString("prefs_content_discovery_header");
+      createAppend("description", discoveryGroup)
+        .textContent = formatString("prefs_content_discovery_description");
+
+      const contentDiscoveryButton = document.createElementNS(HTML_NS, "button");
+      contentDiscoveryButton.classList.add("contentDiscoveryButton");
+      contentDiscoveryButton.textContent = formatString("prefs_content_discovery_button");
+      createAppend("hbox", discoveryGroup)
+        .appendChild(contentDiscoveryButton)
+        .addEventListener("click", () => {
+          discoveryGroup.style.display = "none";
+          contentsGroup.style.visibility = "visible";
+          Services.prefs.clearUserPref(DISCOVERY_STREAM_CONFIG_PREF_NAME);
+        }, {once: true});
+    }
 
     
     gHomePane.toggleRestoreDefaultsBtn();
