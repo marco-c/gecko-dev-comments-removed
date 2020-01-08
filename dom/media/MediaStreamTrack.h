@@ -362,7 +362,7 @@ class MediaStreamTrack : public DOMEventTargetHelper,
   friend class mozilla::SourceStreamInfo;
   friend class mozilla::RemoteSourceStreamInfo;
 
-  class PrincipalHandleListener;
+  class MSGListener;
 
  public:
   
@@ -439,7 +439,6 @@ class MediaStreamTrack : public DOMEventTargetHelper,
   nsIPrincipal* GetPrincipal() const { return mPrincipal; }
 
   
-
 
 
 
@@ -602,7 +601,7 @@ class MediaStreamTrack : public DOMEventTargetHelper,
   RefPtr<MediaStreamTrack> mOriginalTrack;
   nsCOMPtr<nsIPrincipal> mPrincipal;
   nsCOMPtr<nsIPrincipal> mPendingPrincipal;
-  RefPtr<PrincipalHandleListener> mPrincipalHandleListener;
+  RefPtr<MSGListener> mMSGListener;
   
   
   nsTArray<RefPtr<MediaStreamTrackListener>> mTrackListeners;
