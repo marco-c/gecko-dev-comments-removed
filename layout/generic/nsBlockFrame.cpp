@@ -16,6 +16,7 @@
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/ToString.h"
 #include "mozilla/UniquePtr.h"
 
 #include "nsCOMPtr.h"
@@ -284,6 +285,12 @@ RecordReflowStatus(bool aChildIsBlock, const nsReflowStatus& aFrameReflowStatus)
   }
 }
 #endif
+
+static nscoord
+ResolveTextIndent(const nsStyleCoord& aStyle, nscoord aPercentageBasis)
+{
+  return nsLayoutUtils::ResolveToLength<false>(aStyle, aPercentageBasis);
+}
 
 NS_DECLARE_FRAME_PROPERTY_WITH_DTOR_NEVER_CALLED(OverflowLinesProperty,
                                                  nsBlockFrame::FrameLines)
@@ -806,15 +813,8 @@ nsBlockFrame::GetMinISize(gfxContext *aRenderingContext)
       } else {
         if (!curFrame->GetPrevContinuation() &&
             line == curFrame->LinesBegin()) {
-          
-          
-          
-          const nsStyleCoord &indent = StyleText()->mTextIndent;
-          if (indent.ConvertsToLength())
-            data.mCurrentLine += indent.ComputeCoordPercentCalc(0);
+          data.mCurrentLine += ::ResolveTextIndent(StyleText()->mTextIndent, 0);
         }
-        
-
         data.mLine = &line;
         data.SetLineContainer(curFrame);
         nsIFrame *kid = line->mFirstChild;
@@ -905,20 +905,13 @@ nsBlockFrame::GetPrefISize(gfxContext *aRenderingContext)
       } else {
         if (!curFrame->GetPrevContinuation() &&
             line == curFrame->LinesBegin()) {
+          nscoord indent = ::ResolveTextIndent(StyleText()->mTextIndent, 0);
+          data.mCurrentLine += indent;
           
-          
-          
-          const nsStyleCoord &indent = StyleText()->mTextIndent;
-          if (indent.ConvertsToLength()) {
-            nscoord length = indent.ToLength();
-            if (length != 0) {
-              data.mCurrentLine += length;
-              data.mLineIsEmpty = false;
-            }
+          if (indent != nscoord(0)) {
+            data.mLineIsEmpty = false;
           }
         }
-        
-
         data.mLine = &line;
         data.SetLineContainer(curFrame);
         nsIFrame *kid = line->mFirstChild;
@@ -983,16 +976,8 @@ nsBlockFrame::GetPrefWidthTightBounds(gfxContext* aRenderingContext,
       } else {
         if (!curFrame->GetPrevContinuation() &&
             line == curFrame->LinesBegin()) {
-          
-          
-          
-          const nsStyleCoord &indent = StyleText()->mTextIndent;
-          if (indent.ConvertsToLength()) {
-            data.mCurrentLine += indent.ComputeCoordPercentCalc(0);
-          }
+          data.mCurrentLine += ::ResolveTextIndent(StyleText()->mTextIndent, 0);
         }
-        
-
         data.mLine = &line;
         data.SetLineContainer(curFrame);
         nsIFrame *kid = line->mFirstChild;
@@ -4274,7 +4259,7 @@ nsBlockFrame::ReflowInlineFrame(BlockReflowInput& aState,
 
 #ifdef REALLY_NOISY_REFLOW
   nsFrame::ListTag(stdout, aFrame);
-  printf(": status=%s\n", frameReflowStatus.ToString().get());
+  printf(": status=%s\n", ToString(frameReflowStatus).c_str());
 #endif
 
 #if defined(REFLOW_STATUS_COVERAGE)
