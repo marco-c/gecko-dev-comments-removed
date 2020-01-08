@@ -1506,7 +1506,7 @@ nsContextMenu.prototype = {
     }
 
     
-    let engineName = Services.search.currentEngine.name;
+    let engineName = Services.search.defaultEngine.name;
     var menuLabel = gNavigatorBundle.getFormattedString("contextMenuSearch",
                                                         [engineName,
                                                          selectedText]);
