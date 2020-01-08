@@ -76,7 +76,8 @@ class ChannelMediaResource
 
  public:
   ChannelMediaResource(MediaResourceCallback* aDecoder, nsIChannel* aChannel,
-                       nsIURI* aURI, bool aIsPrivateBrowsing = false);
+                       nsIURI* aURI, int64_t aStreamLength,
+                       bool aIsPrivateBrowsing = false);
   ~ChannelMediaResource();
 
   
@@ -251,6 +252,9 @@ class ChannelMediaResource
   MediaCacheStream mCacheStream;
 
   ChannelSuspendAgent mSuspendAgent;
+
+  
+  const int64_t mKnownStreamLength;
 };
 
 }  
