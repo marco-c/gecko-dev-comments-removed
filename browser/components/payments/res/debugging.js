@@ -333,6 +333,11 @@ let buttonActions = {
     requestStore.setState({});
   },
 
+  saveVisibleForm() {
+    
+    paymentDialog.querySelector("#main-container > .page:not([hidden])").saveRecord();
+  },
+
   setAddresses1() {
     paymentDialog.setStateFromParent({savedAddresses: ADDRESSES_1});
   },
