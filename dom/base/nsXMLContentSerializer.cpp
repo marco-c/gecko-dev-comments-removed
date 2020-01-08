@@ -1175,8 +1175,6 @@ nsXMLContentSerializer::AppendToString(const nsAString& aStr,
 }
 
 
-static const uint16_t kGTVal = 62;
-
 #define _ 0
 
 
@@ -1222,14 +1220,28 @@ bool
 nsXMLContentSerializer::AppendAndTranslateEntities(const nsAString& aStr,
                                                    nsAString& aOutputStr)
 {
+  if (mInAttribute) {
+    return AppendAndTranslateEntities<kGTVal>(aStr, aOutputStr, kAttrEntities,
+                                              kEntityStrings);
+  }
+
+  return AppendAndTranslateEntities<kGTVal>(aStr, aOutputStr, kEntities, kEntityStrings);
+}
+
+
+bool
+nsXMLContentSerializer::AppendAndTranslateEntities(const nsAString& aStr,
+                                                   nsAString& aOutputStr,
+                                                   const uint8_t aEntityTable[],
+                                                   uint16_t aMaxTableIndex,
+                                                   const char* const aStringTable[])
+{
   nsReadingIterator<char16_t> done_reading;
   aStr.EndReading(done_reading);
 
   
   uint32_t advanceLength = 0;
   nsReadingIterator<char16_t> iter;
-
-  const uint8_t* entityTable = mInAttribute ? kAttrEntities : kEntities;
 
   for (aStr.BeginReading(iter);
        iter != done_reading;
@@ -1245,8 +1257,8 @@ nsXMLContentSerializer::AppendAndTranslateEntities(const nsAString& aStr,
     
     for (; c < fragmentEnd; c++, advanceLength++) {
       char16_t val = *c;
-      if ((val <= kGTVal) && entityTable[val]) {
-        entityText = kEntityStrings[entityTable[val]];
+      if ((val <= aMaxTableIndex) && aEntityTable[val]) {
+        entityText = aStringTable[aEntityTable[val]];
         break;
       }
     }
