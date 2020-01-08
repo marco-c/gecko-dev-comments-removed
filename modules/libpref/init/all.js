@@ -3105,9 +3105,6 @@ pref("layout.css.outline-style-auto.enabled", false);
 pref("layout.css.scroll-behavior.enabled", true);
 
 
-pref("layout.css.scroll-behavior.property-enabled", true);
-
-
 
 
 pref("layout.css.scroll-behavior.spring-constant", "250.0");
