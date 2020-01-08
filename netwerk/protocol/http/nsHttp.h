@@ -122,6 +122,12 @@ enum class SpdyVersion {
 #define NS_HTTP_CONNECT_ONLY (1 << 16)
 
 
+#define NS_HTTP_DISABLE_IPV4 (1 << 17)
+
+
+#define NS_HTTP_DISABLE_IPV6 (1 << 18)
+
+
 
 
 
