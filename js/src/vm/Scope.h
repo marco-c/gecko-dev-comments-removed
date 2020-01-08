@@ -590,6 +590,20 @@ class FunctionScope : public Scope
         
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         uint16_t nonPositionalFormalStart = 0;
         uint16_t varStart = 0;
         uint32_t length = 0;
