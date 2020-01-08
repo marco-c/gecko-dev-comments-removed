@@ -1039,37 +1039,45 @@ class BuildDriver(MozbuildObject):
             except Exception:
                 pass
 
-            if config is None:
+            
+            
+            clobber_requested = False
+
+            
+            
+            self._write_mozconfig_json()
+
+            previous_backend = None
+            if config is not None:
+                previous_backend = config.substs.get('BUILD_BACKENDS', [None])[0]
+
+            config_rc = None
+            
+            
+            if config is None or build_out_of_date(mozpath.join(self.topobjdir,
+                                                                'config.status'),
+                                                   mozpath.join(self.topobjdir,
+                                                                'config_status_deps.in')):
+                if previous_backend and 'Make' not in previous_backend:
+                    clobber_requested = self._clobber_configure()
+
                 config_rc = self.configure(buildstatus_messages=True,
                                            line_handler=output.on_line)
+
                 if config_rc != 0:
                     return config_rc
 
-                config = self.config_environment
+                config = self.reload_config_environment()
+
+            active_backend = config.substs.get('BUILD_BACKENDS', [None])[0]
 
             status = None
-            active_backend = config.substs.get('BUILD_BACKENDS', [None])[0]
-            if active_backend and 'Make' not in active_backend:
-                
-                
-                clobber_requested = False
-                
-                
-                self._write_mozconfig_json()
-                
-                
-                if build_out_of_date(mozpath.join(self.topobjdir,
-                                                  'config.status'),
-                                     mozpath.join(self.topobjdir,
-                                                  'config_status_deps.in')):
-                    clobber_requested = self._clobber_configure()
-                    config_rc = self.configure(buildstatus_messages=True,
-                                               line_handler=output.on_line)
-                    if config_rc != 0:
-                        return config_rc
-                elif backend_out_of_date(mozpath.join(self.topobjdir,
-                                                      'backend.%sBackend' %
-                                                      active_backend)):
+
+            if 'Make' not in active_backend:
+                if (not config_rc and
+                    backend_out_of_date(mozpath.join(self.topobjdir,
+                                                     'backend.%sBackend' %
+                                                     active_backend))):
                     print('Build configuration changed. Regenerating backend.')
                     args = [config.substs['PYTHON'],
                             mozpath.join(self.topobjdir, 'config.status')]
@@ -1179,7 +1187,6 @@ class BuildDriver(MozbuildObject):
 
             
             try:
-                config = self.config_environment
                 active_backend = config.substs.get('BUILD_BACKENDS', [None])[0]
                 if active_backend:
                     backend_cls = get_backend_class(active_backend)(config)
@@ -1455,8 +1462,6 @@ class BuildDriver(MozbuildObject):
         mozconfig_mk = os.path.join(self.topobjdir, '.mozconfig.mk')
         with FileAvoidWrite(mozconfig_mk) as fh:
             fh.write(b'\n'.join(mozconfig_filtered_lines))
-
-        self._write_mozconfig_json()
 
         
         mozconfig_objdir = os.path.join(self.topobjdir, '.mozconfig')
