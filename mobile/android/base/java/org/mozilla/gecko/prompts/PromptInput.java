@@ -9,6 +9,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
+import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.widget.AllCapsTextView;
 import org.mozilla.gecko.widget.DateTimePicker;
@@ -189,6 +190,16 @@ public abstract class PromptInput {
                 } catch (Exception e) {
                     Log.e(LOGTAG, "error parsing format string: " + e);
                 }
+
+                
+                
+                
+                
+                if (AppConstants.Versions.preLollipop) {
+                    input.setSpinnersShown(true);
+                    input.setCalendarViewShown(false);
+                }
+
                 mView = (View)input;
             } else if (mType.equals("week")) {
                 DateTimePicker input = new DateTimePicker(context, "yyyy-'W'ww", mValue,
