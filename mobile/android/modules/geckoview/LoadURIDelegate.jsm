@@ -20,7 +20,7 @@ const LoadURIDelegate = {
   
   load: function(aWindow, aEventDispatcher, aUri, aWhere, aFlags) {
     if (!aWindow) {
-      return false;
+      return Promise.resolve(false);
     }
 
     const message = {
@@ -30,18 +30,7 @@ const LoadURIDelegate = {
       flags: aFlags
     };
 
-    let handled = undefined;
-    aEventDispatcher.sendRequestForResult(message).then(response => {
-      handled = response;
-    }, () => {
-      
-      
-      handled = false;
-    });
-    Services.tm.spinEventLoopUntil(() =>
-        aWindow.closed || handled !== undefined);
-
-    return handled || false;
+    return aEventDispatcher.sendRequestForResult(message).then((response) => response || false).catch(() => false);
   },
 
   handleLoadError: function(aWindow, aEventDispatcher, aUri, aError,
