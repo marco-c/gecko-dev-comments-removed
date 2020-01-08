@@ -81,7 +81,7 @@ public:
   
   
   
-  void ApplyTo(gfxContext* aContext, int32_t A2D);
+  void ApplyTo(gfxContext* aContext, int32_t A2D) const;
 
   void ApplyRectTo(gfxContext* aContext, int32_t A2D) const;
   
