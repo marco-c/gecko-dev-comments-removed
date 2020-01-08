@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 const { Management } = ChromeUtils.import("resource://gre/modules/Extension.jsm", {});
@@ -21,10 +22,7 @@ function getSupportsFile(path) {
 
 async function installTemporaryExtension(path, name, document) {
   
-  const MockFilePicker = SpecialPowers.MockFilePicker;
-  MockFilePicker.init(window);
-  const file = getSupportsFile(path);
-  MockFilePicker.setFiles([file.file]);
+  prepareMockFilePicker(path);
 
   const onAddonInstalled = new Promise(done => {
     Management.on("startup", function listener(event, extension) {
@@ -42,4 +40,20 @@ async function installTemporaryExtension(path, name, document) {
 
   info("Wait for addon to be installed");
   await onAddonInstalled;
+}
+
+async function removeTemporaryExtension(name, document) {
+  info(`Remove the temporary extension with name: '${name}'`);
+  const temporaryExtensionItem = findDebugTargetByText(name, document);
+  temporaryExtensionItem.querySelector(".js-temporary-extension-remove-button").click();
+
+  info("Wait until the debug target item disappears");
+  await waitUntil(() => !findDebugTargetByText(name, document));
+}
+
+function prepareMockFilePicker(path) {
+  
+  const MockFilePicker = SpecialPowers.MockFilePicker;
+  MockFilePicker.init(window);
+  MockFilePicker.setFiles([getSupportsFile(path).file]);
 }
