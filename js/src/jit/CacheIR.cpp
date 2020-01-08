@@ -5212,6 +5212,37 @@ CallIRGenerator::tryAttachArrayJoin()
 }
 
 bool
+CallIRGenerator::tryAttachIsSuspendedGenerator()
+{
+    
+    
+    
+
+    MOZ_ASSERT(argc_ == 1);
+
+    
+    
+    
+    
+    
+    ValOperandId valId = writer.loadStackValue(0);
+
+    
+    
+    
+    writer.callIsSuspendedGeneratorResult(valId);
+    writer.returnFromIC();
+
+    
+    
+    
+    cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+    trackAttached("IsSuspendedGenerator");
+    return true;
+}
+
+bool
 CallIRGenerator::tryAttachStub()
 {
     AutoAssertNoPendingException aanpe(cx_);
@@ -5249,6 +5280,11 @@ CallIRGenerator::tryAttachStub()
 
         if (calleeFunc->native() == js::array_join) {
             if (tryAttachArrayJoin()) {
+                return true;
+            }
+        }
+        if (calleeFunc->native() == intrinsic_IsSuspendedGenerator) {
+            if (tryAttachIsSuspendedGenerator()) {
                 return true;
             }
         }

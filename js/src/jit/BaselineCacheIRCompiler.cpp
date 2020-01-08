@@ -2169,13 +2169,16 @@ BaselineCacheIRCompiler::init(CacheKind kind)
 #endif
         break;
       case CacheKind::Call:
-        MOZ_ASSERT(numInputs == 1);
-        allocator.initInputLocation(0, R0.scratchReg(), JSVAL_TYPE_INT32);
+        
+        MOZ_ASSERT(numInputs == 0 || numInputs == 1);
+        if (numInputs == 1) {
+            allocator.initInputLocation(0, R0.scratchReg(), JSVAL_TYPE_INT32);
 #if defined(JS_NUNBOX32)
-        
-        
-        available.add(R0.typeReg());
+            
+            
+            available.add(R0.typeReg());
 #endif
+        }
         break;
     }
 
