@@ -9,12 +9,6 @@
 
 #include "js/TracingAPI.h"
 
-#ifdef ENABLE_BIGINT
-namespace JS {
-class BigInt;
-} 
-#endif
-
 namespace js {
 namespace gc {
 
