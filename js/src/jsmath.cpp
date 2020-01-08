@@ -462,7 +462,7 @@ js::math_log(JSContext* cx, unsigned argc, Value* vp)
 double
 js::math_max_impl(double x, double y)
 {
-    AutoUnsafeCallWithABI unsafe;
+    AutoUnsafeCallWithABI unsafe(UnsafeABIStrictness::AllowPendingExceptions);
 
     
     if (x > y || IsNaN(x) || (x == y && IsNegative(y))) {
@@ -491,7 +491,7 @@ js::math_max(JSContext* cx, unsigned argc, Value* vp)
 double
 js::math_min_impl(double x, double y)
 {
-    AutoUnsafeCallWithABI unsafe;
+    AutoUnsafeCallWithABI unsafe(UnsafeABIStrictness::AllowPendingExceptions);
 
     
     if (x < y || IsNaN(x) || (x == y && IsNegativeZero(x))) {
@@ -977,7 +977,7 @@ js::math_atanh(JSContext* cx, unsigned argc, Value* vp)
 double
 js::ecmaHypot(double x, double y)
 {
-    AutoUnsafeCallWithABI unsafe;
+    AutoUnsafeCallWithABI unsafe(UnsafeABIStrictness::AllowPendingExceptions);
     return fdlibm::hypot(x, y);
 }
 
@@ -1123,7 +1123,7 @@ js::math_trunc(JSContext* cx, unsigned argc, Value* vp)
 double
 js::math_sign_impl(double x)
 {
-    AutoUnsafeCallWithABI unsafe;
+    AutoUnsafeCallWithABI unsafe(UnsafeABIStrictness::AllowPendingExceptions);
 
     if (mozilla::IsNaN(x)) {
         return GenericNaN();
