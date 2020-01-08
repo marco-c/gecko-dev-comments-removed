@@ -867,6 +867,9 @@ CompositorD3D11::DrawGeometry(const Geometry& aGeometry,
 
       const float* yuvToRgb = gfxUtils::YuvToRgbMatrix4x3RowMajor(YUVColorSpace::BT601);
       memcpy(&mPSConstants.yuvColorMatrix, yuvToRgb, sizeof(mPSConstants.yuvColorMatrix));
+      
+      
+      mPSConstants.vCoefficient[0] = 1.0;
 
       SetSamplerForSamplingFilter(texturedEffect->mSamplingFilter);
     }
