@@ -132,12 +132,14 @@ class Watchdog
     {
         MOZ_ASSERT(NS_IsMainThread());
         mLock = PR_NewLock();
-        if (!mLock)
+        if (!mLock) {
             MOZ_CRASH("PR_NewLock failed.");
+        }
 
         mWakeup = PR_NewCondVar(mLock);
-        if (!mWakeup)
+        if (!mWakeup) {
             MOZ_CRASH("PR_NewCondVar failed.");
+        }
 
         {
             AutoLockWatchdog lock(this);
@@ -148,8 +150,9 @@ class Watchdog
             mThread = PR_CreateThread(PR_USER_THREAD, WatchdogMain, this,
                                       PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
                                       PR_JOINABLE_THREAD, kWatchdogStackSize);
-            if (!mThread)
+            if (!mThread) {
                 MOZ_CRASH("PR_CreateThread failed!");
+            }
 
             
             
@@ -331,8 +334,9 @@ class WatchdogManager
 
         
         
-        if (active && mWatchdog && mWatchdog->Hibernating())
+        if (active && mWatchdog && mWatchdog->Hibernating()) {
             mWatchdog->WakeUp();
+        }
     }
 
     bool IsAnyContextActive()
@@ -383,22 +387,26 @@ class WatchdogManager
     {
         bool wantWatchdog = Preferences::GetBool("dom.use_watchdog", true);
         if (wantWatchdog != !!mWatchdog) {
-            if (wantWatchdog)
+            if (wantWatchdog) {
                 StartWatchdog();
-            else
+            } else {
                 StopWatchdog();
+            }
         }
 
         if (mWatchdog) {
             int32_t contentTime = Preferences::GetInt(PREF_MAX_SCRIPT_RUN_TIME_CONTENT, 10);
-            if (contentTime <= 0)
+            if (contentTime <= 0) {
                 contentTime = INT32_MAX;
+            }
             int32_t chromeTime = Preferences::GetInt(PREF_MAX_SCRIPT_RUN_TIME_CHROME, 20);
-            if (chromeTime <= 0)
+            if (chromeTime <= 0) {
                 chromeTime = INT32_MAX;
+            }
             int32_t extTime = Preferences::GetInt(PREF_MAX_SCRIPT_RUN_TIME_EXT_CONTENT, 5);
-            if (extTime <= 0)
+            if (extTime <= 0) {
                 extTime = INT32_MAX;
+            }
             mWatchdog->SetMinScriptRunTimeSeconds(std::min({contentTime, chromeTime, extTime}));
         }
     }
@@ -519,8 +527,9 @@ WatchdogMain(void* arg)
         if (!self->ShuttingDown() && manager->IsAnyContextActive()) {
             bool debuggerAttached = false;
             nsCOMPtr<nsIDebug2> dbg = do_GetService("@mozilla.org/xpcom/debug;1");
-            if (dbg)
+            if (dbg) {
                 dbg->GetIsDebuggerAttached(&debuggerAttached);
+            }
             if (debuggerAttached) {
                 
                 continue;
@@ -624,8 +633,9 @@ XPCJSContext::InterruptCallback(JSContext* cx)
 
     
     
-    if (!nsContentUtils::IsInitialized())
+    if (!nsContentUtils::IsInitialized()) {
         return true;
+    }
 
     
     
@@ -651,8 +661,9 @@ XPCJSContext::InterruptCallback(JSContext* cx)
     }
 
     
-    if (limit == 0 || duration.ToSeconds() < limit / 2.0)
+    if (limit == 0 || duration.ToSeconds() < limit / 2.0) {
         return true;
+    }
 
     self->mSlowScriptActualWait += duration;
 
@@ -678,8 +689,9 @@ XPCJSContext::InterruptCallback(JSContext* cx)
         
         
         JS::Rooted<JSObject*> proto(cx);
-        if (!JS_GetPrototype(cx, global, &proto))
+        if (!JS_GetPrototype(cx, global, &proto)) {
             return false;
+        }
         if (proto && xpc::IsSandboxPrototypeProxy(proto) &&
             (proto = js::CheckedUnwrap(proto,  false)))
         {
@@ -710,15 +722,17 @@ XPCJSContext::InterruptCallback(JSContext* cx)
     
     nsGlobalWindowInner::SlowScriptResponse response = win->ShowSlowScriptDialog(addonId);
     if (response == nsGlobalWindowInner::KillSlowScript) {
-        if (Preferences::GetBool("dom.global_stop_script", true))
+        if (Preferences::GetBool("dom.global_stop_script", true)) {
             xpc::Scriptability::Get(global).Block();
+        }
         return false;
     }
     if (response == nsGlobalWindowInner::KillScriptGlobal) {
         nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
 
-        if (!IsSandbox(global) || !obs)
+        if (!IsSandbox(global) || !obs) {
             return false;
+        }
 
         
         nsIXPConnect* xpc = nsContentUtils::XPConnect();
@@ -739,11 +753,13 @@ XPCJSContext::InterruptCallback(JSContext* cx)
 
     
     
-    if (response != nsGlobalWindowInner::ContinueSlowScriptAndKeepNotifying)
+    if (response != nsGlobalWindowInner::ContinueSlowScriptAndKeepNotifying) {
         self->mSlowScriptCheckpoint = TimeStamp::NowLoRes();
+    }
 
-    if (response == nsGlobalWindowInner::AlwaysContinueSlowScript)
+    if (response == nsGlobalWindowInner::AlwaysContinueSlowScript) {
         Preferences::SetInt(prefName, 0);
+    }
 
     return true;
 }
@@ -929,8 +945,9 @@ XPCJSContext::~XPCJSContext()
         mWatchdogManager->UnregisterContext(this);
     }
 
-    if (mCallContext)
+    if (mCallContext) {
         mCallContext->SystemIsBeingShutDown();
+    }
 
     PROFILER_CLEAR_JS_CONTEXT();
 
@@ -983,8 +1000,9 @@ GetWindowsStackSize()
     
     
     MEMORY_BASIC_INFORMATION mbi;
-    if (!VirtualQuery(&mbi, &mbi, sizeof(mbi)))
+    if (!VirtualQuery(&mbi, &mbi, sizeof(mbi))) {
         MOZ_CRASH("VirtualQuery failed");
+    }
 
     const uint8_t* stackBottom = reinterpret_cast<const uint8_t*>(mbi.AllocationBase);
 
@@ -1217,8 +1235,9 @@ XPCJSContext::NewXPCJSContext(XPCJSContext* aPrimaryContext)
         MOZ_CRASH("new XPCJSContext failed to initialize.");
     }
 
-    if (self->Context())
+    if (self->Context()) {
         return self;
+    }
 
     MOZ_CRASH("new XPCJSContext failed to initialize.");
 }
