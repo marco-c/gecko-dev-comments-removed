@@ -3,6 +3,7 @@ package org.mozilla.gecko.mma;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -13,6 +14,8 @@ import android.support.annotation.NonNull;
 
 
 public class PackageAddedReceiver extends BroadcastReceiver {
+    private static final String intentAction = Intent.ACTION_PACKAGE_ADDED;
+    private static final String dataScheme = "package";
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -25,6 +28,15 @@ public class PackageAddedReceiver extends BroadcastReceiver {
                 
             }
         }
+    }
+
+    public static IntentFilter getIntentFilter() {
+        final IntentFilter intentFilter = new IntentFilter();
+
+        intentFilter.addAction(intentAction);
+        intentFilter.addDataScheme(dataScheme);
+
+        return intentFilter;
     }
 
     
