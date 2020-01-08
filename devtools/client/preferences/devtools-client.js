@@ -64,17 +64,15 @@ pref("devtools.inspector.fonteditor.enabled", true);
 
 pref("devtools.inspector.fonthighlighter.enabled", true);
 
-pref("devtools.inspector.changes.enabled", false);
-
 
 
 #if defined(NIGHTLY_BUILD)
 pref("devtools.inspector.flexboxHighlighter.enabled", true);
+pref("devtools.flexboxinspector.enabled", true);
 #else
 pref("devtools.inspector.flexboxHighlighter.enabled", false);
-#endif
-
 pref("devtools.flexboxinspector.enabled", false);
+#endif
 
 
 pref("devtools.gridinspector.gridOutlineMaxColumns", 50);
