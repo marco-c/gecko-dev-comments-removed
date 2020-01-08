@@ -27,10 +27,6 @@ const PREF_URLBAR_BRANCH = "browser.urlbar.";
 const PREF_URLBAR_DEFAULTS = new Map([
   
   
-  ["autocomplete.enabled", true],
-
-  
-  
   
   ["autoFill", true],
 
@@ -47,6 +43,10 @@ const PREF_URLBAR_DEFAULTS = new Map([
   
   
   ["clickSelectsAll", false],
+
+  
+  
+  ["decodeURLsOnCopy", false],
 
   
   
@@ -171,9 +171,6 @@ class Preferences {
 
     Services.prefs.addObserver(PREF_URLBAR_BRANCH, this, true);
     Services.prefs.addObserver("keyword.enabled", this, true);
-
-    
-    this._updateLinkedPrefs();
   }
 
   
@@ -205,10 +202,9 @@ class Preferences {
     if (pref == "matchBuckets") {
       this._map.delete("matchBucketsSearch");
     }
-    if (pref == "autocomplete.enabled" || pref.startsWith("suggest.")) {
+    if (pref.startsWith("suggest.")) {
       this._map.delete("defaultBehavior");
       this._map.delete("emptySearchDefaultBehavior");
-      this._updateLinkedPrefs(pref);
     }
   }
 
@@ -309,47 +305,6 @@ class Preferences {
       }
     }
     return this._readPref(pref);
-  }
-
-  
-
-
-
-
-
-
-
-  _updateLinkedPrefs(changedPref = "") {
-    
-    if (this._linkingPrefs) {
-      return;
-    }
-    this._linkingPrefs = true;
-    try {
-      let branch = Services.prefs.getBranch(PREF_URLBAR_BRANCH);
-      const SUGGEST_PREFS = Object.keys(SUGGEST_PREF_TO_BEHAVIOR);
-      if (changedPref.startsWith("suggest.")) {
-        
-        branch.setBoolPref("autocomplete.enabled",
-                           SUGGEST_PREFS.some(type => this.get("suggest." + type)));
-      } else if (this.get("autocomplete.enabled")) {
-        
-        
-        if (SUGGEST_PREFS.every(type => !this.get("suggest." + type))) {
-          for (let type of SUGGEST_PREFS) {
-            let def = PREF_URLBAR_DEFAULTS.get("suggest." + type);
-            branch.setBoolPref("suggest." + type, def);
-          }
-        }
-      } else {
-        
-        for (let type of SUGGEST_PREFS) {
-          branch.setBoolPref("suggest." + type, false);
-        }
-      }
-    } finally {
-      delete this._linkingPrefs;
-    }
   }
 
   

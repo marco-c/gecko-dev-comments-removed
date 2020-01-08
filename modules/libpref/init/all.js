@@ -1156,12 +1156,6 @@ pref("browser.fixup.dns_first_for_single_words", false);
 pref("browser.fixup.hide_user_pass", true);
 
 
-pref("browser.urlbar.autocomplete.enabled", true);
-
-pref("browser.urlbar.usepreloadedtopurls.enabled", false);
-pref("browser.urlbar.usepreloadedtopurls.expire_days", 14);
-
-
 
 
 

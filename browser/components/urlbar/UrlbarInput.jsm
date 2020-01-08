@@ -370,7 +370,7 @@ class UrlbarInput {
     
     if (inputVal == selectedVal &&
         !uri.schemeIs("javascript") && !uri.schemeIs("data") &&
-        !Services.prefs.getBoolPref("browser.urlbar.decodeURLsOnCopy")) {
+        !UrlbarPrefs.get("decodeURLsOnCopy")) {
       return uri.displaySpec;
     }
 
