@@ -76,6 +76,11 @@ Preferences.addAll([
   
   { id: "privacy.trackingprotection.enabled", type: "bool" },
   { id: "privacy.trackingprotection.pbmode.enabled", type: "bool" },
+  
+  
+  
+  
+  { id: "browser.privacy.trackingprotection.menu", type: "string" },
 
   
   { id: "pref.privacy.disable_button.cookie_exceptions", type: "bool" },
@@ -703,6 +708,7 @@ var gPrivacyPane = {
   trackingProtectionReadPrefs() {
     let enabledPref = Preferences.get("privacy.trackingprotection.enabled");
     let pbmPref = Preferences.get("privacy.trackingprotection.pbmode.enabled");
+    let btpmPref = Preferences.get("browser.privacy.trackingprotection.menu");
     let tpControl,
         tpCheckbox;
     if (contentBlockingUiEnabled) {
@@ -710,6 +716,16 @@ var gPrivacyPane = {
       tpCheckbox = document.getElementById("contentBlockingTrackingProtectionCheckbox");
     } else {
       tpControl = document.getElementById("trackingProtectionRadioGroup");
+    }
+
+    let savedMenuValue;
+    if (contentBlockingUiEnabled) {
+      
+      
+      if (["always", "private"].includes(btpmPref.value) &&
+          tpCheckbox.checked) {
+        savedMenuValue = btpmPref.value;
+      }
     }
 
     this._updateTrackingProtectionUI();
@@ -728,6 +744,9 @@ var gPrivacyPane = {
     } else if (!tpCheckbox) {
       tpControl.value = "never";
     } else {
+      if (savedMenuValue) {
+        tpControl.value = savedMenuValue;
+      }
       tpCheckbox.checked = false;
     }
   },
@@ -785,6 +804,7 @@ var gPrivacyPane = {
   trackingProtectionWritePrefs() {
     let enabledPref = Preferences.get("privacy.trackingprotection.enabled");
     let pbmPref = Preferences.get("privacy.trackingprotection.pbmode.enabled");
+    let btpmPref = Preferences.get("browser.privacy.trackingprotection.menu");
     let tpControl,
         tpCheckbox;
     if (contentBlockingUiEnabled) {
@@ -798,6 +818,7 @@ var gPrivacyPane = {
     if (tpCheckbox) {
       if (tpCheckbox.checked) {
         value = tpControl.value;
+        btpmPref.value = value;
       } else {
         value = "never";
       }
