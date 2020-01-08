@@ -709,9 +709,8 @@ nsDocShell::LoadURI(nsIURI* aURI,
     originalURI = aLoadInfo->OriginalURI();
     aLoadInfo->GetMaybeResultPrincipalURI(resultPrincipalURI);
     loadReplace = aLoadInfo->LoadReplace();
-    nsDocShellLoadInfo::nsDocShellInfoLoadType lt = aLoadInfo->LoadType();
     
-    loadType = ConvertDocShellInfoLoadTypeToLoadType(lt);
+    loadType = aLoadInfo->LoadType();
 
     triggeringPrincipal = aLoadInfo->TriggeringPrincipal();
     inheritPrincipal = aLoadInfo->InheritPrincipal();
@@ -3715,21 +3714,19 @@ nsDocShell::GetChildSHEntry(int32_t aChildOffset, nsISHEntry** aResult)
     
 
 
-    uint32_t loadType = nsDocShellLoadInfo::loadHistory;
+    uint32_t loadType = LOAD_HISTORY;
     mLSHE->GetLoadType(&loadType);
     
     
-    if (loadType == nsDocShellLoadInfo::loadReloadBypassCache ||
-        loadType == nsDocShellLoadInfo::loadReloadBypassProxy ||
-        loadType == nsDocShellLoadInfo::loadReloadBypassProxyAndCache ||
-        loadType == nsDocShellLoadInfo::loadRefresh) {
+    if (IsForceReloadType(loadType) ||
+        loadType == LOAD_REFRESH) {
       return rv;
     }
 
     
 
 
-    if (parentExpired && (loadType == nsDocShellLoadInfo::loadReloadNormal)) {
+    if (parentExpired && (loadType == LOAD_RELOAD_NORMAL)) {
       
       *aResult = nullptr;
       return rv;
@@ -4230,10 +4227,10 @@ nsDocShell::LoadURIWithOptions(const char16_t* aURI,
     loadType = MAKE_LOAD_TYPE(LOAD_NORMAL, aLoadFlags);
   }
 
-  loadInfo->SetLoadType(ConvertLoadTypeToDocShellInfoLoadType(loadType));
+  loadInfo->SetLoadType(loadType);
   loadInfo->SetPostDataStream(postStream);
   loadInfo->SetReferrer(aReferringURI);
-  loadInfo->SetReferrerPolicy(aReferrerPolicy);
+  loadInfo->SetReferrerPolicy((mozilla::net::ReferrerPolicy)aReferrerPolicy);
   loadInfo->SetHeadersStream(aHeaderStream);
   loadInfo->SetBaseURI(aBaseURI);
   loadInfo->SetTriggeringPrincipal(aTriggeringPrincipal);
@@ -6211,7 +6208,7 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal, int32_t aDel
 
 
 
-    loadInfo->SetLoadType(nsDocShellLoadInfo::loadNormalReplace);
+    loadInfo->SetLoadType(LOAD_NORMAL_REPLACE);
 
     
 
@@ -6222,7 +6219,7 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal, int32_t aDel
       loadInfo->SetReferrer(internalReferrer);
     }
   } else {
-    loadInfo->SetLoadType(nsDocShellLoadInfo::loadRefresh);
+    loadInfo->SetLoadType(LOAD_REFRESH);
   }
 
   
@@ -7074,7 +7071,7 @@ nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
   
   
   if (mLSHE) {
-    mLSHE->SetLoadType(nsDocShellLoadInfo::loadHistory);
+    mLSHE->SetLoadType(LOAD_HISTORY);
 
     
     
@@ -9413,7 +9410,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
         
         
         loadInfo->SetReferrer(aReferrer);
-        loadInfo->SetReferrerPolicy(aReferrerPolicy);
+        loadInfo->SetReferrerPolicy((mozilla::net::ReferrerPolicy)aReferrerPolicy);
         loadInfo->SetSendReferrer(!(aFlags &
                                     INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER));
         loadInfo->SetOriginalURI(aOriginalURI);
@@ -9425,7 +9422,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
         
         
         loadInfo->SetPrincipalIsExplicit(true);
-        loadInfo->SetLoadType(ConvertLoadTypeToDocShellInfoLoadType(LOAD_LINK));
+        loadInfo->SetLoadType(LOAD_LINK);
         loadInfo->SetForceAllowDataURI(aFlags & INTERNAL_LOAD_FLAGS_FORCE_ALLOW_DATA_URI);
 
         rv = win->Open(NS_ConvertUTF8toUTF16(spec),
@@ -10940,7 +10937,7 @@ nsDocShell::DoChannelLoad(nsIChannel* aChannel,
 
   
   
-  if (IsForceReloadType(mLoadType)) {
+  if (IsForceReloading()) {
     loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
   }
 
@@ -14195,4 +14192,10 @@ nsDocShell::GetColorMatrix(uint32_t* aMatrixLen, float** aMatrix)
   }
 
   return NS_OK;
+}
+
+bool
+nsDocShell::IsForceReloading()
+{
+  return IsForceReloadType(mLoadType);
 }

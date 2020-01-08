@@ -453,7 +453,7 @@ nsSHEntry::Create(nsIURI* aURI, const nsAString& aTitle,
   mPostData = aInputStream;
 
   
-  mLoadType = (uint32_t)nsDocShellLoadInfo::loadHistory;
+  mLoadType = LOAD_HISTORY;
 
   mShared->mCacheKey = aCacheKey;
   mShared->mContentType = aContentType;
@@ -1009,5 +1009,13 @@ nsSHEntry::SetSHistory(nsISHistory* aSHistory)
   
   MOZ_ASSERT(!mShared->mSHistory || (mShared->mSHistory == shistory));
   mShared->mSHistory = shistory;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsSHEntry::SetAsHistoryLoad()
+{
+  
+  mLoadType = LOAD_HISTORY;
   return NS_OK;
 }

@@ -375,6 +375,10 @@ public:
     return static_cast<nsDocShell*>(aDocShell);
   }
 
+  
+  
+  bool IsForceReloading();
+
 private: 
   friend class nsDSURIContentListener;
   friend class FramingChecker;
