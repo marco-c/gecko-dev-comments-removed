@@ -333,7 +333,10 @@ types.addActorType = function(name) {
           lazyLoadFront(name);
         }
 
-        front = new type.frontClass(ctx.conn); 
+        
+        
+        const Class = type.frontClass;
+        front = new Class(ctx.conn);
         front.actorID = actorID;
         ctx.marshallPool().manage(front);
       }
