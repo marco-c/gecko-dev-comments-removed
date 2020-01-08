@@ -1518,7 +1518,12 @@ JS::Result<Ok> BinASTParser<Tok>::parseInterfaceAssertedDeclaredName(
   MOZ_TRY_VAR(name, tokenizer_->readIdentifierName());
 
   BINJS_MOZ_TRY_DECL(kind_, parseAssertedDeclaredKind());
-
+  if (kind_ == AssertedDeclaredKind::NonConstLexical) {
+    return raiseError("Let is not supported in this preview release");
+  }
+  if (kind_ == AssertedDeclaredKind::ConstLexical) {
+    return raiseError("Const is not supported in this preview release");
+  }
   BINJS_MOZ_TRY_DECL(isCaptured, tokenizer_->readBool());
   ParseContext::Scope* scope;
   DeclarationKind declKind;
