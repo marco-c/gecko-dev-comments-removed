@@ -6,14 +6,11 @@
 
 
 
-
-
 "use strict";
 
 var EXPORTED_SYMBOLS = ["FormAutofillHandler"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 ChromeUtils.import("resource://formautofill/FormAutofill.jsm");
 
