@@ -385,7 +385,7 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
       let link = manageTextEl.querySelector("a");
       
       
-      link.href = "about:preferences#privacy-address-autofill";
+      link.href = "about:preferences#privacy-form-autofill";
     }
 
     this._renderPayButton(state);
