@@ -181,6 +181,14 @@ VARCACHE_PREF(
 
 
 
+VARCACHE_PREF(
+  "dom.compositionevent.text.dispatch_only_system_group_in_content",
+   dom_compositionevent_text_dispatch_only_system_group_in_content,
+   bool, true
+)
+
+
+
 
 #if !defined(DEBUG) && !defined(MOZ_ASAN) && !defined(MOZ_VALGRIND) && \
     !defined(MOZ_TSAN)

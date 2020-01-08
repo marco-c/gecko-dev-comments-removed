@@ -137,14 +137,21 @@ Escape(JSContext* cx, const CharT* chars, uint32_t length, InlineCharBuffer<Lati
         }
 
         
-        newLength += (ch < 256) ? 2 : 5;
+
+
+
+        static_assert(JSString::MAX_LENGTH < UINT32_MAX - 5,
+                      "Adding 5 to valid string length should not overflow");
+
+        MOZ_ASSERT(newLength <= JSString::MAX_LENGTH);
 
         
+        newLength += (ch < 256) ? 2 : 5;
 
-
-
-        static_assert(JSString::MAX_LENGTH < UINT32_MAX / 6,
-                      "newlength must not overflow");
+        if (MOZ_UNLIKELY(newLength > JSString::MAX_LENGTH)) {
+            ReportAllocationOverflow(cx);
+            return false;
+        }
     }
 
     if (newLength == length) {
@@ -976,8 +983,9 @@ js::intl_toLocaleLowerCase(JSContext* cx, unsigned argc, Value* vp)
     mozilla::Range<const char16_t> input = inputChars.twoByteRange();
 
     
-    static_assert(JSString::MAX_LENGTH < INT32_MAX / 3,
-                  "Case conversion doesn't overflow int32_t indices");
+    
+    static_assert(JSString::MAX_LENGTH <= INT32_MAX,
+                  "String length must fit in int32_t for ICU");
 
     static const size_t INLINE_CAPACITY = js::intl::INITIAL_CHAR_BUFFER_SIZE;
 
@@ -1399,8 +1407,9 @@ js::intl_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp)
     mozilla::Range<const char16_t> input = inputChars.twoByteRange();
 
     
-    static_assert(JSString::MAX_LENGTH < INT32_MAX / 3,
-                  "Case conversion doesn't overflow int32_t indices");
+    
+    static_assert(JSString::MAX_LENGTH <= INT32_MAX,
+                  "String length must fit in int32_t for ICU");
 
     static const size_t INLINE_CAPACITY = js::intl::INITIAL_CHAR_BUFFER_SIZE;
 
