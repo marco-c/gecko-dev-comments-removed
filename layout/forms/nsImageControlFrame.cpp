@@ -155,8 +155,8 @@ nsresult nsImageControlFrame::GetCursor(const nsPoint& aPoint,
   
   FillCursorInformationFromStyle(StyleUI(), aCursor);
 
-  if (NS_STYLE_CURSOR_AUTO == aCursor.mCursor) {
-    aCursor.mCursor = NS_STYLE_CURSOR_POINTER;
+  if (StyleCursorKind::Auto == aCursor.mCursor) {
+    aCursor.mCursor = StyleCursorKind::Pointer;
   }
 
   return NS_OK;

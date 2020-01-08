@@ -7054,15 +7054,18 @@ nsIDOMWindowUtils* nsGlobalWindowOuter::WindowUtils() {
 
 void nsGlobalWindowOuter::SetCursorOuter(const nsAString& aCursor,
                                          ErrorResult& aError) {
-  int32_t cursor;
+  StyleCursorKind cursor;
 
-  if (aCursor.EqualsLiteral("auto"))
-    cursor = NS_STYLE_CURSOR_AUTO;
-  else {
+  if (aCursor.EqualsLiteral("auto")) {
+    cursor = StyleCursorKind::Auto;
+  } else {
+    
     nsCSSKeyword keyword = nsCSSKeywords::LookupKeyword(aCursor);
-    if (!nsCSSProps::FindKeyword(keyword, nsCSSProps::kCursorKTable, cursor)) {
+    int32_t c;
+    if (!nsCSSProps::FindKeyword(keyword, nsCSSProps::kCursorKTable, c)) {
       return;
     }
+    cursor = static_cast<StyleCursorKind>(c);
   }
 
   RefPtr<nsPresContext> presContext;

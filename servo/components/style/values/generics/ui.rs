@@ -5,7 +5,7 @@
 
 
 use std::fmt::{self, Write};
-use style_traits::cursor::CursorKind;
+use values::specified::ui::CursorKind;
 use style_traits::{CssWriter, ToCss};
 
 

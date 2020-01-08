@@ -1898,7 +1898,7 @@ bool BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1,
     };
 
     const nsIFrame* ancestor =
-        nsLayoutUtils::FindNearestCommonAncestorFrame(aFrame1, aFrame2);
+      nsLayoutUtils::FindNearestCommonAncestorFrame(aFrame1, aFrame2);
     MOZ_ASSERT(ancestor);
 
     
@@ -4590,13 +4590,13 @@ nsTextFrame::~nsTextFrame() {}
 nsresult nsTextFrame::GetCursor(const nsPoint& aPoint,
                                 nsIFrame::Cursor& aCursor) {
   FillCursorInformationFromStyle(StyleUI(), aCursor);
-  if (NS_STYLE_CURSOR_AUTO == aCursor.mCursor) {
+  if (StyleCursorKind::Auto == aCursor.mCursor) {
     if (!IsSelectable(nullptr)) {
-      aCursor.mCursor = NS_STYLE_CURSOR_DEFAULT;
+      aCursor.mCursor = StyleCursorKind::Default;
     } else {
       aCursor.mCursor = GetWritingMode().IsVertical()
-                            ? NS_STYLE_CURSOR_VERTICAL_TEXT
-                            : NS_STYLE_CURSOR_TEXT;
+                            ? StyleCursorKind::VerticalText
+                            : StyleCursorKind::Text;
     }
     return NS_OK;
   } else {
