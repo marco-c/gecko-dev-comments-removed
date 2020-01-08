@@ -1125,6 +1125,51 @@ typedef Vector<DataSegment, 0, SystemAllocPolicy> DataSegmentVector;
 
 
 
+struct WasmCallee
+{
+    WasmCallee() : instance(nullptr), entry(nullptr) {}
+    WasmCallee(const Instance* instance, void* entry)
+      : instance(instance),
+        entry(entry)
+    {}
+    
+    const Instance* instance;
+    
+    void* entry;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef  Vector<uint8_t,    0, SystemAllocPolicy>  DataSegmentInit;
+typedef  Vector<WasmCallee, 0, SystemAllocPolicy>  ElemSegmentInit;
+
+
+
+
+
+typedef  Vector<UniquePtr<DataSegmentInit>, 0, SystemAllocPolicy>
+         DataSegmentInitVector;
+typedef  Vector<UniquePtr<ElemSegmentInit>, 0, SystemAllocPolicy>
+         ElemSegmentInitVector;
+
+
+
+
 
 
 
