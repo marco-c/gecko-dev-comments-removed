@@ -12,6 +12,7 @@ use values::distance::{ComputeSquaredDistance, SquaredDistance};
 use values::generics::border::BorderRadius;
 use values::generics::position::Position;
 use values::generics::rect::Rect;
+use values::specified::SVGPathData;
 
 
 pub type ClippingShape<BasicShape, Url> = ShapeSource<BasicShape, GeometryBox, Url>;
@@ -53,6 +54,9 @@ pub enum ShapeSource<BasicShape, ReferenceBox, ImageOrUrl> {
     Shape(BasicShape, Option<ReferenceBox>),
     #[animation(error)]
     Box(ReferenceBox),
+    #[animation(error)]
+    #[css(function)]
+    Path(Path),
     #[animation(error)]
     None,
 }
@@ -142,6 +146,19 @@ pub struct PolygonCoord<LengthOrPercentage>(pub LengthOrPercentage, pub LengthOr
 pub enum FillRule {
     Nonzero,
     Evenodd,
+}
+
+
+
+
+#[css(comma)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
+pub struct Path {
+    
+    #[css(skip_if = "fill_is_default")]
+    pub fill: FillRule,
+    
+    pub path: SVGPathData,
 }
 
 
