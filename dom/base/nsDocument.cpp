@@ -3586,9 +3586,22 @@ nsIDocument::GetActiveElement()
 
   
   if (IsHTMLOrXHTML()) {
+    Element* bodyElement = AsHTMLDocument()->GetBody();
+    if (bodyElement) {
+      return bodyElement;
+    }
     
     
-    return AsHTMLDocument()->GetBody();
+    
+    if (nsContentUtils::IsChromeDoc(this)) {
+      Element* docElement = GetDocumentElement();
+      if (docElement && docElement->IsXULElement()) {
+        return docElement;
+      }
+    }
+    
+    
+    return nullptr;
   }
 
   
