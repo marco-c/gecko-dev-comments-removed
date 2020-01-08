@@ -7,6 +7,7 @@
 #include "nsString.h"
 #include "nsIControllerCommand.h"
 #include "nsControllerCommandTable.h"
+#include "nsGlobalWindowCommands.h"
 #include "mozilla/HTMLEditorController.h"
 
 nsresult NS_NewControllerCommandTable(nsIControllerCommandTable** aResult);
@@ -224,6 +225,20 @@ nsControllerCommandTable::CreateHTMLEditorDocStateCommandTable()
 
   
   
+
+  return commandTable.forget();
+}
+
+
+already_AddRefed<nsIControllerCommandTable>
+nsControllerCommandTable::CreateWindowCommandTable()
+{
+  nsCOMPtr<nsIControllerCommandTable> commandTable =
+      new nsControllerCommandTable();
+
+  nsresult rv =
+    nsWindowCommandRegistration::RegisterWindowCommands(commandTable);
+  if (NS_FAILED(rv)) return nullptr;
 
   return commandTable.forget();
 }
