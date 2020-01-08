@@ -10968,9 +10968,9 @@ nsCSSFrameConstructor::ConstructBlock(nsFrameConstructorState& aState,
                                       PendingBinding*          aPendingBinding)
 {
   
-  nsContainerFrame* blockFrame = *aNewFrame;
-  NS_ASSERTION((blockFrame->IsBlockFrame() || blockFrame->IsDetailsFrame()),
-               "not a block frame nor a details frame?");
+  nsBlockFrame* blockFrame = do_QueryFrame(*aNewFrame);
+  MOZ_ASSERT(blockFrame->IsBlockFrame() || blockFrame->IsDetailsFrame(),
+             "not a block frame nor a details frame?");
 
   *aNewFrame =
     InitAndWrapInColumnSetFrameIfNeeded(aState, aContent, aParentFrame,
@@ -11013,6 +11013,36 @@ nsCSSFrameConstructor::ConstructBlock(nsFrameConstructorState& aState,
 
   
   blockFrame->SetInitialChildList(kPrincipalList, childItems);
+  CreateBulletFrameForListItemIfNeeded(blockFrame);
+}
+
+void
+nsCSSFrameConstructor::CreateBulletFrameForListItemIfNeeded(
+  nsBlockFrame* aBlockFrame)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsIFrame* possibleListItem = aBlockFrame;
+  while (true) {
+    nsIFrame* parent = possibleListItem->GetParent();
+    if (parent->GetContent() != aBlockFrame->GetContent()) {
+      break;
+    }
+    possibleListItem = parent;
+  }
+
+  if (possibleListItem->StyleDisplay()->mDisplay == StyleDisplay::ListItem) {
+    aBlockFrame->CreateBulletFrameForListItem();
+  }
 }
 
 nsIFrame*

@@ -7111,10 +7111,6 @@ nsBlockFrame::SetInitialChildList(ChildListID     aListID,
   if (kFloatList == aListID) {
     mFloats.SetFrames(aChildList);
   } else if (kPrincipalList == aListID) {
-    NS_ASSERTION((GetStateBits() & (NS_BLOCK_FRAME_HAS_INSIDE_BULLET |
-                                    NS_BLOCK_FRAME_HAS_OUTSIDE_BULLET)) == 0,
-                 "how can we have a bullet already?");
-
 #ifdef DEBUG
     
     
@@ -7143,31 +7139,6 @@ nsBlockFrame::SetInitialChildList(ChildListID     aListID,
 #endif
 
     AddFrames(aChildList, nullptr);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    nsIFrame* possibleListItem = this;
-    while (1) {
-      nsIFrame* parent = possibleListItem->GetParent();
-      if (parent->GetContent() != GetContent()) {
-        break;
-      }
-      possibleListItem = parent;
-    }
-    if (mozilla::StyleDisplay::ListItem ==
-          possibleListItem->StyleDisplay()->mDisplay &&
-        !GetPrevInFlow()) {
-      CreateBulletFrameForListItem();
-    }
   } else {
     nsContainerFrame::SetInitialChildList(aListID, aChildList);
   }
@@ -7176,6 +7147,10 @@ nsBlockFrame::SetInitialChildList(ChildListID     aListID,
 void
 nsBlockFrame::CreateBulletFrameForListItem()
 {
+  MOZ_ASSERT((GetStateBits() & (NS_BLOCK_FRAME_HAS_INSIDE_BULLET |
+                                NS_BLOCK_FRAME_HAS_OUTSIDE_BULLET)) == 0,
+             "How can we have a bullet already?");
+
   nsIPresShell* shell = PresShell();
   const nsStyleList* styleList = StyleList();
 

@@ -509,12 +509,12 @@ protected:
 
   bool IsVisualFormControl(nsPresContext* aPresContext);
 
+public:
   
 
 
   void CreateBulletFrameForListItem();
 
-public:
   
 
 
