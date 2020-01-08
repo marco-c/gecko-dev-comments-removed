@@ -69,8 +69,8 @@
 #include "nsPluginFrame.h"
 #include "nsSliderFrame.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
-#include "mozilla/layers/AxisPhysicsModel.h"
-#include "mozilla/layers/AxisPhysicsMSDModel.h"
+#include <mozilla/layers/AxisPhysicsModel.h>
+#include <mozilla/layers/AxisPhysicsMSDModel.h>
 #include "mozilla/layers/LayerTransactionChild.h"
 #include "mozilla/layers/ScrollLinkedEffectDetector.h"
 #include "mozilla/Unused.h"
@@ -1163,10 +1163,6 @@ nsHTMLScrollFrame::Reflow(nsPresContext*           aPresContext,
   }
 
   aDesiredSize.SetOverflowAreasToDesiredBounds();
-  if (mHelper.IsIgnoringViewportClipping()) {
-    aDesiredSize.mOverflowAreas.UnionWith(
-      state.mContentsOverflowAreas + mHelper.mScrolledFrame->GetPosition());
-  }
 
   mHelper.UpdateSticky();
   FinishReflowWithAbsoluteFrames(aPresContext, aDesiredSize, aReflowInput, aStatus);
@@ -2529,15 +2525,6 @@ static void AdjustViews(nsIFrame* aFrame)
   }
 }
 
-bool ScrollFrameHelper::IsIgnoringViewportClipping() const
-{
-  if (!mIsRoot)
-    return false;
-  nsSubDocumentFrame* subdocFrame = static_cast<nsSubDocumentFrame*>
-    (nsLayoutUtils::GetCrossDocParentFrame(mOuter->PresShell()->GetRootFrame()));
-  return subdocFrame && !subdocFrame->ShouldClipSubdocument();
-}
-
 void ScrollFrameHelper::MarkScrollbarsDirtyForReflow() const
 {
   nsIPresShell* presShell = mOuter->PresShell();
@@ -3442,7 +3429,7 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   
   bool ignoringThisScrollFrame =
-    aBuilder->GetIgnoreScrollFrame() == mOuter || IsIgnoringViewportClipping();
+    aBuilder->GetIgnoreScrollFrame() == mOuter;
 
   
   

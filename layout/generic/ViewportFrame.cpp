@@ -374,16 +374,11 @@ ViewportFrame::Reflow(nsPresContext*           aPresContext,
     }
 
     nsRect rect = AdjustReflowInputAsContainingBlock(&reflowInput);
-    nsOverflowAreas* overflowAreas = &aDesiredSize.mOverflowAreas;
-    nsIScrollableFrame* rootScrollFrame =
-                    aPresContext->PresShell()->GetRootScrollFrameAsScrollable();
-    if (rootScrollFrame && !rootScrollFrame->IsIgnoringViewportClipping()) {
-      overflowAreas = nullptr;
-    }
     AbsPosReflowFlags flags =
       AbsPosReflowFlags::eCBWidthAndHeightChanged; 
-    GetAbsoluteContainingBlock()->Reflow(this, aPresContext, reflowInput, aStatus,
-                                         rect, flags, overflowAreas);
+    GetAbsoluteContainingBlock()->Reflow(this, aPresContext, reflowInput,
+                                         aStatus, rect, flags,
+                                          nullptr);
   }
 
   if (mFrames.NotEmpty()) {
@@ -397,32 +392,10 @@ ViewportFrame::Reflow(nsPresContext*           aPresContext,
 
   
   
-  bool overflowChanged = FinishAndStoreOverflow(&aDesiredSize);
-  if (overflowChanged) {
-    
-    
-    nsSubDocumentFrame* container = static_cast<nsSubDocumentFrame*>
-      (nsLayoutUtils::GetCrossDocParentFrame(this));
-    if (container && !container->ShouldClipSubdocument()) {
-      container->PresShell()->
-        FrameNeedsReflow(container, nsIPresShell::eResize, NS_FRAME_IS_DIRTY);
-    }
-  }
+  FinishAndStoreOverflow(&aDesiredSize);
 
   NS_FRAME_TRACE_REFLOW_OUT("ViewportFrame::Reflow", aStatus);
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
-}
-
-bool
-ViewportFrame::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas)
-{
-  nsIScrollableFrame* rootScrollFrame =
-    PresShell()->GetRootScrollFrameAsScrollable();
-  if (rootScrollFrame && !rootScrollFrame->IsIgnoringViewportClipping()) {
-    return false;
-  }
-
-  return nsContainerFrame::ComputeCustomOverflow(aOverflowAreas);
 }
 
 void

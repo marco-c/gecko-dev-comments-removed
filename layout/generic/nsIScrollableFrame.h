@@ -440,11 +440,6 @@ public:
   
 
 
-  virtual bool IsIgnoringViewportClipping() const = 0;
-
-  
-
-
   virtual void MarkScrollbarsDirtyForReflow() const = 0;
 
   virtual void SetTransformingByAPZ(bool aTransforming) = 0;
