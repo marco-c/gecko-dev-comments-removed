@@ -178,6 +178,9 @@ impl NonTSPseudoClass {
             NonTSPseudoClass::Fullscreen => unsafe {
                 mozilla::StaticPrefs_sVarCache_full_screen_api_unprefix_enabled
             },
+            NonTSPseudoClass::Defined => unsafe {
+                structs::nsContentUtils_sIsCustomElementsEnabled
+            },
             
             
             _ => !self
@@ -344,7 +347,10 @@ impl<'a, 'i> ::selectors::Parser<'i> for SelectorParser<'a> {
 
     #[inline]
     fn parse_slotted(&self) -> bool {
-        true
+        
+        
+        
+        unsafe { structs::nsContentUtils_sIsShadowDOMEnabled }
     }
 
     #[inline]

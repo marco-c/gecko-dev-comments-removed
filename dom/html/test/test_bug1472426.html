@@ -99,7 +99,10 @@
 
   window.onload = function() {
     SimpleTest.waitForExplicitFinish();
-    testFormSubmissionInShadowDOM();
+    SpecialPowers.pushPrefEnv({"set":[["dom.webcomponents.shadowdom.enabled", true]]},
+                              () => {
+                                testFormSubmissionInShadowDOM();
+                              });
   }
 
   </script>

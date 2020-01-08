@@ -22,7 +22,7 @@
 SimpleTest.waitForExplicitFinish();
 
 var content = '<div id="content" style="display: none"> </div>';
-createIframe(content)
+setShadowDOMPrefAndCreateIframe(content)
   .then((aDocument) => {
     var host = aDocument.querySelector('#content');
     var root = host.attachShadow({mode: "open"});

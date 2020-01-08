@@ -17,7 +17,7 @@
 SimpleTest.waitForExplicitFinish();
 
 var content = '<div id="container"></div>';
-createIframe(content)
+setShadowDOMPrefAndCreateIframe(content)
   .then((aDocument) => {
 
     // Test callback for custom element when used after registration.

@@ -9,14 +9,22 @@
 
 
 
-function createIframe(aSrcDoc) {
+
+
+function setShadowDOMPrefAndCreateIframe(aSrcDoc) {
   return new Promise(function (aResolve, aReject) {
-    let iframe = document.createElement("iframe");
-    iframe.onload = function () { aResolve(iframe.contentDocument); }
-    iframe.onerror = function () { aReject('Failed to load iframe'); }
-    if (aSrcDoc) {
-      iframe.srcdoc = aSrcDoc;
-    }
-    document.body.appendChild(iframe);
+    SpecialPowers.pushPrefEnv({
+      set: [
+        ["dom.webcomponents.shadowdom.enabled", true]
+      ]
+    }, () => {
+      let iframe = document.createElement("iframe");
+      iframe.onload = function () { aResolve(iframe.contentDocument); }
+      iframe.onerror = function () { aReject('Failed to load iframe'); }
+      if (aSrcDoc) {
+        iframe.srcdoc = aSrcDoc;
+      }
+      document.body.appendChild(iframe);
+    });
   });
 }

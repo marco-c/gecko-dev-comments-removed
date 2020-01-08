@@ -7803,14 +7803,17 @@ class CGPerSignatureCall(CGThing):
 
         if (idlNode.getExtendedAttribute('CEReactions') is not None and
             not getter):
-            cgThings.append(CGGeneric(dedent(
+            cgThings.append(CGGeneric(fill(
                 """
                 Maybe<AutoCEReaction> ceReaction;
-                DocGroup* docGroup = self->GetDocGroup();
-                if (docGroup) {
-                  ceReaction.emplace(docGroup->CustomElementReactionsStack(), cx);
+                if (CustomElementRegistry::IsCustomElementEnabled(cx, ${obj})) {
+                  DocGroup* docGroup = self->GetDocGroup();
+                  if (docGroup) {
+                    ceReaction.emplace(docGroup->CustomElementReactionsStack(), cx);
+                  }
                 }
-                """)))
+                """,
+                obj=objectName)))
 
         
         

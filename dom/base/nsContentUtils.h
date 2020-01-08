@@ -3239,7 +3239,10 @@ public:
 
 
   static bool
-  IsUAWidgetEnabled() { return sIsUAWidgetEnabled; }
+  IsUAWidgetEnabled() { return sIsShadowDOMEnabled && sIsUAWidgetEnabled; }
+
+  static bool
+  IsShadowDOMEnabled() { return sIsShadowDOMEnabled; }
 
   
 
@@ -3285,6 +3288,9 @@ public:
 
   static bool
   IsLocalRefURL(const nsString& aString);
+
+  static bool
+  IsCustomElementsEnabled() { return sIsCustomElementsEnabled; }
 
   
 
@@ -3549,6 +3555,7 @@ private:
   static bool sIsFrameTimingPrefEnabled;
   static bool sIsFormAutofillAutocompleteEnabled;
   static bool sIsUAWidgetEnabled;
+  static bool sIsShadowDOMEnabled;
   static bool sIsCustomElementsEnabled;
   static bool sSendPerformanceTimingNotifications;
   static bool sUseActivityCursor;

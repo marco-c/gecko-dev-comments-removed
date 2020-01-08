@@ -723,6 +723,14 @@ async function injectEventUtilsInContentTask(browser) {
 
 
 
+async function enableWebComponents() {
+  await pushPref("dom.webcomponents.shadowdom.enabled", true);
+  await pushPref("dom.webcomponents.customelements.enabled", true);
+}
+
+
+
+
 
 
 

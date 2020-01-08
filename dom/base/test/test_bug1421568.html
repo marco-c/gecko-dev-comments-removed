@@ -15,8 +15,13 @@
   SimpleTest.waitForExplicitFinish();
 
   function init() {
-    document.getElementById("content").innerHTML =
-      "<iframe src='about:blank' onload='test(this)'></iframe>";
+    SpecialPowers.pushPrefEnv({
+      set: [["dom.webcomponents.shadowdom.enabled", true]]
+      },
+      function () {
+        document.getElementById("content").innerHTML =
+          "<iframe src='about:blank' onload='test(this)'></iframe>";
+      });
   }
 
   function test(iframe) {

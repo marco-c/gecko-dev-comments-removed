@@ -303,6 +303,8 @@ bool nsContentUtils::sIsResourceTimingEnabled = false;
 bool nsContentUtils::sIsPerformanceNavigationTimingEnabled = false;
 bool nsContentUtils::sIsFormAutofillAutocompleteEnabled = false;
 bool nsContentUtils::sIsUAWidgetEnabled = false;
+bool nsContentUtils::sIsShadowDOMEnabled = false;
+bool nsContentUtils::sIsCustomElementsEnabled = false;
 bool nsContentUtils::sSendPerformanceTimingNotifications = false;
 bool nsContentUtils::sUseActivityCursor = false;
 bool nsContentUtils::sAnimationsAPICoreEnabled = false;
@@ -671,6 +673,12 @@ nsContentUtils::Init()
 
   Preferences::AddBoolVarCache(&sIsUAWidgetEnabled,
                                "dom.ua_widget.enabled", false);
+
+  Preferences::AddBoolVarCache(&sIsShadowDOMEnabled,
+                               "dom.webcomponents.shadowdom.enabled", false);
+
+  Preferences::AddBoolVarCache(&sIsCustomElementsEnabled,
+                               "dom.webcomponents.customelements.enabled", false);
 
   Preferences::AddIntVarCache(&sPrivacyMaxInnerWidth,
                               "privacy.window.maxInnerWidth",
@@ -10061,12 +10069,14 @@ nsContentUtils::NewXULOrHTMLElement(Element** aResult, mozilla::dom::NodeInfo* a
 
   MOZ_ASSERT_IF(aDefinition, isCustomElement);
 
+  bool customElementEnabled = CustomElementRegistry::IsCustomElementEnabled(nodeInfo->GetDocument());
+
   
   
   
   
   CustomElementDefinition* definition = aDefinition;
-  if (isCustomElement && !definition) {
+  if (customElementEnabled && isCustomElement && !definition) {
     MOZ_ASSERT(nodeInfo->NameAtom()->Equals(nodeInfo->LocalName()));
     definition =
       nsContentUtils::LookupCustomElementDefinition(nodeInfo->GetDocument(),
@@ -10187,7 +10197,7 @@ nsContentUtils::NewXULOrHTMLElement(Element** aResult, mozilla::dom::NodeInfo* a
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  if (isCustomElement) {
+  if (customElementEnabled && isCustomElement) {
     (*aResult)->SetCustomElementData(new CustomElementData(typeAtom));
     nsContentUtils::RegisterCallbackUpgradeElement(*aResult, typeAtom);
   }
