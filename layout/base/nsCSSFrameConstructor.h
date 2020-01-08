@@ -455,6 +455,14 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
   void AppendFramesToParent(nsFrameConstructorState& aState,
                             nsContainerFrame* aParentFrame,
                             nsFrameItems& aFrameList, nsIFrame* aPrevSibling,
