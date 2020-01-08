@@ -33,6 +33,9 @@ class nsSVGFilterFrame;
 class nsSVGMaskFrame;
 namespace mozilla {
 class SVGFilterObserverList;
+namespace dom {
+class SVGGeometryElement;
+}
 }
 
 namespace mozilla {
@@ -499,6 +502,7 @@ class SVGObserverUtils
 {
 public:
   typedef mozilla::dom::Element Element;
+  typedef dom::SVGGeometryElement SVGGeometryElement;
   typedef nsInterfaceHashtable<nsRefPtrHashKey<URLAndReferrerInfo>,
     nsIMutationObserver> URIObserverHashtable;
 
@@ -689,12 +693,21 @@ public:
   static SVGMarkerObserver *
   GetMarkerProperty(URLAndReferrerInfo* aURI, nsIFrame* aFrame,
     const mozilla::FramePropertyDescriptor<SVGMarkerObserver>* aProperty);
+
   
 
 
-  static SVGTextPathObserver *
-  GetTextPathProperty(URLAndReferrerInfo* aURI, nsIFrame* aFrame,
-    const mozilla::FramePropertyDescriptor<SVGTextPathObserver>* aProperty);
+
+  static SVGGeometryElement*
+  GetTextPathsReferencedPath(nsIFrame* aTextPathFrame);
+
+  
+
+
+
+  static void
+  RemoveTextPathObserver(nsIFrame* aTextPathFrame);
+
   
 
 

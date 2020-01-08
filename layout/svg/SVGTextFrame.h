@@ -538,8 +538,6 @@ private:
   bool ShouldRenderAsPath(nsTextFrame* aFrame, bool& aShouldPaintSVGGlyphs);
 
   
-  mozilla::dom::SVGGeometryElement*
-  GetTextPathGeometryElement(nsIFrame* aTextPathFrame);
   already_AddRefed<Path> GetTextPath(nsIFrame* aTextPathFrame);
   gfxFloat GetOffsetScale(nsIFrame* aTextPathFrame);
   gfxFloat GetStartOffset(nsIFrame* aTextPathFrame);
