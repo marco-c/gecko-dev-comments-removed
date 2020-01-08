@@ -1167,17 +1167,6 @@ impl Animate for ComputedTransformOperation {
 
 impl ComputeSquaredDistance for ComputedTransformOperation {
     fn compute_squared_distance(&self, other: &Self) -> Result<SquaredDistance, ()> {
-        
-        
-        
-        
-        
-        
-        let extract_pixel_length = |lop: &LengthOrPercentage| match *lop {
-            LengthOrPercentage::Length(px) => px.px(),
-            LengthOrPercentage::Percentage(_) => 0.,
-            LengthOrPercentage::Calc(calc) => calc.length().px(),
-        };
         match (self, other) {
             (&TransformOperation::Matrix3D(ref this), &TransformOperation::Matrix3D(ref other)) => {
                 this.compute_squared_distance(other)
@@ -1199,10 +1188,16 @@ impl ComputeSquaredDistance for ComputedTransformOperation {
                 &TransformOperation::Translate3D(ref fx, ref fy, ref fz),
                 &TransformOperation::Translate3D(ref tx, ref ty, ref tz),
             ) => {
-                let fx = extract_pixel_length(&fx);
-                let fy = extract_pixel_length(&fy);
-                let tx = extract_pixel_length(&tx);
-                let ty = extract_pixel_length(&ty);
+                
+                
+                
+                
+                
+                
+                let fx = fx.length_component().px();
+                let fy = fy.length_component().px();
+                let tx = tx.length_component().px();
+                let ty = ty.length_component().px();
 
                 Ok(fx.compute_squared_distance(&tx)? +
                     fy.compute_squared_distance(&ty)? +
