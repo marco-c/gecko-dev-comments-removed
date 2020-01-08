@@ -4292,6 +4292,16 @@ CreateError(JSContext* cx, JSExnType type, HandleObject stack,
 
 
 
+extern JS_PUBLIC_API(bool)
+PrintError(JSContext* cx, FILE* file, ConstUTF8CharsZ toStringResult,
+           JSErrorReport* report, bool reportWarnings);
+
+
+
+
+
+
+
 extern JS_PUBLIC_API(JSObject*)
 NewWeakMapObject(JSContext* cx);
 
