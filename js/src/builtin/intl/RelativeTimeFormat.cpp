@@ -302,12 +302,6 @@ js::intl_FormatRelativeTime(JSContext* cx, unsigned argc, Value* vp)
     double t = args[1].toNumber();
 
     
-    
-    if (IsNegativeZero(t)) {
-        t = +0.0;
-    }
-
-    
     constexpr auto RT_FORMAT_SLOT = RelativeTimeFormatObject::URELATIVE_TIME_FORMAT_SLOT;
     void* priv = relativeTimeFormat->getReservedSlot(RT_FORMAT_SLOT).toPrivate();
     URelativeDateTimeFormatter* rtf = static_cast<URelativeDateTimeFormatter*>(priv);
