@@ -823,13 +823,6 @@ var ContentBlocking = {
       return;
     }
 
-    
-    
-    
-    if (webProgress.isTopLevel) {
-      this.iconBox.removeAttribute("animate");
-    }
-
     let anyDetected = false;
     let anyBlocking = false;
 
@@ -856,6 +849,26 @@ var ContentBlocking = {
     
     
     
+    if (isSimulated || !anyBlocking) {
+      this.iconBox.removeAttribute("animate");
+    
+    
+    } else if (anyBlocking && !this.iconBox.hasAttribute("active")) {
+      this.iconBox.setAttribute("animate", "true");
+
+      if (!isBrowserPrivate) {
+        let introCount = Services.prefs.getIntPref(this.prefIntroCount);
+        if (introCount < this.MAX_INTROS) {
+          Services.prefs.setIntPref(this.prefIntroCount, ++introCount);
+          Services.prefs.savePrefFile(null);
+          this.showIntroPanel();
+        }
+      }
+    }
+
+    
+    
+    
     
     this.content.toggleAttribute("detected", anyDetected);
     this.content.toggleAttribute("blocking", anyBlocking);
@@ -873,21 +886,6 @@ var ContentBlocking = {
       this.reportBreakageButton.removeAttribute("hidden");
     } else {
       this.reportBreakageButton.setAttribute("hidden", "true");
-    }
-
-    if (isSimulated) {
-      this.iconBox.removeAttribute("animate");
-    } else if (anyBlocking && webProgress.isTopLevel) {
-      this.iconBox.setAttribute("animate", "true");
-
-      if (!isBrowserPrivate) {
-        let introCount = Services.prefs.getIntPref(this.prefIntroCount);
-        if (introCount < this.MAX_INTROS) {
-          Services.prefs.setIntPref(this.prefIntroCount, ++introCount);
-          Services.prefs.savePrefFile(null);
-          this.showIntroPanel();
-        }
-      }
     }
 
     if (hasException) {
