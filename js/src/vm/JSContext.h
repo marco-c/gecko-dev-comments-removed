@@ -544,7 +544,6 @@ struct JSContext : public JS::RootingContext,
     
     js::ThreadData<size_t> isTouchingGrayThings;
 
-    js::ThreadData<size_t> noGCOrAllocationCheck;
     js::ThreadData<size_t> noNurseryAllocationCheck;
 
     
@@ -554,13 +553,6 @@ struct JSContext : public JS::RootingContext,
 
 
     js::ThreadData<uintptr_t> disableStrictProxyCheckingCount;
-
-    bool isAllocAllowed() { return noGCOrAllocationCheck == 0; }
-    void disallowAlloc() { ++noGCOrAllocationCheck; }
-    void allowAlloc() {
-        MOZ_ASSERT(!isAllocAllowed());
-        --noGCOrAllocationCheck;
-    }
 
     bool isNurseryAllocAllowed() { return noNurseryAllocationCheck == 0; }
     void disallowNurseryAlloc() { ++noNurseryAllocationCheck; }

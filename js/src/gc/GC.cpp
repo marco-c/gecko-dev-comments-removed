@@ -7689,8 +7689,6 @@ GCRuntime::checkCanCallAPI()
 
     
     MOZ_RELEASE_ASSERT(!JS::RuntimeHeapIsBusy());
-
-    MOZ_ASSERT(rt->mainContextFromOwnThread()->isAllocAllowed());
 }
 
 bool
