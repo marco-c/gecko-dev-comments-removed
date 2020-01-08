@@ -91,6 +91,7 @@ const spawnProcess = async function(name, cmdArgs, processData, stdin = null) {
   }
 
   await readAllData(proc.stdout, processData);
+  return proc.exitCode;
 };
 
 const runCommandAndGetOutputAsString = async function(command, cmdArgs) {
@@ -113,7 +114,13 @@ const getSymbolsFromNM = async function(path, arch) {
     args.unshift("-arch", arch);
   }
 
-  await spawnProcess("nm", args, data => parser.consume(data));
+  const exitCode = await spawnProcess("nm", args, data => parser.consume(data));
+  if (exitCode === 69) {
+    throw new ExtensionError("Symbolication requires the Xcode command line tools to be installed " +
+                             "and the license accepted. Please run the following from the command " +
+                             "line to accept the xcode license:\n\n" +
+                             "sudo xcodebuild -license");
+  }
   if (Services.appinfo.OS !== "Darwin") {
     
     await spawnProcess("nm", ["-D", ...args], data => parser.consume(data));
@@ -416,6 +423,10 @@ this.geckoProfiler = class extends ExtensionAPI {
               
               
               
+              
+              if (e instanceof ExtensionError) {
+                throw e;
+              }
             }
           }
 
