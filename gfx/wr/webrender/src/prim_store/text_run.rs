@@ -3,7 +3,7 @@
 
 
 use api::{ColorF, DevicePixelScale, GlyphInstance, LayoutPrimitiveInfo};
-use api::{LayoutRect, LayoutToWorldTransform, RasterSpace};
+use api::{LayoutToWorldTransform, RasterSpace};
 use api::{LayoutVector2D, Shadow};
 use display_list_flattener::{AsInstanceKind, CreateShadow, IsVisible};
 use frame_builder::{FrameBuildingState, PictureContext};
@@ -35,13 +35,11 @@ pub struct TextRunKey {
 impl TextRunKey {
     pub fn new(
         info: &LayoutPrimitiveInfo,
-        prim_relative_clip_rect: LayoutRect,
         text_run: TextRun,
     ) -> Self {
         TextRunKey {
             common: PrimKeyCommonData::with_info(
                 info,
-                prim_relative_clip_rect,
             ),
             font: text_run.font,
             offset: text_run.offset.into(),
@@ -65,6 +63,7 @@ impl AsInstanceKind<TextRunDataHandle> for TextRunKey {
             used_font: self.font.clone(),
             glyph_keys_range: storage::Range::empty(),
             shadow: self.shadow,
+            should_snap: true,
         });
 
         PrimitiveInstanceKind::TextRun{ data_handle, run_index }
@@ -187,11 +186,9 @@ impl intern::Internable for TextRun {
     fn build_key(
         self,
         info: &LayoutPrimitiveInfo,
-        prim_relative_clip_rect: LayoutRect,
     ) -> TextRunKey {
         TextRunKey::new(
             info,
-            prim_relative_clip_rect,
             self,
         )
     }
@@ -227,6 +224,7 @@ pub struct TextRunPrimitive {
     pub used_font: FontInstance,
     pub glyph_keys_range: storage::Range<GlyphKey>,
     pub shadow: bool,
+    pub should_snap: bool,
 }
 
 impl TextRunPrimitive {
@@ -261,6 +259,11 @@ impl TextRunPrimitive {
         } else {
             FontTransform::identity()
         };
+
+        
+        self.should_snap =
+            transform.preserves_2d_axis_alignment() &&
+            raster_space == RasterSpace::Screen;
 
         
         
@@ -341,7 +344,7 @@ fn test_struct_sizes() {
     
     
     assert_eq!(mem::size_of::<TextRun>(), 112, "TextRun size changed");
-    assert_eq!(mem::size_of::<TextRunTemplate>(), 144, "TextRunTemplate size changed");
-    assert_eq!(mem::size_of::<TextRunKey>(), 136, "TextRunKey size changed");
+    assert_eq!(mem::size_of::<TextRunTemplate>(), 128, "TextRunTemplate size changed");
+    assert_eq!(mem::size_of::<TextRunKey>(), 120, "TextRunKey size changed");
     assert_eq!(mem::size_of::<TextRunPrimitive>(), 88, "TextRunPrimitive size changed");
 }

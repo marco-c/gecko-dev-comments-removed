@@ -2,7 +2,7 @@
 
 
 
-use api::{LayoutPrimitiveInfo, LayoutRect};
+use api::{LayoutPrimitiveInfo};
 use internal_types::FastHashMap;
 use malloc_size_of::MallocSizeOf;
 use profiler::ResourceProfileCounter;
@@ -427,6 +427,5 @@ pub trait Internable {
     fn build_key(
         self,
         info: &LayoutPrimitiveInfo,
-        prim_relative_clip_rect: LayoutRect,
     ) -> Self::Source;
 }
