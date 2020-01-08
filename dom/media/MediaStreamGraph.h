@@ -49,11 +49,6 @@ namespace dom {
 enum class AudioContextOperation;
 }
 
-namespace media {
-template <typename V, typename E>
-class Pledge;
-}
-
 
 
 
@@ -966,8 +961,8 @@ class MediaInputPort final {
 
 
 
-  already_AddRefed<media::Pledge<bool, nsresult>> BlockSourceTrackId(
-      TrackID aTrackId, BlockingMode aBlockingMode);
+  RefPtr<GenericPromise> BlockSourceTrackId(TrackID aTrackId,
+                                            BlockingMode aBlockingMode);
 
  private:
   void BlockSourceTrackIdImpl(TrackID aTrackId, BlockingMode aBlockingMode);

@@ -49,11 +49,6 @@ class ImageContainer;
 class OverlayImage;
 }  
 
-namespace media {
-template <typename V, typename E>
-class Pledge;
-}  
-
 #define NS_DOMMEDIASTREAM_IID                        \
   {                                                  \
     0x8cb65468, 0x66c0, 0x444e, {                    \
@@ -279,8 +274,8 @@ class DOMMediaStream
 
 
 
-    already_AddRefed<media::Pledge<bool, nsresult>> BlockSourceTrackId(
-        TrackID aTrackId, BlockingMode aBlockingMode);
+    RefPtr<GenericPromise> BlockSourceTrackId(TrackID aTrackId,
+                                              BlockingMode aBlockingMode);
 
    private:
     RefPtr<MediaInputPort> mInputPort;
