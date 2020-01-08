@@ -683,6 +683,31 @@ DataChannelWrapper.prototype = {
 
   
 
+
+
+
+  get ordered() {
+    return this._channel.ordered;
+  },
+
+  
+
+
+
+
+  get maxPacketLifeTime() {
+    return this._channel.maxPacketLifeTime;
+  },
+
+  
+
+
+
+
+  get maxRetransmits() {
+    return this._channel.maxRetransmits;
+  },
+
   
 
 
