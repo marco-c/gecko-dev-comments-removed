@@ -125,11 +125,6 @@ public:
   bool GetReturnInParagraphCreatesNewParagraph();
 
   
-
-
-  Element* GetSelectionContainer();
-
-  
   virtual nsresult Init(nsIDocument& aDoc, Element* aRoot,
                         nsISelectionController* aSelCon, uint32_t aFlags,
                         const nsAString& aValue) override;
@@ -444,6 +439,17 @@ protected:
 
   static Element* GetBlock(nsINode& aNode,
                            nsINode* aAncestorLimiter = nullptr);
+
+  
+
+
+
+
+
+
+
+
+  Element* GetSelectionContainerElement(Selection& aSelection) const;
 
   void IsNextCharInNodeWhitespace(nsIContent* aContent,
                                   int32_t aOffset,

@@ -302,8 +302,10 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(Selection* aSelection)
   }
 
   
-  RefPtr<Element> focusElement = GetSelectionContainer();
-  NS_ENSURE_TRUE(focusElement, NS_OK);
+  RefPtr<Element> focusElement = GetSelectionContainerElement(*aSelection);
+  if (NS_WARN_IF(!focusElement)) {
+    return NS_OK;
+  }
 
   
   if (!focusElement->IsInUncomposedDoc()) {
