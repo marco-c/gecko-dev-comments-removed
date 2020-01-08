@@ -2,7 +2,7 @@
 
 
 
-use fnv::FnvHashMap;
+use fxhash::FxHashMap;
 use tree::OpaqueElement;
 
 
@@ -32,7 +32,7 @@ impl NthIndexCache {
 
 
 #[derive(Default)]
-pub struct NthIndexCacheInner(FnvHashMap<OpaqueElement, i32>);
+pub struct NthIndexCacheInner(FxHashMap<OpaqueElement, i32>);
 
 impl NthIndexCacheInner {
     

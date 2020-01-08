@@ -5,7 +5,7 @@
 
 
 use context::QuirksMode;
-use fnv::FnvHashSet;
+use fxhash::FxHashSet;
 use media_queries::Device;
 use shared_lock::SharedRwLockReadGuard;
 use stylesheets::{DocumentRule, ImportRule, MediaRule};
@@ -54,14 +54,14 @@ impl ToMediaListKey for MediaRule {}
 #[derive(Debug, MallocSizeOf, PartialEq)]
 pub struct EffectiveMediaQueryResults {
     
-    set: FnvHashSet<MediaListKey>,
+    set: FxHashSet<MediaListKey>,
 }
 
 impl EffectiveMediaQueryResults {
     
     pub fn new() -> Self {
         Self {
-            set: FnvHashSet::default(),
+            set: FxHashSet::default(),
         }
     }
 
