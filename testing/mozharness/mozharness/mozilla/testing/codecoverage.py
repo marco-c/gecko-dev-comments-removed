@@ -204,20 +204,16 @@ class CodeCoverageMixin(SingleTestMixin):
     def coverage_args(self):
         return []
 
-    def set_coverage_env(self, env, is_baseline_test=False):
+    def set_coverage_env(self, env):
         
-        self.gcov_dir = tempfile.mkdtemp()
-        env['GCOV_PREFIX'] = self.gcov_dir
+        gcov_dir = tempfile.mkdtemp()
+        env['GCOV_PREFIX'] = gcov_dir
 
         
-        
-        
-        if self.per_test_coverage and not is_baseline_test and self._is_linux():
-            env['GCOV_RESULTS_DIR'] = tempfile.mkdtemp()
+        jsvm_dir = tempfile.mkdtemp()
+        env['JS_CODE_COVERAGE_OUTPUT_DIR'] = jsvm_dir
 
-        
-        self.jsvm_dir = tempfile.mkdtemp()
-        env['JS_CODE_COVERAGE_OUTPUT_DIR'] = self.jsvm_dir
+        return (gcov_dir, jsvm_dir)
 
     @PreScriptAction('run-tests')
     def _set_gcov_prefix(self, action):
@@ -227,7 +223,7 @@ class CodeCoverageMixin(SingleTestMixin):
         if self.per_test_coverage:
             return
 
-        self.set_coverage_env(os.environ)
+        self.gcov_dir, self.jsvm_dir = self.set_coverage_env(os.environ)
 
     def parse_coverage_artifacts(self,
                                  gcov_dir,
@@ -290,11 +286,9 @@ class CodeCoverageMixin(SingleTestMixin):
         else:
             return grcov_output_file, jsvm_output_file
 
-    def add_per_test_coverage_report(self, env, suite, test):
-        gcov_dir = env['GCOV_RESULTS_DIR'] if 'GCOV_RESULTS_DIR' in env else self.gcov_dir
-
+    def add_per_test_coverage_report(self, gcov_dir, jsvm_dir, suite, test):
         grcov_file = self.parse_coverage_artifacts(
-            gcov_dir, self.jsvm_dir, merge=True, output_format='coveralls',
+            gcov_dir, jsvm_dir, merge=True, output_format='coveralls',
             filter_covered=True,
         )
 
@@ -305,11 +299,6 @@ class CodeCoverageMixin(SingleTestMixin):
             self.per_test_reports[suite] = {}
         assert test not in self.per_test_reports[suite]
         self.per_test_reports[suite][test] = report_file
-
-        if 'GCOV_RESULTS_DIR' in env:
-            
-            
-            shutil.rmtree(self.gcov_dir)
 
     def is_covered(self, sf):
         
