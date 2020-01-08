@@ -119,7 +119,7 @@ add_task(async function test_on_created_navigation_target_from_mouse_click_subfr
   await runCreatedNavigationTargetTest({
     extension,
     openNavTarget() {
-      BrowserTestUtils.synthesizeMouseAtCenter(function() {
+      BrowserTestUtils.synthesizeMouseAtCenter(() => {
         
         
         return this.content.frames[0].document
@@ -138,7 +138,7 @@ add_task(async function test_on_created_navigation_target_from_mouse_click_subfr
   await runCreatedNavigationTargetTest({
     extension,
     openNavTarget() {
-      BrowserTestUtils.synthesizeMouseAtCenter(function() {
+      BrowserTestUtils.synthesizeMouseAtCenter(() => {
         
         
         return this.content.frames[0].document
@@ -157,7 +157,7 @@ add_task(async function test_on_created_navigation_target_from_mouse_click_subfr
   await runCreatedNavigationTargetTest({
     extension,
     openNavTarget() {
-      BrowserTestUtils.synthesizeMouseAtCenter(function() {
+      BrowserTestUtils.synthesizeMouseAtCenter(() => {
         
         
         return this.content.frames[0].document
