@@ -191,9 +191,11 @@ ObjectClient.prototype = {
 
 
 
+
   getPropertyValue: DebuggerClient.requester({
     type: "propertyValue",
     name: arg(0),
+    receiverId: arg(1),
   }),
 
   
