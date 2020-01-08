@@ -3291,10 +3291,6 @@ namespace JS {
 
 
 
-typedef js::Vector<char, 0, js::SystemAllocPolicy> BuildIdCharVector;
-
-
-
 
 
 
@@ -3335,9 +3331,6 @@ class OptimizedEncodingListener {
   
   virtual void storeOptimizedEncoding(const uint8_t* bytes, size_t length) = 0;
 };
-
-extern MOZ_MUST_USE JS_PUBLIC_API bool GetOptimizedEncodingBuildId(
-    BuildIdCharVector* buildId);
 
 class JS_PUBLIC_API StreamConsumer {
  protected:
@@ -4437,18 +4430,6 @@ struct AsmJSCacheOps {
 
 extern JS_PUBLIC_API void SetAsmJSCacheOps(JSContext* cx,
                                            const AsmJSCacheOps* callbacks);
-
-
-
-
-
-
-
-
-
-typedef bool (*BuildIdOp)(BuildIdCharVector* buildId);
-
-extern JS_PUBLIC_API void SetProcessBuildIdOp(BuildIdOp buildIdOp);
 
 
 
