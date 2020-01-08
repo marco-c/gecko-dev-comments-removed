@@ -75,19 +75,19 @@ Would you like to create this directory?
 
 Your choice: '''
 
-STYLO_DIRECTORY_MESSAGE = '''
-Stylo packages require a directory to store shared, persistent state.
-On this machine, that directory is:
+STYLO_NODEJS_DIRECTORY_MESSAGE = '''
+Stylo and NodeJS packages require a directory to store shared, persistent
+state.  On this machine, that directory is:
 
   {statedir}
 
 Please restart bootstrap and create that directory when prompted.
 '''
 
-STYLO_REQUIRES_CLONE = '''
-Installing Stylo packages requires a checkout of mozilla-central. Once you
-have such a checkout, please re-run `./mach bootstrap` from the checkout
-directory.
+STYLE_NODEJS_REQUIRES_CLONE = '''
+Installing Stylo and NodeJS packages requires a checkout of mozilla-central.
+Once you have such a checkout, please re-run `./mach bootstrap` from the
+checkout directory.
 '''
 
 FINISHED = '''
@@ -341,6 +341,7 @@ class Bootstrapper(object):
             print(SOURCE_ADVERTISE)
 
         
+        
         if not self.instance.no_interactive:
             
             
@@ -349,15 +350,16 @@ class Bootstrapper(object):
             
             
             if not state_dir_available:
-                print(STYLO_DIRECTORY_MESSAGE.format(statedir=state_dir))
+                print(STYLO_NODEJS_DIRECTORY_MESSAGE.format(statedir=state_dir))
                 sys.exit(1)
 
             if not have_clone:
-                print(STYLO_REQUIRES_CLONE)
+                print(STYLE_NODEJS_REQUIRES_CLONE)
                 sys.exit(1)
 
             self.instance.state_dir = state_dir
             self.instance.ensure_stylo_packages(state_dir, checkout_root)
+            self.instance.ensure_node_packages(state_dir, checkout_root)
 
         print(self.finished % name)
         if not (self.instance.which('rustc') and self.instance._parse_version('rustc')
