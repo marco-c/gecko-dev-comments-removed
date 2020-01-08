@@ -424,9 +424,6 @@ js::GetElementsWithAdder(JSContext* cx, HandleObject obj, HandleObject receiver,
     return true;
 }
 
-static bool
-ObjectMayHaveExtraIndexedProperties(JSObject* obj);
-
 static inline bool
 IsPackedArrayOrNoExtraIndexedProperties(JSObject* obj, uint64_t length)
 {
@@ -1062,8 +1059,8 @@ ObjectMayHaveExtraIndexedOwnProperties(JSObject* obj)
 
 
 
-static bool
-ObjectMayHaveExtraIndexedProperties(JSObject* obj)
+bool
+js::ObjectMayHaveExtraIndexedProperties(JSObject* obj)
 {
     MOZ_ASSERT_IF(obj->hasDynamicPrototype(), !obj->isNative());
 
