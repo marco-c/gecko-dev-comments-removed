@@ -119,11 +119,22 @@ var BroadcastService = class {
     }
 
     const isNew = !this.jsonFile.data.listeners.hasOwnProperty(broadcastId);
+    const oldVersion = !isNew && this.jsonFile.data.listeners[broadcastId].version;
+    if (!isNew && oldVersion != version) {
+      console.warn("Versions differ while adding listener for", broadcastId,
+                   ". Got", version, "but JSON file says", oldVersion, ".");
+    }
 
     
     
     
-    this.jsonFile.data.listeners[broadcastId] = {version, sourceInfo};
+    
+    
+    
+    
+    
+    
+    this.jsonFile.data.listeners[broadcastId] = {version: oldVersion || version, sourceInfo};
     this.jsonFile.saveSoon();
 
     if (isNew) {
