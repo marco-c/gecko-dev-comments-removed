@@ -831,8 +831,10 @@ ScriptedProxyHandler::ownPropertyKeys(JSContext* cx, HandleObject proxy, AutoIdV
     }
 
     
-    if (!uncheckedResultKeys.empty())
-        return js::Throw(cx, uncheckedResultKeys.all().front(), JSMSG_CANT_REPORT_NEW);
+    if (!uncheckedResultKeys.empty()) {
+        RootedId id(cx, uncheckedResultKeys.all().front());
+        return js::Throw(cx, id, JSMSG_CANT_REPORT_NEW);
+    }
 
     
     return props.appendAll(trapResult);

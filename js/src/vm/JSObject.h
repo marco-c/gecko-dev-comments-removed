@@ -1241,10 +1241,10 @@ XDRObjectLiteral(XDRState<mode>* xdr, MutableHandleObject obj);
 
 
 extern void
-ReportNotObject(JSContext* cx, const Value& v);
+ReportNotObject(JSContext* cx, HandleValue v);
 
 inline JSObject*
-NonNullObject(JSContext* cx, const Value& v)
+NonNullObject(JSContext* cx, HandleValue v)
 {
     if (v.isObject())
         return &v.toObject();
@@ -1292,7 +1292,7 @@ GetFirstArgumentAsObject(JSContext* cx, const CallArgs& args, const char* method
 
 
 extern bool
-Throw(JSContext* cx, jsid id, unsigned errorNumber, const char* details = nullptr);
+Throw(JSContext* cx, HandleId id, unsigned errorNumber, const char* details = nullptr);
 
 
 
