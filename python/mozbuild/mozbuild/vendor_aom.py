@@ -63,14 +63,11 @@ Please set a repository url with --repo on either googlesource or github.''' % h
         try:
             info = req.json()
         except ValueError as e:
-            if 'No JSON object' in e.message:
-                
-                
-                
-                import json
-                info = json.loads(req.text[4:])
-            else:
-                raise
+            
+            
+            
+            import json
+            info = json.loads(req.text[4:])
         return (info['commit'], info['committer']['time'])
 
     def upstream_github_commit(self, revision):
