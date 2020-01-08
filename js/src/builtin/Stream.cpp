@@ -919,6 +919,9 @@ ReadableStreamDefaultControllerEnqueue(JSContext* cx,
                                        Handle<ReadableStreamDefaultController*> unwrappedController,
                                        HandleValue chunk);
 
+
+
+
 static bool
 TeeReaderReadHandler(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -949,8 +952,10 @@ TeeReaderReadHandler(JSContext* cx, unsigned argc, Value* vp)
         
         if (!unwrappedTeeState->canceled1()) {
             
-            Rooted<ReadableStreamDefaultController*> branch1(cx, unwrappedTeeState->branch1());
-            if (!ReadableStreamDefaultControllerClose(cx, branch1)) {
+            
+            Rooted<ReadableStreamDefaultController*> unwrappedBranch1(cx,
+                unwrappedTeeState->branch1());
+            if (!ReadableStreamDefaultControllerClose(cx, unwrappedBranch1)) {
                 return false;
             }
         }
@@ -958,8 +963,10 @@ TeeReaderReadHandler(JSContext* cx, unsigned argc, Value* vp)
         
         if (!unwrappedTeeState->canceled2()) {
             
-            Rooted<ReadableStreamDefaultController*> branch2(cx, unwrappedTeeState->branch2());
-            if (!ReadableStreamDefaultControllerClose(cx, branch2)) {
+            
+            Rooted<ReadableStreamDefaultController*> unwrappedBranch2(cx,
+                unwrappedTeeState->branch2());
+            if (!ReadableStreamDefaultControllerClose(cx, unwrappedBranch2)) {
                 return false;
             }
         }
@@ -988,6 +995,7 @@ TeeReaderReadHandler(JSContext* cx, unsigned argc, Value* vp)
 
     
     
+    
     Rooted<ReadableStreamDefaultController*> unwrappedController(cx);
     if (!unwrappedTeeState->canceled1()) {
         unwrappedController = unwrappedTeeState->branch1();
@@ -996,6 +1004,7 @@ TeeReaderReadHandler(JSContext* cx, unsigned argc, Value* vp)
         }
     }
 
+    
     
     
     if (!unwrappedTeeState->canceled2()) {
@@ -1013,15 +1022,13 @@ static MOZ_MUST_USE JSObject*
 ReadableStreamDefaultReaderRead(JSContext* cx,
                                 Handle<ReadableStreamDefaultReader*> unwrappedReader);
 
+
+
+
+
 static MOZ_MUST_USE JSObject*
 ReadableStreamTee_Pull(JSContext* cx, Handle<TeeState*> unwrappedTeeState)
 {
-    
-    
-    
-
-    
-    
     
     
     Rooted<ReadableStream*> unwrappedStream(cx,
@@ -1034,10 +1041,14 @@ ReadableStreamTee_Pull(JSContext* cx, Handle<TeeState*> unwrappedTeeState)
     if (!unwrappedReaderObj) {
         return nullptr;
     }
-
     Rooted<ReadableStreamDefaultReader*> unwrappedReader(cx,
         &unwrappedReaderObj->as<ReadableStreamDefaultReader>());
 
+    
+    
+    
+    
+    
     RootedObject readPromise(cx, ::ReadableStreamDefaultReaderRead(cx, unwrappedReader));
     if (!readPromise) {
         return nullptr;
