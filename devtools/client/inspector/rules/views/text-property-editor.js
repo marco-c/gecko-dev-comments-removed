@@ -395,7 +395,7 @@ TextPropertyEditor.prototype = {
       flexClass: "ruleview-flex",
       gridClass: "ruleview-grid",
       shapeClass: "ruleview-shape",
-      shapeSwatchClass: SHAPE_SWATCH_CLASS,
+      shapeSwatchClass: SHARED_SWATCH_CLASS + " " + SHAPE_SWATCH_CLASS,
       
       
       defaultColorType: !propDirty,

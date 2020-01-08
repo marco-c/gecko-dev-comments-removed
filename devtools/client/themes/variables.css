@@ -88,6 +88,9 @@
   --theme-graphs-full-blue: #00f;
 
   
+  --theme-icon-checked-filter: url(chrome://devtools/skin/images/filters.svg#icon-checked-light);
+
+  
   --theme-popup-background: -moz-field;
   --theme-popup-color: -moz-fieldText;
   --theme-popup-border-color: ThreeDShadow;
@@ -176,6 +179,9 @@
   --theme-graphs-grey: #757873;
   --theme-graphs-full-red: #f00;
   --theme-graphs-full-blue: #00f;
+
+  
+  --theme-icon-checked-filter: url(chrome://devtools/skin/images/filters.svg#icon-checked-dark);
 
   
   --theme-popup-background: var(--grey-60);
