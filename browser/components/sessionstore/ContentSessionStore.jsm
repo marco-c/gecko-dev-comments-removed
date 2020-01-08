@@ -329,7 +329,8 @@ class ScrollPositionListener extends Handler {
   constructor(store) {
     super(store);
 
-    ssu.addDynamicFrameFilteredListener(this.mm, "scroll", this, false);
+    ssu.addDynamicFrameFilteredListener(this.mm, "mozvisualscroll", this,
+                                         false,  true);
     this.stateChangeNotifier.addObserver(this);
   }
 
