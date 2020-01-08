@@ -319,6 +319,7 @@ class SharedPrefMap
     
     uint8_t mIsLocked : 1;
     
+    
     uint8_t mDefaultChanged : 1;
   };
 
