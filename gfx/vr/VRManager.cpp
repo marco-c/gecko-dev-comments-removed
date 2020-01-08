@@ -21,12 +21,6 @@
 #include "gfxPrefs.h"
 #include "gfxVR.h"
 #include "gfxVRExternal.h"
-#if defined(XP_WIN)
-#include "gfxVROculus.h"
-#endif
-#if defined(XP_WIN) || defined(XP_MACOSX) || (defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID))
-#include "gfxVROpenVR.h"
-#endif
 
 #include "gfxVRPuppet.h"
 #include "ipc/VRLayerParent.h"
@@ -85,20 +79,6 @@ VRManager::VRManager()
 
   RefPtr<VRSystemManager> mgr;
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
 #if !defined(MOZ_WIDGET_ANDROID)
   
   
@@ -123,26 +103,6 @@ VRManager::VRManager()
       mManagers.AppendElement(mExternalManager);
     }
   }
-
-#if defined(XP_WIN)
-  if (!mVRService) {
-    
-    mgr = VRSystemManagerOculus::Create();
-    if (mgr) {
-      mManagers.AppendElement(mgr);
-    }
-  }
-#endif
-
-#if defined(XP_WIN) || defined(XP_MACOSX) || (defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID))
-  if (!mVRService) {
-    
-    mgr = VRSystemManagerOpenVR::Create();
-    if (mgr) {
-      mManagers.AppendElement(mgr);
-    }
-  } 
-#endif
 
   
   
