@@ -2724,7 +2724,8 @@ CharIterator::MatchesFilter() const
 
 
 
-class SVGCharClipDisplayItem : public nsCharClipDisplayItem {
+class SVGCharClipDisplayItem final : public nsCharClipDisplayItem
+{
 public:
   explicit SVGCharClipDisplayItem(const TextRenderedRun& aRun)
     : nsCharClipDisplayItem(aRun.mFrame)
@@ -2747,7 +2748,7 @@ public:
 
 
 
-class SVGTextDrawPathCallbacks : public nsTextFrame::DrawPathCallbacks
+class SVGTextDrawPathCallbacks final : public nsTextFrame::DrawPathCallbacks
 {
   typedef mozilla::image::imgDrawingParams imgDrawingParams;
 
@@ -3066,7 +3067,8 @@ SVGTextDrawPathCallbacks::StrokeGeometry()
 
 
 
-class nsDisplaySVGText : public nsDisplayItem {
+class nsDisplaySVGText final : public nsDisplayItem
+{
 public:
   nsDisplaySVGText(nsDisplayListBuilder* aBuilder, SVGTextFrame* aFrame)
     : nsDisplayItem(aBuilder, aFrame)

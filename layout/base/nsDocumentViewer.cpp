@@ -148,7 +148,7 @@ class AutoPrintEventDispatcher;
 
 
 
-class nsDocViewerSelectionListener : public nsISelectionListener
+class nsDocViewerSelectionListener final : public nsISelectionListener
 {
 public:
 
@@ -180,7 +180,7 @@ protected:
 
 
 
-class nsDocViewerFocusListener : public nsIDOMEventListener
+class nsDocViewerFocusListener final : public nsIDOMEventListener
 {
 public:
   

@@ -50,7 +50,8 @@
 
 
 
-class nsMathMLmfracFrame : public nsMathMLContainerFrame {
+class nsMathMLmfracFrame final : public nsMathMLContainerFrame
+{
 public:
   NS_DECL_FRAMEARENA_HELPERS(nsMathMLmfracFrame)
 

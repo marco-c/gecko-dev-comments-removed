@@ -262,7 +262,7 @@ ComputeBorderOverflow(nsMathMLmtdFrame* aFrame,
 
 
 
-class nsDisplaymtdBorder : public nsDisplayBorder
+class nsDisplaymtdBorder final : public nsDisplayBorder
 {
 public:
   nsDisplaymtdBorder(nsDisplayListBuilder* aBuilder, nsMathMLmtdFrame* aFrame)

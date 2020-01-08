@@ -401,7 +401,8 @@ private:
 
 
 
-class nsMathMLmathBlockFrame : public nsBlockFrame {
+class nsMathMLmathBlockFrame final : public nsBlockFrame
+{
 public:
   NS_DECL_QUERYFRAME
   NS_DECL_FRAMEARENA_HELPERS(nsMathMLmathBlockFrame)
@@ -483,8 +484,9 @@ protected:
 
 
 
-class nsMathMLmathInlineFrame : public nsInlineFrame,
-                                public nsMathMLFrame {
+class nsMathMLmathInlineFrame final : public nsInlineFrame,
+                                      public nsMathMLFrame
+{
 public:
   NS_DECL_QUERYFRAME
   NS_DECL_FRAMEARENA_HELPERS(nsMathMLmathInlineFrame)

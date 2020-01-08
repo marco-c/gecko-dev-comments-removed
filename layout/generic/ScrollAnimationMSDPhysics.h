@@ -14,7 +14,7 @@ namespace mozilla {
 
 
 
-class ScrollAnimationMSDPhysics : public ScrollAnimationPhysics
+class ScrollAnimationMSDPhysics final : public ScrollAnimationPhysics
 {
 public:
   typedef mozilla::layers::AxisPhysicsMSDModel AxisPhysicsMSDModel;

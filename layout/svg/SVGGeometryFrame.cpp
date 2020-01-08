@@ -57,7 +57,8 @@ NS_QUERYFRAME_TAIL_INHERITING(nsFrame)
 
 
 
-class nsDisplaySVGGeometry : public nsDisplayItem {
+class nsDisplaySVGGeometry final : public nsDisplayItem
+{
   typedef mozilla::image::imgDrawingParams imgDrawingParams;
 
 public:

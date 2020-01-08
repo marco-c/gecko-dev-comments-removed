@@ -26,7 +26,8 @@ class ServoRestyleState;
 
 
 
-class ViewportFrame : public nsContainerFrame {
+class ViewportFrame : public nsContainerFrame
+{
 public:
   NS_DECL_QUERYFRAME
   NS_DECL_FRAMEARENA_HELPERS(ViewportFrame)

@@ -16,7 +16,8 @@
 
 
 
-class nsMathMLmrowFrame : public nsMathMLContainerFrame {
+class nsMathMLmrowFrame final : public nsMathMLContainerFrame
+{
 public:
   NS_DECL_FRAMEARENA_HELPERS(nsMathMLmrowFrame)
 

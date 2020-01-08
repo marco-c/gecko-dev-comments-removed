@@ -18,7 +18,7 @@ using namespace mozilla;
 
 
 
-class SVGFEContainerFrame : public nsContainerFrame
+class SVGFEContainerFrame final : public nsContainerFrame
 {
   friend nsIFrame*
   NS_NewSVGFEContainerFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle);

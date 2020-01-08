@@ -25,7 +25,7 @@ struct ScrollAnimationBezierPhysicsSettings
 
 
 
-class ScrollAnimationBezierPhysics : public ScrollAnimationPhysics
+class ScrollAnimationBezierPhysics final : public ScrollAnimationPhysics
 {
 public:
   explicit ScrollAnimationBezierPhysics(const nsPoint& aStartPos,

@@ -19,7 +19,7 @@ using namespace mozilla::dom;
 
 
 
-class SVGViewFrame : public nsFrame
+class SVGViewFrame final : public nsFrame
 {
   friend nsIFrame*
   NS_NewSVGViewFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle);

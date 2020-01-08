@@ -539,7 +539,8 @@ nsSVGOuterSVGFrame::UnionChildOverflow(nsOverflowAreas& aOverflowAreas)
 
 
 
-class nsDisplayOuterSVG : public nsDisplayItem {
+class nsDisplayOuterSVG final : public nsDisplayItem
+{
 public:
   nsDisplayOuterSVG(nsDisplayListBuilder* aBuilder,
                     nsSVGOuterSVGFrame* aFrame) :

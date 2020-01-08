@@ -1067,7 +1067,7 @@ nsXULPopupManager::HidePopup(nsIContent* aPopup,
 }
 
 
-class TransitionEnder : public nsIDOMEventListener
+class TransitionEnder final : public nsIDOMEventListener
 {
 protected:
   virtual ~TransitionEnder() { }

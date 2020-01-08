@@ -89,7 +89,7 @@ nsComboboxControlFrame::RedisplayTextEvent::Run()
 
 
 
-class nsComboButtonListener : public nsIDOMEventListener
+class nsComboButtonListener final : public nsIDOMEventListener
 {
 private:
   virtual ~nsComboButtonListener() {}
@@ -1304,7 +1304,8 @@ nsComboboxControlFrame::GetDisplayNode() const
 
 
 
-class nsComboboxDisplayFrame : public nsBlockFrame {
+class nsComboboxDisplayFrame final : public nsBlockFrame
+{
 public:
   NS_DECL_FRAMEARENA_HELPERS(nsComboboxDisplayFrame)
 
@@ -1554,7 +1555,8 @@ nsComboboxControlFrame::UpdateRecentIndex(int32_t aIndex)
   return index;
 }
 
-class nsDisplayComboboxFocus : public nsDisplayItem {
+class nsDisplayComboboxFocus : public nsDisplayItem
+{
 public:
   nsDisplayComboboxFocus(nsDisplayListBuilder* aBuilder,
                          nsComboboxControlFrame* aFrame)

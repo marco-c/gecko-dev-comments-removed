@@ -144,7 +144,8 @@ private:
 
 
 
-class nsDisplayCanvasBackgroundColor : public nsDisplaySolidColorBase {
+class nsDisplayCanvasBackgroundColor final : public nsDisplaySolidColorBase
+{
 public:
   nsDisplayCanvasBackgroundColor(nsDisplayListBuilder* aBuilder, nsIFrame *aFrame)
     : nsDisplaySolidColorBase(aBuilder, aFrame, NS_RGBA(0,0,0,0))

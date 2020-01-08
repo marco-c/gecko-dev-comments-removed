@@ -16,7 +16,8 @@
 namespace mozilla {
 namespace layout {
 
-class PRFileDescStream : public mozilla::gfx::EventStream {
+class PRFileDescStream final : public mozilla::gfx::EventStream
+{
   
   
   
@@ -129,7 +130,7 @@ private:
   bool mGood;
 };
 
-class DrawEventRecorderPRFileDesc : public gfx::DrawEventRecorderPrivate
+class DrawEventRecorderPRFileDesc final : public gfx::DrawEventRecorderPrivate
 {
 public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(DrawEventRecorderPRFileDesc, override)

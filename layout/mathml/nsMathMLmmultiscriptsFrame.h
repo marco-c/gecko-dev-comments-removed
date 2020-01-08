@@ -17,7 +17,8 @@
 
 
 
-class nsMathMLmmultiscriptsFrame : public nsMathMLContainerFrame {
+class nsMathMLmmultiscriptsFrame final : public nsMathMLContainerFrame
+{
 public:
   NS_DECL_FRAMEARENA_HELPERS(nsMathMLmmultiscriptsFrame)
 
