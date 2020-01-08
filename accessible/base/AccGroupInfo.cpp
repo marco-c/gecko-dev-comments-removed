@@ -233,7 +233,7 @@ AccGroupInfo::TotalItemCount(Accessible* aContainer, bool* aIsHierarchical)
       Accessible* childItem = AccGroupInfo::FirstItemOf(aContainer);
       if (!childItem) {
         childItem = aContainer->FirstChild();
-        if (childItem->IsTextLeaf()) {
+        if (childItem && childItem->IsTextLeaf()) {
           
           childItem = childItem->NextSibling();
         }
