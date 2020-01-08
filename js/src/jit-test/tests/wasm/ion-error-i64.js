@@ -10,8 +10,6 @@ const TRIGGER = options['ion.warmup.trigger'] + 10;
 const ITER = 2 * TRIGGER;
 const EXCEPTION_ITER = ITER - 2;
 
-enableGeckoProfiling();
-
 var instance = wasmEvalText(`(module
     (func $add (export "add") (result i32) (param i32) (param i32)
      get_local 0
@@ -25,7 +23,21 @@ var instance = wasmEvalText(`(module
      call $add
      i64.extend_s/i32
     )
+
+    (func $add_two_i64 (export "add_two_i64") (result i64) (param i64) (param i64)
+     get_local 0
+     get_local 1
+     i64.add
+    )
 )`).exports;
+
+(function() {
+    
+    
+    assertErrorMessage(() => instance.add_two_i64(0, 1), TypeError, /cannot pass i64 to or from JS/);
+})();
+
+enableGeckoProfiling();
 
 var callToMain;
 
@@ -73,7 +85,9 @@ function main() {
             assertEq(+lines[0], arrayCallLine);
             assertEq(+lines[1], callToMain);
         } else if ((i % 2) == 0) {
+            
             assertEqPreciseStacks(profilingStack, [
+                ['', '0', ''],                
                 ['', '>', '0,>', '>', ''],    
                 ['', '!>', '0,!>', '!>', ''], 
             ]);

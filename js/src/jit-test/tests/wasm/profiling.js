@@ -5,7 +5,12 @@ const Module = WebAssembly.Module;
 const Instance = WebAssembly.Instance;
 const Table = WebAssembly.Table;
 
-const { assertEqImpreciseStacks, startProfiling, endProfiling } = WasmHelpers;
+const {
+    assertEqImpreciseStacks,
+    assertEqPreciseStacks,
+    startProfiling,
+    endProfiling
+} = WasmHelpers;
 
 function test(code, importObj, expectedStacks)
 {
@@ -379,4 +384,34 @@ for (let type of ['f32', 'f64']) {
 
  disableSingleStepProfiling();
  disableGeckoProfiling();
+})();
+
+
+let func = wasmEvalText(`(module
+    (func $inner (result i32) (param i32) (param i32)
+        get_local 0
+        get_local 1
+        i32.add
+    )
+    (func (export "add") (result i32) (param i32) (param i32)
+     get_local 0
+     get_local 1
+     call $inner
+    )
+)`).exports.add;
+
+(function() {
+    enableGeckoProfiling();
+    
+    for (let i = 0; i < 10; i++) {
+        enableSingleStepProfiling();
+        let res = func(i - 1, i + 1);
+        assertEqPreciseStacks(disableSingleStepProfiling(), [
+            ['', '>', '1,>', '0,1,>' , '1,>', '>', ''],      
+            ['', '!>', '1,!>', '0,1,!>' , '1,!>', '!>', ''], 
+            ['', '1', '0,1' , '1', ''],                      
+        ]);
+        assertEq(res, i+i);
+    }
+    disableGeckoProfiling();
 })();
