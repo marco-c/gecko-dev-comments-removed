@@ -3924,7 +3924,7 @@ nsGlobalWindowInner::ScrollTo(const CSSIntPoint& aScroll,
       scroll.y = maxpx;
     }
 
-    bool smoothScroll = sf->GetScrollStyles().IsSmoothScroll(aOptions.mBehavior);
+    bool smoothScroll = sf->GetScrollbarStyles().IsSmoothScroll(aOptions.mBehavior);
 
     sf->ScrollToCSSPixels(scroll, smoothScroll
                             ? nsIScrollableFrame::SMOOTH_MSD
@@ -3978,7 +3978,7 @@ nsGlobalWindowInner::ScrollByLines(int32_t numLines,
     
     
     
-    bool smoothScroll = sf->GetScrollStyles().IsSmoothScroll(aOptions.mBehavior);
+    bool smoothScroll = sf->GetScrollbarStyles().IsSmoothScroll(aOptions.mBehavior);
 
     sf->ScrollBy(nsIntPoint(0, numLines), nsIScrollableFrame::LINES,
                  smoothScroll
@@ -3997,7 +3997,7 @@ nsGlobalWindowInner::ScrollByPages(int32_t numPages,
     
     
     
-    bool smoothScroll = sf->GetScrollStyles().IsSmoothScroll(aOptions.mBehavior);
+    bool smoothScroll = sf->GetScrollbarStyles().IsSmoothScroll(aOptions.mBehavior);
 
     sf->ScrollBy(nsIntPoint(0, numPages), nsIScrollableFrame::PAGES,
                  smoothScroll
@@ -4224,131 +4224,6 @@ Element*
 nsGlobalWindowInner::GetFrameElement()
 {
   return GetRealFrameElement(IgnoreErrors());
-}
-
- bool
-nsGlobalWindowInner::TokenizeDialogOptions(nsAString& aToken,
-                                           nsAString::const_iterator& aIter,
-                                           nsAString::const_iterator aEnd)
-{
-  while (aIter != aEnd && nsCRT::IsAsciiSpace(*aIter)) {
-    ++aIter;
-  }
-
-  if (aIter == aEnd) {
-    return false;
-  }
-
-  if (*aIter == ';' || *aIter == ':' || *aIter == '=') {
-    aToken.Assign(*aIter);
-    ++aIter;
-    return true;
-  }
-
-  nsAString::const_iterator start = aIter;
-
-  
-  while (aIter != aEnd && !nsCRT::IsAsciiSpace(*aIter) &&
-         *aIter != ';' &&
-         *aIter != ':' &&
-         *aIter != '=') {
-    ++aIter;
-  }
-
-  aToken.Assign(Substring(start, aIter));
-  return true;
-}
-
-
-
-
-
-
-void
-nsGlobalWindowInner::ConvertDialogOptions(const nsAString& aOptions,
-                                          nsAString& aResult)
-{
-  nsAString::const_iterator end;
-  aOptions.EndReading(end);
-
-  nsAString::const_iterator iter;
-  aOptions.BeginReading(iter);
-
-  nsAutoString token;
-  nsAutoString name;
-  nsAutoString value;
-
-  while (true) {
-    if (!TokenizeDialogOptions(name, iter, end)) {
-      break;
-    }
-
-    
-    if (name.EqualsLiteral("=") ||
-        name.EqualsLiteral(":") ||
-        name.EqualsLiteral(";")) {
-      break;
-    }
-
-    if (!TokenizeDialogOptions(token, iter, end)) {
-      break;
-    }
-
-    if (!token.EqualsLiteral(":") && !token.EqualsLiteral("=")) {
-      continue;
-    }
-
-    
-    if (!TokenizeDialogOptions(value, iter, end)) {
-      break;
-    }
-
-    if (name.LowerCaseEqualsLiteral("center")) {
-      if (value.LowerCaseEqualsLiteral("on")  ||
-          value.LowerCaseEqualsLiteral("yes") ||
-          value.LowerCaseEqualsLiteral("1")) {
-        aResult.AppendLiteral(",centerscreen=1");
-      }
-    } else if (name.LowerCaseEqualsLiteral("dialogwidth")) {
-      if (!value.IsEmpty()) {
-        aResult.AppendLiteral(",width=");
-        aResult.Append(value);
-      }
-    } else if (name.LowerCaseEqualsLiteral("dialogheight")) {
-      if (!value.IsEmpty()) {
-        aResult.AppendLiteral(",height=");
-        aResult.Append(value);
-      }
-    } else if (name.LowerCaseEqualsLiteral("dialogtop")) {
-      if (!value.IsEmpty()) {
-        aResult.AppendLiteral(",top=");
-        aResult.Append(value);
-      }
-    } else if (name.LowerCaseEqualsLiteral("dialogleft")) {
-      if (!value.IsEmpty()) {
-        aResult.AppendLiteral(",left=");
-        aResult.Append(value);
-      }
-    } else if (name.LowerCaseEqualsLiteral("resizable")) {
-      if (value.LowerCaseEqualsLiteral("on")  ||
-          value.LowerCaseEqualsLiteral("yes") ||
-          value.LowerCaseEqualsLiteral("1")) {
-        aResult.AppendLiteral(",resizable=1");
-      }
-    } else if (name.LowerCaseEqualsLiteral("scroll")) {
-      if (value.LowerCaseEqualsLiteral("off")  ||
-          value.LowerCaseEqualsLiteral("no") ||
-          value.LowerCaseEqualsLiteral("0")) {
-        aResult.AppendLiteral(",scrollbars=0");
-      }
-    }
-
-    if (iter == end ||
-        !TokenizeDialogOptions(token, iter, end) ||
-        !token.EqualsLiteral(";")) {
-      break;
-    }
-  }
 }
 
 void
