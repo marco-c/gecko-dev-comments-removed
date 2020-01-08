@@ -118,6 +118,12 @@ public:
   
 
 
+  ContentParentId
+  GetTabProcessId(const TabId& aTabId);
+
+  
+
+
 
   nsTArray<TabId>
   GetTabParentsByProcessId(const ContentParentId& aChildCpId);
@@ -157,6 +163,7 @@ public:
 private:
   static StaticAutoPtr<ContentProcessManager> sSingleton;
   std::map<ContentParentId, ContentProcessInfo> mContentParentMap;
+  std::map<TabId, ContentParentId> mTabProcessMap;
 
   ContentProcessManager() {MOZ_COUNT_CTOR(ContentProcessManager);};
 };
