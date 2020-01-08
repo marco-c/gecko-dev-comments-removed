@@ -723,6 +723,15 @@ void RegisterJSStackFrame(JS::Realm* aRealm, JSStackFrameBase* aStackFrame);
 void UnregisterJSStackFrame(JS::Realm* aRealm, JSStackFrameBase* aStackFrame);
 void NukeJSStackFrames(JS::Realm* aRealm);
 
+
+
+
+bool IsCrossOriginWhitelistedProp(JSContext* cx, JS::HandleId id);
+
+
+
+bool AppendCrossOriginWhitelistedPropNames(JSContext* cx,
+                                           JS::AutoIdVector& props);
 }  
 
 namespace mozilla {
