@@ -185,6 +185,14 @@ add_task(async function test_change_description_and_preview_saved() {
   Assert.equal(previewImageURL, previewImageURLInDB, "previewImageURL should not be updated");
 });
 
+
+
+
+
+
+
+
+
 async function getAnnotationInfoFromDB(pageUrl, annoName) {
   let db = await PlacesUtils.promiseDBConnection();
 

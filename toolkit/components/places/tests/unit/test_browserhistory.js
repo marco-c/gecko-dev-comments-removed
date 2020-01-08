@@ -4,8 +4,8 @@
 
 
 
-const TEST_URI = NetUtil.newURI("http://mozilla.com/");
-const TEST_SUBDOMAIN_URI = NetUtil.newURI("http://foobar.mozilla.com/");
+const TEST_URI = "http://mozilla.com/";
+const TEST_SUBDOMAIN_URI = "http://foobar.mozilla.com/";
 
 async function checkEmptyHistory() {
   let db = await PlacesUtils.promiseDBConnection();
@@ -26,7 +26,7 @@ add_task(async function test_removePage() {
 add_task(async function test_removePages() {
   let pages = [];
   for (let i = 0; i < 8; i++) {
-    pages.push(NetUtil.newURI(TEST_URI.spec + i));
+    pages.push(TEST_URI + i);
   }
 
   await PlacesTestUtils.addVisits(pages.map(uri => ({ uri })));
@@ -55,14 +55,11 @@ add_task(async function test_removePages() {
   
   let folder = await PlacesUtils.getFolderContents(PlacesUtils.bookmarks.unfiledGuid);
   Assert.equal(folder.root.childCount, 1);
-  Assert.equal(PlacesUtils.annotations.getPageAnnotation(pages[BOOKMARK_INDEX], ANNO_NAME),
-               ANNO_VALUE);
+  let pageInfo = await PlacesUtils.history.fetch(pages[BOOKMARK_INDEX], {includeAnnotations: true});
+  Assert.equal(pageInfo.annotations.get(ANNO_NAME), ANNO_VALUE);
 
   
-  try {
-    PlacesUtils.annotations.getPageAnnotation(pages[ANNO_INDEX], ANNO_NAME);
-    do_throw("did not expire expire_never anno on a not bookmarked item");
-  } catch (ex) {}
+  await assertNoOrphanPageAnnotations();
 
   
   await PlacesUtils.bookmarks.eraseEverything();
@@ -74,7 +71,7 @@ add_task(async function test_removePagesByTimeframe() {
   let startDate = (Date.now() - 10000) * 1000;
   for (let i = 0; i < 10; i++) {
     visits.push({
-      uri: NetUtil.newURI(TEST_URI.spec + i),
+      uri: TEST_URI + i,
       visitDate: startDate + i * 1000,
     });
   }
@@ -89,8 +86,7 @@ add_task(async function test_removePagesByTimeframe() {
 
   
   for (let i = 0; i < 10; i++) {
-    Assert.equal(page_in_database(NetUtil.newURI(TEST_URI.spec + i)) == 0,
-                 i > 0 && i < 9);
+    Assert.equal(page_in_database(TEST_URI + i) == 0, i > 0 && i < 9);
   }
 
   
