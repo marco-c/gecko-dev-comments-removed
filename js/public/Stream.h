@@ -220,7 +220,7 @@ NewReadableExternalSourceStreamObject(JSContext* cx, void* underlyingSource,
 
 
 extern JS_PUBLIC_API(bool)
-ReadableStreamGetEmbeddingFlags(JSContext* cx, const JSObject* stream, uint8_t* flags);
+ReadableStreamGetEmbeddingFlags(JSContext* cx, HandleObject stream, uint8_t* flags);
 
 
 
@@ -262,7 +262,7 @@ ReadableStreamGetExternalUnderlyingSource(JSContext* cx, HandleObject stream, vo
 
 
 extern JS_PUBLIC_API(bool)
-ReadableStreamReleaseExternalUnderlyingSource(JSContext* cx, JSObject* stream);
+ReadableStreamReleaseExternalUnderlyingSource(JSContext* cx, HandleObject stream);
 
 
 
@@ -284,7 +284,7 @@ ReadableStreamUpdateDataAvailableFromSource(JSContext* cx, HandleObject stream,
 
 
 extern JS_PUBLIC_API(bool)
-IsReadableStream(const JSObject* obj);
+IsReadableStream(JSObject* obj);
 
 
 
@@ -292,14 +292,14 @@ IsReadableStream(const JSObject* obj);
 
 
 extern JS_PUBLIC_API(bool)
-IsReadableStreamReader(const JSObject* obj);
+IsReadableStreamReader(JSObject* obj);
 
 
 
 
 
 extern JS_PUBLIC_API(bool)
-IsReadableStreamDefaultReader(const JSObject* obj);
+IsReadableStreamDefaultReader(JSObject* obj);
 
 enum class ReadableStreamMode {
     Default,
@@ -316,7 +316,7 @@ enum class ReadableStreamMode {
 
 
 extern JS_PUBLIC_API(bool)
-ReadableStreamGetMode(JSContext* cx, const JSObject* stream, ReadableStreamMode* mode);
+ReadableStreamGetMode(JSContext* cx, HandleObject stream, ReadableStreamMode* mode);
 
 enum class ReadableStreamReaderMode {
     Default
@@ -329,7 +329,7 @@ enum class ReadableStreamReaderMode {
 
 
 extern JS_PUBLIC_API(bool)
-ReadableStreamIsReadable(JSContext* cx, const JSObject* stream, bool* result);
+ReadableStreamIsReadable(JSContext* cx, HandleObject stream, bool* result);
 
 
 
@@ -338,7 +338,7 @@ ReadableStreamIsReadable(JSContext* cx, const JSObject* stream, bool* result);
 
 
 extern JS_PUBLIC_API(bool)
-ReadableStreamIsLocked(JSContext* cx, const JSObject* stream, bool* result);
+ReadableStreamIsLocked(JSContext* cx, HandleObject stream, bool* result);
 
 
 
@@ -347,7 +347,7 @@ ReadableStreamIsLocked(JSContext* cx, const JSObject* stream, bool* result);
 
 
 extern JS_PUBLIC_API(bool)
-ReadableStreamIsDisturbed(JSContext* cx, const JSObject* stream, bool* result);
+ReadableStreamIsDisturbed(JSContext* cx, HandleObject stream, bool* result);
 
 
 
@@ -422,7 +422,7 @@ ReadableStreamClose(JSContext* cx, HandleObject stream);
 
 
 extern JS_PUBLIC_API(bool)
-ReadableStreamReaderIsClosed(JSContext* cx, const JSObject* reader, bool* result);
+ReadableStreamReaderIsClosed(JSContext* cx, HandleObject reader, bool* result);
 
 
 
