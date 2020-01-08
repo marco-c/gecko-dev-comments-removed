@@ -201,40 +201,34 @@ impl<'a> DisplayListFlattener<'a> {
 }
 
 pub trait BorderSideHelpers {
-    fn border_color(
-        &self,
-        scale_factor_0: f32,
-        scale_factor_1: f32,
-        black_color_0: f32,
-        black_color_1: f32,
-    ) -> ColorF;
+    fn border_color(&self, is_inner_border: bool) -> ColorF;
 }
 
 impl BorderSideHelpers for BorderSide {
-    fn border_color(
-        &self,
-        scale_factor_0: f32,
-        scale_factor_1: f32,
-        black_color_0: f32,
-        black_color_1: f32,
-    ) -> ColorF {
-        match self.style {
-            BorderStyle::Inset => {
-                if self.color.r != 0.0 || self.color.g != 0.0 || self.color.b != 0.0 {
-                    self.color.scale_rgb(scale_factor_1)
-                } else {
-                    ColorF::new(black_color_0, black_color_0, black_color_0, self.color.a)
-                }
-            }
-            BorderStyle::Outset => {
-                if self.color.r != 0.0 || self.color.g != 0.0 || self.color.b != 0.0 {
-                    self.color.scale_rgb(scale_factor_0)
-                } else {
-                    ColorF::new(black_color_1, black_color_1, black_color_1, self.color.a)
-                }
-            }
-            _ => self.color,
+    fn border_color(&self, is_inner_border: bool) -> ColorF {
+        let lighter = match self.style {
+            BorderStyle::Inset => is_inner_border,
+            BorderStyle::Outset => !is_inner_border,
+            _ => return self.color,
+        };
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if self.color.r != 0.0 || self.color.g != 0.0 || self.color.b != 0.0 {
+            let scale = if lighter { 1.0 } else { 2.0 / 3.0 };
+            return self.color.scale_rgb(scale)
         }
+
+        let black = if lighter { 0.7 } else { 0.3 };
+        ColorF::new(black, black, black, self.color.a)
     }
 }
 
@@ -912,21 +906,8 @@ impl BorderRenderTaskInfo {
                 side1.style
             };
 
-            
-            
-            
-            
-            let color0 = if flip0 {
-                side0.border_color(2.0 / 3.0, 1.0, 0.7, 0.3)
-            } else {
-                side0.border_color(1.0, 2.0 / 3.0, 0.3, 0.7)
-            };
-
-            let color1 = if flip1 {
-                side1.border_color(2.0 / 3.0, 1.0, 0.7, 0.3)
-            } else {
-                side1.border_color(1.0, 2.0 / 3.0, 0.3, 0.7)
-            };
+            let color0 = side0.border_color(flip0);
+            let color1 = side1.border_color(flip1);
 
             add_segment(
                 info.task_rect,

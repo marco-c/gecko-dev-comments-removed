@@ -2,6 +2,7 @@
 
 
 
+use app_units::Au;
 #[cfg(target_os = "macos")]
 use core_foundation::string::CFString;
 #[cfg(target_os = "macos")]
@@ -345,6 +346,15 @@ impl FontInstanceKey {
     pub fn new(namespace: IdNamespace, key: u32) -> FontInstanceKey {
         FontInstanceKey(namespace, key)
     }
+}
+
+#[derive(Clone)]
+pub struct FontInstanceData {
+    pub font_key: FontKey,
+    pub size: Au,
+    pub options: Option<FontInstanceOptions>,
+    pub platform_options: Option<FontInstancePlatformOptions>,
+    pub variations: Vec<FontVariation>,
 }
 
 pub type GlyphIndex = u32;
