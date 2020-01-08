@@ -36,7 +36,7 @@ public:
     
     
     nsString mName;
-    std::string mBreakpadId;
+    nsCString mBreakpadId;
 
     bool operator==(const Module& other) const;
   };

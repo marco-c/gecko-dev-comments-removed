@@ -1514,7 +1514,7 @@ AddSharedLibraryInfoToStream(JSONWriter& aWriter, const SharedLibrary& aLib)
   aWriter.StringProperty("path", NS_ConvertUTF16toUTF8(aLib.GetModulePath()).get());
   aWriter.StringProperty("debugName", NS_ConvertUTF16toUTF8(aLib.GetDebugName()).get());
   aWriter.StringProperty("debugPath", NS_ConvertUTF16toUTF8(aLib.GetDebugPath()).get());
-  aWriter.StringProperty("breakpadId", aLib.GetBreakpadId().c_str());
+  aWriter.StringProperty("breakpadId", aLib.GetBreakpadId().get());
   aWriter.StringProperty("arch", aLib.GetArch().c_str());
   aWriter.EndObject();
 }
@@ -1800,7 +1800,6 @@ CollectJavaThreadProfileData()
 
     buffer->AddThreadIdEntry(0);
     buffer->AddEntry(ProfileBufferEntry::Time(sampleTime));
-    bool parentFrameWasIdleFrame = false;
     int frameId = 0;
     while (true) {
       jni::String::LocalRef frameName =
@@ -1808,22 +1807,8 @@ CollectJavaThreadProfileData()
       if (!frameName) {
         break;
       }
-      nsCString frameNameString = frameName->ToCString();
-
-      
-      
-      
-      
-      Maybe<js::ProfilingStackFrame::Category> category;
-      if (frameNameString.EqualsLiteral("android.os.MessageQueue.nativePollOnce()")) {
-        category = Some(js::ProfilingStackFrame::Category::IDLE);
-        parentFrameWasIdleFrame = true;
-      } else if (parentFrameWasIdleFrame) {
-        category = Some(js::ProfilingStackFrame::Category::OTHER);
-        parentFrameWasIdleFrame = false;
-      }
-
-      buffer->CollectCodeLocation("", frameNameString.get(), -1, category);
+      buffer->CollectCodeLocation("", frameName->ToCString().get(), -1,
+                                  Nothing());
     }
     sampleId++;
   }
