@@ -61,7 +61,10 @@ enum class GCKind {
 
 
 
-static Atomic<int32_t, ReleaseAcquire> gUnusedAtomCount(0);
+
+
+
+static Atomic<int32_t, ReleaseAcquire, recordreplay::Behavior::DontPreserve> gUnusedAtomCount(0);
 
 nsDynamicAtom::nsDynamicAtom(const nsAString& aString, uint32_t aHash)
   : nsAtom(AtomKind::DynamicNormal, aString, aHash)
