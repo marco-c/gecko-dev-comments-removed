@@ -13,6 +13,7 @@
 #include "mozilla/DefineEnum.h"  
 #include "mozilla/gfx/Point.h"   
 #include "mozilla/Maybe.h"
+#include "mozilla/TimeStamp.h"   
 #include "mozilla/TypedEnumBits.h"
 #include "nsRegion.h"
 #include "nsStyleConsts.h"
@@ -411,6 +412,22 @@ MOZ_DEFINE_ENUM_CLASS_WITH_BASE(ScrollDirection, uint32_t, (
   eHorizontal
 ));
 
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE(CompositionPayloadType, uint8_t, (
+  eKeyPress,
+  eAPZScroll,
+  eAPZPinchZoom
+));
+
+
+struct CompositionPayload {
+  bool operator ==(const CompositionPayload& aOther) const {
+    return mType == aOther.mType && mTimeStamp == aOther.mTimeStamp;
+  }
+  
+  CompositionPayloadType mType;
+  
+  TimeStamp mTimeStamp;
+};
 
 }  
 }  

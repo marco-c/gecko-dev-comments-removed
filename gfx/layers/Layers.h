@@ -731,6 +731,15 @@ class LayerManager : public FrameRecorder {
 
   virtual CompositorBridgeChild* GetCompositorBridgeChild() { return nullptr; }
 
+  void RegisterPayload(const CompositionPayload& aPayload) {
+    mPayload.AppendElement(aPayload);
+    MOZ_ASSERT(mPayload.Length() < 10000);
+  }
+  void RegisterPayload(const InfallibleTArray<CompositionPayload>& aPayload) {
+    mPayload.AppendElements(aPayload);
+    MOZ_ASSERT(mPayload.Length() < 10000);
+  }
+
  protected:
   RefPtr<Layer> mRoot;
   gfx::UserData mUserData;
@@ -757,6 +766,14 @@ class LayerManager : public FrameRecorder {
   TimeStamp mAnimationReadyTime;
   
   uint32_t mPaintedPixelCount;
+  
+  
+  
+  
+  
+  
+  
+  InfallibleTArray<CompositionPayload> mPayload;
 
  public:
   
