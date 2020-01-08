@@ -1110,7 +1110,7 @@ MessageManagerReporter::CountReferents(nsFrameMessageManager* aMessageManager,
 
     
     
-    if (currentCount == MessageManagerReporter::kSuspectReferentCount) {
+    if (currentCount >= MessageManagerReporter::kSuspectReferentCount) {
       aReferentCount->mSuspectMessages.AppendElement(key);
     }
 
