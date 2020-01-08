@@ -9,7 +9,7 @@
 
 
 
-#include "nscore.h"
+#include "nsISupports.h"
 
 class nsISimpleEnumerator;
 class nsIArray;
@@ -19,7 +19,8 @@ class nsCOMArray_base;
 
 nsresult
 NS_NewArrayEnumerator(nsISimpleEnumerator** aResult,
-                      nsIArray* aArray);
+                      nsIArray* aArray,
+                      const nsID& aEntryIID = NS_GET_IID(nsISupports));
 
 
 
@@ -27,6 +28,7 @@ NS_NewArrayEnumerator(nsISimpleEnumerator** aResult,
 
 nsresult
 NS_NewArrayEnumerator(nsISimpleEnumerator** aResult,
-                      const nsCOMArray_base& aArray);
+                      const nsCOMArray_base& aArray,
+                      const nsID& aEntryIID = NS_GET_IID(nsISupports));
 
 #endif
