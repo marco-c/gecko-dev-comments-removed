@@ -223,7 +223,8 @@ var PageActions = {
     } else if (action.__transient) {
       
       this._transientActions.push(action);
-    } else if (gBuiltInActions.find(a => a.id == action.id)) {
+    } else if (action._isBuiltIn) {
+      
       
       
       this._builtInActions.push(action);
@@ -330,7 +331,7 @@ var PageActions = {
     let histogramID = "FX_PAGE_ACTION_" + type.toUpperCase();
     try {
       let histogram = Services.telemetry.getHistogramById(histogramID);
-      if (action._isBuiltIn) {
+      if (action._isMozillaAction) {
         histogram.add(action.labelForHistogram);
       } else {
         histogram.add("other");
@@ -1039,9 +1040,12 @@ Action.prototype = {
     let builtInIDs = [
       "pocket",
       "screenshots_mozilla_org",
-      "webcompat-reporter-button",
     ].concat(gBuiltInActions.filter(a => !a.__isSeparator).map(a => a.id));
     return builtInIDs.includes(this.id);
+  },
+
+  get _isMozillaAction() {
+    return this._isBuiltIn || this.id == "webcompat-reporter-button";
   },
 };
 
