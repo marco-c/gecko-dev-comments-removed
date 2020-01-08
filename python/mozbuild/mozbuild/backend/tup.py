@@ -817,6 +817,15 @@ class TupBackend(CommonBackend):
                 
                 
                 
+                
+                check_unchanged = False
+                if (invocation['target_kind'][0] == 'custom-build' and
+                    os.path.basename(invocation['program']) != 'rustc'):
+                    check_unchanged = True
+
+                
+                
+                
                 rust_backend_file = self._get_backend_file('toolkit/library/rust')
                 rust_backend_file.rule(
                     command,
@@ -825,6 +834,7 @@ class TupBackend(CommonBackend):
                     output_group=self._rust_libs,
                     extra_inputs=[self._installed_files],
                     display='%s %s' % (header, display_name(invocation)),
+                    check_unchanged=check_unchanged,
                 )
 
                 for dst, link in invocation['links'].iteritems():
