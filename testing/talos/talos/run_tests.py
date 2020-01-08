@@ -244,12 +244,8 @@ def run_tests(config, browser_config):
 
         
         
-        
-        scripts_path = os.environ.get('SCRIPTSPATH')
-        LOG.info('scripts_path: %s' % str(scripts_path))
         mitmproxy.install_mitmproxy_cert(mitmproxy_proc,
-                                         browser_config['browser_path'],
-                                         str(scripts_path))
+                                         browser_config['browser_path'])
 
     testname = None
 
