@@ -255,6 +255,8 @@ public:
         return mCurrentTopLevelOuterContentWindowId;
     }
 
+    void BlacklistSpdy(const nsHttpConnectionInfo *ci);
+
 private:
     virtual ~nsHttpConnectionMgr();
 
@@ -314,6 +316,13 @@ private:
         
         
         
+        
+        bool mCanUseSpdy : 1;
+
+        
+        
+        
+        
         bool mPreferIPv4 : 1;
         
         
@@ -326,6 +335,9 @@ private:
         bool mUseFastOpen : 1;
 
         bool mDoNotDestroy : 1;
+
+        bool AllowSpdy() const { return mCanUseSpdy; }
+        void DisallowSpdy();
 
         
         void RecordIPFamilyPreference(uint16_t family);

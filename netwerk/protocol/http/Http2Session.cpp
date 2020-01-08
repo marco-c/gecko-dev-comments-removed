@@ -3170,6 +3170,13 @@ Http2Session::WriteSegmentsAgain(nsAHttpSegmentWriter *writer,
         mInputFrameType != FRAME_TYPE_SETTINGS) {
       LOG3(("First Frame Type Must Be Settings\n"));
       mPeerFailedHandshake = true;
+
+      
+      RefPtr<nsHttpConnectionInfo> ci = ConnectionInfo();
+      if (ci) {
+        gHttpHandler->BlacklistSpdy(ci);
+      }
+
       
       for (auto iter = mStreamTransactionHash.Iter(); !iter.Done(); iter.Next()) {
         nsAutoPtr<Http2Stream>& stream = iter.Data();
