@@ -53,6 +53,10 @@ class Mocks {
     
     this._thisFirefoxClient = createThisFirefoxClientMock();
     this._clients[RUNTIMES.THIS_FIREFOX][RUNTIMES.THIS_FIREFOX] = this._thisFirefoxClient;
+
+    
+    this.enableMocks();
+    registerCleanupFunction(() => this.disableMocks());
   }
 
   get thisFirefoxClient() {
