@@ -49,8 +49,7 @@ def get_generated_sources():
     
     
     rust_build_kind = 'debug' if buildconfig.substs.get('MOZ_DEBUG_RUST') else 'release'
-    base = mozpath.join('toolkit/library',
-                        buildconfig.substs['RUST_TARGET'],
+    base = mozpath.join(buildconfig.substs['RUST_TARGET'],
                         rust_build_kind,
                         'build')
     finder = FileFinder(mozpath.join(buildconfig.topobjdir, base))
