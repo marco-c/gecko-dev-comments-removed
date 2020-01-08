@@ -4950,7 +4950,7 @@ HTMLMediaElement::AttachAndSetUAShadowRoot()
   
   RefPtr<ShadowRoot> shadowRoot =
     AttachShadowWithoutNameChecks(ShadowRootMode::Closed);
-  shadowRoot->SetIsUAWidget(true);
+  shadowRoot->SetIsUAWidget();
 }
 
 nsresult
