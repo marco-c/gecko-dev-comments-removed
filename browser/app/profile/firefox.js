@@ -1517,7 +1517,7 @@ pref("media.gmp-provider.enabled", true);
 
 
 
-#ifdef NIGHTLY_OR_EARLY_BETA
+#ifdef EARLY_BETA_OR_EARLIER
 pref("network.cookie.cookieBehavior", 4 );
 #endif
 
