@@ -122,13 +122,16 @@ exports.matchRequest = matchRequest;
 function NetworkObserver(filters, owner) {
   this.filters = filters;
   this.owner = owner;
+
   this.openRequests = new Map();
   this.openResponses = new Map();
+
   this._httpResponseExaminer =
     DevToolsUtils.makeInfallible(this._httpResponseExaminer).bind(this);
   this._httpModifyExaminer =
     DevToolsUtils.makeInfallible(this._httpModifyExaminer).bind(this);
   this._serviceWorkerRequest = this._serviceWorkerRequest.bind(this);
+
   this._throttleData = null;
   this._throttler = null;
 }

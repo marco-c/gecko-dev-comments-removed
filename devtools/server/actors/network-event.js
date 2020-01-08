@@ -290,6 +290,11 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
   addRequestHeaders(headers, rawHeaders) {
+    
+    if (!this.actorID) {
+      return;
+    }
+
     this._request.headers = headers;
     this._prepareHeaders(headers);
 
@@ -315,6 +320,11 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
   addRequestCookies(cookies) {
+    
+    if (!this.actorID) {
+      return;
+    }
+
     this._request.cookies = cookies;
     this._prepareHeaders(cookies);
 
@@ -330,6 +340,11 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
   addRequestPostData(postData) {
+    
+    if (!this.actorID) {
+      return;
+    }
+
     this._request.postData = postData;
     postData.text = new LongStringActor(this.conn, postData.text);
     
@@ -353,6 +368,11 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
   addResponseStart(info, rawHeaders) {
+    
+    if (!this.actorID) {
+      return;
+    }
+
     rawHeaders = new LongStringActor(this.conn, rawHeaders);
     
     
@@ -378,6 +398,11 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
   addSecurityInfo(info) {
+    
+    if (!this.actorID) {
+      return;
+    }
+
     this._securityInfo = info;
 
     this.emit("network-event-update:security-info", "securityInfo", {
@@ -392,6 +417,11 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
   addResponseHeaders(headers) {
+    
+    if (!this.actorID) {
+      return;
+    }
+
     this._response.headers = headers;
     this._prepareHeaders(headers);
 
@@ -408,6 +438,11 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
   addResponseCookies(cookies) {
+    
+    if (!this.actorID) {
+      return;
+    }
+
     this._response.cookies = cookies;
     this._prepareHeaders(cookies);
 
@@ -428,6 +463,11 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
   addResponseContent(content, {discardResponseBody, truncated}) {
+    
+    if (!this.actorID) {
+      return;
+    }
+
     this._truncated = truncated;
     this._response.content = content;
     content.text = new LongStringActor(this.conn, content.text);
@@ -446,6 +486,11 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
   },
 
   addResponseCache: function(content) {
+    
+    if (!this.actorID) {
+      return;
+    }
+
     this._response.responseCache = content.responseCache;
     this.emit("network-event-update:response-cache", "responseCache");
   },
@@ -459,6 +504,11 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
   addEventTimings(total, timings, offsets) {
+    
+    if (!this.actorID) {
+      return;
+    }
+
     this._totalTime = total;
     this._timings = timings;
     this._offsets = offsets;
