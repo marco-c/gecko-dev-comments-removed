@@ -51,40 +51,45 @@ var gMenuBuilder = {
     xulMenu.addEventListener("popuphidden", this);
     this.xulMenu = xulMenu;
     for (let [, root] of gRootItems) {
-      let rootElement = this.createTopLevelElement(root, contextData);
-      if (rootElement) {
-        this.appendTopLevelElement(rootElement);
-      }
+      this.createAndInsertTopLevelElements(root, contextData, null);
     }
     this.afterBuildingMenu(contextData);
   },
 
-  
-  buildActionContextMenu(contextData) {
-    const {menu} = contextData;
+  createAndInsertTopLevelElements(root, contextData, nextSibling) {
+    let rootElements;
+    if (contextData.onBrowserAction || contextData.onPageAction) {
+      if (contextData.extension.id !== root.extension.id) {
+        return;
+      }
+      rootElements = this.buildTopLevelElements(root, contextData, ACTION_MENU_TOP_LEVEL_LIMIT, false);
 
-    const root = gRootItems.get(contextData.extension);
-    if (!root) {
+      
+      nextSibling = nextSibling || this.xulMenu.firstElementChild;
+      if (rootElements.length && !this.itemsToCleanUp.has(nextSibling)) {
+        rootElements.push(this.xulMenu.ownerDocument.createXULElement("menuseparator"));
+      }
+    } else {
+      rootElements = this.buildTopLevelElements(root, contextData, 1, true);
+      if (rootElements.length && !this.itemsToCleanUp.has(this.xulMenu.lastElementChild)) {
+        
+        
+        rootElements.unshift(this.xulMenu.ownerDocument.createXULElement("menuseparator"));
+      }
+    }
+
+    if (!rootElements.length) {
       return;
     }
 
-    const children = this.buildChildren(root, contextData);
-    const visible = children.slice(0, ACTION_MENU_TOP_LEVEL_LIMIT);
-
-    this.xulMenu = menu;
-    menu.addEventListener("popuphidden", this);
-
-    if (visible.length) {
-      const separator = menu.ownerDocument.createXULElement("menuseparator");
-      menu.insertBefore(separator, menu.firstElementChild);
-      this.itemsToCleanUp.add(separator);
-
-      for (const child of visible) {
-        this.itemsToCleanUp.add(child);
-        menu.insertBefore(child, separator);
-      }
+    if (nextSibling) {
+      nextSibling.before(...rootElements);
+    } else {
+      this.xulMenu.append(...rootElements);
     }
-    this.afterBuildingMenu(contextData);
+    for (let item of rootElements) {
+      this.itemsToCleanUp.add(item);
+    }
   },
 
   buildElementWithChildren(item, contextData) {
@@ -116,63 +121,58 @@ var gMenuBuilder = {
     return children;
   },
 
-  createTopLevelElement(root, contextData) {
-    let rootElement = this.buildElementWithChildren(root, contextData);
-    if (!rootElement.firstElementChild || !rootElement.firstElementChild.children.length) {
-      
-      
-      return null;
-    }
-    rootElement.setAttribute("ext-type", "top-level-menu");
-    rootElement = this.removeTopLevelMenuIfNeeded(rootElement);
+  buildTopLevelElements(root, contextData, maxCount, forceManifestIcons) {
+    let children = this.buildChildren(root, contextData);
 
     
-    if (root.extension.manifest.icons) {
-      this.setMenuItemIcon(rootElement, root.extension, contextData, root.extension.manifest.icons);
-    } else {
-      this.removeMenuItemIcon(rootElement);
-    }
-    return rootElement;
-  },
-
-  appendTopLevelElement(rootElement) {
-    if (this.itemsToCleanUp.size === 0) {
-      const separator = this.xulMenu.ownerDocument.createXULElement("menuseparator");
-      this.itemsToCleanUp.add(separator);
-      this.xulMenu.append(separator);
+    if (children.length === 1 && maxCount === 1 && forceManifestIcons &&
+        AppConstants.platform === "linux" &&
+        children[0].getAttribute("type") === "checkbox") {
+      
+      
+      maxCount = 0;
     }
 
-    this.xulMenu.appendChild(rootElement);
-    this.itemsToCleanUp.add(rootElement);
+    if (children.length > maxCount) {
+      
+      let rootElement = this.buildSingleElement(root, contextData);
+      rootElement.setAttribute("ext-type", "top-level-menu");
+      rootElement.firstElementChild.append(...children.splice(maxCount - 1));
+      children.push(rootElement);
+    }
+
+    if (forceManifestIcons) {
+      for (let rootElement of children) {
+        
+        if (root.extension.manifest.icons) {
+          this.setMenuItemIcon(rootElement, root.extension, contextData, root.extension.manifest.icons);
+        } else {
+          this.removeMenuItemIcon(rootElement);
+        }
+      }
+    }
+    return children;
   },
 
   removeSeparatorIfNoTopLevelItems() {
-    if (this.itemsToCleanUp.size === 1) {
-      
-      const separator = this.itemsToCleanUp.values().next().value;
-      separator.remove();
-      this.itemsToCleanUp.clear();
-    }
-  },
+    
+    let isNonExtensionSeparator =
+      item => item.nodeName === "menuseparator" && !item.id;
 
-  removeTopLevelMenuIfNeeded(element) {
     
     
-    let menuPopup = element.firstElementChild;
-    if (menuPopup && menuPopup.children.length == 1) {
-      let onlyChild = menuPopup.firstElementChild;
+    let isExtensionMenuItemSibling =
+      item => item && this.itemsToCleanUp.has(item) && !isNonExtensionSeparator(item);
 
-      
-      
-      if (AppConstants.platform === "linux" && onlyChild.getAttribute("type") === "checkbox") {
-        return element;
+    for (let item of this.itemsToCleanUp) {
+      if (isNonExtensionSeparator(item)) {
+        if (!isExtensionMenuItemSibling(item.previousElementSibling) &&
+            !isExtensionMenuItemSibling(item.nextElementSibling)) {
+          item.remove();
+          this.itemsToCleanUp.delete(item);
+        }
       }
-
-      onlyChild.remove();
-      return onlyChild;
     }
-
-    return element;
   },
 
   buildSingleElement(item, contextData) {
@@ -377,56 +377,27 @@ var gMenuBuilder = {
       return;
     }
 
-    if (contextData.onBrowserAction || contextData.onPageAction) {
-      if (contextData.extension.id !== extension.id) {
-        
-        
-        
-        return;
-      }
-      
-      
-      for (let item of this.itemsToCleanUp) {
-        item.remove();
-      }
-      this.itemsToCleanUp.clear();
-      this.buildActionContextMenu(contextData);
-      return;
-    }
-
+    
     
     let elementIdPrefix = `${makeWidgetId(extension.id)}-menuitem-`;
-    let oldRoot = null;
-    for (let item = this.xulMenu.lastElementChild; item !== null; item = item.previousElementSibling) {
+    let nextSibling = null;
+    for (let item of this.itemsToCleanUp) {
       if (item.id && item.id.startsWith(elementIdPrefix)) {
-        oldRoot = item;
-        this.itemsToCleanUp.delete(oldRoot);
-        break;
+        nextSibling = item.nextSibling;
+        item.remove();
+        this.itemsToCleanUp.delete(item);
       }
     }
 
     let root = gRootItems.get(extension);
-    let newRoot = root && this.createTopLevelElement(root, contextData);
-    if (newRoot) {
-      this.itemsToCleanUp.add(newRoot);
-      if (oldRoot) {
-        oldRoot.replaceWith(newRoot);
-      } else {
-        this.appendTopLevelElement(newRoot);
-      }
-    } else if (oldRoot) {
-      oldRoot.remove();
-      this.removeSeparatorIfNoTopLevelItems();
+    if (root) {
+      this.createAndInsertTopLevelElements(root, contextData, nextSibling);
     }
+    this.removeSeparatorIfNoTopLevelItems();
   },
 
+  
   afterBuildingMenu(contextData) {
-    if (this.contextData) {
-      
-      
-      return;
-    }
-
     function dispatchOnShownEvent(extension) {
       
       
@@ -472,7 +443,7 @@ var gMenuBuilder = {
 global.actionContextMenu = function(contextData) {
   contextData.tab = tabTracker.activeTab;
   contextData.pageUrl = contextData.tab.linkedBrowser.currentURI.spec;
-  gMenuBuilder.buildActionContextMenu(contextData);
+  gMenuBuilder.build(contextData);
 };
 
 const contextsMap = {
