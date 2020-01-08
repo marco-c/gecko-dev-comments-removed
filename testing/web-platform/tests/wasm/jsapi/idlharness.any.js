@@ -12,15 +12,22 @@ promise_test(async () => {
     srcs.map(i => fetch(`/interfaces/${i}.idl`).then(r => r.text())));
 
   const idl_array = new IdlArray();
-  idl_array.add_idls(wasm);
+  idl_array.add_idls(wasm, {
+    
+    except: ['CompileError', 'LinkError', 'RuntimeError']
+  });
+
+  
+  idl_array.add_untested_idls('[Exposed=(Window,Worker)] interface ArrayBuffer {};');
+
   
   try {
-    self.memory = new Memory({initial: 1024});
+    self.memory = new WebAssembly.Memory({initial: 1024});
   } catch (e) { }
 
   try {
     self.mod = await createWasmModule();
-    self.instance = new Instance(self.mod);
+    self.instance = new WebAssembly.Instance(self.mod);
   } catch (e) { }
 
   idl_array.add_objects({
