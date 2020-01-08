@@ -26,6 +26,7 @@
 #include "nsThreadUtils.h"
 #include "mozJSComponentLoader.h"
 #include "GeckoProfiler.h"
+#include "nsIException.h"
 
 namespace mozilla {
 namespace dom {
@@ -130,6 +131,34 @@ namespace dom {
     return;
   }
   aRetval.set(buffer);
+}
+
+ void ChromeUtils::ReleaseAssert(GlobalObject& aGlobal,
+                                             bool aCondition,
+                                             const nsAString& aMessage) {
+  
+  if (MOZ_LIKELY(aCondition)) {
+    return;
+  }
+
+  
+  nsAutoString filename;
+  uint32_t lineNo = 0;
+
+  if (nsCOMPtr<nsIStackFrame> location = GetCurrentJSStack(1)) {
+    location->GetFilename(aGlobal.Context(), filename);
+    lineNo = location->GetLineNumber(aGlobal.Context());
+  } else {
+    filename.Assign(NS_LITERAL_STRING("<unknown>"));
+  }
+
+  
+  NS_ConvertUTF16toUTF8 filenameUtf8(filename);
+  NS_ConvertUTF16toUTF8 messageUtf8(aMessage);
+
+  
+  MOZ_CRASH_UNSAFE_PRINTF("Failed ChromeUtils.releaseAssert(\"%s\") @ %s:%u",
+                          messageUtf8.get(), filenameUtf8.get(), lineNo);
 }
 
  void ChromeUtils::WaiveXrays(GlobalObject& aGlobal,
