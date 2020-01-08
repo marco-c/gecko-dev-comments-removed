@@ -604,25 +604,34 @@ WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
   }
 
   int64_t next_tstamp = INT64_MIN;
-  auto calculateNextTimestamp = [&] (auto&& pushPacket, auto&& lastFrameTime) {
-    if (next_holder) {
-      next_tstamp = next_holder->Timestamp();
-      (this->*pushPacket)(next_holder);
-    } else if (duration >= 0) {
-      next_tstamp = tstamp + duration;
-    } else if (!mIsMediaSource ||
-               (mIsMediaSource && lastFrameTime.isSome())) {
-      next_tstamp = tstamp + (tstamp - lastFrameTime.refOr(0));
-    } else {
-      (this->*pushPacket)(holder);
-    }
-    lastFrameTime = Some(tstamp);
+  auto calculateNextTimestamp =
+    [&] (auto&& pushPacket, auto&& lastFrameTime, auto&& trackEndTime) {
+      if (next_holder) {
+        next_tstamp = next_holder->Timestamp();
+        (this->*pushPacket)(next_holder);
+      } else if (duration >= 0) {
+        next_tstamp = tstamp + duration;
+      } else if (lastFrameTime.isSome()) {
+        next_tstamp = tstamp + (tstamp - lastFrameTime.ref());
+      } else if (mIsMediaSource) {
+        (this->*pushPacket)(holder);
+      } else {
+        
+        
+        MOZ_ASSERT(trackEndTime >= tstamp);
+        next_tstamp = trackEndTime;
+      }
+      lastFrameTime = Some(tstamp);
   };
 
   if (aType == TrackInfo::kAudioTrack)  {
-    calculateNextTimestamp(&WebMDemuxer::PushAudioPacket, mLastAudioFrameTime);
+    calculateNextTimestamp(&WebMDemuxer::PushAudioPacket,
+                           mLastAudioFrameTime,
+                           mInfo.mAudio.mDuration.ToMicroseconds());
   } else {
-    calculateNextTimestamp(&WebMDemuxer::PushVideoPacket, mLastVideoFrameTime);
+    calculateNextTimestamp(&WebMDemuxer::PushVideoPacket,
+                           mLastVideoFrameTime,
+                           mInfo.mVideo.mDuration.ToMicroseconds());
   }
 
   if (mIsMediaSource && next_tstamp == INT64_MIN) {
@@ -1141,7 +1150,7 @@ WebMTrackDemuxer::Seek(const TimeUnit& aTime)
 nsresult
 WebMTrackDemuxer::NextSample(RefPtr<MediaRawData>& aData)
 {
-  nsresult rv = NS_ERROR_DOM_MEDIA_END_OF_STREAM;;
+  nsresult rv = NS_ERROR_DOM_MEDIA_END_OF_STREAM;
   while (mSamples.GetSize() < 1 &&
          NS_SUCCEEDED((rv = mParent->GetNextPacket(mType, &mSamples)))) {
   }
