@@ -275,6 +275,16 @@ public:
     return FontStretch(kUltraExpanded);
   }
 
+  
+  
+  
+  
+  
+  static FontStretch FromStyle(float aStylePercentage)
+  {
+    return FontStretch(std::min(aStylePercentage * 100.0f, float(kMax)));
+  }
+
   bool IsNormal() const { return mValue == kNormal; }
   float Percentage() const { return ToFloat(); }
 
