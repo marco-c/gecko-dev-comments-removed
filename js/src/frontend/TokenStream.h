@@ -223,6 +223,8 @@ class AutoKeepAtoms;
 
 namespace frontend {
 
+class FunctionBox;
+
 struct TokenPos {
   uint32_t begin;  
   uint32_t end;    
@@ -2028,6 +2030,8 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
 
     return drainCharBufferIntoAtom(anyChars.cx);
   }
+
+  inline void setFunctionStart(FunctionBox* funbox) const;
 };
 
 template <typename Unit, class AnyCharsAccess>

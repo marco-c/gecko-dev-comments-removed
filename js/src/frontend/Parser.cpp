@@ -2437,7 +2437,7 @@ bool GeneralParser<ParseHandler, Unit>::functionArguments(
 
     
     
-    funbox->setStart(anyChars);
+    tokenStream.setFunctionStart(funbox);
   } else {
     
     
@@ -2552,7 +2552,7 @@ bool GeneralParser<ParseHandler, Unit>::functionArguments(
           }
 
           if (parenFreeArrow) {
-            funbox->setStart(anyChars);
+            tokenStream.setFunctionStart(funbox);
           }
 
           RootedPropertyName name(context, bindingIdentifier(yieldHandling));
@@ -3302,6 +3302,7 @@ bool GeneralParser<ParseHandler, Unit>::functionFormalParametersAndBody(
                            openedPos);
       return false;
     }
+
     funbox->setEnd(anyChars);
   } else {
     MOZ_ASSERT(kind == FunctionSyntaxKind::Arrow);
@@ -3309,9 +3310,13 @@ bool GeneralParser<ParseHandler, Unit>::functionFormalParametersAndBody(
     if (anyChars.hadError()) {
       return false;
     }
+
     funbox->setEnd(anyChars);
-    if (kind == FunctionSyntaxKind::Statement && !matchOrInsertSemicolon()) {
-      return false;
+
+    if (kind == FunctionSyntaxKind::Statement) {
+      if (!matchOrInsertSemicolon()) {
+        return false;
+      }
     }
   }
 
