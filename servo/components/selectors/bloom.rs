@@ -5,9 +5,7 @@
 
 
 
-use fnv::FnvHasher;
 use std::fmt::{self, Debug};
-use std::hash::{Hash, Hasher};
 
 
 
@@ -108,6 +106,7 @@ where
         unreachable!()
     }
 
+    
     #[inline]
     pub fn insert_hash(&mut self, hash: u32) {
         self.storage.adjust_first_slot(hash, true);
@@ -116,34 +115,17 @@ where
 
     
     #[inline]
-    pub fn insert<T: Hash>(&mut self, elem: &T) {
-        self.insert_hash(hash(elem))
-    }
-
-    #[inline]
     pub fn remove_hash(&mut self, hash: u32) {
         self.storage.adjust_first_slot(hash, false);
         self.storage.adjust_second_slot(hash, false);
     }
 
     
-    #[inline]
-    pub fn remove<T: Hash>(&mut self, elem: &T) {
-        self.remove_hash(hash(elem))
-    }
-
+    
+    
     #[inline]
     pub fn might_contain_hash(&self, hash: u32) -> bool {
         !self.storage.first_slot_is_empty(hash) && !self.storage.second_slot_is_empty(hash)
-    }
-
-    
-    
-    
-    
-    #[inline]
-    pub fn might_contain<T: Hash>(&self, elem: &T) -> bool {
-        self.might_contain_hash(hash(elem))
     }
 }
 
@@ -296,16 +278,6 @@ impl Clone for BloomStorageBool {
     }
 }
 
-fn hash<T: Hash>(elem: &T) -> u32 {
-    
-    
-    
-    let mut hasher = FnvHasher::default();
-    elem.hash(&mut hasher);
-    let hash: u64 = hasher.finish();
-    (hash >> 32) as u32 ^ (hash as u32)
-}
-
 #[inline]
 fn hash1(hash: u32) -> u32 {
     hash & KEY_MASK
@@ -318,7 +290,17 @@ fn hash2(hash: u32) -> u32 {
 
 #[test]
 fn create_and_insert_some_stuff() {
+    use fxhash::FxHasher;
+    use std::hash::{Hash, Hasher};
     use std::mem::transmute;
+
+    fn hash_as_str(i: usize) -> u32 {
+        let mut hasher = FxHasher::default();
+        let s = i.to_string();
+        s.hash(&mut hasher);
+        let hash: u64 = hasher.finish();
+        (hash >> 32) as u32 ^ (hash as u32)
+    }
 
     let mut bf = BloomFilter::new();
 
@@ -329,33 +311,34 @@ fn create_and_insert_some_stuff() {
     }
 
     for i in 0_usize..1000 {
-        bf.insert(&i);
+        bf.insert_hash(hash_as_str(i));
     }
 
     for i in 0_usize..1000 {
-        assert!(bf.might_contain(&i));
+        assert!(bf.might_contain_hash(hash_as_str(i)));
     }
 
-    let false_positives = (1001_usize..2000).filter(|i| bf.might_contain(i)).count();
+    let false_positives =
+        (1001_usize..2000).filter(|i| bf.might_contain_hash(hash_as_str(*i))).count();
 
-    assert!(false_positives < 160, "{} is not < 160", false_positives); 
+    assert!(false_positives < 190, "{} is not < 190", false_positives); 
 
     for i in 0_usize..100 {
-        bf.remove(&i);
+        bf.remove_hash(hash_as_str(i));
     }
 
     for i in 100_usize..1000 {
-        assert!(bf.might_contain(&i));
+        assert!(bf.might_contain_hash(hash_as_str(i)));
     }
 
-    let false_positives = (0_usize..100).filter(|i| bf.might_contain(i)).count();
+    let false_positives = (0_usize..100).filter(|i| bf.might_contain_hash(hash_as_str(*i))).count();
 
     assert!(false_positives < 20, "{} is not < 20", false_positives); 
 
     bf.clear();
 
     for i in 0_usize..2000 {
-        assert!(!bf.might_contain(&i));
+        assert!(!bf.might_contain_hash(hash_as_str(i)));
     }
 }
 
