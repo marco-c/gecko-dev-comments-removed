@@ -1,7 +1,6 @@
 
 
-if (!this.SharedArrayBuffer)
-    quit(0);
+
 
 var failed = false;
 try {

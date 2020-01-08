@@ -2,9 +2,6 @@
 load(libdir + "asm.js");
 load(libdir + "asserts.js");
 
-if (!isAsmJSCompilationAvailable())
-    quit();
-
 
 
 if (getJitCompilerOptions()["ion.warmup.trigger"] < 5)

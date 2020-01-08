@@ -1,5 +1,4 @@
-if (helperThreadCount() == 0)
-    quit();
+
 
 offThreadCompileScript("\
     (function(stdlib, foreign) {\

@@ -1,8 +1,7 @@
+
+
 load(libdir + "asm.js");
 load(libdir + "asserts.js");
-
-if (!isAsmJSCompilationAvailable())
-    quit();
 
 var m = asmCompile('stdlib', 'foreign', 'buffer',
                   `"use asm";

@@ -2,12 +2,6 @@
 
 load(libdir + "asm.js");
 
-if (!isAsmJSCompilationAvailable())
-    quit(0);
-
-if (!('oomTest' in this))
-    quit();
-
 oomTest(
   function() {
     eval(`

@@ -1,8 +1,7 @@
+
+
+
 load(libdir + "asm.js");
-
-
-if (!getBuildConfiguration()["arm-simulator"])
-    quit();
 
 enableGeckoProfiling();
 enableSingleStepProfiling();

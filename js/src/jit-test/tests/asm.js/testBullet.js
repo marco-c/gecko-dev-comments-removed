@@ -2,9 +2,9 @@
 
 
 
+
+
 setCachingEnabled(true);
-if (!isAsmJSCompilationAvailable())
-    quit();
 
 
 

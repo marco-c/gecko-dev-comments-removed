@@ -1,7 +1,6 @@
-load(libdir + "asm.js");
 
-if (!isAsmJSCompilationAvailable())
-    quit();
+
+load(libdir + "asm.js");
 
 var module = "'use asm';\n";
 for (var i = 0; i < 100; i++) {
@@ -13,14 +12,9 @@ module += "return f0";
 var script = "(function() {\n" + module + "})";
 
 for (var i = 0; i < 10; i++) {
-    try {
-        offThreadCompileScript(script);
-        var f = new Function(module);
-        var g = runOffThreadScript();
-        assertEq(isAsmJSModule(f), true);
-        assertEq(isAsmJSModule(g), true);
-    } catch (e) {
-        
-        
-    }
+    offThreadCompileScript(script);
+    var f = new Function(module);
+    var g = runOffThreadScript();
+    assertEq(isAsmJSModule(f), true);
+    assertEq(isAsmJSModule(g), true);
 }
