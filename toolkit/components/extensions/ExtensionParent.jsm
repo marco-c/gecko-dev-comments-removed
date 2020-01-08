@@ -482,6 +482,15 @@ ProxyMessenger = {
     }
 
     
+    if (recipient.envType === "content_child") {
+      let childId = `${recipient.extensionId}.${recipient.contextId}`;
+      let context = ParentAPIManager.proxyContexts.get(childId);
+      if (context) {
+        return {messageManager: context.parentMessageManager, xulBrowser: context.xulBrowser};
+      }
+    }
+
+    
     let extension = GlobalManager.extensionMap.get(recipient.extensionId);
     if (extension) {
       
