@@ -65,12 +65,7 @@ class KeyframesProgressBar extends PureComponent {
       playbackRate,
     } = animation.state;
 
-    
-    
-    const baseTime = typeof createdTime === "undefined"
-                       ? (animation.state.previousStartTime || 0)
-                       : createdTime;
-    const time = (timeScale.minStartTime + currentTime - baseTime) * playbackRate;
+    const time = (timeScale.minStartTime + currentTime - createdTime) * playbackRate;
 
     if (isNaN(time)) {
       

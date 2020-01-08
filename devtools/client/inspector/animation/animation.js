@@ -195,14 +195,9 @@ class AnimationInspector {
 
 
 
-
   async doSetCurrentTimes(currentTime) {
     const { animations, timeScale } = this.state;
-
-    
-    
-    currentTime = typeof timeScale.currentTime === "undefined"
-                    ? currentTime : currentTime + timeScale.minStartTime;
+    currentTime = currentTime + timeScale.minStartTime;
     await this.animationsFront.setCurrentTimes(animations, currentTime, true,
                                                { relativeToCreatedTime: true });
   }

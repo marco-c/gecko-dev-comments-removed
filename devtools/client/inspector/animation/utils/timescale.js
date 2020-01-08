@@ -18,11 +18,6 @@ const TIME_FORMAT_MAX_DURATION_IN_MS = 4000;
 
 class TimeScale {
   constructor(animations) {
-    if (!animations.every(animation => animation.state.createdTime)) {
-      
-      return this._initializeWithoutCreatedTime(animations);
-    }
-
     let resultCurrentTime = -Number.MAX_VALUE;
     let resultMinStartTime = Infinity;
     let resultMaxEndTime = 0;
@@ -79,54 +74,6 @@ class TimeScale {
 
 
 
-  _initializeWithoutCreatedTime(animations) {
-    this.minStartTime = Infinity;
-    this.maxEndTime = 0;
-    this.documentCurrentTime = 0;
-
-    for (const animation of animations) {
-      const {
-        delay,
-        documentCurrentTime,
-        duration,
-        endDelay = 0,
-        iterationCount,
-        playbackRate,
-        previousStartTime = 0,
-      } = animation.state;
-
-      const toRate = v => v / playbackRate;
-      const minZero = v => Math.max(v, 0);
-      const rateRelativeDuration =
-        toRate(duration * (!iterationCount ? 1 : iterationCount));
-      
-      
-      
-      const relevantDelay = delay < 0 ? toRate(delay) : 0;
-      const startTime = toRate(minZero(delay)) +
-                        rateRelativeDuration +
-                        endDelay;
-      this.minStartTime = Math.min(
-        this.minStartTime,
-        previousStartTime +
-        relevantDelay +
-        Math.min(startTime, 0)
-      );
-      const length = toRate(delay) + rateRelativeDuration + toRate(minZero(endDelay));
-      const endTime = previousStartTime + length;
-      this.maxEndTime = Math.max(this.maxEndTime, endTime);
-
-      this.documentCurrentTime = Math.max(this.documentCurrentTime, documentCurrentTime);
-      this.zeroPositionTime = this.minStartTime;
-    }
-  }
-
-  
-
-
-
-
-
 
 
 
@@ -173,11 +120,7 @@ class TimeScale {
 
 
   getCurrentTime() {
-    
-    
-    const baseTime = typeof this.currentTime === "undefined"
-                       ? this.documentCurrentTime : this.currentTime;
-    return baseTime - this.minStartTime;
+    return this.currentTime - this.minStartTime;
   }
 
   
