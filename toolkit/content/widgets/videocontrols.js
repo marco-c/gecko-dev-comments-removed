@@ -1107,32 +1107,6 @@ this.VideoControlsImplPageWidget = class {
         }
       },
 
-      
-      
-      
-      
-      installFinishedPromisePolyfill(animation) {
-        let handler = {
-          handleEvent(evt) {
-            animation.removeEventListener("finish", this);
-            animation.removeEventListener("cancel", this);
-            if (evt.type == "finish" &&
-                this === animation.finished) {
-              this.fn();
-            }
-          },
-          then(fn) {
-            this.fn = fn;
-          }
-        };
-        
-        
-        
-        Object.defineProperty(animation, "finished", { value: handler, configurable: true });
-        animation.addEventListener("finish", handler);
-        animation.addEventListener("cancel", handler);
-      },
-
       startFade(element, fadeIn, immediate = false) {
         let animationProp =
           this.animationProps[element.id];
@@ -1143,15 +1117,8 @@ this.VideoControlsImplPageWidget = class {
 
         let animation = this.animationMap.get(element);
         if (!animation) {
-          
-          
-          
-          
-
-
-
-          animation = element.animate(animationProp.keyframes, animationProp.options);
-          animation.cancel();
+          animation = new this.window.Animation(new this.window.KeyframeEffect(
+            element, animationProp.keyframes, animationProp.options));
 
           this.animationMap.set(element, animation);
         }
@@ -1193,7 +1160,6 @@ this.VideoControlsImplPageWidget = class {
         if (!immediate) {
           animation.playbackRate = fadeIn ? 1 : -1;
           animation.play();
-          this.installFinishedPromisePolyfill(animation);
           finishedPromise = animation.finished;
         } else {
           animation.cancel();
