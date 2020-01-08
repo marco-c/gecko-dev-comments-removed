@@ -34,6 +34,13 @@ function testFloat32NaNRanges(start, end) {
 
 
 function testFloat64NaNRanges(startHi, startLow, endHi, endLow) {
+
+    
+    if (new Uint32Array(new Uint8Array([1,2,3,4]).buffer)[0] === 0x01020304) {
+	[startHi, startLow] = [startLow, startHi];
+	[endHi, endLow] = [endLow, endHi];
+    }
+
     let skipN = 10e6;
 
     let sampleSizeHi  = Math.floor((endHi - startHi)/skipN);
