@@ -203,18 +203,6 @@ var E10SUtils = {
         
         
         
-        
-        if (aURI.scheme.startsWith("ext+")) {
-          return WebExtensionPolicy.useRemoteWebExtensions ? EXTENSION_REMOTE_TYPE : NOT_REMOTE;
-        }
-
-        
-        
-        
-        
-        
-        
-        
         if (aURI instanceof Ci.nsINestedURI) {
           let innerURI = aURI.QueryInterface(Ci.nsINestedURI).innerURI;
           return this.getRemoteTypeForURIObject(innerURI, aMultiProcess,
