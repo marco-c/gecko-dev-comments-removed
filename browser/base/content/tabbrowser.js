@@ -5547,29 +5547,53 @@ var TabContextMenu = {
   },
   reopenInContainer(event) {
     let userContextId = parseInt(event.target.getAttribute("data-usercontextid"));
-    
+    let reopenedTabs = this.contextTab.multiselected ? gBrowser.selectedTabs : [this.contextTab];
+
+    for (let tab of reopenedTabs) {
+      if (tab.getAttribute("usercontextid") == userContextId) {
+        continue;
+      }
+
+      
 
 
 
-    let triggeringPrincipal = this.contextTab.linkedBrowser.contentPrincipal;
-    if (triggeringPrincipal.isNullPrincipal) {
-      triggeringPrincipal = Services.scriptSecurityManager.createNullPrincipal({ userContextId });
-    } else if (triggeringPrincipal.isCodebasePrincipal) {
-      triggeringPrincipal = Services.scriptSecurityManager.createCodebasePrincipal(triggeringPrincipal.URI, { userContextId });
-    }
-    let newTab = gBrowser.addTab(this.contextTab.linkedBrowser.currentURI.spec, {
-      userContextId,
-      pinned: this.contextTab.pinned,
-      index: this.contextTab._tPos + 1,
-      triggeringPrincipal,
-    });
+      let triggeringPrincipal;
 
-    if (gBrowser.selectedTab == this.contextTab) {
-      gBrowser.selectedTab = newTab;
-    }
-    if (this.contextTab.muted) {
-      if (!newTab.muted) {
-        newTab.toggleMuteAudio(this.contextTab.muteReason);
+      if (tab.linkedPanel) {
+        triggeringPrincipal = tab.linkedBrowser.contentPrincipal;
+      } else {
+        
+        
+        let tabState = JSON.parse(SessionStore.getTabState(tab));
+        try {
+          triggeringPrincipal = Utils.deserializePrincipal(tabState.triggeringPrincipal_base64);
+        } catch (ex) {
+          continue;
+        }
+      }
+
+      if (!triggeringPrincipal || triggeringPrincipal.isNullPrincipal) {
+        
+        
+        
+        triggeringPrincipal = Services.scriptSecurityManager.createNullPrincipal({ userContextId });
+      } else if (triggeringPrincipal.isCodebasePrincipal) {
+        triggeringPrincipal = Services.scriptSecurityManager.createCodebasePrincipal(triggeringPrincipal.URI, { userContextId });
+      }
+
+      let newTab = gBrowser.addTab(tab.linkedBrowser.currentURI.spec, {
+        userContextId,
+        pinned: tab.pinned,
+        index: tab._tPos + 1,
+        triggeringPrincipal,
+      });
+
+      if (gBrowser.selectedTab == tab) {
+        gBrowser.selectedTab = newTab;
+      }
+      if (tab.muted && !newTab.muted) {
+        newTab.toggleMuteAudio(tab.muteReason);
       }
     }
   },
