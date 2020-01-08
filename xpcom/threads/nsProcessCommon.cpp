@@ -15,6 +15,7 @@
 #include "mozilla/ArrayUtils.h"
 
 #include "nsCOMPtr.h"
+#include "nsExceptionHandler.h"
 #include "nsAutoPtr.h"
 #include "nsMemory.h"
 #include "nsProcess.h"
@@ -245,19 +246,7 @@ void nsProcess::Monitor(void* aArg) {
       exitCode = -1;
     }
   }
-
-  
-  {
-    MutexAutoLock lock(process->mLock);
-    CloseHandle(process->mProcess);
-    process->mProcess = nullptr;
-    process->mExitValue = exitCode;
-    if (process->mShutdown) {
-      return;
-    }
-  }
-#else
-#ifdef XP_UNIX
+#elif defined(XP_UNIX)
   int exitCode = -1;
   int status = 0;
   pid_t result;
@@ -279,8 +268,14 @@ void nsProcess::Monitor(void* aArg) {
 #endif
 
   
+  RemoveExecutableCrashAnnotation();
+
+  
   {
     MutexAutoLock lock(process->mLock);
+#if defined(PROCESSMODEL_WINAPI)
+    CloseHandle(process->mProcess);
+#endif
 #if !defined(XP_UNIX)
     process->mProcess = nullptr;
 #endif
@@ -289,7 +284,6 @@ void nsProcess::Monitor(void* aArg) {
       return;
     }
   }
-#endif
 
   
   
@@ -547,6 +541,8 @@ nsresult nsProcess::RunProcess(bool aBlocking, char** aMyArgv,
   mPid = ptrProc->pid;
 #endif
 
+  AddExecutableCrashAnnotation();
+
   NS_ADDREF_THIS();
   mBlocking = aBlocking;
   if (aBlocking) {
@@ -582,6 +578,32 @@ nsProcess::GetIsRunning(bool* aIsRunning) {
   }
 
   return NS_OK;
+}
+
+void nsProcess::AddExecutableCrashAnnotation() {
+#if defined(XP_WIN)
+  nsAutoCString executableName;
+  if (NS_FAILED(mExecutable->GetNativeLeafName(executableName))) {
+    return;
+  }
+
+  
+  
+  
+  if (executableName.EqualsLiteral("minidump-analyzer.exe") ||
+      executableName.EqualsLiteral("pingsender.exe") ||
+      executableName.EqualsLiteral("updater.exe")) {
+    CrashReporter::AnnotateCrashReport(
+        CrashReporter::Annotation::ExecutableName, executableName.get());
+  }
+#endif  
+}
+
+ void nsProcess::RemoveExecutableCrashAnnotation() {
+#if defined(XP_WIN)
+  CrashReporter::RemoveCrashReportAnnotation(
+      CrashReporter::Annotation::ExecutableName);
+#endif  
 }
 
 NS_IMETHODIMP
