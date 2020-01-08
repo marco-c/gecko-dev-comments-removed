@@ -163,11 +163,7 @@ pub enum UserSelect {
     Text,
     #[parse(aliases = "-moz-none")]
     None,
-    Element,
-    Elements,
     All,
-    Toggle,
-    TriState,
     
     
     
