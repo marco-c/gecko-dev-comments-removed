@@ -771,10 +771,6 @@ ShadowLayerForwarder::EndTransaction(const nsIntRegion& aRegionToClear,
   
   GetCompositorBridgeChild()->PostponeMessagesIfAsyncPainting();
 
-  if (recordreplay::IsRecordingOrReplaying()) {
-    recordreplay::child::NotifyPaintStart();
-  }
-
   MOZ_LAYERS_LOG(("[LayersForwarder] sending transaction..."));
   RenderTraceScope rendertrace3("Forward Transaction", "000093");
   if (!mShadowManager->SendUpdate(info)) {
@@ -787,9 +783,8 @@ ShadowLayerForwarder::EndTransaction(const nsIntRegion& aRegionToClear,
     mShadowManager->SendRecordPaintTimes(mPaintTiming);
   }
 
-  
   if (recordreplay::IsRecordingOrReplaying()) {
-    recordreplay::child::CreateCheckpoint();
+    recordreplay::child::NotifyPaintStart();
   }
 
   *aSent = true;

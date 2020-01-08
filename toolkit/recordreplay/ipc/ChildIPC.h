@@ -44,7 +44,8 @@ void CreateCheckpoint();
 void SetVsyncObserver(VsyncObserver* aObserver);
 
 
-void OnVsync();
+
+bool OnVsync();
 
 
 
