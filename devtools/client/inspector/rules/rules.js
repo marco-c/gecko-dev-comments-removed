@@ -196,7 +196,6 @@ CssRuleView.prototype = {
       
       this._popup = new AutocompletePopup(this.inspector.toolbox.doc, {
         autoSelect: true,
-        theme: "auto",
       });
     }
 
