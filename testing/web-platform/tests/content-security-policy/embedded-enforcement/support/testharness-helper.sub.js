@@ -119,11 +119,11 @@ function assert_iframe_with_csp(t, url, csp, shouldBlock, urlId, blockedURI) {
 
   if (shouldBlock) {
     
-    window.onmessage = function (e) {
+    window.onmessage = t.step_func(function(e) {
       if (e.source != i.contentWindow)
           return;
-      t.assert_unreached('No message should be sent from the frame.');
-    }
+      assert_unreached('No message should be sent from the frame.');
+    });
     i.onload = t.step_func(function () {
       
       setTimeout(t.step_func_done(function () {
