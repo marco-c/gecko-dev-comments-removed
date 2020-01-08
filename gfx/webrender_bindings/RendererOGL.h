@@ -84,6 +84,9 @@ public:
   
   bool Resume();
 
+  
+  void CheckGraphicsResetStatus();
+
   layers::SyncObjectHost* GetSyncObject() const;
 
   layers::CompositorBridgeParent* GetCompositorBridge() { return mBridge; }

@@ -376,6 +376,8 @@ RenderThread::UpdateAndRender(wr::WindowId aWindowId,
   } else {
     renderer->Update();
   }
+  
+  renderer->CheckGraphicsResetStatus();
 
   TimeStamp end = TimeStamp::Now();
 
