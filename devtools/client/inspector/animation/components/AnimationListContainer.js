@@ -69,15 +69,34 @@ class AnimationListContainer extends PureComponent {
     const intervalWidth = intervalLength * width / animationDuration;
     const tickCount = parseInt(width / intervalWidth, 10);
     const isAllDurationInfinity =
-      animations.every(animation => animation.state.duration === Infinity);
+          animations.every(animation => animation.state.duration === Infinity);
+    const zeroBasePosition =
+          width * (timeScale.zeroPositionTime / animationDuration);
+    const shiftWidth = zeroBasePosition % intervalWidth;
+    const needToShift = zeroBasePosition !== 0 && shiftWidth !== 0;
 
     const ticks = [];
+    
+    if (needToShift) {
+      const label = timeScale.formatTime(timeScale.distanceToRelativeTime(0));
+      ticks.push({ position: 0, label });
+    }
 
     for (let i = 0; i <= tickCount; i++) {
-      const position = i * intervalWidth * 100 / width;
-      const label = isAllDurationInfinity && i === tickCount
-                      ? getStr("player.infiniteTimeLabel")
-                      : timeScale.formatTime(timeScale.distanceToRelativeTime(position));
+      const position = ((i * intervalWidth) + shiftWidth) * 100 / width;
+      const distance = timeScale.distanceToRelativeTime(position);
+      let label = isAllDurationInfinity && i === tickCount
+                  ? getStr("player.infiniteTimeLabel")
+                  : timeScale.formatTime(distance);
+      
+      
+      
+      if (i === 0 &&
+          needToShift &&
+          shiftWidth < intervalWidth &&
+          Math.abs(distance) >= 0.001) {
+        label = "";
+      }
       ticks.push({ position, label });
     }
 
