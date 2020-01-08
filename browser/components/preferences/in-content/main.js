@@ -237,8 +237,13 @@ var promiseLoadHandlersList;
 
 
 function getBundleForLocale(locale) {
+  let locales = Array.from(new Set([
+    locale,
+    ...Services.locale.getRequestedLocales(),
+    Services.locale.lastFallbackLocale,
+  ]));
   function generateContexts(resourceIds) {
-    return L10nRegistry.generateContexts([locale], resourceIds);
+    return L10nRegistry.generateContexts(locales, resourceIds);
   }
   return new Localization([
     "browser/preferences/preferences.ftl",
