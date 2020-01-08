@@ -831,18 +831,6 @@ public:
   
 
 
-  static already_AddRefed<URLAndReferrerInfo>
-  GetPaintURI(nsIFrame* aFrame, nsStyleSVGPaint nsStyleSVG::* aPaint);
-
-  
-
-
-  static already_AddRefed<URLAndReferrerInfo>
-  GetMaskURI(nsIFrame* aFrame, uint32_t aIndex);
-
-  
-
-
 
 
 
