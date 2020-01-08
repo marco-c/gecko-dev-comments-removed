@@ -14,6 +14,9 @@ ChromeUtils.defineModuleGetter(this, "URLBAR_SELECTED_RESULT_TYPES",
 ChromeUtils.defineModuleGetter(this, "URLBAR_SELECTED_RESULT_METHODS",
                                "resource:///modules/BrowserUsageTelemetry.jsm");
 
+ChromeUtils.defineModuleGetter(this, "SearchTelemetry",
+                              "resource:///modules/SearchTelemetry.jsm");
+
 function checkHistogramResults(resultIndexes, expected, histogram) {
   for (let [i, val] of Object.entries(resultIndexes.values)) {
     if (i == expected) {
@@ -579,16 +582,12 @@ add_task(async function test_privateWindow() {
   
   
   
-  Services.search.QueryInterface(Ci.nsIObserver).observe(
-    null,
-    "test:setSearchProviderInfo",
-    JSON.stringify({
-      "example": {
-        "regexp": "^http://example\\.com/",
-        "queryParam": "q",
-      },
-    })
-  );
+  SearchTelemetry.overrideSearchTelemetryForTests({
+    "example": {
+      "regexp": "^http://example\\.com/",
+      "queryParam": "q",
+    },
+  });
 
   let search_hist = getAndClearKeyedHistogram("SEARCH_COUNTS");
 
@@ -690,6 +689,5 @@ add_task(async function test_privateWindow() {
   await BrowserTestUtils.closeWindow(win);
 
   
-  Services.search.QueryInterface(Ci.nsIObserver)
-    .observe(null, "test:setSearchProviderInfo", "");
+  SearchTelemetry.overrideSearchTelemetryForTests();
 });
