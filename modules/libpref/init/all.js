@@ -5842,9 +5842,6 @@ pref("plugins.rewrite_youtube_embeds", true);
 
 pref("dom.mozBrowserFramesEnabled", false);
 
-
-pref("layout.css.color-adjust.enabled", true);
-
 pref("dom.audiochannel.audioCompeting", false);
 pref("dom.audiochannel.audioCompeting.allAgents", false);
 
