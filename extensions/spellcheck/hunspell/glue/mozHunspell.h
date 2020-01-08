@@ -99,7 +99,7 @@ public:
   void LoadDictionaryList(bool aNotifyChildProcesses);
 
   
-  nsresult ConvertCharset(const char16_t* aStr, std::string* aDst);
+  nsresult ConvertCharset(const nsAString& aStr, std::string& aDst);
 
   NS_DECL_NSIMEMORYREPORTER
 
@@ -115,7 +115,6 @@ protected:
   
   nsInterfaceHashtable<nsStringHashKey, nsIURI> mDictionaries;
   nsString  mDictionary;
-  nsString  mLanguage;
   nsCString mAffixFileName;
 
   
