@@ -2,6 +2,7 @@
 
 
 
+#include "js/PropertyDescriptor.h"  
 #include "jsapi-tests/tests.h"
 
 BEGIN_TEST(test_GetPropertyDescriptor) {
