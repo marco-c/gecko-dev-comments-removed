@@ -1644,11 +1644,8 @@ StartMacOSContentSandbox()
   
   
   
-  if (!recordreplay::IsRecordingOrReplaying()) {
-    
-    
-    CGSShutdownServerConnections();
-  }
+  CGSShutdownServerConnections();
+
   
   
   
