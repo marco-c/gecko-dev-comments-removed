@@ -1,7 +1,6 @@
 
 
-if (helperThreadCount() === 0)
-    quit();
+
 
 function assertFails(f) {
     let failed = false;
