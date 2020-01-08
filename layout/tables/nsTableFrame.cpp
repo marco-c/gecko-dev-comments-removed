@@ -249,7 +249,7 @@ nsTableFrame::RegisterPositionedTablePart(nsIFrame* aFrame)
   
   
   
-  if (!IsTableCell(aFrame->Type())) {
+  if (!IS_TABLE_CELL(aFrame->Type())) {
     nsIContent* content = aFrame->GetContent();
     nsPresContext* presContext = aFrame->PresContext();
     if (content && !presContext->HasWarnedAboutPositionedTableParts()) {
@@ -1883,7 +1883,7 @@ nsTableFrame::AncestorsHaveStyleBSize(const ReflowInput& aParentReflowInput)
   for (const ReflowInput* rs = &aParentReflowInput;
        rs && rs->mFrame; rs = rs->mParentReflowInput) {
     LayoutFrameType frameType = rs->mFrame->Type();
-    if (IsTableCell(frameType) ||
+    if (IS_TABLE_CELL(frameType) ||
         (LayoutFrameType::TableRow      == frameType) ||
         (LayoutFrameType::TableRowGroup == frameType)) {
       const nsStyleCoord &bsize = rs->mStylePosition->BSize(wm);
@@ -1905,7 +1905,7 @@ nsTableFrame::AncestorsHaveStyleBSize(const ReflowInput& aParentReflowInput)
 void
 nsTableFrame::CheckRequestSpecialBSizeReflow(const ReflowInput& aReflowInput)
 {
-  NS_ASSERTION(IsTableCell(aReflowInput.mFrame->Type()) ||
+  NS_ASSERTION(IS_TABLE_CELL(aReflowInput.mFrame->Type()) ||
                aReflowInput.mFrame->IsTableRowFrame() ||
                aReflowInput.mFrame->IsTableRowGroupFrame() ||
                aReflowInput.mFrame->IsTableFrame(),
@@ -1931,7 +1931,7 @@ nsTableFrame::RequestSpecialBSizeReflow(const ReflowInput& aReflowInput)
   
   for (const ReflowInput* rs = &aReflowInput; rs && rs->mFrame; rs = rs->mParentReflowInput) {
     LayoutFrameType frameType = rs->mFrame->Type();
-    NS_ASSERTION(IsTableCell(frameType) ||
+    NS_ASSERTION(IS_TABLE_CELL(frameType) ||
                  LayoutFrameType::TableRow == frameType ||
                  LayoutFrameType::TableRowGroup == frameType ||
                  LayoutFrameType::Table == frameType,
@@ -7554,7 +7554,7 @@ BCBlockDirSeg::CreateWebRenderCommands(BCPaintBorderIterator& aIter,
 
   
   
-  wr::BorderWidths borderWidths = wr::ToBorderWidths(roundedRect.size.width,
+  wr::LayoutSideOffsets borderWidths = wr::ToBorderWidths(roundedRect.size.width,
                                                      roundedRect.size.width,
                                                      roundedRect.size.width,
                                                      roundedRect.size.width);
@@ -7841,7 +7841,7 @@ BCInlineDirSeg::CreateWebRenderCommands(BCPaintBorderIterator& aIter,
 
   
   
-  wr::BorderWidths borderWidths = wr::ToBorderWidths(roundedRect.size.height,
+  wr::LayoutSideOffsets borderWidths = wr::ToBorderWidths(roundedRect.size.height,
                                                      roundedRect.size.height,
                                                      roundedRect.size.height,
                                                      roundedRect.size.height);
@@ -8086,7 +8086,7 @@ nsTableFrame::CreateWebRenderCommandsForBCBorders(wr::DisplayListBuilder& aBuild
 
   LayoutDeviceRect allBorderRect;
   wr::BorderSide wrSide[4];
-  wr::BorderWidths wrWidths;
+  wr::LayoutSideOffsets wrWidths;
   wr::BorderRadius borderRadii = wr::EmptyBorderRadius();
   bool backfaceIsVisible = false;
   NS_FOR_CSS_SIDES(side) {
