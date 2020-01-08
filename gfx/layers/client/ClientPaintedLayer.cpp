@@ -11,6 +11,7 @@
 #include "client/ClientLayerManager.h"  
 #include "gfxContext.h"                 
 #include "gfx2DGlue.h"
+#include "gfxEnv.h"                     
 #include "gfxRect.h"                    
 #include "gfxPrefs.h"                   
 #include "mozilla/Assertions.h"         
@@ -155,13 +156,15 @@ ClientPaintedLayer::RenderLayerWithReadback(ReadbackProcessor *aReadback)
     RefPtr<gfxContext> ctx = gfxContext::CreatePreservingTransformOrNull(target);
     MOZ_ASSERT(ctx); 
 
-    ClientManager()->GetPaintedLayerCallback()(this,
-                                              ctx,
-                                              iter.mDrawRegion,
-                                              iter.mDrawRegion,
-                                              state.mClip,
-                                              state.mRegionToInvalidate,
-                                              ClientManager()->GetPaintedLayerCallbackData());
+    if (!gfxEnv::SkipRasterization()) {
+      ClientManager()->GetPaintedLayerCallback()(this,
+                                                ctx,
+                                                iter.mDrawRegion,
+                                                iter.mDrawRegion,
+                                                state.mClip,
+                                                state.mRegionToInvalidate,
+                                                ClientManager()->GetPaintedLayerCallbackData());
+    }
 
     ctx = nullptr;
     mContentClient->ReturnDrawTarget(target);

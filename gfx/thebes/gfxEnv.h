@@ -102,6 +102,12 @@ public:
   DECL_GFX_ENV("MOZ_LAYERS_PREFER_OFFSCREEN", LayersPreferOffscreen);
 
   
+  DECL_GFX_ENV("MOZ_SKIPCOMPOSITION", SkipComposition);
+
+  
+  DECL_GFX_ENV("MOZ_SKIPRASTERIZATION", SkipRasterization);
+
+  
   DECL_GFX_ENV("NO_VR_RENDERING", NoVRRendering);
 
   

@@ -24,6 +24,7 @@
 #include "Units.h"                      
 #include "UnitTransforms.h"             
 #include "apz/src/AsyncPanZoomController.h"  
+#include "gfxEnv.h"                     
 #include "gfxPrefs.h"                   
 #ifdef XP_MACOSX
 #include "gfxPlatformMac.h"
@@ -477,6 +478,11 @@ LayerManagerComposite::EndTransaction(const TimeStamp& aTimeStamp,
 void
 LayerManagerComposite::UpdateAndRender()
 {
+  if (gfxEnv::SkipComposition()) {
+    mInvalidRegion.SetEmpty();
+    return;
+  }
+
   nsIntRegion invalid;
   
   

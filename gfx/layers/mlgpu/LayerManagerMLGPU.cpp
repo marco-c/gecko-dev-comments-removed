@@ -10,6 +10,7 @@
 #include "ImageLayerMLGPU.h"
 #include "CanvasLayerMLGPU.h"
 #include "GeckoProfiler.h"              
+#include "gfxEnv.h"                     
 #include "MLGDevice.h"
 #include "RenderPassMLGPU.h"
 #include "RenderViewMLGPU.h"
@@ -276,6 +277,10 @@ LayerManagerMLGPU::EndTransaction(const TimeStamp& aTimeStamp, EndTransactionFla
 void
 LayerManagerMLGPU::Composite()
 {
+  if (gfxEnv::SkipComposition()) {
+    return;
+  }
+
   AUTO_PROFILER_LABEL("LayerManagerMLGPU::Composite", GRAPHICS);
 
   
