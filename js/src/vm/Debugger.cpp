@@ -4573,11 +4573,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
 
 
     void consider(JSScript* script, const JS::AutoRequireNoGC& nogc) {
-        
-        
-        
-        
-        if (oom || script->selfHosted() || script->isUncompleted())
+        if (oom || script->selfHosted())
             return;
         Realm* realm = script->realm();
         if (!realms.has(realm))
