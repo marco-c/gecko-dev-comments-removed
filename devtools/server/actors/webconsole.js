@@ -20,7 +20,6 @@ const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const ErrorDocs = require("devtools/server/actors/errordocs");
 
 loader.lazyRequireGetter(this, "NetworkMonitorActor", "devtools/server/actors/network-monitor", true);
-loader.lazyRequireGetter(this, "NetworkEventActor", "devtools/server/actors/network-event", true);
 loader.lazyRequireGetter(this, "ConsoleProgressListener", "devtools/shared/webconsole/network-monitor", true);
 loader.lazyRequireGetter(this, "StackTraceCollector", "devtools/shared/webconsole/network-monitor", true);
 loader.lazyRequireGetter(this, "JSPropertyProvider", "devtools/shared/webconsole/js-property-provider", true);
@@ -74,8 +73,6 @@ function WebConsoleActor(connection, parentActor) {
 
   this.dbg = this.parentActor.makeDebugger();
 
-  this._netEvents = new Map();
-  this._networkEventActorsByURL = new Map();
   this._gripDepth = 0;
   this._listeners = new Set();
   this._lastConsoleInputEvaluation = undefined;
@@ -129,25 +126,6 @@ WebConsoleActor.prototype =
 
 
   _prefs: null,
-
-  
-
-
-
-
-
-
-  _netEvents: null,
-
-  
-
-
-
-
-
-
-
-  _networkEventActorsByURL: null,
 
   
 
@@ -395,7 +373,6 @@ WebConsoleActor.prototype =
     this._webConsoleCommandsCache = null;
     this._lastConsoleInputEvaluation = null;
     this._evalWindow = null;
-    this._netEvents.clear();
     this.dbg.enabled = false;
     this.dbg = null;
     this.conn = null;
@@ -1733,58 +1710,6 @@ WebConsoleActor.prototype =
       message: this.prepareConsoleMessageForRemote(message),
     };
     this.conn.send(packet);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  onNetworkEvent: function(event) {
-    const actor = this.getNetworkEventActor(event.channelId);
-    actor.init(event);
-
-    this._networkEventActorsByURL.set(actor._request.url, actor);
-
-    const packet = {
-      from: this.actorID,
-      type: "networkEvent",
-      eventActor: actor.form()
-    };
-
-    this.conn.send(packet);
-
-    return actor;
-  },
-
-  
-
-
-
-
-
-
-
-
-  getNetworkEventActor: function(channelId) {
-    let actor = this._netEvents.get(channelId);
-    if (actor) {
-      
-      this._netEvents.delete(channelId);
-      return actor;
-    }
-
-    actor = new NetworkEventActor(this);
-    this._actorPool.addActor(actor);
-    return actor;
   },
 
   
