@@ -413,6 +413,9 @@ public:
 
 
   void DeviceChanged();
+  
+
+  void DeviceChangedImpl();
 
   
 
