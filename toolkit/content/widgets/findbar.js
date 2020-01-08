@@ -48,9 +48,12 @@ class MozFindbar extends XULElement {
   }
 
   connectedCallback() {
-    this.appendChild(document.importNode(this.content, true));
-
+    
+    
+    
+    this.setAttribute("noanim", "true");
     this.hidden = true;
+    this.appendChild(document.importNode(this.content, true));
 
     
 
