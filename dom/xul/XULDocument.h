@@ -15,7 +15,6 @@
 #include "mozilla/StyleSheet.h"
 #include "nsForwardReference.h"
 #include "nsIContent.h"
-#include "nsIDOMXULCommandDispatcher.h"
 #include "nsCOMArray.h"
 #include "nsIURI.h"
 #include "nsIStreamListener.h"
@@ -108,7 +107,8 @@ public:
     nsresult OnPrototypeLoadDone(bool aResumeWalk);
 
     
-    virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
+    virtual nsresult Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,
+                           bool aPreallocateChildren) const override;
 
     
     NS_IMETHOD StyleSheetLoaded(mozilla::StyleSheet* aSheet,
@@ -136,10 +136,6 @@ public:
     void TraceProtos(JSTracer* aTrc);
 
     
-    nsIDOMXULCommandDispatcher* GetCommandDispatcher() const
-    {
-        return mCommandDispatcher;
-    }
     void AddBroadcastListenerFor(Element& aBroadcaster, Element& aListener,
                                  const nsAString& aAttr, ErrorResult& aRv);
     void RemoveBroadcastListenerFor(Element& aBroadcaster, Element& aListener,
@@ -219,8 +215,6 @@ protected:
 
 
     bool                       mStillWalking;
-
-    nsCOMPtr<nsIDOMXULCommandDispatcher>     mCommandDispatcher; 
 
     uint32_t mPendingSheets;
 

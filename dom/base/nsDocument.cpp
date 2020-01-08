@@ -259,6 +259,7 @@
 #include "mozilla/dom/MenuBoxObject.h"
 #include "mozilla/dom/TreeBoxObject.h"
 #include "nsIXULWindow.h"
+#include "nsXULCommandDispatcher.h"
 #include "nsXULPopupManager.h"
 #include "nsIDocShellTreeOwner.h"
 #endif
@@ -1924,6 +1925,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsDocument)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mApplets);
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAnchors);
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAnonymousContents)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCommandDispatcher)
 
   
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mStyleSheets)
@@ -2014,6 +2016,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsDocument)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mOrientationPendingPromise)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFontFaceSet)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReadyForIdle);
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mCommandDispatcher)
 
   tmp->mParentDocument = nullptr;
 
@@ -8671,7 +8674,7 @@ nsIDocument::RefreshLinkHrefs()
 }
 
 nsresult
-nsDocument::CloneDocHelper(nsDocument* clone) const
+nsDocument::CloneDocHelper(nsDocument* clone, bool aPreallocateChildren) const
 {
   clone->mIsStaticDocument = mCreatingStaticClone;
 
@@ -10147,6 +10150,20 @@ nsIDocument::MaybeResolveReadyForIdle()
   if (readyPromise) {
     readyPromise->MaybeResolve(this);
   }
+}
+
+nsIDOMXULCommandDispatcher*
+nsIDocument::GetCommandDispatcher()
+{
+  
+  if (!nsContentUtils::IsChromeDoc(this)) {
+    return nullptr;
+  }
+  if (!mCommandDispatcher) {
+    
+    mCommandDispatcher = new nsXULCommandDispatcher(this);
+  }
+  return mCommandDispatcher;
 }
 
 static JSObject*

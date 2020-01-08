@@ -15,6 +15,7 @@
 #include "nsIApplicationCache.h"
 #include "nsIApplicationCacheContainer.h"
 #include "nsIContentViewer.h"
+#include "nsIDOMXULCommandDispatcher.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsILoadContext.h"
 #include "nsILoadGroup.h"                
@@ -535,7 +536,8 @@ public:
                              bool aNotify) override;
   void RemoveChildNode(nsIContent* aKid, bool aNotify) final;
   nsresult Clone(mozilla::dom::NodeInfo* aNodeInfo,
-                 nsINode **aResult) const override
+                 nsINode **aResult,
+                 bool aPreallocateChildren) const override
   {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
@@ -3324,6 +3326,7 @@ public:
 
   mozilla::dom::Promise* GetDocumentReadyForIdle(mozilla::ErrorResult& aRv);
 
+  nsIDOMXULCommandDispatcher* GetCommandDispatcher();
   already_AddRefed<nsINode> GetPopupNode();
   void SetPopupNode(nsINode* aNode);
   nsINode* GetPopupRangeParent(ErrorResult& aRv);
@@ -4497,6 +4500,8 @@ protected:
 
   
   uint32_t mIgnoreOpensDuringUnloadCounter;
+
+  nsCOMPtr<nsIDOMXULCommandDispatcher> mCommandDispatcher; 
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocument, NS_IDOCUMENT_IID)

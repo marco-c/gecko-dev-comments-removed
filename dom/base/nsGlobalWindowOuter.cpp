@@ -6267,8 +6267,8 @@ nsGlobalWindowOuter::UpdateCommands(const nsAString& anAction,
   }
 
   nsIDocument* doc = rootWindow->GetExtantDoc();
-  
-  if (!doc || !doc->IsXULDocument()) {
+
+  if (!doc) {
     return;
   }
   
@@ -6276,7 +6276,7 @@ nsGlobalWindowOuter::UpdateCommands(const nsAString& anAction,
   if (!anAction.EqualsLiteral("selectionchange")) {
     
     nsIDOMXULCommandDispatcher* xulCommandDispatcher =
-      doc->AsXULDocument()->GetCommandDispatcher();
+      doc->GetCommandDispatcher();
     if (xulCommandDispatcher) {
       nsContentUtils::AddScriptRunner(new CommandDispatcher(xulCommandDispatcher,
                                                             anAction));
