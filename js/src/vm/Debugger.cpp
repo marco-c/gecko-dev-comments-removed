@@ -4216,7 +4216,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
         line(0),
         innermost(false),
         innermostForRealm(cx->zone()),
-        vector(cx, ScriptVector(cx)),
+        scriptVector(cx, ScriptVector(cx)),
         wasmInstanceVector(cx, WasmInstanceObjectVector(cx)),
         oom(false)
     {}
@@ -4394,7 +4394,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
             singletonRealm = realms.all().front();
 
         
-        MOZ_ASSERT(vector.empty());
+        MOZ_ASSERT(scriptVector.empty());
         oom = false;
         IterateScripts(cx, singletonRealm, this, considerScript);
         if (oom) {
@@ -4403,7 +4403,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
         }
 
         
-        for (JSScript** i = vector.begin(); i != vector.end(); ++i)
+        for (JSScript** i = scriptVector.begin(); i != scriptVector.end(); ++i)
             JS::ExposeScriptToActiveJS(*i);
 
         
@@ -4416,7 +4416,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
                  r.popFront())
             {
                 JS::ExposeScriptToActiveJS(r.front().value());
-                if (!vector.append(r.front().value())) {
+                if (!scriptVector.append(r.front().value())) {
                     ReportOutOfMemory(cx);
                     return false;
                 }
@@ -4439,7 +4439,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
     }
 
     Handle<ScriptVector> foundScripts() const {
-        return vector;
+        return scriptVector;
     }
 
     Handle<WasmInstanceObjectVector> foundWasmInstances() const {
@@ -4502,7 +4502,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
 
 
 
-    Rooted<ScriptVector> vector;
+    Rooted<ScriptVector> scriptVector;
 
     
 
@@ -4647,7 +4647,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
             }
         } else {
             
-            if (!vector.append(script)) {
+            if (!scriptVector.append(script)) {
                 oom = true;
                 return;
             }
