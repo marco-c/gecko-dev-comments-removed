@@ -20,9 +20,7 @@ function loadFile(lfVarx) {
     var k = 0;
     oomTest(function() {
         
-        if (k++ > 4000)
-          quit();
-        eval(lfVarx);
+        if (k++ <= 4000)
+          eval(lfVarx);
     })
 }
-

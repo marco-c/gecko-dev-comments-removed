@@ -1,7 +1,7 @@
 
 
 if (!('oomTest' in this))
-  throw (new ReferenceError);
+    quit();
 
 var g = newGlobal();
 g.debuggeeGlobal = this;

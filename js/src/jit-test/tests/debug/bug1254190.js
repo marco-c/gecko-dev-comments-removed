@@ -1,7 +1,7 @@
 
 
 if (!('oomTest' in this))
-    throw new Error("out of memory");
+    quit();
 
 var g = newGlobal();
 var dbg = new Debugger(g);

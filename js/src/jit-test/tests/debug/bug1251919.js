@@ -1,7 +1,5 @@
-
-
 if (!('oomTest' in this))
-    throw new Error("out of memory");
+    quit();
 
 
 fullcompartmentchecks(true);

@@ -1,12 +1,15 @@
 
 
+if (!('oomTest' in this))
+    quit();
+
 
 g = newGlobal();
 g.parent = this;
 g.eval("(" + function() {
-    Debugger(parent).onExceptionUnwind = function(frame)
+    Debugger(parent).onExceptionUnwind = function(frame) {
     frame.eval("")
-} + ")()");
+    } } + ")()");
 
 function ERROR(msg) {
     throw new Error("boom");
