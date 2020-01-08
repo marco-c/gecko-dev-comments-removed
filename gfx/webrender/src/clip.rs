@@ -11,7 +11,7 @@ use clip_scroll_tree::{CoordinateSystemId, SpatialNodeIndex};
 use ellipse::Ellipse;
 use gpu_cache::{GpuCache, GpuCacheHandle, ToGpuBlocks};
 use gpu_types::BoxShadowStretchMode;
-use prim_store::{ClipData, ImageMaskData};
+use prim_store::{BrushClipMaskKind, ClipData, ImageMaskData};
 use render_task::to_cache_size;
 use resource_cache::{ImageRequest, ResourceCache};
 use spatial_node::SpatialNode;
@@ -352,12 +352,13 @@ pub struct ClipStore {
 
 
 
+#[derive(Debug)]
 pub struct ClipChainInstance {
     pub clips_range: ClipNodeRange,
     pub local_clip_rect: LayoutRect,
-    pub has_clips_from_other_coordinate_systems: bool,
     pub has_non_root_coord_system: bool,
     pub local_bounding_rect: LayoutRect,
+    pub clip_mask_kind: BrushClipMaskKind,
 }
 
 impl ClipStore {
@@ -549,11 +550,18 @@ impl ClipStore {
 
         let first_clip_node_index = self.clip_node_indices.len() as u32;
         let mut has_non_root_coord_system = false;
-        let mut has_clips_from_other_coordinate_systems = false;
+        let mut clip_mask_kind = BrushClipMaskKind::Individual;
 
         
         for node_info in self.clip_node_info.drain(..) {
             let node = &mut self.clip_nodes[node_info.node_index.0 as usize];
+
+            
+            
+            
+            if node.item.is_image_or_line_decoration_clip() {
+                clip_mask_kind = BrushClipMaskKind::Global;
+            }
 
             
             let prim_rect = node_info
@@ -600,10 +608,15 @@ impl ClipStore {
                             ClipNodeFlags::SAME_SPATIAL_NODE | ClipNodeFlags::SAME_COORD_SYSTEM
                         }
                         ClipSpaceConversion::Offset(..) => {
+                            if !node.item.is_rect() {
+                                clip_mask_kind = BrushClipMaskKind::Global;
+                            }
                             ClipNodeFlags::SAME_COORD_SYSTEM
                         }
                         ClipSpaceConversion::Transform(..) => {
-                            has_clips_from_other_coordinate_systems = true;
+                            
+                            
+                            clip_mask_kind = BrushClipMaskKind::Global;
                             ClipNodeFlags::empty()
                         }
                     };
@@ -626,10 +639,10 @@ impl ClipStore {
         
         Some(ClipChainInstance {
             clips_range,
-            has_clips_from_other_coordinate_systems,
             has_non_root_coord_system,
             local_clip_rect: current_local_clip_rect,
             local_bounding_rect,
+            clip_mask_kind,
         })
     }
 }

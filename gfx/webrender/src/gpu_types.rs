@@ -354,7 +354,7 @@ impl TransformPaletteId {
     pub const IDENTITY: Self = TransformPaletteId(0);
 
     
-    pub fn _spatial_node_index(&self) -> SpatialNodeIndex {
+    pub fn spatial_node_index(&self) -> SpatialNodeIndex {
         SpatialNodeIndex(self.0 as usize & 0xFFFFFF)
     }
 
@@ -478,6 +478,13 @@ impl TransformPalette {
             transform_kind: metadata.transform_kind,
             backface_is_visible: data.transform.is_backface_visible(),
         }
+    }
+
+    pub fn get_transform_by_id(
+        &self,
+        id: TransformPaletteId,
+    ) -> Transform {
+        self.get_transform(id.spatial_node_index())
     }
 
     
