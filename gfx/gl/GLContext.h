@@ -3322,6 +3322,9 @@ class GLContext : public GLLibraryLoader,
   
   void MarkDestroyed();
 
+ protected:
+  virtual void OnMarkDestroyed() {}
+
   
   
  protected:

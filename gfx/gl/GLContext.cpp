@@ -1923,6 +1923,8 @@ bool GLContext::AssembleOffscreenFBs(const GLuint colorMSRB,
 void GLContext::MarkDestroyed() {
   if (IsDestroyed()) return;
 
+  OnMarkDestroyed();
+
   
   
   mScreen = nullptr;
