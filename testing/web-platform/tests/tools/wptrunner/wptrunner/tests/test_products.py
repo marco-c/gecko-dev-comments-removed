@@ -1,4 +1,3 @@
-import os
 import sys
 
 from os.path import join, dirname
@@ -10,7 +9,7 @@ from .base import all_products, active_products
 
 sys.path.insert(0, join(dirname(__file__), "..", "..", "..", ".."))  
 
-from tools import localpaths
+from tools import localpaths  
 
 from wptserve import sslutils
 

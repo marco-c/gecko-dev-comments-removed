@@ -4,7 +4,7 @@ import logging
 import os
 import sys
 
-from tools import localpaths
+from tools import localpaths  
 
 from six import iteritems
 from . import virtualenv

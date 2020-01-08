@@ -1,7 +1,5 @@
 import unittest
 
-from cStringIO import StringIO
-
 from ..backends import static
 
 
