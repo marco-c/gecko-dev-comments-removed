@@ -65,6 +65,21 @@ var UrlbarUtils = {
     
     
     TAB_SWITCH: 1,
+    
+    
+    SEARCH: 2,
+    
+    
+    URL: 3,
+    
+    
+    KEYWORD: 4,
+    
+    
+    OMNIBOX: 5,
+    
+    
+    REMOTE_TAB: 6,
   },
 
   
@@ -74,7 +89,7 @@ var UrlbarUtils = {
   MATCH_SOURCE: {
     BOOKMARKS: 1,
     HISTORY: 2,
-    SEARCHENGINE: 3,
+    SEARCH: 3,
     TABS: 4,
     OTHER_LOCAL: 5,
     OTHER_NETWORK: 6,

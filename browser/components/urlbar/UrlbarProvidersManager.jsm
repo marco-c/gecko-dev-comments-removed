@@ -26,7 +26,7 @@ XPCOMUtils.defineLazyGetter(this, "logger", () =>
 
 
 var localProviderModules = {
-  UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.jsm",
+  UrlbarProviderUnifiedComplete: "resource:///modules/UrlbarProviderUnifiedComplete.jsm",
 };
 
 
@@ -181,7 +181,7 @@ class Query {
         break;
       }
       if (this._providerHasAcceptableSources(provider)) {
-        promises.push(provider.startQuery(this.context, this.add));
+        promises.push(provider.startQuery(this.context, this.add.bind(this)));
       }
     }
 
@@ -254,7 +254,7 @@ class Query {
 
     
     
-    if (match.url.startsWith("javascript:") &&
+    if (match.payload.url && match.payload.url.startsWith("javascript:") &&
         !this.context.searchString.startsWith("javascript:") &&
         UrlbarPrefs.get("filter.javascript")) {
       return;
@@ -381,7 +381,7 @@ function getAcceptableMatchSources(context) {
           acceptedSources.push(source);
         }
         break;
-      case UrlbarUtils.MATCH_SOURCE.SEARCHENGINE:
+      case UrlbarUtils.MATCH_SOURCE.SEARCH:
         if (UrlbarPrefs.get("suggest.searches") &&
             (!restrictTokenType ||
              restrictTokenType === UrlbarTokenizer.TYPE.RESTRICT_SEARCH)) {

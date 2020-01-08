@@ -48,7 +48,7 @@ class UrlbarMatch {
 
     
     
-    if (!payload || (typeof payload != "object") || !payload.url) {
+    if (!payload || (typeof payload != "object")) {
       throw new Error("Invalid match payload");
     }
     this.payload = payload;
@@ -58,21 +58,25 @@ class UrlbarMatch {
 
 
 
-
-
-  get url() {
+  get title() {
     switch (this.type) {
       case UrlbarUtils.MATCH_TYPE.TAB_SWITCH:
-        return this.payload.url;
+      case UrlbarUtils.MATCH_TYPE.URL:
+      case UrlbarUtils.MATCH_TYPE.OMNIBOX:
+      case UrlbarUtils.MATCH_TYPE.REMOTE_TAB:
+        return this.payload.title || "";
+      case UrlbarUtils.MATCH_TYPE.SEARCH:
+        return this.payload.engine;
+      default:
+        return "";
     }
-    return "";
   }
 
   
 
 
 
-  get title() {
-    return "";
+  get icon() {
+    return this.payload.icon;
   }
 }

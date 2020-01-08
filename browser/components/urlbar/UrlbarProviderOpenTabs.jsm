@@ -92,6 +92,10 @@ class ProviderOpenTabs {
     return UrlbarUtils.PROVIDER_TYPE.PROFILE;
   }
 
+  
+
+
+
   get sources() {
     return [
       UrlbarUtils.MATCH_SOURCE.TABS,
@@ -139,6 +143,7 @@ class ProviderOpenTabs {
 
 
   async startQuery(queryContext, addCallback) {
+    
     
     
     
