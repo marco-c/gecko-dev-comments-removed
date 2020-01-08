@@ -4556,6 +4556,8 @@ pub trait SceneBuilderHooks {
     
     fn register(&self);
     
+    fn pre_scene_build(&self);
+    
     fn pre_scene_swap(&self, scenebuild_time: u64);
     
     
@@ -4565,6 +4567,11 @@ pub trait SceneBuilderHooks {
     
     
     fn post_resource_update(&self);
+    
+    
+    
+    
+    fn post_empty_scene_build(&self);
     
     
     
