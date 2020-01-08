@@ -41,9 +41,6 @@ enum PromiseHandler {
     PromiseHandlerThrower,
 
     
-    PromiseHandlerThen,
-
-    
     PromiseHandlerAsyncFunctionAwaitedFulfilled,
     PromiseHandlerAsyncFunctionAwaitedRejected,
 
@@ -93,14 +90,33 @@ enum ReactionJobSlots {
 };
 
 enum ThenableJobSlots {
+    
+    
+    
     ThenableJobSlot_Handler = 0,
+
+    
+    
     ThenableJobSlot_JobData,
 };
 
 enum ThenableJobDataIndices {
+    
     ThenableJobDataIndex_Promise = 0,
+
+    
     ThenableJobDataIndex_Thenable,
+
     ThenableJobDataLength,
+};
+
+enum BuiltinThenableJobSlots {
+    
+    BuiltinThenableJobSlot_Promise = 0,
+
+    
+    
+    BuiltinThenableJobSlot_Thenable,
 };
 
 enum PromiseAllDataHolderSlots {
@@ -559,6 +575,10 @@ static MOZ_MUST_USE bool EnqueuePromiseResolveThenableJob(JSContext* cx,
                                                           HandleValue thenable,
                                                           HandleValue thenVal);
 
+static MOZ_MUST_USE bool EnqueuePromiseResolveThenableBuiltinJob(JSContext* cx,
+                                                                 HandleObject promiseToResolve,
+                                                                 HandleObject thenable);
+
 static bool Promise_then(JSContext* cx, unsigned argc, Value* vp);
 static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal, HandleValue onFulfilled,
                               HandleValue onRejected, MutableHandleValue rval, bool rvalUsed);
@@ -609,18 +629,29 @@ ResolvePromiseInternal(JSContext* cx, HandleObject promise, HandleValue resoluti
     
     
     
+    
+    
+    
+    bool isBuiltinThen = false;
     if (resolution->is<PromiseObject>() &&
         resolution->as<PromiseObject>().compartment() == cx->compartment() &&
         IsNativeFunction(thenVal, Promise_then) &&
-        thenVal.toObject().as<JSFunction>().realm() == cx->realm())
+        thenVal.toObject().as<JSFunction>().realm() == cx->realm() &&
+        promise->is<PromiseObject>() &&
+        promise->as<PromiseObject>().compartment() == cx->compartment())
     {
-        thenVal = UndefinedValue();
+        isBuiltinThen = true;
     }
 
     
-    RootedValue promiseVal(cx, ObjectValue(*promise));
-    if (!EnqueuePromiseResolveThenableJob(cx, promiseVal, resolutionVal, thenVal))
-        return false;
+    if (!isBuiltinThen) {
+        RootedValue promiseVal(cx, ObjectValue(*promise));
+        if (!EnqueuePromiseResolveThenableJob(cx, promiseVal, resolutionVal, thenVal))
+            return false;
+    } else {
+        if (!EnqueuePromiseResolveThenableBuiltinJob(cx, promise, resolution))
+            return false;
+    }
 
     
     return true;
@@ -739,7 +770,7 @@ EnqueuePromiseReactionJob(JSContext* cx, HandleObject reactionObj,
     }
 
     
-    RootedAtom funName(cx, cx->names().empty);
+    HandlePropertyName funName = cx->names().empty;
     RootedFunction job(cx, NewNativeFunction(cx, PromiseReactionJob, 0, funName,
                                              gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
     if (!job)
@@ -948,7 +979,7 @@ NewPromiseCapability(JSContext* cx, HandleObject C, MutableHandleObject promise,
     
 
     
-    RootedAtom funName(cx, cx->names().empty);
+    HandlePropertyName funName = cx->names().empty;
     RootedFunction executor(cx, NewNativeFunction(cx, GetCapabilitiesExecutor, 2, funName,
                                                   gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
     if (!executor)
@@ -1289,7 +1320,46 @@ PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp)
 
 
 
+static bool
+PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
 
+    RootedFunction job(cx, &args.callee().as<JSFunction>());
+    RootedValue then(cx, job->getExtendedSlot(ThenableJobSlot_Handler));
+    MOZ_ASSERT(then.isObject());
+    MOZ_ASSERT(!IsWrapper(&then.toObject()));
+    RootedNativeObject jobArgs(cx, &job->getExtendedSlot(ThenableJobSlot_JobData)
+                                    .toObject().as<NativeObject>());
+
+    RootedObject promise(cx, &jobArgs->getDenseElement(ThenableJobDataIndex_Promise).toObject());
+    RootedValue thenable(cx, jobArgs->getDenseElement(ThenableJobDataIndex_Thenable));
+
+    
+    RootedObject resolveFn(cx);
+    RootedObject rejectFn(cx);
+    if (!CreateResolvingFunctions(cx, promise, &resolveFn, &rejectFn))
+        return false;
+
+    
+    FixedInvokeArgs<2> args2(cx);
+    args2[0].setObject(*resolveFn);
+    args2[1].setObject(*rejectFn);
+
+    
+    RootedValue rval(cx);
+    if (Call(cx, then, thenable, args2, &rval))
+        return true;
+
+    if (!MaybeGetAndClearException(cx, &rval))
+        return false;
+
+    FixedInvokeArgs<1> rejectArgs(cx);
+    rejectArgs[0].set(rval);
+
+    RootedValue rejectVal(cx, ObjectValue(*rejectFn));
+    return Call(cx, rejectVal, UndefinedHandleValue, rejectArgs, &rval);
+}
 
 
 
@@ -1304,20 +1374,17 @@ PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp)
 
 
 static bool
-PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp)
+PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 
     RootedFunction job(cx, &args.callee().as<JSFunction>());
-    RootedValue then(cx, job->getExtendedSlot(ThenableJobSlot_Handler));
-    MOZ_ASSERT(then.isObject() || then.isInt32());
-    MOZ_ASSERT_IF(then.isObject(), !IsWrapper(&then.toObject()));
-    MOZ_ASSERT_IF(then.isInt32(), then.toInt32() == PromiseHandlerThen);
-    RootedNativeObject jobArgs(cx, &job->getExtendedSlot(ThenableJobSlot_JobData)
-                                    .toObject().as<NativeObject>());
+    RootedObject promise(cx, &job->getExtendedSlot(BuiltinThenableJobSlot_Promise).toObject());
+    RootedObject thenable(cx, &job->getExtendedSlot(BuiltinThenableJobSlot_Thenable).toObject());
 
-    RootedObject promise(cx, &jobArgs->getDenseElement(ThenableJobDataIndex_Promise).toObject());
-    RootedValue thenable(cx, jobArgs->getDenseElement(ThenableJobDataIndex_Thenable));
+    assertSameCompartment(cx, promise, thenable);
+    MOZ_ASSERT(promise->is<PromiseObject>());
+    MOZ_ASSERT(thenable->is<PromiseObject>());
 
     
     RootedObject resolveFn(cx);
@@ -1326,40 +1393,26 @@ PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     
-    RootedValue rval(cx);
-    if (then.isObject()) {
-        FixedInvokeArgs<2> args2(cx);
-        args2[0].setObject(*resolveFn);
-        args2[1].setObject(*rejectFn);
+    RootedValue resolveVal(cx, ObjectValue(*resolveFn));
+    RootedValue rejectVal(cx, ObjectValue(*rejectFn));
 
-        
-        if (Call(cx, then, thenable, args2, &rval))
-            return true;
-    } else {
-        RootedValue resolveVal(cx, ObjectValue(*resolveFn));
-        RootedValue rejectVal(cx, ObjectValue(*rejectFn));
-
-        
-        Rooted<PromiseObject*> thenablePromise(cx, &thenable.toObject().as<PromiseObject>());
-        RootedObject resultPromise(cx);
-        if (OriginalPromiseThen(cx, thenablePromise, resolveVal, rejectVal, &resultPromise,
-                                CreateDependentPromise::SkipIfCtorUnobservable))
-        {
-            return true;
-        }
+    
+    RootedObject resultPromise(cx);
+    if (OriginalPromiseThen(cx, thenable.as<PromiseObject>(), resolveVal, rejectVal,
+                            &resultPromise, CreateDependentPromise::SkipIfCtorUnobservable))
+    {
+        return true;
     }
 
-    if (!MaybeGetAndClearException(cx, &rval))
+    RootedValue exception(cx);
+    if (!MaybeGetAndClearException(cx, &exception))
         return false;
 
     FixedInvokeArgs<1> rejectArgs(cx);
-    rejectArgs[0].set(rval);
+    rejectArgs[0].set(exception);
 
-    RootedValue rejectVal(cx, ObjectValue(*rejectFn));
-    return Call(cx, rejectVal, UndefinedHandleValue, rejectArgs, &rval);
+    return Call(cx, rejectVal, UndefinedHandleValue, rejectArgs, &exception);
 }
-
-
 
 
 
@@ -1381,25 +1434,17 @@ EnqueuePromiseResolveThenableJob(JSContext* cx, HandleValue promiseToResolve_,
     
     
     
-    RootedObject then(cx);
-    mozilla::Maybe<AutoRealm> ar;
+    RootedObject then(cx, CheckedUnwrap(&thenVal.toObject()));
+    AutoRealm ar(cx, then);
 
-    if (thenVal.isObject()) {
-        then = CheckedUnwrap(&thenVal.toObject());
-        ar.emplace(cx, then);
-    }
-
-    RootedAtom funName(cx, cx->names().empty);
+    HandlePropertyName funName = cx->names().empty;
     RootedFunction job(cx, NewNativeFunction(cx, PromiseResolveThenableJob, 0, funName,
                                              gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
     if (!job)
         return false;
 
     
-    if (then)
-        job->setExtendedSlot(ThenableJobSlot_Handler, ObjectValue(*then));
-    else
-        job->setExtendedSlot(ThenableJobSlot_Handler, Int32Value(PromiseHandlerThen));
+    job->setExtendedSlot(ThenableJobSlot_Handler, ObjectValue(*then));
 
     
     
@@ -1430,6 +1475,34 @@ EnqueuePromiseResolveThenableJob(JSContext* cx, HandleValue promiseToResolve_,
 
     RootedObject incumbentGlobal(cx, cx->runtime()->getIncumbentGlobal(cx));
     return cx->runtime()->enqueuePromiseJob(cx, job, promise, incumbentGlobal);
+}
+
+
+
+
+
+
+
+static MOZ_MUST_USE bool
+EnqueuePromiseResolveThenableBuiltinJob(JSContext* cx, HandleObject promiseToResolve,
+                                        HandleObject thenable)
+{
+    assertSameCompartment(cx, promiseToResolve, thenable);
+    MOZ_ASSERT(promiseToResolve->is<PromiseObject>());
+    MOZ_ASSERT(thenable->is<PromiseObject>());
+
+    HandlePropertyName funName = cx->names().empty;
+    RootedFunction job(cx, NewNativeFunction(cx, PromiseResolveBuiltinThenableJob, 0, funName,
+                                             gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
+    if (!job)
+        return false;
+
+    
+    job->setExtendedSlot(BuiltinThenableJobSlot_Promise, ObjectValue(*promiseToResolve));
+    job->setExtendedSlot(BuiltinThenableJobSlot_Thenable, ObjectValue(*thenable));
+
+    RootedObject incumbentGlobal(cx, cx->runtime()->getIncumbentGlobal(cx));
+    return cx->runtime()->enqueuePromiseJob(cx, job, promiseToResolve, incumbentGlobal);
 }
 
 static MOZ_MUST_USE bool
