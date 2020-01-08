@@ -465,15 +465,6 @@ Tools.accessibility = {
 
   buildToolStartup(toolbox) {
     return new AccessibilityStartup(toolbox);
-  },
-
-  
-  get badge() {
-    if (Services.prefs.getIntPref("devtools.promote.accessibility") > 0) {
-      return l10n("toolbox.tab.newBadge");
-    }
-
-    return null;
   }
 };
 

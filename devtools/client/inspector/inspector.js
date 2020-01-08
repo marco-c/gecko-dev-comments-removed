@@ -1697,13 +1697,7 @@ Inspector.prototype = {
       click: () => this.showAccessibilityProperties(),
       disabled: true
     });
-    
-    
-    const startup = this._toolbox.getToolStartup("accessibility");
-    if (startup && startup.accessibility.enabled) {
-      this._updateA11YMenuItem(showA11YPropsItem);
-    }
-
+    this._updateA11YMenuItem(showA11YPropsItem);
     menu.append(showA11YPropsItem);
   },
 
