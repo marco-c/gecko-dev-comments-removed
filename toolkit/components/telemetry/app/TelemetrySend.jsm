@@ -551,6 +551,12 @@ var SendScheduler = {
     
     
     
+    
+
+    let disableFuzzingDelay = Services.prefs.getBoolPref(TelemetryUtils.Preferences.DisableFuzzingDelay, false);
+    if (disableFuzzingDelay) {
+      return now.getTime();
+    }
 
     const midnight = Utils.truncateToDays(now);
     
