@@ -33,6 +33,7 @@ nsContainerFrame* NS_NewFlexContainerFrame(nsIPresShell* aPresShell,
 struct ComputedFlexItemInfo
 {
   nsCOMPtr<nsINode> mNode;
+  nsRect mFrameRect;
   
 
 
