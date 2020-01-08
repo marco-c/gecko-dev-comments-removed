@@ -4,10 +4,20 @@ import org.mozilla.gecko.util.ThreadUtils;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.concurrent.TimeoutException;
+
+
+
+
+
+
+
+
 
 
 
@@ -159,7 +169,7 @@ public class GeckoResult<T> {
 
     public static final GeckoResult<AllowOrDeny> DENY = GeckoResult.fromValue(AllowOrDeny.DENY);
 
-    private Handler mHandler;
+    private final Handler mHandler;
     private boolean mComplete;
     private T mValue;
     private Throwable mError;
@@ -173,9 +183,22 @@ public class GeckoResult<T> {
     public GeckoResult() {
         if (ThreadUtils.isOnUiThread()) {
             mHandler = ThreadUtils.getUiHandler();
-        } else {
+        } else if (Looper.myLooper() != null) {
             mHandler = new Handler();
+        } else {
+            mHandler = null;
         }
+    }
+
+    
+
+
+
+
+
+
+    public GeckoResult(final Handler handler) {
+        mHandler = handler;
     }
 
     
@@ -286,28 +309,29 @@ public class GeckoResult<T> {
             throw new IllegalArgumentException("At least one listener should be non-null");
         }
 
+        if (mHandler == null) {
+            throw new IllegalThreadStateException("Must have a Handler");
+        }
+
         final GeckoResult<U> result = new GeckoResult<U>();
-        then(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    if (haveValue()) {
-                        result.completeFrom(valueListener != null ? valueListener.onValue(mValue)
-                                                                  : null);
-                    } else if (!haveError()) {
-                        
-                        throw new AssertionError();
-                    } else if (exceptionListener != null) {
-                        result.completeFrom(exceptionListener.onException(mError));
-                    } else {
-                        result.mIsUncaughtError = mIsUncaughtError;
-                        result.completeExceptionally(mError);
-                    }
-                } catch (Throwable e) {
-                    if (!result.mComplete) {
-                        result.mIsUncaughtError = true;
-                        result.completeExceptionally(e);
-                    }
+        then(() -> {
+            try {
+                if (haveValue()) {
+                    result.completeFrom(valueListener != null ? valueListener.onValue(mValue)
+                                                              : null);
+                } else if (!haveError()) {
+                    
+                    throw new AssertionError();
+                } else if (exceptionListener != null) {
+                    result.completeFrom(exceptionListener.onException(mError));
+                } else {
+                    result.mIsUncaughtError = mIsUncaughtError;
+                    result.completeExceptionally(mError);
+                }
+            } catch (Throwable e) {
+                if (!result.mComplete) {
+                    result.mIsUncaughtError = true;
+                    result.completeExceptionally(e);
                 }
             }
         });
@@ -325,6 +349,32 @@ public class GeckoResult<T> {
         }
     }
 
+    
+
+
+
+    public @Nullable Looper getLooper() {
+        if (mHandler == null) {
+            return null;
+        }
+
+        return mHandler.getLooper();
+    }
+
+    
+
+
+
+
+
+
+
+    public @NonNull GeckoResult<T> withHandler(final @Nullable Handler handler) {
+        final GeckoResult<T> result = new GeckoResult<>(handler);
+        result.completeFrom(this);
+        return result;
+    }
+
     private void dispatchLocked() {
         if (!mComplete) {
             throw new IllegalStateException("Cannot dispatch unless result is complete");
@@ -334,20 +384,19 @@ public class GeckoResult<T> {
             return;
         }
 
-        mHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (mListeners != null) {
-                    for (final Runnable listener : mListeners) {
-                        listener.run();
-                    }
-                } else if (mIsUncaughtError) {
-                    
-                    
-                    throw new UncaughtException(mError);
+        final Runnable dispatcher = () -> {
+            if (mListeners != null) {
+                for (final Runnable listener : mListeners) {
+                    listener.run();
                 }
+            } else if (mIsUncaughtError) {
+                
+                
+                throw new UncaughtException(mError);
             }
-        });
+        };
+
+        dispatchLocked(dispatcher);
     }
 
     private void dispatchLocked(final Runnable runnable) {
@@ -355,12 +404,12 @@ public class GeckoResult<T> {
             throw new IllegalStateException("Cannot dispatch unless result is complete");
         }
 
-        mHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                runnable.run();
-            }
-        });
+        if (mHandler == null) {
+            runnable.run();
+            return;
+        }
+
+        mHandler.post(runnable);
     }
 
     
@@ -374,17 +423,75 @@ public class GeckoResult<T> {
             return;
         }
 
-        other.then(new Runnable() {
-            @Override
-            public void run() {
-                if (other.haveValue()) {
-                    complete(other.mValue);
-                } else {
-                    mIsUncaughtError = other.mIsUncaughtError;
-                    completeExceptionally(other.mError);
-                }
+        other.then(() -> {
+            if (other.haveValue()) {
+                complete(other.mValue);
+            } else {
+                mIsUncaughtError = other.mIsUncaughtError;
+                completeExceptionally(other.mError);
             }
         });
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    public synchronized T poll() throws Throwable {
+        if (Looper.myLooper() != null) {
+            throw new IllegalThreadStateException("Cannot poll indefinitely from thread with Looper");
+        }
+
+        return poll(Long.MAX_VALUE);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public synchronized T poll(long timeoutMillis) throws Throwable {
+        final long start = SystemClock.uptimeMillis();
+        long remaining = timeoutMillis;
+        while (!mComplete && remaining > 0) {
+            try {
+                wait(remaining);
+            } catch (InterruptedException e) {
+            }
+
+            remaining = timeoutMillis - (SystemClock.uptimeMillis() - start);
+        }
+
+        if (!mComplete) {
+            throw new TimeoutException();
+        }
+
+        if (haveError()) {
+            throw mError;
+        }
+
+        return mValue;
     }
 
     
@@ -403,6 +510,7 @@ public class GeckoResult<T> {
         mComplete = true;
 
         dispatchLocked();
+        notifyAll();
     }
 
     
@@ -425,6 +533,7 @@ public class GeckoResult<T> {
         mComplete = true;
 
         dispatchLocked();
+        notifyAll();
     }
 
     
