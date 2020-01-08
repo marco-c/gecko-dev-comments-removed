@@ -207,7 +207,7 @@ class EffectCompositor {
   
   
   static bool AllowCompositorAnimationsOnFrame(
-      const nsIFrame* aFrame, const EffectSet& aEffects,
+      const nsIFrame* aFrame,
       AnimationPerformanceWarning::Type& aWarning );
 
  private:
