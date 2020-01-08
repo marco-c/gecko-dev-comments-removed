@@ -18,7 +18,7 @@
 
 
 
-var CC = Components.Constructor;
+let CC = Components.Constructor;
 
 const KIND_NONHEAP           = Ci.nsIMemoryReporter.KIND_NONHEAP;
 const KIND_HEAP              = Ci.nsIMemoryReporter.KIND_HEAP;
@@ -48,7 +48,7 @@ XPCOMUtils.defineLazyGetter(this, "nsGzipConverter",
                             () => CC("@mozilla.org/streamconv;1?from=gzip&to=uncompressed",
                                      "nsIStreamConverter"));
 
-var gMgr = Cc["@mozilla.org/memory-reporter-manager;1"]
+let gMgr = Cc["@mozilla.org/memory-reporter-manager;1"]
              .getService(Ci.nsIMemoryReporterManager);
 
 const gPageName = "about:memory";
@@ -56,7 +56,7 @@ document.title = gPageName;
 
 const gUnnamedProcessStr = "Main Process";
 
-var gIsDiff = false;
+let gIsDiff = false;
 
 
 
@@ -120,16 +120,16 @@ function onUnload() {
 
 
 
-var gMain;
+let gMain;
 
 
-var gFooter;
+let gFooter;
 
 
-var gVerbose;
+let gVerbose;
 
 
-var gAnonymize;
+let gAnonymize;
 
 
 const HIDE_FOOTER = 0;
@@ -527,7 +527,7 @@ function updateAboutMemoryFromReporters() {
 
 
 
-var gCurrentFileFormatVersion = 1;
+let gCurrentFileFormatVersion = 1;
 
 
 
@@ -701,7 +701,7 @@ function updateAboutMemoryFromTwoFiles(aFilename1, aFilename2) {
 
 
 
-var kProcessPathSep = "^:^:^";
+let kProcessPathSep = "^:^:^";
 
 
 function DReport(aKind, aUnits, aAmount, aDescription, aNMerged, aPresence) {
@@ -1346,7 +1346,7 @@ function sortTreeAndInsertAggregateNodes(aTotalBytes, aT) {
 
 
 
-var gUnsafePathsWithInvalidValuesForThisProcess = [];
+let gUnsafePathsWithInvalidValuesForThisProcess = [];
 
 function appendWarningElements(aP, aHasKnownHeapAllocated,
                                aHasMozMallocUsableSize) {
@@ -1686,7 +1686,7 @@ function appendMrNameSpan(aP, aDescription, aUnsafeName, aIsInvalid, aNMerged,
 
 
 
-var gShowSubtreesBySafeTreeId = {};
+let gShowSubtreesBySafeTreeId = {};
 
 function assertClassListContains(e, className) {
   assert(e, "undefined " + className);
