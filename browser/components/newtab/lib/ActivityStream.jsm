@@ -45,8 +45,6 @@ const GEO_PREF = "browser.search.region";
 const SPOCS_GEOS = ["US"];
 const IS_NIGHTLY_OR_UNBRANDED_BUILD = ["nightly", "default"].includes(UpdateUtils.getUpdateChannel(true));
 
-const ONE_HOUR_IN_MS = 60 * 60 * 1000;
-
 
 function showSpocs({geo}) {
   return SPOCS_GEOS.includes(geo);

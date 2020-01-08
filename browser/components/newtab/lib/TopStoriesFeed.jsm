@@ -253,21 +253,30 @@ this.TopStoriesFeed = class TopStoriesFeed {
     const scoreStart = perfService.absNow();
     const calcResult = items
       .filter(s => !NewTabUtils.blockedLinks.isBlocked({"url": s.url}))
-      .map(s => ({
-        "guid": s.id,
-        "hostname": s.domain || shortURL(Object.assign({}, s, {url: s.url})),
-        "type": (Date.now() - (s.published_timestamp * 1000)) <= STORIES_NOW_THRESHOLD ? "now" : "trending",
-        "context": s.context,
-        "icon": s.icon,
-        "title": s.title,
-        "description": s.excerpt,
-        "image": this.normalizeUrl(s.image_src),
-        "referrer": this.stories_referrer,
-        "url": s.url,
-        "min_score": s.min_score || 0,
-        "score": this.personalized && this.affinityProvider ? this.affinityProvider.calculateItemRelevanceScore(s) : s.item_score || 1,
-        "spoc_meta": this.show_spocs ? {campaign_id: s.campaign_id, caps: s.caps} : {},
-      }))
+      .map(s => {
+        let mapped = {
+          "guid": s.id,
+          "hostname": s.domain || shortURL(Object.assign({}, s, {url: s.url})),
+          "type": (Date.now() - (s.published_timestamp * 1000)) <= STORIES_NOW_THRESHOLD ? "now" : "trending",
+          "context": s.context,
+          "icon": s.icon,
+          "title": s.title,
+          "description": s.excerpt,
+          "image": this.normalizeUrl(s.image_src),
+          "referrer": this.stories_referrer,
+          "url": s.url,
+          "min_score": s.min_score || 0,
+          "score": this.personalized && this.affinityProvider ? this.affinityProvider.calculateItemRelevanceScore(s) : s.item_score || 1,
+          "spoc_meta": this.show_spocs ? {campaign_id: s.campaign_id, caps: s.caps} : {},
+        };
+
+        
+        if (s.expiration_timestamp) {
+          mapped.expiration_timestamp = s.expiration_timestamp;
+        }
+
+        return mapped;
+      })
       .sort(this.personalized ? this.compareScore : (a, b) => 0);
 
     this.dispatchRelevanceScore(scoreStart);
@@ -401,29 +410,43 @@ this.TopStoriesFeed = class TopStoriesFeed {
     this.store.dispatch(ac.OnlyToOneContent(action, target));
   }
 
+  filterSpocs() {
+    if (!this.shouldShowSpocs()) {
+      return [];
+    }
+
+    if (Math.random() > this.spocsPerNewTabs) {
+      return [];
+    }
+
+    if (!this.spocs || !this.spocs.length) {
+      
+      
+      return [];
+    }
+
+    
+    const impressions = this.readImpressionsPref(SPOC_IMPRESSION_TRACKING_PREF);
+    let spocs = this.spocs.filter(s => this.isBelowFrequencyCap(impressions, s));
+
+    
+    spocs = spocs.filter(spoc => {
+      
+      if (!(`expiration_timestamp` in spoc)) {
+        return true;
+      }
+      
+      return spoc.expiration_timestamp * 1000 > Date.now();
+    });
+
+    return spocs;
+  }
+
   maybeAddSpoc(target) {
     const updateContent = () => {
-      if (!this.shouldShowSpocs()) {
-        this.dispatchSpocDone(target);
-        return false;
-      }
-      if (Math.random() > this.spocsPerNewTabs) {
-        this.dispatchSpocDone(target);
-        return false;
-      }
-      if (!this.spocs || !this.spocs.length) {
-        
-        
-        this.dispatchSpocDone(target);
-        return false;
-      }
-
-      
-      const impressions = this.readImpressionsPref(SPOC_IMPRESSION_TRACKING_PREF);
-      const spocs = this.spocs.filter(s => this.isBelowFrequencyCap(impressions, s));
+      let spocs = this.filterSpocs();
 
       if (!spocs.length) {
-        
         this.dispatchSpocDone(target);
         return false;
       }

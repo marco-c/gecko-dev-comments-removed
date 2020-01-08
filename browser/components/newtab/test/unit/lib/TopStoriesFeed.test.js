@@ -707,6 +707,39 @@ describe("Top Stories Feed", () => {
     });
   });
   describe("#spocs", async () => {
+    it("should not display expired or untimestamped spocs", async () => {
+      clock.tick(441792000000); 
+
+      instance.spocsPerNewTabs = 1;
+      instance.show_spocs = true;
+      instance.isBelowFrequencyCap = () => true;
+
+      
+      instance.spocs = [
+        
+        {
+          id: "spoc1",
+        },
+        
+        {
+          id: "spoc2",
+          expiration_timestamp: 1,
+        },
+        
+        {
+          id: "spoc3",
+          expiration_timestamp: 32503708800, 
+        },
+      ];
+
+      sinon.spy(instance, "filterSpocs");
+
+      instance.filterSpocs();
+
+      assert.equal(instance.filterSpocs.firstCall.returnValue.length, 2);
+      assert.equal(instance.filterSpocs.firstCall.returnValue[0].id, "spoc1");
+      assert.equal(instance.filterSpocs.firstCall.returnValue[1].id, "spoc3");
+    });
     it("should insert spoc with provided probability", async () => {
       let fetchStub = globals.sandbox.stub();
       globals.set("fetch", fetchStub);
@@ -716,7 +749,11 @@ describe("Top Stories Feed", () => {
       const response = {
         "settings": {"spocsPerNewTabs": 0.5},
         "recommendations": [{"guid": "rec1"}, {"guid": "rec2"}, {"guid": "rec3"}],
-        "spocs": [{"id": "spoc1"}, {"id": "spoc2"}],
+        
+        "spocs": [
+          {"id": "spoc1", "expiration_timestamp": 9999999999999},
+          {"id": "spoc2", "expiration_timestamp": 9999999999999},
+        ],
       };
 
       instance.personalized = true;
@@ -794,7 +831,8 @@ describe("Top Stories Feed", () => {
       const response = {
         "settings": {"spocsPerNewTabs": 0.5},
         "recommendations": [{"id": "rec1"}, {"id": "rec2"}, {"id": "rec3"}],
-        "spocs": [{"id": "spoc1"}, {"id": "spoc2"}],
+        
+        "spocs": [{"id": "spoc1", "expiration_timestamp": 9999999999999}, {"id": "spoc2"}],
       };
 
       instance.onAction({type: at.NEW_TAB_REHYDRATED, meta: {fromTarget: {}}});
@@ -1034,8 +1072,9 @@ describe("Top Stories Feed", () => {
         "settings": {"spocsPerNewTabs": 1},
         "recommendations": [{"guid": "rec1"}, {"guid": "rec2"}, {"guid": "rec3"}],
         "spocs": [
-          {"id": "spoc1", "campaign_id": 1, "caps": {"lifetime": 3, "campaign": {"count": 2, "period": 3600}}},
-          {"id": "spoc2", "campaign_id": 2, "caps": {"lifetime": 1}},
+          
+          {"id": "spoc1", "campaign_id": 1, "caps": {"lifetime": 3, "campaign": {"count": 2, "period": 3600}}, "expiration_timestamp": 999999999999},
+          {"id": "spoc2", "campaign_id": 2, "caps": {"lifetime": 1}, "expiration_timestamp": 999999999999},
         ],
       };
 
