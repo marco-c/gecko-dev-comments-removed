@@ -78,7 +78,7 @@
       SimpleTest.waitForExplicitFinish();
       window.addEventListener("MozAfterPaint", function paintHandle(e) {
         runCanvasTest();
-        window.removeEventListener("MozAfterPaint", paintHandle, false);
+        window.removeEventListener("MozAfterPaint", paintHandle);
       });
 
       function runCanvasTest() {

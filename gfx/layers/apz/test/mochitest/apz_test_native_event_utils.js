@@ -15,7 +15,7 @@ function getPlatform() {
   }
   
   if (navigator.appVersion.includes("Android")) {
-    return "android"
+    return "android";
   }
   if (navigator.platform.indexOf("Linux") == 0) {
     return "linux";
@@ -131,7 +131,7 @@ function coordinatesRelativeToScreen(aX, aY, aTarget) {
   
   return {
     x: (targetWindow.mozInnerScreenX + ((rect.left + aX) * resolution)) * deviceScale,
-    y: (targetWindow.mozInnerScreenY + ((rect.top + aY) * resolution)) * deviceScale
+    y: (targetWindow.mozInnerScreenY + ((rect.top + aY) * resolution)) * deviceScale,
   };
 }
 
@@ -145,7 +145,7 @@ function rectRelativeToScreen(aElement) {
     x: (targetWindow.mozInnerScreenX + rect.left) * scale,
     y: (targetWindow.mozInnerScreenY + rect.top) * scale,
     w: (rect.width * scale),
-    h: (rect.height * scale)
+    h: (rect.height * scale),
   };
 }
 
@@ -175,11 +175,11 @@ function synthesizeNativeWheel(aTarget, aX, aY, aDeltaX, aDeltaY, aObserver) {
 
 function synthesizeNativeWheelAndWaitForObserver(aElement, aX, aY, aDeltaX, aDeltaY, aCallback) {
   var observer = {
-    observe: function(aSubject, aTopic, aData) {
+    observe(aSubject, aTopic, aData) {
       if (aCallback && aTopic == "mousescrollevent") {
         setTimeout(aCallback, 0);
       }
-    }
+    },
   };
   return synthesizeNativeWheel(aElement, aX, aY, aDeltaX, aDeltaY, observer);
 }
@@ -425,7 +425,7 @@ function* dragVerticalScrollbar(element, testDriver, distance = 20, increment = 
   yield synthesizeNativeMouseEvent(element, mouseX, mouseY + distance, nativeMouseMoveEventMsg(), testDriver);
 
   
-  return function*() {
+  return function* () {
     dump("Finishing drag of #" + element.id + "\n");
     yield synthesizeNativeMouseEvent(element, mouseX, mouseY + distance, nativeMouseUpEventMsg(), testDriver);
   };
