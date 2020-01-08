@@ -524,7 +524,7 @@ WindowBackBuffer::Detach()
 }
 
 bool
-WindowBackBuffer::SetImageDataFromBackBuffer(
+WindowBackBuffer::SetImageDataFromBuffer(
   class WindowBackBuffer* aSourceBuffer)
 {
   if (!IsMatchingSize(aSourceBuffer)) {
@@ -562,26 +562,38 @@ static const struct wl_callback_listener frame_listener = {
 WindowSurfaceWayland::WindowSurfaceWayland(nsWindow *aWindow)
   : mWindow(aWindow)
   , mWaylandDisplay(WaylandDisplayGet(aWindow->GetWaylandDisplay()))
-  , mFrontBuffer(nullptr)
-  , mBackBuffer(nullptr)
+  , mWaylandBuffer(nullptr)
+  , mBackupBuffer(nullptr)
   , mFrameCallback(nullptr)
   , mFrameCallbackSurface(nullptr)
   , mDisplayThreadMessageLoop(MessageLoop::current())
-  , mDirectWlBufferDraw(true)
-  , mDelayedCommit(false)
-  , mFullScreenDamage(false)
+  , mDelayedCommitHandle(nullptr)
+  , mDrawToWaylandBufferDirectly(true)
+  , mPendingCommit(false)
+  , mWaylandBufferFullScreenDamage(false)
   , mIsMainThread(NS_IsMainThread())
 {
 }
 
 WindowSurfaceWayland::~WindowSurfaceWayland()
 {
-  delete mFrontBuffer;
-  delete mBackBuffer;
+  if (mPendingCommit) {
+    NS_WARNING("Deleted WindowSurfaceWayland with a pending commit!");
+  }
+
+  if (mDelayedCommitHandle) {
+    
+    
+    
+    *mDelayedCommitHandle = nullptr;
+  }
 
   if (mFrameCallback) {
     wl_callback_destroy(mFrameCallback);
   }
+
+  delete mWaylandBuffer;
+  delete mBackupBuffer;
 
   if (!mIsMainThread) {
     
@@ -600,69 +612,77 @@ void
 WindowSurfaceWayland::UpdateScaleFactor()
 {
   wl_surface* waylandSurface = mWindow->GetWaylandSurface();
-  if (waylandSurface) {
-    wl_surface_set_buffer_scale(waylandSurface, mWindow->GdkScaleFactor());
+  MOZ_ASSERT(waylandSurface,
+    "Missing Wayland wl_surface during wl_buffer switch!");
+  if (!waylandSurface) {
+    
+    
+    return;
   }
+
+  wl_proxy_set_queue((struct wl_proxy *)waylandSurface,
+                     mWaylandDisplay->GetEventQueue());
+  wl_surface_set_buffer_scale(waylandSurface, mWindow->GdkScaleFactor());
 }
 
 WindowBackBuffer*
-WindowSurfaceWayland::GetFrontBufferToDraw(int aWidth, int aHeight)
+WindowSurfaceWayland::GetWaylandBufferToDraw(int aWidth, int aHeight)
 {
-  if (!mFrontBuffer) {
-    mFrontBuffer = new WindowBackBuffer(mWaylandDisplay, aWidth, aHeight);
-    mBackBuffer = new WindowBackBuffer(mWaylandDisplay, aWidth, aHeight);
-    return mFrontBuffer;
+  if (!mWaylandBuffer) {
+    mWaylandBuffer = new WindowBackBuffer(mWaylandDisplay, aWidth, aHeight);
+    mBackupBuffer = new WindowBackBuffer(mWaylandDisplay, aWidth, aHeight);
+    return mWaylandBuffer;
   }
 
-  if (!mFrontBuffer->IsAttached()) {
-    if (!mFrontBuffer->IsMatchingSize(aWidth, aHeight)) {
-      mFrontBuffer->Resize(aWidth, aHeight);
+  if (!mWaylandBuffer->IsAttached()) {
+    if (!mWaylandBuffer->IsMatchingSize(aWidth, aHeight)) {
+      mWaylandBuffer->Resize(aWidth, aHeight);
       
       
       UpdateScaleFactor();
     }
-    return mFrontBuffer;
+    return mWaylandBuffer;
   }
 
   
-  if (mBackBuffer->IsAttached()) {
+  if (mBackupBuffer->IsAttached()) {
     NS_WARNING("No drawing buffer available");
     return nullptr;
   }
 
-  MOZ_ASSERT(!mDelayedCommit,
+  MOZ_ASSERT(!mPendingCommit,
              "Uncommitted buffer switch, screen artifacts ahead.");
 
-  WindowBackBuffer *tmp = mFrontBuffer;
-  mFrontBuffer = mBackBuffer;
-  mBackBuffer = tmp;
+  WindowBackBuffer *tmp = mWaylandBuffer;
+  mWaylandBuffer = mBackupBuffer;
+  mBackupBuffer = tmp;
 
-  if (mBackBuffer->IsMatchingSize(aWidth, aHeight)) {
+  if (mBackupBuffer->IsMatchingSize(aWidth, aHeight)) {
     
     
     
-    mFrontBuffer->SetImageDataFromBackBuffer(mBackBuffer);
+    mWaylandBuffer->SetImageDataFromBuffer(mBackupBuffer);
     
     
-    mFullScreenDamage = true;
+    mWaylandBufferFullScreenDamage = true;
   } else {
     
     
-    mFrontBuffer->Resize(aWidth, aHeight);
+    mWaylandBuffer->Resize(aWidth, aHeight);
   }
 
-  return mFrontBuffer;
+  return mWaylandBuffer;
 }
 
 already_AddRefed<gfx::DrawTarget>
-WindowSurfaceWayland::LockFrontBuffer(int aWidth, int aHeight)
+WindowSurfaceWayland::LockWaylandBuffer(int aWidth, int aHeight)
 {
-  WindowBackBuffer* buffer = GetFrontBufferToDraw(aWidth, aHeight);
+  WindowBackBuffer* buffer = GetWaylandBufferToDraw(aWidth, aHeight);
   if (buffer) {
     return buffer->Lock();
   }
 
-  NS_WARNING("WindowSurfaceWayland::LockFrontBuffer(): No buffer available");
+  NS_WARNING("WindowSurfaceWayland::LockWaylandBuffer(): No buffer available");
   return nullptr;
 }
 
@@ -707,30 +727,30 @@ WindowSurfaceWayland::Lock(const LayoutDeviceIntRegion& aRegion)
   gfx::IntSize lockSize(bounds.XMost(), bounds.YMost());
 
   
-  mDirectWlBufferDraw = (aRegion.GetNumRects() == 1 &&
-                         bounds.x == 0 && bounds.y == 0 &&
-                         lockSize.width == screenRect.width &&
-                         lockSize.height == screenRect.height);
+  mDrawToWaylandBufferDirectly = (aRegion.GetNumRects() == 1 &&
+                              bounds.x == 0 && bounds.y == 0 &&
+                              lockSize.width == screenRect.width &&
+                              lockSize.height == screenRect.height);
 
-  if (mDirectWlBufferDraw) {
-    RefPtr<gfx::DrawTarget> dt = LockFrontBuffer(screenRect.width,
-                                                 screenRect.height);
+  if (mDrawToWaylandBufferDirectly) {
+    RefPtr<gfx::DrawTarget> dt = LockWaylandBuffer(screenRect.width,
+                                                   screenRect.height);
     if (dt) {
       return dt.forget();
     }
 
     
     
-    mDirectWlBufferDraw = false;
+    mDrawToWaylandBufferDirectly = false;
   }
 
   return LockImageSurface(lockSize);
 }
 
 bool
-WindowSurfaceWayland::CommitImageSurface(const LayoutDeviceIntRegion& aRegion)
+WindowSurfaceWayland::CommitImageSurfaceToWaylandBuffer(const LayoutDeviceIntRegion& aRegion)
 {
-  MOZ_ASSERT(!mDirectWlBufferDraw);
+  MOZ_ASSERT(!mDrawToWaylandBufferDirectly);
 
   LayoutDeviceIntRect screenRect = mWindow->GetBounds();
   gfx::IntRect bounds = aRegion.GetBounds().ToUnknownRect();
@@ -740,8 +760,8 @@ WindowSurfaceWayland::CommitImageSurface(const LayoutDeviceIntRegion& aRegion)
     return false;
   }
 
-  RefPtr<gfx::DrawTarget> dt = LockFrontBuffer(screenRect.width,
-                                               screenRect.height);
+  RefPtr<gfx::DrawTarget> dt = LockWaylandBuffer(screenRect.width,
+                                                 screenRect.height);
   RefPtr<gfx::SourceSurface> surf =
     gfx::Factory::CreateSourceSurfaceForCairoSurface(mImageSurface->CairoSurface(),
                                                      mImageSurface->GetSize(),
@@ -769,32 +789,70 @@ WindowSurfaceWayland::CommitImageSurface(const LayoutDeviceIntRegion& aRegion)
   return true;
 }
 
-void
-WindowSurfaceWayland::Commit(const LayoutDeviceIntRegion& aInvalidRegion)
+static void
+WaylandBufferDelayCommitHandler(WindowSurfaceWayland **aSurface)
 {
-  MOZ_ASSERT(mIsMainThread == NS_IsMainThread());
+  if (*aSurface) {
+    (*aSurface)->DelayedCommitHandler();
+  } else {
+    
+    
+    
+    free(aSurface);
+  }
+}
+
+void
+WindowSurfaceWayland::CommitWaylandBuffer()
+{
+  MOZ_ASSERT(mPendingCommit, "Committing empty surface!");
 
   wl_surface* waylandSurface = mWindow->GetWaylandSurface();
   if (!waylandSurface) {
     
-    NS_WARNING("WindowSurfaceWayland::Commit(): parent wl_surface is already hidden/deleted.");
+    
+    
+    MOZ_ASSERT(!mFrameCallback || waylandSurface != mFrameCallbackSurface,
+      "Missing wayland surface at frame callback!");
+
+    
+    if (!mDelayedCommitHandle) {
+      mDelayedCommitHandle = static_cast<WindowSurfaceWayland**>(
+        moz_xmalloc(sizeof(*mDelayedCommitHandle)));
+      *mDelayedCommitHandle = this;
+
+      MessageLoop::current()->PostDelayedTask(
+        NewRunnableFunction("WaylandBackBufferCommit",
+                            &WaylandBufferDelayCommitHandler,
+                            mDelayedCommitHandle),
+        EVENT_LOOP_DELAY);
+    }
     return;
   }
   wl_proxy_set_queue((struct wl_proxy *)waylandSurface,
                      mWaylandDisplay->GetEventQueue());
 
-  if (!mDirectWlBufferDraw) {
+  
+  if (mFrameCallback) {
+    if (waylandSurface == mFrameCallbackSurface) {
+      
+      
+      return;
+    }
     
-    CommitImageSurface(aInvalidRegion);
+    
+    wl_callback_destroy(mFrameCallback);
+    mFrameCallback = nullptr;
+    mFrameCallbackSurface = nullptr;
   }
 
-  if (mFullScreenDamage) {
+  if (mWaylandBufferFullScreenDamage) {
     LayoutDeviceIntRect rect = mWindow->GetBounds();
     wl_surface_damage(waylandSurface, 0, 0, rect.width, rect.height);
-    mFullScreenDamage = false;
+    mWaylandBufferFullScreenDamage = false;
   } else {
     gint scaleFactor = mWindow->GdkScaleFactor();
-    for (auto iter = aInvalidRegion.RectIter(); !iter.Done(); iter.Next()) {
+    for (auto iter = mWaylandBufferDamage.RectIter(); !iter.Done(); iter.Next()) {
       const mozilla::LayoutDeviceIntRect &r = iter.Get();
       
       
@@ -805,60 +863,67 @@ WindowSurfaceWayland::Commit(const LayoutDeviceIntRegion& aInvalidRegion)
 
   
   
-  
-  
-  
-  if (mFrameCallback && mFrameCallbackSurface == waylandSurface) {
-    
-    
-    mDelayedCommit = true;
-    return;
-  } else  {
-    if (mFrameCallback) {
-      
-      wl_callback_destroy(mFrameCallback);
-    }
+  mWaylandBufferDamage.SetEmpty();
 
-    mFrameCallback = wl_surface_frame(waylandSurface);
-    wl_callback_add_listener(mFrameCallback, &frame_listener, this);
-    mFrameCallbackSurface = waylandSurface;
+  mFrameCallback = wl_surface_frame(waylandSurface);
+  wl_callback_add_listener(mFrameCallback, &frame_listener, this);
+  mFrameCallbackSurface = waylandSurface;
 
-    
-    
-    mFrontBuffer->Attach(waylandSurface);
-    mDelayedCommit = false;
+  mWaylandBuffer->Attach(waylandSurface);
+
+  
+  mPendingCommit = false;
+}
+
+void
+WindowSurfaceWayland::Commit(const LayoutDeviceIntRegion& aInvalidRegion)
+{
+  MOZ_ASSERT(mIsMainThread == NS_IsMainThread());
+
+  
+  if (!mDrawToWaylandBufferDirectly) {
+    CommitImageSurfaceToWaylandBuffer(aInvalidRegion);
   }
+
+  
+  if (!mWaylandBufferFullScreenDamage) {
+    mWaylandBufferDamage.OrWith(aInvalidRegion);
+  }
+
+  
+  mPendingCommit = true;
+  CommitWaylandBuffer();
 }
 
 void
 WindowSurfaceWayland::FrameCallbackHandler()
 {
   MOZ_ASSERT(mIsMainThread == NS_IsMainThread());
+  MOZ_ASSERT(mFrameCallback != nullptr,
+             "FrameCallbackHandler() called without valid frame callback!");
+  MOZ_ASSERT(mFrameCallbackSurface != nullptr,
+             "FrameCallbackHandler() called without valid wl_surface!");
 
-  if (mFrameCallback) {
-    wl_callback_destroy(mFrameCallback);
-    mFrameCallback = nullptr;
-    mFrameCallbackSurface = nullptr;
+  wl_callback_destroy(mFrameCallback);
+  mFrameCallback = nullptr;
+  mFrameCallbackSurface = nullptr;
+
+  if (mPendingCommit) {
+    CommitWaylandBuffer();
   }
+}
 
-  if (mDelayedCommit) {
-    wl_surface* waylandSurface = mWindow->GetWaylandSurface();
-    if (!waylandSurface) {
-      
-      NS_WARNING("WindowSurfaceWayland::FrameCallbackHandler(): parent wl_surface is already hidden/deleted.");
-      return;
-    }
-    wl_proxy_set_queue((struct wl_proxy *)waylandSurface,
-                       mWaylandDisplay->GetEventQueue());
+void
+WindowSurfaceWayland::DelayedCommitHandler()
+{
+  MOZ_ASSERT(mDelayedCommitHandle != nullptr, "Missing mDelayedCommitHandle!");
 
-    
-    
-    mFrameCallback = wl_surface_frame(waylandSurface);
-    wl_callback_add_listener(mFrameCallback, &frame_listener, this);
-    mFrameCallbackSurface = waylandSurface;
+  *mDelayedCommitHandle = nullptr;
+  free(mDelayedCommitHandle);
+  mDelayedCommitHandle = nullptr;
 
-    mFrontBuffer->Attach(waylandSurface);
-    mDelayedCommit = false;
+  if (mPendingCommit) {
+    CommitWaylandBuffer();
   }
 }
 
