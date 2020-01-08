@@ -22,12 +22,11 @@
 
 
 
-CryptoX_Result
-NSS_LoadPublicKey(const unsigned char *certData, unsigned int certDataSize,
-                  SECKEYPublicKey **publicKey)
-{
-  CERTCertificate * cert;
-  SECItem certDataItem = { siBuffer, (unsigned char*) certData, certDataSize };
+CryptoX_Result NSS_LoadPublicKey(const unsigned char *certData,
+                                 unsigned int certDataSize,
+                                 SECKEYPublicKey **publicKey) {
+  CERTCertificate *cert;
+  SECItem certDataItem = {siBuffer, (unsigned char *)certData, certDataSize};
 
   if (!certData || !publicKey) {
     return CryptoX_Error;
@@ -48,10 +47,8 @@ NSS_LoadPublicKey(const unsigned char *certData, unsigned int certDataSize,
   return CryptoX_Success;
 }
 
-CryptoX_Result
-NSS_VerifyBegin(VFYContext **ctx,
-                SECKEYPublicKey * const *publicKey)
-{
+CryptoX_Result NSS_VerifyBegin(VFYContext **ctx,
+                               SECKEYPublicKey *const *publicKey) {
   SECStatus status;
   if (!ctx || !publicKey || !*publicKey) {
     return CryptoX_Error;
@@ -83,11 +80,9 @@ NSS_VerifyBegin(VFYContext **ctx,
 
 
 
-CryptoX_Result
-NSS_VerifySignature(VFYContext * const *ctx,
-                    const unsigned char *signature,
-                    unsigned int signatureLen)
-{
+CryptoX_Result NSS_VerifySignature(VFYContext *const *ctx,
+                                   const unsigned char *signature,
+                                   unsigned int signatureLen) {
   SECItem signedItem;
   SECStatus status;
   if (!ctx || !signature || !*ctx) {
@@ -95,7 +90,7 @@ NSS_VerifySignature(VFYContext * const *ctx,
   }
 
   signedItem.len = signatureLen;
-  signedItem.data = (unsigned char*)signature;
+  signedItem.data = (unsigned char *)signature;
   status = VFY_EndWithSignature(*ctx, &signedItem);
   return SECSuccess == status ? CryptoX_Success : CryptoX_Error;
 }
@@ -110,15 +105,12 @@ NSS_VerifySignature(VFYContext * const *ctx,
 
 
 
-CryptoX_Result
-CryptoAPI_VerifySignature(HCRYPTHASH *hash,
-                          HCRYPTKEY *pubKey,
-                          const BYTE *signature,
-                          DWORD signatureLen)
-{
+CryptoX_Result CryptoAPI_VerifySignature(HCRYPTHASH *hash, HCRYPTKEY *pubKey,
+                                         const BYTE *signature,
+                                         DWORD signatureLen) {
   DWORD i;
   BOOL result;
-
+  
 
 
 
@@ -135,8 +127,8 @@ CryptoAPI_VerifySignature(HCRYPTHASH *hash,
   for (i = 0; i < signatureLen; i++) {
     signatureReversed[i] = signature[signatureLen - 1 - i];
   }
-  result = CryptVerifySignature(*hash, signatureReversed,
-                                signatureLen, *pubKey, NULL, 0);
+  result = CryptVerifySignature(*hash, signatureReversed, signatureLen, *pubKey,
+                                NULL, 0);
   free(signatureReversed);
   return result ? CryptoX_Success : CryptoX_Error;
 }
@@ -150,12 +142,9 @@ CryptoAPI_VerifySignature(HCRYPTHASH *hash,
 
 
 
-CryptoX_Result
-CryptoAPI_LoadPublicKey(HCRYPTPROV provider,
-                        BYTE *certData,
-                        DWORD sizeOfCertData,
-                        HCRYPTKEY *publicKey)
-{
+CryptoX_Result CryptoAPI_LoadPublicKey(HCRYPTPROV provider, BYTE *certData,
+                                       DWORD sizeOfCertData,
+                                       HCRYPTKEY *publicKey) {
   CRYPT_DATA_BLOB blob;
   CERT_CONTEXT *context;
   if (!provider || !certData || !publicKey) {
@@ -166,16 +155,14 @@ CryptoAPI_LoadPublicKey(HCRYPTPROV provider,
   blob.pbData = certData;
   if (!CryptQueryObject(CERT_QUERY_OBJECT_BLOB, &blob,
                         CERT_QUERY_CONTENT_FLAG_CERT,
-                        CERT_QUERY_FORMAT_FLAG_BINARY,
-                        0, NULL, NULL, NULL,
+                        CERT_QUERY_FORMAT_FLAG_BINARY, 0, NULL, NULL, NULL,
                         NULL, NULL, (const void **)&context)) {
     return CryptoX_Error;
   }
 
-  if (!CryptImportPublicKeyInfo(provider,
-                                PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
-                                &context->pCertInfo->SubjectPublicKeyInfo,
-                                publicKey)) {
+  if (!CryptImportPublicKeyInfo(
+          provider, PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
+          &context->pCertInfo->SubjectPublicKeyInfo, publicKey)) {
     CertFreeCertificateContext(context);
     return CryptoX_Error;
   }
@@ -195,28 +182,14 @@ CryptoAPI_LoadPublicKey(HCRYPTPROV provider,
 
 
 
-CryptoX_Result
-CryptoAPI_InitCryptoContext(HCRYPTPROV *provider)
-{
-  if (!CryptAcquireContext(provider,
-                           NULL,
-                           MS_ENH_RSA_AES_PROV,
-                           PROV_RSA_AES,
+CryptoX_Result CryptoAPI_InitCryptoContext(HCRYPTPROV *provider) {
+  if (!CryptAcquireContext(provider, NULL, MS_ENH_RSA_AES_PROV, PROV_RSA_AES,
                            CRYPT_VERIFYCONTEXT)) {
-    if (!CryptAcquireContext(provider,
-                             NULL,
-                             MS_ENH_RSA_AES_PROV,
-                             PROV_RSA_AES,
+    if (!CryptAcquireContext(provider, NULL, MS_ENH_RSA_AES_PROV, PROV_RSA_AES,
                              CRYPT_NEWKEYSET | CRYPT_VERIFYCONTEXT)) {
-      if (!CryptAcquireContext(provider,
-                               NULL,
-                               NULL,
-                               PROV_RSA_AES,
+      if (!CryptAcquireContext(provider, NULL, NULL, PROV_RSA_AES,
                                CRYPT_VERIFYCONTEXT)) {
-        if (!CryptAcquireContext(provider,
-                                 NULL,
-                                 NULL,
-                                 PROV_RSA_AES,
+        if (!CryptAcquireContext(provider, NULL, NULL, PROV_RSA_AES,
                                  CRYPT_NEWKEYSET | CRYPT_VERIFYCONTEXT)) {
           *provider = CryptoX_InvalidHandleValue;
           return CryptoX_Error;
@@ -234,17 +207,14 @@ CryptoAPI_InitCryptoContext(HCRYPTPROV *provider)
 
 
 
-CryptoX_Result
-CryptoAPI_VerifyBegin(HCRYPTPROV provider, HCRYPTHASH* hash)
-{
+CryptoX_Result CryptoAPI_VerifyBegin(HCRYPTPROV provider, HCRYPTHASH *hash) {
   BOOL result;
   if (!provider || !hash) {
     return CryptoX_Error;
   }
 
   *hash = (HCRYPTHASH)NULL;
-  result = CryptCreateHash(provider, CALG_SHA_384,
-                           0, 0, hash);
+  result = CryptCreateHash(provider, CALG_SHA_384, 0, 0, hash);
   return result ? CryptoX_Success : CryptoX_Error;
 }
 
@@ -256,9 +226,7 @@ CryptoAPI_VerifyBegin(HCRYPTPROV provider, HCRYPTHASH* hash)
 
 
 
-CryptoX_Result
-CryptoAPI_VerifyUpdate(HCRYPTHASH* hash, BYTE *buf, DWORD len)
-{
+CryptoX_Result CryptoAPI_VerifyUpdate(HCRYPTHASH *hash, BYTE *buf, DWORD len) {
   BOOL result;
   if (!hash || !buf) {
     return CryptoX_Error;

@@ -31,10 +31,8 @@ struct ProductInformationBlock;
 
 
 
-int get_mar_file_info(const char *path,
-                      int *hasSignatureBlock,
-                      uint32_t *numSignatures,
-                      int *hasAdditionalBlocks,
+int get_mar_file_info(const char *path, int *hasSignatureBlock,
+                      uint32_t *numSignatures, int *hasAdditionalBlocks,
                       uint32_t *offsetAdditionalBlocks,
                       uint32_t *numAdditionalBlocks);
 
@@ -46,9 +44,8 @@ int get_mar_file_info(const char *path,
 
 
 
-int
-read_product_info_block(char *path,
-                        struct ProductInformationBlock *infoBlock);
+int read_product_info_block(char *path,
+                            struct ProductInformationBlock *infoBlock);
 
 
 
@@ -59,9 +56,8 @@ read_product_info_block(char *path,
 
 
 
-int
-refresh_product_info_block(const char *path,
-                           struct ProductInformationBlock *infoBlock);
+int refresh_product_info_block(const char *path,
+                               struct ProductInformationBlock *infoBlock);
 
 
 
@@ -72,8 +68,7 @@ refresh_product_info_block(const char *path,
 
 
 
-int
-strip_signature_block(const char *src, const char * dest);
+int strip_signature_block(const char *src, const char *dest);
 
 
 
@@ -84,8 +79,8 @@ strip_signature_block(const char *src, const char * dest);
 
 
 
-int
-extract_signature(const char *src, uint32_t sigIndex, const char * dest);
+int extract_signature(const char *src, uint32_t sigIndex, const char *dest);
+
 
 
 
@@ -97,14 +92,11 @@ extract_signature(const char *src, uint32_t sigIndex, const char * dest);
 
 
 
-int
-import_signature(const char *src,
-                 uint32_t sigIndex,
-                 const char * base64SigFile,
-                 const char *dest);
+int import_signature(const char *src, uint32_t sigIndex,
+                     const char *base64SigFile, const char *dest);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  
+#endif 

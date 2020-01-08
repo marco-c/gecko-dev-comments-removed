@@ -27,8 +27,7 @@ static_assert(MAX_SIGNATURES <= 9, "too many signatures");
 MOZ_STATIC_ASSERT(MAX_SIGNATURES <= 9, "too many signatures");
 #endif
 
-struct ProductInformationBlock
-{
+struct ProductInformationBlock {
   const char* MARChannelID;
   const char* productVersion;
 };
@@ -36,20 +35,18 @@ struct ProductInformationBlock
 
 
 
-typedef struct MarItem_
-{
-  struct MarItem_* next;  
-  uint32_t offset;        
-  uint32_t length;        
-  uint32_t flags;         
-  char name[1];           
+typedef struct MarItem_ {
+  struct MarItem_* next; 
+  uint32_t offset;       
+  uint32_t length;       
+  uint32_t flags;        
+  char name[1];          
 } MarItem;
 
 
 
 
-typedef struct SeenIndex_
-{
+typedef struct SeenIndex_ {
   struct SeenIndex_* next; 
   uint32_t offset;         
   uint32_t length;         
@@ -60,8 +57,7 @@ typedef struct SeenIndex_
 
 
 
-struct MarFile_
-{
+struct MarFile_ {
   FILE* fp;                       
   MarItem* item_table[TABLESIZE]; 
   SeenIndex* index_list;          
@@ -85,19 +81,17 @@ typedef int (*MarItemCallback)(MarFile* mar, const MarItem* item, void* data);
 
 
 
-MarFile*
-mar_open(const char* path);
+MarFile* mar_open(const char* path);
 
 #ifdef XP_WIN
-MarFile *mar_wopen(const wchar_t *path);
+MarFile* mar_wopen(const wchar_t* path);
 #endif
 
 
 
 
 
-void
-mar_close(MarFile* mar);
+void mar_close(MarFile* mar);
 
 
 
@@ -105,8 +99,7 @@ mar_close(MarFile* mar);
 
 
 
-const MarItem*
-mar_find_item(MarFile* mar, const char* item);
+const MarItem* mar_find_item(MarFile* mar, const char* item);
 
 
 
@@ -117,8 +110,7 @@ mar_find_item(MarFile* mar, const char* item);
 
 
 
-int
-mar_enum_items(MarFile* mar, MarItemCallback callback, void* data);
+int mar_enum_items(MarFile* mar, MarItemCallback callback, void* data);
 
 
 
@@ -130,12 +122,8 @@ mar_enum_items(MarFile* mar, MarItemCallback callback, void* data);
 
 
 
-int
-mar_read(MarFile* mar,
-         const MarItem* item,
-         int offset,
-         uint8_t* buf,
-         int bufsize);
+int mar_read(MarFile* mar, const MarItem* item, int offset, uint8_t* buf,
+             int bufsize);
 
 
 
@@ -147,11 +135,8 @@ mar_read(MarFile* mar,
 
 
 
-int
-mar_create(const char* dest,
-           int numfiles,
-           char** files,
-           struct ProductInformationBlock* infoBlock);
+int mar_create(const char* dest, int numfiles, char** files,
+               struct ProductInformationBlock* infoBlock);
 
 
 
@@ -159,10 +144,9 @@ mar_create(const char* dest,
 
 
 
-int
-mar_extract(const char* path);
+int mar_extract(const char* path);
 
-#define MAR_MAX_CERT_SIZE (16*1024) // Way larger than necessary
+#define MAR_MAX_CERT_SIZE (16 * 1024)  // Way larger than necessary
 
 
 
@@ -177,11 +161,9 @@ mar_extract(const char* path);
 
 
 
-int
-mar_read_entire_file(const char* filePath,
-                     uint32_t maxSize,
-                      const uint8_t** data,
-                      uint32_t* size);
+int mar_read_entire_file(const char* filePath, uint32_t maxSize,
+                          const uint8_t** data,
+                          uint32_t* size);
 
 
 
@@ -203,11 +185,8 @@ mar_read_entire_file(const char* filePath,
 
 
 
-int
-mar_verify_signatures(MarFile* mar,
-                      const uint8_t* const* certData,
-                      const uint32_t* certDataSizes,
-                      uint32_t certCount);
+int mar_verify_signatures(MarFile* mar, const uint8_t* const* certData,
+                          const uint32_t* certDataSizes, uint32_t certCount);
 
 
 
@@ -217,12 +196,11 @@ mar_verify_signatures(MarFile* mar,
 
 
 
-int
-mar_read_product_info_block(MarFile* mar,
-                            struct ProductInformationBlock* infoBlock);
+int mar_read_product_info_block(MarFile* mar,
+                                struct ProductInformationBlock* infoBlock);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  
+#endif 
