@@ -5,6 +5,7 @@
 from __future__ import absolute_import, print_function
 
 import os
+import posixpath
 import re
 import time
 
@@ -98,6 +99,21 @@ class ADBAndroid(ADBDevice):
 
         self.version = int(self.shell_output("getprop ro.build.version.sdk",
                                              timeout=timeout))
+        
+        
+        
+        
+        
+        stack_trace_dir = self.shell_output("getprop dalvik.vm.stack-trace-dir",
+                                            timeout=timeout)
+        if not stack_trace_dir:
+            stack_trace_file = self.shell_output("getprop dalvik.vm.stack-trace-file",
+                                                 timeout=timeout)
+            if stack_trace_file:
+                stack_trace_dir = posixpath.dirname(stack_trace_file)
+            else:
+                stack_trace_dir = '/data/anr'
+        self.stack_trace_dir = stack_trace_dir
 
     def reboot(self, timeout=None):
         """Reboots the device.
