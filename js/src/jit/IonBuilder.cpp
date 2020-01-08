@@ -8986,58 +8986,17 @@ IonBuilder::getElemAddCache(MDefinition* obj, MDefinition* index)
 {
     
 
-    TemporaryTypeSet* types = bytecodeTypes(pc);
-
-    BarrierKind barrier;
-    if (obj->type() == MIRType::Object) {
-        
-        
-        if (index->type() == MIRType::Int32) {
-            barrier = PropertyReadNeedsTypeBarrier(analysisContext, alloc(), constraints(), obj,
-                                                   nullptr, types);
-        } else {
-            barrier = BarrierKind::TypeSet;
-        }
-    } else {
-        
-        
-        
-        barrier = BarrierKind::TypeSet;
-    }
-
-    
-    
-    if (barrier != BarrierKind::TypeSet && !types->unknown()) {
-        MOZ_ASSERT(obj->resultTypeSet());
-        switch (obj->resultTypeSet()->forAllClasses(constraints(), IsTypedObjectClass)) {
-          case TemporaryTypeSet::ForAllResult::ALL_FALSE:
-          case TemporaryTypeSet::ForAllResult::EMPTY:
-            break;
-          case TemporaryTypeSet::ForAllResult::ALL_TRUE:
-          case TemporaryTypeSet::ForAllResult::MIXED:
-            barrier = BarrierKind::TypeSet;
-            break;
-        }
-    }
-
     MGetPropertyCache* ins = MGetPropertyCache::New(alloc(), obj, index,
-                                                    barrier == BarrierKind::TypeSet);
+                                                     true);
     current->add(ins);
     current->push(ins);
 
     MOZ_TRY(resumeAfter(ins));
 
     
-    if (index->type() == MIRType::Int32 && barrier == BarrierKind::NoBarrier) {
-        bool needHoleCheck = !ElementAccessIsPacked(constraints(), obj);
-        MIRType knownType = GetElemKnownType(needHoleCheck, types);
-
-        if (knownType != MIRType::Value && knownType != MIRType::Double) {
-            ins->setResultType(knownType);
-        }
-    }
-
-    MOZ_TRY(pushTypeBarrier(ins, types, barrier));
+    
+    TemporaryTypeSet* types = bytecodeTypes(pc);
+    MOZ_TRY(pushTypeBarrier(ins, types, BarrierKind::TypeSet));
 
     trackOptimizationSuccess();
     return Ok();
