@@ -487,9 +487,6 @@ TokenStreamAnyChars::undoInternalUpdateLineInfoForEOL()
     lineno--;
 }
 
-
-
-
 template<class AnyCharsAccess>
 bool
 TokenStreamChars<char16_t, AnyCharsAccess>::getCodePoint(int32_t* cp)
@@ -510,10 +507,7 @@ TokenStreamChars<char16_t, AnyCharsAccess>::getCodePoint(int32_t* cp)
             break;
 
         if (MOZ_UNLIKELY(c == '\r')) {
-            
-            if (MOZ_LIKELY(!this->sourceUnits.atEnd()))
-                this->sourceUnits.matchCodeUnit('\n');
-
+            matchLineTerminator('\n');
             break;
         }
 
@@ -1846,9 +1840,8 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
         
         
         if (c1kind == EOL) {
-            
-            if (unit == '\r' && !this->sourceUnits.atEnd())
-                this->sourceUnits.matchCodeUnit('\n');
+            if (unit == '\r')
+                matchLineTerminator('\n');
 
             if (!updateLineInfoForEOL())
                 return badToken();
@@ -2339,8 +2332,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
               case 'v': unit = '\v'; break;
 
               case '\r':
-                if (MOZ_LIKELY(!this->sourceUnits.atEnd()))
-                    this->sourceUnits.matchCodeUnit('\n');
+                matchLineTerminator('\n');
                 MOZ_FALLTHROUGH;
               case '\n': {
                 
@@ -2546,10 +2538,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
 
             if (unit == '\r') {
                 unit = '\n';
-
-                
-                if (!this->sourceUnits.atEnd())
-                    this->sourceUnits.matchCodeUnit('\n');
+                matchLineTerminator('\n');
             }
 
             if (!updateLineInfoForEOL())

@@ -946,6 +946,9 @@ CodeUnitValue(mozilla::Utf8Unit unit)
     return unit.toUint8();
 }
 
+template<typename CharT>
+class TokenStreamCharsBase;
+
 
 
 
@@ -1068,14 +1071,19 @@ class SourceUnits
         ptr -= n;
     }
 
-    bool matchCodeUnit(CharT c) {
-        if (*ptr == c) {    
+  private:
+    friend class TokenStreamCharsBase<CharT>;
+
+    bool internalMatchCodeUnit(CharT c) {
+        MOZ_ASSERT(ptr, "shouldn't use poisoned SourceUnits");
+        if (MOZ_LIKELY(!atEnd()) && *ptr == c) {
             ptr++;
             return true;
         }
         return false;
     }
 
+  public:
     void consumeKnownCodeUnit(CharT c) {
         MOZ_ASSERT(ptr, "shouldn't use poisoned SourceUnits");
         MOZ_ASSERT(*ptr == c, "consuming the wrong code unit");
@@ -1225,6 +1233,8 @@ class TokenStreamCharsBase
   : public TokenStreamCharsShared
 {
   protected:
+    TokenStreamCharsBase(JSContext* cx, const CharT* chars, size_t length, size_t startOffset);
+
     
 
 
@@ -1238,18 +1248,34 @@ class TokenStreamCharsBase
         sourceUnits.ungetCodeUnit();
     }
 
-  public:
-    TokenStreamCharsBase(JSContext* cx, const CharT* chars, size_t length, size_t startOffset);
-
     static MOZ_ALWAYS_INLINE JSAtom*
     atomizeSourceChars(JSContext* cx, const CharT* chars, size_t length);
 
     using SourceUnits = frontend::SourceUnits<CharT>;
 
     
-    inline bool matchCodeUnit(int32_t expect);
 
-  protected:
+
+
+    bool matchCodeUnit(char expect) {
+        MOZ_ASSERT(mozilla::IsAscii(expect));
+        MOZ_ASSERT(expect != '\r');
+        MOZ_ASSERT(expect != '\n');
+        return this->sourceUnits.internalMatchCodeUnit(CharT(expect));
+    }
+
+    
+
+
+
+    bool matchLineTerminator(char expect) {
+        MOZ_ASSERT(expect == '\r' || expect == '\n');
+        return this->sourceUnits.internalMatchCodeUnit(CharT(expect));
+    }
+
+    template<typename T> bool matchCodeUnit(T) = delete;
+    template<typename T> bool matchLineTerminator(T) = delete;
+
     int32_t peekCodeUnit() {
         return MOZ_LIKELY(!sourceUnits.atEnd()) ? CodeUnitValue(sourceUnits.peekCodeUnit()) : EOF;
     }
@@ -1300,16 +1326,6 @@ TokenStreamCharsBase<char16_t>::atomizeSourceChars(JSContext* cx, const char16_t
                                                    size_t length)
 {
     return AtomizeChars(cx, chars, length);
-}
-
-template<typename CharT>
-inline bool
-TokenStreamCharsBase<CharT>::matchCodeUnit(int32_t expect)
-{
-    MOZ_ASSERT(expect != EOF, "shouldn't be matching EOFs");
-    MOZ_ASSERT(!SourceUnits::isRawEOLChar(expect));
-    return MOZ_LIKELY(!this->sourceUnits.atEnd()) &&
-           this->sourceUnits.matchCodeUnit(toCharT(expect));
 }
 
 template<>
@@ -1580,6 +1596,7 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
     using SpecializedCharsBase::infallibleConsumeRestOfSingleLineComment;
     using SpecializedCharsBase::infallibleGetNonAsciiCodePointDontNormalize;
     using TokenStreamCharsShared::isAsciiCodePoint;
+    using CharsBase::matchLineTerminator;
     
     using GeneralCharsBase::ungetCodeUnit;
     using GeneralCharsBase::updateLineInfoForEOL;
@@ -1602,9 +1619,11 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
     }
 
     
-    
-    
-    
+
+
+
+
+
     MOZ_MUST_USE bool getCodePoint(int32_t* cp);
 
     
@@ -1625,9 +1644,7 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
                    "getFullAsciiCodePoint called incorrectly");
 
         if (MOZ_UNLIKELY(lead == '\r')) {
-            
-            if (MOZ_LIKELY(!this->sourceUnits.atEnd()))
-                this->sourceUnits.matchCodeUnit('\n');
+            matchLineTerminator('\n');
         } else if (MOZ_LIKELY(lead != '\n')) {
             *codePoint = lead;
             return true;
@@ -1788,6 +1805,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using SpecializedChars::getNonAsciiCodePointDontNormalize;
     using TokenStreamCharsShared::isAsciiCodePoint;
     using CharsBase::matchCodeUnit;
+    using CharsBase::matchLineTerminator;
     using GeneralCharsBase::matchUnicodeEscapeIdent;
     using GeneralCharsBase::matchUnicodeEscapeIdStart;
     using GeneralCharsBase::newAtomToken;
