@@ -2,6 +2,10 @@
 
 
 
+
+
+
+
 importScripts("util.js");
 importScripts("test-vectors.js");
 
@@ -34,6 +38,7 @@ function error(test) {
 }
 
 onmessage = function(msg) {
+  
   var test = eval("(" + msg.data + ")");
 
   try {
