@@ -72,6 +72,9 @@ assert_return(() => call($1, "mul", [2147483647, -1]), -2147483647);
 assert_return(() => call($1, "mul", [19088743, 1985229328]), 898528368);
 
 
+assert_return(() => call($1, "mul", [2147483647, 2147483647]), 1);
+
+
 assert_trap(() => call($1, "div_s", [1, 0]));
 
 
@@ -85,6 +88,9 @@ assert_return(() => call($1, "div_s", [1, 1]), 1);
 
 
 assert_return(() => call($1, "div_s", [0, 1]), 0);
+
+
+assert_return(() => call($1, "div_s", [0, -1]), 0);
 
 
 assert_return(() => call($1, "div_s", [-1, -1]), 1);
@@ -187,6 +193,9 @@ assert_return(() => call($1, "rem_s", [1, 1]), 0);
 
 
 assert_return(() => call($1, "rem_s", [0, 1]), 0);
+
+
+assert_return(() => call($1, "rem_s", [0, -1]), 0);
 
 
 assert_return(() => call($1, "rem_s", [-1, -1]), 0);
@@ -492,13 +501,34 @@ assert_return(() => call($1, "shr_u", [-1, 2147483647]), 1);
 assert_return(() => call($1, "shr_u", [-1, -2147483648]), -1);
 
 
-assert_return(() => call($1, "rotl", [-33498112, 4]), -535969777);
+assert_return(() => call($1, "rotl", [1, 1]), 2);
+
+
+assert_return(() => call($1, "rotl", [1, 0]), 1);
+
+
+assert_return(() => call($1, "rotl", [-1, 1]), -1);
+
+
+assert_return(() => call($1, "rotl", [1, 32]), 1);
 
 
 assert_return(() => call($1, "rotl", [-1412589450, 1]), 1469788397);
 
 
+assert_return(() => call($1, "rotl", [-33498112, 4]), -535969777);
+
+
+assert_return(() => call($1, "rotl", [-1329474845, 5]), 406477942);
+
+
 assert_return(() => call($1, "rotl", [32768, 37]), 1048576);
+
+
+assert_return(() => call($1, "rotl", [-1329474845, 65285]), 406477942);
+
+
+assert_return(() => call($1, "rotl", [1989852383, -19]), 1469837011);
 
 
 assert_return(() => call($1, "rotl", [1989852383, -2147483635]), 1469837011);
@@ -510,10 +540,16 @@ assert_return(() => call($1, "rotl", [1, 31]), -2147483648);
 assert_return(() => call($1, "rotl", [-2147483648, 1]), 1);
 
 
-assert_return(() => call($1, "rotr", [-1329474845, 5]), 495324823);
+assert_return(() => call($1, "rotr", [1, 1]), -2147483648);
 
 
-assert_return(() => call($1, "rotr", [-1329474845, 65285]), 495324823);
+assert_return(() => call($1, "rotr", [1, 0]), 1);
+
+
+assert_return(() => call($1, "rotr", [-1, 1]), -1);
+
+
+assert_return(() => call($1, "rotr", [1, 32]), 1);
 
 
 assert_return(() => call($1, "rotr", [-16724992, 1]), 2139121152);
@@ -522,10 +558,22 @@ assert_return(() => call($1, "rotr", [-16724992, 1]), 2139121152);
 assert_return(() => call($1, "rotr", [524288, 4]), 32768);
 
 
+assert_return(() => call($1, "rotr", [-1329474845, 5]), 495324823);
+
+
+assert_return(() => call($1, "rotr", [32768, 37]), 1024);
+
+
+assert_return(() => call($1, "rotr", [-1329474845, 65285]), 495324823);
+
+
 assert_return(() => call($1, "rotr", [1989852383, -19]), -419711787);
 
 
-assert_return(() => call($1, "rotr", [1, 1]), -2147483648);
+assert_return(() => call($1, "rotr", [1989852383, -2147483635]), -419711787);
+
+
+assert_return(() => call($1, "rotr", [1, 31]), 2);
 
 
 assert_return(() => call($1, "rotr", [-2147483648, 31]), 1);
@@ -607,6 +655,9 @@ assert_return(() => call($1, "eqz", [-2147483648]), 0);
 
 
 assert_return(() => call($1, "eqz", [2147483647]), 0);
+
+
+assert_return(() => call($1, "eqz", [-1]), 0);
 
 
 assert_return(() => call($1, "eq", [0, 0]), 1);
