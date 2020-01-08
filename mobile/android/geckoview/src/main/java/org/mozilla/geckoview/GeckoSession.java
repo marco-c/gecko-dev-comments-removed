@@ -411,11 +411,6 @@ public class GeckoSession implements Parcelable {
                 }
             }
 
-            
-            private int filterFlags(int flags) {
-                return flags & NavigationDelegate.LOAD_REQUEST_IS_USER_TRIGGERED;
-            }
-
             @Override
             public void handleMessage(final NavigationDelegate delegate,
                                       final String event,
@@ -2812,15 +2807,11 @@ public class GeckoSession implements Parcelable {
         public static final int TARGET_WINDOW_CURRENT = 1;
         public static final int TARGET_WINDOW_NEW = 2;
 
-        @IntDef(flag = true,
-                value = {LOAD_REQUEST_IS_USER_TRIGGERED})
-                 @interface LoadRequestFlags {}
-
         
         
 
 
-        public static final int LOAD_REQUEST_IS_USER_TRIGGERED = 0x1000;
+        static final int LOAD_REQUEST_IS_REDIRECT = 0x800000;
 
         
 
@@ -2833,9 +2824,7 @@ public class GeckoSession implements Parcelable {
                 this.uri = uri;
                 this.triggerUri = triggerUri;
                 this.target = convertGeckoTarget(geckoTarget);
-
-                
-                this.isUserTriggered = (flags & 0x1000) != 0;
+                this.isRedirect = (flags & LOAD_REQUEST_IS_REDIRECT) != 0;
             }
 
             
@@ -2869,7 +2858,7 @@ public class GeckoSession implements Parcelable {
             
 
 
-            public final boolean isUserTriggered;
+            public final boolean isRedirect;
         }
 
         
