@@ -350,13 +350,6 @@ public:
   }
 
   
-  template<typename KeyInput>
-  MOZ_MUST_USE bool add(AddPtr& aPtr, KeyInput&& aKey)
-  {
-    return mImpl.add(aPtr, std::forward<KeyInput>(aKey), Value());
-  }
-
-  
   template<typename KeyInput, typename ValueInput>
   MOZ_MUST_USE bool relookupOrAdd(AddPtr& aPtr,
                                   KeyInput&& aKey,
