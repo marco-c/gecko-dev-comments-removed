@@ -151,6 +151,10 @@ class JitTest:
         self.test_reflect_stringify = None
 
         
+        
+        self.skip_if_cond = ''
+
+        
         self.enable = True
 
     def copy(self):
@@ -174,6 +178,7 @@ class JitTest:
         t.enable = True
         t.is_module = self.is_module
         t.is_binast = self.is_binast
+        t.skip_if_cond = self.skip_if_cond
         return t
 
     def copy_and_extend_jitflags(self, variant):
@@ -195,6 +200,9 @@ class JitTest:
         return [self.copy_and_extend_jitflags(v) for v in variants]
 
     COOKIE = '|jit-test|'
+
+    
+    SKIPPED_EXIT_STATUS = 59
     CacheDir = JS_CACHE_DIR
     Directives = {}
 
@@ -255,7 +263,12 @@ class JitTest:
                         test.expect_error = value
                     elif name == 'exitstatus':
                         try:
-                            test.expect_status = int(value, 0)
+                            status = int(value, 0)
+                            if status == test.SKIPPED_EXIT_STATUS:
+                                print("warning: jit-tests uses {} as a sentinel"
+                                      " return value {}", test.SKIPPED_EXIT_STATUS, path)
+                            else:
+                                test.expect_status = status
                         except ValueError:
                             print("warning: couldn't parse exit status"
                                   " {}".format(value))
@@ -268,6 +281,11 @@ class JitTest:
                                   " {}".format(value))
                     elif name == 'include':
                         test.other_includes.append(value)
+                    elif name == 'skip-if':
+                        
+                        if test.skip_if_cond:
+                            test.skip_if_cond += " || "
+                        test.skip_if_cond += "({})".format(value)
                     else:
                         print('{}: warning: unrecognized |jit-test| attribute'
                               ' {}'.format(path, part))
@@ -352,6 +370,8 @@ class JitTest:
             cmd += ['-e', expr]
         for inc in self.other_includes:
             cmd += ['-f', libdir + inc]
+        if self.skip_if_cond:
+            cmd += ['-e', "if ({}) quit({})".format(self.skip_if_cond, self.SKIPPED_EXIT_STATUS)]
         if self.is_module:
             cmd += ['--module-load-path', moduledir]
             cmd += ['--module', path]
@@ -439,6 +459,11 @@ def run_test_remote(test, device, prefix, options):
 
 
 def check_output(out, err, rc, timed_out, test, options):
+    
+    if test.skip_if_cond:
+        if rc == test.SKIPPED_EXIT_STATUS:
+            return True
+
     if timed_out:
         if os.path.normpath(test.relpath_tests).replace(os.sep, '/') \
                 in options.ignore_timeouts:
