@@ -411,33 +411,61 @@ D3D11Checks::DoesRemotePresentWork(IDXGIAdapter* adapter)
   return SUCCEEDED(hr) && check;
 }
 
- bool
-D3D11Checks::DoesNV12Work(ID3D11Device* device)
+ D3D11Checks::VideoFormatOptionSet
+D3D11Checks::FormatOptions(ID3D11Device* device)
 {
-  if(gfxVars::DXNV12Blocked()) {
-    return false;
-  }
+  auto doesNV12Work = [&]() {
+    if (gfxVars::DXNV12Blocked()) {
+      return false;
+    }
 
-  DXGI_ADAPTER_DESC desc;
-  PodZero(&desc);
-  if (!GetDxgiDesc(device, &desc)) {
+    DXGI_ADAPTER_DESC desc;
+    PodZero(&desc);
+    if (!GetDxgiDesc(device, &desc)) {
+      
+      return false;
+    }
+
+    UINT formatSupport;
+    HRESULT hr = device->CheckFormatSupport(DXGI_FORMAT_NV12, &formatSupport);
+    if (FAILED(hr) || !(formatSupport & D3D11_FORMAT_SUPPORT_TEXTURE2D)) {
+      return false;
+    }
+
+    nsString version;
+    nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
+    if (gfxInfo) {
+      gfxInfo->GetAdapterDriverVersion(version);
+    }
+    return DXVA2Manager::IsNV12Supported(desc.VendorId, desc.DeviceId, version);
+  };
+
+  auto doesP010Work = [&]() {
+    UINT formatSupport;
+    HRESULT hr = device->CheckFormatSupport(DXGI_FORMAT_P010, &formatSupport);
+    return (SUCCEEDED(hr) && (formatSupport & D3D11_FORMAT_SUPPORT_TEXTURE2D));
+  };
+
+  auto doesP016Work = [&]() {
+    UINT formatSupport;
+    HRESULT hr = device->CheckFormatSupport(DXGI_FORMAT_P016, &formatSupport);
+    return (SUCCEEDED(hr) && (formatSupport & D3D11_FORMAT_SUPPORT_TEXTURE2D));
+  };
+
+  VideoFormatOptionSet options;
+  if (!doesNV12Work()) {
     
-    return false;
+    
+    return options;
   }
-
-  HRESULT hr;
-  UINT formatSupport;
-  hr = device->CheckFormatSupport(DXGI_FORMAT_NV12, &formatSupport);
-  if (FAILED(hr) || !(formatSupport & D3D11_FORMAT_SUPPORT_TEXTURE2D)) {
-    return false;
+  options += VideoFormatOption::NV12;
+  if (doesP010Work()) {
+    options += VideoFormatOption::P010;
   }
-
-  nsString version;
-  nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
-  if (gfxInfo) {
-    gfxInfo->GetAdapterDriverVersion(version);
+  if (doesP016Work()) {
+    options += VideoFormatOption::P016;
   }
-  return DXVA2Manager::IsNV12Supported(desc.VendorId, desc.DeviceId, version);
+  return options;
 }
 
 } 
