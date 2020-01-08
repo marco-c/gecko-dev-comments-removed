@@ -427,6 +427,63 @@ class MOZ_NON_TEMPORARY_CLASS PromiseLookup final {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class OffThreadPromiseTask : public JS::Dispatchable {
   friend class OffThreadPromiseRuntimeState;
 

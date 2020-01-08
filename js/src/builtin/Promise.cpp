@@ -4974,7 +4974,6 @@ void OffThreadPromiseTask::dispatchResolveAndDestroy() {
   
   
   
-  
   LockGuard<Mutex> lock(state.mutex_);
   state.numCanceled_++;
   if (state.numCanceled_ == state.live_.count()) {
@@ -5107,6 +5106,20 @@ void OffThreadPromiseRuntimeState::shutdown(JSContext* cx) {
   {
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     LockGuard<Mutex> lock(mutex_);
     while (live_.count() != numCanceled_) {
       MOZ_ASSERT(numCanceled_ < live_.count());
@@ -5116,11 +5129,12 @@ void OffThreadPromiseRuntimeState::shutdown(JSContext* cx) {
 
   
   
-  
-  
   for (OffThreadPromiseTaskSet::Range r = live_.all(); !r.empty();
        r.popFront()) {
     OffThreadPromiseTask* task = r.front();
+
+    
+    
     MOZ_ASSERT(task->registered_);
     task->registered_ = false;
     js_delete(task);

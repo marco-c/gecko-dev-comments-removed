@@ -520,8 +520,20 @@ void CancelOffThreadWasmTier2Generator();
 
 
 
+
+
+
 bool StartOffThreadPromiseHelperTask(JSContext* cx,
                                      UniquePtr<PromiseHelperTask> task);
+
+
+
+
+
+
+
+
+
 
 bool StartOffThreadPromiseHelperTask(PromiseHelperTask* task);
 
@@ -836,6 +848,11 @@ class SourceCompressionTask {
   template <typename CharT>
   void workEncodingSpecific();
 };
+
+
+
+
+
 
 
 
