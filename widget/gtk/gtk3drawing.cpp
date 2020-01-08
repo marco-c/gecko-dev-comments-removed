@@ -172,8 +172,6 @@ GetStateFlagsFromGtkWidgetState(GtkWidgetState* state)
             stateFlags = static_cast<GtkStateFlags>(stateFlags|GTK_STATE_FLAG_PRELIGHT);
         if (state->focused)
             stateFlags = static_cast<GtkStateFlags>(stateFlags|GTK_STATE_FLAG_FOCUSED);
-        if (state->backdrop)
-            stateFlags = static_cast<GtkStateFlags>(stateFlags|GTK_STATE_FLAG_BACKDROP);
     }
 
     return stateFlags;
@@ -2313,9 +2311,8 @@ moz_gtk_header_bar_paint(WidgetNodeType widgetType,
                          cairo_t *cr, GdkRectangle* rect, GtkWidgetState* state)
 {
     GtkStateFlags state_flags = GetStateFlagsFromGtkWidgetState(state);
-    GtkStyleContext *style =
-        GetStyleContext(widgetType, GTK_TEXT_DIR_NONE, state_flags);
-
+    GtkStyleContext *style = GetStyleContext(widgetType, GTK_TEXT_DIR_LTR,
+                                             state_flags);
     InsetByMargin(rect, style);
 
     
@@ -2323,8 +2320,6 @@ moz_gtk_header_bar_paint(WidgetNodeType widgetType,
     
     #define TITLEBAR_EXTENT 4
 
-    
-    
     if (widgetType == MOZ_GTK_HEADER_BAR) {
         GtkStyleContext* windowStyle = GetStyleContext(MOZ_GTK_WINDOW);
         bool solidDecorations =
@@ -2348,6 +2343,8 @@ moz_gtk_header_bar_paint(WidgetNodeType widgetType,
 
     return MOZ_GTK_SUCCESS;
 }
+
+
 
 static GtkBorder
 GetMarginBorderPadding(GtkStyleContext* aStyle)
