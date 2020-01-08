@@ -164,7 +164,10 @@ class FontPropertyValue extends PureComponent {
   onChange(e) {
     
     
-    const regex = /^[0-9]+(.[0-9]+)?$/;
+    
+    const regex = (this.props.min && this.props.min < 0)
+      ? /^-?[0-9]+(.[0-9]+)?$/
+      : /^[0-9]+(.[0-9]+)?$/;
     let string = e.target.value.trim();
 
     if (e.target.validity.badInput) {
@@ -190,7 +193,6 @@ class FontPropertyValue extends PureComponent {
       return;
     }
 
-    
     if (!regex.test(string)) {
       return;
     }
