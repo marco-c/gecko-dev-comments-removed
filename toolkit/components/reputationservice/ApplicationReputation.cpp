@@ -600,6 +600,8 @@ static const char* const kBinaryFileExtensions[] = {
     ".pup", 
     ".py", 
     ".pyc", 
+    ".pyd", 
+    ".pyo", 
     ".pyw", 
     
     
