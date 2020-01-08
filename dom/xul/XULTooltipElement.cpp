@@ -27,20 +27,20 @@ XULTooltipElement::Init()
   
   
   RefPtr<mozilla::dom::NodeInfo> nodeInfo;
-  nodeInfo = mNodeInfo->NodeInfoManager()->GetNodeInfo(nsGkAtoms::label,
+  nodeInfo = mNodeInfo->NodeInfoManager()->GetNodeInfo(nsGkAtoms::description,
                                                        nullptr,
                                                        kNameSpaceID_XUL,
                                                        nsINode::ELEMENT_NODE);
-  nsCOMPtr<Element> label;
-  nsresult rv = NS_NewXULElement(getter_AddRefs(label),
+  nsCOMPtr<Element> description;
+  nsresult rv = NS_NewXULElement(getter_AddRefs(description),
                                  nodeInfo.forget(), dom::NOT_FROM_PARSER);
   NS_ENSURE_SUCCESS(rv, rv);
-  label->SetAttr(kNameSpaceID_None, nsGkAtoms::_class,
+  description->SetAttr(kNameSpaceID_None, nsGkAtoms::_class,
                  NS_LITERAL_STRING("tooltip-label"), false);
-  label->SetAttr(kNameSpaceID_None, nsGkAtoms::flex,
+  description->SetAttr(kNameSpaceID_None, nsGkAtoms::flex,
                  NS_LITERAL_STRING("true"), false);
   ErrorResult error;
-  AppendChild(*label, error);
+  AppendChild(*description, error);
 
   return error.StealNSResult();
 }
@@ -55,17 +55,17 @@ XULTooltipElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   if (aNameSpaceID == kNameSpaceID_None && aName == nsGkAtoms::label) {
     
     
-    nsCOMPtr<nsIContent> label = GetFirstChild();
-    if (label && label->IsXULElement(nsGkAtoms::label)) {
+    nsCOMPtr<nsIContent> description = GetFirstChild();
+    if (description && description->IsXULElement(nsGkAtoms::description)) {
       nsAutoString value;
       if (aValue) {
         aValue->ToString(value);
       }
       nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
         "XULTooltipElement::AfterSetAttr",
-        [label, value]() {
-          Element* labelElement = label->AsElement();
-          labelElement->SetTextContent(value, IgnoreErrors());
+        [description, value]() {
+          Element* descriptionElement = description->AsElement();
+          descriptionElement->SetTextContent(value, IgnoreErrors());
         })
       );
     }
