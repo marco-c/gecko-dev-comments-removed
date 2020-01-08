@@ -6,7 +6,6 @@
 
 
 #include "gc/Barrier.h"
-#include "gc/Zone.h"
 #include "js/RootingAPI.h"
 
 #include "jsapi-tests/tests.h"

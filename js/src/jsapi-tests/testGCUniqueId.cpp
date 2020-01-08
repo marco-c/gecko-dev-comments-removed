@@ -6,7 +6,6 @@
 
 
 #include "gc/GCInternals.h"
-#include "gc/Zone.h"
 #include "js/GCVector.h"
 
 #include "jsapi-tests/tests.h"

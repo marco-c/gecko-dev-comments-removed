@@ -5,7 +5,6 @@
 
 
 
-#include "gc/Zone.h"
 #include "jsapi-tests/tests.h"
 
 #include "vm/JSContext-inl.h"
