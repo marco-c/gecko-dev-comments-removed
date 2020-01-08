@@ -1530,7 +1530,7 @@ nsIOService::GetManageOfflineStatus(bool *aManage) {
 
 
 nsresult nsIOService::OnNetworkLinkEvent(const char *data) {
-  if (IsNeckoChild()) {
+  if (IsNeckoChild() || IsSocketProcessChild()) {
     
     
     
