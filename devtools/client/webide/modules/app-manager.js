@@ -252,22 +252,12 @@ var AppManager = exports.AppManager = {
 
   getTarget: function() {
     if (this.selectedProject.type == "mainProcess") {
-      
-      if (this.connection.client.mainRoot.traits.allowChromeProcess) {
-        return this.connection.client.mainRoot.getMainProcess()
-                   .then(front => {
-                     return TargetFactory.forRemoteTab({
-                       activeTab: front,
-                       client: this.connection.client,
-                       chrome: true,
-                     });
-                   });
-      }
-      
-      return TargetFactory.forRemoteTab({
-          form: this._rootForm,
+      return this.connection.client.mainRoot.getMainProcess().then(front => {
+        return TargetFactory.forRemoteTab({
+          activeTab: front,
           client: this.connection.client,
           chrome: true,
+        });
       });
     }
 
