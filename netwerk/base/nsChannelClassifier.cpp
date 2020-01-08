@@ -394,27 +394,30 @@ nsChannelClassifier::ShouldEnableTrackingProtectionInternal(
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    
-    
-    
-    
-    
-    
-    
-    bool isThirdPartyChannel = true;
-    bool isThirdPartyWindow = true;
-    thirdPartyUtil->IsThirdPartyURI(chanURI, topWinURI, &isThirdPartyWindow);
-    thirdPartyUtil->IsThirdPartyChannel(aChannel, nullptr, &isThirdPartyChannel);
-    if (!isThirdPartyWindow || !isThirdPartyChannel) {
-      *result = false;
-      if (LOG_ENABLED()) {
-        nsCString spec = chanURI->GetSpecOrDefault();
-        spec.Truncate(std::min(spec.Length(), sMaxSpecLength));
-        LOG(("nsChannelClassifier[%p]: Skipping tracking protection checks "
-             "for first party or top-level load channel[%p] with uri %s",
-             this, aChannel, spec.get()));
+    if (!aAnnotationsOnly) {
+      
+      
+      
+      
+      
+      
+      
+      
+      bool isThirdPartyChannel = true;
+      bool isThirdPartyWindow = true;
+      thirdPartyUtil->IsThirdPartyURI(chanURI, topWinURI, &isThirdPartyWindow);
+      thirdPartyUtil->IsThirdPartyChannel(aChannel, nullptr, &isThirdPartyChannel);
+      if (!isThirdPartyWindow || !isThirdPartyChannel) {
+        *result = false;
+        if (LOG_ENABLED()) {
+          nsCString spec = chanURI->GetSpecOrDefault();
+          spec.Truncate(std::min(spec.Length(), sMaxSpecLength));
+          LOG(("nsChannelClassifier[%p]: Skipping tracking protection checks "
+               "for first party or top-level load channel[%p] with uri %s",
+               this, aChannel, spec.get()));
+        }
+        return NS_OK;
       }
-      return NS_OK;
     }
 
     if (AddonMayLoad(aChannel, chanURI)) {
