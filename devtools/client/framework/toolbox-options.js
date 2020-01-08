@@ -467,6 +467,10 @@ OptionsPanel.prototype = {
     } else {
       
       this.disableJSNode.parentNode.style.display = "none";
+
+      const triggersPageRefreshLabel =
+        this.panelDoc.getElementById("triggers-page-refresh-label");
+      triggersPageRefreshLabel.style.display = "none";
     }
   },
 
