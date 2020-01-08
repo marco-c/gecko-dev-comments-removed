@@ -2,8 +2,6 @@
 
 
 
-import "../vendor/custom-elements.min.js";
-
 import PaymentStateSubscriberMixin from "../mixins/PaymentStateSubscriberMixin.js";
 import paymentRequest from "../paymentRequest.js";
 
