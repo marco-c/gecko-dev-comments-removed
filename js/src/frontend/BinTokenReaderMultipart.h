@@ -178,6 +178,13 @@ class MOZ_STACK_CLASS BinTokenReaderMultipart: public BinTokenReaderBase
 
     MOZ_MUST_USE JS::Result<Ok> enterUntaggedTuple(AutoTuple& guard);
 
+    
+
+
+    MOZ_MUST_USE JS::Result<uint32_t> readUnsignedLong() {
+        return readInternalUint32();
+    }
+
   private:
     
 

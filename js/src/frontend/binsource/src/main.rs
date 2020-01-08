@@ -76,6 +76,8 @@ struct NodeRules {
     extra_params: Option<Rc<String>>,
 
     
+    
+    
     extra_args: Option<Rc<String>>,
 
     
@@ -1371,6 +1373,15 @@ impl CPPExporter {
                     } else {
                         (None,
                             Some(format!("BINJS_MOZ_TRY_DECL({var_name}, tokenizer_->readDouble());", var_name = var_name)))
+                    }
+                }
+                Some(IsNullable { is_nullable: false, content: Primitive::UnsignedLong }) => {
+                    if needs_block {
+                        (Some(format!("uint32_t {var_name};", var_name = var_name)),
+                            Some(format!("MOZ_TRY_VAR({var_name}, tokenizer_->readUnsignedLong());", var_name = var_name)))
+                    } else {
+                        (None,
+                            Some(format!("BINJS_MOZ_TRY_DECL({var_name}, tokenizer_->readUnsignedLong());", var_name = var_name)))
                     }
                 }
                 Some(IsNullable { is_nullable: false, content: Primitive::Boolean }) => {

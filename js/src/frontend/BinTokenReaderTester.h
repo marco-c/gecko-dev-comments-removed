@@ -204,6 +204,13 @@ class MOZ_STACK_CLASS BinTokenReaderTester: public BinTokenReaderBase
     
 
 
+    MOZ_MUST_USE JS::Result<uint32_t> readUnsignedLong() {
+        return readInternalUint32();
+    }
+
+    
+
+
     MOZ_MUST_USE JS::Result<uint32_t> readInternalUint32();
 
   public:

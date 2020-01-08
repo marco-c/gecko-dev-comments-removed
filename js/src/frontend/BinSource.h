@@ -196,6 +196,9 @@ class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEPa
 
     MOZ_MUST_USE JS::Result<Ok> checkBinding(JSAtom* name);
 
+    MOZ_MUST_USE JS::Result<Ok> checkPositionalParameterIndices(Handle<GCVector<JSAtom*>> positionalParams,
+                                                                ListNode* params);
+
     
     MOZ_MUST_USE JS::Result<Ok> checkClosedVars(ParseContext::Scope& scope);
 
