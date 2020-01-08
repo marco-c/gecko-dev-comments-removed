@@ -2294,39 +2294,10 @@ CreateReadableStreamDefaultController(JSContext* cx, Handle<ReadableStream*> str
 bool
 ReadableStreamDefaultController::constructor(JSContext* cx, unsigned argc, Value* vp)
 {
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    if (!ThrowIfNotConstructing(cx, args, "ReadableStreamDefaultController")) {
-        return false;
-    }
-
     
-    HandleValue streamVal = args.get(0);
-    if (!Is<ReadableStream>(streamVal)) {
-        ReportArgTypeError(cx, "ReadableStreamDefaultController", "ReadableStream",
-                           args.get(0));
-        return false;
-    }
-
-    Rooted<ReadableStream*> stream(cx, &streamVal.toObject().as<ReadableStream>());
-
-    
-    
-    if (stream->hasController()) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_READABLESTREAM_CONTROLLER_SET);
-        return false;
-    }
-
-    
-    RootedObject controller(cx, CreateReadableStreamDefaultController(cx, stream, args.get(1),
-                                                                      args.get(2), args.get(3)));
-    if (!controller) {
-        return false;
-    }
-
-    args.rval().setObject(*controller);
-    return true;
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_BOGUS_CONSTRUCTOR, "ReadableStreamDefaultController");
+    return false;
 }
 
 static MOZ_MUST_USE double
@@ -3224,38 +3195,10 @@ CreateReadableByteStreamController(JSContext* cx, Handle<ReadableStream*> stream
 bool
 ReadableByteStreamController::constructor(JSContext* cx, unsigned argc, Value* vp)
 {
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    if (!ThrowIfNotConstructing(cx, args, "ReadableByteStreamController")) {
-        return false;
-    }
-
     
-    HandleValue streamVal = args.get(0);
-    if (!Is<ReadableStream>(streamVal)) {
-        ReportArgTypeError(cx, "ReadableStreamDefaultController", "ReadableStream",
-                           args.get(0));
-        return false;
-    }
-
-    Rooted<ReadableStream*> stream(cx, &streamVal.toObject().as<ReadableStream>());
-
-    
-    
-    if (stream->hasController()) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_READABLESTREAM_CONTROLLER_SET);
-        return false;
-    }
-
-    RootedObject controller(cx, CreateReadableByteStreamController(cx, stream, args.get(1),
-                                                                   args.get(2)));
-    if (!controller) {
-        return false;
-    }
-
-    args.rval().setObject(*controller);
-    return true;
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_BOGUS_CONSTRUCTOR, "ReadableByteStreamController");
+    return false;
 }
 
 
