@@ -78,7 +78,8 @@ const libraryMap = [
   },
   {
     label: "Angular",
-    pattern: /angular/i
+    pattern: /angular/i,
+    contextPattern: /(zone\.js)/
   },
   {
     label: "Redux",
@@ -106,14 +107,34 @@ const libraryMap = [
   }
 ];
 
-export function getLibraryFromUrl(frame: Frame) {
+export function getLibraryFromUrl(frame: Frame, callStack: Array<Frame> = []) {
   
   
   const frameUrl = getFrameUrl(frame);
-  const matches = libraryMap.filter(o => frameUrl.match(o.pattern));
-  if (matches.length == 0) {
-    return null;
+
+  
+  let match = libraryMap.find(o => frameUrl.match(o.pattern));
+  if (match) {
+    return match.label;
   }
 
-  return matches[0].label;
+  
+  
+  
+  
+  
+  
+  match = libraryMap.find(
+    o => o.contextPattern && frameUrl.match(o.contextPattern)
+  );
+  if (match) {
+    const contextMatch = callStack.some(f =>
+      libraryMap.find(o => frameUrl.match(o.pattern))
+    );
+    if (contextMatch) {
+      return match.label;
+    }
+  }
+
+  return null;
 }

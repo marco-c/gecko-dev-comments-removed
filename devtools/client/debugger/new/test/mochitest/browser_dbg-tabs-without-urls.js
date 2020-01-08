@@ -1,0 +1,31 @@
+
+
+
+function countTabs(dbg) {
+  return findElement(dbg, "sourceTabs").children.length;
+}
+
+
+
+add_task(async function() {
+  const dbg = await initDebugger("doc-scripts.html", "simple1", "simple2");
+
+  await selectSource(dbg, "simple1");
+  await selectSource(dbg, "simple2");
+
+  is(countTabs(dbg), 2);
+
+  invokeInTab("doEval");
+  await waitForPaused(dbg);
+  await resume(dbg);
+  is(countTabs(dbg), 3);
+
+  invokeInTab("doEval");
+  await waitForPaused(dbg);
+  await resume(dbg);
+  is(countTabs(dbg), 4);
+
+  
+  await reload(dbg, "simple1", "simple2");
+  is(countTabs(dbg), 2);
+});
