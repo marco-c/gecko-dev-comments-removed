@@ -219,7 +219,13 @@ public:
   
   
   
-  nsCSSPropertyIDSet GetPropertiesForCompositor(const EffectSet& aEffects) const;
+  
+  
+  
+  
+  
+  nsCSSPropertyIDSet GetPropertiesForCompositor(EffectSet& aEffects,
+                                                const nsIFrame* aFrame) const;
 
   const InfallibleTArray<AnimationProperty>& Properties() const
   {
