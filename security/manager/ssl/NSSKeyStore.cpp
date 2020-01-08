@@ -107,6 +107,18 @@ nsresult NSSKeyStore::StoreSecret(const nsACString& aSecret,
     return NS_ERROR_FAILURE;
   }
 
+  
+  
+  
+  
+  
+  nsresult rv = DeleteSecret(aLabel);
+  if (NS_FAILED(rv)) {
+    MOZ_LOG(gNSSKeyStoreLog, LogLevel::Debug,
+            ("DeleteSecret before StoreSecret failed"));
+    return rv;
+  }
+
   uint8_t* p = BitwiseCast<uint8_t*, const char*>(aSecret.BeginReading());
   UniqueSECItem key(SECITEM_AllocItem(nullptr, nullptr, aSecret.Length()));
   if (!key) {
