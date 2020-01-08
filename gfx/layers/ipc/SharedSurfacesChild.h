@@ -80,6 +80,13 @@ public:
   static Maybe<wr::ExternalImageId>
   GetExternalId(const gfx::SourceSurfaceSharedData* aSurface);
 
+  
+
+
+
+  static gfx::SourceSurfaceSharedData*
+  AsSourceSurfaceSharedData(gfx::SourceSurface* aSurface);
+
   static nsresult UpdateAnimation(ImageContainer* aContainer,
                                   gfx::SourceSurface* aSurface,
                                   const gfx::IntRect& aDirtyRect);
