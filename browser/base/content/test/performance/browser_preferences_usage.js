@@ -50,6 +50,13 @@ function checkPrefGetters(stats, max, whitelist = {}) {
     }
   }
 
+  
+  
+  
+  if (whitelist["browser.startup.record"]) {
+    delete whitelist["browser.startup.record"];
+  }
+
   let remainingWhitelist = Object.keys(whitelist);
   is(remainingWhitelist.length, 0, `Should have checked all whitelist items. Remaining: ${remainingWhitelist}`);
 }
