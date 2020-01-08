@@ -132,20 +132,6 @@ public:
 
   AnimatedValue* GetAnimatedValue(const uint64_t& aId) const;
 
-  
-
-
-
-  Maybe<float> GetAnimationOpacity(const uint64_t& aId) const;
-
-  
-
-
-
-
-
-  Maybe<gfx::Matrix4x4> GetAnimationTransform(const uint64_t& aId) const;
-
   OMTAValue GetOMTAValue(const uint64_t& aId) const;
 
   
