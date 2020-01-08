@@ -311,6 +311,8 @@ pref("devtools.editor.enableCodeFolding", true);
 pref("devtools.editor.autocomplete", true);
 
 
+pref("devtools.responsive.leftAlignViewport.enabled", false);
+
 pref("devtools.responsive.reloadConditions.touchSimulation", false);
 
 pref("devtools.responsive.reloadConditions.userAgent", false);
