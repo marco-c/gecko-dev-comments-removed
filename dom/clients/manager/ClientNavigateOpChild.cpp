@@ -15,7 +15,6 @@
 #include "nsIWebProgressListener.h"
 #include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
-#include "nsURLHelper.h"
 
 namespace mozilla {
 namespace dom {
@@ -74,7 +73,9 @@ public:
     
     
     
-    rv = ssm->CheckSameOriginURI(mBaseURL, channelURL, false);
+    
+    
+    rv = ssm->CheckSameOriginURI(mBaseURL, channelURL, false, false);
     if (NS_FAILED(rv)) {
       mPromise->Resolve(NS_OK, __func__);
       return NS_OK;
@@ -186,24 +187,8 @@ ClientNavigateOpChild::DoNavigate(const ClientNavigateOpConstructorArgs& aArgs)
     return ref.forget();
   }
 
-  
-  
-  
-  
-  
-  
-  
-  bool shouldUseBaseURL = true;
-  nsAutoCString scheme;
-  if (NS_SUCCEEDED(net_ExtractURLScheme(aArgs.url(), scheme)) &&
-      scheme.LowerCaseEqualsLiteral("view-source")) {
-    shouldUseBaseURL = false;
-  }
-
   nsCOMPtr<nsIURI> url;
-  rv = NS_NewURI(getter_AddRefs(url), aArgs.url(),
-                 nullptr, shouldUseBaseURL ? baseURL.get()
-                                           : nullptr);
+  rv = NS_NewURI(getter_AddRefs(url), aArgs.url(), nullptr, baseURL);
   if (NS_FAILED(rv)) {
     ref = ClientOpPromise::CreateAndReject(rv, __func__);
     return ref.forget();
