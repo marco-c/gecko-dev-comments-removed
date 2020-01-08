@@ -4,9 +4,26 @@
 
 
 
+#ifndef nsStringEnumerator_h
+#define nsStringEnumerator_h
+
 #include "nsIStringEnumerator.h"
 #include "nsStringFwd.h"
 #include "nsTArrayForwardDeclare.h"
+
+class nsStringEnumeratorBase : public nsIStringEnumerator
+                             , public nsIUTF8StringEnumerator
+{
+public:
+  NS_DECL_NSISTRINGENUMERATORBASE
+
+  NS_IMETHOD GetNext(nsAString&) override;
+
+  using nsIUTF8StringEnumerator::GetNext;
+
+protected:
+  virtual ~nsStringEnumeratorBase() = default;
+};
 
 
 
@@ -89,3 +106,5 @@ MOZ_MUST_USE nsresult
 NS_NewUTF8StringEnumerator(nsIUTF8StringEnumerator** aResult,
                            const nsTArray<nsCString>* aArray,
                            nsISupports* aOwner);
+
+#endif 
