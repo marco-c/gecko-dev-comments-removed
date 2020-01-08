@@ -31,7 +31,6 @@ loader.lazyRequireGetter(this, "WebConsoleCommands", "devtools/server/actors/web
 loader.lazyRequireGetter(this, "addWebConsoleCommands", "devtools/server/actors/webconsole/utils", true);
 loader.lazyRequireGetter(this, "formatCommand", "devtools/server/actors/webconsole/commands", true);
 loader.lazyRequireGetter(this, "isCommand", "devtools/server/actors/webconsole/commands", true);
-loader.lazyRequireGetter(this, "validCommands", "devtools/server/actors/webconsole/commands", true);
 loader.lazyRequireGetter(this, "CONSOLE_WORKER_IDS", "devtools/server/actors/webconsole/utils", true);
 loader.lazyRequireGetter(this, "WebConsoleUtils", "devtools/server/actors/webconsole/utils", true);
 loader.lazyRequireGetter(this, "EnvironmentActor", "devtools/server/actors/environment", true);
@@ -1086,57 +1085,54 @@ WebConsoleActor.prototype =
     let dbgObject = null;
     let environment = null;
     let hadDebuggee = false;
-    let matches = [];
-    let matchProp;
-    const reqText = request.text.substr(0, request.cursor);
 
-    if (isCommand(reqText)) {
-      const commandsCache = this._getWebConsoleCommandsCache();
-      matchProp = reqText;
-      matches = validCommands
-        .filter(c => `:${c}`.startsWith(reqText)
-          && commandsCache.find(n => `:${n}`.startsWith(reqText))
-        )
-        .map(c => `:${c}`);
+    
+    if (frameActorId) {
+      const frameActor = this.conn.getActor(frameActorId);
+      try {
+        
+        
+        const frame = frameActor.frame;
+        environment = frame.environment;
+      } catch (e) {
+        DevToolsUtils.reportException("autocomplete",
+          Error("The frame actor was not found: " + frameActorId));
+      }
     } else {
       
-      if (frameActorId) {
-        const frameActor = this.conn.getActor(frameActorId);
-        try {
-          
-          
-          const frame = frameActor.frame;
-          environment = frame.environment;
-        } catch (e) {
-          DevToolsUtils.reportException("autocomplete",
-            Error("The frame actor was not found: " + frameActorId));
-        }
-      } else {
-        
-        hadDebuggee = this.dbg.hasDebuggee(this.evalWindow);
-        dbgObject = this.dbg.addDebuggee(this.evalWindow);
+      hadDebuggee = this.dbg.hasDebuggee(this.evalWindow);
+      dbgObject = this.dbg.addDebuggee(this.evalWindow);
+    }
+
+    const result = JSPropertyProvider(dbgObject, environment, request.text,
+                                    request.cursor, frameActorId) || {};
+
+    if (!hadDebuggee && dbgObject) {
+      this.dbg.removeDebuggee(this.evalWindow);
+    }
+
+    let matches = result.matches || [];
+    const reqText = request.text.substr(0, request.cursor);
+
+    
+    
+    const lastNonAlphaIsDot = /[.][a-zA-Z0-9$]*$/.test(reqText);
+    if (!lastNonAlphaIsDot) {
+      if (!this._webConsoleCommandsCache) {
+        const helpers = {
+          sandbox: Object.create(null)
+        };
+        addWebConsoleCommands(helpers);
+        this._webConsoleCommandsCache =
+          Object.getOwnPropertyNames(helpers.sandbox);
       }
 
-      const result = JSPropertyProvider(dbgObject, environment, request.text,
-                                      request.cursor, frameActorId) || {};
-
-      if (!hadDebuggee && dbgObject) {
-        this.dbg.removeDebuggee(this.evalWindow);
-      }
-
-      matches = result.matches || [];
-      matchProp = result.matchProp;
-
-      
-      
-      const lastNonAlphaIsDot = /[.][a-zA-Z0-9$]*$/.test(reqText);
-      if (!lastNonAlphaIsDot) {
-        matches = matches.concat(this._getWebConsoleCommandsCache().filter(n =>
-          
-          
-          n !== "screenshot" && n.startsWith(result.matchProp)
-        ));
-      }
+      matches = matches.concat(this._webConsoleCommandsCache
+          .filter(n =>
+            
+            
+            n !== "screenshot" && n.startsWith(result.matchProp)
+          ));
     }
 
     
@@ -1147,7 +1143,7 @@ WebConsoleActor.prototype =
     return {
       from: this.actorID,
       matches,
-      matchProp,
+      matchProp: result.matchProp,
     };
   },
 
@@ -1276,17 +1272,6 @@ WebConsoleActor.prototype =
       Object.defineProperty(helpers.sandbox, name, desc);
     }
     return helpers;
-  },
-
-  _getWebConsoleCommandsCache: function() {
-    if (!this._webConsoleCommandsCache) {
-      const helpers = {
-        sandbox: Object.create(null)
-      };
-      addWebConsoleCommands(helpers);
-      this._webConsoleCommandsCache = Object.getOwnPropertyNames(helpers.sandbox);
-    }
-    return this._webConsoleCommandsCache;
   },
 
   
