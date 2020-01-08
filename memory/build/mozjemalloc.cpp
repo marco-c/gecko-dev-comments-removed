@@ -2891,11 +2891,6 @@ arena_bin_t::Init(SizeClass aSizeClass)
              try_reg0_offset);
 
     
-    if (try_run_size > gMaxLargeClass) {
-      break;
-    }
-
-    
     if (Fraction(try_reg0_offset, try_run_size) <= kRunOverhead) {
       break;
     }
@@ -2918,6 +2913,13 @@ arena_bin_t::Init(SizeClass aSizeClass)
     
     
     if (try_mask_nelms * sizeof(unsigned) >= kFixedHeaderSize) {
+      break;
+    }
+
+    
+    
+    
+    if (try_run_size + gPageSize > gMaxLargeClass) {
       break;
     }
 
