@@ -28,6 +28,20 @@ class WindowsDllPatcherBase {
     
     if (origFn[0] == 0xeb) {
       int8_t offset = (int8_t)(origFn[1]);
+      uintptr_t abstarget = origFn.GetAddress() + 2 + offset;
+
+#if defined(_M_X64)
+      
+      
+      
+      if ((offset < 0) && (origFn.IsValidAtOffset(2 + offset))) {
+        ReadOnlyTargetFunction<MMPolicyT> redirectFn(mVMPolicy, abstarget);
+        if ((redirectFn[0] == 0xff) && (redirectFn[1] == 0x25)) {
+          return redirectFn;
+        }
+      }
+#endif
+
       if (offset <= 0) {
         
         
@@ -41,7 +55,6 @@ class WindowsDllPatcherBase {
         }
       }
 
-      uintptr_t abstarget = (origFn + 2 + offset).GetAddress();
       return EnsureTargetIsAccessible(std::move(origFn), abstarget);
     }
 
