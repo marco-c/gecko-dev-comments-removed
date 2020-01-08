@@ -568,7 +568,8 @@ def target_tasks_searchfox(full_task_graph, parameters, graph_config):
     """Select tasks required for indexing Firefox for Searchfox web site each day"""
     
     
-    return ['searchfox-linux64-searchfox/debug']
+    return ['searchfox-linux64-searchfox/debug',
+            'searchfox-macosx64-searchfox/debug']
 
 
 @_target_task('file_update')
