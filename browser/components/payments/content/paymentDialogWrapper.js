@@ -139,24 +139,15 @@ var paymentDialogWrapper = {
     }
 
     let address = this.createPaymentAddress({
-      addressLines: addressData["street-address"].split("\n"),
-      city: addressData["address-level2"],
       country: addressData.country,
-      dependentLocality: addressData["address-level3"],
-      organization: addressData.organization,
-      phone: addressData.tel,
-      postalCode: addressData["postal-code"],
-      recipient: addressData.name,
+      addressLines: addressData["street-address"].split("\n"),
       region: addressData["address-level1"],
-      
-      
-      
-      
-      
-      
-      
-      
-      regionCode: "",
+      city: addressData["address-level2"],
+      dependentLocality: addressData["address-level3"],
+      postalCode: addressData["postal-code"],
+      organization: addressData.organization,
+      recipient: addressData.name,
+      phone: addressData.tel,
     });
 
     return address;
@@ -310,17 +301,17 @@ var paymentDialogWrapper = {
   },
 
   createPaymentAddress({
-    addressLines = [],
-    city = "",
     country = "",
-    dependentLocality = "",
-    organization = "",
-    postalCode = "",
-    phone = "",
-    recipient = "",
+    addressLines = [],
     region = "",
     regionCode = "",
+    city = "",
+    dependentLocality = "",
+    postalCode = "",
     sortingCode = "",
+    organization = "",
+    recipient = "",
+    phone = "",
   }) {
     const paymentAddress = Cc["@mozilla.org/dom/payments/payment-address;1"]
                            .createInstance(Ci.nsIPaymentAddress);
