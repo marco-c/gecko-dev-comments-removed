@@ -111,7 +111,8 @@ EventQueue::CoalesceEvents()
           return;
         }
       }
-    } break; 
+      break; 
+    }
 
     case AccEvent::eCoalesceSelectionChange:
     {
@@ -129,8 +130,8 @@ EventQueue::CoalesceEvents()
           }
         }
       }
-
-    } break; 
+      break; 
+    }
 
     case AccEvent::eCoalesceStateChange:
     {
@@ -172,7 +173,8 @@ EventQueue::CoalesceEvents()
         }
 
       }
-    } break; 
+      break; 
+    }
 
     case AccEvent::eRemoveDupes:
     {
@@ -187,7 +189,8 @@ EventQueue::CoalesceEvents()
           return;
         }
       }
-    } break; 
+      break; 
+    }
 
     default:
       break; 
