@@ -58,7 +58,7 @@ function isSupportedPlatform(state = null, action) {
 
 
 
-function interval(state = 1, action) {
+function interval(state = 1000, action) {
   switch (action.type) {
     case "CHANGE_INTERVAL":
       return action.interval;
