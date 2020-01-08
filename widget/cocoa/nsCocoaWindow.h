@@ -362,9 +362,7 @@ protected:
   virtual already_AddRefed<nsIWidget>
   AllocateChildPopupWidget() override
   {
-    static NS_DEFINE_IID(kCPopUpCID, NS_POPUP_CID);
-    nsCOMPtr<nsIWidget> widget = do_CreateInstance(kCPopUpCID);
-    return widget.forget();
+    return nsIWidget::CreateTopLevelWindow();
   }
 
   nsIWidget*           mParent;         
