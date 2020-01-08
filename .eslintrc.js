@@ -39,5 +39,12 @@ module.exports = {
     "env": {
       "mozilla/browser-window": true
     }
+  }, {
+    
+    
+    "files": "dom/**",
+    "rules": {
+      "mozilla/reject-importGlobalProperties": "off",
+    }
   }]
 };
