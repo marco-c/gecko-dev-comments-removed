@@ -5,6 +5,15 @@
 
 const TEST_URL = "about:buildconfig";
 
+function scrolledIntoView(item, parentItem) {
+  let itemRect = item.getBoundingClientRect();
+  let parentItemRect = parentItem.getBoundingClientRect();
+  let pointInView = y => parentItemRect.top < y && y < parentItemRect.bottom;
+
+  
+  return pointInView(itemRect.top) || pointInView(itemRect.bottom);
+}
+
 add_task(async function() {
   await PlacesUtils.bookmarks.eraseEverything();
   let tags = ["a", "b", "c", "d", "e", "f", "g",
@@ -63,32 +72,30 @@ add_task(async function() {
     isnot(listItem, null, "Valid listItem found");
 
     tagsSelector.ensureElementIsVisible(listItem);
-    let visibleIndex = tagsSelector.getIndexOfFirstVisibleRow();
+    let scrollTop = tagsSelector.scrollTop;
 
-    ok(listItem.checked, "Item is checked " + i);
+    ok(listItem.hasAttribute("checked"), "Item is checked " + i);
     let selectedTag = listItem.label;
 
     
     let promiseNotification = PlacesTestUtils.waitForNotification(
       "onItemChanged", (id, property) => property == "tags");
-    listItem.checked = false;
+    EventUtils.synthesizeMouseAtCenter(listItem.firstChild, {});
     await promiseNotification;
-    is(visibleIndex, tagsSelector.getIndexOfFirstVisibleRow(),
-       "Scroll position did not change");
+    is(scrollTop, tagsSelector.scrollTop, "Scroll position did not change");
 
     
     let newItem = tagsSelector.selectedItem;
     isnot(newItem, null, "Valid new listItem found");
-    ok(!newItem.checked, "New listItem is unchecked " + i);
+    ok(!newItem.hasAttribute("checked"), "New listItem is unchecked " + i);
     is(newItem.label, selectedTag, "Correct tag is still selected");
 
     
     promiseNotification = PlacesTestUtils.waitForNotification(
       "onItemChanged", (id, property) => property == "tags");
-    newItem.checked = true;
+    EventUtils.synthesizeMouseAtCenter(newItem.firstChild, {});
     await promiseNotification;
-    is(visibleIndex, tagsSelector.getIndexOfFirstVisibleRow(),
-       "Scroll position did not change");
+    is(scrollTop, tagsSelector.scrollTop, "Scroll position did not change");
   }
 
   
@@ -101,28 +108,24 @@ add_task(async function() {
     isnot(listItem, null, "Valid listItem found");
 
     tagsSelector.ensureElementIsVisible(listItem);
-    let firstVisibleTag = tags[tagsSelector.getIndexOfFirstVisibleRow()];
+    let items = [...tagsSelector.children];
+    let topTag = items.find(e => scrolledIntoView(e, tagsSelector)).label;
 
-    ok(listItem.checked, "Item is checked " + i);
+    ok(listItem.hasAttribute("checked"), "Item is checked " + i);
 
     
     let promiseNotification = PlacesTestUtils.waitForNotification(
       "onItemChanged", (id, property) => property == "tags");
-    listItem.checked = false;
+    EventUtils.synthesizeMouseAtCenter(listItem.firstChild, {});
     await promiseNotification;
 
     
-    let firstVisibleIndex = tagsSelector.getIndexOfFirstVisibleRow();
-    let lastVisibleIndex = firstVisibleIndex + tagsSelector.getNumberOfVisibleRows() - 1;
-    let expectedTagIndex = tags.indexOf(firstVisibleTag);
-    ok(expectedTagIndex >= firstVisibleIndex &&
-       expectedTagIndex <= lastVisibleIndex,
-       "Scroll position is correct");
+    let topItem = [...tagsSelector.children].find(e => e.label == topTag);
+    ok(scrolledIntoView(topItem, tagsSelector), "Scroll position is correct");
 
-    
     let newItem = tagsSelector.selectedItem;
     isnot(newItem, null, "Valid new listItem found");
-    ok(newItem.checked, "New listItem is checked " + i);
+    ok(newItem.hasAttribute("checked"), "New listItem is checked " + i);
     is(tagsSelector.selectedItem.label,
        tags[Math.min(i + 1, tags.length - 2)],
        "The next tag is now selected");

@@ -849,11 +849,6 @@ toolbarspring {
   }
 }
 
-#editBMPanel_tagsSelector {
-  
-  width: auto;
-}
-
 menupopup[emptyplacesresult="true"] > .hide-if-empty-places-result {
   display: none;
 }
