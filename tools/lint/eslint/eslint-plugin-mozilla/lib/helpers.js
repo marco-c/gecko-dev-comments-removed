@@ -11,6 +11,7 @@ const estraverse = require("estraverse");
 const path = require("path");
 const fs = require("fs");
 const ini = require("ini-parser");
+const recommendedConfig = require("./configs/recommended");
 
 var gModules = null;
 var gRootDir = null;
@@ -71,10 +72,13 @@ module.exports = {
 
 
 
-  getAST(sourceText) {
+
+
+
+  getAST(sourceText, astOptions = {}) {
     
     
-    var config = this.getPermissiveConfig();
+    let config = {...this.getPermissiveConfig(), ...astOptions};
 
     return espree.parse(sourceText, config);
   },
@@ -411,9 +415,18 @@ module.exports = {
       loc: true,
       comment: true,
       attachComment: true,
-      ecmaVersion: 9,
+      ecmaVersion: this.getECMAVersion(),
       sourceType: "script"
     };
+  },
+
+  
+
+
+
+
+  getECMAVersion() {
+    return recommendedConfig.parserOptions.ecmaVersion;
   },
 
   

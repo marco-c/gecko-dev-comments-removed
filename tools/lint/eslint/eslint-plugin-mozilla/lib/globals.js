@@ -168,7 +168,9 @@ module.exports = {
 
 
 
-  getGlobalsForFile(filePath) {
+
+
+  getGlobalsForFile(filePath, astOptions = {}) {
     if (globalCache.has(filePath)) {
       return globalCache.get(filePath);
     }
@@ -183,11 +185,10 @@ module.exports = {
     let content = fs.readFileSync(filePath, "utf8");
 
     
-    let ast = helpers.getAST(content);
+    let ast = helpers.getAST(content, astOptions);
 
     
-    
-    let scopeManager = eslintScope.analyze(ast, {});
+    let scopeManager = eslintScope.analyze(ast, astOptions);
     let globalScope = scopeManager.acquire(ast);
 
     let globals = Object.keys(globalScope.variables).map(v => ({
@@ -243,34 +244,40 @@ module.exports = {
     let parser = new htmlparser.Parser({
       onopentag(name, attribs) {
         if (name === "script" && "src" in attribs) {
-          scriptSrcs.push(attribs.src);
+          scriptSrcs.push({
+            src: attribs.src,
+            type: "type" in attribs ? attribs.type : "script"
+          });
         }
       }
     });
 
     parser.parseComplete(content);
 
-    for (let scriptSrc of scriptSrcs) {
+    for (let script of scriptSrcs) {
       
-      if (!scriptSrc) {
+      if (!script.src) {
         continue;
       }
       let scriptName;
-      if (scriptSrc.includes("http:")) {
+      if (script.src.includes("http:")) {
         
-      } else if (scriptSrc.includes("chrome")) {
+      } else if (script.src.includes("chrome")) {
         
-        scriptSrc = scriptSrc.replace("chrome://mochikit/content/", "/");
-        scriptName = path.join(helpers.rootDir, "testing", "mochitest", scriptSrc);
-      } else if (scriptSrc.includes("SimpleTest")) {
+        script.src = script.src.replace("chrome://mochikit/content/", "/");
+        scriptName = path.join(helpers.rootDir, "testing", "mochitest", script.src);
+      } else if (script.src.includes("SimpleTest")) {
         
-        scriptName = path.join(helpers.rootDir, "testing", "mochitest", scriptSrc);
+        scriptName = path.join(helpers.rootDir, "testing", "mochitest", script.src);
       } else {
         
-        scriptName = path.join(dir, scriptSrc);
+        scriptName = path.join(dir, script.src);
       }
       if (scriptName && fs.existsSync(scriptName)) {
-        globals.push(...module.exports.getGlobalsForFile(scriptName));
+        globals.push(...module.exports.getGlobalsForFile(scriptName, {
+          ecmaVersion: helpers.getECMAVersion(),
+          sourceType: script.type
+        }));
       }
     }
 
