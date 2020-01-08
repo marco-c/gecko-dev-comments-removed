@@ -23,7 +23,7 @@ const MOZ_JEXL_FILEPATH = "mozjexl";
 const {activityStreamProvider: asProvider} = NewTabUtils;
 
 const FRECENT_SITES_UPDATE_INTERVAL = 6 * 60 * 60 * 1000; 
-const FRECENT_SITES_IGNORE_BLOCKED = true;
+const FRECENT_SITES_IGNORE_BLOCKED = false;
 const FRECENT_SITES_NUM_ITEMS = 25;
 const FRECENT_SITES_MIN_FRECENCY = 100;
 
@@ -76,8 +76,24 @@ const TotalBookmarksCountCache = new CachedTargetingGetter("getTotalBookmarksCou
 
 
 
-function removeRandomItemFromArray(arr) {
-  return arr.splice(Math.floor(Math.random() * arr.length), 1)[0];
+
+
+
+
+
+
+
+
+
+
+
+
+
+function sortMessagesByWeightedRank(messages) {
+  return messages
+    .map(message => ({message, rank: Math.pow(Math.random(), 1 / message.weight)}))
+    .sort((a, b) => b.rank - a.rank)
+    .map(({message}) => message);
 }
 
 const TargetingGetters = {
@@ -254,13 +270,9 @@ this.ASRouterTargeting = {
 
 
   async findMatchingMessage({messages, trigger, context, onError}) {
-    const arrayOfItems = [...messages];
-    let match;
-    let candidate;
+    const sortedMessages = sortMessagesByWeightedRank([...messages]);
 
-    while (!match && arrayOfItems.length) {
-      candidate = removeRandomItemFromArray(arrayOfItems);
-
+    for (const candidate of sortedMessages) {
       if (
         candidate &&
         (trigger ? this.isTriggerMatch(trigger, candidate.trigger) : !candidate.trigger) &&
@@ -268,10 +280,11 @@ this.ASRouterTargeting = {
         
         await this.checkMessageTargeting(candidate, context, onError)
       ) {
-        match = candidate;
+        return candidate;
       }
     }
-    return match;
+
+    return null;
   },
 };
 
