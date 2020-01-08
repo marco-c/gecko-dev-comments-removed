@@ -870,7 +870,12 @@ nsHostResolver::Shutdown()
                              "Failed to shutdown GetAddrInfo");
     }
 
-    mResolverThreads->Shutdown();
+    
+    
+    
+    if (mActiveTaskCount == 0) {
+        mResolverThreads->Shutdown();
+    }
 }
 
 nsresult
