@@ -1137,6 +1137,8 @@ WebConsoleActor.prototype =
     let hadDebuggee = false;
     let matches = [];
     let matchProp;
+    let isElementAccess;
+
     const reqText = request.text.substr(0, request.cursor);
 
     if (isCommand(reqText)) {
@@ -1175,12 +1177,15 @@ WebConsoleActor.prototype =
 
       matches = result.matches || new Set();
       matchProp = result.matchProp;
+      isElementAccess = result.isElementAccess;
 
       
       
       
       const lastNonAlphaIsDot = /[.][a-zA-Z0-9$\s]*$/.test(reqText);
-      if (!lastNonAlphaIsDot) {
+
+      
+      if (!lastNonAlphaIsDot && !isElementAccess) {
         this._getWebConsoleCommandsCache().forEach(n => {
           
           if (n !== "screenshot" && n.startsWith(result.matchProp)) {
@@ -1193,8 +1198,11 @@ WebConsoleActor.prototype =
       
       
       matches = Array.from(matches).sort((a, b) => {
-        const lA = a[0].toLocaleLowerCase() === a[0];
-        const lB = b[0].toLocaleLowerCase() === b[0];
+        const startingQuoteRegex = /^('|"|`)/;
+        const aFirstMeaningfulChar = startingQuoteRegex.test(a) ? a[1] : a[0];
+        const bFirstMeaningfulChar = startingQuoteRegex.test(b) ? b[1] : b[0];
+        const lA = aFirstMeaningfulChar.toLocaleLowerCase() === aFirstMeaningfulChar;
+        const lB = bFirstMeaningfulChar.toLocaleLowerCase() === bFirstMeaningfulChar;
         if (lA === lB) {
           return a < b ? -1 : 1;
         }
@@ -1206,6 +1214,7 @@ WebConsoleActor.prototype =
       from: this.actorID,
       matches,
       matchProp,
+      isElementAccess: isElementAccess === true,
     };
   },
 

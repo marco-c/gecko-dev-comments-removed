@@ -1141,17 +1141,30 @@ class JSTerm extends Component {
 
     if (this._autocompleteQuery && input.startsWith(this._autocompleteQuery)) {
       let filterBy = input;
-      
-      const lastNonAlpha = input.match(/[^a-zA-Z0-9_$:][a-zA-Z0-9_$:]*$/);
-      
-      
-      if (lastNonAlpha) {
-        filterBy = input.substring(input.lastIndexOf(lastNonAlpha) + 1);
+      if (this._autocompleteCache.isElementAccess) {
+        
+        
+        filterBy = input.substring(input.lastIndexOf("[") + 1);
+      } else {
+        
+        const lastNonAlpha = input.match(/[^a-zA-Z0-9_$:][a-zA-Z0-9_$:]*$/);
+        
+        
+        if (lastNonAlpha) {
+          filterBy = input.substring(input.lastIndexOf(lastNonAlpha) + 1);
+        }
       }
 
+      const stripWrappingQuotes = s => s.replace(/^['"`](.+(?=['"`]$))['"`]$/g, "$1");
       const filterByLc = filterBy.toLocaleLowerCase();
       const looseMatching = !filterBy || filterBy[0].toLocaleLowerCase() === filterBy[0];
-      const newList = this._autocompleteCache.filter(l => {
+      const needStripQuote = this._autocompleteCache.isElementAccess
+        && !/^[`"']/.test(filterBy);
+      const newList = this._autocompleteCache.matches.filter(l => {
+        if (needStripQuote) {
+          l = stripWrappingQuotes(l);
+        }
+
         if (looseMatching) {
           return l.toLocaleLowerCase().startsWith(filterByLc);
         }
@@ -1161,7 +1174,8 @@ class JSTerm extends Component {
 
       this._receiveAutocompleteProperties(null, {
         matches: newList,
-        matchProp: filterBy
+        matchProp: filterBy,
+        isElementAccess: this._autocompleteCache.isElementAccess,
       });
       return;
     }
@@ -1194,25 +1208,46 @@ class JSTerm extends Component {
     
     const inputUntilCursor = this.getInputValueBeforeCursor();
 
-    if (requestId != null && /[a-zA-Z0-9.]$/.test(inputUntilCursor)) {
-      this._autocompleteCache = message.matches;
+    if (requestId != null && /[a-zA-Z0-9.\[]$/.test(inputUntilCursor)) {
+      this._autocompleteCache = {
+        matches: message.matches,
+        matchProp: message.matchProp,
+        isElementAccess: message.isElementAccess,
+      };
       this._autocompleteQuery = inputUntilCursor;
     }
 
-    const {matches, matchProp} = message;
+    const {matches, matchProp, isElementAccess} = message;
     if (!matches.length) {
       this.clearCompletion();
       this.emit("autocomplete-updated");
       return;
     }
 
-    const items = matches.map(match => ({
-      preLabel: match.substring(0, matchProp.length),
-      label: match
-    }));
+    const items = matches.map(label => {
+      let preLabel = label.substring(0, matchProp.length);
+      
+      
+      
+      if (isElementAccess && /^['"`]/.test(matchProp) === false) {
+        preLabel = label.substring(0, matchProp.length + 1);
+      }
+      return {preLabel, label, isElementAccess};
+    });
 
     if (items.length > 0) {
-      const suffix = items[0].label.substring(matchProp.length);
+      const {preLabel, label} = items[0];
+      let suffix = label.substring(preLabel.length);
+      if (isElementAccess) {
+        if (!matchProp) {
+          suffix = label;
+        }
+        const inputAfterCursor = this.getInputValue().substring(inputUntilCursor.length);
+        
+        if (!inputAfterCursor.trimLeft().startsWith("]")) {
+          suffix = suffix + "]";
+        }
+      }
       this.setAutoCompletionText(suffix);
     }
 
@@ -1274,7 +1309,23 @@ class JSTerm extends Component {
   onAutocompleteSelect() {
     const {selectedItem} = this.autocompletePopup;
     if (selectedItem) {
-      const suffix = selectedItem.label.substring(selectedItem.preLabel.length);
+      const {preLabel, label, isElementAccess} = selectedItem;
+      let suffix = label.substring(preLabel.length);
+
+      
+      
+      if (isElementAccess) {
+        const inputBeforeCursor = this.getInputValueBeforeCursor();
+        if (inputBeforeCursor.trim().endsWith("[")) {
+          suffix = label;
+        }
+
+        const inputAfterCursor = this.getInputValue().substring(inputBeforeCursor.length);
+        
+        if (!inputAfterCursor.trimLeft().startsWith("]")) {
+          suffix = suffix + "]";
+        }
+      }
       this.setAutoCompletionText(suffix);
     } else {
       this.setAutoCompletionText("");
@@ -1307,10 +1358,6 @@ class JSTerm extends Component {
   
 
 
-
-
-
-
   acceptProposedCompletion() {
     let completionText = this.getAutoCompletionText();
     let numberOfCharsToReplaceCharsBeforeCursor;
@@ -1320,8 +1367,27 @@ class JSTerm extends Component {
     
     if (this.autocompletePopup.isOpen && this.autocompletePopup.selectedItem) {
       const {selectedItem} = this.autocompletePopup;
-      completionText = selectedItem.label;
-      numberOfCharsToReplaceCharsBeforeCursor = selectedItem.preLabel.length;
+      const {label, preLabel, isElementAccess} = selectedItem;
+
+      completionText = label;
+      numberOfCharsToReplaceCharsBeforeCursor = preLabel.length;
+
+      
+      
+      if (isElementAccess) {
+        const inputBeforeCursor = this.getInputValueBeforeCursor();
+        const lastOpeningBracketIndex = inputBeforeCursor.lastIndexOf("[");
+        if (lastOpeningBracketIndex > -1) {
+          numberOfCharsToReplaceCharsBeforeCursor =
+            inputBeforeCursor.substring(lastOpeningBracketIndex + 1).length;
+        }
+
+        const inputAfterCursor = this.getInputValue().substring(inputBeforeCursor.length);
+        
+        if (!inputAfterCursor.trimLeft().startsWith("]")) {
+          completionText = completionText + "]";
+        }
+      }
     }
 
     this.clearCompletion();

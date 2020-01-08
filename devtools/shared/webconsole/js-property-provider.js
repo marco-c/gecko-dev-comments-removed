@@ -55,7 +55,9 @@ function hasArrayIndex(str) {
 
 
 
-function findCompletionBeginning(str) {
+
+
+function analyzeInputString(str) {
   const bodyStack = [];
 
   let state = STATE_NORMAL;
@@ -109,7 +111,7 @@ function findCompletionBeginning(str) {
         } else if (OPEN_BODY.includes(c)) {
           bodyStack.push({
             token: c,
-            start: start
+            start
           });
           start = i + 1;
         } else if (CLOSE_BODY.includes(c)) {
@@ -164,11 +166,23 @@ function findCompletionBeginning(str) {
     }
   }
 
+  let isElementAccess = false;
+  if (bodyStack.length === 1 && bodyStack[0].token === "[") {
+    start = bodyStack[0].start;
+    isElementAccess = true;
+    if ([STATE_DQUOTE, STATE_QUOTE, STATE_TEMPLATE_LITERAL].includes(state)) {
+      state = STATE_NORMAL;
+    }
+  }
+
   return {
-    state: state,
-    lastStatement: characters.slice(start).join("")
+    state,
+    lastStatement: characters.slice(start).join(""),
+    isElementAccess,
   };
 }
+
+
 
 
 
@@ -206,7 +220,12 @@ function JSPropertyProvider(dbgObject, anEnvironment, inputValue, cursor) {
 
   
   
-  const {err, state, lastStatement} = findCompletionBeginning(inputValue);
+  const {
+    err,
+    state,
+    lastStatement,
+    isElementAccess
+  } = analyzeInputString(inputValue);
 
   
   if (err) {
@@ -218,23 +237,24 @@ function JSPropertyProvider(dbgObject, anEnvironment, inputValue, cursor) {
   if (state != STATE_NORMAL) {
     return null;
   }
-
   const completionPart = lastStatement;
-  const lastDot = completionPart.lastIndexOf(".");
+  const lastDotIndex = completionPart.lastIndexOf(".");
+  const lastOpeningBracketIndex = isElementAccess ? completionPart.lastIndexOf("[") : -1;
+  const lastCompletionCharIndex = Math.max(lastDotIndex, lastOpeningBracketIndex);
+  const startQuoteRegex = /^('|"|`)/;
 
   
   if (completionPart.trim() == "") {
     return null;
   }
-
   
   
   
   
-  if (!isWorker && lastDot > 0) {
+  if (!isWorker && lastCompletionCharIndex > 0) {
     const parser = new Parser();
     parser.logExceptions = false;
-    const syntaxTree = parser.get(completionPart.slice(0, lastDot));
+    const syntaxTree = parser.get(completionPart.slice(0, lastCompletionCharIndex));
     const lastTree = syntaxTree.getLastSyntaxTree();
     const lastBody = lastTree && lastTree.AST.body[lastTree.AST.body.length - 1];
 
@@ -242,19 +262,62 @@ function JSPropertyProvider(dbgObject, anEnvironment, inputValue, cursor) {
     
     if (lastBody) {
       const expression = lastBody.expression;
-      const matchProp = completionPart.slice(lastDot + 1).trimLeft();
+      const matchProp = completionPart.slice(lastCompletionCharIndex + 1).trimLeft();
+      let search = matchProp;
+
+      let elementAccessQuote;
+      if (isElementAccess && startQuoteRegex.test(matchProp)) {
+        elementAccessQuote = matchProp[0];
+        search = matchProp.replace(startQuoteRegex, "");
+      }
+
       if (expression.type === "ArrayExpression") {
-        return getMatchedProps(Array.prototype, matchProp);
-      } else if (expression.type === "Literal" &&
-                 (typeof expression.value === "string")) {
-        return getMatchedProps(String.prototype, matchProp);
+        let arrayProtoProps = getMatchedProps(Array.prototype, search);
+        if (isElementAccess) {
+          arrayProtoProps = wrapMatchesInQuotes(arrayProtoProps, elementAccessQuote);
+        }
+
+        return {
+          isElementAccess,
+          matchProp,
+          matches: arrayProtoProps
+        };
+      }
+
+      if (expression.type === "Literal" && typeof expression.value === "string") {
+        let stringProtoProps = getMatchedProps(String.prototype, search);
+        if (isElementAccess) {
+          stringProtoProps = wrapMatchesInQuotes(stringProtoProps, elementAccessQuote);
+        }
+
+        return {
+          isElementAccess,
+          matchProp,
+          matches: stringProtoProps,
+        };
       }
     }
   }
 
   
   const properties = completionPart.split(".");
-  const matchProp = properties.pop().trimLeft();
+  let matchProp;
+  if (isElementAccess) {
+    const lastPart = properties[properties.length - 1];
+    const openBracketIndex = lastPart.lastIndexOf("[");
+    matchProp = lastPart.substr(openBracketIndex + 1);
+    properties[properties.length - 1] = lastPart.substring(0, openBracketIndex);
+  } else {
+    matchProp = properties.pop().trimLeft();
+  }
+
+  let search = matchProp;
+  let elementAccessQuote;
+  if (isElementAccess && startQuoteRegex.test(search)) {
+    elementAccessQuote = search[0];
+    search = search.replace(startQuoteRegex, "");
+  }
+
   let obj = dbgObject;
 
   
@@ -262,7 +325,11 @@ function JSPropertyProvider(dbgObject, anEnvironment, inputValue, cursor) {
   const env = anEnvironment || obj.asEnvironment();
 
   if (properties.length === 0) {
-    return getMatchedPropsInEnvironment(env, matchProp);
+    return {
+      isElementAccess,
+      matchProp,
+      matches: getMatchedPropsInEnvironment(env, search)
+    };
   }
 
   const firstProp = properties.shift().trim();
@@ -286,8 +353,8 @@ function JSPropertyProvider(dbgObject, anEnvironment, inputValue, cursor) {
 
   
   
-  for (let i = 0; i < properties.length; i++) {
-    const prop = properties[i].trim();
+  for (let prop of properties) {
+    prop = prop.trim();
     if (!prop) {
       return null;
     }
@@ -307,10 +374,25 @@ function JSPropertyProvider(dbgObject, anEnvironment, inputValue, cursor) {
 
   
   if (typeof obj != "object") {
-    return getMatchedProps(obj, matchProp);
+    return {
+      isElementAccess,
+      matchProp,
+      matches: getMatchedProps(obj, search)
+    };
   }
 
-  return getMatchedPropsInDbgObject(obj, matchProp);
+  let matches = getMatchedPropsInDbgObject(obj, search);
+  if (isElementAccess) {
+    
+    
+    matches = wrapMatchesInQuotes(matches, elementAccessQuote);
+  }
+  return {isElementAccess, matchProp, matches};
+}
+
+function wrapMatchesInQuotes(matches, quote = `"`) {
+  return new Set([...matches].map(p =>
+    `${quote}${p.replace(new RegExp(`${quote}`, "g"), `\\${quote}`)}${quote}`));
 }
 
 
@@ -425,8 +507,6 @@ function getMatchedProps(obj, match) {
 
 
 
-
-
 function getMatchedPropsImpl(obj, match, {chainIterator, getProperties}) {
   const matches = new Set();
   let numProps = 0;
@@ -460,9 +540,7 @@ function getMatchedPropsImpl(obj, match, {chainIterator, getProperties}) {
       if (!propertyMatches(prop)) {
         continue;
       }
-      if (prop.indexOf("-") > -1) {
-        continue;
-      }
+
       
       
       
@@ -477,10 +555,7 @@ function getMatchedPropsImpl(obj, match, {chainIterator, getProperties}) {
     }
   }
 
-  return {
-    matchProp: match,
-    matches,
-  };
+  return matches;
 }
 
 
