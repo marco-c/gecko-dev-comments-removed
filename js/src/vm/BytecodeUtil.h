@@ -74,6 +74,7 @@ enum {
 
     JOF_GNAME           = 1 << 13,  
     JOF_TYPESET         = 1 << 14,  
+    JOF_IC              = 1 << 15,  
 };
 
 
@@ -763,6 +764,12 @@ GetBytecodeInteger(jsbytecode* pc)
       default:
         MOZ_CRASH("Bad op");
     }
+}
+
+inline bool
+BytecodeOpHasIC(JSOp op)
+{
+    return CodeSpec[op].format & JOF_IC;
 }
 
 
