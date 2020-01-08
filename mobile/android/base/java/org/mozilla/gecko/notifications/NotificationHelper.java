@@ -105,11 +105,15 @@ public final class NotificationHelper implements BundleEventListener {
 
 
         UPDATER,
+        
+
+
+        SYNCED_TABS,
     }
 
     
     
-    private final Map<Channel, String> mDefinedNotificationChannels = new HashMap<Channel, String>(5) {{
+    private final Map<Channel, String> mDefinedNotificationChannels = new HashMap<Channel, String>(6) {{
         final String DEFAULT_CHANNEL_TAG = "default-notification-channel";
         put(Channel.DEFAULT, DEFAULT_CHANNEL_TAG);
 
@@ -126,6 +130,9 @@ public final class NotificationHelper implements BundleEventListener {
             final String UPDATER_CHANNEL_TAG = "updater-notification-channel";
             put(Channel.UPDATER, UPDATER_CHANNEL_TAG);
         }
+
+        final String SYNCED_TABS_CHANNEL_TAG = "synced-tabs-notification-channel";
+        put(Channel.SYNCED_TABS, SYNCED_TABS_CHANNEL_TAG);
     }};
 
     
@@ -206,6 +213,13 @@ public final class NotificationHelper implements BundleEventListener {
                     channel = new NotificationChannel(mDefinedNotificationChannels.get(definedChannel),
                             mContext.getString(R.string.updater_notification_channel),
                             NotificationManager.IMPORTANCE_LOW);
+                }
+                break;
+
+                case SYNCED_TABS: {
+                    channel = new NotificationChannel(mDefinedNotificationChannels.get(definedChannel),
+                            mContext.getString(R.string.synced_tabs_notification_channel),
+                            NotificationManager.IMPORTANCE_HIGH);
                 }
                 break;
 
