@@ -149,7 +149,7 @@ class FennecBrowser(FirefoxBrowser):
                                           "apz.allow_zooming": False,
                                           "android.widget_paints_background": False,
                                           
-                                          "layout.testing.overlay-scrollbars.always-visible": True})
+                                          "ui.scrollbarFadeBeginDelay": 100000})
 
         if self.install_fonts:
             self.logger.debug("Copying Ahem font to profile")
