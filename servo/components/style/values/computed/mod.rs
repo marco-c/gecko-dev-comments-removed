@@ -62,9 +62,9 @@ pub use self::font::{MozScriptLevel, MozScriptMinSize, MozScriptSizeMultiplier, 
 pub use self::gecko::ScrollSnapPoint;
 pub use self::image::{Gradient, GradientItem, Image, ImageLayer, LineDirection, MozImageRect};
 pub use self::length::{CSSPixelLength, ExtremumLength, NonNegativeLength};
-pub use self::length::{Length, LengthOrNumber, LengthOrPercentage};
-pub use self::length::{LengthOrPercentageOrAuto, LengthOrPercentageOrNone, MaxLength, MozLength};
-pub use self::length::{NonNegativeLengthOrPercentage, NonNegativeLengthOrPercentageOrAuto};
+pub use self::length::{Length, LengthOrNumber, LengthPercentage};
+pub use self::length::{LengthPercentageOrAuto, LengthPercentageOrNone, MaxLength, MozLength};
+pub use self::length::{NonNegativeLengthPercentage, NonNegativeLengthPercentageOrAuto};
 #[cfg(feature = "gecko")]
 pub use self::list::ListStyleType;
 pub use self::list::{QuotePair, Quotes};
@@ -689,20 +689,20 @@ impl ToCss for ClipRect {
 pub type ClipRectOrAuto = Either<ClipRect, Auto>;
 
 
-pub type TrackBreadth = GenericTrackBreadth<LengthOrPercentage>;
+pub type TrackBreadth = GenericTrackBreadth<LengthPercentage>;
 
 
-pub type TrackSize = GenericTrackSize<LengthOrPercentage>;
+pub type TrackSize = GenericTrackSize<LengthPercentage>;
 
 
 
-pub type TrackList = GenericTrackList<LengthOrPercentage, Integer>;
+pub type TrackList = GenericTrackList<LengthPercentage, Integer>;
 
 
 pub type GridLine = GenericGridLine<Integer>;
 
 
-pub type GridTemplateComponent = GenericGridTemplateComponent<LengthOrPercentage, Integer>;
+pub type GridTemplateComponent = GenericGridTemplateComponent<LengthPercentage, Integer>;
 
 impl ClipRectOrAuto {
     

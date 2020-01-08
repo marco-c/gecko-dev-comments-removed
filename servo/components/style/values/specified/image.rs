@@ -16,7 +16,7 @@ use crate::values::generics::image::{self as generic, Circle, CompatMode, Ellips
 use crate::values::generics::position::Position as GenericPosition;
 use crate::values::specified::position::{LegacyPosition, Position, PositionComponent, Side, X, Y};
 use crate::values::specified::url::SpecifiedImageUrl;
-use crate::values::specified::{Angle, Color, Length, LengthOrPercentage};
+use crate::values::specified::{Angle, Color, Length, LengthPercentage};
 use crate::values::specified::{Number, NumberOrPercentage, Percentage};
 use crate::values::{Either, None_};
 use crate::Atom;
@@ -54,13 +54,13 @@ pub type Image = generic::Image<Gradient, MozImageRect, SpecifiedImageUrl>;
 
 #[cfg(not(feature = "gecko"))]
 pub type Gradient =
-    generic::Gradient<LineDirection, Length, LengthOrPercentage, Position, Color, Angle>;
+    generic::Gradient<LineDirection, Length, LengthPercentage, Position, Color, Angle>;
 
 
 
 #[cfg(feature = "gecko")]
 pub type Gradient =
-    generic::Gradient<LineDirection, Length, LengthOrPercentage, GradientPosition, Color, Angle>;
+    generic::Gradient<LineDirection, Length, LengthPercentage, GradientPosition, Color, Angle>;
 
 impl SpecifiedValueInfo for Gradient {
     const SUPPORTED_TYPES: u8 = CssType::GRADIENT;
@@ -88,12 +88,12 @@ impl SpecifiedValueInfo for Gradient {
 
 #[cfg(not(feature = "gecko"))]
 pub type GradientKind =
-    generic::GradientKind<LineDirection, Length, LengthOrPercentage, Position, Angle>;
+    generic::GradientKind<LineDirection, Length, LengthPercentage, Position, Angle>;
 
 
 #[cfg(feature = "gecko")]
 pub type GradientKind =
-    generic::GradientKind<LineDirection, Length, LengthOrPercentage, GradientPosition, Angle>;
+    generic::GradientKind<LineDirection, Length, LengthPercentage, GradientPosition, Angle>;
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq)]
@@ -125,13 +125,13 @@ pub enum GradientPosition {
 }
 
 
-pub type EndingShape = generic::EndingShape<Length, LengthOrPercentage>;
+pub type EndingShape = generic::EndingShape<Length, LengthPercentage>;
 
 
-pub type GradientItem = generic::GradientItem<Color, LengthOrPercentage>;
+pub type GradientItem = generic::GradientItem<Color, LengthPercentage>;
 
 
-pub type ColorStop = generic::ColorStop<Color, LengthOrPercentage>;
+pub type ColorStop = generic::ColorStop<Color, LengthPercentage>;
 
 
 
@@ -538,8 +538,8 @@ impl Gradient {
                         &generic::GradientItem::ColorStop(ref b),
                     ) => match (&a.position, &b.position) {
                         (
-                            &Some(LengthOrPercentage::Percentage(a)),
-                            &Some(LengthOrPercentage::Percentage(b)),
+                            &Some(LengthPercentage::Percentage(a)),
+                            &Some(LengthPercentage::Percentage(b)),
                         ) => {
                             return a.0.partial_cmp(&b.0).unwrap_or(Ordering::Equal);
                         },
@@ -698,14 +698,14 @@ impl generic::LineDirection for LineDirection {
                 
                 let x = match *x {
                     OriginComponent::Center => true,
-                    OriginComponent::Length(LengthOrPercentage::Percentage(
+                    OriginComponent::Length(LengthPercentage::Percentage(
                         ComputedPercentage(val),
                     )) => val == 0.5,
                     _ => false,
                 };
                 let y = match *y {
                     OriginComponent::Side(Y::Top) => true,
-                    OriginComponent::Length(LengthOrPercentage::Percentage(
+                    OriginComponent::Length(LengthPercentage::Percentage(
                         ComputedPercentage(val),
                     )) => val == 0.0,
                     _ => false,
@@ -876,8 +876,8 @@ impl EndingShape {
             }
             if compat_mode == CompatMode::Modern {
                 let pair: Result<_, ParseError> = input.try(|i| {
-                    let x = LengthOrPercentage::parse(context, i)?;
-                    let y = LengthOrPercentage::parse(context, i)?;
+                    let x = LengthPercentage::parse(context, i)?;
+                    let y = LengthPercentage::parse(context, i)?;
                     Ok((x, y))
                 });
                 if let Ok((x, y)) = pair {
@@ -892,7 +892,7 @@ impl EndingShape {
         
         if compat_mode != CompatMode::Moz {
             if let Ok(length) = input.try(|i| Length::parse(context, i)) {
-                if let Ok(y) = input.try(|i| LengthOrPercentage::parse(context, i)) {
+                if let Ok(y) = input.try(|i| LengthPercentage::parse(context, i)) {
                     if compat_mode == CompatMode::Modern {
                         let _ = input.try(|i| i.expect_ident_matching("ellipse"));
                     }
@@ -904,7 +904,7 @@ impl EndingShape {
                 if compat_mode == CompatMode::Modern {
                     let y = input.try(|i| {
                         i.expect_ident_matching("ellipse")?;
-                        LengthOrPercentage::parse(context, i)
+                        LengthPercentage::parse(context, i)
                     });
                     if let Ok(y) = y {
                         return Ok(generic::EndingShape::Ellipse(Ellipse::Radii(
@@ -920,7 +920,7 @@ impl EndingShape {
         }
         input.try(|i| {
             let x = Percentage::parse(context, i)?;
-            let y = if let Ok(y) = i.try(|i| LengthOrPercentage::parse(context, i)) {
+            let y = if let Ok(y) = i.try(|i| LengthPercentage::parse(context, i)) {
                 if compat_mode == CompatMode::Modern {
                     let _ = i.try(|i| i.expect_ident_matching("ellipse"));
                 }
@@ -929,7 +929,7 @@ impl EndingShape {
                 if compat_mode == CompatMode::Modern {
                     i.expect_ident_matching("ellipse")?;
                 }
-                LengthOrPercentage::parse(context, i)?
+                LengthPercentage::parse(context, i)?
             };
             Ok(generic::EndingShape::Ellipse(Ellipse::Radii(x.into(), y)))
         })
@@ -963,7 +963,7 @@ impl GradientItem {
         loop {
             input.parse_until_before(Delimiter::Comma, |input| {
                 if seen_stop {
-                    if let Ok(hint) = input.try(|i| LengthOrPercentage::parse(context, i)) {
+                    if let Ok(hint) = input.try(|i| LengthPercentage::parse(context, i)) {
                         seen_stop = false;
                         items.push(generic::GradientItem::InterpolationHint(hint));
                         return Ok(());
@@ -972,7 +972,7 @@ impl GradientItem {
 
                 let stop = ColorStop::parse(context, input)?;
 
-                if let Ok(multi_position) = input.try(|i| LengthOrPercentage::parse(context, i)) {
+                if let Ok(multi_position) = input.try(|i| LengthPercentage::parse(context, i)) {
                     let stop_color = stop.color.clone();
                     items.push(generic::GradientItem::ColorStop(stop));
                     items.push(generic::GradientItem::ColorStop(ColorStop {
@@ -1008,7 +1008,7 @@ impl Parse for ColorStop {
     ) -> Result<Self, ParseError<'i>> {
         Ok(ColorStop {
             color: Color::parse(context, input)?,
-            position: input.try(|i| LengthOrPercentage::parse(context, i)).ok(),
+            position: input.try(|i| LengthPercentage::parse(context, i)).ok(),
         })
     }
 }

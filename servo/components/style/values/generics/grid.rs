@@ -482,11 +482,11 @@ impl<L: Clone> TrackRepeat<L, specified::Integer> {
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
-pub enum TrackListValue<LengthOrPercentage, Integer> {
+pub enum TrackListValue<LengthPercentage, Integer> {
     
-    TrackSize(TrackSize<LengthOrPercentage>),
+    TrackSize(TrackSize<LengthPercentage>),
     
-    TrackRepeat(TrackRepeat<LengthOrPercentage, Integer>),
+    TrackRepeat(TrackRepeat<LengthPercentage, Integer>),
 }
 
 
@@ -515,7 +515,7 @@ pub enum TrackListType {
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo)]
-pub struct TrackList<LengthOrPercentage, Integer> {
+pub struct TrackList<LengthPercentage, Integer> {
     
     
     
@@ -523,7 +523,7 @@ pub struct TrackList<LengthOrPercentage, Integer> {
     #[css(skip)]
     pub list_type: TrackListType,
     
-    pub values: Vec<TrackListValue<LengthOrPercentage, Integer>>,
+    pub values: Vec<TrackListValue<LengthPercentage, Integer>>,
     
     
     
@@ -531,7 +531,7 @@ pub struct TrackList<LengthOrPercentage, Integer> {
     
     pub line_names: Box<[Box<[CustomIdent]>]>,
     
-    pub auto_repeat: Option<TrackRepeat<LengthOrPercentage, Integer>>,
+    pub auto_repeat: Option<TrackRepeat<LengthPercentage, Integer>>,
 }
 
 impl<L: ToCss, I: ToCss> ToCss for TrackList<L, I> {

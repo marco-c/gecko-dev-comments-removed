@@ -6,7 +6,7 @@
 
 #[cfg(feature = "servo")]
 use crate::properties::StyleBuilder;
-use crate::values::computed::length::{Length, LengthOrPercentage};
+use crate::values::computed::length::{Length, LengthPercentage};
 use crate::values::computed::{NonNegativeLength, NonNegativeNumber};
 use crate::values::generics::text::InitialLetter as GenericInitialLetter;
 use crate::values::generics::text::LineHeight as GenericLineHeight;
@@ -29,7 +29,7 @@ pub type InitialLetter = GenericInitialLetter<CSSFloat, CSSInteger>;
 pub type LetterSpacing = Spacing<Length>;
 
 
-pub type WordSpacing = Spacing<LengthOrPercentage>;
+pub type WordSpacing = Spacing<LengthPercentage>;
 
 
 pub type LineHeight = GenericLineHeight<NonNegativeNumber, NonNegativeLength>;

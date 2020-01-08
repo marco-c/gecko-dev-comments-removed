@@ -4,7 +4,7 @@
 
 
 
-use crate::values::computed::length::{NonNegativeLength, NonNegativeLengthOrPercentage};
+use crate::values::computed::length::{NonNegativeLength, NonNegativeLengthPercentage};
 use crate::values::computed::{NonNegativeNumber, NonNegativeNumberOrPercentage};
 use crate::values::generics::border::BorderCornerRadius as GenericBorderCornerRadius;
 use crate::values::generics::border::BorderImageSideWidth as GenericBorderImageSideWidth;
@@ -23,16 +23,16 @@ pub type BorderImageWidth = Rect<BorderImageSideWidth>;
 
 
 pub type BorderImageSideWidth =
-    GenericBorderImageSideWidth<NonNegativeLengthOrPercentage, NonNegativeNumber>;
+    GenericBorderImageSideWidth<NonNegativeLengthPercentage, NonNegativeNumber>;
 
 
 pub type BorderImageSlice = GenericBorderImageSlice<NonNegativeNumberOrPercentage>;
 
 
-pub type BorderRadius = GenericBorderRadius<NonNegativeLengthOrPercentage>;
+pub type BorderRadius = GenericBorderRadius<NonNegativeLengthPercentage>;
 
 
-pub type BorderCornerRadius = GenericBorderCornerRadius<NonNegativeLengthOrPercentage>;
+pub type BorderCornerRadius = GenericBorderCornerRadius<NonNegativeLengthPercentage>;
 
 
 pub type BorderSpacing = GenericBorderSpacing<NonNegativeLength>;
@@ -80,8 +80,8 @@ impl BorderCornerRadius {
     
     pub fn zero() -> Self {
         GenericBorderCornerRadius(Size::new(
-            NonNegativeLengthOrPercentage::zero(),
-            NonNegativeLengthOrPercentage::zero(),
+            NonNegativeLengthPercentage::zero(),
+            NonNegativeLengthPercentage::zero(),
         ))
     }
 }
@@ -90,8 +90,8 @@ impl BorderRadius {
     
     pub fn all_zero(&self) -> bool {
         fn all(corner: &BorderCornerRadius) -> bool {
-            fn is_zero(l: &NonNegativeLengthOrPercentage) -> bool {
-                *l == NonNegativeLengthOrPercentage::zero()
+            fn is_zero(l: &NonNegativeLengthPercentage) -> bool {
+                *l == NonNegativeLengthPercentage::zero()
             }
             is_zero(corner.0.width()) && is_zero(corner.0.height())
         }

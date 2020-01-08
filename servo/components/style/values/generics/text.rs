@@ -123,7 +123,7 @@ impl<V> ToAnimatedZero for Spacing<V> {
     ToAnimatedValue,
     ToCss,
 )]
-pub enum LineHeight<Number, LengthOrPercentage> {
+pub enum LineHeight<Number, LengthPercentage> {
     
     Normal,
     
@@ -132,7 +132,7 @@ pub enum LineHeight<Number, LengthOrPercentage> {
     
     Number(Number),
     
-    Length(LengthOrPercentage),
+    Length(LengthPercentage),
 }
 
 impl<N, L> ToAnimatedZero for LineHeight<N, L> {

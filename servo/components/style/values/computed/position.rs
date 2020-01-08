@@ -7,7 +7,7 @@
 
 
 
-use crate::values::computed::{Integer, LengthOrPercentage, Percentage};
+use crate::values::computed::{Integer, LengthPercentage, Percentage};
 use crate::values::generics::position::Position as GenericPosition;
 use crate::values::generics::position::ZIndex as GenericZIndex;
 pub use crate::values::specified::position::{GridAutoFlow, GridTemplateAreas};
@@ -18,25 +18,25 @@ use style_traits::{CssWriter, ToCss};
 pub type Position = GenericPosition<HorizontalPosition, VerticalPosition>;
 
 
-pub type HorizontalPosition = LengthOrPercentage;
+pub type HorizontalPosition = LengthPercentage;
 
 
-pub type VerticalPosition = LengthOrPercentage;
+pub type VerticalPosition = LengthPercentage;
 
 impl Position {
     
     #[inline]
     pub fn center() -> Self {
         Self::new(
-            LengthOrPercentage::new_percent(Percentage(0.5)),
-            LengthOrPercentage::new_percent(Percentage(0.5)),
+            LengthPercentage::new_percent(Percentage(0.5)),
+            LengthPercentage::new_percent(Percentage(0.5)),
         )
     }
 
     
     #[inline]
     pub fn zero() -> Self {
-        Self::new(LengthOrPercentage::zero(), LengthOrPercentage::zero())
+        Self::new(LengthPercentage::zero(), LengthPercentage::zero())
     }
 }
 

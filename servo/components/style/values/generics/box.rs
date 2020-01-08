@@ -19,7 +19,7 @@ use crate::values::animated::ToAnimatedZero;
     ToComputedValue,
     ToCss,
 )]
-pub enum VerticalAlign<LengthOrPercentage> {
+pub enum VerticalAlign<LengthPercentage> {
     
     Baseline,
     
@@ -40,7 +40,7 @@ pub enum VerticalAlign<LengthOrPercentage> {
     #[cfg(feature = "gecko")]
     MozMiddleWithBaseline,
     
-    Length(LengthOrPercentage),
+    Length(LengthPercentage),
 }
 
 impl<L> VerticalAlign<L> {

@@ -5,10 +5,10 @@
 
 
 use crate::values::computed::length::Length as ComputedLength;
-use crate::values::computed::length::LengthOrPercentage as ComputedLengthOrPercentage;
+use crate::values::computed::length::LengthPercentage as ComputedLengthPercentage;
 use crate::values::specified::angle::Angle as SpecifiedAngle;
 use crate::values::specified::length::Length as SpecifiedLength;
-use crate::values::specified::length::LengthOrPercentage as SpecifiedLengthOrPercentage;
+use crate::values::specified::length::LengthPercentage as SpecifiedLengthPercentage;
 use crate::values::{computed, CSSFloat};
 use app_units::Au;
 use euclid::{self, Rect, Transform3D};
@@ -105,7 +105,7 @@ impl<H, V, D> TransformOrigin<H, V, D> {
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
 
-pub enum TransformOperation<Angle, Number, Length, Integer, LengthOrPercentage> {
+pub enum TransformOperation<Angle, Number, Length, Integer, LengthPercentage> {
     
     Matrix(Matrix<Number>),
     
@@ -125,19 +125,19 @@ pub enum TransformOperation<Angle, Number, Length, Integer, LengthOrPercentage> 
     SkewY(Angle),
     
     #[css(comma, function)]
-    Translate(LengthOrPercentage, Option<LengthOrPercentage>),
+    Translate(LengthPercentage, Option<LengthPercentage>),
     
     #[css(function = "translateX")]
-    TranslateX(LengthOrPercentage),
+    TranslateX(LengthPercentage),
     
     #[css(function = "translateY")]
-    TranslateY(LengthOrPercentage),
+    TranslateY(LengthPercentage),
     
     #[css(function = "translateZ")]
     TranslateZ(Length),
     
     #[css(comma, function = "translate3d")]
-    Translate3D(LengthOrPercentage, LengthOrPercentage, Length),
+    Translate3D(LengthPercentage, LengthPercentage, Length),
     
     
     
@@ -192,8 +192,8 @@ pub enum TransformOperation<Angle, Number, Length, Integer, LengthOrPercentage> 
     #[css(comma, function = "interpolatematrix")]
     InterpolateMatrix {
         from_list:
-            Transform<TransformOperation<Angle, Number, Length, Integer, LengthOrPercentage>>,
-        to_list: Transform<TransformOperation<Angle, Number, Length, Integer, LengthOrPercentage>>,
+            Transform<TransformOperation<Angle, Number, Length, Integer, LengthPercentage>>,
+        to_list: Transform<TransformOperation<Angle, Number, Length, Integer, LengthPercentage>>,
         progress: computed::Percentage,
     },
     
@@ -201,8 +201,8 @@ pub enum TransformOperation<Angle, Number, Length, Integer, LengthOrPercentage> 
     #[css(comma, function = "accumulatematrix")]
     AccumulateMatrix {
         from_list:
-            Transform<TransformOperation<Angle, Number, Length, Integer, LengthOrPercentage>>,
-        to_list: Transform<TransformOperation<Angle, Number, Length, Integer, LengthOrPercentage>>,
+            Transform<TransformOperation<Angle, Number, Length, Integer, LengthPercentage>>,
+        to_list: Transform<TransformOperation<Angle, Number, Length, Integer, LengthPercentage>>,
         count: Integer,
     },
 }
@@ -211,8 +211,8 @@ pub enum TransformOperation<Angle, Number, Length, Integer, LengthOrPercentage> 
 
 pub struct Transform<T>(#[css(if_empty = "none", iterable)] pub Vec<T>);
 
-impl<Angle, Number, Length, Integer, LengthOrPercentage>
-    TransformOperation<Angle, Number, Length, Integer, LengthOrPercentage>
+impl<Angle, Number, Length, Integer, LengthPercentage>
+    TransformOperation<Angle, Number, Length, Integer, LengthPercentage>
 {
     
     pub fn is_rotate(&self) -> bool {
@@ -263,13 +263,13 @@ impl ToAbsoluteLength for SpecifiedLength {
     }
 }
 
-impl ToAbsoluteLength for SpecifiedLengthOrPercentage {
+impl ToAbsoluteLength for SpecifiedLengthPercentage {
     
     
     
     #[inline]
     fn to_pixel_length(&self, _containing_len: Option<Au>) -> Result<CSSFloat, ()> {
-        use self::SpecifiedLengthOrPercentage::*;
+        use self::SpecifiedLengthPercentage::*;
         match *self {
             Length(len) => len.to_computed_pixel_length_without_context(),
             Calc(ref calc) => calc.to_computed_pixel_length_without_context(),
@@ -285,7 +285,7 @@ impl ToAbsoluteLength for ComputedLength {
     }
 }
 
-impl ToAbsoluteLength for ComputedLengthOrPercentage {
+impl ToAbsoluteLength for ComputedLengthPercentage {
     #[inline]
     fn to_pixel_length(&self, containing_len: Option<Au>) -> Result<CSSFloat, ()> {
         match containing_len {
@@ -633,13 +633,13 @@ impl<Number: ToCss + PartialEq> ToCss for Scale<Number> {
 
 
 
-pub enum Translate<LengthOrPercentage, Length> {
+pub enum Translate<LengthPercentage, Length> {
     
     None,
     
-    Translate(LengthOrPercentage, LengthOrPercentage),
+    Translate(LengthPercentage, LengthPercentage),
     
-    Translate3D(LengthOrPercentage, LengthOrPercentage, Length),
+    Translate3D(LengthPercentage, LengthPercentage, Length),
 }
 
 

@@ -37,11 +37,11 @@ pub enum Image<Gradient, MozImageRect, ImageUrl> {
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
-pub struct Gradient<LineDirection, Length, LengthOrPercentage, Position, Color, Angle> {
+pub struct Gradient<LineDirection, Length, LengthPercentage, Position, Color, Angle> {
     
-    pub kind: GradientKind<LineDirection, Length, LengthOrPercentage, Position, Angle>,
+    pub kind: GradientKind<LineDirection, Length, LengthPercentage, Position, Angle>,
     
-    pub items: Vec<GradientItem<Color, LengthOrPercentage>>,
+    pub items: Vec<GradientItem<Color, LengthPercentage>>,
     
     pub repeating: bool,
     
@@ -61,12 +61,12 @@ pub enum CompatMode {
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
-pub enum GradientKind<LineDirection, Length, LengthOrPercentage, Position, Angle> {
+pub enum GradientKind<LineDirection, Length, LengthPercentage, Position, Angle> {
     
     Linear(LineDirection),
     
     Radial(
-        EndingShape<Length, LengthOrPercentage>,
+        EndingShape<Length, LengthPercentage>,
         Position,
         Option<Angle>,
     ),
@@ -74,11 +74,11 @@ pub enum GradientKind<LineDirection, Length, LengthOrPercentage, Position, Angle
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
-pub enum EndingShape<Length, LengthOrPercentage> {
+pub enum EndingShape<Length, LengthPercentage> {
     
     Circle(Circle<Length>),
     
-    Ellipse(Ellipse<LengthOrPercentage>),
+    Ellipse(Ellipse<LengthPercentage>),
 }
 
 
@@ -92,9 +92,9 @@ pub enum Circle<Length> {
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
-pub enum Ellipse<LengthOrPercentage> {
+pub enum Ellipse<LengthPercentage> {
     
-    Radii(LengthOrPercentage, LengthOrPercentage),
+    Radii(LengthPercentage, LengthPercentage),
     
     Extent(ShapeExtent),
 }
@@ -115,21 +115,21 @@ pub enum ShapeExtent {
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
-pub enum GradientItem<Color, LengthOrPercentage> {
+pub enum GradientItem<Color, LengthPercentage> {
     
-    ColorStop(ColorStop<Color, LengthOrPercentage>),
+    ColorStop(ColorStop<Color, LengthPercentage>),
     
-    InterpolationHint(LengthOrPercentage),
+    InterpolationHint(LengthPercentage),
 }
 
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
-pub struct ColorStop<Color, LengthOrPercentage> {
+pub struct ColorStop<Color, LengthPercentage> {
     
     pub color: Color,
     
-    pub position: Option<LengthOrPercentage>,
+    pub position: Option<LengthPercentage>,
 }
 
 

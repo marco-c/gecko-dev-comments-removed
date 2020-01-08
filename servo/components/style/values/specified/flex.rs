@@ -11,7 +11,7 @@ use style_traits::ParseError;
 
 
 #[cfg(feature = "servo")]
-pub type Width = crate::values::specified::NonNegativeLengthOrPercentageOrAuto;
+pub type Width = crate::values::specified::NonNegativeLengthPercentageOrAuto;
 
 
 #[cfg(feature = "gecko")]

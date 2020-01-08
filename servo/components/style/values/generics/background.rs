@@ -22,13 +22,13 @@ use style_traits::{CssWriter, ToCss};
     ToAnimatedZero,
     ToComputedValue,
 )]
-pub enum BackgroundSize<LengthOrPercentageOrAuto> {
+pub enum BackgroundSize<LengthPercentageOrAuto> {
     
     Explicit {
         
-        width: LengthOrPercentageOrAuto,
+        width: LengthPercentageOrAuto,
         
-        height: LengthOrPercentageOrAuto,
+        height: LengthPercentageOrAuto,
     },
     
     #[animation(error)]
@@ -38,9 +38,9 @@ pub enum BackgroundSize<LengthOrPercentageOrAuto> {
     Contain,
 }
 
-impl<LengthOrPercentageOrAuto> ToCss for BackgroundSize<LengthOrPercentageOrAuto>
+impl<LengthPercentageOrAuto> ToCss for BackgroundSize<LengthPercentageOrAuto>
 where
-    LengthOrPercentageOrAuto: ToCss + IsAuto,
+    LengthPercentageOrAuto: ToCss + IsAuto,
 {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where

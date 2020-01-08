@@ -4,20 +4,20 @@
 
 
 
-use crate::values::computed::length::NonNegativeLengthOrPercentageOrAuto;
+use crate::values::computed::length::NonNegativeLengthPercentageOrAuto;
 use crate::values::generics::background::BackgroundSize as GenericBackgroundSize;
 
 pub use crate::values::specified::background::BackgroundRepeat;
 
 
-pub type BackgroundSize = GenericBackgroundSize<NonNegativeLengthOrPercentageOrAuto>;
+pub type BackgroundSize = GenericBackgroundSize<NonNegativeLengthPercentageOrAuto>;
 
 impl BackgroundSize {
     
     pub fn auto() -> Self {
         GenericBackgroundSize::Explicit {
-            width: NonNegativeLengthOrPercentageOrAuto::auto(),
-            height: NonNegativeLengthOrPercentageOrAuto::auto(),
+            width: NonNegativeLengthPercentageOrAuto::auto(),
+            height: NonNegativeLengthPercentageOrAuto::auto(),
         }
     }
 }

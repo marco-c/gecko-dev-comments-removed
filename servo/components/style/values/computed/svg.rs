@@ -6,7 +6,7 @@
 
 use crate::values::computed::color::Color;
 use crate::values::computed::url::ComputedUrl;
-use crate::values::computed::{LengthOrPercentage, NonNegativeLengthOrPercentage};
+use crate::values::computed::{LengthPercentage, NonNegativeLengthPercentage};
 use crate::values::computed::{NonNegativeNumber, Number, Opacity};
 use crate::values::generics::svg as generic;
 use crate::values::RGBA;
@@ -42,56 +42,56 @@ impl SVGPaint {
 
 
 
-pub type SvgLengthOrPercentageOrNumber =
-    generic::SvgLengthOrPercentageOrNumber<LengthOrPercentage, Number>;
+pub type SvgLengthPercentageOrNumber =
+    generic::SvgLengthPercentageOrNumber<LengthPercentage, Number>;
 
 
-pub type SVGLength = generic::SVGLength<SvgLengthOrPercentageOrNumber>;
+pub type SVGLength = generic::SVGLength<SvgLengthPercentageOrNumber>;
 
 impl SVGLength {
     
     pub fn zero() -> Self {
-        generic::SVGLength::Length(generic::SvgLengthOrPercentageOrNumber::LengthOrPercentage(
-            LengthOrPercentage::zero(),
+        generic::SVGLength::Length(generic::SvgLengthPercentageOrNumber::LengthPercentage(
+            LengthPercentage::zero(),
         ))
     }
 }
 
 
 
-pub type NonNegativeSvgLengthOrPercentageOrNumber =
-    generic::SvgLengthOrPercentageOrNumber<NonNegativeLengthOrPercentage, NonNegativeNumber>;
+pub type NonNegativeSvgLengthPercentageOrNumber =
+    generic::SvgLengthPercentageOrNumber<NonNegativeLengthPercentage, NonNegativeNumber>;
 
 
 
-impl Into<NonNegativeSvgLengthOrPercentageOrNumber> for SvgLengthOrPercentageOrNumber {
-    fn into(self) -> NonNegativeSvgLengthOrPercentageOrNumber {
+impl Into<NonNegativeSvgLengthPercentageOrNumber> for SvgLengthPercentageOrNumber {
+    fn into(self) -> NonNegativeSvgLengthPercentageOrNumber {
         match self {
-            generic::SvgLengthOrPercentageOrNumber::LengthOrPercentage(lop) => {
-                generic::SvgLengthOrPercentageOrNumber::LengthOrPercentage(lop.into())
+            generic::SvgLengthPercentageOrNumber::LengthPercentage(lop) => {
+                generic::SvgLengthPercentageOrNumber::LengthPercentage(lop.into())
             },
-            generic::SvgLengthOrPercentageOrNumber::Number(num) => {
-                generic::SvgLengthOrPercentageOrNumber::Number(num.into())
+            generic::SvgLengthPercentageOrNumber::Number(num) => {
+                generic::SvgLengthPercentageOrNumber::Number(num.into())
             },
         }
     }
 }
 
 
-pub type SVGWidth = generic::SVGLength<NonNegativeSvgLengthOrPercentageOrNumber>;
+pub type SVGWidth = generic::SVGLength<NonNegativeSvgLengthPercentageOrNumber>;
 
 impl SVGWidth {
     
     pub fn one() -> Self {
         use crate::values::generics::NonNegative;
-        generic::SVGLength::Length(generic::SvgLengthOrPercentageOrNumber::LengthOrPercentage(
-            NonNegative(LengthOrPercentage::one()),
+        generic::SVGLength::Length(generic::SvgLengthPercentageOrNumber::LengthPercentage(
+            NonNegative(LengthPercentage::one()),
         ))
     }
 }
 
 
-pub type SVGStrokeDashArray = generic::SVGStrokeDashArray<NonNegativeSvgLengthOrPercentageOrNumber>;
+pub type SVGStrokeDashArray = generic::SVGStrokeDashArray<NonNegativeSvgLengthPercentageOrNumber>;
 
 impl Default for SVGStrokeDashArray {
     fn default() -> Self {

@@ -8,7 +8,7 @@
 
 
 use crate::values::computed::url::ComputedUrl;
-use crate::values::computed::{Image, LengthOrPercentage, NonNegativeLengthOrPercentage};
+use crate::values::computed::{Image, LengthPercentage, NonNegativeLengthPercentage};
 use crate::values::generics::basic_shape as generic;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
@@ -24,25 +24,25 @@ pub type FloatAreaShape = generic::FloatAreaShape<BasicShape, Image>;
 
 
 pub type BasicShape = generic::BasicShape<
-    LengthOrPercentage,
-    LengthOrPercentage,
-    LengthOrPercentage,
-    NonNegativeLengthOrPercentage,
+    LengthPercentage,
+    LengthPercentage,
+    LengthPercentage,
+    NonNegativeLengthPercentage,
 >;
 
 
-pub type InsetRect = generic::InsetRect<LengthOrPercentage, NonNegativeLengthOrPercentage>;
+pub type InsetRect = generic::InsetRect<LengthPercentage, NonNegativeLengthPercentage>;
 
 
 pub type Circle =
-    generic::Circle<LengthOrPercentage, LengthOrPercentage, NonNegativeLengthOrPercentage>;
+    generic::Circle<LengthPercentage, LengthPercentage, NonNegativeLengthPercentage>;
 
 
 pub type Ellipse =
-    generic::Ellipse<LengthOrPercentage, LengthOrPercentage, NonNegativeLengthOrPercentage>;
+    generic::Ellipse<LengthPercentage, LengthPercentage, NonNegativeLengthPercentage>;
 
 
-pub type ShapeRadius = generic::ShapeRadius<NonNegativeLengthOrPercentage>;
+pub type ShapeRadius = generic::ShapeRadius<NonNegativeLengthPercentage>;
 
 impl ToCss for Circle {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
