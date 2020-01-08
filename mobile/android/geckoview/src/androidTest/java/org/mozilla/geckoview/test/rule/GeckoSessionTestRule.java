@@ -929,6 +929,15 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
 
 
 
+    public long getTimeoutMillis() {
+        return mTimeoutMillis;
+    }
+
+    
+
+
+
+
 
 
     public <T> void checkThat(final String reason, final T value, final Matcher<? super T> matcher) {
