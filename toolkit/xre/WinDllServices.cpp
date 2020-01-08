@@ -67,6 +67,7 @@ class UntrustedModulesManager {
 
   ModuleEvaluator mEvaluator;
   int mErrorModules = 0;
+  Maybe<double> mXULLoadDurationMS;
 
   
   
@@ -177,13 +178,20 @@ class UntrustedModulesManager {
       ModuleLoadEvent eventCopy(
           e, ModuleLoadEvent::CopyOption::CopyWithoutModules);
       for (auto& m : e.mModules) {
-        Maybe<bool> ret =
+        Maybe<bool> maybeIsTrusted =
             mEvaluator.IsModuleTrusted(m, eventCopy, dllSvcRef.get());
-        if (ret.isNothing()) {
+
+        
+        if ((m.mTrustFlags & ModuleTrustFlags::Xul) &&
+            mXULLoadDurationMS.isNothing()) {
+          mXULLoadDurationMS = m.mLoadDurationMS;
+        }
+
+        if (maybeIsTrusted.isNothing()) {
           
           
           errorModules++;
-        } else if (*ret) {
+        } else if (maybeIsTrusted.value()) {
           
           
           if (!aHasProcessedStartupModules) {
@@ -356,6 +364,7 @@ class UntrustedModulesManager {
     }
 
     aOut.mErrorModules = mErrorModules;
+    aOut.mXULLoadDurationMS = mXULLoadDurationMS;
 
     
     

@@ -264,6 +264,13 @@ Maybe<bool> ModuleEvaluator::IsModuleTrusted(
         score += 50;
         aDllInfo.mTrustFlags |= ModuleTrustFlags::FirefoxDirectory;
 
+        if (dllLeafLower.EqualsLiteral("xul.dll")) {
+          
+          
+          
+          aDllInfo.mTrustFlags |= ModuleTrustFlags::Xul;
+        }
+
         
         
         if (mExeVersion.isSome() &&
