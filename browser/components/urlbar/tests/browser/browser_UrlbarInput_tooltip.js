@@ -66,6 +66,7 @@ add_task(async function() {
 
   
   gBrowser.selectedBrowser.focus();
+  await synthesizeMouseOut(gURLBar.inputField);
 
   gURLBar.value = "short string";
   await expectNoTooltip();
