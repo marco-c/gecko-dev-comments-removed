@@ -41,14 +41,6 @@ class Alias(object):
 
 <%!
 
-
-
-def order_key(prop):
-    if prop.name.startswith("-"):
-        return prop.name[prop.name.find("-", 1) + 1:]
-    return prop.name
-
-
 def is_internal(prop):
     
     
@@ -161,16 +153,16 @@ def sub_properties(prop):
 %>
 
 data = [
-    % for prop in sorted(data.longhands, key=order_key):
+    % for prop in data.longhands:
     Longhand("${prop.name}", "${method(prop)}", "${prop.ident}", [${flags(prop)}], ${pref(prop)}),
     % endfor
 
-    % for prop in sorted(data.shorthands, key=order_key):
+    % for prop in data.shorthands:
     Shorthand("${prop.name}", "${prop.camel_case}", "${prop.ident}", [${flags(prop)}], ${pref(prop)},
               [${sub_properties(prop)}]),
     % endfor
 
-    % for prop in sorted(data.all_aliases(), key=lambda x: x.name):
+    % for prop in data.all_aliases():
     Alias("${prop.name}", "${prop.camel_case}", "${prop.ident}", "${prop.original.ident}", [], ${pref(prop)}),
     % endfor
 ]
