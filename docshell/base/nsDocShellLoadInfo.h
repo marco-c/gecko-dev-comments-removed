@@ -17,6 +17,10 @@ class nsISHEntry;
 class nsIURI;
 class nsIDocShell;
 
+
+
+
+
 class nsDocShellLoadInfo
 {
 public:
@@ -106,6 +110,8 @@ public:
 
   void SetBaseURI(nsIURI* aBaseURI);
 
+  
+  
   void
   GetMaybeResultPrincipalURI(mozilla::Maybe<nsCOMPtr<nsIURI>>& aRPURI) const;
 
@@ -116,26 +122,83 @@ protected:
   virtual ~nsDocShellLoadInfo();
 
 protected:
+  
   nsCOMPtr<nsIURI> mReferrer;
+
+  
   nsCOMPtr<nsIURI> mOriginalURI;
+
+  
+  
+  
   nsCOMPtr<nsIURI> mResultPrincipalURI;
-  nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
   bool mResultPrincipalURIIsSome;
+
+  
+  
+  
+  nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
+
+  
   bool mLoadReplace;
+
+  
+  
   bool mInheritPrincipal;
+
+  
+  
+  
+  
+  
   bool mPrincipalIsExplicit;
+
+  
+  
   bool mForceAllowDataURI;
+
+  
+  
   bool mOriginalFrameSrc;
+
+  
+  
   bool mSendReferrer;
+
+  
+  
   mozilla::net::ReferrerPolicy mReferrerPolicy;
+
+  
+  
   uint32_t mLoadType;
+
+  
   nsCOMPtr<nsISHEntry> mSHEntry;
+
+  
   nsString mTarget;
+
+  
   nsCOMPtr<nsIInputStream> mPostDataStream;
+
+  
   nsCOMPtr<nsIInputStream> mHeadersStream;
+
+  
+  
   bool mIsSrcdocLoad;
+
+  
+  
+  
   nsString mSrcdocData;
+
+  
   nsCOMPtr<nsIDocShell> mSourceDocShell;
+
+  
+  
   nsCOMPtr<nsIURI> mBaseURI;
 };
 
