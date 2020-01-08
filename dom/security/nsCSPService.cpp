@@ -93,15 +93,17 @@ subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
   
   
   
-  bool isImgOrStyleOrDTD = contentType == nsIContentPolicy::TYPE_IMAGE ||
-                      contentType == nsIContentPolicy::TYPE_STYLESHEET ||
-                      contentType == nsIContentPolicy::TYPE_DTD;
+  bool isImgOrStyleOrDTDorXBL =
+    contentType == nsIContentPolicy::TYPE_IMAGE ||
+    contentType == nsIContentPolicy::TYPE_STYLESHEET ||
+    contentType == nsIContentPolicy::TYPE_DTD ||
+    contentType == nsIContentPolicy::TYPE_XBL;
   rv = aURI->SchemeIs("resource", &match);
-  if (NS_SUCCEEDED(rv) && match && !isImgOrStyleOrDTD) {
+  if (NS_SUCCEEDED(rv) && match && !isImgOrStyleOrDTDorXBL) {
     return true;
   }
   rv = aURI->SchemeIs("chrome", &match);
-  if (NS_SUCCEEDED(rv) && match && !isImgOrStyleOrDTD) {
+  if (NS_SUCCEEDED(rv) && match && !isImgOrStyleOrDTDorXBL) {
     return true;
   }
   rv = aURI->SchemeIs("moz-icon", &match);
