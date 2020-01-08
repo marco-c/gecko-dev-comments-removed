@@ -6,15 +6,20 @@
 
 #include "vm/DateTime.h"
 
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/TextUtils.h"
 #include "mozilla/Unused.h"
 
 #include <algorithm>
-#if defined(XP_WIN)
 #include <cstdlib>
-#endif 
 #include <cstring>
 #include <time.h>
+
+#if !defined(XP_WIN)
+#include <limits.h>
+#include <unistd.h>
+#endif 
 
 #include "jsutil.h"
 
@@ -509,16 +514,20 @@ js::InitDateTimeState()
 
     IcuTimeZoneStatus initialStatus = IcuTimeZoneStatus::Valid;
 
+    
+    
+    
+    
+    
+    if (const char* tz = std::getenv("TZ")) {
 #if defined(XP_WIN)
-    
-    
-    
-    
-    
-    const char* tz = std::getenv("TZ");
-    if (tz && IsOlsonCompatibleWindowsTimeZoneId(tz))
-        initialStatus = IcuTimeZoneStatus::NeedsUpdate;
-#endif
+        if (IsOlsonCompatibleWindowsTimeZoneId(tz))
+            initialStatus = IcuTimeZoneStatus::NeedsUpdate;
+#else
+        if (std::strcmp(tz, ":/etc/localtime") == 0)
+            initialStatus = IcuTimeZoneStatus::NeedsUpdate;
+#endif 
+    }
 
     IcuTimeZoneState = js_new<ExclusiveData<IcuTimeZoneStatus>>(mutexid::IcuTimeZoneStateMutex,
                                                                 initialStatus);
@@ -612,7 +621,73 @@ IsOlsonCompatibleWindowsTimeZoneId(const char* tz)
     }
     return false;
 }
-#endif
+#elif ENABLE_INTL_API && defined(ICU_TZ_HAS_RECREATE_DEFAULT)
+
+
+
+
+
+
+
+
+
+
+
+
+
+static icu::UnicodeString
+ReadSystemTimeZoneId()
+{
+    
+    static constexpr char SystemTimeZoneFile[] = "/etc/localtime";
+
+    
+    
+    static constexpr char ZoneInfoPath[] = "/zoneinfo/";
+    constexpr size_t ZoneInfoPathLength = mozilla::ArrayLength(ZoneInfoPath) - 1; 
+
+    char buf[PATH_MAX];
+    constexpr size_t buflen = mozilla::ArrayLength(buf) - 1; 
+
+    
+    ssize_t slen = readlink(SystemTimeZoneFile, buf, buflen);
+    if (slen < 0 || size_t(slen) >= buflen)
+        return icu::UnicodeString();
+
+    
+    
+    buf[size_t(slen)] = '\0';
+
+    
+    const char* timeZoneWithZoneInfo = std::strstr(buf, ZoneInfoPath);
+    if (!timeZoneWithZoneInfo)
+        return icu::UnicodeString();
+
+    const char* timeZone = timeZoneWithZoneInfo + ZoneInfoPathLength;
+    size_t timeZoneLen = std::strlen(timeZone);
+
+    
+    
+    
+    for (size_t i = 0; i < timeZoneLen; i++) {
+        char c = timeZone[i];
+
+        
+        
+        
+        if (mozilla::IsAsciiAlphanumeric(c) || c == '_' || c == '-' || c == '+')
+            continue;
+
+        
+        if (c == '/' && i > 0 && i + 1 < timeZoneLen && timeZone[i + 1] != '/')
+            continue;
+
+        return icu::UnicodeString();
+    }
+
+    return icu::UnicodeString(timeZone, timeZoneLen, US_INV);
+}
+#endif 
 
 void
 js::ResyncICUDefaultTimeZone()
@@ -621,26 +696,42 @@ js::ResyncICUDefaultTimeZone()
     auto guard = IcuTimeZoneState->lock();
     if (guard.get() == IcuTimeZoneStatus::NeedsUpdate) {
         bool recreate = true;
+
+        if (const char* tz = std::getenv("TZ")) {
+            icu::UnicodeString tzid;
+
 #if defined(XP_WIN)
-        
-        
-        
-        const char* tz = std::getenv("TZ");
-        if (tz && IsOlsonCompatibleWindowsTimeZoneId(tz)) {
-            icu::UnicodeString tzid(tz, -1, US_INV);
-            mozilla::UniquePtr<icu::TimeZone> newTimeZone(icu::TimeZone::createTimeZone(tzid));
-            MOZ_ASSERT(newTimeZone);
-            if (*newTimeZone != icu::TimeZone::getUnknown()) {
+            
+            
+            
+            if (IsOlsonCompatibleWindowsTimeZoneId(tz)) {
+                tzid.setTo(icu::UnicodeString(tz, -1, US_INV));
+            } else {
                 
-                icu::TimeZone::adoptDefault(newTimeZone.release());
-                recreate = false;
+                
+                
             }
-        } else {
+#else
             
             
             
+            
+            
+            if (std::strcmp(tz, ":/etc/localtime") == 0)
+                tzid.setTo(ReadSystemTimeZoneId());
+#endif 
+
+            if (!tzid.isEmpty()) {
+                mozilla::UniquePtr<icu::TimeZone> newTimeZone(icu::TimeZone::createTimeZone(tzid));
+                MOZ_ASSERT(newTimeZone);
+                if (*newTimeZone != icu::TimeZone::getUnknown()) {
+                    
+                    icu::TimeZone::adoptDefault(newTimeZone.release());
+                    recreate = false;
+                }
+            }
         }
-#endif
+
         if (recreate)
             icu::TimeZone::recreateDefault();
         guard.get() = IcuTimeZoneStatus::Valid;
