@@ -2906,14 +2906,17 @@ nsLineLayout::ApplyFrameJustification(PerSpanData* aPSD,
 
   nscoord deltaICoord = 0;
   for (PerFrameData* pfd = aPSD->mFirstFrame; pfd != nullptr; pfd = pfd->mNext) {
-    
-    if (!pfd->mIsBullet) {
-      nscoord dw = 0;
-      WritingMode lineWM = mRootSpan->mWritingMode;
-      const auto& assign = pfd->mJustificationAssignment;
-      bool isInlineText = pfd->mIsTextFrame &&
-                          !pfd->mWritingMode.IsOrthogonalTo(lineWM);
+    nscoord dw = 0;
+    WritingMode lineWM = mRootSpan->mWritingMode;
+    const auto& assign = pfd->mJustificationAssignment;
+    bool isInlineText = pfd->mIsTextFrame &&
+                        !pfd->mWritingMode.IsOrthogonalTo(lineWM);
 
+    
+    
+    
+    
+    if (pfd->ParticipatesInJustification()) {
       if (isInlineText) {
         if (aState.IsJustifiable()) {
           
@@ -2927,30 +2930,32 @@ nsLineLayout::ApplyFrameJustification(PerSpanData* aPSD,
         if (dw) {
           pfd->mRecomputeOverflow = true;
         }
-      }
-      else {
+      } else {
         if (nullptr != pfd->mSpan) {
           dw = ApplyFrameJustification(pfd->mSpan, aState);
         }
       }
-
-      pfd->mBounds.ISize(lineWM) += dw;
-      nscoord gapsAtEnd = 0;
-      if (!isInlineText && assign.TotalGaps()) {
-        
-        
-        deltaICoord += aState.Consume(assign.mGapsAtStart);
-        gapsAtEnd = aState.Consume(assign.mGapsAtEnd);
-        dw += gapsAtEnd;
-      }
-      pfd->mBounds.IStart(lineWM) += deltaICoord;
-
-      
-      
-      ApplyLineJustificationToAnnotations(pfd, deltaICoord, dw - gapsAtEnd);
-      deltaICoord += dw;
-      pfd->mFrame->SetRect(lineWM, pfd->mBounds, ContainerSizeForSpan(aPSD));
+    } else {
+      MOZ_ASSERT(!assign.TotalGaps(),
+                 "Non-participants shouldn't have assigned gaps");
     }
+
+    pfd->mBounds.ISize(lineWM) += dw;
+    nscoord gapsAtEnd = 0;
+    if (!isInlineText && assign.TotalGaps()) {
+      
+      
+      deltaICoord += aState.Consume(assign.mGapsAtStart);
+      gapsAtEnd = aState.Consume(assign.mGapsAtEnd);
+      dw += gapsAtEnd;
+    }
+    pfd->mBounds.IStart(lineWM) += deltaICoord;
+
+    
+    
+    ApplyLineJustificationToAnnotations(pfd, deltaICoord, dw - gapsAtEnd);
+    deltaICoord += dw;
+    pfd->mFrame->SetRect(lineWM, pfd->mBounds, ContainerSizeForSpan(aPSD));
   }
   return deltaICoord;
 }
