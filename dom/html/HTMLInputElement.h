@@ -846,8 +846,12 @@ public:
 
 
   void GetDateTimeInputBoxValue(DateTimeValue& aValue);
-  void UpdateDateTimeInputBox(const DateTimeValue& aValue);
-  void SetDateTimePickerState(bool aOpen);
+
+  
+
+
+
+  Element* GetDateTimeBoxElement();
 
   
 
