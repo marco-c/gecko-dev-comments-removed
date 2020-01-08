@@ -162,8 +162,7 @@ inline bool isInIgnoredNamespaceForImplicitCtor(const Decl *Declaration) {
          Name == "dwarf2reader" ||      
          Name == "arm_ex_to_module" ||  
          Name == "testing" ||           
-         Name == "Json" ||              
-         Name == "pdfium";              
+         Name == "Json";                
 }
 
 inline bool isInIgnoredNamespaceForImplicitConversion(const Decl *Declaration) {
@@ -221,8 +220,7 @@ inline bool isIgnoredPathForSprintfLiteral(const CallExpr *Call,
         Begin->compare_lower(StringRef("skia")) == 0 ||
         Begin->compare_lower(StringRef("sfntly")) == 0 ||
         
-        Begin->compare_lower(StringRef("testing")) == 0 ||
-        Begin->compare_lower(StringRef("pdfium")) == 0) {
+        Begin->compare_lower(StringRef("testing")) == 0) {
       return true;
     }
     if (Begin->compare_lower(StringRef("webrtc")) == 0) {

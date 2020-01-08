@@ -1301,11 +1301,6 @@ pref("toolkit.winRegisterApplicationRestart", true);
 
 
 
-pref("pdfium.enabled", false);
-
-
-
-
 pref("pdfjs.disabled", false);
 
 
