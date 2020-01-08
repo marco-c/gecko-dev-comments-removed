@@ -506,7 +506,8 @@ function openLinkIn(url, where, params) {
 
     
     
-    if (targetBrowser.hasAttribute("recordExecution")) {
+    if (targetBrowser.hasAttribute("recordExecution") &&
+        targetBrowser.currentURI.spec != "about:blank") {
       w.gBrowser.updateBrowserRemoteness(targetBrowser, true,
                                          { recordExecution: "*", newFrameloader: true });
     }
