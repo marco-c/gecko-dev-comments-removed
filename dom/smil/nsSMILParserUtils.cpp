@@ -5,6 +5,7 @@
 
 
 #include "nsSMILParserUtils.h"
+#include "mozilla/SVGContentUtils.h"
 #include "mozilla/TextUtils.h"
 #include "nsSMILKeySpline.h"
 #include "nsISMILAttr.h"
@@ -15,7 +16,6 @@
 #include "nsSMILRepeatCount.h"
 #include "nsContentUtils.h"
 #include "nsCharSeparatedTokenizer.h"
-#include "SVGContentUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
