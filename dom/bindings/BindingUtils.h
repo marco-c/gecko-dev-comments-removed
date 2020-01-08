@@ -1721,7 +1721,9 @@ FindAssociatedGlobal(JSContext* cx, nsIGlobalObject* const& p)
 
   JSObject* global = p->GetGlobalJSObject();
   if (!global) {
-    return nullptr;
+    
+    
+    return JS::CurrentGlobalOrNull(cx);
   }
 
   MOZ_ASSERT(JS_IsGlobalObject(global));
