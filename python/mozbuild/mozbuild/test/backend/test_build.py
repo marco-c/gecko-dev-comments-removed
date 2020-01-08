@@ -43,7 +43,9 @@ class TestBuild(unittest.TestCase):
 
     @contextmanager
     def do_test_backend(self, *backends, **kwargs):
-        topobjdir = mkdtemp()
+        
+        
+        topobjdir = mkdtemp(dir=buildconfig.topsrcdir)
         try:
             config = ConfigEnvironment(buildconfig.topsrcdir, topobjdir,
                                        **kwargs)
