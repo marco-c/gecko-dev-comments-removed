@@ -104,9 +104,6 @@ public:
 
   
   bool mIsInterval;
-
-  
-  bool mIsTracking;
 };
 
 } 

@@ -21,7 +21,6 @@ class PerformanceCounter;
 
 namespace dom {
 
-class OrderedTimeoutIterator;
 class TimeoutExecutor;
 
 
@@ -40,8 +39,7 @@ public:
 
   bool HasTimeouts() const
   {
-    return !mNormalTimeouts.IsEmpty() ||
-           !mTrackingTimeouts.IsEmpty();
+    return !mTimeouts.IsEmpty();
   }
 
   nsresult SetTimeout(nsITimeoutHandler* aHandler,
@@ -82,9 +80,6 @@ public:
   static void Initialize();
 
   
-  bool IsTimeoutTracking(uint32_t aTimeoutId);
-
-  
   void OnDocumentLoaded();
   void StartThrottlingTimeouts();
 
@@ -93,19 +88,7 @@ public:
   template <class Callable>
   void ForEachUnorderedTimeout(Callable c)
   {
-    mNormalTimeouts.ForEach(c);
-    mTrackingTimeouts.ForEach(c);
-  }
-
-  
-  
-  
-  template <class Callable>
-  void ForEachUnorderedTimeoutAbortable(Callable c)
-  {
-    if (!mNormalTimeouts.ForEachAbortable(c)) {
-      mTrackingTimeouts.ForEachAbortable(c);
-    }
+    mTimeouts.ForEach(c);
   }
 
   void BeginSyncOperation();
@@ -204,8 +187,6 @@ private:
       return false;
     }
 
-    friend class OrderedTimeoutIterator;
-
   private:
     
     
@@ -218,8 +199,6 @@ private:
     TimeoutList               mTimeoutList;
   };
 
-  friend class OrderedTimeoutIterator;
-
   
   
   nsGlobalWindowInner&             mWindow;
@@ -228,9 +207,7 @@ private:
   
   RefPtr<TimeoutExecutor>     mExecutor;
   
-  Timeouts                    mNormalTimeouts;
-  
-  Timeouts                    mTrackingTimeouts;
+  Timeouts                    mTimeouts;
   uint32_t                    mTimeoutIdCounter;
   uint32_t                    mNextFiringId;
   AutoTArray<uint32_t, 2>     mFiringIdStack;
