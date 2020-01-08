@@ -6,9 +6,18 @@
 
 
 
-use buffer::Cursor;
-use std::error::Error;
+use std;
 use std::fmt::{self, Display};
+use std::iter::FromIterator;
+
+use proc_macro2::{
+    Delimiter, Group, Ident, LexError, Literal, Punct, Spacing, Span, TokenStream, TokenTree,
+};
+
+use buffer::Cursor;
+
+
+pub type Result<T> = std::result::Result<T, Error>;
 
 
 
@@ -17,44 +26,112 @@ use std::fmt::{self, Display};
 
 
 
-pub type PResult<'a, O> = Result<(O, Cursor<'a>), ParseError>;
-
-
-
-
-pub fn parse_error<'a, O>() -> PResult<'a, O> {
-    Err(ParseError(None))
+#[derive(Debug, Clone)]
+pub struct Error {
+    span: Span,
+    message: String,
 }
 
-
-
-
-
-
-
-
-#[derive(Debug)]
-pub struct ParseError(Option<String>);
-
-impl Error for ParseError {
-    fn description(&self) -> &str {
-        match self.0 {
-            Some(ref desc) => desc,
-            None => "failed to parse",
+impl Error {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new<T: Display>(span: Span, message: T) -> Self {
+        Error {
+            span: span,
+            message: message.to_string(),
         }
     }
-}
 
-impl Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Display::fmt(self.description(), f)
+    pub fn span(&self) -> Span {
+        self.span
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn to_compile_error(&self) -> TokenStream {
+        
+        TokenStream::from_iter(vec![
+            TokenTree::Ident(Ident::new("compile_error", self.span)),
+            TokenTree::Punct({
+                let mut punct = Punct::new('!', Spacing::Alone);
+                punct.set_span(self.span);
+                punct
+            }),
+            TokenTree::Group({
+                let mut group = Group::new(Delimiter::Brace, {
+                    TokenStream::from_iter(vec![TokenTree::Literal({
+                        let mut string = Literal::string(&self.message);
+                        string.set_span(self.span);
+                        string
+                    })])
+                });
+                group.set_span(self.span);
+                group
+            }),
+        ])
     }
 }
 
-impl ParseError {
-    
-    #[doc(hidden)]
-    pub fn new<T: Into<String>>(msg: T) -> Self {
-        ParseError(Some(msg.into()))
+pub fn new_at<T: Display>(scope: Span, cursor: Cursor, message: T) -> Error {
+    if cursor.eof() {
+        Error::new(scope, format!("unexpected end of input, {}", message))
+    } else {
+        Error::new(cursor.span(), message)
+    }
+}
+
+impl Display for Error {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str(&self.message)
+    }
+}
+
+impl std::error::Error for Error {
+    fn description(&self) -> &str {
+        "parse error"
+    }
+}
+
+impl From<LexError> for Error {
+    fn from(err: LexError) -> Self {
+        Error::new(Span::call_site(), format!("{:?}", err))
     }
 }
