@@ -131,12 +131,17 @@ nsMacUtilsImpl::GetIsTranslated(bool* aIsTranslated) {
 
 
 
+
+
 bool nsMacUtilsImpl::GetAppPath(nsCString& aAppPath) {
   nsAutoCString appPath;
   nsAutoCString appBinaryPath(
       (CommandLine::ForCurrentProcess()->argv()[0]).c_str());
 
-  auto pattern = NS_LITERAL_CSTRING(".app/Contents/MacOS/");
+  
+  
+  
+  auto pattern = NS_LITERAL_CSTRING("/Contents/MacOS/");
   nsAutoCString::const_iterator start, end;
   appBinaryPath.BeginReading(start);
   appBinaryPath.EndReading(end);
@@ -144,6 +149,7 @@ bool nsMacUtilsImpl::GetAppPath(nsCString& aAppPath) {
     end = start;
     appBinaryPath.BeginReading(start);
 
+    
     
     
     if (!XRE_IsParentProcess()) {
@@ -155,10 +161,6 @@ bool nsMacUtilsImpl::GetAppPath(nsCString& aAppPath) {
       }
     }
 
-    ++end;
-    ++end;
-    ++end;
-    ++end;
     appPath.Assign(Substring(start, end));
   } else {
     return false;
