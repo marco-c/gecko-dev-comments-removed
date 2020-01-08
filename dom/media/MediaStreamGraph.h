@@ -1189,10 +1189,6 @@ public:
   
 
 
-  void QueueFinish();
-  
-
-
 
 
 
