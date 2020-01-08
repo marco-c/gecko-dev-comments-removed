@@ -312,7 +312,8 @@ def main():
                                                         libname)))
 
     
-    if buildconfig.substs.get('LLVM_SYMBOLIZER') and mozinfo.isWin:
+    
+    if buildconfig.substs['MOZ_COPY_PDBS']:
         for p, f in copier:
             if isinstance(f, ExecutableFile):
                 pdbname = os.path.splitext(f.inputs()[0])[0] + '.pdb'

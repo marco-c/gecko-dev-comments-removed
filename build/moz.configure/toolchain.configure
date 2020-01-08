@@ -693,7 +693,7 @@ def default_c_compilers(host_or_target, other_c_compiler=None):
     from init.configure.
     `other_c_compiler` is the `target` C compiler when `host_or_target` is `host`.
     '''
-    assert host_or_target in {host, target}
+    assert host_or_target in (host, target)
 
     other_c_compiler = () if other_c_compiler is None else (other_c_compiler,)
 
@@ -838,11 +838,11 @@ def compiler(language, host_or_target, c_compiler=None, other_compiler=None,
     `other_c_compiler` is the result of the `compiler` template for the
     language 'C' for `target`.
     '''
-    assert host_or_target in {host, target}
+    assert host_or_target in (host, target)
     assert language in ('C', 'C++')
     assert language == 'C' or c_compiler is not None
-    assert host_or_target is target or other_compiler is not None
-    assert language == 'C' or host_or_target is target or \
+    assert host_or_target == target or other_compiler is not None
+    assert language == 'C' or host_or_target == target or \
         other_c_compiler is not None
 
     host_or_target_str = {
@@ -1050,7 +1050,7 @@ def compiler(language, host_or_target, c_compiler=None, other_compiler=None,
     # need to check this works for preprocessing, because we already relied
     # on $CC -E/$CXX -E doing preprocessing work to validate the compiler
     # in the first place.
-    if host_or_target is target:
+    if host_or_target == target:
         pp_var = {
             'C': 'CPP',
             'C++': 'CXXCPP',
@@ -1079,7 +1079,7 @@ def compiler(language, host_or_target, c_compiler=None, other_compiler=None,
                 log.warning('The value of %s is not used by this build system.'
                             % linker_var)
 
-        if host_or_target is target:
+        if host_or_target == target:
             @depends(valid_compiler)
             def is_msvc(compiler):
                 return compiler.type == 'msvc'
@@ -1142,11 +1142,13 @@ def bindgen_cflags(value):
 add_old_configure_assignment('_BINDGEN_CFLAGS', bindgen_cflags)
 
 
-@depends(c_compiler)
-def default_debug_flags(compiler_info):
+@depends(c_compiler, target)
+def default_debug_flags(compiler_info, target):
     # Debug info is ON by default.
     if compiler_info.type in ('msvc', 'clang-cl'):
         return '-Zi'
+    elif target.kernel == 'WINNT' and compiler_info.type == 'clang':
+        return '-g -gcodeview'
     return '-g'
 
 
@@ -1993,10 +1995,15 @@ add_old_configure_assignment('LIBFUZZER_FLAGS', libfuzzer_flags.use_flags)
 @depends(target, c_compiler)
 def make_shared_library(target, compiler):
     if target.os == 'WINNT':
-        if compiler.type in ('gcc', 'clang'):
+        if compiler.type == 'gcc':
             return namespace(
                 mkshlib=['$(CXX)', '$(DSO_LDOPTS)', '-o', '$@'],
                 mkcshlib=['$(CC)', '$(DSO_LDOPTS)', '-o', '$@'],
+            )
+        elif compiler.type == 'clang':
+            return namespace(
+                mkshlib=['$(CXX)', '$(DSO_LDOPTS)', '-Wl,-pdb,$(LINK_PDBFILE)', '-o', '$@'],
+                mkcshlib=['$(CC)', '$(DSO_LDOPTS)', '-Wl,-pdb,$(LINK_PDBFILE)', '-o', '$@'],
             )
         else:
             linker = [
