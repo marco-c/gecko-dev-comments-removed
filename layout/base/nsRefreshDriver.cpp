@@ -1718,7 +1718,9 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
 
   nsCOMPtr<nsIPresShell> presShell = mPresContext->GetPresShell();
   if (!presShell ||
-      (!HasObservers() && !HasImageRequests() && mScrollEvents.IsEmpty())) {
+      (!HasObservers() && !HasImageRequests() &&
+       mVisualViewportResizeEvents.IsEmpty() && mScrollEvents.IsEmpty() &&
+       mVisualViewportScrollEvents.IsEmpty())) {
     
     
     
