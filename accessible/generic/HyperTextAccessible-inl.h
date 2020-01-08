@@ -56,19 +56,17 @@ HyperTextAccessible::AddToSelection(int32_t aStartOffset, int32_t aEndOffset)
 inline void
 HyperTextAccessible::ReplaceText(const nsAString& aText)
 {
-  
-  
-  
-  DeleteText(0, CharacterCount());
+  if (aText.Length() == 0) {
+    DeleteText(0, CharacterCount());
+    return;
+  }
+
+  SetSelectionRange(0, CharacterCount());
 
   RefPtr<TextEditor> textEditor = GetEditor();
   if (!textEditor) {
     return;
   }
-
-  
-  
-  textEditor->SelectAll();
 
   DebugOnly<nsresult> rv = textEditor->InsertTextAsAction(aText);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to insert the new text");
