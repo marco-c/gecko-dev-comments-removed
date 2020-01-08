@@ -5090,7 +5090,18 @@ pref("alerts.showFavicons", false);
 
 
 
+
+
+
+#if defined(XP_WIN)
+#if defined(NIGHTLY_BUILD)
 pref("alerts.useSystemBackend", true);
+#else
+pref("alerts.useSystemBackend", false);
+#endif
+#else
+pref("alerts.useSystemBackend", true);
+#endif
 
 
 pref("full-screen-api.enabled", false);
@@ -5423,8 +5434,6 @@ pref("network.trr.request-timeout", 1500);
 pref("network.trr.early-AAAA", false);
 
 pref("network.trr.disable-ECS", true);
-
-pref("network.trr.max-fails", 5);
 
 pref("captivedetect.canonicalURL", "http://detectportal.firefox.com/success.txt");
 pref("captivedetect.canonicalContent", "success\n");
