@@ -11,11 +11,9 @@
 #include "mozIDOMWindow.h"
 
 #include "nsCOMPtr.h"
-#include "nsDataHashtable.h"
 #include "nsTArray.h"
 #include "mozilla/dom/EventTarget.h"
 #include "mozilla/TaskCategory.h"
-#include "mozilla/TimeStamp.h"
 #include "js/TypeDecls.h"
 #include "nsRefPtrHashtable.h"
 
@@ -792,13 +790,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   
 
 
-  void NotifyTemporaryAutoplayPermissionChanged(int32_t aState,
-                                                const nsAString& aPrePath);
-  bool HasTemporaryAutoplayPermission();
-
-  
-
-
 
 
 
@@ -1190,9 +1181,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   mozilla::dom::LargeAllocStatus mLargeAllocStatus;
 
   RefPtr<mozilla::dom::BrowsingContext> mOpenerForInitialContentBrowser;
-
-  using PermissionInfo = std::pair<bool, mozilla::TimeStamp>;
-  nsDataHashtable<nsStringHashKey, PermissionInfo> mAutoplayTemporaryPermission;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowOuter, NS_PIDOMWINDOWOUTER_IID)
