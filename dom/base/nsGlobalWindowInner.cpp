@@ -809,16 +809,12 @@ class PromiseDocumentFlushedResolver final {
   virtual ~PromiseDocumentFlushedResolver() = default;
 
   void Call() {
-    nsMutationGuard guard;
     ErrorResult error;
     JS::Rooted<JS::Value> returnVal(RootingCx());
     mCallback->Call(&returnVal, error);
 
     if (error.Failed()) {
       mPromise->MaybeReject(error);
-    } else if (guard.Mutated(0)) {
-      
-      mPromise->MaybeReject(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR);
     } else {
       mPromise->MaybeResolve(returnVal);
     }
