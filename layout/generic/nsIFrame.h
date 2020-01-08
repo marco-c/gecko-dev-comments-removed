@@ -115,6 +115,10 @@ class Layer;
 class LayerManager;
 }  
 
+namespace layout {
+class ScrollAnchorContainer;
+}  
+
 namespace dom {
 class Selection;
 }  
@@ -566,7 +570,8 @@ class nsIFrame : public nsQueryFrame {
         mIsPrimaryFrame(false),
         mMayHaveTransformAnimation(false),
         mMayHaveOpacityAnimation(false),
-        mAllDescendantsAreInvisible(false) {
+        mAllDescendantsAreInvisible(false),
+        mInScrollAnchorChain(false) {
     mozilla::PodZero(&mOverflow);
   }
 
@@ -1845,6 +1850,24 @@ class nsIFrame : public nsQueryFrame {
   void ComputePreserve3DChildrenOverflow(nsOverflowAreas& aOverflowAreas);
 
   void RecomputePerspectiveChildrenOverflow(const nsIFrame* aStartFrame);
+
+  
+
+
+
+
+
+
+
+  bool IsScrollAnchor(
+      mozilla::layout::ScrollAnchorContainer** aOutContainer = nullptr);
+
+  
+
+
+
+  bool IsInScrollAnchorChain() const;
+  void SetInScrollAnchorChain(bool aInChain);
 
   
 
@@ -4293,9 +4316,12 @@ class nsIFrame : public nsQueryFrame {
 
   bool mAllDescendantsAreInvisible : 1;
 
- protected:
   
 
+
+  bool mInScrollAnchorChain : 1;
+
+ protected:
   
   
 
