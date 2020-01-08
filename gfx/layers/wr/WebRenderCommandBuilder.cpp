@@ -985,6 +985,9 @@ IsItemProbablyActive(nsDisplayItem* aItem, nsDisplayListBuilder* aDisplayListBui
     GP("active: %d\n", active);
     return active || HasActiveChildren(*opacityItem->GetChildren(), aDisplayListBuilder);
   }
+  case DisplayItemType::TYPE_FOREIGN_OBJECT: {
+    return true;
+  }
   case DisplayItemType::TYPE_WRAP_LIST:
   case DisplayItemType::TYPE_PERSPECTIVE: {
     if (aItem->GetChildren()) {
@@ -1396,10 +1399,6 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
         mDoGrouping = true;
         GP("attempting to enter the grouping code\n");
       }
-
-
-
-
 
       if (dumpEnabled) {
         std::stringstream ss;

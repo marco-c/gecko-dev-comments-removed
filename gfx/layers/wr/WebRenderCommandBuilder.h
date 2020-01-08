@@ -189,6 +189,7 @@ private:
 
   wr::usize mBuilderDumpIndex;
   wr::usize mDumpIndent;
+public:
   
   
   bool mDoGrouping;
