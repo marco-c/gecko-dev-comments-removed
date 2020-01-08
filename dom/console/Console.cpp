@@ -1770,8 +1770,9 @@ Console::ProcessCallData(JSContext* aCx, ConsoleCallData* aData,
   
 
   
+  JS::Rooted<JSObject*> targetScope(aCx, xpc::PrivilegedJunkScope());
   if (NS_WARN_IF(!PopulateConsoleNotificationInTheTargetScope(aCx, aArguments,
-                                                              xpc::PrivilegedJunkScope(),
+                                                              targetScope,
                                                               &eventValue, aData))) {
     return;
   }
@@ -1810,15 +1811,14 @@ Console::ProcessCallData(JSContext* aCx, ConsoleCallData* aData,
 bool
 Console::PopulateConsoleNotificationInTheTargetScope(JSContext* aCx,
                                                      const Sequence<JS::Value>& aArguments,
-                                                     JSObject* aTargetScope,
+                                                     JS::Handle<JSObject*> aTargetScope,
                                                      JS::MutableHandle<JS::Value> aEventValue,
                                                      ConsoleCallData* aData)
 {
   MOZ_ASSERT(aCx);
   MOZ_ASSERT(aData);
   MOZ_ASSERT(aTargetScope);
-
-  JS::Rooted<JSObject*> targetScope(aCx, aTargetScope);
+  MOZ_ASSERT(JS_IsGlobalObject(aTargetScope));
 
   ConsoleStackEntry frame;
   if (aData->mTopStackFrame) {
@@ -1927,7 +1927,7 @@ Console::PopulateConsoleNotificationInTheTargetScope(JSContext* aCx,
                                                       aData->mCountValue);
   }
 
-  JSAutoRealmAllowCCW ar2(aCx, targetScope);
+  JSAutoRealm ar2(aCx, aTargetScope);
 
   if (NS_WARN_IF(!ToJSValue(aCx, event, aEventValue))) {
     return false;
@@ -2692,16 +2692,18 @@ Console::NotifyHandler(JSContext* aCx, const Sequence<JS::Value>& aArguments,
 
   JS::Rooted<JS::Value> value(aCx);
 
-  JS::Rooted<JSObject*> callable(aCx, mConsoleEventNotifier->CallableOrNull());
-  if (NS_WARN_IF(!callable)) {
+  JS::Rooted<JSObject*> callableGlobal(aCx,
+    mConsoleEventNotifier->CallbackGlobalOrNull());
+  if (NS_WARN_IF(!callableGlobal)) {
     return;
   }
 
   
   
   
+  
   if (NS_WARN_IF(!PopulateConsoleNotificationInTheTargetScope(aCx, aArguments,
-                                                              callable,
+                                                              callableGlobal,
                                                               &value,
                                                               aCallData))) {
     return;

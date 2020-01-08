@@ -49,6 +49,7 @@ class EventListenerInfo final : public nsIEventListenerInfo
 public:
   EventListenerInfo(const nsAString& aType,
                     JS::Handle<JSObject*> aScriptedListener,
+                    JS::Handle<JSObject*> aScriptedListenerGlobal,
                     bool aCapturing,
                     bool aAllowsUntrusted,
                     bool aInSystemEventGroup);
@@ -61,11 +62,16 @@ protected:
  virtual ~EventListenerInfo();
 
   bool GetJSVal(JSContext* aCx,
-                Maybe<JSAutoRealmAllowCCW>& aAr,
+                Maybe<JSAutoRealm>& aAr,
                 JS::MutableHandle<JS::Value> aJSVal);
 
   nsString mType;
   JS::Heap<JSObject*> mScriptedListener;  
+  
+  
+  
+  
+  JS::Heap<JSObject*> mScriptedListenerGlobal;
   bool mCapturing;
   bool mAllowsUntrusted;
   bool mInSystemEventGroup;
