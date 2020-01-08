@@ -307,7 +307,11 @@ HTMLTextFieldAccessible::NativeAttributes()
   
   
   nsAutoString type;
-  if (mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::type, type)) {
+  
+  
+  
+  nsIContent* content = mContent->FindFirstNonChromeOnlyAccessContent();
+  if (content->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::type, type)) {
     nsAccUtils::SetAccAttr(attributes, nsGkAtoms::textInputType, type);
     if (!ARIARoleMap() && type.EqualsLiteral("search")) {
       nsAccUtils::SetAccAttr(attributes, nsGkAtoms::xmlroles,
