@@ -254,7 +254,11 @@ var PermissionPromptPrototype = {
 
 
 
-  onBeforeShow() {},
+
+
+
+
+  onBeforeShow() { return true; },
 
   
 
@@ -440,14 +444,15 @@ var PermissionPromptPrototype = {
       return false;
     };
 
-    this.onBeforeShow();
-    chromeWin.PopupNotifications.show(this.browser,
-                                      this.notificationID,
-                                      this.message,
-                                      this.anchorID,
-                                      mainAction,
-                                      secondaryActions,
-                                      options);
+    if (this.onBeforeShow() !== false) {
+      chromeWin.PopupNotifications.show(this.browser,
+                                        this.notificationID,
+                                        this.message,
+                                        this.anchorID,
+                                        mainAction,
+                                        secondaryActions,
+                                        options);
+    }
   },
 };
 
@@ -590,6 +595,7 @@ GeolocationPermissionPrompt.prototype = {
     let secHistogram = Services.telemetry.getHistogramById("SECURITY_UI");
     const SHOW_REQUEST = Ci.nsISecurityUITelemetry.WARNING_GEOLOCATION_REQUEST;
     secHistogram.add(SHOW_REQUEST);
+    return true;
   },
 };
 
@@ -826,9 +832,6 @@ MIDIPermissionPrompt.prototype = {
         action: Ci.nsIPermissionManager.DENY_ACTION,
     }];
   },
-
-  onBeforeShow() {
-  },
 };
 
 PermissionUI.MIDIPermissionPrompt = MIDIPermissionPrompt;
@@ -911,6 +914,7 @@ AutoplayPermissionPrompt.prototype = {
     };
     this.browser.addEventListener(
       "DOMAudioPlaybackStarted", this.handlePlaybackStart);
+    return true;
   },
 };
 
