@@ -35,16 +35,19 @@ static const char kProfileProperties[] =
 
 
 nsresult CreateResetProfile(nsIToolkitProfileService* aProfileSvc,
-                            const nsACString& aOldProfileName,
+                            nsIToolkitProfile* aOldProfile,
                             nsIToolkitProfile** aNewProfile) {
   MOZ_ASSERT(aProfileSvc, "NULL profile service");
+
+  nsAutoCString oldProfileName;
+  aOldProfile->GetName(oldProfileName);
 
   nsCOMPtr<nsIToolkitProfile> newProfile;
   
   
   nsAutoCString newProfileName;
-  if (!aOldProfileName.IsEmpty()) {
-    newProfileName.Assign(aOldProfileName);
+  if (!oldProfileName.IsEmpty()) {
+    newProfileName.Assign(oldProfileName);
     newProfileName.Append("-");
   } else {
     newProfileName.AssignLiteral("default-");
