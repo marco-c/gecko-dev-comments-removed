@@ -1050,6 +1050,10 @@ const browsingContextTargetPrototype = {
         options.cacheDisabled !== this._getCacheDisabled()) {
       this._setCacheDisabled(options.cacheDisabled);
     }
+    if (typeof options.paintFlashing !== "undefined" &&
+        options.PaintFlashing !== this._getPaintFlashing()) {
+      this._setPaintFlashingEnabled(options.paintFlashing);
+    }
     if ((typeof options.serviceWorkersTestingEnabled !== "undefined") &&
         (options.serviceWorkersTestingEnabled !==
          this._getServiceWorkersTestingEnabled())) {
@@ -1076,6 +1080,7 @@ const browsingContextTargetPrototype = {
     this._restoreJavascript();
     this._setCacheDisabled(false);
     this._setServiceWorkersTestingEnabled(false);
+    this._setPaintFlashingEnabled(false);
   },
 
   
@@ -1133,6 +1138,14 @@ const browsingContextTargetPrototype = {
   
 
 
+  _setPaintFlashingEnabled(enabled) {
+    const windowUtils = this.window.windowUtils;
+    windowUtils.paintFlashing = enabled;
+  },
+
+  
+
+
   _getCacheDisabled() {
     if (!this.docShell) {
       
@@ -1142,6 +1155,18 @@ const browsingContextTargetPrototype = {
     const disable = Ci.nsIRequest.LOAD_BYPASS_CACHE |
                   Ci.nsIRequest.INHIBIT_CACHING;
     return this.docShell.defaultLoadFlags === disable;
+  },
+
+  
+
+
+  _getPaintFlashing() {
+    if (!this.docShell) {
+      
+      return null;
+    }
+
+    return this.window.windowUtils.paintFlashing;
   },
 
   
