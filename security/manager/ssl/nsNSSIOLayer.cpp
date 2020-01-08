@@ -286,8 +286,9 @@ void nsNSSSocketInfo::SetHandshakeCompleted() {
                                                  : NotAllowedToFalseStart;
 
     
-    Telemetry::AccumulateTimeDelta(Telemetry::SSL_TIME_UNTIL_HANDSHAKE_FINISHED,
-                                   mSocketCreationTimestamp, TimeStamp::Now());
+    Telemetry::AccumulateTimeDelta(
+        Telemetry::SSL_TIME_UNTIL_HANDSHAKE_FINISHED_KEYED_BY_KA, mKeaGroup,
+        mSocketCreationTimestamp, TimeStamp::Now());
 
     
     
