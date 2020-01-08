@@ -394,6 +394,8 @@ MessageManagerTunnel.prototype = {
     "PermitUnload",
     
     "Browser:Reload",
+    "PageStyle:Disable",
+    "PageStyle:Switch",
     
     "Forms:DismissedDropDown",
     "Forms:MouseOut",
@@ -412,6 +414,7 @@ MessageManagerTunnel.prototype = {
     "Link:SetFailedIcon",
     "Link:AddFeed",
     "Link:AddSearch",
+    "PageStyle:StyleSheets",
     
     "Content:LoadURIResult",
     "Content:LocationChange",
