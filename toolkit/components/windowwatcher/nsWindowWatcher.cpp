@@ -1127,6 +1127,9 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
     if (subjectPrincipal) {
       loadState->SetTriggeringPrincipal(subjectPrincipal);
     }
+#ifndef ANDROID
+    MOZ_ASSERT(subjectPrincipal, "nsWindowWatcher: triggeringPrincipal required");
+#endif
 
     
 
