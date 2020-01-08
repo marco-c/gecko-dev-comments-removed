@@ -709,11 +709,11 @@ DevToolsStartup.prototype = {
   },
 
   
-  handleDevToolsFlag: function(window) {
+  handleDevToolsFlag: async function(window) {
     const require = this.initDevTools("CommandLine");
     const {gDevTools} = require("devtools/client/framework/devtools");
     const {TargetFactory} = require("devtools/client/framework/target");
-    const target = TargetFactory.forTab(window.gBrowser.selectedTab);
+    const target = await TargetFactory.forTab(window.gBrowser.selectedTab);
     gDevTools.showToolbox(target);
   },
 
