@@ -3141,11 +3141,11 @@ var CustomizableUI = {
 
 
 
-
-
-
-  registerToolbarNode(aToolbar, aExistingChildren) {
-    CustomizableUIInternal.registerToolbarNode(aToolbar, aExistingChildren);
+  registerToolbarNode(aToolbar) {
+    let children = Array.from(aToolbar.children)
+                        .filter(child => child.getAttribute("skipintoolbarset") != "true" && child.id)
+                        .map(child => child.id);
+    CustomizableUIInternal.registerToolbarNode(aToolbar, children);
   },
   
 
