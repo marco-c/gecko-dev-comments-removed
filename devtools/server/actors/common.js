@@ -15,26 +15,6 @@ const { method } = require("devtools/shared/protocol");
 
 
 
-
-
-
-
-
-
-exports.appendExtraActors = function appendExtraActors(object) {
-  for (const name in this._extraActors) {
-    const actor = this._extraActors[name];
-    object[name] = actor.actorID;
-  }
-};
-
-
-
-
-
-
-
-
 function ActorPool(connection) {
   this.conn = connection;
   this._actors = {};
