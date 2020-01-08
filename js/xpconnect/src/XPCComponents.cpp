@@ -1589,8 +1589,13 @@ nsXPCComponents_Utils::Unload(const nsACString& registryLocation) {
 NS_IMETHODIMP
 nsXPCComponents_Utils::ImportGlobalProperties(HandleValue aPropertyList,
                                               JSContext* cx) {
-  RootedObject global(cx, CurrentGlobalOrNull(cx));
+  
+  
+  
+  RootedObject global(cx, JS::GetScriptedCallerGlobal(cx));
   MOZ_ASSERT(global);
+  js::AssertSameCompartment(cx, global);
+  JSAutoRealm ar(cx, global);
 
   
   nsGlobalWindowInner* win;
