@@ -514,7 +514,11 @@ public:
     nsCOMPtr<nsIGlobalObject> sgo = aWorkerPrivate->GlobalScope();
     ErrorResult rv;
     mData->Read(aCx, &messageData, rv);
-    if (NS_WARN_IF(rv.Failed())) {
+
+    
+    bool deserializationFailed = rv.ErrorCodeIs(NS_ERROR_DOM_DATA_CLONE_ERR);
+
+    if (!deserializationFailed && NS_WARN_IF(rv.Failed())) {
       return true;
     }
 
@@ -528,14 +532,22 @@ public:
     init.mBubbles = false;
     init.mCancelable = false;
 
-    init.mData = messageData;
-    init.mPorts = ports;
+    
+    
+    if (!deserializationFailed) {
+      init.mData = messageData;
+      init.mPorts = ports;
+    }
+
     init.mSource.SetValue().SetAsClient() =
       new Client(sgo, mClientInfoAndState);
 
+    rv = NS_OK;
     RefPtr<EventTarget> target = aWorkerPrivate->GlobalScope();
     RefPtr<ExtendableMessageEvent> extendableEvent =
-      ExtendableMessageEvent::Constructor(target, NS_LITERAL_STRING("message"),
+      ExtendableMessageEvent::Constructor(target,
+                                          deserializationFailed ? NS_LITERAL_STRING("messageerror") :
+                                                                  NS_LITERAL_STRING("message"),
                                           init, rv);
     if (NS_WARN_IF(rv.Failed())) {
       rv.SuppressException();

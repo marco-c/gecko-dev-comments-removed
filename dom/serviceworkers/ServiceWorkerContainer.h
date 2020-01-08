@@ -66,7 +66,8 @@ public:
 
   IMPL_EVENT_HANDLER(controllerchange)
   IMPL_EVENT_HANDLER(error)
-  
+  IMPL_EVENT_HANDLER(messageerror)
+
   
   
   
@@ -160,7 +161,8 @@ private:
   FillInMessageEventInit(JSContext* aCx,
                          nsIGlobalObject* aGlobal,
                          ReceivedMessage& aMessage,
-                         MessageEventInit& aInit);
+                         MessageEventInit& aInit,
+                         ErrorResult& aRv);
 
   RefPtr<Inner> mInner;
 

@@ -718,17 +718,29 @@ ServiceWorkerContainer::DispatchMessage(RefPtr<ReceivedMessage> aMessage)
   
   RunWithJSContext([this, message = std::move(aMessage)](JSContext* const aCx,
                                                          nsIGlobalObject* const aGlobal) {
+    ErrorResult result;
+    bool deserializationFailed = false;
     RootedDictionary<MessageEventInit> init(aCx);
-    if (!FillInMessageEventInit(aCx, aGlobal, *message, init)) {
-      
-      return;
+    if (!FillInMessageEventInit(aCx, aGlobal, *message, init, result)) {
+      deserializationFailed = result.ErrorCodeIs(NS_ERROR_DOM_DATA_CLONE_ERR);
+      MOZ_ASSERT_IF(deserializationFailed, init.mData.isNull());
+      MOZ_ASSERT_IF(deserializationFailed, init.mPorts.IsEmpty());
+      MOZ_ASSERT_IF(deserializationFailed, !init.mOrigin.IsEmpty());
+      MOZ_ASSERT_IF(deserializationFailed, !init.mSource.IsNull());
+
+      if (!deserializationFailed && result.MaybeSetPendingException(aCx)) {
+        return;
+      }
     }
 
     RefPtr<MessageEvent> event =
-      MessageEvent::Constructor(this, NS_LITERAL_STRING("message"), init);
+      MessageEvent::Constructor(this,
+                                deserializationFailed ? NS_LITERAL_STRING("messageerror") :
+                                                        NS_LITERAL_STRING("message"),
+                                init);
     event->SetTrusted(true);
 
-    ErrorResult result;
+    result = NS_OK;
     DispatchEvent(*event, result);
     if (result.Failed()) {
       result.SuppressException();
@@ -791,19 +803,22 @@ bool
 ServiceWorkerContainer::FillInMessageEventInit(JSContext* const aCx,
                                                nsIGlobalObject* const aGlobal,
                                                ReceivedMessage& aMessage,
-                                               MessageEventInit& aInit)
+                                               MessageEventInit& aInit,
+                                               ErrorResult& aRv)
 {
-  ErrorResult result;
-  JS::Rooted<JS::Value> messageData(aCx);
-  aMessage.mClonedData.Read(aCx, &messageData, result);
-  if (result.Failed()) {
-    return false;
-  }
-
-  aInit.mData = messageData;
-
-  if (!aMessage.mClonedData.TakeTransferredPortsAsSequence(aInit.mPorts)) {
-    return false;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const RefPtr<ServiceWorker> serviceWorkerInstance =
+    GetOrCreateServiceWorkerWithoutWarnings(aGlobal, aMessage.mServiceWorker);
+  if (serviceWorkerInstance) {
+    aInit.mSource.SetValue().SetAsServiceWorker() = serviceWorkerInstance;
   }
 
   const nsresult rv = FillInOriginNoSuffix(aMessage.mServiceWorker, aInit.mOrigin);
@@ -811,10 +826,17 @@ ServiceWorkerContainer::FillInMessageEventInit(JSContext* const aCx,
     return false;
   }
 
-  const RefPtr<ServiceWorker> serviceWorkerInstance =
-    GetOrCreateServiceWorkerWithoutWarnings(aGlobal, aMessage.mServiceWorker);
-  if (serviceWorkerInstance) {
-    aInit.mSource.SetValue().SetAsServiceWorker() = serviceWorkerInstance;
+  JS::Rooted<JS::Value> messageData(aCx);
+  aMessage.mClonedData.Read(aCx, &messageData, aRv);
+  if (aRv.Failed()) {
+    return false;
+  }
+
+  aInit.mData = messageData;
+
+  if (!aMessage.mClonedData.TakeTransferredPortsAsSequence(aInit.mPorts)) {
+    xpc::Throw(aCx, NS_ERROR_OUT_OF_MEMORY);
+    return false;
   }
 
   return true;
