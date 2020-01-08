@@ -1122,6 +1122,18 @@ HTMLEditor::UpdateBaseURL()
   return NS_OK;
 }
 
+NS_IMETHODIMP
+HTMLEditor::InsertLineBreak()
+{
+  
+  
+  nsresult rv = InsertParagraphSeparatorAsSubAction();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
+
 nsresult
 HTMLEditor::InsertLineBreakAsAction()
 {
@@ -1130,8 +1142,65 @@ HTMLEditor::InsertLineBreakAsAction()
     return NS_ERROR_NOT_INITIALIZED;
   }
 
+  
+  
   AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::TypingTxnName);
   nsresult rv = InsertBrElementAtSelectionWithTransaction();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
+
+nsresult
+HTMLEditor::InsertParagraphSeparatorAsAction()
+{
+  AutoEditActionDataSetter editActionData(
+                             *this,
+                             EditAction::eInsertParagraphSeparator);
+  if (NS_WARN_IF(!editActionData.CanHandle())) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
+  
+  
+  AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::TypingTxnName);
+  nsresult rv = InsertParagraphSeparatorAsSubAction();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
+
+nsresult
+HTMLEditor::InsertParagraphSeparatorAsSubAction()
+{
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
+  if (!mRules) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
+  
+  RefPtr<TextEditRules> rules(mRules);
+
+  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+                                      *this,
+                                      EditSubAction::eInsertParagraphSeparator,
+                                      nsIEditor::eNext);
+
+  EditSubActionInfo subActionInfo(EditSubAction::eInsertParagraphSeparator);
+  subActionInfo.maxLength = mMaxTextLength;
+  bool cancel, handled;
+  nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
+  if (cancel) {
+    return rv; 
+  }
+  
+  
+  
+  
+  rv = rules->DidDoAction(subActionInfo, rv);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
