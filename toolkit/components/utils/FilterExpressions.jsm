@@ -22,6 +22,8 @@ XPCOMUtils.defineLazyGetter(this, "jexl", () => {
     preferenceIsUserSet: PreferenceFilters.preferenceIsUserSet,
     preferenceExists: PreferenceFilters.preferenceExists,
     keys,
+    length,
+    mapToProperty
   });
   jexl.addBinaryOp("intersect", 40, operatorIntersect);
   return jexl;
@@ -46,6 +48,26 @@ function keys(obj) {
   }
 
   return Object.keys(obj);
+}
+
+
+
+
+
+
+function length(arr) {
+  return Array.isArray(arr) ? arr.length : undefined;
+}
+
+
+
+
+
+
+
+
+function mapToProperty(arr, prop) {
+  return Array.isArray(arr) ? arr.map(elem => elem[prop]) : undefined;
 }
 
 
