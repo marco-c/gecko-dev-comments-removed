@@ -8,6 +8,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Unused.h"
+#include "mozilla/dom/Document.h"
 #include "nsContentUtils.h"
 #include "nsIChannel.h"
 #include "nsIDocShell.h"
@@ -107,56 +108,62 @@ void nsSecureBrowserUIImpl::CheckForBlockedContent() {
     }
   }
 
+  RefPtr<dom::Document> doc = docShell->GetDocument();
+  if (!doc) {
+    
+    return;
+  }
+
   
   
   
   
   if (((mState & STATE_IS_SECURE) != 0) || ((mState & STATE_IS_BROKEN) != 0)) {
-    if (docShell->GetHasMixedActiveContentLoaded()) {
+    if (doc->GetHasMixedActiveContentLoaded()) {
       mState |= STATE_IS_BROKEN | STATE_LOADED_MIXED_ACTIVE_CONTENT;
       mState &= ~STATE_IS_SECURE;
     }
 
-    if (docShell->GetHasMixedDisplayContentLoaded()) {
+    if (doc->GetHasMixedDisplayContentLoaded()) {
       mState |= STATE_IS_BROKEN | STATE_LOADED_MIXED_DISPLAY_CONTENT;
       mState &= ~STATE_IS_SECURE;
     }
 
-    if (docShell->GetHasMixedActiveContentBlocked()) {
+    if (doc->GetHasMixedActiveContentBlocked()) {
       mState |= STATE_BLOCKED_MIXED_ACTIVE_CONTENT;
     }
 
-    if (docShell->GetHasMixedDisplayContentBlocked()) {
+    if (doc->GetHasMixedDisplayContentBlocked()) {
       mState |= STATE_BLOCKED_MIXED_DISPLAY_CONTENT;
     }
   }
 
   
-  if (docShell->GetHasTrackingContentBlocked()) {
+  if (doc->GetHasTrackingContentBlocked()) {
     mState |= STATE_BLOCKED_TRACKING_CONTENT;
   }
 
-  if (docShell->GetHasTrackingContentLoaded()) {
+  if (doc->GetHasTrackingContentLoaded()) {
     mState |= STATE_LOADED_TRACKING_CONTENT;
   }
 
-  if (docShell->GetHasCookiesBlockedByPermission()) {
+  if (doc->GetHasCookiesBlockedByPermission()) {
     mState |= STATE_COOKIES_BLOCKED_BY_PERMISSION;
   }
 
-  if (docShell->GetHasCookiesBlockedDueToTrackers()) {
+  if (doc->GetHasTrackingCookiesBlocked()) {
     mState |= STATE_COOKIES_BLOCKED_TRACKER;
   }
 
-  if (docShell->GetHasForeignCookiesBeenBlocked()) {
+  if (doc->GetHasForeignCookiesBlocked()) {
     mState |= STATE_COOKIES_BLOCKED_FOREIGN;
   }
 
-  if (docShell->GetHasAllCookiesBeenBlocked()) {
+  if (doc->GetHasAllCookiesBlocked()) {
     mState |= STATE_COOKIES_BLOCKED_ALL;
   }
 
-  if (docShell->GetHasCookiesLoaded()) {
+  if (doc->GetHasCookiesLoaded()) {
     mState |= STATE_COOKIES_LOADED;
   }
 }
