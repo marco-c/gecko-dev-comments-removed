@@ -453,7 +453,13 @@ var PanelMultiView = class extends AssociatedToNode {
 
 
 
-  async openPopup(...args) {
+
+
+
+
+
+
+  async openPopup(anchor, options, ...args) {
     
     
     
@@ -515,7 +521,7 @@ var PanelMultiView = class extends AssociatedToNode {
       
       try {
         canCancel = false;
-        this._panel.openPopup(...args);
+        this._panel.openPopup(anchor, options, ...args);
 
         
         
@@ -523,6 +529,13 @@ var PanelMultiView = class extends AssociatedToNode {
         if (this._panel.state == "closed" && this.openViews.length) {
           this.dispatchCustomEvent("popuphidden");
           return false;
+        }
+
+        if (options && typeof options == "object" && options.triggerEvent &&
+            options.triggerEvent.type == "keypress" &&
+            this.openViews.length) {
+          
+          this.openViews[0].focusWhenActive = true;
         }
 
         return true;
@@ -793,6 +806,10 @@ var PanelMultiView = class extends AssociatedToNode {
   _activateView(panelView) {
     if (panelView.isOpenIn(this)) {
       panelView.active = true;
+      if (panelView.focusWhenActive) {
+        panelView.focusFirstNavigableElement();
+        panelView.focusWhenActive = false;
+      }
       panelView.dispatchCustomEvent("ViewShown");
     }
   }
@@ -1153,6 +1170,15 @@ var PanelView = class extends AssociatedToNode {
 
 
     this.active = false;
+
+    
+
+
+
+
+
+
+    this.focusWhenActive = false;
   }
 
   
@@ -1186,6 +1212,7 @@ var PanelView = class extends AssociatedToNode {
     } else {
       this.node.removeAttribute("visible");
       this.active = false;
+      this.focusWhenActive = false;
     }
   }
 

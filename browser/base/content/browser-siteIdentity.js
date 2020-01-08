@@ -820,15 +820,6 @@ var gIdentityHandler = {
 
     
     
-    
-    if (event.type == "keypress") {
-      let panelView = PanelView.forNode(this._identityPopupMainView);
-      this._identityPopupMainView.addEventListener("ViewShown", () => panelView.focusFirstNavigableElement(),
-        {once: true});
-    }
-
-    
-    
     this._identityPopup.hidden = false;
 
     
@@ -841,8 +832,10 @@ var gIdentityHandler = {
     this._identityBox.setAttribute("open", "true");
 
     
-    PanelMultiView.openPopup(this._identityPopup, this._identityIcon,
-                             "bottomcenter topleft").catch(Cu.reportError);
+    PanelMultiView.openPopup(this._identityPopup, this._identityIcon, {
+      position: "bottomcenter topleft",
+      triggerEvent: event,
+    }).catch(Cu.reportError);
   },
 
   onPopupShown(event) {
