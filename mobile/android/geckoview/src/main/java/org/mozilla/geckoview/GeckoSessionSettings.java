@@ -91,6 +91,13 @@ public final class GeckoSessionSettings implements Parcelable {
     
 
 
+
+    public static final Key<String> USER_AGENT_OVERRIDE =
+        new Key<String>("userAgentOverride",  false,  null);
+
+    
+
+
     public static final Key<Integer> DISPLAY_MODE =
         new Key<Integer>("displayMode",  false,
                          Arrays.asList(DISPLAY_MODE_BROWSER, DISPLAY_MODE_MINIMAL_UI,
@@ -143,6 +150,7 @@ public final class GeckoSessionSettings implements Parcelable {
         mBundle.putBoolean(ALLOW_JAVASCRIPT.name, true);
         mBundle.putBoolean(FULL_ACCESSIBILITY_TREE.name, false);
         mBundle.putInt(USER_AGENT_MODE.name, USER_AGENT_MODE_MOBILE);
+        mBundle.putString(USER_AGENT_OVERRIDE.name, null);
         mBundle.putInt(DISPLAY_MODE.name, DISPLAY_MODE_BROWSER);
     }
 
