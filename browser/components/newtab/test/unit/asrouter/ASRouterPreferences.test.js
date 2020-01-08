@@ -10,7 +10,8 @@ const SNIPPETS_USER_PREF = "browser.newtabpage.activity-stream.feeds.snippets";
 
 
 
-const NUMBER_OF_PREFS_TO_OBSERVE = 3;
+
+const NUMBER_OF_PREFS_TO_OBSERVE = 4;
 
 describe("ASRouterPreferences", () => {
   let ASRouterPreferences;
@@ -161,6 +162,45 @@ describe("ASRouterPreferences", () => {
     it("should return the user preference for snippets", () => {
       boolPrefStub.withArgs(SNIPPETS_USER_PREF).returns(true);
       assert.isTrue(ASRouterPreferences.getUserPreference("snippets"));
+    });
+  });
+  describe("#enableOrDisableProvider", () => {
+    it("should enable an existing provider if second param is true", () => {
+      const setStub = sandbox.stub(global.Services.prefs, "setStringPref");
+      stringPrefStub.withArgs(PROVIDER_PREF).returns(JSON.stringify([{id: "foo", enabled: false}, {id: "bar", enabled: false}]));
+      assert.isFalse(ASRouterPreferences.providers[0].enabled);
+
+      ASRouterPreferences.enableOrDisableProvider("foo", true);
+
+      assert.calledWith(setStub, PROVIDER_PREF, JSON.stringify([{id: "foo", enabled: true}, {id: "bar", enabled: false}]));
+    });
+    it("should disable an existing provider if second param is false", () => {
+      const setStub = sandbox.stub(global.Services.prefs, "setStringPref");
+      stringPrefStub.withArgs(PROVIDER_PREF).returns(JSON.stringify([{id: "foo", enabled: true}, {id: "bar", enabled: true}]));
+      assert.isTrue(ASRouterPreferences.providers[0].enabled);
+
+      ASRouterPreferences.enableOrDisableProvider("foo", false);
+
+      assert.calledWith(setStub, PROVIDER_PREF, JSON.stringify([{id: "foo", enabled: false}, {id: "bar", enabled: true}]));
+    });
+    it("should not throw if the id does not exist", () => {
+      assert.doesNotThrow(() => {
+        ASRouterPreferences.enableOrDisableProvider("does_not_exist", true);
+      });
+    });
+    it("should not throw if pref is not parseable", () => {
+      stringPrefStub.withArgs(PROVIDER_PREF).returns("not valid");
+      assert.doesNotThrow(() => {
+        ASRouterPreferences.enableOrDisableProvider("foo", true);
+      });
+    });
+  });
+  describe("#resetProviderPref", () => {
+    it("should reset the pref and user prefs", () => {
+      const resetStub = sandbox.stub(global.Services.prefs, "clearUserPref");
+      ASRouterPreferences.resetProviderPref();
+      assert.calledWith(resetStub, PROVIDER_PREF);
+      assert.calledWith(resetStub, SNIPPETS_USER_PREF);
     });
   });
   describe("observer, listeners", () => {
