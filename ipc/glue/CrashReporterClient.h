@@ -32,6 +32,11 @@ public:
   
   template <typename T>
   static bool InitSingleton(T* aToplevelProtocol) {
+    
+    if (recordreplay::IsRecordingOrReplaying()) {
+      return true;
+    }
+
     Shmem shmem;
     if (!AllocShmem(aToplevelProtocol, &shmem)) {
       return false;
