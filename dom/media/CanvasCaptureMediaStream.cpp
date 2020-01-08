@@ -115,7 +115,7 @@ OutputStreamDriver::OutputStreamDriver(SourceMediaStream* aSourceStream,
   MOZ_ASSERT(mSourceStream);
   mSourceStream->AddTrack(aTrackId, new VideoSegment());
   mSourceStream->AddTrackListener(mTrackListener, aTrackId);
-  mSourceStream->SetPullEnabled(true);
+  mSourceStream->SetPullingEnabled(aTrackId, true);
 
   
   mFrameCaptureRequested = true;

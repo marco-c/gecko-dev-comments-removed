@@ -4207,8 +4207,6 @@ RefPtr<SourceListener::InitPromise> SourceListener::InitializeAsync() {
           return InitPromise::CreateAndResolve(true, __func__);
         }
 
-        mStream->SetPullEnabled(true);
-
         for (DeviceState* state :
              {mAudioDeviceState.get(), mVideoDeviceState.get()}) {
           if (!state) {
@@ -4221,6 +4219,15 @@ RefPtr<SourceListener::InitPromise> SourceListener::InitializeAsync() {
           state->mDeviceEnabled = true;
           state->mTrackEnabled = true;
           state->mTrackEnabledTime = TimeStamp::Now();
+
+          if (state->mDevice->GetMediaSource() !=
+              MediaSourceEnum::AudioCapture) {
+            
+            
+            mStream->SetPullingEnabled(
+                state == mAudioDeviceState.get() ? kAudioTrack : kVideoTrack,
+                true);
+          }
         }
         return InitPromise::CreateAndResolve(true, __func__);
       },
@@ -4295,11 +4302,12 @@ void SourceListener::Remove() {
     
     
     
-    mStream->SetPullEnabled(false);
     if (mAudioDeviceState) {
+      mStream->SetPullingEnabled(kAudioTrack, false);
       mStream->RemoveTrackListener(mAudioDeviceState->mListener, kAudioTrack);
     }
     if (mVideoDeviceState) {
+      mStream->SetPullingEnabled(kVideoTrack, false);
       mStream->RemoveTrackListener(mVideoDeviceState->mListener, kVideoTrack);
     }
   }

@@ -664,7 +664,8 @@ class SourceMediaStream : public MediaStream {
 
 
 
-  void SetPullEnabled(bool aEnabled);
+
+  void SetPullingEnabled(TrackID aTrackID, bool aEnabled);
 
   
   
@@ -809,6 +810,8 @@ class SourceMediaStream : public MediaStream {
     
     
     uint32_t mCommands;
+    
+    bool mPullingEnabled;
   };
 
   bool NeedsMixing();
@@ -867,7 +870,6 @@ class SourceMediaStream : public MediaStream {
   nsTArray<TrackData> mUpdateTracks;
   nsTArray<TrackData> mPendingTracks;
   nsTArray<TrackBound<DirectMediaStreamTrackListener>> mDirectTrackListeners;
-  bool mPullEnabled;
   bool mFinishPending;
 };
 
