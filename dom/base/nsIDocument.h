@@ -1341,7 +1341,8 @@ protected:
 
   void DispatchPageTransition(mozilla::dom::EventTarget* aDispatchTarget,
                               const nsAString& aType,
-                              bool aPersisted);
+                              bool aPersisted,
+                              bool aOnlySystemGroup = false);
 
   
   
@@ -2201,8 +2202,10 @@ public:
 
 
 
+
   virtual void OnPageShow(bool aPersisted,
-                          mozilla::dom::EventTarget* aDispatchStartTarget);
+                          mozilla::dom::EventTarget* aDispatchStartTarget,
+                          bool aOnlySystemGroup = false);
 
   
 
@@ -2216,8 +2219,10 @@ public:
 
 
 
+
   void OnPageHide(bool aPersisted,
-                  mozilla::dom::EventTarget* aDispatchStartTarget);
+                  mozilla::dom::EventTarget* aDispatchStartTarget,
+                  bool aOnlySystemGroup = false);
 
   
 
@@ -2843,6 +2848,15 @@ public:
   using mozilla::dom::DocumentOrShadowRoot::GetElementsByTagName;
   using mozilla::dom::DocumentOrShadowRoot::GetElementsByTagNameNS;
   using mozilla::dom::DocumentOrShadowRoot::GetElementsByClassName;
+
+  
+
+
+
+
+
+
+  Element* LookupImageElement(const nsAString& aElementId);
 
   mozilla::dom::DocumentTimeline* Timeline();
   mozilla::LinkedList<mozilla::dom::DocumentTimeline>& Timelines()
@@ -3538,30 +3552,6 @@ public:
   {
     MOZ_ASSERT(mIgnoreOpensDuringUnloadCounter);
     --mIgnoreOpensDuringUnloadCounter;
-  }
-
-  void IncrementTrackerCount(bool aIsTrackerBlocked)
-  {
-    MOZ_ASSERT(!GetSameTypeParentDocument());
-
-    ++mNumTrackersFound;
-    if (aIsTrackerBlocked) {
-      ++mNumTrackersBlocked;
-    }
-  }
-
-  uint32_t NumTrackersFound()
-  {
-    MOZ_ASSERT(!GetSameTypeParentDocument() || mNumTrackersFound == 0);
-
-    return mNumTrackersFound;
-  }
-
-  uint32_t NumTrackersBlocked()
-  {
-    MOZ_ASSERT(!GetSameTypeParentDocument() || mNumTrackersBlocked == 0);
-
-    return mNumTrackersBlocked;
   }
 
   bool AllowPaymentRequest() const
@@ -4516,12 +4506,6 @@ protected:
   uint32_t mIgnoreOpensDuringUnloadCounter;
 
   nsCOMPtr<nsIDOMXULCommandDispatcher> mCommandDispatcher; 
-
-  
-  
-  
-  uint32_t mNumTrackersFound;
-  uint32_t mNumTrackersBlocked;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocument, NS_IDOCUMENT_IID)

@@ -1514,9 +1514,7 @@ nsIDocument::nsIDocument()
     mCurrentOrientationType(OrientationType::Portrait_primary),
     mServoRestyleRootDirtyBits(0),
     mThrowOnDynamicMarkupInsertionCounter(0),
-    mIgnoreOpensDuringUnloadCounter(0),
-    mNumTrackersFound(0),
-    mNumTrackersBlocked(0)
+    mIgnoreOpensDuringUnloadCounter(0)
 {
   SetIsInDocument();
 }
@@ -4953,6 +4951,16 @@ nsIDocument::MozSetImageElement(const nsAString& aImageElementId,
   }
 }
 
+Element*
+nsIDocument::LookupImageElement(const nsAString& aId)
+{
+  if (aId.IsEmpty())
+    return nullptr;
+
+  nsIdentifierMapEntry* entry = mIdentifierMap.GetEntry(aId);
+  return entry ? entry->GetImageIdElement() : nullptr;
+}
+
 void
 nsIDocument::DispatchContentLoadedEvents()
 {
@@ -8320,7 +8328,8 @@ nsIDocument::GetContentInThisDocument(nsIFrame* aFrame) const
 void
 nsIDocument::DispatchPageTransition(EventTarget* aDispatchTarget,
                                     const nsAString& aType,
-                                    bool aPersisted)
+                                    bool aPersisted,
+                                    bool aOnlySystemGroup)
 {
   if (!aDispatchTarget) {
     return;
@@ -8339,6 +8348,9 @@ nsIDocument::DispatchPageTransition(EventTarget* aDispatchTarget,
 
   event->SetTrusted(true);
   event->SetTarget(this);
+  if (aOnlySystemGroup) {
+    event->WidgetEventPtr()->mFlags.mOnlySystemGroupDispatchInContent = true;
+  }
   EventDispatcher::DispatchDOMEvent(aDispatchTarget, nullptr, event,
                                     nullptr, nullptr);
 }
@@ -8352,7 +8364,8 @@ NotifyPageShow(nsIDocument* aDocument, void* aData)
 }
 
 void
-nsIDocument::OnPageShow(bool aPersisted, EventTarget* aDispatchStartTarget)
+nsIDocument::OnPageShow(bool aPersisted, EventTarget* aDispatchStartTarget,
+                        bool aOnlySystemGroup)
 {
   mVisible = true;
 
@@ -8405,7 +8418,8 @@ nsIDocument::OnPageShow(bool aPersisted, EventTarget* aDispatchStartTarget)
     if (!target) {
       target = do_QueryInterface(GetWindow());
     }
-    DispatchPageTransition(target, NS_LITERAL_STRING("pageshow"), aPersisted);
+    DispatchPageTransition(target, NS_LITERAL_STRING("pageshow"), aPersisted,
+                           aOnlySystemGroup);
   }
 }
 
@@ -8452,7 +8466,8 @@ HasHttpScheme(nsIURI* aURI)
 }
 
 void
-nsIDocument::OnPageHide(bool aPersisted, EventTarget* aDispatchStartTarget)
+nsIDocument::OnPageHide(bool aPersisted, EventTarget* aDispatchStartTarget,
+                        bool aOnlySystemGroup)
 {
   if (IsTopLevelContentDocument() && GetDocGroup() &&
       Telemetry::CanRecordExtended()) {
@@ -8524,7 +8539,8 @@ nsIDocument::OnPageHide(bool aPersisted, EventTarget* aDispatchStartTarget)
     }
     {
       PageUnloadingEventTimeStamp timeStamp(this);
-      DispatchPageTransition(target, NS_LITERAL_STRING("pagehide"), aPersisted);
+      DispatchPageTransition(target, NS_LITERAL_STRING("pagehide"), aPersisted,
+                             aOnlySystemGroup);
     }
   }
 
