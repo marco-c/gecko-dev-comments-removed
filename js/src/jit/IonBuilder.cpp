@@ -5356,6 +5356,14 @@ IonBuilder::jsop_funcall(uint32_t argc)
     TemporaryTypeSet* funTypes = current->peek(funcDepth)->resultTypeSet();
     JSFunction* target = getSingleCallTarget(funTypes);
 
+    CallInfo callInfo(alloc(), pc,  false,
+                       BytecodeIsPopped(pc));
+
+    
+    
+    
+    MOZ_TRY(callInfo.savePriorCallStack(this, current, argc + 2));
+
     
     current->shimmySlots(funcDepth - 1);
 
@@ -5370,8 +5378,6 @@ IonBuilder::jsop_funcall(uint32_t argc)
         argc -= 1;
     }
 
-    CallInfo callInfo(alloc(), pc,  false,
-                       BytecodeIsPopped(pc));
     if (!callInfo.init(current, argc)) {
         return abort(AbortReason::Alloc);
     }
