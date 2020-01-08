@@ -152,7 +152,7 @@ ContentRestoreInternal.prototype = {
     let activePageData = tabData.entries[activeIndex] || {};
     let uri = activePageData.url || null;
     if (uri && !loadArguments) {
-      webNavigation.setCurrentURI(Utils.makeURI(uri));
+      webNavigation.setCurrentURI(Services.io.newURI(uri));
     }
 
     SessionHistory.restore(this.docShell, tabData);
@@ -212,7 +212,7 @@ ContentRestoreInternal.prototype = {
     
     
     if (!isRemotenessUpdate) {
-      webNavigation.setCurrentURI(Utils.makeURI("about:blank"));
+      webNavigation.setCurrentURI(Services.io.newURI("about:blank"));
     }
 
     try {
@@ -220,7 +220,7 @@ ContentRestoreInternal.prototype = {
         
         
         let referrer = loadArguments.referrer ?
-                       Utils.makeURI(loadArguments.referrer) : null;
+                       Services.io.newURI(loadArguments.referrer) : null;
         let referrerPolicy = ("referrerPolicy" in loadArguments
             ? loadArguments.referrerPolicy
             : Ci.nsIHttpChannel.REFERRER_POLICY_UNSET);
@@ -399,7 +399,7 @@ HistoryListener.prototype = {
 
     
     
-    this.webNavigation.setCurrentURI(Utils.makeURI("about:blank"));
+    this.webNavigation.setCurrentURI(Services.io.newURI("about:blank"));
 
     
     
