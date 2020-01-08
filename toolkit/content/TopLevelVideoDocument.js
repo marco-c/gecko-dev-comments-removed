@@ -9,11 +9,10 @@ let videoElement = document.getElementsByTagName("video")[0];
 
 
 
+document.addEventListener("focus", () => videoElement.focus(), true);
+
 
 document.addEventListener("keypress", ev => {
-  if (ev.synthetic) 
-    return;
-
   
   
   if (ev.key == "F11" && videoElement.videoWidth != 0 && videoElement.videoHeight != 0) {
@@ -34,15 +33,5 @@ document.addEventListener("keypress", ev => {
     } else {
       document.mozCancelFullScreen();
     }
-    return;
   }
-
-  
-  
-  if (document.activeElement == videoElement)
-    return;
-
-  let newEvent = new KeyboardEvent("keypress", ev);
-  newEvent.synthetic = true;
-  videoElement.dispatchEvent(newEvent);
 });
