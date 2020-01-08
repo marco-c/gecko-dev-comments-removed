@@ -327,6 +327,10 @@ class AutofillRecords {
       }
     } else if (!recordToSave.deleted) {
       this._normalizeRecord(recordToSave);
+      
+      
+      
+      this._validateFields(recordToSave);
 
       recordToSave.guid = this._generateGUID();
       recordToSave.version = this.version;
@@ -437,6 +441,13 @@ class AutofillRecords {
     if (!hasValidField) {
       throw new Error("Record contains no valid field.");
     }
+
+    
+    
+    
+    
+    
+    this._validateFields(recordFound);
 
     recordFound.timeLastModified = Date.now();
     let syncMetadata = this._getSyncMetaData(recordFound);
@@ -1221,7 +1232,27 @@ class AutofillRecords {
   computeFields(record) {}
 
   
-  _normalizeFields(record) {}
+
+
+
+
+
+
+
+
+
+  _normalizeFields(partialRecord) {}
+
+  
+
+
+
+
+
+
+
+
+  _validateFields(record) {}
 
   
   mergeIfPossible(guid, record, strict) {}
@@ -1579,7 +1610,7 @@ class CreditCards extends AutofillRecords {
     if (creditCard["cc-number"]) {
       let card = new CreditCard({number: creditCard["cc-number"]});
       creditCard["cc-number"] = card.number;
-      if (!creditCard["cc-number"]) {
+      if (!card.isValidNumber()) {
         delete creditCard["cc-number"];
       }
     }
@@ -1602,6 +1633,12 @@ class CreditCards extends AutofillRecords {
       delete creditCard["cc-exp-year"];
     }
     delete creditCard["cc-exp"];
+  }
+
+  _validateFields(creditCard) {
+    if (!creditCard["cc-number"]) {
+      throw new Error("Missing/invalid cc-number");
+    }
   }
 
   
