@@ -31,7 +31,7 @@ class NameResolver {
   StringBuffer* buf;       
 
   
-  bool call(ParseNode* pn) { return pn && pn->isKind(ParseNodeKind::CallExpr); }
+  bool call(ParseNode* pn) { return pn && pn->isKind(ParseNodeKind::Call); }
 
   
 
@@ -74,7 +74,7 @@ class NameResolver {
 
   bool nameExpression(ParseNode* n, bool* foundName) {
     switch (n->getKind()) {
-      case ParseNodeKind::DotExpr: {
+      case ParseNodeKind::Dot: {
         PropertyAccess* prop = &n->as<PropertyAccess>();
         if (!nameExpression(&prop->expression(), foundName)) {
           return false;
@@ -90,11 +90,11 @@ class NameResolver {
         *foundName = true;
         return buf->append(n->as<NameNode>().atom());
 
-      case ParseNodeKind::ThisExpr:
+      case ParseNodeKind::This:
         *foundName = true;
         return buf->append("this");
 
-      case ParseNodeKind::ElemExpr: {
+      case ParseNodeKind::Elem: {
         PropertyByValue* elem = &n->as<PropertyByValue>();
         if (!nameExpression(&elem->expression(), foundName)) {
           return false;
@@ -111,7 +111,7 @@ class NameResolver {
         return buf->append(']');
       }
 
-      case ParseNodeKind::NumberExpr:
+      case ParseNodeKind::Number:
         *foundName = true;
         return appendNumber(n->as<NumericLiteral>().value());
 
@@ -148,12 +148,12 @@ class NameResolver {
         case ParseNodeKind::PrivateName:
         case ParseNodeKind::Name:
           return cur; 
-        case ParseNodeKind::ThisExpr:
+        case ParseNodeKind::This:
           return cur; 
         case ParseNodeKind::Function:
           return nullptr; 
 
-        case ParseNodeKind::ReturnStmt:
+        case ParseNodeKind::Return:
           
 
 
@@ -264,11 +264,11 @@ class NameResolver {
           node->isKind(ParseNodeKind::Shorthand)) {
         ParseNode* left = node->as<BinaryNode>().left();
         if (left->isKind(ParseNodeKind::ObjectPropertyName) ||
-            left->isKind(ParseNodeKind::StringExpr)) {
+            left->isKind(ParseNodeKind::String)) {
           if (!appendPropertyReference(left->as<NameNode>().atom())) {
             return false;
           }
-        } else if (left->isKind(ParseNodeKind::NumberExpr)) {
+        } else if (left->isKind(ParseNodeKind::Number)) {
           if (!appendNumericPropertyReference(
                   left->as<NumericLiteral>().value())) {
             return false;
@@ -326,10 +326,10 @@ class NameResolver {
   }
 
   bool resolveTemplateLiteral(ListNode* node, HandleAtom prefix) {
-    MOZ_ASSERT(node->isKind(ParseNodeKind::TemplateStringListExpr));
+    MOZ_ASSERT(node->isKind(ParseNodeKind::TemplateStringList));
     ParseNode* element = node->head();
     while (true) {
-      MOZ_ASSERT(element->isKind(ParseNodeKind::TemplateStringExpr));
+      MOZ_ASSERT(element->isKind(ParseNodeKind::TemplateString));
 
       element = element->pn_next;
       if (!element) {
@@ -345,7 +345,7 @@ class NameResolver {
   }
 
   bool resolveTaggedTemplate(BinaryNode* taggedTemplate, HandleAtom prefix) {
-    MOZ_ASSERT(taggedTemplate->isKind(ParseNodeKind::TaggedTemplateExpr));
+    MOZ_ASSERT(taggedTemplate->isKind(ParseNodeKind::TaggedTemplate));
 
     ParseNode* tag = taggedTemplate->left();
 
@@ -363,13 +363,13 @@ class NameResolver {
 #ifdef DEBUG
     {
       ListNode* rawNodes = &element->head()->as<ListNode>();
-      MOZ_ASSERT(rawNodes->isKind(ParseNodeKind::ArrayExpr));
+      MOZ_ASSERT(rawNodes->isKind(ParseNodeKind::Array));
       for (ParseNode* raw : rawNodes->contents()) {
-        MOZ_ASSERT(raw->isKind(ParseNodeKind::TemplateStringExpr));
+        MOZ_ASSERT(raw->isKind(ParseNodeKind::TemplateString));
       }
       for (ParseNode* cooked : element->contentsFrom(rawNodes->pn_next)) {
-        MOZ_ASSERT(cooked->isKind(ParseNodeKind::TemplateStringExpr) ||
-                   cooked->isKind(ParseNodeKind::RawUndefinedExpr));
+        MOZ_ASSERT(cooked->isKind(ParseNodeKind::TemplateString) ||
+                   cooked->isKind(ParseNodeKind::RawUndefined));
       }
     }
 #endif
@@ -427,43 +427,43 @@ class NameResolver {
     switch (cur->getKind()) {
       
       
-      case ParseNodeKind::EmptyStmt:
-      case ParseNodeKind::TrueExpr:
-      case ParseNodeKind::FalseExpr:
-      case ParseNodeKind::NullExpr:
-      case ParseNodeKind::RawUndefinedExpr:
+      case ParseNodeKind::EmptyStatement:
+      case ParseNodeKind::True:
+      case ParseNodeKind::False:
+      case ParseNodeKind::Null:
+      case ParseNodeKind::RawUndefined:
       case ParseNodeKind::Elision:
       case ParseNodeKind::Generator:
-      case ParseNodeKind::ExportBatchSpecStmt:
+      case ParseNodeKind::ExportBatchSpec:
       case ParseNodeKind::PosHolder:
         MOZ_ASSERT(cur->is<NullaryNode>());
         break;
 
-      case ParseNodeKind::DebuggerStmt:
+      case ParseNodeKind::Debugger:
         MOZ_ASSERT(cur->is<DebuggerStatement>());
         break;
 
-      case ParseNodeKind::BreakStmt:
+      case ParseNodeKind::Break:
         MOZ_ASSERT(cur->is<BreakStatement>());
         break;
 
-      case ParseNodeKind::ContinueStmt:
+      case ParseNodeKind::Continue:
         MOZ_ASSERT(cur->is<ContinueStatement>());
         break;
 
       case ParseNodeKind::ObjectPropertyName:
       case ParseNodeKind::PrivateName:  
                                         
-      case ParseNodeKind::StringExpr:
-      case ParseNodeKind::TemplateStringExpr:
+      case ParseNodeKind::String:
+      case ParseNodeKind::TemplateString:
         MOZ_ASSERT(cur->is<NameNode>());
         break;
 
-      case ParseNodeKind::RegExpExpr:
+      case ParseNodeKind::RegExp:
         MOZ_ASSERT(cur->is<RegExpLiteral>());
         break;
 
-      case ParseNodeKind::NumberExpr:
+      case ParseNodeKind::Number:
         MOZ_ASSERT(cur->is<NumericLiteral>());
         break;
 
@@ -473,14 +473,14 @@ class NameResolver {
         break;
 #endif
 
-      case ParseNodeKind::TypeOfNameExpr:
+      case ParseNodeKind::TypeOfName:
       case ParseNodeKind::SuperBase:
         MOZ_ASSERT(cur->as<UnaryNode>().kid()->isKind(ParseNodeKind::Name));
         MOZ_ASSERT(!cur->as<UnaryNode>().kid()->as<NameNode>().initializer());
         break;
 
-      case ParseNodeKind::NewTargetExpr:
-      case ParseNodeKind::ImportMetaExpr: {
+      case ParseNodeKind::NewTarget:
+      case ParseNodeKind::ImportMeta: {
         MOZ_ASSERT(
             cur->as<BinaryNode>().left()->isKind(ParseNodeKind::PosHolder));
         MOZ_ASSERT(
@@ -489,33 +489,33 @@ class NameResolver {
       }
 
       
-      case ParseNodeKind::ExpressionStmt:
+      case ParseNodeKind::ExpressionStatement:
       case ParseNodeKind::TypeOfExpr:
-      case ParseNodeKind::VoidExpr:
-      case ParseNodeKind::NotExpr:
-      case ParseNodeKind::BitNotExpr:
-      case ParseNodeKind::ThrowStmt:
-      case ParseNodeKind::DeleteNameExpr:
-      case ParseNodeKind::DeletePropExpr:
-      case ParseNodeKind::DeleteElemExpr:
+      case ParseNodeKind::Void:
+      case ParseNodeKind::Not:
+      case ParseNodeKind::BitNot:
+      case ParseNodeKind::Throw:
+      case ParseNodeKind::DeleteName:
+      case ParseNodeKind::DeleteProp:
+      case ParseNodeKind::DeleteElem:
       case ParseNodeKind::DeleteExpr:
-      case ParseNodeKind::NegExpr:
-      case ParseNodeKind::PosExpr:
-      case ParseNodeKind::PreIncrementExpr:
-      case ParseNodeKind::PostIncrementExpr:
-      case ParseNodeKind::PreDecrementExpr:
-      case ParseNodeKind::PostDecrementExpr:
+      case ParseNodeKind::Neg:
+      case ParseNodeKind::Pos:
+      case ParseNodeKind::PreIncrement:
+      case ParseNodeKind::PostIncrement:
+      case ParseNodeKind::PreDecrement:
+      case ParseNodeKind::PostDecrement:
       case ParseNodeKind::ComputedName:
       case ParseNodeKind::Spread:
       case ParseNodeKind::MutateProto:
-      case ParseNodeKind::ExportStmt:
+      case ParseNodeKind::Export:
         if (!resolve(cur->as<UnaryNode>().kid(), prefix)) {
           return false;
         }
         break;
 
       
-      case ParseNodeKind::ThisExpr:
+      case ParseNodeKind::This:
         if (ParseNode* expr = cur->as<ThisLiteral>().kid()) {
           if (!resolve(expr, prefix)) {
             return false;
@@ -524,25 +524,25 @@ class NameResolver {
         break;
 
       
-      case ParseNodeKind::AssignExpr:
-      case ParseNodeKind::AddAssignExpr:
-      case ParseNodeKind::SubAssignExpr:
-      case ParseNodeKind::BitOrAssignExpr:
-      case ParseNodeKind::BitXorAssignExpr:
-      case ParseNodeKind::BitAndAssignExpr:
-      case ParseNodeKind::LshAssignExpr:
-      case ParseNodeKind::RshAssignExpr:
-      case ParseNodeKind::UrshAssignExpr:
-      case ParseNodeKind::MulAssignExpr:
-      case ParseNodeKind::DivAssignExpr:
-      case ParseNodeKind::ModAssignExpr:
-      case ParseNodeKind::PowAssignExpr:
+      case ParseNodeKind::Assign:
+      case ParseNodeKind::AddAssign:
+      case ParseNodeKind::SubAssign:
+      case ParseNodeKind::BitOrAssign:
+      case ParseNodeKind::BitXorAssign:
+      case ParseNodeKind::BitAndAssign:
+      case ParseNodeKind::LshAssign:
+      case ParseNodeKind::RshAssign:
+      case ParseNodeKind::UrshAssign:
+      case ParseNodeKind::MulAssign:
+      case ParseNodeKind::DivAssign:
+      case ParseNodeKind::ModAssign:
+      case ParseNodeKind::PowAssign:
       case ParseNodeKind::Colon:
       case ParseNodeKind::Shorthand:
-      case ParseNodeKind::DoWhileStmt:
-      case ParseNodeKind::WhileStmt:
-      case ParseNodeKind::SwitchStmt:
-      case ParseNodeKind::ForStmt:
+      case ParseNodeKind::DoWhile:
+      case ParseNodeKind::While:
+      case ParseNodeKind::Switch:
+      case ParseNodeKind::For:
       case ParseNodeKind::ClassMethod:
       case ParseNodeKind::SetThis: {
         BinaryNode* node = &cur->as<BinaryNode>();
@@ -570,7 +570,7 @@ class NameResolver {
         break;
       }
 
-      case ParseNodeKind::ElemExpr: {
+      case ParseNodeKind::Elem: {
         PropertyByValue* elem = &cur->as<PropertyByValue>();
         if (!elem->isSuper() && !resolve(&elem->expression(), prefix)) {
           return false;
@@ -581,7 +581,7 @@ class NameResolver {
         break;
       }
 
-      case ParseNodeKind::WithStmt: {
+      case ParseNodeKind::With: {
         BinaryNode* node = &cur->as<BinaryNode>();
         if (!resolve(node->left(), prefix)) {
           return false;
@@ -615,14 +615,14 @@ class NameResolver {
         break;
       }
 
-      case ParseNodeKind::YieldStarExpr:
+      case ParseNodeKind::YieldStar:
         if (!resolve(cur->as<UnaryNode>().kid(), prefix)) {
           return false;
         }
         break;
 
-      case ParseNodeKind::YieldExpr:
-      case ParseNodeKind::AwaitExpr:
+      case ParseNodeKind::Yield:
+      case ParseNodeKind::Await:
         if (ParseNode* expr = cur->as<UnaryNode>().kid()) {
           if (!resolve(expr, prefix)) {
             return false;
@@ -630,7 +630,7 @@ class NameResolver {
         }
         break;
 
-      case ParseNodeKind::ReturnStmt:
+      case ParseNodeKind::Return:
         if (ParseNode* returnValue = cur->as<UnaryNode>().kid()) {
           if (!resolve(returnValue, prefix)) {
             return false;
@@ -638,9 +638,9 @@ class NameResolver {
         }
         break;
 
-      case ParseNodeKind::ImportDecl:
-      case ParseNodeKind::ExportFromStmt:
-      case ParseNodeKind::ExportDefaultStmt: {
+      case ParseNodeKind::Import:
+      case ParseNodeKind::ExportFrom:
+      case ParseNodeKind::ExportDefault: {
         BinaryNode* node = &cur->as<BinaryNode>();
         
         
@@ -648,13 +648,13 @@ class NameResolver {
         if (!resolve(node->left(), prefix)) {
           return false;
         }
-        MOZ_ASSERT_IF(!node->isKind(ParseNodeKind::ExportDefaultStmt),
-                      node->right()->isKind(ParseNodeKind::StringExpr));
+        MOZ_ASSERT_IF(!node->isKind(ParseNodeKind::ExportDefault),
+                      node->right()->isKind(ParseNodeKind::String));
         break;
       }
 
       
-      case ParseNodeKind::ConditionalExpr: {
+      case ParseNodeKind::Conditional: {
         TernaryNode* condNode = &cur->as<TernaryNode>();
         if (!resolve(condNode->kid1(), prefix)) {
           return false;
@@ -712,7 +712,7 @@ class NameResolver {
       
       
       
-      case ParseNodeKind::ClassDecl: {
+      case ParseNodeKind::Class: {
         ClassNode* classNode = &cur->as<ClassNode>();
 #ifdef DEBUG
         if (classNode->names()) {
@@ -740,7 +740,7 @@ class NameResolver {
 
       
       
-      case ParseNodeKind::IfStmt: {
+      case ParseNodeKind::If: {
         TernaryNode* ifNode = &cur->as<TernaryNode>();
         if (!resolve(ifNode->kid1(), prefix)) {
           return false;
@@ -759,7 +759,7 @@ class NameResolver {
       
       
       
-      case ParseNodeKind::TryStmt: {
+      case ParseNodeKind::Try: {
         TryNode* tryNode = &cur->as<TryNode>();
         if (!resolve(tryNode->body(), prefix)) {
           return false;
@@ -798,40 +798,40 @@ class NameResolver {
       }
 
       
-      case ParseNodeKind::OrExpr:
-      case ParseNodeKind::AndExpr:
-      case ParseNodeKind::BitOrExpr:
-      case ParseNodeKind::BitXorExpr:
-      case ParseNodeKind::BitAndExpr:
-      case ParseNodeKind::StrictEqExpr:
-      case ParseNodeKind::EqExpr:
-      case ParseNodeKind::StrictNeExpr:
-      case ParseNodeKind::NeExpr:
-      case ParseNodeKind::LtExpr:
-      case ParseNodeKind::LeExpr:
-      case ParseNodeKind::GtExpr:
-      case ParseNodeKind::GeExpr:
-      case ParseNodeKind::InstanceOfExpr:
-      case ParseNodeKind::InExpr:
-      case ParseNodeKind::LshExpr:
-      case ParseNodeKind::RshExpr:
-      case ParseNodeKind::UrshExpr:
-      case ParseNodeKind::AddExpr:
-      case ParseNodeKind::SubExpr:
-      case ParseNodeKind::MulExpr:
-      case ParseNodeKind::DivExpr:
-      case ParseNodeKind::ModExpr:
-      case ParseNodeKind::PowExpr:
-      case ParseNodeKind::PipelineExpr:
-      case ParseNodeKind::CommaExpr:
-      case ParseNodeKind::ArrayExpr:
+      case ParseNodeKind::Or:
+      case ParseNodeKind::And:
+      case ParseNodeKind::BitOr:
+      case ParseNodeKind::BitXor:
+      case ParseNodeKind::BitAnd:
+      case ParseNodeKind::StrictEq:
+      case ParseNodeKind::Eq:
+      case ParseNodeKind::StrictNe:
+      case ParseNodeKind::Ne:
+      case ParseNodeKind::Lt:
+      case ParseNodeKind::Le:
+      case ParseNodeKind::Gt:
+      case ParseNodeKind::Ge:
+      case ParseNodeKind::InstanceOf:
+      case ParseNodeKind::In:
+      case ParseNodeKind::Lsh:
+      case ParseNodeKind::Rsh:
+      case ParseNodeKind::Ursh:
+      case ParseNodeKind::Add:
+      case ParseNodeKind::Sub:
+      case ParseNodeKind::Star:
+      case ParseNodeKind::Div:
+      case ParseNodeKind::Mod:
+      case ParseNodeKind::Pow:
+      case ParseNodeKind::Pipeline:
+      case ParseNodeKind::Comma:
+      case ParseNodeKind::Array:
       case ParseNodeKind::StatementList:
       case ParseNodeKind::ParamsBody:
       
       
-      case ParseNodeKind::VarStmt:
-      case ParseNodeKind::ConstDecl:
-      case ParseNodeKind::LetDecl:
+      case ParseNodeKind::Var:
+      case ParseNodeKind::Const:
+      case ParseNodeKind::Let:
         for (ParseNode* element : cur->as<ListNode>().contents()) {
           if (!resolve(element, prefix)) {
             return false;
@@ -839,7 +839,7 @@ class NameResolver {
         }
         break;
 
-      case ParseNodeKind::ObjectExpr:
+      case ParseNodeKind::Object:
       case ParseNodeKind::ClassMemberList:
         for (ParseNode* element : cur->as<ListNode>().contents()) {
           if (!resolve(element, prefix)) {
@@ -850,21 +850,21 @@ class NameResolver {
 
       
       
-      case ParseNodeKind::TemplateStringListExpr:
+      case ParseNodeKind::TemplateStringList:
         if (!resolveTemplateLiteral(&cur->as<ListNode>(), prefix)) {
           return false;
         }
         break;
 
-      case ParseNodeKind::TaggedTemplateExpr:
+      case ParseNodeKind::TaggedTemplate:
         if (!resolveTaggedTemplate(&cur->as<BinaryNode>(), prefix)) {
           return false;
         }
         break;
 
-      case ParseNodeKind::NewExpr:
-      case ParseNodeKind::CallExpr:
-      case ParseNodeKind::SuperCallExpr: {
+      case ParseNodeKind::New:
+      case ParseNodeKind::Call:
+      case ParseNodeKind::SuperCall: {
         BinaryNode* callNode = &cur->as<BinaryNode>();
         if (!resolve(callNode->left(), prefix)) {
           return false;
@@ -895,8 +895,7 @@ class NameResolver {
         bool isImport = cur->isKind(ParseNodeKind::ImportSpecList);
         ListNode* list = &cur->as<ListNode>();
         ParseNode* item = list->head();
-        if (!isImport && item &&
-            item->isKind(ParseNodeKind::ExportBatchSpecStmt)) {
+        if (!isImport && item && item->isKind(ParseNodeKind::ExportBatchSpec)) {
           MOZ_ASSERT(item->is<NullaryNode>());
           break;
         }
@@ -913,7 +912,7 @@ class NameResolver {
         break;
       }
 
-      case ParseNodeKind::CallImportExpr: {
+      case ParseNodeKind::CallImport: {
         BinaryNode* node = &cur->as<BinaryNode>();
         if (!resolve(node->right(), prefix)) {
           return false;
@@ -921,7 +920,7 @@ class NameResolver {
         break;
       }
 
-      case ParseNodeKind::DotExpr: {
+      case ParseNodeKind::Dot: {
         
         PropertyAccess* prop = &cur->as<PropertyAccess>();
         if (prop->isSuper()) {
@@ -933,7 +932,7 @@ class NameResolver {
         break;
       }
 
-      case ParseNodeKind::LabelStmt:
+      case ParseNodeKind::Label:
         if (!resolve(cur->as<LabeledStatement>().statement(), prefix)) {
           return false;
         }
@@ -964,11 +963,11 @@ class NameResolver {
 
         
 
-      case ParseNodeKind::ImportSpec:        
-      case ParseNodeKind::ExportSpec:        
-      case ParseNodeKind::CallSiteObjExpr:   
-      case ParseNodeKind::ClassNames:        
-      case ParseNodeKind::PropertyNameExpr:  
+      case ParseNodeKind::ImportSpec:    
+      case ParseNodeKind::ExportSpec:    
+      case ParseNodeKind::CallSiteObj:   
+      case ParseNodeKind::ClassNames:    
+      case ParseNodeKind::PropertyName:  
         MOZ_CRASH("should have been handled by a parent node");
 
       case ParseNodeKind::Limit:  
