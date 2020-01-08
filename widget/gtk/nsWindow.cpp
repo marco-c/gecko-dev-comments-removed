@@ -6729,6 +6729,13 @@ nsWindow::UpdateClientOffsetForCSDWindow()
     
     
     
+    if (!mIsX11Display) {
+        return;
+    }
+
+    
+    
+    
     if (mSizeState == nsSizeMode_Normal) {
         GtkBorder decorationSize;
         GetCSDDecorationSize(GTK_WINDOW(mShell), &decorationSize);
