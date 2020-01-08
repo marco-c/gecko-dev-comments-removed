@@ -8,8 +8,8 @@ const { createFactory, PureComponent } = require("devtools/client/shared/vendor/
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
+const FontAxis = createFactory(require("./FontAxis"));
 const FontName = createFactory(require("./FontName"));
-const FontPropertyValue = createFactory(require("./FontPropertyValue"));
 const FontSize = createFactory(require("./FontSize"));
 const FontStyle = createFactory(require("./FontStyle"));
 const FontWeight = createFactory(require("./FontWeight"));
@@ -43,33 +43,6 @@ class FontEditor extends PureComponent {
 
 
 
-  getAxisStep(min, max) {
-    let step = 1;
-    const delta = parseInt(max, 10) - parseInt(min, 10);
-
-    if (delta <= 1) {
-      step = 0.001;
-    } else if (delta <= 10) {
-      step = 0.01;
-    } else if (delta <= 100) {
-      step = 0.1;
-    }
-
-    return step.toString();
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
 
 
   renderAxes(fontAxes = [], editedAxes) {
@@ -78,16 +51,10 @@ class FontEditor extends PureComponent {
     }
 
     return fontAxes.map(axis => {
-      return FontPropertyValue({
+      return FontAxis({
         key: axis.tag,
-        className: "font-control-axis",
-        label: axis.name,
-        min: axis.minValue,
-        max: axis.maxValue,
-        name: axis.tag,
+        axis,
         onChange: this.props.onPropertyChange,
-        step: this.getAxisStep(axis.minValue, axis.maxValue),
-        unit: null,
         value: editedAxes[axis.tag] || axis.defaultValue,
       });
     });
