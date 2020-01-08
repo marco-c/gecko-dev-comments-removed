@@ -680,8 +680,9 @@ JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm, const VMFunct
     regs.take(cxreg);
 
     
-    if (f.expectTailCall == NonTailCall)
+    if (f.expectTailCall == NonTailCall) {
         masm.pushReturnAddress();
+    }
 
     
     masm.loadJSContext(cxreg);
@@ -746,8 +747,9 @@ JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm, const VMFunct
     masm.reserveStack(outParamOffset);
     masm.movePtr(StackPointer, doubleArgs);
 
-    if (!generateTLEnterVM(masm, f))
+    if (!generateTLEnterVM(masm, f)) {
         return false;
+    }
 
     masm.setupAlignedABICall();
     masm.passABIArg(cxreg);
@@ -797,8 +799,9 @@ JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm, const VMFunct
 
     masm.callWithABI(f.wrapped, MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
-    if (!generateTLExitVM(masm, f))
+    if (!generateTLExitVM(masm, f)) {
         return false;
+    }
 
     
     switch (f.failType()) {

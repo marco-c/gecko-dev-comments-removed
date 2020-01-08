@@ -659,8 +659,9 @@ JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm, const VMFunct
     regs.take(cxreg);
 
     
-    if (f.expectTailCall == NonTailCall)
+    if (f.expectTailCall == NonTailCall) {
         masm.pushReturnAddress();
+    }
 
     
     masm.loadJSContext(cxreg);
@@ -714,8 +715,9 @@ JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm, const VMFunct
         break;
     }
 
-    if (!generateTLEnterVM(masm, f))
+    if (!generateTLEnterVM(masm, f)) {
         return false;
+    }
 
     masm.setupUnalignedABICall(regs.getAny());
     masm.passABIArg(cxreg);
@@ -726,10 +728,11 @@ JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm, const VMFunct
     for (uint32_t explicitArg = 0; explicitArg < f.explicitArgs; explicitArg++) {
         switch (f.argProperties(explicitArg)) {
           case VMFunction::WordByValue:
-            if (f.argPassedInFloatReg(explicitArg))
+            if (f.argPassedInFloatReg(explicitArg)) {
                 masm.passABIArg(MoveOperand(argsBase, argDisp), MoveOp::DOUBLE);
-            else
+            } else {
                 masm.passABIArg(MoveOperand(argsBase, argDisp), MoveOp::GENERAL);
+            }
             argDisp += sizeof(void*);
             break;
           case VMFunction::WordByRef:
@@ -745,13 +748,15 @@ JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm, const VMFunct
     }
 
     
-    if (InvalidReg != outReg)
+    if (InvalidReg != outReg) {
         masm.passABIArg(outReg);
+    }
 
     masm.callWithABI(f.wrapped, MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
-    if (!generateTLExitVM(masm, f))
+    if (!generateTLExitVM(masm, f)) {
         return false;
+    }
 
     
     switch (f.failType()) {

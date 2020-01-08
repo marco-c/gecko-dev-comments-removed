@@ -32,8 +32,9 @@ class ABIArgGenerator
     ABIArg& current() { return current_; }
 
     uint32_t stackBytesConsumedSoFar() const {
-        if (usedArgSlots_ <= 8)
+        if (usedArgSlots_ <= 8) {
             return 0;
+        }
 
         return (usedArgSlots_ - 8) * sizeof(int64_t);
     }
@@ -233,14 +234,16 @@ GetTempRegForIntArg(uint32_t usedIntArgs, uint32_t usedFloatArgs, Register* out)
     
     MOZ_ASSERT(usedFloatArgs == 0);
 
-    if (GetIntArgReg(usedIntArgs, out))
+    if (GetIntArgReg(usedIntArgs, out)) {
         return true;
+    }
     
     
     
     usedIntArgs -= NumIntArgRegs;
-    if (usedIntArgs >= NumCallTempNonArgRegs)
+    if (usedIntArgs >= NumCallTempNonArgRegs) {
         return false;
+    }
     *out = CallTempNonArgRegs[usedIntArgs];
     return true;
 }
