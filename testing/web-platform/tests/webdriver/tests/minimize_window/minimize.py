@@ -1,20 +1,10 @@
 from tests.support.asserts import assert_error, assert_success
+from tests.support.helpers import is_fullscreen
 
 
 def minimize(session):
     return session.transport.send(
         "POST", "session/{session_id}/window/minimize".format(**vars(session)))
-
-
-def is_fullscreen(session):
-    
-    
-    
-    
-    
-    return session.execute_script("""
-        return !!(window.fullScreen || document.webkitIsFullScreen)
-        """)
 
 
 def is_minimized(session):

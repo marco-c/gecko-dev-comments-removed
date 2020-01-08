@@ -5,23 +5,13 @@ import pytest
 from webdriver.transport import Response
 
 from tests.support.asserts import assert_error, assert_success
+from tests.support.helpers import is_fullscreen
 
 
 def set_window_rect(session, rect):
     return session.transport.send(
         "POST", "session/{session_id}/window/rect".format(**vars(session)),
         rect)
-
-
-def is_fullscreen(session):
-    
-    
-    
-    
-    
-    return session.execute_script("""
-        return !!(window.fullScreen || document.webkitIsFullScreen)
-        """)
 
 
 def test_null_parameter_value(session, http):

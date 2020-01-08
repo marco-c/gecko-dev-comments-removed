@@ -119,6 +119,17 @@ def is_element_in_viewport(session, element):
     """, args=(element,))
 
 
+def is_fullscreen(session):
+    
+    
+    
+    
+    
+    return session.execute_script("""
+        return !!(window.fullScreen || document.webkitIsFullScreen)
+        """)
+
+
 def document_dimensions(session):
     return tuple(session.execute_script("""
         let {devicePixelRatio} = window;

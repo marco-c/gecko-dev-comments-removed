@@ -3,22 +3,12 @@
 import pytest
 
 from tests.support.asserts import assert_dialog_handled, assert_error, assert_success
+from tests.support.helpers import is_fullscreen
 
 
 def fullscreen(session):
     return session.transport.send(
         "POST", "session/{session_id}/window/fullscreen".format(**vars(session)))
-
-
-def is_fullscreen(session):
-    
-    
-    
-    
-    
-    return session.execute_script("""
-        return !!(window.fullScreen || document.webkitIsFullScreen)
-        """)
 
 
 @pytest.fixture
