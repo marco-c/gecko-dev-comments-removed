@@ -76,15 +76,14 @@ class BinASTParserBase: private JS::AutoGCRooter
     ParseNodeAllocator nodeAlloc_;
 
     
+  protected:
+    
     AutoKeepAtoms keepAtoms_;
 
-    
-  protected:
     ParseContext* parseContext_;
     FullParseHandler factory_;
 
     friend class BinParseContext;
-
 };
 
 

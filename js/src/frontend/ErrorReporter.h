@@ -11,7 +11,10 @@
 #include <stddef.h> 
 #include <stdint.h> 
 
-#include "jsapi.h" 
+#include "js/CompileOptions.h"
+#include "js/UniquePtr.h"
+
+class JSErrorNotes;
 
 namespace js {
 namespace frontend {

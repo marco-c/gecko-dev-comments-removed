@@ -1,3 +1,9 @@
+
+
+
+
+
+
 #ifndef frontend_ParseContext_inl_h
 #define frontend_ParseContext_inl_h
 
@@ -19,7 +25,6 @@ ParseContext::Statement::is<ParseContext::ClassStatement>() const
 {
     return kind_ == StatementKind::Class;
 }
-
 
 inline JS::Result<Ok, ParseContext::BreakStatementError>
 ParseContext::checkBreakStatement(PropertyName* label)
