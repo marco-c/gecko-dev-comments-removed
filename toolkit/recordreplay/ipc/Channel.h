@@ -401,6 +401,10 @@ public:
   
   typedef std::function<void(Message*)> MessageHandler;
 
+  
+  
+  static const size_t RecordingId = 0;
+
 private:
   
   size_t mId;
@@ -447,6 +451,9 @@ public:
   
   void SendMessage(const Message& aMsg);
 };
+
+
+static const char* gMiddlemanPidOption = "-middlemanPid";
 
 
 static const char* gChannelIDOption = "-recordReplayChannelID";

@@ -38,7 +38,7 @@ const char* SaveAllRecordingsDirectory();
 
 
 
-void SaveRecording(const nsCString& aFilename);
+void SaveRecording(const ipc::FileDescriptor& aFile);
 
 
 ipc::MessageChannel* ChannelToUIProcess();
@@ -48,6 +48,17 @@ void InitializeMiddleman(int aArgc, char* aArgv[], base::ProcessId aParentPid);
 
 
 void NotePrefsShmemContents(char* aPrefs, size_t aPrefsLen);
+
+
+
+void OpenChannel(base::ProcessId aMiddlemanPid, uint32_t aChannelId,
+                 ipc::FileDescriptor* aConnection);
+
+
+
+void GetArgumentsForChildProcess(base::ProcessId aMiddlemanPid, uint32_t aChannelId,
+                                 const char* aRecordingFile, bool aRecording,
+                                 std::vector<std::string>& aExtraArgs);
 
 } 
 } 

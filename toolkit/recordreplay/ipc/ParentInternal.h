@@ -124,11 +124,15 @@ public:
 };
 
 
+
+
+
+
+extern ipc::GeckoChildProcessHost* gRecordingProcess;
+
+
 class ChildProcessInfo
 {
-  
-  ipc::GeckoChildProcessHost* mProcess;
-
   
   Channel* mChannel;
 
@@ -202,8 +206,6 @@ class ChildProcessInfo
   
   bool mPauseNeeded;
 
-  static void Terminate(ipc::GeckoChildProcessHost* aProcess);
-
   void OnIncomingMessage(size_t aChannelId, const Message& aMsg);
   void OnIncomingRecoveryMessage(const Message& aMsg);
   void SendNextRecoveryMessage();
@@ -226,14 +228,12 @@ class ChildProcessInfo
   bool CanRestart();
   void AttemptRestart(const char* aWhy);
   void LaunchSubprocess();
-  void TerminateSubprocess();
 
 public:
   ChildProcessInfo(UniquePtr<ChildRole> aRole, bool aRecording);
   ~ChildProcessInfo();
 
   ChildRole* Role() { return mRole.get(); }
-  ipc::GeckoChildProcessHost* Process() { return mProcess; }
   size_t GetId() { return mChannel->GetId(); }
   bool IsRecording() { return mRecording; }
   size_t LastCheckpoint() { return mLastCheckpoint; }

@@ -33,8 +33,7 @@ ChildProcessInfo::SetIntroductionMessage(IntroductionMessage* aMessage)
 }
 
 ChildProcessInfo::ChildProcessInfo(UniquePtr<ChildRole> aRole, bool aRecording)
-  : mProcess(nullptr)
-  , mChannel(nullptr)
+  : mChannel(nullptr)
   , mRecording(aRecording)
   , mRecoveryStage(RecoveryStage::None)
   , mPaused(false)
@@ -75,7 +74,6 @@ ChildProcessInfo::~ChildProcessInfo()
   if (IsRecording()) {
     SendMessage(TerminateMessage());
   }
-  TerminateSubprocess();
 }
 
 ChildProcessInfo::Disposition
@@ -423,38 +421,56 @@ ChildProcessInfo::SendNextRecoveryMessage()
 
 
 
+ipc::GeckoChildProcessHost* gRecordingProcess;
+
+void
+GetArgumentsForChildProcess(base::ProcessId aMiddlemanPid, uint32_t aChannelId,
+                            const char* aRecordingFile, bool aRecording,
+                            std::vector<std::string>& aExtraArgs)
+{
+  MOZ_RELEASE_ASSERT(IsMiddleman() || XRE_IsParentProcess());
+
+  aExtraArgs.push_back(gMiddlemanPidOption);
+  aExtraArgs.push_back(nsPrintfCString("%d", aMiddlemanPid).get());
+
+  aExtraArgs.push_back(gChannelIDOption);
+  aExtraArgs.push_back(nsPrintfCString("%d", (int) aChannelId).get());
+
+  aExtraArgs.push_back(gProcessKindOption);
+  aExtraArgs.push_back(nsPrintfCString("%d", aRecording
+                                             ? (int) ProcessKind::Recording
+                                             : (int) ProcessKind::Replaying).get());
+
+  aExtraArgs.push_back(gRecordingFileOption);
+  aExtraArgs.push_back(aRecordingFile);
+}
+
 void
 ChildProcessInfo::LaunchSubprocess()
 {
-  MOZ_RELEASE_ASSERT(!mProcess);
+  size_t channelId = gNumChannels++;
+  MOZ_RELEASE_ASSERT((channelId == Channel::RecordingId) == IsRecording());
 
   
   
   
   
-  size_t channelId = gNumChannels++;
   mChannel = new Channel(channelId, [=](Message* aMsg) {
       ReceiveChildMessageOnMainThread(channelId, aMsg);
     });
 
-  mProcess = new ipc::GeckoChildProcessHost(GeckoProcessType_Content);
+  if (IsRecording()) {
+    std::vector<std::string> extraArgs;
+    GetArgumentsForChildProcess(base::GetCurrentProcId(), channelId,
+                                gRecordingFilename,  true, extraArgs);
 
-  std::vector<std::string> extraArgs;
-  char buf[20];
-
-  SprintfLiteral(buf, "%d", (int) GetId());
-  extraArgs.push_back(gChannelIDOption);
-  extraArgs.push_back(buf);
-
-  SprintfLiteral(buf, "%d", (int) IsRecording() ? ProcessKind::Recording : ProcessKind::Replaying);
-  extraArgs.push_back(gProcessKindOption);
-  extraArgs.push_back(buf);
-
-  extraArgs.push_back(gRecordingFileOption);
-  extraArgs.push_back(gRecordingFilename);
-
-  if (!mProcess->LaunchAndWaitForProcessHandle(extraArgs)) {
-    MOZ_CRASH("ChildProcessInfo::LaunchSubprocess");
+    MOZ_RELEASE_ASSERT(!gRecordingProcess);
+    gRecordingProcess = new ipc::GeckoChildProcessHost(GeckoProcessType_Content);
+    if (!gRecordingProcess->LaunchAndWaitForProcessHandle(extraArgs)) {
+      MOZ_CRASH("ChildProcessInfo::LaunchSubprocess");
+    }
+  } else {
+    dom::ContentChild::GetSingleton()->SendCreateReplayingProcess(channelId);
   }
 
   mLastMessageTime = TimeStamp::Now();
@@ -473,40 +489,6 @@ ChildProcessInfo::LaunchSubprocess()
 
   MOZ_RELEASE_ASSERT(gIntroductionMessage);
   SendMessage(*gIntroductionMessage);
-}
-
-
-static bool gWaitingOnTerminateChildProcess;
-
-void
-ChildProcess::TerminateSubprocess()
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  MOZ_RELEASE_ASSERT(!gWaitingOnTerminateChildProcess);
-  gWaitingOnTerminateChildProcess = true;
-
-  
-  XRE_GetIOMessageLoop()->PostTask(NewRunnableFunction("TerminateSubprocess", Terminate, mProcess));
-
-  MonitorAutoLock lock(*gMonitor);
-  while (gWaitingOnTerminateChildProcess) {
-    gMonitor->Wait();
-  }
-
-  mProcess = nullptr;
-}
-
- void
-ChildProcess::Terminate(ipc::GeckoChildProcessHost* aProcess)
-{
-  
-  delete aProcess;
-
-  MonitorAutoLock lock(*gMonitor);
-  MOZ_RELEASE_ASSERT(gWaitingOnTerminateChildProcess);
-  gWaitingOnTerminateChildProcess = false;
-  gMonitor->Notify();
 }
 
 
@@ -541,7 +523,7 @@ ChildProcessInfo::AttemptRestart(const char* aWhy)
 
   mNumRestarts++;
 
-  TerminateSubprocess();
+  dom::ContentChild::GetSingleton()->SendTerminateReplayingProcess(mChannel->GetId());
 
   bool newPaused = mPaused;
   Message* newPausedMessage = mPausedMessage;
