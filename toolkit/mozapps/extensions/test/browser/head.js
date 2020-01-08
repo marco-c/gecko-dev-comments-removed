@@ -1388,6 +1388,31 @@ function promiseNotification(id = "addon-webext-permissions") {
   });
 }
 
+
+
+
+
+
+
+
+
+
+function promisePopupNotificationShown(name = "addon-webext-permissions") {
+  return new Promise(resolve => {
+    function popupshown() {
+      let notification = PopupNotifications.getNotification(name);
+      if (!notification) { return; }
+
+      ok(notification, `${name} notification shown`);
+      ok(PopupNotifications.isPanelOpen, "notification panel open");
+
+      PopupNotifications.panel.removeEventListener("popupshown", popupshown);
+      resolve(PopupNotifications.panel.firstChild);
+    }
+    PopupNotifications.panel.addEventListener("popupshown", popupshown);
+  });
+}
+
 function acceptAppMenuNotificationWhenShown(id) {
   ChromeUtils.import("resource://gre/modules/AppMenuNotifications.jsm");
   return new Promise(resolve => {
