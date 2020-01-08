@@ -4,19 +4,19 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #include "SVGLength.h"
-#include "SVGElement.h"
+
+#include "mozilla/ArrayUtils.h"
+#include "mozilla/dom/SVGElement.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "nsTextFormatter.h"
 #include "SVGContentUtils.h"
 #include <limits>
 #include <algorithm>
 
-namespace mozilla {
+using namespace mozilla::dom;
 
-using namespace mozilla;
+namespace mozilla {
 
 
 static void GetUnitString(nsAString& unit, uint16_t unitType);

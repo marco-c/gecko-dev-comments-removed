@@ -13,6 +13,8 @@
 #include "nsSMILValue.h"
 #include "SVGPathSegListSMILType.h"
 
+using namespace mozilla::dom;
+
 
 
 namespace mozilla {
