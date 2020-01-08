@@ -26,10 +26,6 @@ struct FeatureMap {
 
 static FeatureMap sSupportedFeatures[] = {
   
-  { "accelerometer", FeatureMap::eSelf },
-  
-  { "ambient-light-sensor", FeatureMap::eSelf },
-  
   { "autoplay", FeatureMap::eSelf },
   
   { "camera", FeatureMap::eSelf  },
@@ -40,19 +36,11 @@ static FeatureMap sSupportedFeatures[] = {
   
   { "geolocation", FeatureMap::eSelf  },
   
-  { "gyroscope", FeatureMap::eSelf  },
-  
-  { "magnetometer", FeatureMap::eSelf  },
-  
   { "microphone", FeatureMap::eSelf  },
   { "midi", FeatureMap::eSelf  },
   { "payment", FeatureMap::eSelf  },
   
-  { "picture-in-picture", FeatureMap::eAll  },
-  
   { "speaker", FeatureMap::eSelf  },
-  
-  { "usb", FeatureMap::eSelf  },
   
   { "vr", FeatureMap::eSelf  },
 };
