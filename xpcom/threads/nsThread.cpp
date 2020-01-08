@@ -420,7 +420,6 @@ nsThread::ThreadFunc(void* aArg)
   nsThread* self = initData->thread;  
 
   self->mThread = PR_GetCurrentThread();
-  self->mThreadId = uint32_t(PlatformThread::CurrentId());
   self->mVirtualThread = GetCurrentVirtualThread();
   self->mEventTarget->SetCurrentThread();
   SetupCurrentThreadForChaosMode();
@@ -429,71 +428,7 @@ nsThread::ThreadFunc(void* aArg)
     NS_SetCurrentThreadName(initData->name.BeginReading());
   }
 
-  {
-#if defined(XP_LINUX)
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_getattr_np(pthread_self(), &attr);
-
-    size_t stackSize;
-    pthread_attr_getstack(&attr, &self->mStackBase, &stackSize);
-
-    
-    
-    
-    
-    
-    static bool sAdjustForGuardSize = ({
-#ifdef __GLIBC__
-      unsigned major, minor;
-      sscanf(gnu_get_libc_version(), "%u.%u", &major, &minor) < 2 ||
-        major < 2 || (major == 2 && minor < 27);
-#else
-      false;
-#endif
-    });
-    if (sAdjustForGuardSize) {
-      size_t guardSize;
-      pthread_attr_getguardsize(&attr, &guardSize);
-
-      
-      
-      
-      
-      self->mStackBase = reinterpret_cast<char*>(self->mStackBase) + guardSize;
-      stackSize -= guardSize;
-    }
-
-    self->mStackSize = stackSize;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    madvise(self->mStackBase, stackSize, MADV_NOHUGEPAGE);
-
-    pthread_attr_destroy(&attr);
-#elif defined(XP_WIN)
-    static const DynamicallyLinkedFunctionPtr<GetCurrentThreadStackLimitsFn>
-      sGetStackLimits(L"kernel32.dll", "GetCurrentThreadStackLimits");
-
-    if (sGetStackLimits) {
-      ULONG_PTR stackBottom, stackTop;
-      sGetStackLimits(&stackBottom, &stackTop);
-      self->mStackBase = reinterpret_cast<void*>(stackBottom);
-      self->mStackSize = stackTop - stackBottom;
-    }
-#endif
-  }
+  self->InitCommon();
 
   
   nsThreadManager::get().RegisterCurrentThread(*self);
@@ -572,6 +507,81 @@ nsThread::ThreadFunc(void* aArg)
 #endif
 
   NS_RELEASE(self);
+}
+
+void
+nsThread::InitCommon()
+{
+  mThreadId = uint32_t(PlatformThread::CurrentId());
+
+  {
+#if defined(XP_LINUX)
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_getattr_np(pthread_self(), &attr);
+
+    size_t stackSize;
+    pthread_attr_getstack(&attr, &mStackBase, &stackSize);
+
+    
+    
+    
+    
+    
+    static bool sAdjustForGuardSize = ({
+#ifdef __GLIBC__
+      unsigned major, minor;
+      sscanf(gnu_get_libc_version(), "%u.%u", &major, &minor) < 2 ||
+        major < 2 || (major == 2 && minor < 27);
+#else
+      false;
+#endif
+    });
+    if (sAdjustForGuardSize) {
+      size_t guardSize;
+      pthread_attr_getguardsize(&attr, &guardSize);
+
+      
+      
+      
+      
+      mStackBase = reinterpret_cast<char*>(mStackBase) + guardSize;
+      stackSize -= guardSize;
+    }
+
+    mStackSize = stackSize;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    madvise(mStackBase, stackSize, MADV_NOHUGEPAGE);
+
+    pthread_attr_destroy(&attr);
+#elif defined(XP_WIN)
+    static const DynamicallyLinkedFunctionPtr<GetCurrentThreadStackLimitsFn>
+      sGetStackLimits(L"kernel32.dll", "GetCurrentThreadStackLimits");
+
+    if (sGetStackLimits) {
+      ULONG_PTR stackBottom, stackTop;
+      sGetStackLimits(&stackBottom, &stackTop);
+      mStackBase = reinterpret_cast<void*>(stackBottom);
+      mStackSize = stackTop - stackBottom;
+    }
+#endif
+  }
+
+  OffTheBooksMutexAutoLock mal(ThreadListMutex());
+  ThreadList().insertBack(this);
 }
 
 
@@ -670,7 +680,17 @@ nsThread::~nsThread()
 {
   NS_ASSERTION(mRequestedShutdownContexts.IsEmpty(),
                "shouldn't be waiting on other threads to shutdown");
-  MOZ_ASSERT(!isInList());
+
+  
+  
+  
+  
+  
+  if (isInList()) {
+    OffTheBooksMutexAutoLock mal(ThreadListMutex());
+    removeFrom(ThreadList());
+  }
+
 #ifdef DEBUG
   
   
@@ -704,11 +724,6 @@ nsThread::Init(const nsACString& aName)
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  {
-    OffTheBooksMutexAutoLock mal(ThreadListMutex());
-    ThreadList().insertBack(this);
-  }
-
   
   
   
@@ -728,6 +743,7 @@ nsThread::InitCurrentThread()
   mThread = PR_GetCurrentThread();
   mVirtualThread = GetCurrentVirtualThread();
   SetupCurrentThreadForChaosMode();
+  InitCommon();
 
   nsThreadManager::get().RegisterCurrentThread(*this);
   return NS_OK;
