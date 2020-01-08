@@ -3248,6 +3248,8 @@ function BrowserReloadWithFlags(reloadFlags) {
   
   
   SitePermissions.clearTemporaryPermissions(gBrowser.selectedBrowser);
+  PanelMultiView.hidePopup(gIdentityHandler._identityPopup);
+
 
   let handlingUserInput = window.windowUtils.isHandlingUserInput;
 

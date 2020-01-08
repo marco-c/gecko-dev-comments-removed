@@ -3353,6 +3353,7 @@ window._gBrowser = {
     
     
     SitePermissions.clearTemporaryPermissions(browser);
+    PanelMultiView.hidePopup(gIdentityHandler._identityPopup);
     browser.reload();
   },
 
