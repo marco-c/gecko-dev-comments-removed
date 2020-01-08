@@ -337,6 +337,14 @@ public:
                     const RefPtr<MediaEngineSource>& aMediaEngineSource,
                     const nsString& aDeviceId);
 
+  
+  static void
+  ConvertOldWithWarning(
+      const dom::OwningBooleanOrConstrainBooleanParameters& old,
+      dom::OwningBooleanOrConstrainBooleanParameters& to,
+      const char* aMessageName,
+      nsPIDOMWindowInner* aWindow);
+
   static void LogConstraints(const NormalizedConstraintSet& aConstraints);
 };
 
