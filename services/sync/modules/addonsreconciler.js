@@ -89,28 +89,6 @@ var EXPORTED_SYMBOLS = ["AddonsReconciler", "CHANGE_INSTALLED",
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function AddonsReconciler(queueCaller) {
   this._log = Log.repository.getLogger("Sync.AddonsReconciler");
   this._log.manageLevelFromPref("services.sync.log.logger.addonsreconciler");
@@ -291,7 +269,6 @@ AddonsReconciler.prototype = {
 
     this._log.info("Registering as Add-on Manager listener.");
     AddonManager.addAddonListener(this);
-    AddonManager.addInstallListener(this);
     this._listening = true;
   },
 
@@ -309,8 +286,7 @@ AddonsReconciler.prototype = {
       return;
     }
 
-    this._log.debug("Stopping listening and removing AddonManager listeners.");
-    AddonManager.removeInstallListener(this);
+    this._log.debug("Stopping listening and removing AddonManager listener.");
     AddonManager.removeAddonListener(this);
     this._listening = false;
   },
@@ -531,26 +507,15 @@ AddonsReconciler.prototype = {
   
 
 
-  async _handleListener(action, addon, requiresRestart) {
+  async _handleListener(action, addon) {
     
     
     try {
       let id = addon.id;
       this._log.debug("Add-on change: " + action + " to " + id);
 
-      
-      
-      
-      
-      if (requiresRestart === false) {
-        this._log.debug("Ignoring " + action + " for restartless add-on.");
-        return;
-      }
-
       switch (action) {
-        case "onEnabling":
         case "onEnabled":
-        case "onDisabling":
         case "onDisabled":
         case "onInstalled":
         case "onInstallEnded":
@@ -558,7 +523,6 @@ AddonsReconciler.prototype = {
           await this.rectifyStateFromAddon(addon);
           break;
 
-        case "onUninstalling":
         case "onUninstalled":
           let id = addon.id;
           let addons = this.addons;
@@ -583,36 +547,19 @@ AddonsReconciler.prototype = {
   },
 
   
-  onEnabling: function onEnabling(addon, requiresRestart) {
-    this.queueCaller.enqueueCall(() => this._handleListener("onEnabling", addon, requiresRestart));
-  },
   onEnabled: function onEnabled(addon) {
     this.queueCaller.enqueueCall(() => this._handleListener("onEnabled", addon));
-  },
-  onDisabling: function onDisabling(addon, requiresRestart) {
-    this.queueCaller.enqueueCall(() => this._handleListener("onDisabling", addon, requiresRestart));
   },
   onDisabled: function onDisabled(addon) {
     this.queueCaller.enqueueCall(() => this._handleListener("onDisabled", addon));
   },
-  onInstalling: function onInstalling(addon, requiresRestart) {
-    this.queueCaller.enqueueCall(() => this._handleListener("onInstalling", addon, requiresRestart));
-  },
   onInstalled: function onInstalled(addon) {
     this.queueCaller.enqueueCall(() => this._handleListener("onInstalled", addon));
-  },
-  onUninstalling: function onUninstalling(addon, requiresRestart) {
-    this.queueCaller.enqueueCall(() => this._handleListener("onUninstalling", addon, requiresRestart));
   },
   onUninstalled: function onUninstalled(addon) {
     this.queueCaller.enqueueCall(() => this._handleListener("onUninstalled", addon));
   },
   onOperationCancelled: function onOperationCancelled(addon) {
     this.queueCaller.enqueueCall(() => this._handleListener("onOperationCancelled", addon));
-  },
-
-  
-  onInstallEnded: function onInstallEnded(install, addon) {
-    this.queueCaller.enqueueCall(() => this._handleListener("onInstallEnded", addon));
   },
 };
