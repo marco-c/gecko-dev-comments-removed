@@ -4339,10 +4339,6 @@ nsresult HTMLInputElement::BindToTree(Document* aDocument, nsIContent* aParent,
       
       mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
 
-      
-      
-      ClearBrokenState();
-      RemoveStatesSilently(NS_EVENT_STATE_BROKEN);
       nsContentUtils::AddScriptRunner(
           NewRunnableMethod("dom::HTMLInputElement::MaybeLoadImage", this,
                             &HTMLInputElement::MaybeLoadImage));

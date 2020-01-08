@@ -200,8 +200,6 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
   void DestroyImageLoadingContent();
 
-  void ClearBrokenState() { mBroken = false; }
-
   
 
 

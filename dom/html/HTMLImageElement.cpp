@@ -527,11 +527,6 @@ nsresult HTMLImageElement::BindToTree(Document* aDocument, nsIContent* aParent,
 
     
     
-    ClearBrokenState();
-    RemoveStatesSilently(NS_EVENT_STATE_BROKEN);
-
-    
-    
     
 
     

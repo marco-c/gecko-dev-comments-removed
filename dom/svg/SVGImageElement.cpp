@@ -190,10 +190,6 @@ nsresult SVGImageElement::BindToTree(Document* aDocument, nsIContent* aParent,
 
   if (mStringAttributes[HREF].IsExplicitlySet() ||
       mStringAttributes[XLINK_HREF].IsExplicitlySet()) {
-    
-    
-    ClearBrokenState();
-    RemoveStatesSilently(NS_EVENT_STATE_BROKEN);
     nsContentUtils::AddScriptRunner(
         NewRunnableMethod("dom::SVGImageElement::MaybeLoadSVGImage", this,
                           &SVGImageElement::MaybeLoadSVGImage));
