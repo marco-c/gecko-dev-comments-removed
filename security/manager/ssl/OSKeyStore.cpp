@@ -235,7 +235,7 @@ OSKeyStore::GetIsNSSKeyStore(bool* aNSSKeyStore)
 
 
 
-static nsresult
+nsresult
 GetPromise(JSContext* aCx,  RefPtr<Promise>& aPromise)
 {
   nsIGlobalObject* globalObject = xpc::CurrentNativeGlobal(aCx);
