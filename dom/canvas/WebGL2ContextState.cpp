@@ -19,6 +19,7 @@ namespace mozilla {
 JS::Value
 WebGL2Context::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
 {
+  const FuncScope funcScope(*this, "getParameter");
   
   
   
