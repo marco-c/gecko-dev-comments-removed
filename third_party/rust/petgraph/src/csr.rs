@@ -35,6 +35,15 @@ const BINARY_SEARCH_CUTOFF: usize = 32;
 
 
 
+
+
+
+
+
+
+
+
+
 #[derive(Debug)]
 pub struct Csr<N = (), E = (), Ty = Directed, Ix = DefaultIx> {
     
@@ -88,6 +97,25 @@ impl<N, E, Ty, Ix> Csr<N, E, Ty, Ix>
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn with_nodes(n: usize) -> Self
         where N: Default,
     {
@@ -112,6 +140,21 @@ impl<N, E, Ix> Csr<N, E, Directed, Ix>
     where Ix: IndexType,
 {
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -298,7 +341,7 @@ impl<N, E, Ty, Ix> Csr<N, E, Ty, Ix>
 
     fn neighbors_range(&self, a: NodeIndex<Ix>) -> Range<usize> {
         let index = self.row[a.index()];
-        let end = self.row.get(a.index() + 1).cloned().unwrap_or(self.column.len());
+        let end = self.row.get(a.index() + 1).cloned().unwrap_or_else(|| self.column.len());
         index..end
     }
 

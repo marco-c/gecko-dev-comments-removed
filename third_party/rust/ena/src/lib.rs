@@ -8,16 +8,16 @@
 
 
 
-#![cfg_attr(all(feature = "unstable", test), feature(test))]
-#![allow(dead_code)]
+
+
+
+#![cfg_attr(feature = "bench", feature(test))]
 
 #[macro_use]
-mod debug;
+extern crate log;
 
-pub mod constraint;
-pub mod graph;
+#[cfg(feature = "persistent")]
+extern crate dogged;
+
 pub mod snapshot_vec;
-#[cfg(feature = "unstable")]
-pub mod cc;
 pub mod unify;
-pub mod bitvec;

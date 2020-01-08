@@ -3,7 +3,8 @@
 
 
 use lexer::re::Regex;
-use regex_syntax::{ClassRange, Expr, Repeater};
+use regex_syntax::hir::{Anchor, Class, ClassUnicodeRange, GroupKind, Hir, HirKind, Literal,
+                        RepetitionKind, RepetitionRange};
 use std::char;
 use std::fmt::{Debug, Error as FmtError, Formatter};
 use std::usize;
@@ -101,7 +102,7 @@ pub enum NFAConstructionError {
 impl NFA {
     pub fn from_re(regex: &Regex) -> Result<NFA, NFAConstructionError> {
         let mut nfa = NFA::new();
-        let s0 = try!(nfa.expr(regex, ACCEPT, REJECT));
+        let s0 = nfa.expr(regex, ACCEPT, REJECT)?;
         nfa.push_edge(START, Noop, s0);
         Ok(nfa)
     }
@@ -197,169 +198,127 @@ impl NFA {
 
     fn expr(
         &mut self,
-        expr: &Expr,
+        expr: &Hir,
         accept: NFAStateIndex,
         reject: NFAStateIndex,
     ) -> Result<NFAStateIndex, NFAConstructionError> {
-        match *expr {
-            Expr::Empty => Ok(accept),
+        match *expr.kind() {
+            HirKind::Empty => Ok(accept),
 
-            Expr::Literal { ref chars, casei } => {
-                
-                
-                
-                
+            HirKind::Literal(ref l) => {
+                match *l {
+                    
+                    Literal::Unicode(c) => {
+                        let s0 = self.new_state(StateKind::Neither);
+                        self.push_edge(s0, Test::char(c), accept);
+                        self.push_edge(s0, Other, reject);
+                        Ok(s0)
+                    }
+                    
+                    Literal::Byte(_) => Err(NFAConstructionError::ByteRegex),
+                }
+            }
 
-                Ok(if casei {
-                    chars.iter().rev().fold(accept, |s, &ch| {
-                        let s1 = self.new_state(StateKind::Neither);
-                        for ch1 in ch.to_lowercase().chain(ch.to_uppercase()) {
-                            self.push_edge(s1, Test::char(ch1), s);
-                        }
-                        self.push_edge(s1, Other, reject);
-                        s1
-                    })
+            HirKind::Class(ref class) => {
+                match *class {
+                    Class::Unicode(ref uc) =>
+                    
+                    
+                    
+                    
+                    
+                    
+                        {
+                            let s0 = self.new_state(StateKind::Neither);
+                            for &range in uc.iter()
+                                {
+                                    let test: Test = range.into();
+                                    self.push_edge(s0, test, accept);
+                                }
+                            self.push_edge(s0, Other, reject);
+                            Ok(s0)
+                        },
+                    
+                    Class::Bytes(_) => Err(NFAConstructionError::ByteRegex),
+
+                }
+            }
+
+            
+            
+            HirKind::WordBoundary(_) => Err(NFAConstructionError::WordBoundary),
+            HirKind::Anchor(ref a) => match a {
+                &Anchor::StartLine | &Anchor::EndLine => Err(NFAConstructionError::LineBoundary),
+                &Anchor::StartText | &Anchor::EndText => Err(NFAConstructionError::TextBoundary),
+            },
+
+            
+            
+            
+            HirKind::Group(ref g) => match g.kind {
+                GroupKind::CaptureName { .. } => Err(NFAConstructionError::NamedCaptures),
+                GroupKind::CaptureIndex(_) | GroupKind::NonCapturing => {
+                    self.expr(&g.hir, accept, reject)
+                }
+            },
+
+            HirKind::Repetition(ref r) => {
+                if !r.greedy {
+                    
+                    Err(NFAConstructionError::NonGreedy)
                 } else {
-                    chars.iter().rev().fold(accept, |s, &ch| {
-                        let s1 = self.new_state(StateKind::Neither);
-                        self.push_edge(s1, Test::char(ch), s);
-                        self.push_edge(s1, Other, reject);
-                        s1
-                    })
-                })
-            }
-
-            Expr::AnyCharNoNL => {
-                
-                
-                
-                
-                
-                
-
-                let s0 = self.new_state(StateKind::Neither);
-                for nl_char in "\n\r".chars() {
-                    self.push_edge(s0, Test::char(nl_char), reject);
+                    match r.kind {
+                        RepetitionKind::ZeroOrOne => self.optional_expr(&r.hir, accept, reject),
+                        RepetitionKind::ZeroOrMore => self.star_expr(&r.hir, accept, reject),
+                        RepetitionKind::OneOrMore => self.plus_expr(&r.hir, accept, reject),
+                        RepetitionKind::Range(ref range) => {
+                            match *range {
+                                RepetitionRange::Exactly(c) => {
+                                    let mut s = accept;
+                                    for _ in 0..c {
+                                        s = self.expr(&r.hir, s, reject)?;
+                                    }
+                                    Ok(s)
+                                }
+                                RepetitionRange::AtLeast(min) => {
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    let mut s = self.star_expr(&r.hir, accept, reject)?;
+                                    for _ in 0..min {
+                                        s = self.expr(&r.hir, s, reject)?;
+                                    }
+                                    Ok(s)
+                                }
+                                RepetitionRange::Bounded(min, max) => {
+                                    let mut s = accept;
+                                    for _ in min..max {
+                                        s = self.optional_expr(&r.hir, s, reject)?;
+                                    }
+                                    for _ in 0..min {
+                                        s = self.expr(&r.hir, s, reject)?;
+                                    }
+                                    Ok(s)
+                                }
+                            }
+                        }
+                    }
                 }
-                self.push_edge(s0, Other, accept);
-                Ok(s0)
             }
 
-            Expr::AnyChar => {
-                
-
-                let s0 = self.new_state(StateKind::Neither);
-                self.push_edge(s0, Other, accept);
-                Ok(s0)
-            }
-
-            Expr::Class(ref class) => {
-                
-                
-                
-                
-                
-                
-
-                let s0 = self.new_state(StateKind::Neither);
-                for &range in class {
-                    let test: Test = range.into();
-                    self.push_edge(s0, test, accept);
-                }
-                self.push_edge(s0, Other, reject);
-                Ok(s0)
-            }
-
-            
-            
-            Expr::StartLine | Expr::EndLine => Err(NFAConstructionError::LineBoundary),
-
-            Expr::StartText | Expr::EndText => Err(NFAConstructionError::TextBoundary),
-
-            Expr::WordBoundaryAscii
-            | Expr::NotWordBoundaryAscii
-            | Expr::WordBoundary
-            | Expr::NotWordBoundary => Err(NFAConstructionError::WordBoundary),
-
-            
-            
-            
-            Expr::Group {
-                ref e,
-                i: _,
-                name: None,
-            } => self.expr(e, accept, reject),
-            Expr::Group { name: Some(_), .. } => Err(NFAConstructionError::NamedCaptures),
-
-            
-            Expr::Repeat { greedy: false, .. } => Err(NFAConstructionError::NonGreedy),
-
-            Expr::Repeat {
-                ref e,
-                r: Repeater::ZeroOrOne,
-                greedy: true,
-            } => self.optional_expr(e, accept, reject),
-
-            Expr::Repeat {
-                ref e,
-                r: Repeater::ZeroOrMore,
-                greedy: true,
-            } => self.star_expr(e, accept, reject),
-
-            Expr::Repeat {
-                ref e,
-                r: Repeater::OneOrMore,
-                greedy: true,
-            } => self.plus_expr(e, accept, reject),
-
-            Expr::Repeat {
-                ref e,
-                r: Repeater::Range { min, max: None },
-                greedy: true,
-            } => {
-                
-                
-                
-                
-                
-                
-                
-
-                let mut s = try!(self.star_expr(e, accept, reject));
-                for _ in 0..min {
-                    s = try!(self.expr(e, s, reject));
-                }
-                Ok(s)
-            }
-
-            Expr::Repeat {
-                ref e,
-                r:
-                    Repeater::Range {
-                        min,
-                        max: Some(max),
-                    },
-                greedy: true,
-            } => {
-                let mut s = accept;
-                for _ in min..max {
-                    s = try!(self.optional_expr(e, s, reject));
-                }
-                for _ in 0..min {
-                    s = try!(self.expr(e, s, reject));
-                }
-                Ok(s)
-            }
-
-            Expr::Concat(ref exprs) => {
+            HirKind::Concat(ref exprs) => {
                 let mut s = accept;
                 for expr in exprs.iter().rev() {
-                    s = try!(self.expr(expr, s, reject));
+                    s = self.expr(expr, s, reject)?;
                 }
                 Ok(s)
             }
 
-            Expr::Alternate(ref exprs) => {
+            HirKind::Alternation(ref exprs) => {
                 
                 
                 
@@ -369,12 +328,10 @@ impl NFA {
                 
 
                 let s0 = self.new_state(StateKind::Neither);
-                let targets: Vec<_> = try!(
-                    exprs
-                        .iter()
-                        .map(|expr| self.expr(expr, accept, reject))
-                        .collect()
-                );
+                let targets: Vec<_> = exprs
+                    .iter()
+                    .map(|expr| self.expr(expr, accept, reject))
+                    .collect::<Result<Vec<_>, _>>()?;
 
                 
                 
@@ -383,18 +340,12 @@ impl NFA {
                 }
                 Ok(s0)
             }
-
-            
-            
-            Expr::AnyByte | Expr::AnyByteNoNL | Expr::ClassBytes(_) | Expr::LiteralBytes { .. } => {
-                Err(NFAConstructionError::ByteRegex)
-            }
         }
     }
 
     fn optional_expr(
         &mut self,
-        expr: &Expr,
+        expr: &Hir,
         accept: NFAStateIndex,
         reject: NFAStateIndex,
     ) -> Result<NFAStateIndex, NFAConstructionError> {
@@ -417,7 +368,7 @@ impl NFA {
 
     fn star_expr(
         &mut self,
-        expr: &Expr,
+        expr: &Hir,
         accept: NFAStateIndex,
         reject: NFAStateIndex,
     ) -> Result<NFAStateIndex, NFAConstructionError> {
@@ -443,7 +394,7 @@ impl NFA {
 
     fn plus_expr(
         &mut self,
-        expr: &Expr,
+        expr: &Hir,
         accept: NFAStateIndex,
         reject: NFAStateIndex,
     ) -> Result<NFAStateIndex, NFAConstructionError> {
@@ -599,9 +550,9 @@ impl Test {
     }
 }
 
-impl From<ClassRange> for Test {
-    fn from(range: ClassRange) -> Test {
-        Test::inclusive_range(range.start, range.end)
+impl From<ClassUnicodeRange> for Test {
+    fn from(range: ClassUnicodeRange) -> Test {
+        Test::inclusive_range(range.start(), range.end())
     }
 }
 

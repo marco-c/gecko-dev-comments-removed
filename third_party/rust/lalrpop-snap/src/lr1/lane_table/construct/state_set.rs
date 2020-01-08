@@ -35,6 +35,8 @@ impl UnifyKey for StateSet {
 
 
 impl UnifyValue for ContextSet {
+    type Error = (Self, Self);
+
     fn unify_values(value1: &Self, value2: &Self) -> Result<Self, (Self, Self)> {
         match ContextSet::union(value1, value2) {
             Ok(v) => Ok(v),

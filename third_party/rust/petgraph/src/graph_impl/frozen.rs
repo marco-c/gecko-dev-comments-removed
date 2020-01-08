@@ -15,10 +15,13 @@ use data::{DataMap, DataMapMut};
 
 
 impl<'a, G> Frozen<'a, G> {
+    
     pub fn new(gr: &'a mut G) -> Self {
         Frozen(gr)
     }
 }
+
+
 
 impl<'a, G> Deref for Frozen<'a, G> {
     type Target = G;
