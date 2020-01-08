@@ -632,7 +632,6 @@ class GCRuntime
     IncrementalProgress endMarkingSweepGroup(FreeOp* fop, SliceBudget& budget);
     void markIncomingCrossCompartmentPointers(MarkColor color);
     IncrementalProgress beginSweepingSweepGroup(FreeOp* fop, SliceBudget& budget);
-    bool shouldReleaseObservedTypes();
     void sweepDebuggerOnMainThread(FreeOp* fop);
     void sweepJitDataOnMainThread(FreeOp* fop);
     IncrementalProgress endSweepingSweepGroup(FreeOp* fop, SliceBudget& budget);
@@ -815,9 +814,6 @@ class GCRuntime
 
     
     MainThreadData<uint64_t> majorGCNumber;
-
-    
-    MainThreadData<uint64_t> jitReleaseNumber;
 
     
     MainThreadData<uint64_t> number;
