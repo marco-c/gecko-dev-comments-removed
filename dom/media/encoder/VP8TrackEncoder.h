@@ -65,7 +65,7 @@ private:
                                   int32_t aDisplayHeight, vpx_codec_enc_cfg_t& config);
 
   
-  StreamTime mEncodedTimestamp;
+  StreamTime mEncodedTimestamp = 0;
 
   
   CheckedInt64 mExtractedDuration;
@@ -83,7 +83,7 @@ private:
   
 
 
-  StreamTime mDurationSinceLastKeyframe;
+  StreamTime mDurationSinceLastKeyframe = 0;
 
   
 
