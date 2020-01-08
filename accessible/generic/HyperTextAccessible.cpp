@@ -2206,7 +2206,10 @@ HyperTextAccessible::GetSpellTextAttr(nsINode* aNode,
                                      prevRange->EndOffset());
     }
 
-    if (startOffset > *aStartOffset)
+    
+    
+    
+    if (startOffset > *aStartOffset && startOffset < *aEndOffset)
       *aStartOffset = startOffset;
 
     if (endOffset < *aEndOffset)
@@ -2223,7 +2226,10 @@ HyperTextAccessible::GetSpellTextAttr(nsINode* aNode,
   startOffset = DOMPointToOffset(prevRange->GetEndContainer(),
                                  prevRange->EndOffset());
 
-  if (startOffset > *aStartOffset)
+  
+  
+  
+  if (startOffset > *aStartOffset && startOffset < *aEndOffset)
     *aStartOffset = startOffset;
 }
 
