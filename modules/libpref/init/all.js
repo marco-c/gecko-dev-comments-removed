@@ -5640,6 +5640,9 @@ pref("intl.allow-insecure-text-input", false);
 pref("dom.meta-viewport.enabled", false);
 
 
+pref("dom.visualviewport.enabled", false);
+
+
 pref("browser.search.log", false);
 pref("browser.search.update", true);
 pref("browser.search.update.log", false);
