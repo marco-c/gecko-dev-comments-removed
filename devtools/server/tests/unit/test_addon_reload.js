@@ -34,17 +34,10 @@ function promiseWebExtensionStartup() {
   });
 }
 
-async function findAddonInRootList(client, addonId) {
-  const result = await client.listAddons();
-  const addonTargetActor = result.addons.filter(addon => addon.id === addonId)[0];
-  ok(addonTargetActor, `Found add-on actor for ${addonId}`);
-  return addonTargetActor;
-}
-
-async function reloadAddon(client, addonTargetActor) {
+async function reloadAddon(addonTargetFront) {
   
   const onInstalled = promiseAddonEvent("onInstalled");
-  await client.request({to: addonTargetActor.actor, type: "reload"});
+  await addonTargetFront.reload();
   await onInstalled;
 }
 
@@ -74,10 +67,10 @@ add_task(async function testReloadExitedAddon() {
     promiseWebExtensionStartup(),
   ]);
 
-  const addonTargetActor = await findAddonInRootList(client, installedAddon.id);
+  const addonTargetFront = await client.mainRoot.getAddon({ id: installedAddon.id });
 
   await Promise.all([
-    reloadAddon(client, addonTargetActor),
+    reloadAddon(addonTargetFront),
     promiseWebExtensionStartup(),
   ]);
 
@@ -88,11 +81,11 @@ add_task(async function testReloadExitedAddon() {
 
   
   
-  const newAddonActor = await findAddonInRootList(client, installedAddon.id);
-  equal(newAddonActor.id, addonTargetActor.id);
+  const newAddonFront = await client.mainRoot.getAddon({ id: installedAddon.id });
+  equal(newAddonFront.id, addonTargetFront.id);
 
   
-  equal(newAddonActor.actor, addonTargetActor.actor);
+  equal(newAddonFront, addonTargetFront);
 
   const onAddonListChanged = client.mainRoot.once("addonListChanged");
 
@@ -107,13 +100,13 @@ add_task(async function testReloadExitedAddon() {
   await onAddonListChanged;
 
   
-  const upgradedAddonActor = await findAddonInRootList(client, upgradedAddon.id);
-  equal(upgradedAddonActor.id, addonTargetActor.id);
+  const upgradedAddonFront = await client.mainRoot.getAddon({ id: upgradedAddon.id });
+  equal(upgradedAddonFront.id, addonTargetFront.id);
   
-  equal(upgradedAddonActor.actor, addonTargetActor.actor);
+  equal(upgradedAddonFront, addonTargetFront);
 
   
-  equal(upgradedAddonActor.name, "Test Addons Actor Upgrade");
+  equal(upgradedAddonFront.name, "Test Addons Actor Upgrade");
 
   await close(client);
 });
