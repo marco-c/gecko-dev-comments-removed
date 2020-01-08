@@ -41,7 +41,7 @@
 
 
 
-static const opcode_t opcode_table[] = 
+static const opcode_t opcode_table[] =
 {
     {{do2(nop)},                                    0, "NOP"},
 
@@ -122,4 +122,3 @@ static const opcode_t opcode_table[] =
     
     {{do_(temp_copy), NILOP},                       0, "TEMP_COPY"}
 };
-

@@ -46,7 +46,7 @@ gr_uint16 gr_fref_feature_value(const gr_feature_ref* pfeatureref, const gr_feat
 int gr_fref_set_feature_value(const gr_feature_ref* pfeatureref, gr_uint16 val, gr_feature_val* pDest)
 {
     if (!pfeatureref || !pDest) return 0;
-    
+
     return pfeatureref->applyValToFeature(val, *pDest);
 }
 
@@ -55,7 +55,7 @@ gr_uint32 gr_fref_id(const gr_feature_ref* pfeatureref)
 {
   if (!pfeatureref)
     return 0;
-  
+
   return pfeatureref->getId();
 }
 
@@ -128,7 +128,7 @@ gr_feature_val* gr_featureval_clone(const gr_feature_val* pfeatures)
 {                      
     return static_cast<gr_feature_val*>(pfeatures ? new Features(*pfeatures) : new Features);
 }
-  
+
 void gr_featureval_destroy(gr_feature_val *p)
 {
     delete static_cast<Features*>(p);

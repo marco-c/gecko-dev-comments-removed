@@ -216,7 +216,7 @@ Zones::Exclusion Zones::Exclusion::weighted<XY>(float xmin, float xmax, float f,
         float m, float xi, GR_MAYBE_UNUSED float ai, float c, GR_MAYBE_UNUSED bool nega) {
     return Exclusion(xmin, xmax,
             m + f,
-            m * xi, 
+            m * xi,
             m * xi * xi + f * a0 * a0 + c);
 }
 
@@ -225,9 +225,9 @@ inline
 Zones::Exclusion Zones::Exclusion::weighted<SD>(float xmin, float xmax, float f, float a0,
         float m, float xi, float ai,float c, bool nega) {
     float xia = nega ? xi - ai : xi + ai;
-    return Exclusion(xmin, xmax, 
-            0.25f * (m + 2.f * f), 
-            0.25f * m * xia, 
+    return Exclusion(xmin, xmax,
+            0.25f * (m + 2.f * f),
+            0.25f * m * xia,
             0.25f * (m * xia * xia + 2.f * f * a0 * a0) + c);
 }
 

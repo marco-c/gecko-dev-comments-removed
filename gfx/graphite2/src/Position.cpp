@@ -95,4 +95,3 @@ Position Rect::constrainedAvoid(Position &offset, Rect &box, Rect &sdbox, Positi
     return res;
 }
 #endif
-

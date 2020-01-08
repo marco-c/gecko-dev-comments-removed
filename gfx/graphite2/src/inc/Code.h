@@ -54,11 +54,11 @@ namespace vm {
 class Machine::Code
 {
 public:
-    enum status_t 
+    enum status_t
     {
         loaded,
-        alloc_failed, 
-        invalid_opcode, 
+        alloc_failed,
+        invalid_opcode,
         unimplemented_opcode_used,
         out_of_range_data,
         jump_past_end,
@@ -94,7 +94,7 @@ public:
          enum passtype pt, byte * * const _out = 0);
     Code(const Machine::Code &) throw();
     ~Code() throw();
-    
+
     Code & operator=(const Code &rhs) throw();
     operator bool () const throw()                  { return _code && status() == loaded; }
     status_t      status() const throw()            { return _status; }
@@ -107,7 +107,7 @@ public:
     void          externalProgramMoved(ptrdiff_t) throw();
 
     int32 run(Machine &m, slotref * & map) const;
-    
+
     CLASS_NEW_DELETE;
 };
 
@@ -128,16 +128,16 @@ inline Machine::Code::Code() throw()
 }
 
 inline Machine::Code::Code(const Machine::Code &obj) throw ()
- :  _code(obj._code), 
-    _data(obj._data), 
-    _data_size(obj._data_size), 
+ :  _code(obj._code),
+    _data(obj._data),
+    _data_size(obj._data_size),
     _instr_count(obj._instr_count),
     _max_ref(obj._max_ref),
-    _status(obj._status), 
+    _status(obj._status),
     _constraint(obj._constraint),
     _modify(obj._modify),
     _delete(obj._delete),
-    _own(obj._own) 
+    _own(obj._own)
 {
     obj._own = false;
 }
@@ -145,15 +145,15 @@ inline Machine::Code::Code(const Machine::Code &obj) throw ()
 inline Machine::Code & Machine::Code::operator=(const Machine::Code &rhs) throw() {
     if (_instr_count > 0)
         release_buffers();
-    _code        = rhs._code; 
+    _code        = rhs._code;
     _data        = rhs._data;
-    _data_size   = rhs._data_size; 
+    _data_size   = rhs._data_size;
     _instr_count = rhs._instr_count;
-    _status      = rhs._status; 
+    _status      = rhs._status;
     _constraint  = rhs._constraint;
     _modify      = rhs._modify;
     _delete      = rhs._delete;
-    _own         = rhs._own; 
+    _own         = rhs._own;
     rhs._own = false;
     return *this;
 }

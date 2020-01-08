@@ -60,7 +60,7 @@
 
 
 
-namespace 
+namespace
 {
 #ifdef ALL_TTFUTILS
     
@@ -79,45 +79,45 @@ namespace
     const int kcPostNames = 258;
 
     const char * rgPostName[kcPostNames] = {
-        ".notdef", ".null", "nonmarkingreturn", "space", "exclam", "quotedbl", "numbersign", 
-        "dollar", "percent", "ampersand", "quotesingle", "parenleft", 
-        "parenright", "asterisk", "plus", "comma", "hyphen", "period", "slash", 
-        "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", 
-        "nine", "colon", "semicolon", "less", "equal", "greater", "question", 
-        "at", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", 
-        "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", 
-        "bracketleft", "backslash", "bracketright", "asciicircum", 
-        "underscore", "grave", "a", "b", "c", "d", "e", "f", "g", "h", "i", 
-        "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", 
-        "x", "y", "z", "braceleft", "bar", "braceright", "asciitilde", 
-        "Adieresis", "Aring", "Ccedilla", "Eacute", "Ntilde", "Odieresis", 
-        "Udieresis", "aacute", "agrave", "acircumflex", "adieresis", "atilde", 
-        "aring", "ccedilla", "eacute", "egrave", "ecircumflex", "edieresis", 
-        "iacute", "igrave", "icircumflex", "idieresis", "ntilde", "oacute", 
-        "ograve", "ocircumflex", "odieresis", "otilde", "uacute", "ugrave", 
-        "ucircumflex", "udieresis", "dagger", "degree", "cent", "sterling", 
-        "section", "bullet", "paragraph", "germandbls", "registered", 
-        "copyright", "trademark", "acute", "dieresis", "notequal", "AE", 
-        "Oslash", "infinity", "plusminus", "lessequal", "greaterequal", "yen", 
-        "mu", "partialdiff", "summation", "product", "pi", "integral", 
-        "ordfeminine", "ordmasculine", "Omega", "ae", "oslash", "questiondown", 
-        "exclamdown", "logicalnot", "radical", "florin", "approxequal", 
-        "Delta", "guillemotleft", "guillemotright", "ellipsis", "nonbreakingspace", 
-        "Agrave", "Atilde", "Otilde", "OE", "oe", "endash", "emdash", 
-        "quotedblleft", "quotedblright", "quoteleft", "quoteright", "divide", 
-        "lozenge", "ydieresis", "Ydieresis", "fraction", "currency", 
-        "guilsinglleft", "guilsinglright", "fi", "fl", "daggerdbl", "periodcentered", 
-        "quotesinglbase", "quotedblbase", "perthousand", "Acircumflex", 
-        "Ecircumflex", "Aacute", "Edieresis", "Egrave", "Iacute", 
-        "Icircumflex", "Idieresis", "Igrave", "Oacute", "Ocircumflex", 
-        "apple", "Ograve", "Uacute", "Ucircumflex", "Ugrave", "dotlessi", 
-        "circumflex", "tilde", "macron", "breve", "dotaccent", "ring", 
-        "cedilla", "hungarumlaut", "ogonek", "caron", "Lslash", "lslash", 
-        "Scaron", "scaron", "Zcaron", "zcaron", "brokenbar", "Eth", "eth", 
-        "Yacute", "yacute", "Thorn", "thorn", "minus", "multiply", 
-        "onesuperior", "twosuperior", "threesuperior", "onehalf", "onequarter", 
-        "threequarters", "franc", "Gbreve", "gbreve", "Idotaccent", "Scedilla", 
-        "scedilla", "Cacute", "cacute", "Ccaron", "ccaron", 
+        ".notdef", ".null", "nonmarkingreturn", "space", "exclam", "quotedbl", "numbersign",
+        "dollar", "percent", "ampersand", "quotesingle", "parenleft",
+        "parenright", "asterisk", "plus", "comma", "hyphen", "period", "slash",
+        "zero", "one", "two", "three", "four", "five", "six", "seven", "eight",
+        "nine", "colon", "semicolon", "less", "equal", "greater", "question",
+        "at", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+        "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+        "bracketleft", "backslash", "bracketright", "asciicircum",
+        "underscore", "grave", "a", "b", "c", "d", "e", "f", "g", "h", "i",
+        "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w",
+        "x", "y", "z", "braceleft", "bar", "braceright", "asciitilde",
+        "Adieresis", "Aring", "Ccedilla", "Eacute", "Ntilde", "Odieresis",
+        "Udieresis", "aacute", "agrave", "acircumflex", "adieresis", "atilde",
+        "aring", "ccedilla", "eacute", "egrave", "ecircumflex", "edieresis",
+        "iacute", "igrave", "icircumflex", "idieresis", "ntilde", "oacute",
+        "ograve", "ocircumflex", "odieresis", "otilde", "uacute", "ugrave",
+        "ucircumflex", "udieresis", "dagger", "degree", "cent", "sterling",
+        "section", "bullet", "paragraph", "germandbls", "registered",
+        "copyright", "trademark", "acute", "dieresis", "notequal", "AE",
+        "Oslash", "infinity", "plusminus", "lessequal", "greaterequal", "yen",
+        "mu", "partialdiff", "summation", "product", "pi", "integral",
+        "ordfeminine", "ordmasculine", "Omega", "ae", "oslash", "questiondown",
+        "exclamdown", "logicalnot", "radical", "florin", "approxequal",
+        "Delta", "guillemotleft", "guillemotright", "ellipsis", "nonbreakingspace",
+        "Agrave", "Atilde", "Otilde", "OE", "oe", "endash", "emdash",
+        "quotedblleft", "quotedblright", "quoteleft", "quoteright", "divide",
+        "lozenge", "ydieresis", "Ydieresis", "fraction", "currency",
+        "guilsinglleft", "guilsinglright", "fi", "fl", "daggerdbl", "periodcentered",
+        "quotesinglbase", "quotedblbase", "perthousand", "Acircumflex",
+        "Ecircumflex", "Aacute", "Edieresis", "Egrave", "Iacute",
+        "Icircumflex", "Idieresis", "Igrave", "Oacute", "Ocircumflex",
+        "apple", "Ograve", "Uacute", "Ucircumflex", "Ugrave", "dotlessi",
+        "circumflex", "tilde", "macron", "breve", "dotaccent", "ring",
+        "cedilla", "hungarumlaut", "ogonek", "caron", "Lslash", "lslash",
+        "Scaron", "scaron", "Zcaron", "zcaron", "brokenbar", "Eth", "eth",
+        "Yacute", "yacute", "Thorn", "thorn", "minus", "multiply",
+        "onesuperior", "twosuperior", "threesuperior", "onehalf", "onequarter",
+        "threequarters", "franc", "Gbreve", "gbreve", "Idotaccent", "Scedilla",
+        "scedilla", "Cacute", "cacute", "Ccaron", "ccaron",
         "dcroat" };
 #endif
 
@@ -167,7 +167,7 @@ bool GetHeaderInfo(size_t & lOffset, size_t & lSize)
 
 bool CheckHeader(const void * pHdr)
 {
-    const Sfnt::OffsetSubTable * pOffsetTable  
+    const Sfnt::OffsetSubTable * pOffsetTable
         = reinterpret_cast<const Sfnt::OffsetSubTable *>(pHdr);
 
     return pHdr && be::swap(pOffsetTable->scaler_type) == Sfnt::OffsetSubTable::TrueTypeWin;
@@ -185,7 +185,7 @@ bool GetTableDirInfo(const void * pHdr, size_t & lOffset, size_t & lSize)
     lOffset = offsetof(Sfnt::OffsetSubTable, table_directory);
     lSize   = be::swap(pOffsetTable->num_tables)
         * sizeof(Sfnt::OffsetSubTable::Entry);
-    
+
     return true;
 }
 
@@ -197,10 +197,10 @@ bool GetTableDirInfo(const void * pHdr, size_t & lOffset, size_t & lSize)
 bool GetTableInfo(const Tag TableTag, const void * pHdr, const void * pTableDir,
                            size_t & lOffset, size_t & lSize)
 {
-    const Sfnt::OffsetSubTable * pOffsetTable 
+    const Sfnt::OffsetSubTable * pOffsetTable
         = reinterpret_cast<const Sfnt::OffsetSubTable *>(pHdr);
     const size_t num_tables = be::swap(pOffsetTable->num_tables);
-    const Sfnt::OffsetSubTable::Entry 
+    const Sfnt::OffsetSubTable::Entry
         * entry_itr = reinterpret_cast<const Sfnt::OffsetSubTable::Entry *>(
             pTableDir),
         * const  dir_end = entry_itr + num_tables;
@@ -228,14 +228,14 @@ bool GetTableInfo(const Tag TableTag, const void * pHdr, const void * pTableDir,
 bool CheckTable(const Tag TableId, const void * pTable, size_t lTableSize)
 {
     using namespace Sfnt;
-    
+
     if (pTable == 0 || lTableSize < 4) return false;
 
     switch(TableId)
     {
     case Tag::cmap: 
     {
-        const Sfnt::CharacterCodeMap * const pCmap 
+        const Sfnt::CharacterCodeMap * const pCmap
             = reinterpret_cast<const Sfnt::CharacterCodeMap *>(pTable);
         if (lTableSize < sizeof(Sfnt::CharacterCodeMap))
             return false;
@@ -244,39 +244,39 @@ bool CheckTable(const Tag TableId, const void * pTable, size_t lTableSize)
 
     case Tag::head: 
     {
-        const Sfnt::FontHeader * const pHead 
+        const Sfnt::FontHeader * const pHead
             = reinterpret_cast<const Sfnt::FontHeader *>(pTable);
         if (lTableSize < sizeof(Sfnt::FontHeader))
             return false;
         bool r = be::swap(pHead->version) == OneFix
             && be::swap(pHead->magic_number) == FontHeader::MagicNumber
             && be::swap(pHead->glyph_data_format)
-                    == FontHeader::GlypDataFormat 
+                    == FontHeader::GlypDataFormat
             && (be::swap(pHead->index_to_loc_format)
-                    == FontHeader::ShortIndexLocFormat 
+                    == FontHeader::ShortIndexLocFormat
                 || be::swap(pHead->index_to_loc_format)
-                    == FontHeader::LongIndexLocFormat) 
+                    == FontHeader::LongIndexLocFormat)
             && sizeof(FontHeader) <= lTableSize;
         return r;
     }
 
     case Tag::post: 
     {
-        const Sfnt::PostScriptGlyphName * const pPost 
+        const Sfnt::PostScriptGlyphName * const pPost
             = reinterpret_cast<const Sfnt::PostScriptGlyphName *>(pTable);
         if (lTableSize < sizeof(Sfnt::PostScriptGlyphName))
             return false;
         const fixed format = be::swap(pPost->format);
-        bool r = format == PostScriptGlyphName::Format1 
-            || format == PostScriptGlyphName::Format2 
-            || format == PostScriptGlyphName::Format3 
+        bool r = format == PostScriptGlyphName::Format1
+            || format == PostScriptGlyphName::Format2
+            || format == PostScriptGlyphName::Format3
             || format == PostScriptGlyphName::Format25;
         return r;
     }
 
     case Tag::hhea: 
     {
-        const Sfnt::HorizontalHeader * pHhea = 
+        const Sfnt::HorizontalHeader * pHhea =
             reinterpret_cast<const Sfnt::HorizontalHeader *>(pTable);
         if (lTableSize < sizeof(Sfnt::HorizontalHeader))
             return false;
@@ -288,7 +288,7 @@ bool CheckTable(const Tag TableId, const void * pTable, size_t lTableSize)
 
     case Tag::maxp: 
     {
-        const Sfnt::MaximumProfile * pMaxp = 
+        const Sfnt::MaximumProfile * pMaxp =
             reinterpret_cast<const Sfnt::MaximumProfile *>(pTable);
         if (lTableSize < sizeof(Sfnt::MaximumProfile))
             return false;
@@ -299,7 +299,7 @@ bool CheckTable(const Tag TableId, const void * pTable, size_t lTableSize)
 
     case Tag::OS_2: 
     {
-        const Sfnt::Compatibility * pOs2 
+        const Sfnt::Compatibility * pOs2
             = reinterpret_cast<const Sfnt::Compatibility *>(pTable);
         if (be::swap(pOs2->version) == 0)
         { 
@@ -334,7 +334,7 @@ bool CheckTable(const Tag TableId, const void * pTable, size_t lTableSize)
 
     case Tag::name:
     {
-        const Sfnt::FontNames * pName 
+        const Sfnt::FontNames * pName
             = reinterpret_cast<const Sfnt::FontNames *>(pTable);
         if (lTableSize < sizeof(Sfnt::FontNames))
             return false;
@@ -360,7 +360,7 @@ bool CheckTable(const Tag TableId, const void * pTable, size_t lTableSize)
 
 size_t GlyphCount(const void * pMaxp)
 {
-    const Sfnt::MaximumProfile * pTable = 
+    const Sfnt::MaximumProfile * pTable =
             reinterpret_cast<const Sfnt::MaximumProfile *>(pMaxp);
     return be::swap(pTable->num_glyphs);
 }
@@ -373,7 +373,7 @@ size_t GlyphCount(const void * pMaxp)
 
 size_t  MaxCompositeComponentCount(const void * pMaxp)
 {
-    const Sfnt::MaximumProfile * pTable = 
+    const Sfnt::MaximumProfile * pTable =
             reinterpret_cast<const Sfnt::MaximumProfile *>(pMaxp);
     return be::swap(pTable->max_component_elements);
 }
@@ -387,7 +387,7 @@ size_t  MaxCompositeComponentCount(const void * pMaxp)
 
 size_t  MaxCompositeLevelCount(const void * pMaxp)
 {
-    const Sfnt::MaximumProfile * pTable = 
+    const Sfnt::MaximumProfile * pTable =
             reinterpret_cast<const Sfnt::MaximumProfile *>(pMaxp);
     return be::swap(pTable->max_component_depth);
 }
@@ -401,14 +401,14 @@ size_t  MaxCompositeLevelCount(const void * pMaxp)
 size_t LocaGlyphCount(size_t lLocaSize, const void * pHead) 
 {
 
-    const Sfnt::FontHeader * pTable 
+    const Sfnt::FontHeader * pTable
         = reinterpret_cast<const Sfnt::FontHeader *>(pHead);
 
     if (be::swap(pTable->index_to_loc_format)
         == Sfnt::FontHeader::ShortIndexLocFormat)
     
         return (lLocaSize >> 1) - 1;
-    
+
     if (be::swap(pTable->index_to_loc_format)
         == Sfnt::FontHeader::LongIndexLocFormat)
      
@@ -424,9 +424,9 @@ size_t LocaGlyphCount(size_t lLocaSize, const void * pHead)
 
 int DesignUnits(const void * pHead)
 {
-    const Sfnt::FontHeader * pTable = 
+    const Sfnt::FontHeader * pTable =
             reinterpret_cast<const Sfnt::FontHeader *>(pHead);
-    
+
     return be::swap(pTable->units_per_em);
 }
 
@@ -436,9 +436,9 @@ int DesignUnits(const void * pHead)
 
 int HeadTableCheckSum(const void * pHead)
 {
-    const Sfnt::FontHeader * pTable = 
+    const Sfnt::FontHeader * pTable =
             reinterpret_cast<const Sfnt::FontHeader *>(pHead);
-    
+
     return be::swap(pTable->check_sum_adjustment);
 }
 
@@ -451,9 +451,9 @@ int HeadTableCheckSum(const void * pHead)
 void HeadTableCreateTime(const void * pHead,
     unsigned int * pnDateBC, unsigned int * pnDateAD)
 {
-    const Sfnt::FontHeader * pTable = 
+    const Sfnt::FontHeader * pTable =
             reinterpret_cast<const Sfnt::FontHeader *>(pHead);
-    
+
     *pnDateBC = be::swap(pTable->created[0]);
     *pnDateAD = be::swap(pTable->created[1]);
 }
@@ -467,9 +467,9 @@ void HeadTableCreateTime(const void * pHead,
 void HeadTableModifyTime(const void * pHead,
     unsigned int * pnDateBC, unsigned int *pnDateAD)
 {
-    const Sfnt::FontHeader * pTable = 
+    const Sfnt::FontHeader * pTable =
             reinterpret_cast<const Sfnt::FontHeader *>(pHead);
-   ; 
+   ;
     *pnDateBC = be::swap(pTable->modified[0]);
     *pnDateAD = be::swap(pTable->modified[1]);
 }
@@ -479,7 +479,7 @@ void HeadTableModifyTime(const void * pHead,
 
 bool IsItalic(const void * pHead)
 {
-    const Sfnt::FontHeader * pTable = 
+    const Sfnt::FontHeader * pTable =
             reinterpret_cast<const Sfnt::FontHeader *>(pHead);
 
     return ((be::swap(pTable->mac_style) & 0x00000002) != 0);
@@ -518,7 +518,7 @@ bool FontOs2Style(const void *pOs2, bool & fBold, bool & fItalic)
 
     fBold = (be::swap(pTable->fs_selection) & Sfnt::Compatibility::Bold) != 0;
     fItalic = (be::swap(pTable->fs_selection) & Sfnt::Compatibility::Italic) != 0;
-    
+
     return true;
 }
 #endif
@@ -615,7 +615,7 @@ int GetLangsForNames(const void * pName, int nPlatformId, int nEncodingId,
 
 bool Get31EngFamilyInfo(const void * pName, size_t & lOffset, size_t & lSize)
 {
-    return GetNameInfo(pName, Sfnt::NameRecord::Microsoft, 1, 1033, 
+    return GetNameInfo(pName, Sfnt::NameRecord::Microsoft, 1, 1033,
         Sfnt::NameRecord::Family, lOffset, lSize);
 }
 
@@ -628,7 +628,7 @@ bool Get31EngFamilyInfo(const void * pName, size_t & lOffset, size_t & lSize)
 
 bool Get31EngFullFontInfo(const void * pName, size_t & lOffset, size_t & lSize)
 {
-    return GetNameInfo(pName, Sfnt::NameRecord::Microsoft, 1, 1033, 
+    return GetNameInfo(pName, Sfnt::NameRecord::Microsoft, 1, 1033,
         Sfnt::NameRecord::Fullname, lOffset, lSize);
 }
 
@@ -639,7 +639,7 @@ bool Get31EngFullFontInfo(const void * pName, size_t & lOffset, size_t & lSize)
 
 bool Get30EngFamilyInfo(const void * pName, size_t & lOffset, size_t & lSize)
 {
-    return GetNameInfo(pName, Sfnt::NameRecord::Microsoft, 0, 1033, 
+    return GetNameInfo(pName, Sfnt::NameRecord::Microsoft, 0, 1033,
         Sfnt::NameRecord::Family, lOffset, lSize);
 }
 
@@ -652,7 +652,7 @@ bool Get30EngFamilyInfo(const void * pName, size_t & lOffset, size_t & lSize)
 
 bool Get30EngFullFontInfo(const void * pName, size_t & lOffset, size_t & lSize)
 {
-    return GetNameInfo(pName, Sfnt::NameRecord::Microsoft, 0, 1033, 
+    return GetNameInfo(pName, Sfnt::NameRecord::Microsoft, 0, 1033,
         Sfnt::NameRecord::Fullname, lOffset, lSize);
 }
 
@@ -667,12 +667,12 @@ bool Get30EngFullFontInfo(const void * pName, size_t & lOffset, size_t & lSize)
 
 
 
-int PostLookup(const void * pPost, size_t lPostSize, const void * pMaxp, 
+int PostLookup(const void * pPost, size_t lPostSize, const void * pMaxp,
                         const char * pPostName)
 {
     using namespace Sfnt;
-    
-    const Sfnt::PostScriptGlyphName * pTable 
+
+    const Sfnt::PostScriptGlyphName * pTable
         = reinterpret_cast<const Sfnt::PostScriptGlyphName *>(pPost);
     fixed format = be::swap(pTable->format);
 
@@ -696,16 +696,16 @@ int PostLookup(const void * pPost, size_t lPostSize, const void * pMaxp,
     { 
         return iPostName;
     }
-    
+
     if (format == PostScriptGlyphName::Format25)
-    { 
+    {
         if (iPostName == -1)
             return -1;
-        
-        const PostScriptGlyphName25 * pTable25 
+
+        const PostScriptGlyphName25 * pTable25
             = static_cast<const PostScriptGlyphName25 *>(pTable);
         int cnGlyphs = GlyphCount(pMaxp);
-        for (gid16 nGlyphId = 0; nGlyphId < cnGlyphs && nGlyphId < kcPostNames; 
+        for (gid16 nGlyphId = 0; nGlyphId < cnGlyphs && nGlyphId < kcPostNames;
                 nGlyphId++)
         { 
           
@@ -716,9 +716,9 @@ int PostLookup(const void * pPost, size_t lPostSize, const void * pMaxp,
 
     if (format == PostScriptGlyphName::Format2)
     { 
-        const PostScriptGlyphName2 * pTable2 
+        const PostScriptGlyphName2 * pTable2
             = static_cast<const PostScriptGlyphName2 *>(pTable);
-        
+
         int cnGlyphs = be::swap(pTable2->number_of_glyphs);
 
         if (iPostName != -1)
@@ -737,9 +737,9 @@ int PostLookup(const void * pPost, size_t lPostSize, const void * pMaxp,
             const char * pGlyphName = pFirstGlyphName;
             int iInNames = 0; 
             bool fFound = false;
-            const char * const endOfTable 
+            const char * const endOfTable
                 = reinterpret_cast<const char *>(pTable2) + lPostSize;
-            while (pGlyphName < endOfTable && !fFound) 
+            while (pGlyphName < endOfTable && !fFound)
             { 
                 size_t nStringSize = size_t(*pGlyphName);
                 if (nStrSizeGoal != nStringSize ||
@@ -803,17 +803,17 @@ void SwapWString(void * pWStr, size_t nSize )
 
 
 
-bool HorMetrics(gid16 nGlyphId, const void * pHmtx, size_t lHmtxSize, const void * pHhea, 
+bool HorMetrics(gid16 nGlyphId, const void * pHmtx, size_t lHmtxSize, const void * pHhea,
                          int & nLsb, unsigned int & nAdvWid)
 {
-    const Sfnt::HorizontalMetric * phmtx = 
+    const Sfnt::HorizontalMetric * phmtx =
         reinterpret_cast<const Sfnt::HorizontalMetric *>(pHmtx);
 
-    const Sfnt::HorizontalHeader * phhea = 
+    const Sfnt::HorizontalHeader * phhea =
         reinterpret_cast<const Sfnt::HorizontalHeader *>(pHhea);
 
     size_t cLongHorMetrics = be::swap(phhea->num_long_hor_metrics);
-    if (nGlyphId < cLongHorMetrics) 
+    if (nGlyphId < cLongHorMetrics)
     {   
         if ((nGlyphId + 1) * sizeof(Sfnt::HorizontalMetric) > lHmtxSize) return false;
         nAdvWid = be::swap(phmtx[nGlyphId].advance_width);
@@ -958,7 +958,7 @@ gid16 CmapSubtable4Lookup(const void * pCmapSubtabel4, unsigned int nUnicodeId, 
     const Sfnt::CmapSubTableFormat4 * pTable = reinterpret_cast<const Sfnt::CmapSubTableFormat4 *>(pCmapSubtabel4);
 
     uint16 nSeg = be::swap(pTable->seg_count_x2) >> 1;
-  
+
     uint16 n;
     const uint16 * pLeft, * pMid;
     uint16 cMid, chStart, chEnd;
@@ -1211,8 +1211,8 @@ unsigned int CmapSubtable12NextCodepoint(const void *pCmap310, unsigned int nUni
 
 
 
-size_t LocaLookup(gid16 nGlyphId, 
-        const void * pLoca, size_t lLocaSize, 
+size_t LocaLookup(gid16 nGlyphId,
+        const void * pLoca, size_t lLocaSize,
         const void * pHead) 
 {
     const Sfnt::FontHeader * pTable = reinterpret_cast<const Sfnt::FontHeader *>(pHead);
@@ -1252,8 +1252,8 @@ size_t LocaLookup(gid16 nGlyphId,
 void * GlyfLookup(const void * pGlyf, size_t nGlyfOffset, size_t nTableLen)
 {
     const uint8 * pByte = reinterpret_cast<const uint8 *>(pGlyf);
-        if (nGlyfOffset + pByte < pByte || nGlyfOffset >= nTableLen - sizeof(Sfnt::Glyph))
-            return NULL;
+    if (OVERFLOW_OFFSET_CHECK(pByte, nGlyfOffset) || nGlyfOffset >= nTableLen - sizeof(Sfnt::Glyph))
+        return NULL;
     return const_cast<uint8 *>(pByte + nGlyfOffset);
 }
 
@@ -1261,7 +1261,7 @@ void * GlyfLookup(const void * pGlyf, size_t nGlyfOffset, size_t nTableLen)
 
 
 
-bool GlyfBox(const void * pSimpleGlyf, int & xMin, int & yMin, 
+bool GlyfBox(const void * pSimpleGlyf, int & xMin, int & yMin,
                       int & xMax, int & yMax)
 {
     const Sfnt::Glyph * pGlyph = reinterpret_cast<const Sfnt::Glyph *>(pSimpleGlyf);
@@ -1294,7 +1294,7 @@ int GlyfContourCount(const void * pSimpleGlyf)
 
 
 
-bool GlyfContourEndPoints(const void * pSimpleGlyf, int * prgnContourEndPoint, 
+bool GlyfContourEndPoints(const void * pSimpleGlyf, int * prgnContourEndPoint,
                                    int cnPointsTotal, int & cnPoints)
 {
     const Sfnt::SimpleGlyph * pGlyph = reinterpret_cast<const Sfnt::SimpleGlyph *>(pSimpleGlyf);
@@ -1324,11 +1324,11 @@ bool GlyfContourEndPoints(const void * pSimpleGlyf, int * prgnContourEndPoint,
 
 
 
-bool GlyfPoints(const void * pSimpleGlyf, int * prgnX, int * prgnY, 
+bool GlyfPoints(const void * pSimpleGlyf, int * prgnX, int * prgnY,
         char * prgbFlag, int cnPointsTotal, int & cnPoints)
 {
     using namespace Sfnt;
-    
+
     const Sfnt::SimpleGlyph * pGlyph = reinterpret_cast<const Sfnt::SimpleGlyph *>(pSimpleGlyf);
     int cContours = be::swap(pGlyph->number_of_contours);
     
@@ -1341,7 +1341,7 @@ bool GlyfPoints(const void * pSimpleGlyf, int * prgnX, int * prgnY,
     
     const uint8 * pbGlyph = reinterpret_cast<const uint8 *>
         (&pGlyph->end_pts_of_contours[cContours]);
-    
+
     
     int cbHints = be::swap(*(uint16 *)pbGlyph);
     pbGlyph += sizeof(uint16);
@@ -1403,7 +1403,7 @@ bool GlyfPoints(const void * pSimpleGlyf, int * prgnX, int * prgnY,
         }
         iFlag++;
     }
-        
+
     
     iFlag = 0;
     while (iFlag < cPts)
@@ -1432,7 +1432,7 @@ bool GlyfPoints(const void * pSimpleGlyf, int * prgnX, int * prgnY,
         }
         iFlag++;
     }
-        
+
     cnPoints = cPts;
     return true;
 }
@@ -1446,11 +1446,11 @@ bool GlyfPoints(const void * pSimpleGlyf, int * prgnX, int * prgnY,
 
 
 
-bool GetComponentGlyphIds(const void * pSimpleGlyf, int * prgnCompId, 
+bool GetComponentGlyphIds(const void * pSimpleGlyf, int * prgnCompId,
         size_t cnCompIdTotal, size_t & cnCompId)
 {
     using namespace Sfnt;
-    
+
     if (GlyfContourCount(pSimpleGlyf) >= 0)
         return false;
 
@@ -1460,13 +1460,13 @@ bool GetComponentGlyphIds(const void * pSimpleGlyf, int * prgnCompId,
 
     uint16 GlyphFlags;
     size_t iCurrentComp = 0;
-    do 
+    do
     {
         GlyphFlags = be::swap(*((uint16 *)pbGlyph));
         pbGlyph += sizeof(uint16);
         prgnCompId[iCurrentComp++] = be::swap(*((uint16 *)pbGlyph));
         pbGlyph += sizeof(uint16);
-        if (iCurrentComp >= cnCompIdTotal) 
+        if (iCurrentComp >= cnCompIdTotal)
             return false;
         int nOffset = 0;
         nOffset += GlyphFlags & CompoundGlyph::Arg1Arg2Words ? 4 : 2;
@@ -1495,7 +1495,7 @@ bool GetComponentPlacement(const void * pSimpleGlyf, int nCompId,
                                     bool fOffset, int & a, int & b)
 {
     using namespace Sfnt;
-    
+
     if (GlyfContourCount(pSimpleGlyf) >= 0)
         return false;
 
@@ -1504,7 +1504,7 @@ bool GetComponentPlacement(const void * pSimpleGlyf, int nCompId,
     const uint8 * pbGlyph = reinterpret_cast<const uint8 *>(&pGlyph->end_pts_of_contours[0]);
 
     uint16 GlyphFlags;
-    do 
+    do
     {
         GlyphFlags = be::swap(*((uint16 *)pbGlyph));
         pbGlyph += sizeof(uint16);
@@ -1555,12 +1555,12 @@ bool GetComponentPlacement(const void * pSimpleGlyf, int nCompId,
 
 
 
-bool GetComponentTransform(const void * pSimpleGlyf, int nCompId, 
-                                    float & flt11, float & flt12, float & flt21, float & flt22, 
+bool GetComponentTransform(const void * pSimpleGlyf, int nCompId,
+                                    float & flt11, float & flt12, float & flt21, float & flt22,
                                     bool & fTransOffset)
 {
     using namespace Sfnt;
-    
+
     if (GlyfContourCount(pSimpleGlyf) >= 0)
         return false;
 
@@ -1569,7 +1569,7 @@ bool GetComponentTransform(const void * pSimpleGlyf, int nCompId,
     const uint8 * pbGlyph = reinterpret_cast<const uint8 *>(&pGlyph->end_pts_of_contours[0]);
 
     uint16 GlyphFlags;
-    do 
+    do
     {
         GlyphFlags = be::swap(*((uint16 *)pbGlyph));
         pbGlyph += sizeof(uint16);
@@ -1579,7 +1579,7 @@ bool GetComponentTransform(const void * pSimpleGlyf, int nCompId,
             pbGlyph += GlyphFlags & CompoundGlyph::Arg1Arg2Words  ? 4 : 2; 
 
             if (fTransOffset) 
-                fTransOffset = !(GlyphFlags & CompoundGlyph::UnscaledOffset); 
+                fTransOffset = !(GlyphFlags & CompoundGlyph::UnscaledOffset);
             else 
                 fTransOffset = (GlyphFlags & CompoundGlyph::ScaledOffset) != 0;
 
@@ -1644,13 +1644,13 @@ bool GetComponentTransform(const void * pSimpleGlyf, int nCompId,
 
 
 
-void * GlyfLookup(gid16 nGlyphId, const void * pGlyf, const void * pLoca, 
+void * GlyfLookup(gid16 nGlyphId, const void * pGlyf, const void * pLoca,
                            size_t lGlyfSize, size_t lLocaSize, const void * pHead)
 {
     
     
-    
-    const Sfnt::FontHeader * pTable 
+
+    const Sfnt::FontHeader * pTable
         = reinterpret_cast<const Sfnt::FontHeader *>(pHead);
 
     if (be::swap(pTable->index_to_loc_format) == Sfnt::FontHeader::ShortIndexLocFormat)
@@ -1670,7 +1670,7 @@ void * GlyfLookup(gid16 nGlyphId, const void * pGlyf, const void * pLoca,
         }
     }
 
-    long lGlyfOffset = LocaLookup(nGlyphId, pLoca, lLocaSize, pHead);
+    size_t lGlyfOffset = LocaLookup(nGlyphId, pLoca, lLocaSize, pHead);
     void * pSimpleGlyf = GlyfLookup(pGlyf, lGlyfOffset, lGlyfSize); 
     return pSimpleGlyf;
 }
@@ -1683,7 +1683,7 @@ void * GlyfLookup(gid16 nGlyphId, const void * pGlyf, const void * pLoca,
 bool IsSpace(gid16 nGlyphId, const void * pLoca, size_t lLocaSize, const void * pHead)
 {
     size_t lGlyfOffset = LocaLookup(nGlyphId, pLoca, lLocaSize, pHead);
-    
+
     
     size_t lNextGlyfOffset = LocaLookup(nGlyphId + 1, pLoca, lLocaSize, pHead);
 
@@ -1693,7 +1693,7 @@ bool IsSpace(gid16 nGlyphId, const void * pLoca, size_t lLocaSize, const void * 
 
 
 
-bool IsDeepComposite(gid16 nGlyphId, const void * pGlyf, const void * pLoca, 
+bool IsDeepComposite(gid16 nGlyphId, const void * pGlyf, const void * pLoca,
                     size_t lGlyfSize, long lLocaSize, const void * pHead)
 {
     if (IsSpace(nGlyphId, pLoca, lLocaSize, pHead)) {return false;}
@@ -1714,7 +1714,7 @@ bool IsDeepComposite(gid16 nGlyphId, const void * pGlyf, const void * pLoca,
 
     for (size_t i = 0; i < cCompId; i++)
     {
-        pSimpleGlyf = GlyfLookup(static_cast<gid16>(rgnCompId[i]), 
+        pSimpleGlyf = GlyfLookup(static_cast<gid16>(rgnCompId[i]),
                             pGlyf, pLoca, lGlyfSize, lLocaSize, pHead);
         if (pSimpleGlyf == NULL) {return false;}
 
@@ -1731,7 +1731,7 @@ bool IsDeepComposite(gid16 nGlyphId, const void * pGlyf, const void * pLoca,
 
 
 
-bool GlyfBox(gid16  nGlyphId, const void * pGlyf, const void * pLoca, 
+bool GlyfBox(gid16  nGlyphId, const void * pGlyf, const void * pLoca,
         size_t lGlyfSize, size_t lLocaSize, const void * pHead, int & xMin, int & yMin, int & xMax, int & yMax)
 {
     xMin = yMin = xMax = yMax = INT_MIN;
@@ -1750,7 +1750,7 @@ bool GlyfBox(gid16  nGlyphId, const void * pGlyf, const void * pLoca,
 
 
 
-bool GlyfContourCount(gid16 nGlyphId, const void * pGlyf, const void * pLoca, 
+bool GlyfContourCount(gid16 nGlyphId, const void * pGlyf, const void * pLoca,
     size_t lGlyfSize, size_t lLocaSize, const void * pHead, size_t & cnContours)
 {
     cnContours = static_cast<size_t>(INT_MIN);
@@ -1766,7 +1766,7 @@ bool GlyfContourCount(gid16 nGlyphId, const void * pGlyf, const void * pLoca,
         cnContours = size_t(cRtnContours);
         return true;
     }
-        
+
     
 
     int rgnCompId[kMaxGlyphComponents]; 
@@ -1781,11 +1781,11 @@ bool GlyfContourCount(gid16 nGlyphId, const void * pGlyf, const void * pLoca,
     for (size_t i = 0; i < cCompId; i++)
     {
         if (IsSpace(static_cast<gid16>(rgnCompId[i]), pLoca, lLocaSize, pHead)) {return false;}
-        pSimpleGlyf = GlyfLookup(static_cast<gid16>(rgnCompId[i]), 
+        pSimpleGlyf = GlyfLookup(static_cast<gid16>(rgnCompId[i]),
                                  pGlyf, pLoca, lGlyfSize, lLocaSize, pHead);
         if (pSimpleGlyf == 0) {return false;}
         
-        if ((cTmp = GlyfContourCount(pSimpleGlyf)) < 0) 
+        if ((cTmp = GlyfContourCount(pSimpleGlyf)) < 0)
             return false;
         cRtnContours += cTmp;
     }
@@ -1803,7 +1803,7 @@ bool GlyfContourCount(gid16 nGlyphId, const void * pGlyf, const void * pLoca,
 
 
 
-bool GlyfContourEndPoints(gid16 nGlyphId, const void * pGlyf, const void * pLoca, 
+bool GlyfContourEndPoints(gid16 nGlyphId, const void * pGlyf, const void * pLoca,
     size_t lGlyfSize, size_t lLocaSize, const void * pHead,
     int * prgnContourEndPoint, size_t cnPoints)
 {
@@ -1819,9 +1819,9 @@ bool GlyfContourEndPoints(gid16 nGlyphId, const void * pGlyf, const void * pLoca
     int cActualPts = 0;
     if (cContours > 0)
         return GlyfContourEndPoints(pSimpleGlyf, prgnContourEndPoint, cnPoints, cActualPts);
+
     
-    
-    
+
     int rgnCompId[kMaxGlyphComponents]; 
     size_t cCompIdTotal = kMaxGlyphComponents;
     size_t cCompId = 0;
@@ -1882,7 +1882,7 @@ bool GlyfPoints(gid16 nGlyphId, const void * pGlyf,
         memset(prgnX, 0x7F, cnPoints * sizeof(int));
         memset(prgnY, 0x7F, cnPoints * sizeof(int));
 
-    if (IsSpace(nGlyphId, pLoca, lLocaSize, pHead)) 
+    if (IsSpace(nGlyphId, pLoca, lLocaSize, pHead))
         return false;
 
     void * pSimpleGlyf = GlyfLookup(nGlyphId, pGlyf, pLoca, lGlyfSize, lLocaSize, pHead);
@@ -1924,12 +1924,12 @@ bool GlyfPoints(gid16 nGlyphId, const void * pGlyf,
         void * pCompGlyf = GlyfLookup(static_cast<gid16>(rgnCompId[i]), pGlyf, pLoca, lGlyfSize, lLocaSize, pHead);
         if (pCompGlyf == NULL) {return false;}
         
-        if (!GlyfPoints(pCompGlyf, prgnCurrentX, prgnCurrentY, prgbCurrentFlag, 
+        if (!GlyfPoints(pCompGlyf, prgnCurrentX, prgnCurrentY, prgbCurrentFlag,
             cCurrentPoints, cActualPts))
-            return false; 
+            return false;
         if (!GetComponentPlacement(pSimpleGlyf, rgnCompId[i], fOffset, a, b))
             return false;
-        if (!GetComponentTransform(pSimpleGlyf, rgnCompId[i], 
+        if (!GetComponentTransform(pSimpleGlyf, rgnCompId[i],
             flt11, flt12, flt21, flt22, fTransOff))
             return false;
         bool fIdTrans = flt11 == 1.0 && flt12 == 0.0 && flt21 == 0.0 && flt22 == 1.0;
@@ -1948,18 +1948,18 @@ bool GlyfPoints(gid16 nGlyphId, const void * pGlyf,
                 prgnCurrentX[j] = (int)(x * flt11 + y * flt12);
                 prgnCurrentY[j] = (int)(x * flt21 + y * flt22);
             }
-            
+
         
         int nXOff, nYOff;
         if (fOffset) 
-        { 
+        {
             
 
 
 
 
 
- 
+
             { 
                 nXOff = a;
                 nYOff = b;

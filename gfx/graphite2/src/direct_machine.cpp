@@ -83,13 +83,13 @@ const void * direct_run(const bool          get_table_mode,
                   * const mapb = smap.begin()+smap.context();
     uint8                  dir = _dir;
     int8                 flags = 0;
-    
+
     
     goto **ip;
 
     
     #include "inc/opcodes.h"
-    
+
     end:
     __map  = map;
     *__map = is;
@@ -111,11 +111,10 @@ Machine::stack_t  Machine::run(const instr   * program,
                                slotref     * & is)
 {
     assert(program != 0);
-    
+
     const stack_t *sp = static_cast<const stack_t *>(
                 direct_run(false, program, data, _stack, is, _map.dir(), _status, &_map));
     const stack_t ret = sp == _stack+STACK_GUARD+1 ? *sp-- : 0;
     check_final_stack(sp);
     return ret;
 }
-

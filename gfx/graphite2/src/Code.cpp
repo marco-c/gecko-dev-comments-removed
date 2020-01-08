@@ -67,7 +67,7 @@ inline bool is_return(const instr i) {
 struct context
 {
     context(uint8 ref=0) : codeRef(ref) {flags.changed=false; flags.referenced=false;}
-    struct { 
+    struct {
         uint8   changed:1,
                 referenced:1;
     } flags;
@@ -82,14 +82,14 @@ class Machine::Code::decoder
 public:
     struct limits;
     static const int NUMCONTEXTS = 256;
-    
+
     decoder(limits & lims, Code &code, enum passtype pt) throw();
-    
+
     bool        load(const byte * bc_begin, const byte * bc_end);
     void        apply_analysis(instr * const code, instr * code_end);
     byte        max_ref() { return _max_ref; }
     int         out_index() const { return _out_index; }
-    
+
 private:
     void        set_ref(int index) throw();
     void        set_noref(int index) throw();
@@ -102,7 +102,7 @@ private:
     bool        test_context() const throw();
     bool        test_ref(int8 index) const throw();
     void        failure(const status_t s) const throw() { _code.failure(s); }
-    
+
     Code              & _code;
     int                 _out_index;
     uint16              _out_length;
@@ -128,18 +128,18 @@ struct Machine::Code::decoder::limits
                      features;
   const byte         attrid[gr_slatMax];
 };
-   
+
 inline Machine::Code::decoder::decoder(limits & lims, Code &code, enum passtype pt) throw()
 : _code(code),
-  _out_index(code._constraint ? 0 : lims.pre_context), 
-  _out_length(code._constraint ? 1 : lims.rule_length), 
+  _out_index(code._constraint ? 0 : lims.pre_context),
+  _out_length(code._constraint ? 1 : lims.rule_length),
   _instr(code._code), _data(code._data), _max(lims), _passtype(pt),
   _stack_depth(0),
   _in_ctxt_item(false),
   _slotref(0),
   _max_ref(0)
 { }
-    
+
 
 
 Machine::Code::Code(bool is_constraint, const byte * bytecode_begin, const byte * const bytecode_end,
@@ -159,38 +159,38 @@ Machine::Code::Code(bool is_constraint, const byte * bytecode_begin, const byte 
     }
     assert(bytecode_end > bytecode_begin);
     const opcode_t *    op_to_fn = Machine::getOpcodeTable();
-    
+
     
     
     if (_out)   _code = reinterpret_cast<instr *>(*_out);
     else        _code = static_cast<instr *>(malloc(estimateCodeDataOut(bytecode_end-bytecode_begin, 1, is_constraint ? 0 : rule_length)));
     _data = reinterpret_cast<byte *>(_code + (bytecode_end - bytecode_begin));
-    
+
     if (!_code || !_data) {
         failure(alloc_failed);
         return;
     }
-    
+
     decoder::limits lims = {
         bytecode_end,
         pre_context,
         rule_length,
         silf.numClasses(),
         face.glyphs().numAttrs(),
-        face.numFeatures(), 
-        {1,1,1,1,1,1,1,1, 
+        face.numFeatures(),
+        {1,1,1,1,1,1,1,1,
          1,1,1,1,1,1,1,255,
-         1,1,1,1,1,1,1,1, 
-         1,1,1,1,1,1,0,0, 
-         0,0,0,0,0,0,0,0, 
-         0,0,0,0,0,0,0,0, 
+         1,1,1,1,1,1,1,1,
+         1,1,1,1,1,1,0,0,
+         0,0,0,0,0,0,0,0,
+         0,0,0,0,0,0,0,0,
          0,0,0,0,0,0,0, silf.numUser()}
     };
-    
+
     decoder dec(lims, *this, pt);
     if(!dec.load(bytecode_begin, bytecode_end))
        return;
-    
+
     
     if (_instr_count == 0)
     {
@@ -198,7 +198,7 @@ Machine::Code::Code(bool is_constraint, const byte * bytecode_begin, const byte 
       ::new (this) Code();
       return;
     }
-    
+
     
     if (!is_return(_code[_instr_count-1])) {
         failure(missing_return);
@@ -208,7 +208,7 @@ Machine::Code::Code(bool is_constraint, const byte * bytecode_begin, const byte 
     assert((_constraint && immutable()) || !_constraint);
     dec.apply_analysis(_code, _code + _instr_count);
     _max_ref = dec.max_ref();
-    
+
     
     
     
@@ -255,13 +255,13 @@ bool Machine::Code::decoder::load(const byte * bc, const byte * bc_end)
         const opcode opc = fetch_opcode(bc++);
         if (opc == vm::MAX_OPCODE)
             return false;
-        
+
         analyse_opcode(opc, reinterpret_cast<const int8 *>(bc));
-        
+
         if (!emit_opcode(opc, bc))
             return false;
     }
-    
+
     return bool(_code);
 }
 
@@ -509,7 +509,7 @@ void Machine::Code::decoder::analyse_opcode(const opcode opc, const int8  * arg)
     case NEXT :
     case COPY_NEXT :
       ++_slotref;
-      _contexts[_slotref] = context(_code._instr_count+1);
+      _contexts[_slotref] = context(uint8(_code._instr_count+1));
       
       break;
     case INSERT :
@@ -517,7 +517,7 @@ void Machine::Code::decoder::analyse_opcode(const opcode opc, const int8  * arg)
       _code._modify = true;
       break;
     case PUT_SUBS_8BIT_OBS :    
-    case PUT_SUBS : 
+    case PUT_SUBS :
       _code._modify = true;
       set_changed(0);
       GR_FALLTHROUGH;
@@ -559,7 +559,7 @@ bool Machine::Code::decoder::emit_opcode(opcode opc, const byte * & bc)
     const size_t     param_sz = op.param_sz == VARARGS ? bc[0] + 1 : op.param_sz;
 
     
-    *_instr++ = op.impl[_code._constraint]; 
+    *_instr++ = op.impl[_code._constraint];
     ++_code._instr_count;
 
     
@@ -569,7 +569,7 @@ bool Machine::Code::decoder::emit_opcode(opcode opc, const byte * & bc)
         _data            += param_sz;
         _code._data_size += param_sz;
     }
-    
+
     
     
     if (opc == CNTXT_ITEM)
@@ -589,8 +589,8 @@ bool Machine::Code::decoder::emit_opcode(opcode opc, const byte * & bc)
         if (load(bc, bc + instr_skip))
         {
             bc += instr_skip;
-            data_skip  = instr_skip - (_code._instr_count - ctxt_start);
-            instr_skip = _code._instr_count - ctxt_start;
+            data_skip  = instr_skip - byte(_code._instr_count - ctxt_start);
+            instr_skip =  byte(_code._instr_count - ctxt_start);
             _max.bytecode = curr_end;
 
             _out_length = 1;
@@ -605,7 +605,7 @@ bool Machine::Code::decoder::emit_opcode(opcode opc, const byte * & bc)
             return false;
         }
     }
-    
+
     return bool(_code);
 }
 
@@ -620,15 +620,15 @@ void Machine::Code::decoder::apply_analysis(instr * const code, instr * code_end
     for (const context * c = _contexts, * const ce = c + _slotref; c < ce; ++c)
     {
         if (!c->flags.referenced || !c->flags.changed) continue;
-        
-        instr * const tip = code + c->codeRef + tempcount;        
+
+        instr * const tip = code + c->codeRef + tempcount;
         memmove(tip+1, tip, (code_end - tip) * sizeof(instr));
         *tip = temp_copy;
         ++code_end;
         ++tempcount;
         _code._delete = true;
     }
-    
+
     _code._instr_count = code_end - code;
 }
 
@@ -695,7 +695,7 @@ bool Machine::Code::decoder::test_context() const throw()
     return true;
 }
 
-inline 
+inline
 void Machine::Code::failure(const status_t s) throw() {
     release_buffers();
     _status = s;
@@ -750,4 +750,3 @@ int32 Machine::Code::run(Machine & m, slotref * & map) const
 
     return  m.run(_code, _data, map);
 }
-

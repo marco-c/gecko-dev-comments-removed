@@ -136,5 +136,3 @@ const opcode_t * Machine::getOpcodeTable() throw()
 {
     return opcode_table;
 }
-
-

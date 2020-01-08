@@ -30,7 +30,7 @@
 
 #define GR2_VERSION_MAJOR   1
 #define GR2_VERSION_MINOR   3
-#define GR2_VERSION_BUGFIX  11
+#define GR2_VERSION_BUGFIX  12
 
 #ifdef __cplusplus
 extern "C"
@@ -113,7 +113,7 @@ struct gr_face_ops
 	gr_get_table_fn 	get_table;
         
 
-	gr_release_table_fn	release_table;  
+	gr_release_table_fn	release_table;
 };
 typedef struct gr_face_ops	gr_face_ops;
 
@@ -140,7 +140,7 @@ GR2_API gr_face* gr_make_face_with_ops(const void* appFaceHandle, const gr_face_
 
 
 
-GR2_API gr_face* gr_make_face(const void* appFaceHandle, gr_get_table_fn getTable, unsigned int faceOptions);
+GR2_DEPRECATED_API gr_face* gr_make_face(const void* appFaceHandle, gr_get_table_fn getTable, unsigned int faceOptions);
 
 
 
@@ -153,7 +153,8 @@ GR2_API gr_face* gr_make_face(const void* appFaceHandle, gr_get_table_fn getTabl
 
 
 
-GR2_API gr_face* gr_make_face_with_seg_cache_and_ops(const void* appFaceHandle, const gr_face_ops *face_ops, unsigned int segCacheMaxSize, unsigned int faceOptions);
+
+GR2_DEPRECATED_API gr_face* gr_make_face_with_seg_cache_and_ops(const void* appFaceHandle, const gr_face_ops *face_ops, unsigned int segCacheMaxSize, unsigned int faceOptions);
 
 
 
@@ -165,8 +166,9 @@ GR2_API gr_face* gr_make_face_with_seg_cache_and_ops(const void* appFaceHandle, 
 
 
 
-GR2_API gr_face* gr_make_face_with_seg_cache(const void* appFaceHandle, gr_get_table_fn getTable, unsigned int segCacheMaxSize, unsigned int faceOptions);
 
+
+GR2_DEPRECATED_API gr_face* gr_make_face_with_seg_cache(const void* appFaceHandle, gr_get_table_fn getTable, unsigned int segCacheMaxSize, unsigned int faceOptions);
 
 
 
@@ -251,8 +253,8 @@ GR2_API gr_face* gr_make_file_face(const char *filename, unsigned int faceOption
 
 
 
-GR2_API gr_face* gr_make_file_face_with_seg_cache(const char *filename, unsigned int segCacheMaxSize, unsigned int faceOptions);
 
+GR2_DEPRECATED_API gr_face* gr_make_file_face_with_seg_cache(const char *filename, unsigned int segCacheMaxSize, unsigned int faceOptions);
 #endif      
 
 
@@ -347,7 +349,7 @@ GR2_API gr_uint16 gr_fref_n_values(const gr_feature_ref* pfeatureref);
 
 
 
-GR2_API gr_int16 gr_fref_value(const gr_feature_ref* pfeatureref, gr_uint16 settingno);   
+GR2_API gr_int16 gr_fref_value(const gr_feature_ref* pfeatureref, gr_uint16 settingno);
 
 
 
@@ -385,4 +387,3 @@ GR2_API void gr_featureval_destroy(gr_feature_val *pfeatures);
 #ifdef __cplusplus
 }
 #endif
-

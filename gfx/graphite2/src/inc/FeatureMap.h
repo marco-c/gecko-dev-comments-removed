@@ -41,7 +41,7 @@ public:
     FeatureSetting(int16 theValue, uint16 labelId) : m_label(labelId), m_value(theValue) {};
     uint16 label() const { return m_label; }
     int16 value() const { return m_value; }
-    
+
     CLASS_NEW_DELETE;
 private:
     FeatureSetting(const FeatureSetting & fs) : m_label(fs.m_label), m_value(fs.m_value) {};
@@ -146,7 +146,7 @@ friend class SillMap;
     FeatureRef *m_feats;
     NameAndFeatureRef* m_pNamedFeats;   
     FeatureVal m_defaultFeatures;        
-    
+
 private:        
     FeatureMap(const FeatureMap&);
     FeatureMap& operator=(const FeatureMap&);
@@ -164,7 +164,7 @@ private:
     public:
         LangFeaturePair() :  m_lang(0), m_pFeatures(0) {}
         ~LangFeaturePair() { delete m_pFeatures; }
-        
+
         uint32 m_lang;
         Features* m_pFeatures;      
         CLASS_NEW_DELETE

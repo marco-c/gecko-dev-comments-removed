@@ -64,4 +64,3 @@ private:
 } 
 
 struct gr_char_info : public graphite2::CharInfo {};
-

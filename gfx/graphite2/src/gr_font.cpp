@@ -72,7 +72,3 @@ void gr_font_destroy(gr_font *font)
 
 
 } 
-
-
-
-

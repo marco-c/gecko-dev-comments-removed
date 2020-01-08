@@ -58,7 +58,7 @@ const gr_slot* gr_slot_first_attachment(const gr_slot* p)
     return static_cast<const gr_slot*>(p->firstChild());
 }
 
-    
+
 const gr_slot* gr_slot_next_sibling_attachment(const gr_slot* p)        
 {        
     assert(p);
@@ -112,7 +112,7 @@ float gr_slot_advance_Y(const gr_slot *p, GR_MAYBE_UNUSED const gr_face *face, c
     else
         return res;
 }
-        
+
 int gr_slot_before(const gr_slot* p)
 {
     assert(p);
@@ -170,4 +170,3 @@ size_t id(const gr_slot* p)
 
 
 } 
-

@@ -73,7 +73,7 @@ class Silf
 public:
     Silf() throw();
     ~Silf() throw();
-    
+
     bool readGraphite(const byte * const pSilf, size_t lSilf, Face &face, uint32 version);
     bool runGraphite(Segment *seg, uint8 firstPass=0, uint8 lastPass=0, int dobidi = 0) const;
     uint16 findClassIndex(uint16 cid, uint16 gid) const;
@@ -121,7 +121,7 @@ private:
     uint16      m_aLig, m_numPseudo, m_nClass, m_nLinear,
                 m_gEndLine;
     gr_faceinfo m_silfinfo;
-    
+
     void releaseBuffers() throw();
 };
 

@@ -41,32 +41,39 @@ enum gr_encform {
 };
 
 
-#if defined _WIN32 || defined __CYGWIN__
-  #if defined GRAPHITE2_STATIC
-    #define GR2_API
-  #elif defined GRAPHITE2_EXPORTING
-    #if defined __GNUC__
-      #define GR2_API    __attribute__((dllexport))
-    #else
-      #define GR2_API    __declspec(dllexport)
-    #endif
-  #else
-    #if defined __GNUC__
-      #define GR2_API    __attribute__((dllimport))
-    #else
-      #define GR2_API    __declspec(dllimport)
-    #endif
-  #endif
-  #define GR2_LOCAL
-#elif __GNUC__ >= 4
-  #if defined GRAPHITE2_STATIC
-    #define GR2_API      __attribute__ ((visibility("hidden")))
-  #else
-    #define GR2_API      __attribute__ ((visibility("default")))
-  #endif
-  #define GR2_LOCAL      __attribute__ ((visibility("hidden")))
-#else
-  #define GR2_API
-  #define GR2_LOCAL
+
+
+#if defined __GNUC__
+  #define _gr2_and ,
+  #define _gr2_tag_fn(a)        __attribute__((a))
+  #define _gr2_deprecated_flag  deprecated
+  #define _gr2_export_flag      visibility("default")
+  #define _gr2_import_flag      visibility("default")
+  #define _gr2_static_flag      visibility("hidden")
 #endif
 
+#if defined _WIN32 || defined __CYGWIN__
+  #if defined __GNUC__  
+    #undef _gr2_export_flag
+    #undef _gr2_import_flag
+    #undef _gr2_static_flag
+  #else  
+    #define _gr2_and
+    #define _gr2_tag_fn(a)       __declspec(a)
+    #define _gr2_deprecated_flag deprecated
+  #endif
+  #define _gr2_export_flag     dllexport
+  #define _gr2_import_flag     dllimport
+  #define _gr2_static_flag
+#endif
+
+#if defined GRAPHITE2_STATIC
+  #define GR2_API             _gr2_tag_fn(_gr2_static_flag)
+  #define GR2_DEPRECATED_API  _gr2_tag_fn(_gr2_deprecated_flag _gr2_and _gr2_static_flag)
+#elif defined GRAPHITE2_EXPORTING
+  #define GR2_API             _gr2_tag_fn(_gr2_export_flag)
+  #define GR2_DEPRECATED_API  _gr2_tag_fn(_gr2_deprecated_flag _gr2_and _gr2_export_flag)
+#else
+  #define GR2_API             _gr2_tag_fn(_gr2_import_flag)
+  #define GR2_DEPRECATED_API  _gr2_tag_fn(_gr2_deprecated_flag _gr2_and _gr2_import_flag)
+#endif

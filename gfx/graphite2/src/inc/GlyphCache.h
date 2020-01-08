@@ -71,7 +71,7 @@ class GlyphBox
     GlyphBox & operator = (const GlyphBox &);
 
 public:
-    GlyphBox(uint8 numsubs, unsigned short bitmap, Rect *slanted) : _num(numsubs), _bitmap(bitmap), _slant(*slanted) {}; 
+    GlyphBox(uint8 numsubs, unsigned short bitmap, Rect *slanted) : _num(numsubs), _bitmap(bitmap), _slant(*slanted) {};
 
     void addSubBox(int subindex, int boundary, Rect *val) { _subs[subindex * 2 + boundary] = *val; }
     Rect &subVal(int subindex, int boundary) { return _subs[subindex * 2 + boundary]; }
@@ -115,7 +115,7 @@ public:
     bool             hasBoxes() const { return _boxes != 0; }
 
     CLASS_NEW_DELETE;
-    
+
 private:
     const Rect            _empty_slant_box;
     const Loader        * _glyph_loader;

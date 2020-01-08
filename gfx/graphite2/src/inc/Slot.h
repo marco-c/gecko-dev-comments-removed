@@ -37,7 +37,6 @@ namespace graphite2 {
 typedef gr_attrCode attrCode;
 
 class GlyphFace;
-class SegCacheEntry;
 class Segment;
 
 struct SlotJustify
@@ -163,7 +162,6 @@ private:
     int16   *m_userAttr;    
     SlotJustify *m_justs;   
 
-    friend class SegCacheEntry;
     friend class Segment;
 };
 

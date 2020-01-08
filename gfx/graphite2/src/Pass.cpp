@@ -97,10 +97,10 @@ bool Pass::readPass(const byte * const pass_start, size_t pass_length, size_t su
                * const pass_end = p + pass_length;
     size_t numRanges;
 
-    if (e.test(pass_length < 40, E_BADPASSLENGTH)) return face.error(e); 
+    if (e.test(pass_length < 40, E_BADPASSLENGTH)) return face.error(e);
     
     const byte flags = be::read<byte>(p);
-    if (e.test((flags & 0x1f) && 
+    if (e.test((flags & 0x1f) &&
             (pt < PASS_TYPE_POSITIONING || !m_silf->aCollision() || !face.glyphs().hasBoxes() || !(m_silf->flags() & 0x20)),
             E_BADCOLLISIONPASS))
         return face.error(e);
@@ -191,7 +191,7 @@ bool Pass::readPass(const byte * const pass_start, size_t pass_length, size_t su
     if (pass_constraint_len)
     {
         face.error_context(face.error_context() + 1);
-        m_cPConstraint = vm::Machine::Code(true, pcCode, pcCode + pass_constraint_len, 
+        m_cPConstraint = vm::Machine::Code(true, pcCode, pcCode + pass_constraint_len,
                                   precontext[0], be::peek<uint16>(sort_keys), *m_silf, face, PASS_TYPE_UNKNOWN);
         if (e.test(!m_cPConstraint, E_OUTOFMEM)
                 || e.test(m_cPConstraint.status() != Code::loaded, m_cPConstraint.status() + E_CODEFAILURE))
@@ -246,11 +246,11 @@ bool Pass::readRules(const byte * rule_map, const size_t num_entries,
     Rule * r = m_rules + m_numRules - 1;
     for (size_t n = m_numRules; r >= m_rules; --n, --r, ac_end = ac_begin, rc_end = rc_begin)
     {
-        face.error_context((face.error_context() & 0xFFFF00) + EC_ARULE + ((n - 1) << 24));
+        face.error_context((face.error_context() & 0xFFFF00) + EC_ARULE + int((n - 1) << 24));
         r->preContext = *--precontext;
         r->sort       = be::peek<uint16>(--sort_key);
 #ifndef NDEBUG
-        r->rule_idx   = n - 1;
+        r->rule_idx   = uint16(n - 1);
 #endif
         if (r->sort > 63 || r->preContext >= r->sort || r->preContext > m_maxPreCtxt || r->preContext < m_minPreCtxt)
             return false;
@@ -330,7 +330,7 @@ bool Pass::readStates(const byte * starts, const byte *states, const byte * o_ru
         *s = be::read<uint16>(starts);
         if (e.test(*s >= m_numStates, E_BADSTATE))
         {
-            face.error_context((face.error_context() & 0xFFFF00) + EC_ASTARTS + ((s - m_startStates) << 24));
+            face.error_context((face.error_context() & 0xFFFF00) + EC_ASTARTS + int((s - m_startStates) << 24));
             return face.error(e); 
         }
     }
@@ -342,7 +342,7 @@ bool Pass::readStates(const byte * starts, const byte *states, const byte * o_ru
         *t = be::read<uint16>(states);
         if (e.test(*t >= m_numStates, E_BADSTATE))
         {
-            face.error_context((face.error_context() & 0xFFFF00) + EC_ATRANS + (((t - m_transitions) / m_numColumns) << 8));
+            face.error_context((face.error_context() & 0xFFFF00) + EC_ATRANS + int(((t - m_transitions) / m_numColumns) << 8));
             return face.error(e);
         }
     }
@@ -357,7 +357,7 @@ bool Pass::readStates(const byte * starts, const byte *states, const byte * o_ru
 
         if (e.test(begin >= rule_map_end || end > rule_map_end || begin > end, E_BADRULEMAPPING))
         {
-            face.error_context((face.error_context() & 0xFFFF00) + EC_ARULEMAP + (n << 24));
+            face.error_context((face.error_context() & 0xFFFF00) + EC_ARULEMAP + int(n << 24));
             return face.error(e);
         }
         s->rules = begin;
@@ -962,7 +962,7 @@ bool Pass::resolveCollisions(Segment *seg, Slot *slotFix, Slot *start,
     while (base->attachedTo())
         base = base->attachedTo();
     Position zero(0., 0.);
-    
+
     
     for (nbor = start; nbor; nbor = isRev ? nbor->prev() : nbor->next())
     {
@@ -982,7 +982,7 @@ bool Pass::resolveCollisions(Segment *seg, Slot *slotFix, Slot *start,
         else if (nbor == slotFix)
             
             ignoreForKern = !ignoreForKern;
-            
+
         if (nbor != start && (cNbor->flags() & (isRev ? SlotCollision::COLL_START : SlotCollision::COLL_END)))
             break;
     }
@@ -1011,7 +1011,7 @@ bool Pass::resolveCollisions(Segment *seg, Slot *slotFix, Slot *start,
 #if !defined GRAPHITE2_NTRACING
         if (dbgout)
         {
-            *dbgout << json::object 
+            *dbgout << json::object
                             << "missed" << objectid(dslot(seg, slotFix));
             coll.outputJsonDbg(dbgout, seg, -1);
             *dbgout << json::close;
@@ -1072,7 +1072,7 @@ float Pass::resolveKern(Segment *seg, Slot *slotFix, GR_MAYBE_UNUSED Slot *start
         }
         else
         {
-            space_count = 0; 
+            space_count = 0;
             if (nbor != slotFix && !cNbor->ignore())
             {
                 seenEnd = true;
@@ -1105,4 +1105,3 @@ float Pass::resolveKern(Segment *seg, Slot *slotFix, GR_MAYBE_UNUSED Slot *start
     }
     return 0.;
 }
-

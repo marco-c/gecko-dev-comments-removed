@@ -62,63 +62,63 @@ enum gr_justFlags {
 
 enum gr_attrCode {
     
-    gr_slatAdvX = 0,        
+    gr_slatAdvX = 0,
     
-    gr_slatAdvY,            
+    gr_slatAdvY,
     
-    gr_slatAttTo,           
+    gr_slatAttTo,
     
-    gr_slatAttX,            
+    gr_slatAttX,
     
-    gr_slatAttY,            
+    gr_slatAttY,
     
-    gr_slatAttGpt,          
+    gr_slatAttGpt,
     
-    gr_slatAttXOff,         
+    gr_slatAttXOff,
     
-    gr_slatAttYOff,         
+    gr_slatAttYOff,
     
-    gr_slatAttWithX,        
+    gr_slatAttWithX,
     
-    gr_slatAttWithY,        
+    gr_slatAttWithY,
     
-    gr_slatWithGpt,         
+    gr_slatWithGpt,
     
-    gr_slatAttWithXOff,     
+    gr_slatAttWithXOff,
     
-    gr_slatAttWithYOff,     
+    gr_slatAttWithYOff,
     
-    gr_slatAttLevel,        
+    gr_slatAttLevel,
     
-    gr_slatBreak,           
+    gr_slatBreak,
     
-    gr_slatCompRef,         
+    gr_slatCompRef,
     
-    gr_slatDir,             
+    gr_slatDir,
     
     gr_slatInsert,
     
-    gr_slatPosX,            
+    gr_slatPosX,
     
-    gr_slatPosY,            
+    gr_slatPosY,
     
-    gr_slatShiftX,          
+    gr_slatShiftX,
     
-    gr_slatShiftY,          
+    gr_slatShiftY,
     
-    gr_slatUserDefnV1,      
+    gr_slatUserDefnV1,
     
-    gr_slatMeasureSol,      
+    gr_slatMeasureSol,
     
-    gr_slatMeasureEol,      
+    gr_slatMeasureEol,
     
-    gr_slatJStretch,        
+    gr_slatJStretch,
     
-    gr_slatJShrink,         
+    gr_slatJShrink,
     
-    gr_slatJStep,           
+    gr_slatJStep,
     
-    gr_slatJWeight,         
+    gr_slatJWeight,
     
     gr_slatJWidth = 29,
     
@@ -159,11 +159,11 @@ enum gr_attrCode {
     gr_slatSeqBelowWt,
     gr_slatSeqValignHt,
     gr_slatSeqValignWt,
-                            
+
     
-    gr_slatMax,             
+    gr_slatMax,
     
-    gr_slatNoEffect = gr_slatMax + 1    
+    gr_slatNoEffect = gr_slatMax + 1
 };
 
 enum gr_bidirtl {

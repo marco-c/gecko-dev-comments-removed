@@ -48,9 +48,9 @@ public:
     {
         size_t n = size();
         if (n != b.size())      return false;
-        
+
         for(const_iterator l = begin(), r = b.begin(); n && *l == *r; --n, ++l, ++r);
-        
+
         return n == 0;
     }
 

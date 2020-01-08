@@ -56,6 +56,3 @@ Font::Font(float ppm, const Face & f, const void * appFontHandle, const gr_font_
 {
     free(m_advances);
 }
-
-
-
