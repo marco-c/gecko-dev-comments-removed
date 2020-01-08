@@ -64,7 +64,49 @@ MozElements.NotificationBox = class NotificationBox {
     return null;
   }
 
-  appendNotification(aLabel, aValue, aImage, aPriority, aButtons, aEventCallback) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  appendNotification(aLabel, aValue, aImage, aPriority, aButtons,
+                     aEventCallback, aNotificationIs) {
     if (aPriority < this.PRIORITY_INFO_LOW ||
       aPriority > this.PRIORITY_CRITICAL_HIGH)
       throw "Invalid notification priority " + aPriority;
@@ -79,24 +121,28 @@ MozElements.NotificationBox = class NotificationBox {
       insertPos = notifications[n];
     }
 
-    var newitem = document.createXULElement("notification");
     
-    let labelIsDocFragment = aLabel && typeof aLabel == "object" && aLabel.nodeType &&
-      aLabel.nodeType == aLabel.DOCUMENT_FRAGMENT_NODE;
-    if (!labelIsDocFragment)
-      newitem.setAttribute("label", aLabel);
+    var newitem = document.createXULElement("notification",
+      aNotificationIs ? { is: aNotificationIs } : {});
+    this.stack.insertBefore(newitem, insertPos);
+
+    
+    if (newitem.messageText) {
+      
+      if (aLabel && typeof aLabel == "object" &&
+          aLabel.nodeType && aLabel.nodeType == aLabel.DOCUMENT_FRAGMENT_NODE) {
+        newitem.messageText.appendChild(aLabel);
+      } else {
+        newitem.messageText.textContent = aLabel;
+      }
+    }
     newitem.setAttribute("value", aValue);
-    if (aImage)
-      newitem.setAttribute("image", aImage);
+    if (aImage) {
+      newitem.messageImage.setAttribute("src", aImage);
+    }
     newitem.eventCallback = aEventCallback;
 
     if (aButtons) {
-      
-      
-      
-      
-      var defaultElem;
-
       for (var b = 0; b < aButtons.length; b++) {
         var button = aButtons[b];
         var buttonElem = document.createXULElement("button");
@@ -104,20 +150,12 @@ MozElements.NotificationBox = class NotificationBox {
         if (typeof button.accessKey == "string")
           buttonElem.setAttribute("accesskey", button.accessKey);
         buttonElem.classList.add("notification-button");
-
-        if (button.isDefault ||
-          b == 0 && !("isDefault" in button))
-          defaultElem = buttonElem;
-
-        newitem.appendChild(buttonElem);
+        newitem.messageDetails.appendChild(buttonElem);
         buttonElem.buttonInfo = button;
       }
-
-      if (defaultElem)
-        defaultElem.classList.add("notification-button-default");
     }
 
-    newitem.setAttribute("priority", aPriority);
+    newitem.priority = aPriority;
     if (aPriority >= this.PRIORITY_CRITICAL_LOW)
       newitem.setAttribute("type", "critical");
     else if (aPriority <= this.PRIORITY_INFO_HIGH)
@@ -130,17 +168,8 @@ MozElements.NotificationBox = class NotificationBox {
       newitem.style.top = "100%";
       newitem.style.marginTop = "-15px";
       newitem.style.opacity = "0";
-    }
-    this.stack.insertBefore(newitem, insertPos);
-    
-    
-    if (labelIsDocFragment) {
-      document.getAnonymousElementByAttribute(newitem, "anonid", "messageText")
-        .appendChild(aLabel);
-    }
-
-    if (!insertPos)
       this._showNotification(newitem, true);
+    }
 
     
     var event = document.createEvent("Events");
@@ -265,3 +294,80 @@ Object.assign(MozElements.NotificationBox.prototype, {
   PRIORITY_CRITICAL_MEDIUM: 8,
   PRIORITY_CRITICAL_HIGH: 9,
 });
+
+MozElements.Notification = class Notification extends MozXULElement {
+  constructor() {
+    super();
+    this.persistence = 0;
+    this.priority = 0;
+    this.timeout = 0;
+  }
+
+  connectedCallback() {
+    this.appendChild(MozXULElement.parseXULToFragment(`
+      <hbox class="messageDetails" align="center" flex="1"
+            oncommand="this.parentNode._doButtonCommand(event);">
+        <image class="messageImage"/>
+        <description class="messageText" flex="1"/>
+        <spacer flex="1"/>
+      </hbox>
+      <toolbarbutton ondblclick="event.stopPropagation();"
+                     class="messageCloseButton close-icon tabbable"
+                     tooltiptext="&closeNotification.tooltip;"
+                     oncommand="this.parentNode.dismiss();"/>
+    `, ["chrome://global/locale/notification.dtd"]));
+
+    for (let [propertyName, selector] of [
+      ["messageDetails", ".messageDetails"],
+      ["messageImage", ".messageImage"],
+      ["messageText", ".messageText"],
+      ["spacer", "spacer"],
+    ]) {
+      this[propertyName] = this.querySelector(selector);
+    }
+  }
+
+  get control() {
+    return this.closest(".notificationbox-stack")._notificationBox;
+  }
+
+  
+
+
+
+
+  dismiss() {
+    if (this.eventCallback) {
+      this.eventCallback("dismissed");
+    }
+    this.close();
+  }
+
+  close() {
+    this.control.removeNotification(this);
+  }
+
+  _doButtonCommand(event) {
+    if (!("buttonInfo" in event.target)) {
+      return;
+    }
+
+    var button = event.target.buttonInfo;
+    if (button.popup) {
+      document.getElementById(button.popup).
+      openPopup(event.originalTarget, "after_start", 0, 0, false, false, event);
+      event.stopPropagation();
+    } else {
+      var callback = button.callback;
+      if (callback) {
+        var result = callback(this, button, event.target, event);
+        if (!result) {
+          this.close();
+        }
+        event.stopPropagation();
+      }
+    }
+  }
+};
+
+customElements.define("notification", MozElements.Notification);

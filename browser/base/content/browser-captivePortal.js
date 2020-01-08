@@ -215,7 +215,6 @@ var CaptivePortalWatcher = {
           
           return true;
         },
-        isDefault: true,
       },
     ];
 

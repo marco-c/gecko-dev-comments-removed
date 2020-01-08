@@ -279,9 +279,7 @@ add_task(async function test_other_ignored() {
   Assert.ok(notification, "There should be a notification");
 
   
-  let closeButton =
-    document.getAnonymousElementByAttribute(notification, "anonid", "close-button");
-  closeButton.click();
+  notification.querySelector(".messageCloseButton").click();
   gNotificationBox.removeNotification(notification, true);
   await waitForIgnoredReports(toIgnore);
 
@@ -471,9 +469,7 @@ add_task(async function test_can_ignore() {
   Assert.ok(notification, "There should be a notification");
 
   
-  let closeButton =
-    document.getAnonymousElementByAttribute(notification, "anonid", "close-button");
-  closeButton.click();
+  notification.querySelector(".messageCloseButton").click();
   
   
   gNotificationBox.removeNotification(notification, true);
@@ -545,9 +541,7 @@ add_task(async function test_shutdown_while_not_showing() {
   Assert.ok(notification, "There should be a notification");
 
   
-  let closeButton =
-    document.getAnonymousElementByAttribute(notification, "anonid", "close-button");
-  closeButton.click();
+  notification.querySelector(".messageCloseButton").click();
   
   
   gNotificationBox.removeNotification(notification, true);
