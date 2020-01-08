@@ -298,9 +298,7 @@ AsyncImagePipelineManager::ApplyAsyncImages(wr::TransactionBuilder& aTxn)
     }
 
     
-    if (updateDisplayList || !op.isNothing()) {
-      SetWillGenerateFrame();
-    }
+    
 
     if (!updateDisplayList) {
       
