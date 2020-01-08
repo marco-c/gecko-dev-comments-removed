@@ -3,7 +3,7 @@
 
 
 
-package org.mozilla.gecko.gfx;
+package org.mozilla.geckoview;
 
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.JNIObject;
