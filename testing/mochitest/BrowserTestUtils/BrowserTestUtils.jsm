@@ -578,13 +578,6 @@ var BrowserTestUtils = {
           Services.ww.unregisterNotification(observe);
         }
 
-        
-        
-        let promises = [
-          this.waitForEvent(win, "focus"),
-          this.waitForEvent(win, "activate"),
-        ];
-
         if (url) {
           await this.waitForEvent(win, "DOMContentLoaded");
 
@@ -593,18 +586,18 @@ var BrowserTestUtils = {
           }
         }
 
-        promises.push(TestUtils.topicObserved("browser-delayed-startup-finished",
-                                              subject => subject == win));
+        let promises = [
+          TestUtils.topicObserved("browser-delayed-startup-finished",
+                                  subject => subject == win),
+          this.waitForEvent(win, "focus"),
+          this.waitForEvent(win, "activate"),
+        ];
 
         if (url) {
           let browser = win.gBrowser.selectedBrowser;
 
-          
-          let process =
-              browser.isRemoteBrowser ? Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT
-              : Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
           if (win.gMultiProcessBrowser &&
-              !E10SUtils.canLoadURIInProcess(url, process)) {
+              !E10SUtils.canLoadURIInRemoteType(url, browser.remoteType)) {
             await this.waitForEvent(browser, "XULFrameLoaderCreated");
           }
 
@@ -648,13 +641,9 @@ var BrowserTestUtils = {
     }
 
     
-    let process = browser.isRemoteBrowser ? Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT
-                                          : Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
-
     
     
-    
-    if (!E10SUtils.canLoadURIInProcess(uri, process)) {
+    if (!E10SUtils.canLoadURIInRemoteType(uri, browser.remoteType)) {
       await this.waitForEvent(browser, "XULFrameLoaderCreated");
     }
   },
