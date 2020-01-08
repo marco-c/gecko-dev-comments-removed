@@ -156,7 +156,6 @@ impl Transaction {
     
     
     
-    
     pub fn set_display_list(
         &mut self,
         epoch: Epoch,
