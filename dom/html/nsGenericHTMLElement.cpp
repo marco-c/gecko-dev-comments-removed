@@ -2180,8 +2180,7 @@ nsGenericHTMLFormElement::IsElementDisabledForEvents(EventMessage aMessage,
 
   
   
-  if (aFrame &&
-      aFrame->StyleUserInterface()->mUserInput == StyleUserInput::None) {
+  if (aFrame && aFrame->StyleUI()->mUserInput == StyleUserInput::None) {
     return true;
   }
 

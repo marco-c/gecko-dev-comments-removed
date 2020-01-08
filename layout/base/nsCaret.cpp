@@ -510,9 +510,8 @@ nsCaret::GetPaintGeometry(nsRect* aRect)
   }
 
   
-  const nsStyleUserInterface* userinterface = frame->StyleUserInterface();
-  if ((!mIgnoreUserModify &&
-       userinterface->mUserModify == StyleUserModify::ReadOnly) ||
+  const nsStyleUI* ui = frame->StyleUI();
+  if ((!mIgnoreUserModify && ui->mUserModify == StyleUserModify::ReadOnly) ||
       frame->IsContentDisabled()) {
     return nullptr;
   }

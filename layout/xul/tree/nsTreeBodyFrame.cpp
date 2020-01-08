@@ -578,7 +578,7 @@ nsTreeBodyFrame::GetSelectionRegion()
 
 
   RefPtr<nsPresContext> presContext = PresContext();
-  nsIntRect rect = mRect.ToOutsidePixels(AppUnitsPerCSSPixel());
+  nsIntRect rect = mRect.ToOutsidePixels(presContext->AppUnitsPerCSSPixel());
 
   nsIFrame* rootFrame = presContext->PresShell()->GetRootFrame();
   nsPoint origin = GetOffsetTo(rootFrame);
@@ -2442,8 +2442,7 @@ nsTreeBodyFrame::GetCursor(const nsPoint& aPoint,
       
       ComputedStyle* childContext = GetPseudoComputedStyle(child);
 
-      FillCursorInformationFromStyle(childContext->StyleUserInterface(),
-                                     aCursor);
+      FillCursorInformationFromStyle(childContext->StyleUI(), aCursor);
       if (aCursor.mCursor == NS_STYLE_CURSOR_AUTO)
         aCursor.mCursor = NS_STYLE_CURSOR_DEFAULT;
 

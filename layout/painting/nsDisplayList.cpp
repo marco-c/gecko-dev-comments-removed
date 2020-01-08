@@ -2851,7 +2851,7 @@ static bool
 IsFrameReceivingPointerEvents(nsIFrame* aFrame)
 {
   return NS_STYLE_POINTER_EVENTS_NONE !=
-    aFrame->StyleUserInterface()->GetEffectivePointerEvents(aFrame);
+    aFrame->StyleUI()->GetEffectivePointerEvents(aFrame);
 }
 
 
@@ -7929,7 +7929,7 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(const FrameTransformProp
                                                     &dummyBool);
   } else if (hasSVGTransforms) {
     
-    float pixelsPerCSSPx = AppUnitsPerCSSPixel() /
+    float pixelsPerCSSPx = frame->PresContext()->AppUnitsPerCSSPixel() /
                              aAppUnitsPerPixel;
     svgTransform._31 *= pixelsPerCSSPx;
     svgTransform._32 *= pixelsPerCSSPx;
@@ -7946,7 +7946,7 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(const FrameTransformProp
 
   if (parentHasChildrenOnlyTransform) {
     float pixelsPerCSSPx =
-      AppUnitsPerCSSPixel() / aAppUnitsPerPixel;
+      frame->PresContext()->AppUnitsPerCSSPixel() / aAppUnitsPerPixel;
     parentsChildrenOnlyTransform._31 *= pixelsPerCSSPx;
     parentsChildrenOnlyTransform._32 *= pixelsPerCSSPx;
 
@@ -8109,7 +8109,7 @@ nsDisplayTransform::ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBui
   }
 
   if (frameArea > maxLimitArea) {
-    uint64_t appUnitsPerPixel = AppUnitsPerCSSPixel();
+    uint64_t appUnitsPerPixel = nsPresContext::AppUnitsPerCSSPixel();
     EffectCompositor::SetPerformanceWarning(
       aFrame, eCSSProperty_transform,
       AnimationPerformanceWarning(
