@@ -185,8 +185,10 @@ MetadataDecodingTask::Run()
 
 
 
-AnonymousDecodingTask::AnonymousDecodingTask(NotNull<Decoder*> aDecoder)
+AnonymousDecodingTask::AnonymousDecodingTask(NotNull<Decoder*> aDecoder,
+                                             bool aResumable)
   : mDecoder(aDecoder)
+  , mResumable(aResumable)
 { }
 
 void
@@ -208,6 +210,21 @@ AnonymousDecodingTask::Run()
     
     
     MOZ_ASSERT(result.is<Yield>());
+  }
+}
+
+void
+AnonymousDecodingTask::Resume()
+{
+  
+  
+  
+  
+  if (mResumable) {
+    RefPtr<AnonymousDecodingTask> self(this);
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "image::AnonymousDecodingTask::Resume",
+      [self]() -> void { self->Run(); }));
   }
 }
 

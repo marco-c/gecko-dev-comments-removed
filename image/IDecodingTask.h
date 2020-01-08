@@ -109,22 +109,21 @@ class AnonymousDecodingTask final : public IDecodingTask
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AnonymousDecodingTask, override)
 
-  explicit AnonymousDecodingTask(NotNull<Decoder*> aDecoder);
+  explicit AnonymousDecodingTask(NotNull<Decoder*> aDecoder,
+                                 bool aResumable);
 
   void Run() override;
 
   bool ShouldPreferSyncRun() const override { return true; }
   TaskPriority Priority() const override { return TaskPriority::eLow; }
 
-  
-  
-  
-  void Resume() override { }
+  void Resume() override;
 
 private:
   virtual ~AnonymousDecodingTask() { }
 
   NotNull<RefPtr<Decoder>> mDecoder;
+  bool mResumable;
 };
 
 } 

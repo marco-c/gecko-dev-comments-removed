@@ -134,6 +134,9 @@ public:
 };
 
 
+void SpinPendingEvents();
+
+
 already_AddRefed<nsIInputStream> LoadFile(const char* aRelativePath);
 
 

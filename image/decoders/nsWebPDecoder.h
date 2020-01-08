@@ -21,6 +21,8 @@ class nsWebPDecoder final : public Decoder
 public:
   virtual ~nsWebPDecoder();
 
+  DecoderType GetType() const override { return DecoderType::WEBP; }
+
 protected:
   LexerResult DoDecode(SourceBufferIterator& aIterator,
                        IResumable* aOnResume) override;
@@ -76,6 +78,9 @@ private:
 
   
   gfx::SurfaceFormat mFormat;
+
+  
+  IntRect mFrameRect;
 
   
   int mLastRow;

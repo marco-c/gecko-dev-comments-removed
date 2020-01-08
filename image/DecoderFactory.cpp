@@ -246,7 +246,8 @@ DecoderFactory::CloneAnimationDecoder(Decoder* aDecoder)
   
   
   DecoderType type = aDecoder->GetType();
-  MOZ_ASSERT(type == DecoderType::GIF || type == DecoderType::PNG,
+  MOZ_ASSERT(type == DecoderType::GIF || type == DecoderType::PNG ||
+             type == DecoderType::WEBP,
              "Calling CloneAnimationDecoder for non-animating DecoderType");
 
   RefPtr<Decoder> decoder = GetDecoder(type, nullptr,  true);

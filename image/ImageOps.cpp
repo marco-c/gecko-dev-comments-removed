@@ -179,7 +179,8 @@ ImageOps::DecodeMetadata(ImageBuffer* aBuffer,
   }
 
   
-  RefPtr<IDecodingTask> task = new AnonymousDecodingTask(WrapNotNull(decoder));
+  RefPtr<IDecodingTask> task =
+    new AnonymousDecodingTask(WrapNotNull(decoder),  false);
   task->Run();
   if (!decoder->GetDecodeDone() || decoder->HasError()) {
     return NS_ERROR_FAILURE;
@@ -233,7 +234,8 @@ ImageOps::DecodeToSurface(ImageBuffer* aBuffer,
   }
 
   
-  RefPtr<IDecodingTask> task = new AnonymousDecodingTask(WrapNotNull(decoder));
+  RefPtr<IDecodingTask> task =
+    new AnonymousDecodingTask(WrapNotNull(decoder),  false);
   task->Run();
   if (!decoder->GetDecodeDone() || decoder->HasError()) {
     return nullptr;
