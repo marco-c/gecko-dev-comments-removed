@@ -11,6 +11,7 @@
 #include "mozilla/Likely.h"
 #include "mozilla/Unused.h"
 
+#include "xpcprivate.h"
 #include "XPCWrapper.h"
 #include "jsfriendapi.h"
 #include "js/ProfilingStack.h"
@@ -58,6 +59,7 @@ nsIPrincipal* nsXPConnect::gSystemPrincipal = nullptr;
 const char XPC_EXCEPTION_CONTRACTID[]     = "@mozilla.org/js/xpc/Exception;1";
 const char XPC_CONSOLE_CONTRACTID[]       = "@mozilla.org/consoleservice;1";
 const char XPC_SCRIPT_ERROR_CONTRACTID[]  = "@mozilla.org/scripterror;1";
+const char XPC_XPCONNECT_CONTRACTID[]     = "@mozilla.org/js/xpc/XPConnect;1";
 
 
 
@@ -150,6 +152,12 @@ nsXPConnect::InitStatics()
 
     
     gSelf->mRuntime->InitSingletonScopes();
+}
+
+already_AddRefed<nsXPConnect>
+nsXPConnect::GetSingleton()
+{
+    return do_AddRef(nsXPConnect::XPConnect());
 }
 
 
@@ -1088,30 +1096,6 @@ NS_IMETHODIMP
 nsXPConnect::ReadFunction(nsIObjectInputStream* stream, JSContext* cx, JSObject** functionObjp)
 {
     return ReadScriptOrFunction(stream, cx, nullptr, functionObjp);
-}
-
-NS_IMETHODIMP
-nsXPConnect::GetIsShuttingDown(bool* aIsShuttingDown)
-{
-    if (!aIsShuttingDown)
-        return NS_ERROR_INVALID_ARG;
-
-    *aIsShuttingDown = mShuttingDown;
-
-    return NS_OK;
-}
-
-
-nsIXPConnect*
-nsIXPConnect::XPConnect()
-{
-    
-    
-    
-    if (!MOZ_LIKELY(NS_IsMainThread()))
-        MOZ_CRASH();
-
-    return nsXPConnect::gSelf;
 }
 
 
