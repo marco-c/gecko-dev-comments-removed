@@ -271,6 +271,21 @@ class GCMarker : public JSTracer {
   void setMarkColor(gc::MarkColor newColor);
   gc::MarkColor markColor() const { return color; }
 
+  
+  
+  
+  template <typename T>
+  bool isMarked(T* thingp) {
+    return color == gc::MarkColor::Black ? gc::IsMarkedBlack(runtime(), thingp)
+                                         : gc::IsMarked(runtime(), thingp);
+  }
+  template <typename T>
+  bool isMarkedUnbarriered(T* thingp) {
+    return color == gc::MarkColor::Black
+               ? gc::IsMarkedBlackUnbarriered(runtime(), thingp)
+               : gc::IsMarkedUnbarriered(runtime(), thingp);
+  }
+
   void enterWeakMarkingMode();
   void leaveWeakMarkingMode();
   void abortLinearWeakMarking() {

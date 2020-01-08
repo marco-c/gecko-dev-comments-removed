@@ -778,9 +778,9 @@ bool js::gc::CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key,
   Zone* valueZone = GetCellZone(value);
   MOZ_ASSERT(valueZone == zone || valueZone->isAtomsZone());
 
-  
-  
-  CellColor mapColor = object ? GetCellColor(object) : CellColor::Gray;
+  CellColor mapColor = map->markColor == MarkColor::Black ? CellColor::Black
+                                                          : CellColor::Gray;
+  MOZ_ASSERT_IF(object, GetCellColor(object) == mapColor);
 
   CellColor keyColor = GetCellColor(key);
   CellColor valueColor = valueZone->isGCMarking() ? GetCellColor(value)

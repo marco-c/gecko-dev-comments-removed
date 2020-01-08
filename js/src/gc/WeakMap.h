@@ -130,7 +130,9 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   JS::Zone* zone_;
 
   
+  
   bool marked;
+  gc::MarkColor markColor;
 };
 
 template <class Key, class Value>
@@ -193,9 +195,9 @@ class WeakMap
     JS::ExposeObjectToActiveJS(obj);
   }
 
-  bool keyNeedsMark(JSObject* key) const;
-  bool keyNeedsMark(JSScript* script) const;
-  bool keyNeedsMark(LazyScript* script) const;
+  bool keyNeedsMark(GCMarker* marker, JSObject* key) const;
+  bool keyNeedsMark(GCMarker* marker, JSScript* script) const;
+  bool keyNeedsMark(GCMarker* marker, LazyScript* script) const;
 
   bool findZoneEdges() override {
     

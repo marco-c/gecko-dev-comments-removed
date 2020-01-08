@@ -68,6 +68,11 @@ template <typename T>
 bool IsMarkedInternal(JSRuntime* rt, T** thing);
 
 template <typename T>
+bool IsMarkedBlackInternal(JSRuntime* rt, T* thing);
+template <typename T>
+bool IsMarkedBlackInternal(JSRuntime* rt, T** thing);
+
+template <typename T>
 bool IsAboutToBeFinalizedInternal(T* thingp);
 template <typename T>
 bool IsAboutToBeFinalizedInternal(T** thingp);
@@ -87,6 +92,19 @@ template <typename T>
 inline bool IsMarked(JSRuntime* rt, WriteBarrieredBase<T>* thingp) {
   return IsMarkedInternal(rt,
                           ConvertToBase(thingp->unsafeUnbarrieredForTracing()));
+}
+
+
+template <typename T>
+inline bool IsMarkedBlackUnbarriered(JSRuntime* rt, T* thingp) {
+  return IsMarkedBlackInternal(rt, ConvertToBase(thingp));
+}
+
+
+template <typename T>
+inline bool IsMarkedBlack(JSRuntime* rt, WriteBarrieredBase<T>* thingp) {
+  return IsMarkedBlackInternal(
+      rt, ConvertToBase(thingp->unsafeUnbarrieredForTracing()));
 }
 
 template <typename T>
