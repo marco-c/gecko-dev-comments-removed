@@ -715,7 +715,10 @@ TEST(TestCookie,TestCookieMain)
     EXPECT_EQ(hostCookies, 2u);
     
     bool found;
-    EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CookieExistsNative(newDomainCookie, &attrs,  &found)));
+    EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CookieExistsNative(NS_LITERAL_CSTRING("new.domain"),
+                                                            NS_LITERAL_CSTRING("/rabbit"),
+                                                            NS_LITERAL_CSTRING("test3"),
+                                                            &attrs,  &found)));
     EXPECT_TRUE(found);
 
 
@@ -725,7 +728,10 @@ TEST(TestCookie,TestCookieMain)
                                                      NS_LITERAL_CSTRING("/rabbit"),    
                                                      true,                             
                                                      &attrs)));                         
-    EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CookieExistsNative(newDomainCookie, &attrs, &found)));
+    EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CookieExistsNative(NS_LITERAL_CSTRING("new.domain"),
+                                                            NS_LITERAL_CSTRING("/rabbit"),
+                                                            NS_LITERAL_CSTRING("test3"),
+                                                            &attrs,  &found)));
     EXPECT_FALSE(found);
     EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->AddNative(NS_LITERAL_CSTRING("new.domain"),     
                                                    NS_LITERAL_CSTRING("/rabbit"),        
@@ -737,7 +743,10 @@ TEST(TestCookie,TestCookieMain)
                                                    INT64_MIN,                            
                                                    &attrs,                            
                                                    nsICookie2::SAMESITE_UNSET)));
-    EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CookieExistsNative(newDomainCookie, &attrs, &found)));
+    EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CookieExistsNative(NS_LITERAL_CSTRING("new.domain"),
+                                                            NS_LITERAL_CSTRING("/rabbit"),
+                                                            NS_LITERAL_CSTRING("test3"),
+                                                            &attrs,  &found)));
     EXPECT_FALSE(found);
     
     PR_Sleep(4 * PR_TicksPerSecond());
@@ -745,7 +754,10 @@ TEST(TestCookie,TestCookieMain)
     
     EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CountCookiesFromHost(NS_LITERAL_CSTRING("cookiemgr.test"), &hostCookies)));
     EXPECT_EQ(hostCookies, 2u);
-    EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CookieExistsNative(expiredCookie, &attrs, &found)));
+    EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CookieExistsNative(NS_LITERAL_CSTRING("cookiemgr.test"),
+                                                            NS_LITERAL_CSTRING("/foo"),
+                                                            NS_LITERAL_CSTRING("test2"),
+                                                            &attrs,  &found)));
     EXPECT_TRUE(found);
     
     EXPECT_TRUE(NS_SUCCEEDED(cookieMgr->RemoveAll()));

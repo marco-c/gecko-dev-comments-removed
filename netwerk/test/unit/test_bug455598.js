@@ -28,7 +28,7 @@ function run_test() {
     }
   };
   var cm = Cc["@mozilla.org/cookiemanager;1"].getService(Ci.nsICookieManager);
-  Assert.ok(!cm.cookieExists(cookie));
+  Assert.ok(!cm.cookieExists(cookie.host, cookie.path, cookie.name, {}));
   
   do_test_finished();
 }
