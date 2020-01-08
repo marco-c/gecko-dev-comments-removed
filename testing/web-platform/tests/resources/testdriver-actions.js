@@ -7,7 +7,7 @@
   function Actions() {
     this.sourceTypes = new Map([["key", KeySource],
                                 ["pointer", PointerSource],
-                                ["general", GeneralSource]]);
+                                ["none", GeneralSource]]);
     this.sources = new Map();
     this.sourceOrder = [];
     for (let sourceType of this.sourceTypes.keys()) {
@@ -17,7 +17,7 @@
     for (let sourceType of this.sourceTypes.keys()) {
       this.currentSources.set(sourceType, null);
     }
-    this.createSource("general");
+    this.createSource("none");
     this.tickIdx = 0;
   }
 
@@ -187,7 +187,7 @@
 
 
     pause: function(duration) {
-      this.getSource("general").addPause(this, duration);
+      this.getSource("none").addPause(this, duration);
       return this;
     },
 
