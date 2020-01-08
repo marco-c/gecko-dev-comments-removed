@@ -10,6 +10,9 @@ function getBuffer(size)
   return buffer;
 }
 
+
+
+
 function getRandomBuffer(size)
 {
   let buffer = getBuffer(size);
