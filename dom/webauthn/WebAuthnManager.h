@@ -47,10 +47,8 @@ namespace dom {
 class WebAuthnTransaction
 {
 public:
-  WebAuthnTransaction(const RefPtr<Promise>& aPromise,
-                      AbortSignal* aSignal)
+  explicit WebAuthnTransaction(const RefPtr<Promise>& aPromise)
     : mPromise(aPromise)
-    , mSignal(aSignal)
     , mId(NextId())
   {
     MOZ_ASSERT(mId > 0);
@@ -58,9 +56,6 @@ public:
 
   
   RefPtr<Promise> mPromise;
-
-  
-  RefPtr<AbortSignal> mSignal;
 
   
   uint64_t mId;
