@@ -92,6 +92,11 @@ impl<T: Clone, U> Clone for Plane<T, U> {
     }
 }
 
+
+
+#[derive(Clone, Debug, Hash, PartialEq, PartialOrd)]
+pub struct NegativeHemisphereError;
+
 impl<
     T: Copy + Zero + One + Float + ApproxEq<T> +
         ops::Sub<T, Output=T> + ops::Add<T, Output=T> +
@@ -99,16 +104,22 @@ impl<
     U,
 > Plane<T, U> {
     
-    pub fn from_unnormalized(normal: TypedVector3D<T, U>, offset: T) -> Option<Self> {
+    pub fn from_unnormalized(
+        normal: TypedVector3D<T, U>, offset: T
+    ) -> Result<Option<Self>, NegativeHemisphereError> {
         let square_len = normal.square_length();
-        if square_len < T::approx_epsilon() {
-            None
+        if square_len < T::approx_epsilon() * T::approx_epsilon() {
+            if offset > T::zero() {
+                Ok(None)
+            } else {
+                Err(NegativeHemisphereError)
+            }
         } else {
             let kf = T::one() / square_len.sqrt();
-            Some(Plane {
+            Ok(Some(Plane {
                 normal: normal * TypedScale::new(kf),
                 offset: offset * kf,
-            })
+            }))
         }
     }
 

@@ -119,18 +119,8 @@ impl<T, U> Polygon<T, U> where
     U: fmt::Debug,
 {
     
-    #[deprecated(since = "0.12.1", note = "Use try_from_points instead")]
+    
     pub fn from_points(
-        points: [TypedPoint3D<T, U>; 4],
-        anchor: usize,
-    ) -> Self {
-        Self::try_from_points(points, anchor).unwrap()
-    }
-
-    
-    
-    
-    pub fn try_from_points(
         points: [TypedPoint3D<T, U>; 4],
         anchor: usize,
     ) -> Option<Self> {
@@ -179,7 +169,7 @@ impl<T, U> Polygon<T, U> where
                 rect.bottom_left().to_3d(),
             ],
             anchor,
-        )
+        ).unwrap()
     }
 
     
@@ -201,7 +191,7 @@ impl<T, U> Polygon<T, U> where
         
         
         
-        Self::try_from_points(points, anchor)
+        Self::from_points(points, anchor)
     }
 
     
@@ -243,7 +233,7 @@ impl<T, U> Polygon<T, U> where
         
         
         
-        Polygon::try_from_points(points, self.anchor)
+        Polygon::from_points(points, self.anchor)
     }
 
     
