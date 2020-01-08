@@ -835,17 +835,9 @@ IMEHandler::NeedOnScreenKeyboard()
   
   
   
-  typedef POWER_PLATFORM_ROLE (WINAPI* PowerDeterminePlatformRoleEx)(ULONG Version);
   if (!sDeterminedPowerPlatformRole) {
     sDeterminedPowerPlatformRole = true;
-    PowerDeterminePlatformRoleEx power_determine_platform_role =
-      reinterpret_cast<PowerDeterminePlatformRoleEx>(::GetProcAddress(
-        ::LoadLibraryW(L"PowrProf.dll"), "PowerDeterminePlatformRoleEx"));
-    if (power_determine_platform_role) {
-      sPowerPlatformRole = power_determine_platform_role(POWER_PLATFORM_ROLE_V2);
-    } else {
-      sPowerPlatformRole = PlatformRoleUnspecified;
-    }
+    sPowerPlatformRole = WinUtils::GetPowerPlatformRole();
   }
 
   

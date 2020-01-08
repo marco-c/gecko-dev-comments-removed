@@ -472,6 +472,11 @@ public:
   
 
 
+  static POWER_PLATFORM_ROLE GetPowerPlatformRole();
+
+  
+
+
 
 
 
