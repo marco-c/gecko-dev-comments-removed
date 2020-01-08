@@ -653,6 +653,15 @@ html|input.urlbar-input[textoverflow="start"]:not([focused]) {
   display: none;
 }
 
+
+
+
+
+#PopupAutoCompleteRichResult > richlistbox > richlistitem.emptySearchQuery > .ac-separator,
+#PopupAutoCompleteRichResult > richlistbox > richlistitem.emptySearchQuery > .ac-title {
+  display: none;
+}
+
 #PopupAutoCompleteRichResult > richlistbox > richlistitem > .ac-site-icon {
   margin-inline-start: 0;
 }
