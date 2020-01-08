@@ -270,28 +270,6 @@ static inline void EnableIonDebugAsyncLogging()
 
 #endif 
 
-template <JitSpewChannel Channel>
-class AutoDisableSpew
-{
-    mozilla::DebugOnly<bool> enabled_;
-
-  public:
-    AutoDisableSpew()
-      : enabled_(JitSpewEnabled(Channel))
-    {
-        DisableChannel(Channel);
-    }
-
-    ~AutoDisableSpew()
-    {
-#ifdef JS_JITSPEW
-        if (enabled_) {
-            EnableChannel(Channel);
-        }
-#endif
-    }
-};
-
 } 
 } 
 
