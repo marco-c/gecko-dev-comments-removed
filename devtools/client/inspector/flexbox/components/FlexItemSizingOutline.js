@@ -61,17 +61,16 @@ class FlexItemSizingOutline extends PureComponent {
   render() {
     const {
       flexItemSizing,
-      properties,
     } = this.props.flexItem;
     const {
       mainBaseSize,
       mainDeltaSize,
       mainMaxSize,
       mainMinSize,
+      clampState,
     } = flexItemSizing;
 
     const isRow = this.props.flexDirection.startsWith("row");
-    const dimension = isRow ? "width" : "height";
 
     
     let mainFinalSize = mainBaseSize + mainDeltaSize;
@@ -84,17 +83,11 @@ class FlexItemSizingOutline extends PureComponent {
     }
 
     
-    
-    
-    const showMax = mainMaxSize === mainFinalSize;
+    const showMax = clampState === "clamped_to_max";
 
     
     
-    
-    
-    
-    
-    const showMin = mainMinSize === mainFinalSize && properties[`min-${dimension}`];
+    const showMin = clampState === "clamped_to_min";
 
     
     
@@ -153,7 +146,7 @@ class FlexItemSizingOutline extends PureComponent {
           this.renderBasisOutline(mainBaseSize),
           this.renderDeltaOutline(mainDeltaSize),
           this.renderFinalOutline(mainFinalSize, mainMaxSize, mainMinSize,
-                                  showMin || showMax)
+                                  clampState !== "unclamped")
         )
       )
     );
