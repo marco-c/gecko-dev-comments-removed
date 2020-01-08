@@ -1764,6 +1764,14 @@ ValueToStringBuffer(JSContext* cx, const Value& v, StringBuffer& sb);
 extern JSString*
 ValueToSource(JSContext* cx, HandleValue v);
 
+
+
+
+
+
+extern JSString*
+StringToSource(JSContext* cx, JSString* str);
+
 } 
 
 MOZ_ALWAYS_INLINE bool
