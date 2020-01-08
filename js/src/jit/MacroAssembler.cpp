@@ -969,32 +969,16 @@ MacroAssembler::nurseryAllocateString(Register result, Register temp, gc::AllocK
     
     
     
-    
     auto nurseryPosAddr = intptr_t(zone->addressOfStringNurseryPosition());
     auto nurseryEndAddr = intptr_t(zone->addressOfStringNurseryCurrentEnd());
-    auto zoneAddr = intptr_t(zone);
 
-    intptr_t maxOffset = std::max(std::abs(nurseryPosAddr - zoneAddr),
-                                  std::abs(nurseryEndAddr - zoneAddr));
-    if (maxOffset < (1 << 31)) {
-        movePtr(ImmPtr(zone), temp); 
-        loadPtr(Address(temp, nurseryPosAddr - zoneAddr), result);
-        addPtr(Imm32(totalSize), result); 
-        branchPtr(Assembler::Below, Address(temp, nurseryEndAddr - zoneAddr), result, fail);
-        storePtr(result, Address(temp, nurseryPosAddr - zoneAddr)); 
-        subPtr(Imm32(thingSize), result); 
-        storePtr(temp, Address(result, -js::Nursery::stringHeaderSize())); 
-    } else {
-        
-        
-        movePtr(ImmPtr(zone->addressOfNurseryPosition()), temp);
-        loadPtr(Address(temp, 0), result);
-        addPtr(Imm32(totalSize), result);
-        branchPtr(Assembler::Below, Address(temp, nurseryEndAddr - nurseryPosAddr), result, fail);
-        storePtr(result, Address(temp, 0));
-        subPtr(Imm32(thingSize), result);
-        storePtr(ImmPtr(zone), Address(result, -js::Nursery::stringHeaderSize()));
-    }
+    movePtr(ImmPtr(zone->addressOfNurseryPosition()), temp);
+    loadPtr(Address(temp, 0), result);
+    addPtr(Imm32(totalSize), result);
+    branchPtr(Assembler::Below, Address(temp, nurseryEndAddr - nurseryPosAddr), result, fail);
+    storePtr(result, Address(temp, 0));
+    subPtr(Imm32(thingSize), result);
+    storePtr(ImmPtr(zone), Address(result, -js::Nursery::stringHeaderSize()));
 }
 
 
