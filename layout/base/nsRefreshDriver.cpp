@@ -1133,9 +1133,8 @@ nsRefreshDriver::nsRefreshDriver(nsPresContext* aPresContext)
              "Need a pres context to tell us to call Disconnect() later "
              "and decrement sRefreshDriverCount.");
   mMostRecentRefresh = TimeStamp::Now();
-  mMostRecentTick = mMostRecentRefresh;
-  mNextThrottledFrameRequestTick = mMostRecentTick;
-  mNextRecomputeVisibilityTick = mMostRecentTick;
+  mNextThrottledFrameRequestTick = mMostRecentRefresh;
+  mNextRecomputeVisibilityTick = mMostRecentRefresh;
 
   ++sRefreshDriverCount;
 }
@@ -1788,17 +1787,16 @@ nsRefreshDriver::Tick(TimeStamp aNowTime)
     return;
   }
 
-  TimeStamp previousRefresh = mMostRecentRefresh;
-
-  mMostRecentRefresh = aNowTime;
-
   if (IsWaitingForPaint(aNowTime)) {
     
     
     
     return;
   }
-  mMostRecentTick = aNowTime;
+
+  TimeStamp previousRefresh = mMostRecentRefresh;
+  mMostRecentRefresh = aNowTime;
+
   if (mRootRefresh) {
     mRootRefresh->RemoveRefreshObserver(this, FlushType::Style);
     mRootRefresh = nullptr;
@@ -2240,7 +2238,7 @@ nsRefreshDriver::IsWaitingForPaint(mozilla::TimeStamp aTime)
   }
 
   if (mWaitingForTransaction) {
-    if (mSkippedPaints && aTime > (mMostRecentTick + TimeDuration::FromMilliseconds(mWarningThreshold * 1000))) {
+    if (mSkippedPaints && aTime > (mMostRecentRefresh + TimeDuration::FromMilliseconds(mWarningThreshold * 1000))) {
       
       
       
