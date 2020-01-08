@@ -10,11 +10,11 @@ const { ADB } = require("devtools/shared/adb/adb");
 
 
 
-function Device(id) {
+function AdbDevice(id) {
   this.id = id;
 }
 
-Device.prototype = {
+AdbDevice.prototype = {
   type: "adb",
 
   shell: ADB.shell.bind(ADB),
@@ -30,4 +30,4 @@ Device.prototype = {
   
 };
 
-module.exports = Device;
+module.exports = AdbDevice;
