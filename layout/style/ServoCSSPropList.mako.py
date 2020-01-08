@@ -74,6 +74,7 @@ def method(prop):
 
 
 SERIALIZED_PREDEFINED_TYPES = [
+    "Clear",
     "Color",
     "Content",
     "CounterIncrement",

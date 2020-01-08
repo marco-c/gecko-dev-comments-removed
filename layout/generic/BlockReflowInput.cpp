@@ -742,7 +742,7 @@ BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
   
   if (StyleClear::None != floatDisplay->mBreakType) {
     
-    mBCoord = ClearFloats(mBCoord, floatDisplay->PhysicalBreakType(wm));
+    mBCoord = ClearFloats(mBCoord, floatDisplay->mBreakType);
   }
   
   nsFlowAreaRect floatAvailableSpace =
