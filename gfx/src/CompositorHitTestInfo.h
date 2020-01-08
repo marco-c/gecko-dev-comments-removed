@@ -18,35 +18,37 @@ namespace gfx {
 
 
 
+
+
 enum class CompositorHitTestFlags : uint8_t {
   
-  eVisibleToHitTest = 0,
+  eVisibleToHitTest = 0,              
   
-  eDispatchToContent,
+  eDispatchToContent,                 
 
   
   
-  eTouchActionPanXDisabled,
-  eTouchActionPanYDisabled,
-  eTouchActionPinchZoomDisabled,
-  eTouchActionDoubleTapZoomDisabled,
+  eTouchActionPanXDisabled,           
+  eTouchActionPanYDisabled,           
+  eTouchActionPinchZoomDisabled,      
+  eTouchActionDoubleTapZoomDisabled,  
 
   
   
-  eScrollbar,
+  eScrollbar,                         
   
   
   
-  eScrollbarThumb,
+  eScrollbarThumb,                    
   
   
-  eScrollbarVertical,
+  eScrollbarVertical,                 
 
   
   
   
   
-  eRequiresTargetConfirmation,
+  eRequiresTargetConfirmation,        
 };
 
 using CompositorHitTestInfo = EnumSet<CompositorHitTestFlags, uint32_t>;
