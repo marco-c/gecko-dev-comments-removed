@@ -11,6 +11,7 @@
 
 
 
+#include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
 
@@ -286,7 +287,6 @@ struct LayoutPixel;
 
 
 
-
 struct Renderer;
 
 
@@ -352,7 +352,6 @@ struct FontKey {
 };
 
 using WrFontKey = FontKey;
-
 
 
 
@@ -589,7 +588,6 @@ using LayoutSize = TypedSize2D<float, LayoutPixel>;
 
 
 
-
 struct BuiltDisplayListDescriptor {
   
   uint64_t builder_start_time;
@@ -779,7 +777,6 @@ using LayoutSideOffsets = TypedSideOffsets2D<float, LayoutPixel>;
 
 
 
-
 struct ColorF {
   float r;
   float g;
@@ -841,8 +838,6 @@ struct WrAnimationProperty {
            id == aOther.id;
   }
 };
-
-
 
 
 
@@ -930,7 +925,7 @@ union RasterSpace {
   };
   Local_Body local;
 
-  static RasterSpace Local(float const& a0) {
+  static RasterSpace Local(const float &a0) {
     RasterSpace result;
     result.local._0 = a0;
     result.tag = Tag::Local;
@@ -1015,8 +1010,7 @@ struct MutByteSlice {
 
 
 
-
-using VoidPtrToSizeFn = uintptr_t(*)(const void*);
+using VoidPtrToSizeFn = uintptr_t(*)(const void *ptr);
 
 struct RendererStats {
   uintptr_t total_draw_calls;
