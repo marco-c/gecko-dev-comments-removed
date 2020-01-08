@@ -35,6 +35,8 @@
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/widget/CompositorWidget.h"
 
+using mozilla::Telemetry::LABELS_CONTENT_FRAME_TIME_REASON;
+
 #ifdef MOZ_GECKO_PROFILER
 #include "ProfilerMarkerPayload.h"
 #endif
@@ -955,7 +957,8 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvSetDisplayList(
     
     if (CompositorBridgeParent* cbp = GetRootCompositorBridgeParent()) {
       TimeStamp now = TimeStamp::Now();
-      cbp->NotifyPipelineRendered(mPipelineId, wrEpoch, now, now, now);
+      cbp->NotifyPipelineRendered(mPipelineId, wrEpoch, VsyncId(), now, now,
+                                  now);
     }
   }
 
@@ -1076,7 +1079,8 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvEmptyTransaction(
     MOZ_ASSERT(mPendingTransactionIds.size() == 1);
     if (CompositorBridgeParent* cbp = GetRootCompositorBridgeParent()) {
       TimeStamp now = TimeStamp::Now();
-      cbp->NotifyPipelineRendered(mPipelineId, mWrEpoch, now, now, now);
+      cbp->NotifyPipelineRendered(mPipelineId, mWrEpoch, VsyncId(), now, now,
+                                  now);
     }
   }
 
@@ -1218,7 +1222,7 @@ void WebRenderBridgeParent::FlushFrameGeneration() {
     mCompositorScheduler->CancelCurrentCompositeTask();
     
     mCompositorScheduler->UpdateLastComposeTime();
-    MaybeGenerateFrame( true);
+    MaybeGenerateFrame(VsyncId(),  true);
   }
 }
 
@@ -1679,7 +1683,7 @@ void WebRenderBridgeParent::CompositeToTarget(VsyncId aId,
     }
     return;
   }
-  MaybeGenerateFrame( false);
+  MaybeGenerateFrame(aId,  false);
 }
 
 TimeDuration WebRenderBridgeParent::GetVsyncInterval() const {
@@ -1691,7 +1695,8 @@ TimeDuration WebRenderBridgeParent::GetVsyncInterval() const {
   return TimeDuration();
 }
 
-void WebRenderBridgeParent::MaybeGenerateFrame(bool aForceGenerateFrame) {
+void WebRenderBridgeParent::MaybeGenerateFrame(VsyncId aId,
+                                               bool aForceGenerateFrame) {
   
   MOZ_ASSERT(IsRootWebRenderBridgeParent());
 
@@ -1739,7 +1744,7 @@ void WebRenderBridgeParent::MaybeGenerateFrame(bool aForceGenerateFrame) {
 
   SetAPZSampleTime();
 
-  wr::RenderThread::Get()->IncPendingFrameCount(mApi->GetId(), start);
+  wr::RenderThread::Get()->IncPendingFrameCount(mApi->GetId(), aId, start);
 
 #if defined(ENABLE_FRAME_LATENCY_LOG)
   auto startTime = TimeStamp::Now();
@@ -1782,10 +1787,10 @@ void WebRenderBridgeParent::NotifySceneBuiltForEpoch(
 }
 
 TransactionId WebRenderBridgeParent::FlushTransactionIdsForEpoch(
-    const wr::Epoch& aEpoch, const TimeStamp& aCompositeStartTime,
-    const TimeStamp& aRenderStartTime, const TimeStamp& aEndTime,
-    UiCompositorControllerParent* aUiController, wr::RendererStats* aStats,
-    nsTArray<FrameStats>* aOutputStats) {
+    const wr::Epoch& aEpoch, const VsyncId& aCompositeStartId,
+    const TimeStamp& aCompositeStartTime, const TimeStamp& aRenderStartTime,
+    const TimeStamp& aEndTime, UiCompositorControllerParent* aUiController,
+    wr::RendererStats* aStats, nsTArray<FrameStats>* aOutputStats) {
   TransactionId id{0};
   while (!mPendingTransactionIds.empty()) {
     const auto& transactionId = mPendingTransactionIds.front();
@@ -1821,6 +1826,50 @@ TransactionId WebRenderBridgeParent::FlushTransactionIdsForEpoch(
                                             aEndTime));
       }
 #endif
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      latencyMs = (aEndTime - transactionId.mRefreshStartTime).ToMilliseconds();
+      latencyNorm = latencyMs / mVsyncRate.ToMilliseconds();
+      fracLatencyNorm = lround(latencyNorm * 100.0);
+      if (fracLatencyNorm < 200) {
+        
+        Telemetry::AccumulateCategorical(
+            LABELS_CONTENT_FRAME_TIME_REASON::Success);
+      } else {
+        if (transactionId.mVsyncId == VsyncId() ||
+            aCompositeStartId == VsyncId() ||
+            transactionId.mVsyncId >= aCompositeStartId) {
+          
+          
+          Telemetry::AccumulateCategorical(
+              LABELS_CONTENT_FRAME_TIME_REASON::NoVsync);
+        } else if (aCompositeStartId - transactionId.mVsyncId > 1) {
+          
+          Telemetry::AccumulateCategorical(
+              LABELS_CONTENT_FRAME_TIME_REASON::MissedComposite);
+        } else {
+          
+          Telemetry::AccumulateCategorical(
+              LABELS_CONTENT_FRAME_TIME_REASON::SlowComposite);
+        }
+      }
 
       if (fracLatencyNorm > 200) {
         aOutputStats->AppendElement(FrameStats(

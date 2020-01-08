@@ -39,6 +39,8 @@
 #include "mozilla/layers/TextureHost.h"
 #include "mozilla/layers/AsyncCompositionManager.h"
 
+using mozilla::Telemetry::LABELS_CONTENT_FRAME_TIME_REASON;
+
 namespace mozilla {
 namespace layers {
 
@@ -884,12 +886,49 @@ bool LayerTransactionParent::IsSameProcess() const {
 }
 
 TransactionId LayerTransactionParent::FlushTransactionId(
-    TimeStamp& aCompositeEnd) {
+    const VsyncId& aId, TimeStamp& aCompositeEnd) {
   if (mId.IsValid() && mPendingTransaction.IsValid() && !mVsyncRate.IsZero()) {
     double latencyMs = (aCompositeEnd - mTxnStartTime).ToMilliseconds();
     double latencyNorm = latencyMs / mVsyncRate.ToMilliseconds();
     int32_t fracLatencyNorm = lround(latencyNorm * 100.0);
     Telemetry::Accumulate(Telemetry::CONTENT_FRAME_TIME, fracLatencyNorm);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    latencyMs = (aCompositeEnd - mRefreshStartTime).ToMilliseconds();
+    latencyNorm = latencyMs / mVsyncRate.ToMilliseconds();
+    fracLatencyNorm = lround(latencyNorm * 100.0);
+    if (fracLatencyNorm < 200) {
+      
+      Telemetry::AccumulateCategorical(
+          LABELS_CONTENT_FRAME_TIME_REASON::Success);
+    } else {
+      if (mTxnVsyncId == VsyncId() || aId == VsyncId() || mTxnVsyncId >= aId) {
+        
+        
+        Telemetry::AccumulateCategorical(
+            LABELS_CONTENT_FRAME_TIME_REASON::NoVsync);
+      } else if (aId - mTxnVsyncId > 1) {
+        
+        Telemetry::AccumulateCategorical(
+            LABELS_CONTENT_FRAME_TIME_REASON::MissedComposite);
+      } else {
+        
+        Telemetry::AccumulateCategorical(
+            LABELS_CONTENT_FRAME_TIME_REASON::SlowComposite);
+      }
+    }
   }
 
 #if defined(ENABLE_FRAME_LATENCY_LOG)

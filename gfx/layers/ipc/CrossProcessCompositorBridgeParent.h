@@ -137,10 +137,8 @@ class CrossProcessCompositorBridgeParent final
   
   
   
-  void DidCompositeLocked(LayersId aId, TimeStamp& aCompositeStart,
-                          TimeStamp& aCompositeEnd);
-  void DidComposite(LayersId aId, TimeStamp& aCompositeStart,
-                    TimeStamp& aCompositeEnd) override;
+  void DidCompositeLocked(LayersId aId, const VsyncId& aVsyncId,
+                          TimeStamp& aCompositeStart, TimeStamp& aCompositeEnd);
 
   PTextureParent* AllocPTextureParent(
       const SurfaceDescriptor& aSharedData, const ReadLockDescriptor& aReadLock,
