@@ -450,7 +450,10 @@ function compareFocusResults() {
     is(matchWindow.document.hasFocus(), true, currentTestName + " hasFocus");
     var expectedActive = _expectedElement;
     if (!expectedActive) {
-      expectedActive = matchWindow.document instanceof XULDocument ?
+      
+      
+      
+      expectedActive = matchWindow.document.documentElement instanceof XULElement ?
                        "main-window" : getId(matchWindow.document.body);
     }
     is(getId(matchWindow.document.activeElement), expectedActive, currentTestName + " activeElement");
