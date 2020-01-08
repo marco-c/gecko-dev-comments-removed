@@ -270,6 +270,10 @@ void EarlyInitializeRedirections();
 bool InitializeRedirections();
 
 
+
+void LateInitializeRedirections();
+
+
 static inline ErrorType SaveError() { return errno; }
 static inline void RestoreError(ErrorType aError) { errno = aError; }
 
@@ -286,17 +290,8 @@ OriginalFunction(size_t aCallId)
   return GetRedirection(aCallId).mOriginalFunction;
 }
 
-#define TokenPaste(aFirst, aSecond) aFirst ## aSecond
 
-
-
-#define OriginalCallABI(aName, aReturnType, aABI, ...)          \
-  TokenPaste(CallFunction, aABI) <aReturnType>                  \
-    (OriginalFunction(CallEvent_ ##aName), ##__VA_ARGS__)
-
-
-#define OriginalCall(aName, aReturnType, ...)                   \
-  OriginalCallABI(aName, aReturnType, DEFAULTABI, ##__VA_ARGS__)
+void* OriginalFunction(const char* aName);
 
 static inline ThreadEvent
 CallIdToThreadEvent(size_t aCallId)
@@ -305,7 +300,7 @@ CallIdToThreadEvent(size_t aCallId)
 }
 
 void
-RecordReplayInvokeCall(size_t aCallId, CallArguments* aArguments);
+RecordReplayInvokeCall(void* aFunction, CallArguments* aArguments);
 
 
 
