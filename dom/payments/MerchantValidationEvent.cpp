@@ -64,6 +64,17 @@ bool
 MerchantValidationEvent::init(const MerchantValidationEventInit& aEventInitDict,
                               ErrorResult& aRv)
 {
+  
+  if (!aEventInitDict.mMethodName.IsEmpty()) {
+    nsString errMsg;
+    auto rv = PaymentRequest::IsValidPaymentMethodIdentifier(
+      aEventInitDict.mMethodName, errMsg);
+    if (NS_FAILED(rv)) {
+      aRv.ThrowRangeError<MSG_ILLEGAL_RANGE_PR_CONSTRUCTOR>(errMsg);
+      return false;
+    }
+  }
+  SetMethodName(aEventInitDict.mMethodName);
   nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(GetParentObject());
   auto doc = window->GetExtantDoc();
   if (!doc) {
@@ -115,6 +126,7 @@ MerchantValidationEvent::ResolvedCallback(JSContext* aCx,
   }
   mWaitForUpdate = false;
 
+  
   
   
   
@@ -182,6 +194,18 @@ void
 MerchantValidationEvent::SetValidationURL(nsAString& aValidationURL)
 {
   mValidationURL.Assign(aValidationURL);
+}
+
+void
+MerchantValidationEvent::GetMethodName(nsAString& aMethodName)
+{
+  aMethodName.Assign(mMethodName);
+}
+
+void
+MerchantValidationEvent::SetMethodName(const nsAString& aMethodName)
+{
+  mMethodName.Assign(aMethodName);
 }
 
 MerchantValidationEvent::~MerchantValidationEvent() {}
