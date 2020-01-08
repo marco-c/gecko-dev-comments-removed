@@ -2,7 +2,18 @@
 
 
 
-'Merge resources across channels.'
+'''Merge resources across channels.
+
+Merging resources is done over a series of parsed resources, or source
+strings.
+The nomenclature is that the resources are ordered from newest to oldest.
+The generated file structure is taken from the newest file, and then the
+next-newest, etc. The values of the returned entities are taken from the
+newest to the oldest resource, too.
+
+In merge_resources, there's an option to choose the values from oldest
+to newest instead.
+'''
 
 from collections import OrderedDict, defaultdict
 from codecs import encode
@@ -10,27 +21,33 @@ import six
 
 
 from compare_locales import parser as cl
-from compare_locales.compare import AddRemove
+from compare_locales.compare.utils import AddRemove
 
 
 class MergeNotSupportedError(ValueError):
     pass
 
 
-def merge_channels(name, *resources):
+def merge_channels(name, resources):
     try:
         parser = cl.getParser(name)
     except UserWarning:
         raise MergeNotSupportedError(
             'Unsupported file format ({}).'.format(name))
 
-    entities = merge_resources(parser, *resources)
+    entities = merge_resources(parser, resources)
     return encode(serialize_legacy_resource(entities), parser.encoding)
 
 
-def merge_resources(parser, *resources):
-    
-    comments = {}
+def merge_resources(parser, resources, keep_newest=True):
+    '''Merge parsed or unparsed resources, returning a enumerable of Entities.
+
+    Resources are ordered from newest to oldest in the input. The structure
+    of the generated content is taken from the newest resource first, and
+    then filled by the next etc.
+    Values are also taken from the newest, unless keep_newest is False,
+    then values are taken from the oldest first.
+    '''
 
     def parse_resource(resource):
         
@@ -54,44 +71,39 @@ def merge_resources(parser, *resources):
             
             return (entity, entity)
 
-        
-        
-        
-        
-        if isinstance(entity, cl.Entity) and entity.pre_comment:
-            comments[entity.pre_comment] = entity.key
-
         return (entity.key, entity)
 
     entities = six.moves.reduce(
-        lambda x, y: merge_two(comments, x, y),
+        lambda x, y: merge_two(x, y, keep_newer=keep_newest),
         map(parse_resource, resources))
-    return entities
+    return entities.values()
 
 
-def merge_two(comments, newer, older):
+def merge_two(newer, older, keep_newer=True):
+    '''Merge two OrderedDicts.
+
+    The order of the result dict is determined by `newer`.
+    The values in the dict are the newer ones by default, too.
+    If `keep_newer` is False, the values will be taken from the older
+    dict.
+    '''
     diff = AddRemove()
     diff.set_left(newer.keys())
     diff.set_right(older.keys())
 
     def get_entity(key):
-        entity = newer.get(key, None)
+        if keep_newer:
+            default, backup = newer, older
+        else:
+            default, backup = older, newer
+
+        entity = default.get(key, None)
 
         
         if entity is not None:
             return entity
 
-        entity = older.get(key)
-
-        
-        
-        if isinstance(entity, cl.Comment) and entity in comments:
-            next_entity = newer.get(comments[entity], None)
-            if next_entity is not None and next_entity.pre_comment:
-                
-                return None
-
-        return entity
+        return backup.get(key)
 
     
     contents = [(key, get_entity(key)) for _, key in diff]
@@ -119,4 +131,4 @@ def merge_two(comments, newer, older):
 
 
 def serialize_legacy_resource(entities):
-    return "".join((entity.all for entity in entities.values()))
+    return "".join((entity.all for entity in entities))
