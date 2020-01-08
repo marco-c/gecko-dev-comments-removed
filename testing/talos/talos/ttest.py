@@ -148,6 +148,11 @@ class TTest(object):
 
             
             
+            if test_config.get('perfherder_framework', None) is not None:
+                test_results.framework = test_config['perfherder_framework']
+
+            
+            
             if test_config.get('reinstall', ''):
                 for keep in test_config['reinstall']:
                     origin = os.path.join(test_config['profile_path'],
