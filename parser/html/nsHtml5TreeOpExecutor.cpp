@@ -202,6 +202,10 @@ nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated)
     mDocument->EndLoad();
   }
 
+  
+  
+  
+  
   GetParser()->DropStreamParser();
   DropParserAndPerfHint();
 #ifdef GATHER_DOCWRITE_STATISTICS
