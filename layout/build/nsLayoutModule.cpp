@@ -126,13 +126,10 @@ static void Shutdown();
 #include "mozilla/dom/nsContentSecurityManager.h"
 #include "mozilla/dom/nsCSPService.h"
 #include "mozilla/dom/nsCSPContext.h"
-#include "nsIPowerManagerService.h"
 #include "nsIMediaManager.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
 
 #include "mozilla/net/WebSocketEventService.h"
-
-#include "mozilla/dom/power/PowerManagerService.h"
 
 #include "nsIPresentationService.h"
 
@@ -148,12 +145,10 @@ static void Shutdown();
 #include "nsControllerCommandTable.h"
 
 #include "mozilla/TextInputProcessor.h"
-#include "mozilla/ScriptableContentIterator.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::net;
-using mozilla::dom::power::PowerManagerService;
 using mozilla::dom::quota::QuotaManagerService;
 using mozilla::gmp::GeckoMediaPluginService;
 
@@ -209,8 +204,6 @@ NS_GENERIC_FACTORY_CONSTRUCTOR(nsDeviceSensors)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsHapticFeedback)
 #endif
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(ThirdPartyUtil, Init)
-NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR(nsIPowerManagerService,
-                                         PowerManagerService::GetInstance)
 
 NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR(nsIMediaManagerService,
                                          MediaManager::GetInstance)
@@ -221,7 +214,6 @@ NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR(nsIPresentationService,
 NS_GENERIC_FACTORY_CONSTRUCTOR(PresentationTCPSessionTransport)
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(NotificationTelemetryService, Init)
 NS_GENERIC_FACTORY_CONSTRUCTOR(PushNotifier)
-NS_GENERIC_FACTORY_CONSTRUCTOR(ScriptableContentIterator)
 
 
 
@@ -239,20 +231,6 @@ void nsLayoutModuleInitialize() {
                 "size of a pointer on your platform.");
 
   gInitialized = true;
-
-  if (XRE_GetProcessType() == GeckoProcessType_VR) {
-    
-    return;
-  }
-
-  if (XRE_GetProcessType() == GeckoProcessType_GPU ||
-      XRE_GetProcessType() == GeckoProcessType_RDD) {
-    
-    
-    
-    
-    return;
-  }
 
   if (NS_FAILED(xpcModuleCtor())) {
     MOZ_CRASH("xpcModuleCtor failed");
@@ -497,7 +475,6 @@ NS_DEFINE_NAMED_CID(NS_DEVICE_SENSORS_CID);
 #if defined(ANDROID)
 NS_DEFINE_NAMED_CID(NS_HAPTICFEEDBACK_CID);
 #endif
-NS_DEFINE_NAMED_CID(NS_POWERMANAGERSERVICE_CID);
 NS_DEFINE_NAMED_CID(OSFILECONSTANTSSERVICE_CID);
 NS_DEFINE_NAMED_CID(NS_MEDIAMANAGERSERVICE_CID);
 #ifdef MOZ_WEBSPEECH_TEST_BACKEND
@@ -520,8 +497,6 @@ NS_DEFINE_NAMED_CID(PRESENTATION_TCP_SESSION_TRANSPORT_CID);
 NS_DEFINE_NAMED_CID(TEXT_INPUT_PROCESSOR_CID);
 
 NS_DEFINE_NAMED_CID(NS_SCRIPTERROR_CID);
-
-NS_DEFINE_NAMED_CID(SCRIPTABLE_CONTENT_ITERATOR_CID);
 
 static nsresult LocalStorageManagerConstructor(nsISupports* aOuter,
                                                REFNSIID aIID, void** aResult) {
@@ -596,7 +571,6 @@ static const mozilla::Module::CIDEntry kLayoutCIDs[] = {
 #endif
   { &kTHIRDPARTYUTIL_CID, false, nullptr, ThirdPartyUtilConstructor },
   { &kNS_STRUCTUREDCLONECONTAINER_CID, false, nullptr, nsStructuredCloneContainerConstructor },
-  { &kNS_POWERMANAGERSERVICE_CID, false, nullptr, nsIPowerManagerServiceConstructor, Module::ALLOW_IN_GPU_PROCESS },
   { &kOSFILECONSTANTSSERVICE_CID, true, nullptr, OSFileConstantsServiceConstructor },
   { &kGECKO_MEDIA_PLUGIN_SERVICE_CID, true, nullptr, GeckoMediaPluginServiceConstructor },
   { &kNS_MEDIAMANAGERSERVICE_CID, false, nullptr, nsIMediaManagerServiceConstructor },
@@ -608,7 +582,6 @@ static const mozilla::Module::CIDEntry kLayoutCIDs[] = {
   { &kPRESENTATION_TCP_SESSION_TRANSPORT_CID, false, nullptr, PresentationTCPSessionTransportConstructor },
   { &kTEXT_INPUT_PROCESSOR_CID, false, nullptr, TextInputProcessorConstructor },
   { &kNS_SCRIPTERROR_CID, false, nullptr, nsScriptErrorConstructor },
-  { &kSCRIPTABLE_CONTENT_ITERATOR_CID, false, nullptr, ScriptableContentIteratorConstructor },
   { nullptr }
     
 };
@@ -669,7 +642,6 @@ static const mozilla::Module::ContractIDEntry kLayoutContracts[] = {
 #endif
   { THIRDPARTYUTIL_CONTRACTID, &kTHIRDPARTYUTIL_CID },
   { NS_STRUCTUREDCLONECONTAINER_CONTRACTID, &kNS_STRUCTUREDCLONECONTAINER_CID },
-  { POWERMANAGERSERVICE_CONTRACTID, &kNS_POWERMANAGERSERVICE_CID, Module::ALLOW_IN_GPU_PROCESS },
   { OSFILECONSTANTSSERVICE_CONTRACTID, &kOSFILECONSTANTSSERVICE_CID },
   { MEDIAMANAGERSERVICE_CONTRACTID, &kNS_MEDIAMANAGERSERVICE_CID },
 #ifdef ACCESSIBILITY
@@ -681,7 +653,6 @@ static const mozilla::Module::ContractIDEntry kLayoutContracts[] = {
   { PRESENTATION_TCP_SESSION_TRANSPORT_CONTRACTID, &kPRESENTATION_TCP_SESSION_TRANSPORT_CID },
   { "@mozilla.org/text-input-processor;1", &kTEXT_INPUT_PROCESSOR_CID },
   { NS_SCRIPTERROR_CONTRACTID, &kNS_SCRIPTERROR_CID },
-  { "@mozilla.org/scriptable-content-iterator;1", &kSCRIPTABLE_CONTENT_ITERATOR_CID },
   { nullptr }
 };
 
@@ -711,12 +682,6 @@ static nsresult Initialize() {
 }
 
 static void LayoutModuleDtor() {
-  if (XRE_GetProcessType() == GeckoProcessType_GPU ||
-      XRE_GetProcessType() == GeckoProcessType_VR ||
-      XRE_GetProcessType() == GeckoProcessType_RDD) {
-    return;
-  }
-
   Shutdown();
   nsContentUtils::XPCOMShutdown();
 
@@ -736,7 +701,6 @@ static const mozilla::Module kLayoutModule = {mozilla::Module::kVersion,
                                               kLayoutCategories,
                                               nullptr,
                                               Initialize,
-                                              LayoutModuleDtor,
-                                              Module::ALLOW_IN_GPU_PROCESS};
+                                              LayoutModuleDtor};
 
 NSMODULE_DEFN(nsLayoutModule) = &kLayoutModule;
