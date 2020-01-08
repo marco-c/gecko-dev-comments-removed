@@ -199,40 +199,6 @@ public:
 };
 
 
-
-
-
-
-
-
-
-
-
-inline const unsigned char*
-Utf8AsUnsignedChars(const Utf8Unit* aUnits)
-{
-  static_assert(sizeof(Utf8Unit) == sizeof(unsigned char),
-                "sizes must match to permissibly reinterpret_cast<>");
-  static_assert(alignof(Utf8Unit) == alignof(unsigned char),
-                "alignment must match to permissibly reinterpret_cast<>");
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  return reinterpret_cast<const unsigned char*>(aUnits);
-}
-
-
 inline bool
 IsAscii(Utf8Unit aUnit)
 {
