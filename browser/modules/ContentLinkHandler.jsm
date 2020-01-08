@@ -297,8 +297,7 @@ function guessType(icon) {
 
 
 
-
-function selectIcons(document, iconInfos, preferredWidth) {
+function selectIcons(iconInfos, preferredWidth) {
   if (iconInfos.length == 0) {
     return {
       richIcon: null,
@@ -450,6 +449,7 @@ class ContentLinkHandler {
     chromeGlobal.addEventListener("DOMLinkChanged", this);
     chromeGlobal.addEventListener("pageshow", this);
     chromeGlobal.addEventListener("pagehide", this);
+    chromeGlobal.addEventListener("DOMHeadElementParsed", this);
 
     
     
@@ -461,8 +461,7 @@ class ContentLinkHandler {
 
   loadIcons() {
     let preferredWidth = PREFERRED_WIDTH * Math.ceil(this.chromeGlobal.content.devicePixelRatio);
-    let { richIcon, tabIcon } = selectIcons(this.chromeGlobal.content.document,
-                                            this.iconInfos, preferredWidth);
+    let { richIcon, tabIcon } = selectIcons(this.iconInfos, preferredWidth);
     this.iconInfos = [];
 
     if (richIcon) {
@@ -486,30 +485,60 @@ class ContentLinkHandler {
     this.iconTask.arm();
   }
 
-  onPageShow(event) {
-    if (event.target != this.chromeGlobal.content.document) {
+  addRootIcon(document) {
+    
+    
+    if (this.seenTabIcon || !Services.prefs.getBoolPref("browser.chrome.guess_favicon", true)) {
       return;
     }
 
-    if (!this.seenTabIcon && Services.prefs.getBoolPref("browser.chrome.guess_favicon", true)) {
-      
-      
+    
+    
 
-      
-      
-      let baseURI = this.chromeGlobal.content.document.documentURIObject;
-      if (baseURI.schemeIs("http") || baseURI.schemeIs("https")) {
-        let iconUri = baseURI.mutate().setPathQueryRef("/favicon.ico").finalize();
-        this.addIcon({
-          iconUri,
-          width: -1,
-          isRichIcon: false,
-          type: TYPE_ICO,
-          node: this.chromeGlobal.content.document,
-        });
-      }
+    
+    
+    let baseURI = document.documentURIObject;
+    if (baseURI.schemeIs("http") || baseURI.schemeIs("https")) {
+      let iconUri = baseURI.mutate().setPathQueryRef("/favicon.ico").finalize();
+      this.addIcon({
+        iconUri,
+        width: -1,
+        isRichIcon: false,
+        type: TYPE_ICO,
+        node: document,
+      });
+    }
+  }
+
+  onHeadParsed(event) {
+    let document = this.chromeGlobal.content.document;
+    if (event.target.ownerDocument != document) {
+      return;
     }
 
+    
+    
+    
+    this.addRootIcon(document);
+
+    
+    if (this.iconTask.isArmed) {
+      this.iconTask.disarm();
+      this.loadIcons();
+    }
+  }
+
+  onPageShow(event) {
+    let document = this.chromeGlobal.content.document;
+    if (event.target != document) {
+      return;
+    }
+
+    
+    
+    this.addRootIcon(document);
+
+    
     
     if (this.iconTask.isArmed) {
       this.iconTask.disarm();
@@ -617,6 +646,9 @@ class ContentLinkHandler {
         break;
       case "pagehide":
         this.onPageHide(event);
+        break;
+      case "DOMHeadElementParsed":
+        this.onHeadParsed(event);
         break;
       default:
         this.onLinkEvent(event);
