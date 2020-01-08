@@ -980,9 +980,41 @@ public:
   
 
 
+  bool GetHasSlowTrackingContentBlocked()
+  {
+    return mHasSlowTrackingContentBlocked;
+  }
+
+  
+
+
+  bool GetHasAllCookiesBlocked()
+  {
+    return mHasAllCookiesBlocked;
+  }
+
+  
+
+
   bool GetHasTrackingCookiesBlocked()
   {
     return mHasTrackingCookiesBlocked;
+  }
+
+  
+
+
+  bool GetHasForeignCookiesBlocked()
+  {
+    return mHasForeignCookiesBlocked;
+  }
+
+  
+
+
+  bool GetHasCookiesBlockedByPermission()
+  {
+    return mHasCookiesBlockedByPermission;
   }
 
   
@@ -996,9 +1028,41 @@ public:
   
 
 
+  void SetHasSlowTrackingContentBlocked(bool aHasSlowTrackingContentBlocked)
+  {
+    mHasSlowTrackingContentBlocked = aHasSlowTrackingContentBlocked;
+  }
+
+  
+
+
+  void SetHasAllCookiesBlocked(bool aHasAllCookiesBlocked)
+  {
+    mHasAllCookiesBlocked = aHasAllCookiesBlocked;
+  }
+
+  
+
+
   void SetHasTrackingCookiesBlocked(bool aHasTrackingCookiesBlocked)
   {
     mHasTrackingCookiesBlocked = aHasTrackingCookiesBlocked;
+  }
+
+  
+
+
+  void SetHasForeignCookiesBlocked(bool aHasForeignCookiesBlocked)
+  {
+    mHasForeignCookiesBlocked = aHasForeignCookiesBlocked;
+  }
+
+  
+
+
+  void SetHasCookiesBlockedByPermission(bool aHasCookiesBlockedByPermission)
+  {
+    mHasCookiesBlockedByPermission = aHasCookiesBlockedByPermission;
   }
 
   
@@ -4004,7 +4068,19 @@ protected:
   bool mHasTrackingContentBlocked : 1;
 
   
+  bool mHasSlowTrackingContentBlocked : 1;
+
+  
+  bool mHasAllCookiesBlocked : 1;
+
+  
   bool mHasTrackingCookiesBlocked : 1;
+
+  
+  bool mHasForeignCookiesBlocked : 1;
+
+  
+  bool mHasCookiesBlockedByPermission : 1;
 
   
   bool mHasTrackingContentLoaded : 1;
