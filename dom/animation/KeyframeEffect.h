@@ -201,12 +201,17 @@ public:
   
   
   
-  bool HasEffectiveAnimationOfProperty(nsCSSPropertyID aProperty) const
+  
+  
+  
+  
+  bool HasEffectiveAnimationOfProperty(nsCSSPropertyID aProperty,
+                                       const EffectSet& aEffect) const
   {
-    return GetEffectiveAnimationOfProperty(aProperty) != nullptr;
+    return GetEffectiveAnimationOfProperty(aProperty, aEffect) != nullptr;
   }
   const AnimationProperty* GetEffectiveAnimationOfProperty(
-    nsCSSPropertyID aProperty) const;
+    nsCSSPropertyID aProperty, const EffectSet& aEffect) const;
 
   
   
