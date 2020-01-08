@@ -146,11 +146,6 @@ UnscaledFontFreeType::CreateScaledFont(Float aGlyphSize,
     
     
     nfr->AddRef();
-    
-    
-    
-    FT_Library library = face->glyph->library;
-    Factory::LockFTLibrary(library);
     cairo_status_t err = CAIRO_STATUS_SUCCESS;
     bool cleanupFace = false;
     if (varFace) {
@@ -168,7 +163,6 @@ UnscaledFontFreeType::CreateScaledFont(Float aGlyphSize,
                                           nfr,
                                           ReleaseNativeFontResource);
     }
-    Factory::UnlockFTLibrary(library);
     if (err != CAIRO_STATUS_SUCCESS) {
       gfxWarning() << "Failed binding NativeFontResource to Cairo font face";
       if (varFace && cleanupFace) {

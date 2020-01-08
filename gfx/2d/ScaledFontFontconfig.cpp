@@ -444,11 +444,6 @@ ScaledFontFontconfig::CreateFromInstanceData(const InstanceData& aInstanceData,
     
     
     aNativeFontResource->AddRef();
-    
-    
-    
-    FT_Library library = face ? face->glyph->library : Factory::GetFTLibrary();
-    Factory::LockFTLibrary(library);
     cairo_status_t err = CAIRO_STATUS_SUCCESS;
     bool cleanupFace = false;
     if (varFace) {
@@ -465,7 +460,6 @@ ScaledFontFontconfig::CreateFromInstanceData(const InstanceData& aInstanceData,
                                           aNativeFontResource,
                                           ReleaseNativeFontResource);
     }
-    Factory::UnlockFTLibrary(library);
     if (err != CAIRO_STATUS_SUCCESS) {
       gfxWarning() << "Failed binding NativeFontResource to Cairo font face";
       if (varFace && cleanupFace) {
