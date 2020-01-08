@@ -2966,8 +2966,6 @@ TEST_P(NewSdpTest, CheckMediaLevelIcePwd) {
 }
 
 TEST_P(NewSdpTest, CheckGroups) {
-  SKIP_TEST_WITH_RUST_PARSER; 
-
   ParseSdp(kBasicAudioVideoOffer);
   const SdpGroupAttributeList& group = mSdp->GetAttributeList().GetGroup();
   const SdpGroupAttributeList::Group& group1 = group.mGroups[0];
