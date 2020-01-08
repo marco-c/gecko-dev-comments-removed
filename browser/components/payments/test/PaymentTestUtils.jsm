@@ -181,6 +181,16 @@ var PaymentTestUtils = {
       EventUtils.synthesizeKey(option.textContent, {}, content.window);
     },
 
+    selectPaymentOptionByGuid: guid => {
+      let doc = content.document;
+      let methodPicker = doc.querySelector("payment-method-picker");
+      let select = Cu.waiveXrays(methodPicker).dropdown.popupBox;
+      let option = select.querySelector(`[guid="${guid}"]`);
+      select.focus();
+      
+      EventUtils.synthesizeKey(option.label, {}, content.window);
+    },
+
     
 
 

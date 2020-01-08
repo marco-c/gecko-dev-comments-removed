@@ -31,7 +31,7 @@ var PaymentDialogUtils = {
     return `${address.name} (${address.guid})`;
   },
 
-  getCreditCardNetworks(address) {
+  getCreditCardNetworks() {
     
     
     return [
