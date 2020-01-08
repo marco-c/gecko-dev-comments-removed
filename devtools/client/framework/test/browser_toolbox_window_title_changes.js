@@ -49,7 +49,7 @@ function test() {
     
       .then(function() {
         const onTitleChanged = waitForTitleChange(toolbox);
-        gBrowser.loadURI(URL_2);
+        BrowserTestUtils.loadURI(gBrowser, URL_2);
         return onTitleChanged;
       })
       .then(checkTitle.bind(null, NAME_2, URL_2, "url changed"))
@@ -57,7 +57,7 @@ function test() {
     
       .then(() => {
         const onTitleChanged = waitForTitleChange(toolbox);
-        gBrowser.loadURI(URL_3);
+        BrowserTestUtils.loadURI(gBrowser, URL_3);
         return onTitleChanged;
       })
       .then(checkTitle.bind(null, NAME_3, URL_3, "url changed"))
