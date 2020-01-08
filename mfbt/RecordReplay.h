@@ -346,9 +346,9 @@ MFBT_API void EndContentParse(const void* aToken);
 
 
 static inline void
-NoteContentParse8(const void* aToken,
-                  const char* aURL, const char* aContentType,
-                  const mozilla::Utf8Unit* aUtf8Buffer, size_t aLength)
+NoteContentParse(const void* aToken,
+                 const char* aURL, const char* aContentType,
+                 const Utf8Unit* aUtf8Buffer, size_t aLength)
 {
   BeginContentParse(aToken, aURL, aContentType);
   AddContentParseData8(aToken, aUtf8Buffer, aLength);
@@ -357,9 +357,9 @@ NoteContentParse8(const void* aToken,
 
 
 static inline void
-NoteContentParse16(const void* aToken,
-                   const char* aURL, const char* aContentType,
-                   const char16_t* aBuffer, size_t aLength)
+NoteContentParse(const void* aToken,
+                 const char* aURL, const char* aContentType,
+                 const char16_t* aBuffer, size_t aLength)
 {
   BeginContentParse(aToken, aURL, aContentType);
   AddContentParseData16(aToken, aBuffer, aLength);

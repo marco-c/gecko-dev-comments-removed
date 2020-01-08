@@ -443,6 +443,13 @@ frontend::SourceAwareCompiler<Unit>::createSourceAndParser(BytecodeCompiler& inf
         return false;
     }
 
+    
+    if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+        mozilla::recordreplay::NoteContentParse(this, info.options.filename(),
+                                                "application/javascript",
+                                                sourceBuffer_.units(), sourceBuffer_.length());
+    }
+
     info.createUsedNames();
 
     if (info.canLazilyParse()) {
