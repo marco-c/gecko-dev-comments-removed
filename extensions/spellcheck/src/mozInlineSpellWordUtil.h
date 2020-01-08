@@ -87,20 +87,22 @@ public:
 
 
 
+
 class MOZ_STACK_CLASS mozInlineSpellWordUtil
 {
 public:
   mozInlineSpellWordUtil()
-    : mIsContentEditableOrDesignMode(false), mRootNode(nullptr),
+    : mRootNode(nullptr),
       mSoftBegin(nullptr, 0), mSoftEnd(nullptr, 0),
       mNextWordIndex(-1), mSoftTextValid(false) {}
 
   nsresult Init(mozilla::TextEditor* aTextEditor);
 
+  nsresult SetEnd(nsINode* aEndNode, int32_t aEndOffset);
+
   
   
-  nsresult SetPositionAndEnd(nsINode* aPositionNode, int32_t aPositionOffset,
-                             nsINode* aEndNode, int32_t aEndOffset);
+  nsresult SetPosition(nsINode* aNode, int32_t aOffset);
 
   
   
@@ -136,7 +138,6 @@ private:
 
   
   nsCOMPtr<nsIDocument>         mDocument;
-  bool mIsContentEditableOrDesignMode;
 
   
   nsINode*    mRootNode;
