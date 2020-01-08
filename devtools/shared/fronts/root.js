@@ -222,20 +222,6 @@ const RootFront = protocol.FrontClassWithSpec(rootSpec, {
 
 
 
-
-  async getAddon({ id }) {
-    const addons = await this.listAddons();
-    const addonTargetFront = addons.find(addon => addon.id === id);
-    return addonTargetFront;
-  },
-
-  
-
-
-
-
-
-
   echo(packet) {
     packet.type = "echo";
     return this.request(packet);

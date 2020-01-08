@@ -62,7 +62,7 @@ function createClientMock() {
       return null;
     },
     
-    listAddons: () => [],
+    listAddons: () => ({ addons: [] }),
     
     listTabs: () => ({ tabs: []}),
     

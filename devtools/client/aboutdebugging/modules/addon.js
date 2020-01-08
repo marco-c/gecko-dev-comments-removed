@@ -25,6 +25,19 @@ exports.isTemporaryID = function(addonID) {
   return AddonManagerPrivate.isTemporaryInstallID(addonID);
 };
 
+exports.isLegacyTemporaryExtension = function(addonForm) {
+  if (!addonForm.type) {
+    
+    
+    
+    return false;
+  }
+  return addonForm.type == "extension" &&
+         addonForm.temporarilyInstalled &&
+         !addonForm.isWebExtension &&
+         !addonForm.isAPIExtension;
+};
+
 
 
 

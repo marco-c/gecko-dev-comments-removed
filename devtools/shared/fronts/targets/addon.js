@@ -6,64 +6,15 @@
 const {addonTargetSpec} = require("devtools/shared/specs/targets/addon");
 const protocol = require("devtools/shared/protocol");
 const {custom} = protocol;
-loader.lazyRequireGetter(this, "BrowsingContextTargetFront", "devtools/shared/fronts/targets/browsing-context", true);
 
 const AddonTargetFront = protocol.FrontClassWithSpec(addonTargetSpec, {
-  initialize: function(client) {
-    protocol.Front.prototype.initialize.call(this, client);
+  initialize: function(client, form) {
+    protocol.Front.prototype.initialize.call(this, client, form);
 
     this.client = client;
 
     this.traits = {};
   },
-
-  form(json) {
-    this.actorID = json.actor;
-
-    
-    
-    this.targetForm = json;
-
-    
-    
-    for (const name in json) {
-      if (name == "actor") {
-        continue;
-      }
-      this[name] = json[name];
-    }
-  },
-
-  isLegacyTemporaryExtension() {
-    if (!this.type) {
-      
-      
-      
-      return false;
-    }
-    return this.type == "extension" &&
-           this.temporarilyInstalled &&
-           !this.isWebExtension &&
-           !this.isAPIExtension;
-  },
-
-  
-
-
-
-
-
-
-
-
-  connect: custom(async function() {
-    const { form } = await this._connect();
-    const front = new BrowsingContextTargetFront(this.client, form);
-    this.manage(front);
-    return front;
-  }, {
-    impl: "_connect",
-  }),
 
   attach: custom(async function() {
     const response = await this._attach();

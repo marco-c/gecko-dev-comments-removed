@@ -562,7 +562,13 @@ Target.prototype = {
         
         
         
-        this.activeTab = await this.activeTab.connect();
+        const {form} = await this._client.request({
+          to: this.form.actor, type: "connect",
+        });
+
+        this._form = form;
+        this._url = this.form.url;
+        this._title = this.form.title;
       }
 
       
@@ -570,11 +576,14 @@ Target.prototype = {
       
       if (this.isBrowsingContext) {
         await attachBrowsingContextTarget();
+      } else if (this.isLegacyAddon) {
+        const [, addonTargetFront] = await this._client.attachAddon(this.form);
+        this.activeTab = addonTargetFront;
 
       
       
       
-      } else if (this.isWorkerTarget || this.isLegacyAddon) {
+      } else if (this.isWorkerTarget) {
         
         
         await this.activeTab.attach();
