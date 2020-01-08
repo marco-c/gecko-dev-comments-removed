@@ -2974,7 +2974,7 @@ void TabChild::ReinitRenderingForDeviceReset() {
 
 NS_IMETHODIMP
 TabChild::OnShowTooltip(int32_t aXCoords, int32_t aYCoords,
-                        const char16_t* aTipText, const char16_t* aTipDir) {
+                        const nsAString& aTipText, const nsAString& aTipDir) {
   nsString str(aTipText);
   nsString dir(aTipDir);
   SendShowTooltip(aXCoords, aYCoords, str, dir);
@@ -3082,14 +3082,14 @@ mozilla::ipc::IPCResult TabChild::RecvSetWidgetNativeData(
 mozilla::ipc::IPCResult TabChild::RecvGetContentBlockingLog(
     GetContentBlockingLogResolver&& aResolve) {
   bool success = false;
-  nsAutoCString result;
+  nsAutoString result;
 
   if (nsCOMPtr<Document> doc = GetDocument()) {
     result = doc->GetContentBlockingLog()->Stringify();
     success = true;
   }
 
-  aResolve(Tuple<const nsCString&, const bool&>(result, success));
+  aResolve(Tuple<const nsString&, const bool&>(result, success));
   return IPC_OK();
 }
 
