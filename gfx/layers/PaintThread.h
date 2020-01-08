@@ -27,6 +27,12 @@ namespace layers {
 
 
 
+
+
+
+
+
+
 class PaintTask {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PaintTask)
 public:
@@ -57,20 +63,25 @@ public:
   static bool IsOnPaintThread();
   bool IsOnPaintWorkerThread();
 
-  void UpdateRenderMode();
-
-  void QueuePaintTask(PaintTask* aTask);
-
   
   void Dispatch(RefPtr<Runnable>& aRunnable);
 
   
   
   
+  void UpdateRenderMode();
+
+  
+  
+  void QueuePaintTask(PaintTask* aTask);
+
   
   
   
-  void EndLayerTransaction(SyncObjectClient* aSyncObject);
+  
+  
+  
+  void QueueEndLayerTransaction(SyncObjectClient* aSyncObject);
 
   
   

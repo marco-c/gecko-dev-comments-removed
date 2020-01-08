@@ -433,7 +433,7 @@ ClientLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
     
     
     if (PaintThread::Get() && mQueuedAsyncPaints) {
-      PaintThread::Get()->EndLayerTransaction(nullptr);
+      PaintThread::Get()->QueueEndLayerTransaction(nullptr);
     }
     return false;
   }
@@ -722,7 +722,7 @@ ClientLayerManager::ForwardTransaction(bool aScheduleComposite)
   
   if (mQueuedAsyncPaints) {
     MOZ_ASSERT(PaintThread::Get());
-    PaintThread::Get()->EndLayerTransaction(syncObject);
+    PaintThread::Get()->QueueEndLayerTransaction(syncObject);
   } else if (syncObject) {
     syncObject->Synchronize();
   }
