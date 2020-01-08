@@ -91,6 +91,20 @@ VARCACHE_PREF(
 
 
 
+
+
+#ifdef FUZZING
+VARCACHE_PREF(
+  "fuzzing.enabled",
+   fuzzing_enabled,
+  bool, false
+)
+#endif
+
+
+
+
+
 #if !defined(ANDROID) && !defined(XP_MACOSX) && defined(XP_UNIX)
 # define PREF_VALUE true
 #else

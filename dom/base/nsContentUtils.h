@@ -216,9 +216,22 @@ public:
   
   static nsresult RemoveWyciwygScheme(nsIURI* aURI, nsIURI** aReturn);
 
-  static bool     IsCallerChrome();
-  static bool     ThreadsafeIsCallerChrome();
-  static bool     IsCallerContentXBL();
+  static bool IsCallerChrome();
+  static bool ThreadsafeIsCallerChrome();
+  static bool IsCallerContentXBL();
+  static bool IsFuzzingEnabled()
+#ifndef FUZZING
+  {
+    return false;
+  }
+#else
+  ;
+#endif
+
+  static bool IsCallerChromeOrFuzzingEnabled(JSContext* aCx, JSObject*)
+  {
+    return ThreadsafeIsSystemCaller(aCx) || IsFuzzingEnabled();
+  }
 
   
   
