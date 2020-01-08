@@ -293,6 +293,10 @@ window.Audit = (function() {
 
 
 
+
+
+
+
     throw() {
       this._processArguments(arguments);
       this._printActualForFailure = false;
@@ -313,17 +317,16 @@ window.Audit = (function() {
           
           didThrowCorrectly = true;
           passDetail = '${actual} threw ' + error.name + errorMessage + '.';
-        } else if (typeof(this._expected) == "string" &&
-                   error instanceof DOMException &&
-                   error.name === this._expected) {
+        } else if (this._expected === DOMException &&
+                   (this._expectedDescription === undefined ||
+                    this._expectedDescription === error.name)) {
           
           didThrowCorrectly = true;
           passDetail = '${actual} threw ${expected}' + errorMessage + '.';
-        } else if (this._expected == error.constructor &&
-                   this._expected.name == error.name) {
+        } else if (this._expected == error.constructor) {
           
           didThrowCorrectly = true;
-          passDetail = '${actual} threw ${expected}' + errorMessage + '.';
+          passDetail = '${actual} threw ' + error.name + errorMessage + '.';
         } else {
           didThrowCorrectly = false;
           failDetail =
