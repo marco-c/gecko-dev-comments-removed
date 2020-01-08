@@ -171,7 +171,7 @@ pref("dom.enable_performance_navigation_timing", true);
 pref("dom.performance.enable_notify_performance_timing", false);
 
 
-pref("dom.performance.enable_scheduler_timing", true);
+pref("dom.performance.enable_scheduler_timing", false);
 
 
 pref("dom.permissions.revoke.enable", false);
@@ -3282,7 +3282,11 @@ pref("dom.ipc.plugins.asyncdrawing.enabled", true);
 pref("dom.ipc.plugins.forcedirect.enabled", true);
 
 
+#if defined(NIGHTLY_BUILD)
+pref("dom.ipc.processCount", 8);
+#else
 pref("dom.ipc.processCount", 4);
+#endif
 
 
 pref("dom.ipc.processCount.file", 1);
@@ -5072,7 +5076,7 @@ pref("extensions.webextensions.ExtensionStorageIDB.enabled", false);
 #endif
 
 
-pref("extensions.webextensions.enablePerformanceCounters", true);
+pref("extensions.webextensions.enablePerformanceCounters", false);
 
 
 
