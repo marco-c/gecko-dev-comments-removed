@@ -342,6 +342,8 @@ class FlexboxInspector {
       this.highlighters.showFlexboxHighlighter(flexbox.flexContainer.nodeFront);
     }
 
+    this._overlayColor = color;
+
     const currentUrl = this.inspector.target.url;
     
     
