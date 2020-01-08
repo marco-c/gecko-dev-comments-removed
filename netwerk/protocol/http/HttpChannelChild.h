@@ -186,7 +186,13 @@ protected:
 
   nsresult
   AsyncCall(void (HttpChannelChild::*funcPtr)(),
-            nsRunnableMethod<HttpChannelChild> **retval = nullptr) override;
+            nsRunnableMethod<HttpChannelChild> **retval = nullptr) override {
+    
+    
+    
+    
+    return AsyncCallImpl(funcPtr, retval);
+  };
 
   
   already_AddRefed<nsIEventTarget> GetNeckoTarget() override;
@@ -195,6 +201,9 @@ protected:
   NS_IMETHOD LogBlockedCORSRequest(const nsAString & aMessage, const nsACString& aCategory) override;
 
 private:
+  nsresult
+  AsyncCallImpl(void (HttpChannelChild::*funcPtr)(),
+                nsRunnableMethod<HttpChannelChild> **retval);
 
   class OverrideRunnable : public Runnable {
   public:
