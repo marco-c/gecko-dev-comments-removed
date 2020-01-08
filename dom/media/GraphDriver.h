@@ -263,8 +263,7 @@ public:
 
   void RunThread();
   friend class MediaStreamGraphInitThreadRunnable;
-  uint32_t IterationDuration() override
-  {
+  uint32_t IterationDuration() override {
     return MEDIA_GRAPH_TARGET_PERIOD_MS;
   }
 
@@ -400,7 +399,8 @@ class AudioCallbackDriver : public GraphDriver,
 #endif
 {
 public:
-  explicit AudioCallbackDriver(MediaStreamGraphImpl* aGraphImpl);
+  
+  AudioCallbackDriver(MediaStreamGraphImpl* aGraphImpl, uint32_t aInputChannelCount);
   virtual ~AudioCallbackDriver();
 
   void Start() override;
@@ -418,15 +418,16 @@ public:
                              const void * aInputBuffer,
                              void * aOutputBuffer,
                              long aFrames);
-  static void StateCallback_s(cubeb_stream* aStream, void * aUser,
-                              cubeb_state aState);
+  static void StateCallback_s(cubeb_stream* aStream, void * aUser, cubeb_state aState);
   static void DeviceChangedCallback_s(void * aUser);
   
 
 
 
 
-  long DataCallback(const AudioDataValue* aInputBuffer, AudioDataValue* aOutputBuffer, long aFrames);
+  long DataCallback(const AudioDataValue* aInputBuffer,
+                    AudioDataValue* aOutputBuffer,
+                    long aFrames);
   
 
   void StateCallback(cubeb_state aState);
@@ -463,6 +464,11 @@ public:
     return mOutputChannels;
   }
 
+  uint32_t InputChannelCount()
+  {
+    return mInputChannelCount;
+  }
+
   
 
   void EnqueueStreamAndPromiseForOperation(MediaStream* aStream,
@@ -482,10 +488,6 @@ public:
   
 
   bool IsStarted();
-
-  
-
-  void SetMicrophoneActive(bool aActive);
 
   void CompleteAudioContextOperations(AsyncCubebOperation aOperation);
 
@@ -538,7 +540,7 @@ private:
   uint32_t mSampleRate;
   
 
-  uint32_t mInputChannels;
+  const uint32_t mInputChannelCount;
   
 
 
@@ -558,8 +560,6 @@ private:
 
 
   Atomic<bool> mStarted;
-  
-  RefPtr<AudioDataListener> mAudioInput;
 
   struct AutoInCallback
   {
@@ -585,10 +585,6 @@ private:
   
 
   Atomic<bool> mAudioThreadRunning;
-  
-
-
-  Atomic<bool> mMicrophoneActive;
   
 
 
