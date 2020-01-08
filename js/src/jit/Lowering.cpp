@@ -4636,11 +4636,6 @@ LIRGenerator::visitWasmAddOffset(MWasmAddOffset* ins)
 void
 LIRGenerator::visitWasmLoadTls(MWasmLoadTls* ins)
 {
-#ifdef WASM_HUGE_MEMORY
-    
-    
-    MOZ_CRASH("No WasmLoadTls here at the moment");
-#endif
     auto* lir = new(alloc()) LWasmLoadTls(useRegisterAtStart(ins->tlsPtr()));
     define(lir, ins);
 }

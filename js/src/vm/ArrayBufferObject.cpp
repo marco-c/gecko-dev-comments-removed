@@ -935,47 +935,13 @@ js::CreateWasmBuffer(JSContext* cx, const wasm::Limits& memory,
 
 
  bool
-ArrayBufferObject::prepareForAsmJS(JSContext* cx, Handle<ArrayBufferObject*> buffer, bool needGuard)
+ArrayBufferObject::prepareForAsmJS(JSContext* cx, Handle<ArrayBufferObject*> buffer)
 {
-#ifdef WASM_HUGE_MEMORY
-    MOZ_ASSERT(needGuard);
-#endif
     MOZ_ASSERT(buffer->byteLength() % wasm::PageSize == 0);
     MOZ_RELEASE_ASSERT(wasm::HaveSignalHandlers());
 
     if (buffer->forInlineTypedObject()) {
         return false;
-    }
-
-    if (needGuard) {
-        if (buffer->isWasm() && buffer->isPreparedForAsmJS()) {
-            return true;
-        }
-
-        
-        
-        
-        if (buffer->isWasm() || buffer->isPreparedForAsmJS()) {
-            return false;
-        }
-
-        uint32_t length = buffer->byteLength();
-        WasmArrayRawBuffer* wasmBuf = WasmArrayRawBuffer::Allocate(length, Some(length));
-        if (!wasmBuf) {
-            ReportOutOfMemory(cx);
-            return false;
-        }
-
-        void* data = wasmBuf->dataPointer();
-        memcpy(data, buffer->dataPointer(), length);
-
-        
-        
-        buffer->changeContents(cx, BufferContents::create<WASM>(data), OwnsData);
-        buffer->setIsPreparedForAsmJS();
-        MOZ_ASSERT(data == buffer->dataPointer());
-        cx->updateMallocCounter(wasmBuf->mappedSize());
-        return true;
     }
 
     if (!buffer->isWasm() && buffer->isPreparedForAsmJS()) {
@@ -1210,6 +1176,18 @@ ArrayBufferObjectMaybeShared::wasmBoundsCheckLimit() const
         return as<ArrayBufferObject>().wasmBoundsCheckLimit();
     }
     return as<SharedArrayBufferObject>().wasmBoundsCheckLimit();
+}
+#else
+uint32_t
+ArrayBufferObject::wasmBoundsCheckLimit() const
+{
+    return byteLength();
+}
+
+uint32_t
+ArrayBufferObjectMaybeShared::wasmBoundsCheckLimit() const
+{
+    return byteLength();
 }
 #endif
 

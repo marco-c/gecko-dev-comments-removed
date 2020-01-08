@@ -1499,12 +1499,11 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     
-    
     void wasmBoundsCheck(Condition cond, Register index, Register boundsCheckLimit, Label* label)
-        DEFINED_ON(arm, arm64, mips32, mips64, x86);
+        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
     void wasmBoundsCheck(Condition cond, Register index, Address boundsCheckLimit, Label* label)
-        DEFINED_ON(arm, arm64, mips32, mips64, x86);
+        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
     
     void wasmLoad(const wasm::MemoryAccessDesc& access, Operand srcAddr, AnyRegister out) DEFINED_ON(x86, x64);

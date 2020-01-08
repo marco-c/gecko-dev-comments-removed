@@ -195,32 +195,6 @@ AnalyzeLoadUnboxedScalar(MLoadUnboxedScalar* load)
 }
 
 template<typename AsmJSMemoryAccess>
-bool
-EffectiveAddressAnalysis::tryAddDisplacement(AsmJSMemoryAccess* ins, int32_t o)
-{
-#ifdef WASM_HUGE_MEMORY
-    
-    uint32_t oldOffset = ins->offset();
-    uint32_t newOffset = oldOffset + o;
-    if (o < 0 ? (newOffset >= oldOffset) : (newOffset < oldOffset)) {
-        return false;
-    }
-
-    
-    
-    if (newOffset >= wasm::OffsetGuardLimit) {
-        return false;
-    }
-
-    
-    ins->setOffset(newOffset);
-    return true;
-#else
-    return false;
-#endif
-}
-
-template<typename AsmJSMemoryAccess>
 void
 EffectiveAddressAnalysis::analyzeAsmJSHeapAccess(AsmJSMemoryAccess* ins)
 {
@@ -229,37 +203,11 @@ EffectiveAddressAnalysis::analyzeAsmJSHeapAccess(AsmJSMemoryAccess* ins)
     if (base->isConstant()) {
         
         
-        
-        
-        
         int32_t imm = base->toConstant()->toInt32();
-        if (imm != 0 && tryAddDisplacement(ins, imm)) {
-            MInstruction* zero = MConstant::New(graph_.alloc(), Int32Value(0));
-            ins->block()->insertBefore(ins, zero);
-            ins->replaceBase(zero);
-        }
-
-        
-        
         if (imm >= 0) {
             int32_t end = (uint32_t)imm + ins->byteSize();
             if (end >= imm && (uint32_t)end <= mir_->minWasmHeapLength()) {
                  ins->removeBoundsCheck();
-            }
-        }
-    } else if (base->isAdd()) {
-        
-        
-        
-        MDefinition* op0 = base->toAdd()->getOperand(0);
-        MDefinition* op1 = base->toAdd()->getOperand(1);
-        if (op0->isConstant()) {
-            mozilla::Swap(op0, op1);
-        }
-        if (op1->isConstant()) {
-            int32_t imm = op1->toConstant()->toInt32();
-            if (tryAddDisplacement(ins, imm)) {
-                ins->replaceBase(op0);
             }
         }
     }
