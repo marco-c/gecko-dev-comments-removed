@@ -560,14 +560,6 @@ async function checkDeleteAndSelection(inspector, key,
 
 
 
-async function enableWebComponents() {
-  await pushPref("dom.webcomponents.shadowdom.enabled", true);
-  await pushPref("dom.webcomponents.customelements.enabled", true);
-}
-
-
-
-
 function assertContainerSlotted(container) {
   ok(container.isSlotted(), "Container is a slotted container");
   ok(container.elt.querySelector(".reveal-link"),

@@ -226,8 +226,8 @@ CssLogic.prototype = {
     this.reset();
 
     
-    Array.prototype.forEach.call(this.viewedDocument.styleSheets,
-        this._cacheSheet, this);
+    const styleSheets = InspectorUtils.getAllStyleSheets(this.viewedDocument, true);
+    Array.prototype.forEach.call(styleSheets, this._cacheSheet, this);
 
     this._sheetsCached = true;
   },
