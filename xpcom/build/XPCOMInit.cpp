@@ -367,7 +367,7 @@ private:
 
 NS_IMPL_ISUPPORTS(ICUReporter, nsIMemoryReporter)
 
- template<> Atomic<size_t>
+ template<> CountingAllocatorBase<ICUReporter>::AmountType
 CountingAllocatorBase<ICUReporter>::sAmount(0);
 
 class OggReporter final
@@ -395,7 +395,7 @@ private:
 
 NS_IMPL_ISUPPORTS(OggReporter, nsIMemoryReporter)
 
- template<> Atomic<size_t>
+ template<> CountingAllocatorBase<OggReporter>::AmountType
 CountingAllocatorBase<OggReporter>::sAmount(0);
 
 #ifdef MOZ_VPX

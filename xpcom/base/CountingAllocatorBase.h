@@ -129,7 +129,9 @@ public:
 private:
   
   
-  static Atomic<size_t> sAmount;
+  
+  typedef Atomic<size_t, SequentiallyConsistent, recordreplay::Behavior::DontPreserve> AmountType;
+  static AmountType sAmount;
 
   MOZ_DEFINE_MALLOC_SIZE_OF_ON_ALLOC(MallocSizeOfOnAlloc)
   MOZ_DEFINE_MALLOC_SIZE_OF_ON_FREE(MallocSizeOfOnFree)
