@@ -220,85 +220,111 @@ HTMLEditor::GetZIndex(Element& aElement)
   return zIndexStr.ToInteger(&errorCode);
 }
 
-ManualNACPtr
-HTMLEditor::CreateGrabber(nsIContent& aParentContent)
+bool
+HTMLEditor::CreateGrabberInternal(nsIContent& aParentContent)
 {
-  
-  ManualNACPtr grabber =
-    CreateAnonymousElement(nsGkAtoms::span, aParentContent,
-                           NS_LITERAL_STRING("mozGrabber"), false);
-  if (NS_WARN_IF(!grabber)) {
-    return nullptr;
+  if (NS_WARN_IF(mGrabber)) {
+    return false;
   }
 
+  mGrabber = CreateAnonymousElement(nsGkAtoms::span, aParentContent,
+                                    NS_LITERAL_STRING("mozGrabber"), false);
+
   
+  
+  if (NS_WARN_IF(!mGrabber)) {
+    return false;
+  }
+
   EventListenerManager* eventListenerManager =
-    grabber->GetOrCreateListenerManager();
+    mGrabber->GetOrCreateListenerManager();
   eventListenerManager->AddEventListenerByType(
                           mEventListener,
                           NS_LITERAL_STRING("mousedown"),
                           TrustedEventsAtSystemGroupBubble());
-  return grabber;
+  MOZ_ASSERT(mGrabber);
+  return true;
 }
 
 NS_IMETHODIMP
 HTMLEditor::RefreshGrabber()
 {
-  NS_ENSURE_TRUE(mAbsolutelyPositionedObject, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(!mAbsolutelyPositionedObject)) {
+    return NS_ERROR_FAILURE;
+  }
 
-  nsresult rv =
-    GetPositionAndDimensions(
-      *mAbsolutelyPositionedObject,
-      mPositionedObjectX,
-      mPositionedObjectY,
-      mPositionedObjectWidth,
-      mPositionedObjectHeight,
-      mPositionedObjectBorderLeft,
-      mPositionedObjectBorderTop,
-      mPositionedObjectMarginLeft,
-      mPositionedObjectMarginTop);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsresult rv = RefreshGrabberInternal();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
 
-  SetAnonymousElementPosition(mPositionedObjectX+12,
-                              mPositionedObjectY-14,
+nsresult
+HTMLEditor::RefreshGrabberInternal()
+{
+  if (!mAbsolutelyPositionedObject) {
+    return NS_OK;
+  }
+  nsresult rv = GetPositionAndDimensions(*mAbsolutelyPositionedObject,
+                                         mPositionedObjectX,
+                                         mPositionedObjectY,
+                                         mPositionedObjectWidth,
+                                         mPositionedObjectHeight,
+                                         mPositionedObjectBorderLeft,
+                                         mPositionedObjectBorderTop,
+                                         mPositionedObjectMarginLeft,
+                                         mPositionedObjectMarginTop);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  SetAnonymousElementPosition(mPositionedObjectX + 12,
+                              mPositionedObjectY - 14,
                               mGrabber);
   return NS_OK;
 }
 
 void
-HTMLEditor::HideGrabber()
+HTMLEditor::HideGrabberInternal()
 {
-  nsresult rv = mAbsolutelyPositionedObject->UnsetAttr(kNameSpaceID_None,
-                                                       nsGkAtoms::_moz_abspos,
-                                                       true);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  mAbsolutelyPositionedObject = nullptr;
-  if (NS_WARN_IF(!mGrabber)) {
+  if (NS_WARN_IF(!mAbsolutelyPositionedObject)) {
     return;
   }
 
   
-  nsCOMPtr<nsIPresShell> ps = GetPresShell();
   
-  
-  
+  RefPtr<Element> absolutePositioningObject =
+    std::move(mAbsolutelyPositionedObject);
+  ManualNACPtr grabber = std::move(mGrabber);
+  ManualNACPtr positioningShadow = std::move(mPositioningShadow);
 
-  DeleteRefToAnonymousNode(std::move(mGrabber), ps);
-  DeleteRefToAnonymousNode(std::move(mPositioningShadow), ps);
+  DebugOnly<nsresult> rv =
+    absolutePositioningObject->UnsetAttr(kNameSpaceID_None,
+                                         nsGkAtoms::_moz_abspos,
+                                         true);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to unset the attribute");
+
+  
+  
+  
+  nsCOMPtr<nsIPresShell> presShell = GetPresShell();
+  if (grabber) {
+    DeleteRefToAnonymousNode(std::move(grabber), presShell);
+  }
+  if (positioningShadow) {
+    DeleteRefToAnonymousNode(std::move(positioningShadow), presShell);
+  }
 }
 
 nsresult
-HTMLEditor::ShowGrabber(Element& aElement)
+HTMLEditor::ShowGrabberInternal(Element& aElement)
 {
   if (NS_WARN_IF(!IsDescendantOfEditorRoot(&aElement))) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  if (mGrabber) {
-    NS_ERROR("call HideGrabber first");
+  if (NS_WARN_IF(mGrabber)) {
     return NS_ERROR_UNEXPECTED;
   }
 
@@ -311,7 +337,6 @@ HTMLEditor::ShowGrabber(Element& aElement)
                         classValue, true);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
   mAbsolutelyPositionedObject = &aElement;
 
   nsIContent* parentContent = aElement.GetParent();
@@ -319,13 +344,22 @@ HTMLEditor::ShowGrabber(Element& aElement)
     return NS_ERROR_FAILURE;
   }
 
-  mGrabber = CreateGrabber(*parentContent);
-  NS_ENSURE_TRUE(mGrabber, NS_ERROR_FAILURE);
+  if (NS_WARN_IF(!CreateGrabberInternal(*parentContent))) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  MOZ_ASSERT(mAbsolutelyPositionedObject);
 
   mHasShownGrabber = true;
 
   
-  return RefreshGrabber();
+  rv = RefreshGrabberInternal();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 nsresult
@@ -446,8 +480,11 @@ HTMLEditor::SetFinalPosition(int32_t aX,
   
   AutoPlaceholderBatch batchIt(this);
 
-  nsCOMPtr<Element> absolutelyPositionedObject = mAbsolutelyPositionedObject;
-  NS_ENSURE_STATE(absolutelyPositionedObject);
+  if (NS_WARN_IF(!mAbsolutelyPositionedObject)) {
+    return NS_ERROR_FAILURE;
+  }
+  OwningNonNull<Element> absolutelyPositionedObject =
+    *mAbsolutelyPositionedObject;
   mCSSEditUtils->SetCSSPropertyPixels(*absolutelyPositionedObject,
                                       *nsGkAtoms::top, newY);
   mCSSEditUtils->SetCSSPropertyPixels(*absolutelyPositionedObject,

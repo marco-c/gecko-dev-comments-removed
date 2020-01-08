@@ -1871,14 +1871,29 @@ protected:
 
 
 
-  nsresult ShowGrabber(Element& aElement);
+  nsresult ShowGrabberInternal(Element& aElement);
 
   
 
 
-  void HideGrabber();
 
-  ManualNACPtr CreateGrabber(nsIContent& aParentContent);
+
+
+  nsresult RefreshGrabberInternal();
+
+  
+
+
+  void HideGrabberInternal();
+
+  
+
+
+
+
+
+  bool CreateGrabberInternal(nsIContent& aParentContent);
+
   nsresult StartMoving();
   nsresult SetFinalPosition(int32_t aX, int32_t aY);
   void AddPositioningOffset(int32_t& aX, int32_t& aY);
@@ -2051,7 +2066,7 @@ protected:
   int32_t mPositionedObjectBorderLeft;
   int32_t mPositionedObjectBorderTop;
 
-  nsCOMPtr<Element> mAbsolutelyPositionedObject;
+  RefPtr<Element> mAbsolutelyPositionedObject;
   ManualNACPtr mGrabber;
   ManualNACPtr mPositioningShadow;
 
