@@ -41,8 +41,7 @@ nsresult Set(const nsACString& aName, JS::HandleValue aVal, JSContext* aCx);
 nsresult SetMaximum(const nsACString& aName, JS::HandleValue aVal, JSContext* aCx);
 nsresult CreateSnapshots(unsigned int aDataset, bool aClearScalars,
                          JSContext* aCx, uint8_t optional_argc,
-                         JS::MutableHandle<JS::Value> aResult, bool aFilterTest,
-                         const nsACString& aStoreName);
+                         JS::MutableHandle<JS::Value> aResult, bool aFilterTest=false);
 
 
 nsresult Add(const nsACString& aName, const nsAString& aKey, JS::HandleValue aVal,
@@ -53,8 +52,7 @@ nsresult SetMaximum(const nsACString& aName, const nsAString& aKey, JS::HandleVa
                     JSContext* aCx);
 nsresult CreateKeyedSnapshots(unsigned int aDataset, bool aClearScalars,
                               JSContext* aCx, uint8_t optional_argc,
-                              JS::MutableHandle<JS::Value> aResult, bool aFilterTest,
-                              const nsACString& aStoreName);
+                              JS::MutableHandle<JS::Value> aResult, bool aFilterTest=false);
 
 
 void Add(mozilla::Telemetry::ScalarID aId, uint32_t aValue);
