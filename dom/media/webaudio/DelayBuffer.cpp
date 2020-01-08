@@ -71,8 +71,8 @@ DelayBuffer::Read(const double aPerFrameDelays[WEBAUDIO_BLOCK_SIZE],
   }
 
   
-  int oldestChunk = ChunkForDelay(int(maxDelay) + 1);
-  int youngestChunk = ChunkForDelay(minDelay);
+  int oldestChunk = ChunkForDelay(std::ceil(maxDelay));
+  int youngestChunk = ChunkForDelay(std::floor(minDelay));
 
   uint32_t channelCount = 0;
   for (int i = oldestChunk; true; i = (i + 1) % chunkCount) {
@@ -148,7 +148,10 @@ DelayBuffer::ReadChannels(const double aPerFrameDelays[WEBAUDIO_BLOCK_SIZE],
       int readChunk = ChunkForPosition(positions[tick]);
       
       
-      if (!mChunks[readChunk].IsNull()) {
+      
+      
+      
+      if (interpolationFactor != 0.0 && !mChunks[readChunk].IsNull()) {
         int readOffset = OffsetForPosition(positions[tick]);
         UpdateUpmixChannels(readChunk, totalChannelCount,
                             aChannelInterpretation);
