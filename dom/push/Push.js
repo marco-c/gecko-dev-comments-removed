@@ -180,7 +180,6 @@ Push.prototype = {
     
     let type = {
       type: "desktop-notification",
-      access: null,
       options: [],
       QueryInterface: ChromeUtils.generateQI([Ci.nsIContentPermissionType]),
     };

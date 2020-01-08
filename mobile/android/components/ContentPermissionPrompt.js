@@ -17,12 +17,6 @@ const kEntities = {
   "geolocation": "geolocation",
 };
 
-
-const PROMPT_FOR_UNKNOWN = [
-  "desktop-notification",
-  "geolocation",
-];
-
 function ContentPermissionPrompt() {}
 
 ContentPermissionPrompt.prototype = {
@@ -30,7 +24,7 @@ ContentPermissionPrompt.prototype = {
 
   QueryInterface: ChromeUtils.generateQI([Ci.nsIContentPermissionPrompt]),
 
-  handleExistingPermission: function handleExistingPermission(request, type, denyUnknown, callback) {
+  handleExistingPermission: function handleExistingPermission(request, type, isApp, callback) {
     let result = Services.perms.testExactPermissionFromPrincipal(request.principal, type);
     if (result == Ci.nsIPermissionManager.ALLOW_ACTION) {
       callback( true);
@@ -42,7 +36,7 @@ ContentPermissionPrompt.prototype = {
       return true;
     }
 
-    if (denyUnknown && result == Ci.nsIPermissionManager.UNKNOWN_ACTION) {
+    if (isApp && result == Ci.nsIPermissionManager.UNKNOWN_ACTION) {
       callback( false);
       return true;
     }
@@ -92,10 +86,7 @@ ContentPermissionPrompt.prototype = {
     };
 
     
-    let access = (perm.access && perm.access !== "unused") ?
-                 (perm.type + "-" + perm.access) : perm.type;
-    if (this.handleExistingPermission(request, access,
-           isApp || !PROMPT_FOR_UNKNOWN.includes(perm.type), callback)) {
+    if (this.handleExistingPermission(request, perm.type, isApp, callback)) {
        return;
     }
 
@@ -107,7 +98,7 @@ ContentPermissionPrompt.prototype = {
       callback: function(aChecked) {
         
         if (aChecked || entityName == "desktopNotification2")
-          Services.perms.addFromPrincipal(request.principal, access, Ci.nsIPermissionManager.DENY_ACTION);
+          Services.perms.addFromPrincipal(request.principal, perm.type, Ci.nsIPermissionManager.DENY_ACTION);
 
         callback( false);
       },
@@ -117,10 +108,10 @@ ContentPermissionPrompt.prototype = {
       callback: function(aChecked) {
         
         if (aChecked || entityName == "desktopNotification2") {
-          Services.perms.addFromPrincipal(request.principal, access, Ci.nsIPermissionManager.ALLOW_ACTION);
+          Services.perms.addFromPrincipal(request.principal, perm.type, Ci.nsIPermissionManager.ALLOW_ACTION);
         } else if (isApp) {
           
-          Services.perms.addFromPrincipal(request.principal, access, Ci.nsIPermissionManager.ALLOW_ACTION, Ci.nsIPermissionManager.EXPIRE_SESSION);
+          Services.perms.addFromPrincipal(request.principal, perm.type, Ci.nsIPermissionManager.ALLOW_ACTION, Ci.nsIPermissionManager.EXPIRE_SESSION);
         }
 
         callback( true);
