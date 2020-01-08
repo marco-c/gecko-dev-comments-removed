@@ -40,15 +40,6 @@ public:
                                            uint32_t aBitDepth,
                                            TextureFlags aTextureFlags);
 
-  
-  
-  
-  static BufferTextureData* CreateForYCbCrWithBufferSize(KnowsCompositor* aAllocator,
-                                                         int32_t aSize,
-                                                         YUVColorSpace aYUVColorSpace,
-                                                         uint32_t aBitDepth,
-                                                         TextureFlags aTextureFlags);
-
   virtual bool Lock(OpenMode aMode) override { return true; }
 
   virtual void Unlock() override {}

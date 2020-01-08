@@ -380,16 +380,6 @@ public:
                            TextureAllocationFlags flags = ALLOC_DEFAULT);
 
   
-  
-  
-  static already_AddRefed<TextureClient>
-  CreateForYCbCrWithBufferSize(KnowsCompositor* aAllocator,
-                               size_t aSize,
-                               YUVColorSpace aYUVColorSpace,
-                               uint32_t aBitDepth,
-                               TextureFlags aTextureFlags);
-
-  
   already_AddRefed<TextureClient>
   CreateSimilar(LayersBackend aLayersBackend = LayersBackend::LAYERS_NONE,
                 TextureFlags aFlags = TextureFlags::DEFAULT,
