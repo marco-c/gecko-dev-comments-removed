@@ -1129,6 +1129,15 @@ public:
   
 
 
+
+
+  const DisplayItemClipChain* FuseClipChainUpTo(
+    const DisplayItemClipChain* aClipChain,
+    const ActiveScrolledRoot* aASR);
+
+  
+
+
   void SetActiveScrolledRootForRootScrollframe(const ActiveScrolledRoot* aASR)
   {
     mActiveScrolledRootForRootScrollframe = aASR;
