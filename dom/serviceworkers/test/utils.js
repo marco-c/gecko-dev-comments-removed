@@ -61,6 +61,24 @@ function createIframeAndWaitForMessage(url) {
   });
 }
 
+
+
+
+
+
+
+
+function createNestedIframeAndWaitForMessage(url) {
+  const iframe = document.getElementsByTagName('iframe')[0];
+  iframe.contentWindow.postMessage("create nested iframe", "*");
+  return new Promise((resolve) => {
+    window.addEventListener(
+      'message',
+      (event) => { resolve(event.data); },
+      { once: true });
+  });
+}
+
 async function unregisterAll() {
   const registrations = await navigator.serviceWorker.getRegistrations();
   for (const reg of registrations) {
