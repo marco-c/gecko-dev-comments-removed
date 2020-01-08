@@ -1624,7 +1624,7 @@ pref("network.tickle-wifi.duration", 400);
 pref("network.tickle-wifi.delay", 16);
 
 
-pref("network.disable.ipc.security", false);
+pref("network.disable.ipc.security", true);
 
 
 pref("network.protocol-handler.external-default", true);      
@@ -5295,16 +5295,6 @@ pref("dom.idle-observers-api.fuzz_time.disabled", true);
 
 
 pref("io.activity.enabled", false);
-
-
-
-
-
-
-
-
-
-pref("io.activity.intervalMilliseconds", 0);
 
 
 
