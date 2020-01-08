@@ -9171,7 +9171,7 @@ nsLayoutUtils::ComputeScrollMetadata(nsIFrame* aForFrame,
                                      const nsRect& aViewport,
                                      const Maybe<nsRect>& aClipRect,
                                      bool aIsRootContent,
-                                     const ContainerLayerParameters& aContainerParameters)
+                                     const Maybe<ContainerLayerParameters>& aContainerParameters)
 {
   nsPresContext* presContext = aForFrame->PresContext();
   int32_t auPerDevPixel = presContext->AppUnitsPerDevPixel();
@@ -9334,7 +9334,12 @@ nsLayoutUtils::ComputeScrollMetadata(nsIFrame* aForFrame,
   
   
   
-  metrics.SetCumulativeResolution(aContainerParameters.Scale());
+  
+  
+  
+  metrics.SetCumulativeResolution(aContainerParameters
+      ? aContainerParameters->Scale()
+      : LayoutDeviceToLayerScale2D(LayoutDeviceToLayerScale(presShell->GetCumulativeResolution())));
 
   LayoutDeviceToScreenScale2D resolutionToScreen(
       presShell->GetCumulativeResolution()
@@ -9502,7 +9507,7 @@ nsLayoutUtils::GetRootMetadata(nsDisplayListBuilder* aBuilder,
                            rootScrollFrame, content,
                            aBuilder->FindReferenceFrameFor(frame),
                            aLayerManager, FrameMetrics::NULL_SCROLL_ID, viewport, Nothing(),
-                           isRootContent, aContainerParameters));
+                           isRootContent, Some(aContainerParameters)));
   }
 
   return Nothing();

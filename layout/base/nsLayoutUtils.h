@@ -2902,7 +2902,7 @@ public:
                                               const nsRect& aViewport,
                                               const mozilla::Maybe<nsRect>& aClipRect,
                                               bool aIsRoot,
-                                              const ContainerLayerParameters& aContainerParameters);
+                                              const mozilla::Maybe<ContainerLayerParameters>& aContainerParameters);
 
   
 
