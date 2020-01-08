@@ -1021,15 +1021,6 @@ XULDocument::AddElementToDocumentPre(Element* aElement)
 
     
     
-    
-    if (aElement->AttrValueIs(kNameSpaceID_None, nsGkAtoms::commandupdater,
-                              nsGkAtoms::_true, eCaseMatters)) {
-        rv = nsXULContentUtils::SetCommandUpdater(this, aElement);
-        if (NS_FAILED(rv)) return rv;
-    }
-
-    
-    
     bool listener, resolved;
     rv = CheckBroadcasterHookup(aElement, &listener, &resolved);
     if (NS_FAILED(rv)) return rv;
@@ -1127,14 +1118,6 @@ XULDocument::RemoveSubtreeFromDocument(nsIContent* aContent)
 
     
     
-    if (aElement->AttrValueIs(kNameSpaceID_None, nsGkAtoms::commandupdater,
-                              nsGkAtoms::_true, eCaseMatters)) {
-        rv = mCommandDispatcher->RemoveCommandUpdater(aElement);
-        if (NS_FAILED(rv)) return rv;
-    }
-
-    
-    
     nsCOMPtr<Element> broadcaster, listener;
     nsAutoString attribute, broadcasterID;
     rv = FindBroadcaster(aElement, getter_AddRefs(listener),
@@ -1152,7 +1135,8 @@ XULDocument::RemoveSubtreeFromDocument(nsIContent* aContent)
 
 
 nsresult
-XULDocument::Clone(mozilla::dom::NodeInfo* aNodeInfo, nsINode** aResult) const
+XULDocument::Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,
+                   bool aPreallocateChildren) const
 {
     
     *aResult = nullptr;
