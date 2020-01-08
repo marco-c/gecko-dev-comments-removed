@@ -19,6 +19,7 @@ window {
 
 .inspector-responsive-container {
   height: 100vh;
+  overflow: hidden;
 }
 
 
