@@ -392,6 +392,11 @@ private:
                                       nsINode** aClosestAncestor,
                                       nsINode** aFarthestAncestor);
 
+  
+
+
+  bool CanAccess(const nsINode&) const;
+
 public:
   
 
