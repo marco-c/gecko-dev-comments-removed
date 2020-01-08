@@ -8702,25 +8702,25 @@ void Document::ScrollToRef() {
     }
 
     if (NS_FAILED(rv)) {
-      char* tmpstr = ToNewCString(mScrollToRef);
-      if (!tmpstr) {
-        return;
-      }
-      nsUnescape(tmpstr);
-      nsAutoCString unescapedRef;
-      unescapedRef.Assign(tmpstr);
-      free(tmpstr);
+      nsAutoCString buff;
+      const bool unescaped =
+          NS_UnescapeURL(mScrollToRef.BeginReading(), mScrollToRef.Length(),
+                         0, buff);
 
-      NS_ConvertUTF8toUTF16 utf16Str(unescapedRef);
-      if (!utf16Str.IsEmpty()) {
-        rv = shell->GoToAnchor(utf16Str, mChangeScrollPosWhenScrollingToRef);
+      
+      if (unescaped) {
+        NS_ConvertUTF8toUTF16 utf16Str(buff);
+        if (!utf16Str.IsEmpty()) {
+          rv = shell->GoToAnchor(utf16Str, mChangeScrollPosWhenScrollingToRef);
+        }
       }
 
       
       
       if (NS_FAILED(rv)) {
         const Encoding* encoding = GetDocumentCharacterSet();
-        rv = encoding->DecodeWithoutBOMHandling(unescapedRef, ref);
+        rv = encoding->DecodeWithoutBOMHandling(
+            unescaped ? buff : mScrollToRef, ref);
         if (NS_SUCCEEDED(rv) && !ref.IsEmpty()) {
           rv = shell->GoToAnchor(ref, mChangeScrollPosWhenScrollingToRef);
         }
