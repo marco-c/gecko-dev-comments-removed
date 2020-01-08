@@ -20,9 +20,8 @@ class DelayBuffer final
 
 public:
   explicit DelayBuffer(double aMaxDelayTicks)
-    : mCurrentDelay(-1.0)
     
-    , mMaxDelayTicks(ceil(aMaxDelayTicks))
+    : mMaxDelayTicks(ceil(aMaxDelayTicks))
     , mCurrentChunk(0)
     
 #ifdef DEBUG
@@ -69,7 +68,6 @@ public:
 
   void Reset() {
     mChunks.Clear();
-    mCurrentDelay = -1.0;
   };
 
   int MaxDelayTicks() const { return mMaxDelayTicks; }
@@ -93,8 +91,6 @@ private:
   FallibleTArray<AudioChunk> mChunks;
   
   AutoTArray<const float*,GUESS_AUDIO_CHANNELS> mUpmixChannels;
-  
-  double mCurrentDelay;
   
   int mMaxDelayTicks;
   
