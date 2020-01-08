@@ -639,7 +639,7 @@ DoGetElemFallback(JSContext* cx, BaselineFrame* frame, ICGetElem_Fallback* stub_
 
 static bool
 DoGetElemSuperFallback(JSContext* cx, BaselineFrame* frame, ICGetElem_Fallback* stub_,
-                       HandleValue lhs, HandleValue receiver, HandleValue rhs,
+                       HandleValue lhs, HandleValue rhs, HandleValue receiver,
                        MutableHandleValue res)
 {
     

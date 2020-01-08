@@ -2125,6 +2125,13 @@ BytecodeEmitter::emitSuperElemOperands(ParseNode* pn, EmitElemOption opts)
     if (!emitGetThisForSuperBase(pn->pn_left))      
         return false;
 
+    if (opts == EmitElemOption::Call) {
+        
+        
+        if (!emit1(JSOP_DUP))                       
+            return false;
+    }
+
     if (!emitTree(pn->pn_right))                    
         return false;
 
@@ -2132,16 +2139,6 @@ BytecodeEmitter::emitSuperElemOperands(ParseNode* pn, EmitElemOption opts)
     
     if (opts == EmitElemOption::IncDec || opts == EmitElemOption::CompoundAssign) {
         if (!emit1(JSOP_TOID))                      
-            return false;
-    }
-
-    if (opts == EmitElemOption::Call) {
-        
-        
-        if (!emitDupAt(1))                          
-            return false;
-    } else {
-        if (!emit1(JSOP_SWAP))                      
             return false;
     }
 
@@ -2232,27 +2229,16 @@ BytecodeEmitter::emitElemIncDec(ParseNode* pn)
         return false;
     if (!emit1(JSOP_POS))                               
         return false;
-    if (post && !emit1(JSOP_DUP))                       
-        return false;
+    if (post) {
+        if (!emit1(JSOP_DUP))                           
+            return false;
+        if (!emit2(JSOP_UNPICK, 3 + isSuper))           
+            return false;
+    }
     if (!emit1(JSOP_ONE))                               
         return false;
     if (!emit1(binop))                                  
         return false;
-
-    if (post) {
-        if (isSuper) {
-            
-            
-            if (!emit2(JSOP_PICK, 4))
-                return false;
-        }
-        if (!emit2(JSOP_PICK, 3 + isSuper))             
-            return false;
-        if (!emit2(JSOP_PICK, 3 + isSuper))             
-            return false;
-        if (!emit2(JSOP_PICK, 2 + isSuper))             
-            return false;
-    }
 
     JSOp setOp = isSuper ? (sc->strict() ? JSOP_STRICTSETELEM_SUPER : JSOP_SETELEM_SUPER)
                          : (sc->strict() ? JSOP_STRICTSETELEM : JSOP_SETELEM);
@@ -6759,10 +6745,10 @@ BytecodeEmitter::emitSelfHostedGetPropertySuper(ParseNode* pn)
     ParseNode* idNode = objNode->pn_next;
     ParseNode* receiverNode = idNode->pn_next;
 
-    if (!emitTree(idNode))
+    if (!emitTree(receiverNode))
         return false;
 
-    if (!emitTree(receiverNode))
+    if (!emitTree(idNode))
         return false;
 
     if (!emitTree(objNode))
