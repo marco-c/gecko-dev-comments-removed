@@ -902,6 +902,19 @@ nsImageBoxFrame::OnFrameUpdate(imgIRequest* aRequest)
     return NS_OK;
   }
 
+  
+  
+  if (HasProperty(WebRenderUserDataProperty::Key())) {
+    uint32_t key = static_cast<uint32_t>(DisplayItemType::TYPE_XUL_IMAGE);
+    RefPtr<WebRenderFallbackData> data =
+      GetWebRenderUserData<WebRenderFallbackData>(this, key);
+    if (data) {
+      data->SetInvalid(true);
+    }
+    SchedulePaint();
+    return NS_OK;
+  }
+
   InvalidateLayer(DisplayItemType::TYPE_XUL_IMAGE);
 
   return NS_OK;
