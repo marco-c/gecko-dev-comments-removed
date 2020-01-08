@@ -3082,9 +3082,6 @@ pref("layout.css.prefixes.box-sizing", true);
 pref("layout.css.prefixes.font-features", true);
 
 
-pref("layout.css.background-blend-mode.enabled", true);
-
-
 
 #ifdef XP_MACOSX
 pref("layout.css.osx-font-smoothing.enabled", true);
