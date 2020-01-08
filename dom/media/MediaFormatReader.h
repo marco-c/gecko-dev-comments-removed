@@ -406,6 +406,9 @@ private:
     RefPtr<TaskQueue> mTaskQueue;
 
     
+    
+    
+    
     Mutex mMutex;
     
     RefPtr<MediaDataDecoder> mDecoder;
@@ -588,6 +591,13 @@ private:
       }
       return mOriginalInfo.get();
     }
+    
+    
+    
+    const TrackInfo* GetWorkingInfo() const
+    {
+      return mWorkingInfo.get();
+    }
     bool IsEncrypted() const
     {
       return GetCurrentInfo()->mCrypto.mValid;
@@ -605,6 +615,9 @@ private:
     Maybe<media::TimeUnit> mLastTimeRangesEnd;
     
     UniquePtr<TrackInfo> mOriginalInfo;
+    
+    
+    UniquePtr<TrackInfo> mWorkingInfo;
     RefPtr<TrackInfoSharedPtr> mInfo;
     Maybe<media::TimeUnit> mFirstDemuxedSampleTime;
     
