@@ -828,34 +828,7 @@ static inline wr::WrFilterOpType ToWrFilterOpType(uint32_t type) {
   return wr::WrFilterOpType::Grayscale;
 }
 
-
-
-
-
-
-struct WrClipId {
-  size_t id;
-
-  bool operator==(const WrClipId& other) const {
-    return id == other.id;
-  }
-
-  bool operator!=(const WrClipId& other) const {
-    return !(*this == other);
-  }
-
-  static WrClipId RootScrollNode();
-
-  
-  
-  
-  struct HashFn {
-    std::size_t operator()(const WrClipId& aKey) const
-    {
-      return std::hash<size_t>{}(aKey.id);
-    }
-  };
-};
+extern WrClipId RootScrollNode();
 
 
 
@@ -911,5 +884,15 @@ static inline wr::SyntheticItalics DegreesToSyntheticItalics(float aDegrees) {
 
 } 
 } 
+
+namespace std
+{
+    template<> struct hash<mozilla::wr::WrClipId>
+    {
+        std::size_t operator()(mozilla::wr::WrClipId const& aKey) const noexcept {
+          return std::hash<size_t>{}(aKey.id);
+        }
+    };
+}
 
 #endif 

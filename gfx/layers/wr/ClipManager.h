@@ -119,8 +119,7 @@ private:
   
   
   std::unordered_map<wr::WrClipId,
-                     std::stack<wr::WrClipId>,
-                     wr::WrClipId::HashFn> mASROverride;
+                     std::stack<wr::WrClipId>> mASROverride;
 
   
   struct ItemClips {
