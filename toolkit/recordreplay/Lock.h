@@ -43,8 +43,11 @@ public:
   
   
   
+  void Enter();
+
   
-  void Enter(const std::function<void()>& aCallback);
+  
+  void Exit();
 
   
   static void New(void* aNativeLock);

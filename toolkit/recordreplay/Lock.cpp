@@ -151,7 +151,7 @@ Lock::Find(void* aNativeLock)
 }
 
 void
-Lock::Enter(const std::function<void()>& aCallback)
+Lock::Enter()
 {
   MOZ_RELEASE_ASSERT(!AreThreadEventsPassedThrough() && !HasDivergedFromRecording());
   MOZ_RELEASE_ASSERT(!AreThreadEventsDisallowed());
@@ -174,9 +174,16 @@ Lock::Enter(const std::function<void()>& aCallback)
     while (thread->Id() != acquires->mNextOwner) {
       Thread::Wait();
     }
+  }
+}
+
+void
+Lock::Exit()
+{
+  if (IsReplaying()) {
     
-    aCallback();
-    acquires->ReadAndNotifyNextOwner(thread);
+    LockAcquires* acquires = gLockAcquires.Get(mId);
+    acquires->ReadAndNotifyNextOwner(Thread::Current());
   }
 }
 
