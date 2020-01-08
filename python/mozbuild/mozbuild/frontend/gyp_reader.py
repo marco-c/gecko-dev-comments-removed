@@ -263,20 +263,24 @@ def process_gyp_result(gyp_result, gyp_dir_attrs, path, config, output,
                     
                     include = '!/' + mozpath.relpath(include, config.topobjdir)
                 else:
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  if include.startswith('/'):
-                      resolved = mozpath.abspath(mozpath.join(config.topsrcdir, include[1:]))
-                  else:
-                      resolved = mozpath.abspath(mozpath.join(mozpath.dirname(build_file), include))
-                  if not os.path.exists(resolved):
-                      continue
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    if include.startswith('/'):
+                        resolved = mozpath.abspath(mozpath.join(config.topsrcdir, include[1:]))
+                    elif not include.startswith(('!', '%')):
+                        resolved = mozpath.abspath(mozpath.join(mozpath.dirname(build_file), include))
+                    if not include.startswith(('!', '%')) and not os.path.exists(resolved):
+                        continue
                 context['LOCAL_INCLUDES'] += [include]
 
             context['ASFLAGS'] = target_conf.get('asflags_mozilla', [])
