@@ -8,61 +8,57 @@ var pref = "browser.fixup.typo.scheme";
 var data = [
   {
     
-    wrong: 'ttp://www.example.com/',
-    fixed: 'http://www.example.com/',
+    wrong: "ttp://www.example.com/",
+    fixed: "http://www.example.com/",
   },
   {
     
-    wrong: 'htp://www.example.com/',
-    fixed: 'http://www.example.com/',
+    wrong: "htp://www.example.com/",
+    fixed: "http://www.example.com/",
   },
   {
     
-    wrong: 'ttps://www.example.com/',
-    fixed: 'https://www.example.com/',
+    wrong: "ttps://www.example.com/",
+    fixed: "https://www.example.com/",
   },
   {
     
-    wrong: 'tps://www.example.com/',
-    fixed: 'https://www.example.com/',
+    wrong: "tps://www.example.com/",
+    fixed: "https://www.example.com/",
   },
   {
     
-    wrong: 'ps://www.example.com/',
-    fixed: 'https://www.example.com/',
+    wrong: "ps://www.example.com/",
+    fixed: "https://www.example.com/",
   },
   {
     
-    wrong: 'htps://www.example.com/',
-    fixed: 'https://www.example.com/',
+    wrong: "htps://www.example.com/",
+    fixed: "https://www.example.com/",
   },
   {
     
-    wrong: 'ile:///this/is/a/test.html',
-    fixed: 'file:///this/is/a/test.html',
+    wrong: "ile:///this/is/a/test.html",
+    fixed: "file:///this/is/a/test.html",
   },
   {
     
-    wrong: 'le:///this/is/a/test.html',
-    fixed: 'file:///this/is/a/test.html',
+    wrong: "le:///this/is/a/test.html",
+    fixed: "file:///this/is/a/test.html",
   },
   {
     
-    wrong: 'https://example.com/this/is/a/test.html',
-    fixed: 'https://example.com/this/is/a/test.html',
+    wrong: "https://example.com/this/is/a/test.html",
+    fixed: "https://example.com/this/is/a/test.html",
   },
   {
     
-    wrong: 'whatever://this/is/a/test.html',
-    fixed: 'whatever://this/is/a/test.html',
+    wrong: "whatever://this/is/a/test.html",
+    fixed: "whatever://this/is/a/test.html",
   },
 ];
 
 var len = data.length;
-
-function run_test() {
-  run_next_test();
-}
 
 
 add_task(function test_unset_pref_fixes_typos() {
@@ -75,7 +71,7 @@ add_task(function test_unset_pref_fixes_typos() {
     Assert.equal(result, item.fixed);
   }
 });
-  
+
 
 
 add_task(function test_false_pref_keeps_typos() {
