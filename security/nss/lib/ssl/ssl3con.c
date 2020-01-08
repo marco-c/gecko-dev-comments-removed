@@ -6398,6 +6398,41 @@ ssl_CheckServerSessionIdCorrectness(sslSocket *ss, SECItem *sidBytes)
     return sidBytes->len == 0;
 }
 
+static SECStatus
+ssl_CheckServerRandom(sslSocket *ss)
+{
+    
+
+
+
+
+
+
+
+
+    SSL3ProtocolVersion checkVersion =
+        ss->ssl3.downgradeCheckVersion ? ss->ssl3.downgradeCheckVersion
+                                       : ss->vrange.max;
+
+    if (checkVersion >= SSL_LIBRARY_VERSION_TLS_1_2 &&
+        checkVersion > ss->version) {
+        
+        PRUint8 *downgrade_sentinel =
+            ss->ssl3.hs.server_random +
+            SSL3_RANDOM_LENGTH - sizeof(tls13_downgrade_random);
+        if (!PORT_Memcmp(downgrade_sentinel,
+                         tls13_downgrade_random,
+                         sizeof(tls13_downgrade_random)) ||
+            !PORT_Memcmp(downgrade_sentinel,
+                         tls12_downgrade_random,
+                         sizeof(tls12_downgrade_random))) {
+            return SECFailure;
+        }
+    }
+
+    return SECSuccess;
+}
+
 
 
 
@@ -6414,9 +6449,6 @@ ssl3_HandleServerHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
     SSL3AlertDescription desc = illegal_parameter;
     const PRUint8 *savedMsg = b;
     const PRUint32 savedLength = length;
-#ifndef TLS_1_3_DRAFT_VERSION
-    SSL3ProtocolVersion downgradeCheckVersion;
-#endif
 
     SSL_TRC(3, ("%d: SSL3[%d]: handle server_hello handshake",
                 SSL_GETPID(), ss->fd));
@@ -6553,39 +6585,19 @@ ssl3_HandleServerHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
         goto alert_loser;
     }
 
-#ifndef TLS_1_3_DRAFT_VERSION
-    
-
-
-
-
-
-
-
-
-
-
-    downgradeCheckVersion = ss->ssl3.downgradeCheckVersion ? ss->ssl3.downgradeCheckVersion
-                                                           : ss->vrange.max;
-
-    if (downgradeCheckVersion >= SSL_LIBRARY_VERSION_TLS_1_2 &&
-        downgradeCheckVersion > ss->version) {
+    if (ss->opt.enableHelloDowngradeCheck
+#ifdef DTLS_1_3_DRAFT_VERSION
         
-        PRUint8 *downgrade_sentinel =
-            ss->ssl3.hs.server_random +
-            SSL3_RANDOM_LENGTH - sizeof(tls13_downgrade_random);
-        if (!PORT_Memcmp(downgrade_sentinel,
-                         tls13_downgrade_random,
-                         sizeof(tls13_downgrade_random)) ||
-            !PORT_Memcmp(downgrade_sentinel,
-                         tls12_downgrade_random,
-                         sizeof(tls12_downgrade_random))) {
+        && !IS_DTLS(ss)
+#endif
+            ) {
+        rv = ssl_CheckServerRandom(ss);
+        if (rv != SECSuccess) {
             desc = illegal_parameter;
             errCode = SSL_ERROR_RX_MALFORMED_SERVER_HELLO;
             goto alert_loser;
         }
     }
-#endif
 
     
     ss->ssl3.hs.preliminaryInfo |= ssl_preinfo_version;
@@ -7426,16 +7438,25 @@ ssl3_CheckFalseStart(sslSocket *ss)
         SSL_TRC(3, ("%d: SSL[%d]: no false start callback so no false start",
                     SSL_GETPID(), ss->fd));
     } else {
-        PRBool maybeFalseStart;
+        PRBool maybeFalseStart = PR_TRUE;
         SECStatus rv;
+
+        rv = ssl_CheckServerRandom(ss);
+        if (rv != SECSuccess) {
+            SSL_TRC(3, ("%d: SSL[%d]: no false start due to possible downgrade",
+                        SSL_GETPID(), ss->fd));
+            maybeFalseStart = PR_FALSE;
+        }
 
         
 
 
 
-        ssl_GetSpecReadLock(ss);
-        maybeFalseStart = ss->ssl3.cwSpec->cipherDef->secret_key_size >= 10;
-        ssl_ReleaseSpecReadLock(ss);
+        if (maybeFalseStart) {
+            ssl_GetSpecReadLock(ss);
+            maybeFalseStart = ss->ssl3.cwSpec->cipherDef->secret_key_size >= 10;
+            ssl_ReleaseSpecReadLock(ss);
+        }
 
         if (!maybeFalseStart) {
             SSL_TRC(3, ("%d: SSL[%d]: no false start due to weak cipher",
@@ -8098,6 +8119,62 @@ ssl3_SelectServerCert(sslSocket *ss)
     return SECFailure;
 }
 
+static SECStatus
+ssl_GenerateServerRandom(sslSocket *ss)
+{
+    SECStatus rv = ssl3_GetNewRandom(ss->ssl3.hs.server_random);
+    if (rv != SECSuccess) {
+        return SECFailure;
+    }
+
+    if (ss->version == ss->vrange.max) {
+        return SECSuccess;
+    }
+#ifdef DTLS_1_3_DRAFT_VERSION
+    if (IS_DTLS(ss)) {
+        return SECSuccess;
+    }
+#endif
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    PRUint8 *downgradeSentinel =
+        ss->ssl3.hs.server_random +
+        SSL3_RANDOM_LENGTH - sizeof(tls13_downgrade_random);
+
+    switch (ss->vrange.max) {
+        case SSL_LIBRARY_VERSION_TLS_1_3:
+            PORT_Memcpy(downgradeSentinel,
+                        tls13_downgrade_random, sizeof(tls13_downgrade_random));
+            break;
+        case SSL_LIBRARY_VERSION_TLS_1_2:
+            PORT_Memcpy(downgradeSentinel,
+                        tls12_downgrade_random, sizeof(tls12_downgrade_random));
+            break;
+        default:
+            
+            break;
+    }
+
+    return SECSuccess;
+}
+
 
 
 
@@ -8291,56 +8368,6 @@ ssl3_HandleClientHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
             goto alert_loser;
         }
     }
-
-    
-
-    rv = ssl3_GetNewRandom(ss->ssl3.hs.server_random);
-    if (rv != SECSuccess) {
-        errCode = SSL_ERROR_GENERATE_RANDOM_FAILURE;
-        goto loser;
-    }
-
-#ifndef TLS_1_3_DRAFT_VERSION
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    if (ss->vrange.max > ss->version) {
-        PRUint8 *downgrade_sentinel =
-            ss->ssl3.hs.server_random +
-            SSL3_RANDOM_LENGTH - sizeof(tls13_downgrade_random);
-
-        switch (ss->vrange.max) {
-            case SSL_LIBRARY_VERSION_TLS_1_3:
-                PORT_Memcpy(downgrade_sentinel,
-                            tls13_downgrade_random,
-                            sizeof(tls13_downgrade_random));
-                break;
-            case SSL_LIBRARY_VERSION_TLS_1_2:
-                PORT_Memcpy(downgrade_sentinel,
-                            tls12_downgrade_random,
-                            sizeof(tls12_downgrade_random));
-                break;
-            default:
-                
-                break;
-        }
-    }
-#endif
 
     
     if (ssl3_FindExtension(ss, ssl_tls13_cookie_xtn)) {
@@ -9088,6 +9115,7 @@ ssl_ConstructServerHello(sslSocket *ss, PRBool helloRetry,
     SECStatus rv;
     SSL3ProtocolVersion version;
     sslSessionID *sid = ss->sec.ci.sid;
+    const PRUint8 *random;
 
     version = PR_MIN(ss->version, SSL_LIBRARY_VERSION_TLS_1_2);
     if (IS_DTLS(ss)) {
@@ -9097,9 +9125,17 @@ ssl_ConstructServerHello(sslSocket *ss, PRBool helloRetry,
     if (rv != SECSuccess) {
         return SECFailure;
     }
-    
-    rv = sslBuffer_Append(messageBuf, helloRetry ? ssl_hello_retry_random : ss->ssl3.hs.server_random,
-                          SSL3_RANDOM_LENGTH);
+
+    if (helloRetry) {
+        random = ssl_hello_retry_random;
+    } else {
+        rv = ssl_GenerateServerRandom(ss);
+        if (rv != SECSuccess) {
+            return SECFailure;
+        }
+        random = ss->ssl3.hs.server_random;
+    }
+    rv = sslBuffer_Append(messageBuf, random, SSL3_RANDOM_LENGTH);
     if (rv != SECSuccess) {
         return SECFailure;
     }

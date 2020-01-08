@@ -1007,7 +1007,10 @@ class HelloRetryRequestAgentTest : public TlsAgentTestClient {
     
     i = hrr_data.Write(i, ssl_tls13_supported_versions_xtn, 2);
     i = hrr_data.Write(i, 2, 2);
-    i = hrr_data.Write(i, 0x7f00 | TLS_1_3_DRAFT_VERSION, 2);
+    i = hrr_data.Write(i, (variant_ == ssl_variant_datagram)
+                              ? (0x7f00 | DTLS_1_3_DRAFT_VERSION)
+                              : SSL_LIBRARY_VERSION_TLS_1_3,
+                       2);
     if (len) {
       hrr_data.Write(i, body, len);
     }

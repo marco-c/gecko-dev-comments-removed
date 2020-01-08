@@ -151,6 +151,7 @@ class SSLv2ClientHelloTestF : public TlsConnectTestBase {
   void SetUp() override {
     TlsConnectTestBase::SetUp();
     filter_ = MakeTlsFilter<SSLv2ClientHelloFilter>(client_, version_);
+    server_->SetOption(SSL_ENABLE_V2_COMPATIBLE_HELLO, PR_TRUE);
   }
 
   void SetExpectedVersion(uint16_t version) {
@@ -195,6 +196,27 @@ class SSLv2ClientHelloTest : public SSLv2ClientHelloTestF,
 TEST_P(SSLv2ClientHelloTest, Connect) {
   SetAvailableCipherSuite(TLS_DHE_RSA_WITH_AES_128_CBC_SHA);
   Connect();
+}
+
+TEST_P(SSLv2ClientHelloTest, ConnectDisabled) {
+  server_->SetOption(SSL_ENABLE_V2_COMPATIBLE_HELLO, PR_FALSE);
+  SetAvailableCipherSuite(TLS_DHE_RSA_WITH_AES_128_CBC_SHA);
+
+  StartConnect();
+  client_->Handshake();  
+  server_->Handshake();  
+  
+  
+  
+  EXPECT_EQ(PR_WOULD_BLOCK_ERROR, PORT_GetError());
+
+  
+  
+  uint8_t zeros[SSL_LIBRARY_VERSION_TLS_1_2] = {0};
+  client_->SendDirect(DataBuffer(zeros, sizeof(zeros)));
+  ExpectAlert(server_, kTlsAlertIllegalParameter);
+  server_->Handshake();
+  client_->Handshake();
 }
 
 

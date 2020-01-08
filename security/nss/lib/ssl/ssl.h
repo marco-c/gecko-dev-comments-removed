@@ -282,6 +282,23 @@ SSL_IMPORT PRFileDesc *DTLS_ImportFD(PRFileDesc *model, PRFileDesc *fd);
 
 #define SSL_ENABLE_DTLS_SHORT_HEADER 36
 
+
+
+
+
+
+
+
+#define SSL_ENABLE_HELLO_DOWNGRADE_CHECK 37
+
+
+
+
+
+
+
+#define SSL_ENABLE_V2_COMPATIBLE_HELLO 38
+
 #ifdef SSL_DEPRECATED_FUNCTION
 
 SSL_IMPORT SECStatus SSL_Enable(PRFileDesc *fd, int option, PRIntn on);

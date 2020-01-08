@@ -470,8 +470,8 @@ ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
             ssl2Gather ssl2gs = { PR_FALSE, 0 };
             ssl2Gather *ssl2gs_ptr = NULL;
 
-            
-            if (ss->sec.isServer && ss->ssl3.hs.ws == wait_client_hello) {
+            if (ss->sec.isServer && ss->opt.enableV2CompatibleHello &&
+                ss->ssl3.hs.ws == wait_client_hello) {
                 ssl2gs_ptr = &ssl2gs;
             }
 
