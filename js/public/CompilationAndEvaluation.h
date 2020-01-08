@@ -86,7 +86,7 @@ JS_ExecuteScript(JSContext* cx, JS::AutoVector<JSObject*>& envChain, JS::Handle<
 
 
 extern JS_PUBLIC_API(bool)
-JS_CompileScript(JSContext* cx, const char* ascii, size_t length,
+JS_CompileScript(JSContext* cx, const char* bytes, size_t length,
                  const JS::CompileOptions& options,
                  JS::MutableHandle<JSScript*> script);
 
@@ -152,9 +152,63 @@ extern JS_PUBLIC_API(bool)
 Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
         SourceBufferHolder& srcBuf, MutableHandle<JSScript*> script);
 
+
+
+
+
+
+
+
+
+
+
 extern JS_PUBLIC_API(bool)
+CompileUtf8(JSContext* cx, const ReadOnlyCompileOptions& options,
+            const char* bytes, size_t length, MutableHandle<JSScript*> script);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+CompileLatin1(JSContext* cx, const ReadOnlyCompileOptions& options,
+              const char* bytes, size_t length, MutableHandle<JSScript*> script);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+inline bool
 Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
-        const char* bytes, size_t length, MutableHandle<JSScript*> script);
+        const char* bytes, size_t length, MutableHandle<JSScript*> script)
+{
+    return options.utf8
+           ? CompileUtf8(cx, options, bytes, length, script)
+           : CompileLatin1(cx, options, bytes, length, script);
+}
 
 extern JS_PUBLIC_API(bool)
 Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
@@ -168,9 +222,17 @@ extern JS_PUBLIC_API(bool)
 CompileForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options,
                             SourceBufferHolder& srcBuf, MutableHandle<JSScript*> script);
 
+
+
+
+
+
+
+
 extern JS_PUBLIC_API(bool)
-CompileForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options,
-                            const char* bytes, size_t length, MutableHandle<JSScript*> script);
+CompileLatin1ForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options,
+                                  const char* bytes, size_t length,
+                                  MutableHandle<JSScript*> script);
 
 extern JS_PUBLIC_API(bool)
 CompileForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options,

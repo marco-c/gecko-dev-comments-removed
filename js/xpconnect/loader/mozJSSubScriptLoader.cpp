@@ -178,9 +178,9 @@ PrepareScript(nsIURI* uri,
     
     options.setSourceIsLazy(true);
     if (wantGlobalScript) {
-        return JS::Compile(cx, options, buf, len, script);
+        return JS::CompileLatin1(cx, options, buf, len, script);
     }
-    return JS::CompileForNonSyntacticScope(cx, options, buf, len, script);
+    return JS::CompileLatin1ForNonSyntacticScope(cx, options, buf, len, script);
 }
 
 static bool
