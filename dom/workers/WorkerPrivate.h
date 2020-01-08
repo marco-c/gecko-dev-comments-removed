@@ -23,7 +23,6 @@
 #include "mozilla/PerformanceCounter.h"
 #include "mozilla/ThreadBound.h"
 
-class nsIConsoleReportCollector;
 class nsIThreadInternal;
 
 namespace mozilla {
@@ -45,7 +44,7 @@ class Function;
 class MessagePort;
 class MessagePortIdentifier;
 class PerformanceStorage;
-class SharedWorker;
+class SharedWorkerManager;
 class WorkerControlRunnable;
 class WorkerCSPEventListener;
 class WorkerDebugger;
@@ -1080,19 +1079,11 @@ public:
     mLoadingWorkerScript = aLoadingWorkerScript;
   }
 
-  void
-  BroadcastErrorToSharedWorkers(JSContext* aCx,
-                                const WorkerErrorReport* aReport,
-                                bool aIsErrorEvent);
+  SharedWorkerManager*
+  GetSharedWorkerManager();
 
   void
-  GetAllSharedWorkers(nsTArray<RefPtr<SharedWorker>>& aSharedWorkers);
-
-  void
-  CloseAllSharedWorkers();
-
-  void
-  FlushReportsToSharedWorkers(nsIConsoleReportCollector* aReporter);
+  SetSharedWorkerManager(SharedWorkerManager* aWorkerManager);
 
   
   
@@ -1402,8 +1393,7 @@ private:
   nsTArray<RefPtr<WorkerRunnable>> mPreStartRunnables;
 
   
-  
-  nsTArray<RefPtr<SharedWorker>> mSharedWorkers;
+  RefPtr<SharedWorkerManager> mSharedWorkerManager;
 
   JS::UniqueChars mDefaultLocale; 
   TimeStamp mKillTime;
