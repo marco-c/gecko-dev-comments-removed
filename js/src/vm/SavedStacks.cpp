@@ -745,15 +745,6 @@ SavedFrame_checkThis(JSContext* cx, CallArgs& args, const char* fnName,
     
     
     
-    if (!SavedFrame::isSavedFrameAndNotProto(*thisObject)) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INCOMPATIBLE_PROTO,
-                                  SavedFrame::class_.name, fnName, "prototype object");
-        return false;
-    }
-
-    
-    
-    
     frame.set(&thisValue.toObject());
     return true;
 }
@@ -792,7 +783,7 @@ UnwrapSavedFrame(JSContext* cx, JSPrincipals* principals, HandleObject obj,
         return nullptr;
     }
 
-    MOZ_RELEASE_ASSERT(js::SavedFrame::isSavedFrameAndNotProto(*savedFrameObj));
+    MOZ_RELEASE_ASSERT(savedFrameObj->is<js::SavedFrame>());
     js::RootedSavedFrame frame(cx, &savedFrameObj->as<js::SavedFrame>());
     return GetFirstSubsumedFrame(cx, principals, frame, selfHosted, skippedAsync);
 }
@@ -1141,14 +1132,14 @@ JS_PUBLIC_API(bool)
 IsMaybeWrappedSavedFrame(JSObject* obj)
 {
     MOZ_ASSERT(obj);
-    return js::SavedFrame::isSavedFrameOrWrapperAndNotProto(*obj);
+    return js::SavedFrame::isSavedFrameOrWrapper(*obj);
 }
 
 JS_PUBLIC_API(bool)
 IsUnwrappedSavedFrame(JSObject* obj)
 {
     MOZ_ASSERT(obj);
-    return js::SavedFrame::isSavedFrameAndNotProto(*obj);
+    return obj->is<js::SavedFrame>();
 }
 
 } 
@@ -1313,7 +1304,7 @@ SavedStacks::copyAsyncStack(JSContext* cx, HandleObject asyncStack, HandleString
 
     RootedObject asyncStackObj(cx, CheckedUnwrap(asyncStack));
     MOZ_RELEASE_ASSERT(asyncStackObj);
-    MOZ_RELEASE_ASSERT(js::SavedFrame::isSavedFrameAndNotProto(*asyncStackObj));
+    MOZ_RELEASE_ASSERT(asyncStackObj->is<js::SavedFrame>());
     adoptedStack.set(&asyncStackObj->as<js::SavedFrame>());
 
     if (!adoptAsyncStack(cx, adoptedStack, asyncCauseAtom, maxFrameCount)) {
