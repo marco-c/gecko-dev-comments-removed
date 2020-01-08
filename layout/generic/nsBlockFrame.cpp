@@ -1844,20 +1844,11 @@ nsBlockFrame::ComputeOverflowAreas(const nsRect&         aBounds,
   
   
   nsOverflowAreas areas(aBounds, aBounds);
-  if (mComputedStyle->GetPseudo() == nsCSSAnonBoxes::scrolledContent() &&
-      mParent->StyleDisplay()->IsContainLayout()) {
-    
-    
-    
-    
-    aDisplay = mParent->StyleDisplay();
-  }
   if (!ShouldApplyOverflowClipping(this, aDisplay)) {
     for (LineIterator line = LinesBegin(), line_end = LinesEnd();
          line != line_end;
          ++line) {
       if (aDisplay->IsContainLayout()) {
-        
         
         
         
@@ -3971,7 +3962,6 @@ nsBlockFrame::ReflowInlineFrames(BlockReflowInput& aState,
           aState.FloatManager()->PopState(&floatManagerState);
           
           aState.mCurrentLineFloats.DeleteAll();
-          MOZ_ASSERT(aState.mNoWrapFloats.IsEmpty());
           aState.mBelowCurrentLineFloats.DeleteAll();
         }
 
@@ -4597,9 +4587,6 @@ nsBlockFrame::PlaceLine(BlockReflowInput& aState,
                         nscoord& aAvailableSpaceBSize,
                         bool* aKeepReflowGoing)
 {
-  
-  aLineLayout.FlushNoWrapFloats();
-
   
   aLineLayout.TrimTrailingWhiteSpace();
 
