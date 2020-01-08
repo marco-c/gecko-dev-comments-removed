@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef MSGPACK_TYPE_CPP11_UNORDERED_SET_HPP
+#define MSGPACK_TYPE_CPP11_UNORDERED_SET_HPP
+
+#include "msgpack/v1/adaptor/cpp11/unordered_set.hpp"
+
+#endif 

@@ -1,0 +1,17 @@
+# 
+
+
+
+
+
+
+
+#
+# 
+#
+# ifndef MSGPACK_PREPROCESSOR_FOR_HPP
+# define MSGPACK_PREPROCESSOR_FOR_HPP
+#
+# include <msgpack/preprocessor/repetition/for.hpp>
+#
+# endif

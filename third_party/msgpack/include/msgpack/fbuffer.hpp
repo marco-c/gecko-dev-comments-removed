@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+#ifndef MSGPACK_FBUFFER_HPP
+#define MSGPACK_FBUFFER_HPP
+
+#include "msgpack/fbuffer_decl.hpp"
+
+#include "msgpack/v1/fbuffer.hpp"
+
+#endif 

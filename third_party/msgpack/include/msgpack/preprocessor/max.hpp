@@ -1,0 +1,17 @@
+# 
+
+
+
+
+
+
+
+#
+# 
+#
+# ifndef MSGPACK_PREPROCESSOR_MAX_HPP
+# define MSGPACK_PREPROCESSOR_MAX_HPP
+#
+# include <msgpack/preprocessor/selection/max.hpp>
+#
+# endif

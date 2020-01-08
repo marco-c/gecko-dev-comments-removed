@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+#ifndef MSGPACK_UTIL_H
+#define MSGPACK_UTIL_H
+
+#define MSGPACK_UNUSED(a) (void)(a)
+
+#endif 
