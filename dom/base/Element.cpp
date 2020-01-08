@@ -1200,20 +1200,9 @@ Element::GetShadowRootByMode() const
   return shadowRoot;
 }
 
-
-already_AddRefed<ShadowRoot>
-Element::AttachShadow(const ShadowRootInit& aInit, ErrorResult& aError)
+bool
+Element::CanAttachShadowDOM() const
 {
-  
-
-
-
-  if (!IsHTMLElement() &&
-      !(XRE_IsParentProcess() && IsXULElement() && nsContentUtils::AllowXULXBLForPrincipal(NodePrincipal()))) {
-    aError.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-    return nullptr;
-  }
-
   
 
 
@@ -1241,6 +1230,31 @@ Element::AttachShadow(const ShadowRootInit& aInit, ErrorResult& aError)
         nameAtom == nsGkAtoms::p ||
         nameAtom == nsGkAtoms::section ||
         nameAtom == nsGkAtoms::span)) {
+    return false;
+  }
+
+  return true;
+}
+
+
+already_AddRefed<ShadowRoot>
+Element::AttachShadow(const ShadowRootInit& aInit, ErrorResult& aError)
+{
+  
+
+
+
+  if (!IsHTMLElement() &&
+      !(XRE_IsParentProcess() && IsXULElement() && nsContentUtils::AllowXULXBLForPrincipal(NodePrincipal()))) {
+    aError.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return nullptr;
+  }
+
+  
+
+
+
+  if (!CanAttachShadowDOM()) {
     aError.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
     return nullptr;
   }

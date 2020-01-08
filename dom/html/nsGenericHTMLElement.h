@@ -256,6 +256,9 @@ public:
     return IsNodeInternal(aFirst, aArgs...);
   }
 
+  
+  void AttachAndSetUAShadowRoot();
+
 protected:
   virtual ~nsGenericHTMLElement() {}
 
