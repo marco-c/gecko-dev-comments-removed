@@ -223,9 +223,12 @@ class nsUrlClassifierDBServiceWorker final : public nsIUrlClassifierDBService {
 
   
   
-  nsresult DoLocalLookup(const nsACString& spec,
-                         const nsTArray<nsCString>& tables,
-                         LookupResultArray& results);
+  nsresult DoSingleLocalLookupWithURIFragments(
+      const nsTArray<nsCString>& aSpecFragments, const nsACString& aTable,
+      LookupResultArray& aResults);
+  nsresult DoLocalLookupWithURI(const nsACString& aSpec,
+                                const nsTArray<nsCString>& aTables,
+                                LookupResultArray& aResults);
 
   
   nsresult GCC_MANGLING_WORKAROUND OpenDb();

@@ -59,8 +59,16 @@ class Classifier {
   
 
 
-  nsresult Check(const nsACString& aSpec, const nsTArray<nsCString>& tables,
-                 LookupResultArray& aResults);
+  nsresult CheckURI(const nsACString& aSpec, const nsTArray<nsCString>& tables,
+                    LookupResultArray& aResults);
+
+  
+
+
+
+  nsresult CheckURIFragments(const nsTArray<nsCString>& aSpecFragments,
+                             const nsACString& table,
+                             LookupResultArray& aResults);
 
   
 
