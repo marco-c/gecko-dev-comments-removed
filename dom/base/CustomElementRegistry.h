@@ -129,13 +129,16 @@ struct CustomElementData
 
   void SetCustomElementDefinition(CustomElementDefinition* aDefinition);
   CustomElementDefinition* GetCustomElementDefinition();
-  nsAtom* GetCustomElementType();
+  nsAtom* GetCustomElementType() const
+  {
+    return mType;
+  }
 
   void Traverse(nsCycleCollectionTraversalCallback& aCb) const;
   void Unlink();
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
-  nsAtom* GetIs(Element* aElement)
+  nsAtom* GetIs(const Element* aElement) const
   {
     
     
@@ -415,6 +418,17 @@ private:
   };
 
 public:
+  
+
+
+
+
+  bool IsLikelyToBeCustomElement(nsAtom* aTypeAtom) const
+  {
+    return mCustomDefinitions.GetWeak(aTypeAtom) ||
+      mElementCreationCallbacks.GetWeak(aTypeAtom);
+  }
+
   
 
 

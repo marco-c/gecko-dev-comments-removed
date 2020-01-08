@@ -3070,6 +3070,9 @@ public:
                                       mozilla::dom::FromParser aFromParser, nsAtom* aIsAtom,
                                       mozilla::dom::CustomElementDefinition* aDefinition);
 
+  static mozilla::dom::CustomElementRegistry*
+    GetCustomElementRegistry(nsIDocument*);
+
   
 
 
