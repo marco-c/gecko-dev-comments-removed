@@ -4,24 +4,10 @@
 
 "use strict";
 
-loader.lazyRequireGetter(this, "adbAddon", "devtools/shared/adb/adb-addon", true);
-loader.lazyRequireGetter(this, "ADB_ADDON_STATES", "devtools/shared/adb/adb-addon", true);
 loader.lazyGetter(this, "adbScanner", () => {
-  const { ADBScanner } = require("devtools/shared/adb/adb-scanner");
-  return new ADBScanner();
+  const { AddonAwareADBScanner } = require("devtools/shared/adb/addon-aware-adb-scanner");
+  return new AddonAwareADBScanner();
 });
-
-function _onAdbAddonUpdate() {
-  
-  if (adbAddon.status === ADB_ADDON_STATES.INSTALLED) {
-    
-    adbScanner.enable();
-  } else {
-    
-    
-    adbScanner.disable();
-  }
-}
 
 
 
@@ -33,18 +19,12 @@ function addUSBRuntimesObserver(listener) {
 exports.addUSBRuntimesObserver = addUSBRuntimesObserver;
 
 function disableUSBRuntimes() {
-  if (adbAddon.status === ADB_ADDON_STATES.INSTALLED) {
-    adbScanner.disable();
-  }
-  adbAddon.off("update", _onAdbAddonUpdate);
+  adbScanner.disable();
 }
 exports.disableUSBRuntimes = disableUSBRuntimes;
 
 async function enableUSBRuntimes() {
-  if (adbAddon.status === ADB_ADDON_STATES.INSTALLED) {
-    adbScanner.enable();
-  }
-  adbAddon.on("update", _onAdbAddonUpdate);
+  adbScanner.enable();
 }
 exports.enableUSBRuntimes = enableUSBRuntimes;
 
