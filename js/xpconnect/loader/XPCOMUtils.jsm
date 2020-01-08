@@ -413,16 +413,6 @@ var XPCOMUtils = {
 
 
 
-  IterSimpleEnumerator: function XPCU_IterSimpleEnumerator(e, i)
-  {
-    return e.entries(i);
-  },
-
-  
-
-
-
-
   IterStringEnumerator: function* XPCU_IterStringEnumerator(e)
   {
     while (e.hasMore())
