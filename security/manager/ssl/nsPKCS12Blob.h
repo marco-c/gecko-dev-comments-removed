@@ -24,54 +24,23 @@ public:
   ~nsPKCS12Blob() {}
 
   
-  nsresult ImportFromFile(nsIFile* file);
+  nsresult ImportFromFile(nsIFile* file, const nsAString& password,
+                          uint32_t& error);
 
   
-  nsresult ExportToFile(nsIFile* file, nsIX509Cert** certs, int numCerts);
+  nsresult ExportToFile(nsIFile* file, nsIX509Cert** certs, int numCerts,
+                        const nsAString& password, uint32_t& error);
 
 private:
   nsCOMPtr<nsIInterfaceRequestor> mUIContext;
 
   
-  nsresult getPKCS12FilePassword(uint32_t& passwordBufferLength,
-                                 mozilla::UniquePtr<uint8_t[]>& passwordBuffer);
-  nsresult newPKCS12FilePassword(uint32_t& passwordBufferLength,
-                                 mozilla::UniquePtr<uint8_t[]>& passwordBuffer);
   nsresult inputToDecoder(mozilla::UniqueSEC_PKCS12DecoderContext& dcx,
                           nsIFile* file,
                           PRErrorCode& nssError);
-  mozilla::UniquePtr<uint8_t[]> stringToBigEndianBytes(const nsString& uni,
+  mozilla::UniquePtr<uint8_t[]> stringToBigEndianBytes(const nsAString& uni,
                                                        uint32_t& bytesLength);
-  void handleError(int myerr, PRErrorCode prerr);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  enum class RetryReason
-  {
-    DoNotRetry,
-    BadPassword,
-    AutoRetryEmptyPassword,
-  };
-  enum class ImportMode
-  {
-    StandardPrompt,
-    TryZeroLengthSecitem
-  };
-
-  void handleImportError(PRErrorCode nssError, RetryReason& retryReason,
-                         uint32_t passwordLengthInBytes);
-
-  nsresult ImportFromFileHelper(nsIFile* file,
-                                ImportMode aImportMode,
-                                RetryReason& aWantRetry);
+  uint32_t handlePRErrorCode(PRErrorCode prerr);
 
   static SECItem* nicknameCollision(SECItem* oldNick, PRBool* cancel,
                                     void* wincx);
