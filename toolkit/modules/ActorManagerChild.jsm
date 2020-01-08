@@ -16,6 +16,9 @@ ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
+ChromeUtils.defineModuleGetter(this, "WebNavigationFrames",
+                               "resource://gre/modules/WebNavigationFrames.jsm");
+
 const {DefaultMap} = ExtensionUtils;
 
 const {sharedData} = Services.cpmm;
@@ -41,6 +44,9 @@ class Dispatcher {
 
   init() {
     for (let msg of this.messages.keys()) {
+      
+      
+      
       this.mm.addMessageListener(msg, this);
     }
     for (let topic of this.observers.keys()) {
@@ -59,9 +65,39 @@ class Dispatcher {
     }
   }
 
+  get window() {
+    return this.mm.content;
+  }
+
+  get frameId() {
+    
+    return WebNavigationFrames.getFrameId(this.window);
+  }
+
+  get browsingContextId() {
+    return this.window.docShell.browsingContext.id;
+  }
+
   addEventListener(event, actor, options) {
     let listener = this.handleActorEvent.bind(this, actor);
     this.mm.addEventListener(event, listener, options);
+  }
+
+  addMessageListener(msg, actor) {
+    let actors = this.messages.get(msg);
+
+    if (!actors) {
+      actors = [];
+      this.messages.set(msg, actors);
+    }
+
+    if (actors.length == 0) {
+      this.mm.addMessageListener(msg, this);
+    }
+
+    if (!actors.includes(actor)) {
+      actors.push(actor);
+    }
   }
 
   getActor(actorName) {
@@ -89,9 +125,7 @@ class Dispatcher {
 
     if (simulateFission) {
       targetWindow = event.target.ownerGlobal;
-      let dispatcherWindow = this.window || this.mm.content;
-
-      if (targetWindow != dispatcherWindow) {
+      if (targetWindow != this.window) {
         
         
         return;
@@ -102,15 +136,32 @@ class Dispatcher {
 
   receiveMessage(message) {
     let actors = this.messages.get(message.name);
-    let result;
+
+    if (simulateFission) {
+      let match = false;
+      let data = message.data || {};
+      if (data.hasOwnProperty("frameId")) {
+        match = (data.frameId == this.frameId);
+      } else if (data.hasOwnProperty("browsingContextId")) {
+        match = (data.browsingContextId == this.browsingContextId);
+      } else {
+        
+        
+        match = (this.frameId == 0);
+      }
+
+      if (!match) {
+        return;
+      }
+    }
+
     for (let actor of actors) {
       try {
-        result = this.getActor(actor).receiveMessage(message);
+        this.getActor(actor).receiveMessage(message);
       } catch (e) {
         Cu.reportError(e);
       }
     }
-    return result;
   }
 
   observe(subject, topic, data) {
@@ -136,7 +187,7 @@ class SingletonDispatcher extends Dispatcher {
     window.addEventListener("pageshow", this, {mozSystemGroup: true});
     window.addEventListener("pagehide", this, {mozSystemGroup: true});
 
-    this.window = window;
+    this._window = window;
     this.listeners = [];
   }
 
@@ -173,6 +224,10 @@ class SingletonDispatcher extends Dispatcher {
     }
 
     this.listeners = [];
+  }
+
+  get window() {
+    return this._window;
   }
 
   handleEvent(event) {
