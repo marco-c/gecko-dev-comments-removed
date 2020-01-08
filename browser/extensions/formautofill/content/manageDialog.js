@@ -102,7 +102,7 @@ class ManageRecords {
 
   async _loadRecords() {
     let storage = await this.getStorage();
-    let records = await storage.getAll();
+    let records = storage.getAll();
     
     records.sort((a, b) => b.timeLastModified - a.timeLastModified);
     await this.renderRecordElements(records);

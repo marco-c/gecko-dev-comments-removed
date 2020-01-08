@@ -262,13 +262,10 @@ class AutofillRecords {
     this._collectionName = collectionName;
     this._schemaVersion = schemaVersion;
 
-    Promise.all(this._data.map(record => this._migrateRecord(record)))
-      .then(hasChangesArr => {
-        let dataHasChanges = hasChangesArr.find(hasChanges => hasChanges);
-        if (dataHasChanges) {
-          this._store.saveSoon();
-        }
-      });
+    let hasChanges = (result, record) => this._migrateRecord(record) || result;
+    if (this._data.reduce(hasChanges, false)) {
+      this._store.saveSoon();
+    }
   }
 
   
@@ -311,7 +308,7 @@ class AutofillRecords {
 
 
 
-  async add(record, {sourceSync = false} = {}) {
+  add(record, {sourceSync = false} = {}) {
     this.log.debug("add:", record);
 
     let recordToSave = this._clone(record);
@@ -351,7 +348,7 @@ class AutofillRecords {
     return this._saveRecord(recordToSave, {sourceSync});
   }
 
-  async _saveRecord(record, {sourceSync = false} = {}) {
+  _saveRecord(record, {sourceSync = false} = {}) {
     if (!record.guid) {
       throw new Error("Record missing GUID");
     }
@@ -369,7 +366,7 @@ class AutofillRecords {
     } else {
       this._ensureMatchingVersion(record);
       recordToSave = record;
-      await this.computeFields(recordToSave);
+      this.computeFields(recordToSave);
     }
 
     if (sourceSync) {
@@ -408,7 +405,7 @@ class AutofillRecords {
 
 
 
-  async update(guid, record, preserveOldProperties = false) {
+  update(guid, record, preserveOldProperties = false) {
     this.log.debug("update:", guid, record);
 
     let recordFoundIndex = this._findIndexByGUID(guid);
@@ -418,7 +415,7 @@ class AutofillRecords {
 
     
     let recordFound = this._clone(this._data[recordFoundIndex]);
-    await this._stripComputedFields(recordFound);
+    this._stripComputedFields(recordFound);
 
     let recordToUpdate = this._clone(record);
     this._normalizeRecord(recordToUpdate, true);
@@ -460,7 +457,7 @@ class AutofillRecords {
       syncMetadata.changeCounter += 1;
     }
 
-    await this.computeFields(recordFound);
+    this.computeFields(recordFound);
     this._data[recordFoundIndex] = recordFound;
 
     this._store.saveSoon();
@@ -557,7 +554,7 @@ class AutofillRecords {
 
 
 
-  async get(guid, {rawData = false} = {}) {
+  get(guid, {rawData = false} = {}) {
     this.log.debug("get:", guid, rawData);
 
     let recordFound = this._findByGUID(guid);
@@ -568,7 +565,7 @@ class AutofillRecords {
     
     let clonedRecord = this._cloneAndCleanUp(recordFound);
     if (rawData) {
-      await this._stripComputedFields(clonedRecord);
+      this._stripComputedFields(clonedRecord);
     } else {
       this._recordReadProcessor(clonedRecord);
     }
@@ -585,48 +582,20 @@ class AutofillRecords {
 
 
 
-  async getAll({rawData = false, includeDeleted = false} = {}) {
+  getAll({rawData = false, includeDeleted = false} = {}) {
     this.log.debug("getAll", rawData, includeDeleted);
 
     let records = this._data.filter(r => !r.deleted || includeDeleted);
     
     let clonedRecords = records.map(r => this._cloneAndCleanUp(r));
-    await Promise.all(clonedRecords.map(async record => {
+    clonedRecords.forEach(record => {
       if (rawData) {
-        await this._stripComputedFields(record);
+        this._stripComputedFields(record);
       } else {
         this._recordReadProcessor(record);
       }
-    }));
+    });
     return clonedRecords;
-  }
-
-  
-
-
-
-
-
-
-  getSavedFieldNames() {
-    this.log.debug("getSavedFieldNames");
-
-    let records = this._data.filter(r => !r.deleted);
-    records
-      .map(record => this._cloneAndCleanUp(record))
-      .forEach(record => this._recordReadProcessor(record));
-
-    let fieldNames = new Set();
-    for (let record of records) {
-      for (let fieldName of Object.keys(record)) {
-        if (INTERNAL_FIELDS.includes(fieldName) || !record[fieldName]) {
-          continue;
-        }
-        fieldNames.add(fieldName);
-      }
-    }
-
-    return fieldNames;
   }
 
   
@@ -763,11 +732,11 @@ class AutofillRecords {
 
 
 
-  async _replaceRecordAt(index, remoteRecord, {keepSyncMetadata = false} = {}) {
+  _replaceRecordAt(index, remoteRecord, {keepSyncMetadata = false} = {}) {
     let localRecord = this._data[index];
     let newRecord = this._clone(remoteRecord);
 
-    await this._stripComputedFields(newRecord);
+    this._stripComputedFields(newRecord);
 
     this._data[index] = newRecord;
 
@@ -801,7 +770,7 @@ class AutofillRecords {
       }
     }
 
-    await this.computeFields(newRecord);
+    this.computeFields(newRecord);
   }
 
   
@@ -813,7 +782,7 @@ class AutofillRecords {
 
 
 
-  async _forkLocalRecord(strippedLocalRecord) {
+  _forkLocalRecord(strippedLocalRecord) {
     let forkedLocalRecord = this._cloneAndCleanUp(strippedLocalRecord);
     forkedLocalRecord.guid = this._generateGUID();
 
@@ -823,7 +792,7 @@ class AutofillRecords {
     
     this._getSyncMetaData(forkedLocalRecord, true);
 
-    await this.computeFields(forkedLocalRecord);
+    this.computeFields(forkedLocalRecord);
     this._data.push(forkedLocalRecord);
 
     return forkedLocalRecord;
@@ -844,7 +813,7 @@ class AutofillRecords {
 
 
 
-  async reconcile(remoteRecord) {
+  reconcile(remoteRecord) {
     this._ensureMatchingVersion(remoteRecord);
     if (remoteRecord.deleted) {
       throw new Error(`Can't reconcile tombstone ${remoteRecord.guid}`);
@@ -862,26 +831,26 @@ class AutofillRecords {
 
     if (sync.changeCounter === 0) {
       
-      await this._replaceRecordAt(localIndex, remoteRecord, {
+      this._replaceRecordAt(localIndex, remoteRecord, {
         keepSyncMetadata: false,
       });
     } else {
       let strippedLocalRecord = this._clone(localRecord);
-      await this._stripComputedFields(strippedLocalRecord);
+      this._stripComputedFields(strippedLocalRecord);
 
       let mergedRecord = this._mergeSyncedRecords(strippedLocalRecord, remoteRecord);
       if (mergedRecord) {
         
         
-        await this._replaceRecordAt(localIndex, mergedRecord, {
+        this._replaceRecordAt(localIndex, mergedRecord, {
           keepSyncMetadata: true,
         });
       } else {
         
         
-        let forkedLocalRecord = await this._forkLocalRecord(strippedLocalRecord);
+        let forkedLocalRecord = this._forkLocalRecord(strippedLocalRecord);
         forkedGUID = forkedLocalRecord.guid;
-        await this._replaceRecordAt(localIndex, remoteRecord, {
+        this._replaceRecordAt(localIndex, remoteRecord, {
           keepSyncMetadata: false,
         });
       }
@@ -1082,7 +1051,7 @@ class AutofillRecords {
 
 
 
-  async findDuplicateGUID(remoteRecord) {
+  findDuplicateGUID(remoteRecord) {
     if (!remoteRecord.guid) {
       throw new Error("Record missing GUID");
     }
@@ -1108,7 +1077,7 @@ class AutofillRecords {
 
       
       let strippedLocalRecord = this._clone(localRecord);
-      await this._stripComputedFields(strippedLocalRecord);
+      this._stripComputedFields(strippedLocalRecord);
 
       let keys = new Set(Object.keys(remoteRecord));
       for (let key of Object.keys(strippedLocalRecord)) {
@@ -1174,7 +1143,7 @@ class AutofillRecords {
     });
   }
 
-  async _migrateRecord(record) {
+  _migrateRecord(record) {
     let hasChanges = false;
 
     if (record.deleted) {
@@ -1193,10 +1162,10 @@ class AutofillRecords {
       record.version = this.version;
 
       
-      await this._stripComputedFields(record);
+      this._stripComputedFields(record);
     }
 
-    hasChanges |= await this.computeFields(record);
+    hasChanges |= this.computeFields(record);
     return hasChanges;
   }
 
@@ -1231,10 +1200,10 @@ class AutofillRecords {
 
 
 
-  async mergeToStorage(targetRecord, strict = false) {
+  mergeToStorage(targetRecord, strict = false) {
     let mergedGUIDs = [];
     for (let record of this._data) {
-      if (!record.deleted && await this.mergeIfPossible(record.guid, targetRecord, strict)) {
+      if (!record.deleted && this.mergeIfPossible(record.guid, targetRecord, strict)) {
         mergedGUIDs.push(record.guid);
       }
     }
@@ -1254,7 +1223,7 @@ class AutofillRecords {
     }}, "formautofill-storage-changed", "removeAll");
   }
 
-  async _stripComputedFields(record) {
+  _stripComputedFields(record) {
     this.VALID_COMPUTED_FIELDS.forEach(field => delete record[field]);
   }
 
@@ -1262,7 +1231,7 @@ class AutofillRecords {
   _recordReadProcessor(record) {}
 
   
-  async computeFields(record) {}
+  computeFields(record) {}
 
   
 
@@ -1288,7 +1257,7 @@ class AutofillRecords {
   _validateFields(record) {}
 
   
-  async mergeIfPossible(guid, record, strict) {}
+  mergeIfPossible(guid, record, strict) {}
 }
 
 class Addresses extends AutofillRecords {
@@ -1303,7 +1272,7 @@ class Addresses extends AutofillRecords {
     }
   }
 
-  async computeFields(address) {
+  computeFields(address) {
     
     
     
@@ -1494,7 +1463,7 @@ class Addresses extends AutofillRecords {
 
 
 
-  async mergeIfPossible(guid, address, strict) {
+  mergeIfPossible(guid, address, strict) {
     this.log.debug("mergeIfPossible:", guid, address);
 
     let addressFound = this._findByGUID(guid);
@@ -1554,7 +1523,7 @@ class Addresses extends AutofillRecords {
       return true;
     }
 
-    await this.update(guid, addressToMerge, true);
+    this.update(guid, addressToMerge, true);
     return true;
   }
 }
@@ -1564,7 +1533,7 @@ class CreditCards extends AutofillRecords {
     super(store, "creditCards", VALID_CREDIT_CARD_FIELDS, VALID_CREDIT_CARD_COMPUTED_FIELDS, CREDIT_CARD_SCHEMA_VERSION);
   }
 
-  async computeFields(creditCard) {
+  computeFields(creditCard) {
     
     
     
@@ -1602,7 +1571,7 @@ class CreditCards extends AutofillRecords {
       if ("cc-number" in creditCard) {
         let ccNumber = creditCard["cc-number"];
         creditCard["cc-number"] = CreditCard.getLongMaskedNumber(ccNumber);
-        creditCard["cc-number-encrypted"] = await MasterPassword.encrypt(ccNumber);
+        creditCard["cc-number-encrypted"] = MasterPassword.encryptSync(ccNumber);
       } else {
         creditCard["cc-number-encrypted"] = "";
       }
@@ -1611,11 +1580,11 @@ class CreditCards extends AutofillRecords {
     return hasNewComputedFields;
   }
 
-  async _stripComputedFields(creditCard) {
+  _stripComputedFields(creditCard) {
     if (creditCard["cc-number-encrypted"]) {
-      creditCard["cc-number"] = await MasterPassword.decrypt(creditCard["cc-number-encrypted"]);
+      creditCard["cc-number"] = MasterPassword.decryptSync(creditCard["cc-number-encrypted"]);
     }
-    await super._stripComputedFields(creditCard);
+    super._stripComputedFields(creditCard);
   }
 
   _normalizeFields(creditCard) {
@@ -1681,11 +1650,11 @@ class CreditCards extends AutofillRecords {
 
 
 
-  async getDuplicateGuid(targetCreditCard) {
+  getDuplicateGuid(targetCreditCard) {
     let clonedTargetCreditCard = this._clone(targetCreditCard);
     this._normalizeRecord(clonedTargetCreditCard);
     for (let creditCard of this._data) {
-      let isDuplicate = await Promise.all(this.VALID_FIELDS.map(async field => {
+      let isDuplicate = this.VALID_FIELDS.every(field => {
         if (!clonedTargetCreditCard[field]) {
           return !creditCard[field];
         }
@@ -1695,10 +1664,10 @@ class CreditCards extends AutofillRecords {
             
             return CreditCard.getLongMaskedNumber(clonedTargetCreditCard[field]) == creditCard[field];
           }
-          return (clonedTargetCreditCard[field] == await MasterPassword.decrypt(creditCard["cc-number-encrypted"]));
+          return clonedTargetCreditCard[field] == MasterPassword.decryptSync(creditCard["cc-number-encrypted"]);
         }
         return clonedTargetCreditCard[field] == creditCard[field];
-      })).then(fieldResults => fieldResults.every(result => result));
+      });
       if (isDuplicate) {
         return creditCard.guid;
       }
@@ -1717,11 +1686,11 @@ class CreditCards extends AutofillRecords {
 
 
 
-  async mergeIfPossible(guid, creditCard) {
+  mergeIfPossible(guid, creditCard) {
     this.log.debug("mergeIfPossible:", guid, creditCard);
 
     
-    let creditCardFound = await this.get(guid, {rawData: true});
+    let creditCardFound = this.get(guid, {rawData: true});
     if (!creditCardFound) {
       throw new Error("No matching credit card.");
     }
@@ -1758,7 +1727,7 @@ class CreditCards extends AutofillRecords {
       return true;
     }
 
-    await this.update(guid, creditCardToMerge, true);
+    this.update(guid, creditCardToMerge, true);
     return true;
   }
 }

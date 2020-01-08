@@ -31,7 +31,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "logLevel", "extensions.formautofill
 
 
 function debug() {
-  if (logLevel.toLowerCase() == "debug") {
+  if (logLevel == "debug") {
     this.log.debug(...arguments);
   }
 }
