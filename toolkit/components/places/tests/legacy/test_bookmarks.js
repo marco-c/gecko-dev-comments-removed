@@ -328,7 +328,7 @@ add_task(async function test_bookmarks() {
 
   
   bookmarksObserver._itemChangedId = -1;
-  anno.setItemAnnotation(newId3, "test-annotation", "foo", 0, 0);
+  anno.setItemAnnotation(newId3, "test-annotation", "foo", 0, anno.EXPIRE_NEVER);
   Assert.equal(bookmarksObserver._itemChangedId, newId3);
   Assert.equal(bookmarksObserver._itemChangedProperty, "test-annotation");
   Assert.ok(bookmarksObserver._itemChanged_isAnnotationProperty);

@@ -50,7 +50,7 @@ add_task(async function test_execute() {
   PlacesUtils.annotations.setPageAnnotation(testAnnoDeletedURI,
                                             testAnnoDeletedName,
                                             testAnnoDeletedValue, 0,
-                                            PlacesUtils.annotations.EXPIRE_WITH_HISTORY);
+                                            PlacesUtils.annotations.EXPIRE_NEVER);
 
   
   var testAnnoRetainedURI = uri("http://www.test-1.com/");
@@ -59,7 +59,7 @@ add_task(async function test_execute() {
   PlacesUtils.annotations.setPageAnnotation(testAnnoRetainedURI,
                                             testAnnoRetainedName,
                                             testAnnoRetainedValue, 0,
-                                            PlacesUtils.annotations.EXPIRE_WITH_HISTORY);
+                                            PlacesUtils.annotations.EXPIRE_NEVER);
 
   
   await PlacesUtils.history.removeByFilter({ host: "www.test.com" });
