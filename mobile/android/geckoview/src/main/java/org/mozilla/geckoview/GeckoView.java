@@ -16,6 +16,7 @@ import org.mozilla.gecko.util.ActivityUtils;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Rect;
@@ -341,6 +342,7 @@ public class GeckoView extends FrameLayout {
         if (!mSession.isOpen()) {
             mSession.open(mRuntime);
         }
+        mRuntime.orientationChanged();
 
         super.onAttachedToWindow();
     }
@@ -356,6 +358,18 @@ public class GeckoView extends FrameLayout {
         
         if (!mStateSaved && mSession.isOpen()) {
             mSession.close();
+        }
+    }
+
+    @Override
+    protected void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        if (mRuntime != null) {
+            
+            
+            
+            mRuntime.orientationChanged(newConfig.orientation);
         }
     }
 
