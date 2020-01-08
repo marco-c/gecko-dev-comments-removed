@@ -28,6 +28,8 @@ class HighlightersOverlay {
     this.highlighterUtils = this.inspector.toolbox.highlighterUtils;
     this.store = this.inspector.store;
     this.telemetry = inspector.telemetry;
+    this.maxGridHighlighters =
+      Services.prefs.getIntPref("devtools.gridinspector.maxHighlighters");
 
     
     
@@ -432,19 +434,16 @@ class HighlightersOverlay {
 
 
   async showGridHighlighter(node, options, trigger) {
-    const maxHighlighters =
-      Services.prefs.getIntPref("devtools.gridinspector.maxHighlighters");
-
     
     
     if (!this.gridHighlighters.has(node)) {
-      if (maxHighlighters === 1) {
+      if (this.maxGridHighlighters === 1) {
         
         
         for (const nodeFront of this.gridHighlighters.keys()) {
           await this.hideGridHighlighter(nodeFront);
         }
-      } else if (this.gridHighlighters.size === maxHighlighters) {
+      } else if (this.gridHighlighters.size === this.maxGridHighlighters) {
         
         
         return;
@@ -496,8 +495,6 @@ class HighlightersOverlay {
       return;
     }
 
-    this._toggleRuleViewIcon(node, false, ".ruleview-grid");
-
     
     
     const highlighter = this.gridHighlighters.get(node);
@@ -506,6 +503,8 @@ class HighlightersOverlay {
 
     this.state.grids.delete(node);
     this.gridHighlighters.delete(node);
+
+    this._toggleRuleViewIcon(node, false, ".ruleview-grid");
 
     
     
@@ -790,11 +789,21 @@ class HighlightersOverlay {
 
 
   _toggleRuleViewIcon(node, active, selector) {
-    if (this.inspector.selection.nodeFront != node) {
+    const ruleViewEl = this.inspector.getPanel("ruleview").view.element;
+
+    if (this.inspector.selection.nodeFront !== node) {
+      if (selector === ".ruleview-grid") {
+        for (const icon of ruleViewEl.querySelectorAll(selector)) {
+          if (this.canGridHighlighterToggle(this.inspector.selection.nodeFront)) {
+            icon.removeAttribute("disabled");
+          } else {
+            icon.setAttribute("disabled", true);
+          }
+        }
+      }
+
       return;
     }
-
-    const ruleViewEl = this.inspector.getPanel("ruleview").view.element;
 
     for (const icon of ruleViewEl.querySelectorAll(selector)) {
       icon.classList.toggle("active", active);
