@@ -2,7 +2,8 @@
 
 
 
-use api::{DebugCommand, DeviceIntRect, DocumentId, ExternalImageData, ExternalImageId};
+use api::{DebugCommand, DocumentId, ExternalImageData, ExternalImageId};
+use api::{DeviceIntPoint, DeviceIntRect, DeviceIntSize};
 use api::{ImageFormat, WorldPixel, NotificationRequest};
 use device::TextureFilter;
 use renderer::PipelineInfo;
@@ -108,6 +109,9 @@ pub enum TextureUpdateSource {
         channel_index: u8,
     },
     Bytes { data: Arc<Vec<u8>> },
+    
+    
+    DebugClear,
 }
 
 
@@ -182,6 +186,30 @@ impl TextureUpdateList {
     pub fn push_update(&mut self, update: TextureCacheUpdate) {
         self.updates.push(update);
     }
+
+    
+    
+    #[cold]
+    pub fn push_debug_clear(
+        &mut self,
+        id: CacheTextureId,
+        origin: DeviceIntPoint,
+        width: i32,
+        height: i32,
+        layer_index: usize
+    ) {
+        let size = DeviceIntSize::new(width, height);
+        let rect = DeviceIntRect::new(origin, size);
+        self.push_update(TextureCacheUpdate {
+            id,
+            rect,
+            source: TextureUpdateSource::DebugClear,
+            stride: None,
+            offset: 0,
+            layer_index: layer_index as i32,
+        });
+    }
+
 
     
     pub fn push_alloc(&mut self, id: CacheTextureId, info: TextureCacheAllocInfo) {

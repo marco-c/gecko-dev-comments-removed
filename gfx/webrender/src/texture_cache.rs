@@ -2,7 +2,7 @@
 
 
 
-use api::{DeviceIntPoint, DeviceIntRect, DeviceIntSize};
+use api::{DebugFlags, DeviceIntPoint, DeviceIntRect, DeviceIntSize};
 use api::{ExternalImageType, ImageData, ImageFormat};
 use api::ImageDescriptor;
 use device::{TextureFilter, total_gpu_bytes_allocated};
@@ -320,6 +320,9 @@ pub struct TextureCache {
     max_texture_layers: usize,
 
     
+    debug_flags: DebugFlags,
+
+    
     next_id: CacheTextureId,
 
     
@@ -372,6 +375,7 @@ impl TextureCache {
             shared_textures: SharedTextures::new(),
             max_texture_size,
             max_texture_layers,
+            debug_flags: DebugFlags::empty(),
             next_id: CacheTextureId(1),
             pending_updates: TextureUpdateList::new(),
             frame_id: FrameId::INVALID,
@@ -379,6 +383,10 @@ impl TextureCache {
             entries: FreeList::new(),
             handles: EntryHandles::default(),
         }
+    }
+
+    pub fn set_debug_flags(&mut self, flags: DebugFlags) {
+        self.debug_flags = flags;
     }
 
     pub fn clear(&mut self) {
@@ -548,16 +556,6 @@ impl TextureCache {
     }
 
     
-    fn get_region_mut(&mut self,
-        format: ImageFormat,
-        filter: TextureFilter,
-        layer_index: usize,
-    ) -> &mut TextureRegion {
-        let texture_array = self.shared_textures.select(format, filter);
-        &mut texture_array.regions[layer_index]
-    }
-
-    
     
     pub fn is_allocated(&self, handle: &TextureCacheHandle) -> bool {
         self.entries.get_opt(handle).is_some()
@@ -715,11 +713,20 @@ impl TextureCache {
                 layer_index,
             } => {
                 
-                let region = self.get_region_mut(
-                    entry.format,
-                    entry.filter,
-                    layer_index,
-                );
+                let texture_array = self.shared_textures.select(entry.format, entry.filter);
+                let region = &mut texture_array.regions[layer_index];
+
+                if self.debug_flags.contains(
+                    DebugFlags::TEXTURE_CACHE_DBG |
+                    DebugFlags::TEXTURE_CACHE_DBG_CLEAR_EVICTED) {
+                    self.pending_updates.push_debug_clear(
+                        entry.texture_id,
+                        origin,
+                        region.slab_size.width,
+                        region.slab_size.height,
+                        layer_index
+                    );
+                }
                 region.free(origin);
             }
         }
