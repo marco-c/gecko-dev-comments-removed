@@ -22,9 +22,7 @@ if (url.search.length > 1) {
   const { DebuggerClient } = require("devtools/shared/client/debugger-client");
 
   
-  let host = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                   .getInterface(Ci.nsIDOMWindowUtils)
-                   .containerElement;
+  let host = window.windowUtils.containerElement;
 
   
   

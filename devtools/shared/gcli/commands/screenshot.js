@@ -300,8 +300,7 @@ function createScreenshotData(document, args) {
 
   
   if (!args.selector) {
-    const winUtils = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                         .getInterface(Ci.nsIDOMWindowUtils);
+    const winUtils = window.windowUtils;
     const scrollbarHeight = {};
     const scrollbarWidth = {};
     winUtils.getScrollbarSize(false, scrollbarWidth, scrollbarHeight);

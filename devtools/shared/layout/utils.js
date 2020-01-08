@@ -26,9 +26,10 @@ exports.setIgnoreLayoutChanges = (...args) =>
 
 const utilsCache = new WeakMap();
 function utilsFor(win) {
+  
+  
   if (!utilsCache.has(win)) {
-    utilsCache.set(win, win.QueryInterface(Ci.nsIInterfaceRequestor)
-                           .getInterface(Ci.nsIDOMWindowUtils));
+    utilsCache.set(win, win.windowUtils);
   }
   return utilsCache.get(win);
 }
@@ -668,6 +669,9 @@ function isAfterPseudoElement(node) {
   return node.nodeName === "_moz_generated_content_after";
 }
 exports.isAfterPseudoElement = isAfterPseudoElement;
+
+
+
 
 
 

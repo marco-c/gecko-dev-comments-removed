@@ -1597,8 +1597,7 @@ var Scratchpad = {
 
 
   getInnerWindowId: function SP_getInnerWindowId(aWindow) {
-    return aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-           .getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
+    return aWindow.windowUtils.currentInnerWindowID;
   },
 
   updateStatusBar: function SP_updateStatusBar(aEventType) {

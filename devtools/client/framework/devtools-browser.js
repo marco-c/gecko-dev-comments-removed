@@ -525,8 +525,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
       
       
-      const utils = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                         .getInterface(Ci.nsIDOMWindowUtils);
+      const utils = window.windowUtils;
       utils.enterModalState();
       Services.tm.spinEventLoopUntil(() => {
         return setupFinished;

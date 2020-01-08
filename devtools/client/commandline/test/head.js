@@ -37,7 +37,5 @@ function whenDelayedStartupFinished(aWindow, aCallback) {
 
 
 registerCleanupFunction(function tearDown() {
-  window.QueryInterface(Ci.nsIInterfaceRequestor)
-      .getInterface(Ci.nsIDOMWindowUtils)
-      .garbageCollect();
+  window.windowUtils.garbageCollect();
 });

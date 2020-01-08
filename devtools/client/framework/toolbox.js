@@ -3028,9 +3028,7 @@ Toolbox.prototype = {
           
           
           if (flags.testing) {
-            win.QueryInterface(Ci.nsIInterfaceRequestor)
-              .getInterface(Ci.nsIDOMWindowUtils)
-              .garbageCollect();
+            win.windowUtils.garbageCollect();
           }
         }).catch(console.error));
     });
