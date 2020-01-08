@@ -18,6 +18,7 @@ public class GeckoActivityMonitor implements Application.ActivityLifecycleCallba
     private static final GeckoActivityMonitor instance = new GeckoActivityMonitor();
 
     private WeakReference<Activity> currentActivity = new WeakReference<>(null);
+    private boolean currentActivityInBackground = true;
 
     public static GeckoActivityMonitor getInstance() {
         return instance;
@@ -26,20 +27,31 @@ public class GeckoActivityMonitor implements Application.ActivityLifecycleCallba
     private GeckoActivityMonitor() { }
 
     private void updateActivity(final Activity activity) {
-        if (currentActivity.get() == null) {
+        if (currentActivityInBackground) {
             ((GeckoApplication) activity.getApplication()).onApplicationForeground();
+            currentActivityInBackground = false;
         }
         currentActivity = new WeakReference<>(activity);
     }
 
-    private void checkAppGoingIntoBackground(final Activity activity) {
+    private void checkAppGoingIntoBackground(final Activity activity, boolean clearActivity) {
         
         
         
+        if (currentActivity.get() != activity) {
+            
+            
+            return;
+        }
         
-        if (currentActivity.get() == activity) {
+        
+
+        if (clearActivity) {
             currentActivity.clear();
+        }
+        if (!currentActivityInBackground) {
             ((GeckoApplication) activity.getApplication()).onApplicationBackground();
+            currentActivityInBackground = true;
         }
     }
 
@@ -69,12 +81,16 @@ public class GeckoActivityMonitor implements Application.ActivityLifecycleCallba
 
     @Override
     public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
-        checkAppGoingIntoBackground(activity);
+        
+        
+        
+        
+        checkAppGoingIntoBackground(activity, false);
     }
 
     @Override
     public void onActivityStopped(Activity activity) {
-        checkAppGoingIntoBackground(activity);
+        checkAppGoingIntoBackground(activity, true);
     }
 
     @Override
