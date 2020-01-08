@@ -825,13 +825,17 @@ nsAccessiblePivot::SearchForText(Accessible* aAccessible, bool aBackward)
       if (temp == root)
         break;
 
+      
+      
+      
+      
       if (temp != aAccessible && temp->IsHyperText())
         return temp->AsHyperText();
 
-      sibling = aBackward ? temp->PrevSibling() : temp->NextSibling();
-
       if (sibling)
         break;
+
+      sibling = aBackward ? temp->PrevSibling() : temp->NextSibling();
     } while ((temp = temp->Parent()));
 
     if (!sibling)
