@@ -165,6 +165,7 @@ Inspector.prototype = {
       this._getCssProperties(),
       this._getPageStyle(),
       this._getDefaultSelection(),
+      this._getAccessibilityFront(),
     ]);
 
     return this._deferredOpen();
@@ -334,6 +335,11 @@ Inspector.prototype = {
     return initCssProperties(this.toolbox).then(cssProperties => {
       this._cssProperties = cssProperties;
     }, this._handleRejectionIfNotDestroyed);
+  },
+
+  _getAccessibilityFront: async function() {
+    this.accessibilityFront = await this.target.getFront("accessibility");
+    return this.accessibilityFront;
   },
 
   _getDefaultSelection: function() {
@@ -1682,8 +1688,7 @@ Inspector.prototype = {
     });
     
     
-    const accessibilityFront = this.target.getFront("accessibility");
-    if (accessibilityFront.enabled) {
+    if (this.accessibilityFront.enabled) {
       this._updateA11YMenuItem(showA11YPropsItem);
     }
 
