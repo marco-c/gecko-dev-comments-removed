@@ -63,7 +63,9 @@ DataStruct::SetData(nsISupports* aData, uint32_t aDataLen, bool aIsPrivateData)
 {
   
   
-  if (aDataLen > kLargeDatasetSize && !aIsPrivateData) {
+  if (aDataLen > kLargeDatasetSize && !aIsPrivateData &&
+      
+      XRE_IsParentProcess()) {
     
     if (NS_SUCCEEDED(WriteCache(aData, aDataLen))) {
       
