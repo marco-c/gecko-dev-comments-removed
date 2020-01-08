@@ -9689,24 +9689,7 @@ js::gc::detail::CellIsNotGray(const Cell* cell)
     MOZ_ASSERT(!JS::RuntimeHeapIsCycleCollecting());
 
     auto tc = &cell->asTenured();
-    if (!detail::CellIsMarkedGray(tc)) {
-        return true;
-    }
-
-    
-    
-
-    auto rt = tc->runtimeFromAnyThread();
-    if (!rt->gc.isIncrementalGCInProgress() || tc->zone()->wasGCStarted()) {
-        return false;
-    }
-
-    Zone* sourceZone = rt->gc.marker.stackContainsCrossZonePointerTo(tc);
-    if (sourceZone && sourceZone->wasGCStarted()) {
-        return true;
-    }
-
-    return false;
+    return !detail::CellIsMarkedGray(tc);
 }
 
 extern JS_PUBLIC_API(bool)
