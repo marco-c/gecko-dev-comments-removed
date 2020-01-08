@@ -122,6 +122,10 @@ public class GeckoMediaControlAgent {
     }
 
     private void initialize() {
+        
+        
+        ThreadUtils.assertOnUiThread();
+        
         if (mInitialized) {
             return;
         }
@@ -156,21 +160,23 @@ public class GeckoMediaControlAgent {
             @Override
             public void prefValue(String pref, boolean value) {
                 if (pref.equals(MEDIA_CONTROL_PREF)) {
-                    mIsMediaControlPrefOn = value;
+                    ThreadUtils.postToUiThread(() -> {
+                        mIsMediaControlPrefOn = value;
 
-                    
-                    
-                    if (sMediaState.equals(State.PLAYING)) {
-                        setState(mIsMediaControlPrefOn ? State.PLAYING : State.STOPPED);
-                    }
+                        
+                        
+                        if (sMediaState.equals(State.PLAYING)) {
+                            setState(mIsMediaControlPrefOn ? State.PLAYING : State.STOPPED);
+                        }
 
-                    
-                    
-                    
-                    if (sMediaState.equals(State.PAUSED) &&
-                            !mIsMediaControlPrefOn) {
-                        handleAction(ACTION_STOP);
-                    }
+                        
+                        
+                        
+                        if (sMediaState.equals(State.PAUSED) &&
+                                !mIsMediaControlPrefOn) {
+                            handleAction(ACTION_STOP);
+                        }
+                    });
                 }
             }
         };
@@ -541,16 +547,7 @@ public class GeckoMediaControlAgent {
         }
 
         void unregisterReceiver(Context context) {
-            try {
-                
-                context.unregisterReceiver(HeadSetStateReceiver.this);
-            } catch (IllegalArgumentException e) {
-                if (AppConstants.RELEASE_OR_BETA) {
-                    Log.w(LOGTAG, "bug 1505685", e);
-                } else {
-                    throw e;
-                }
-            }
+            context.unregisterReceiver(HeadSetStateReceiver.this);
         }
 
         @Override
