@@ -20,6 +20,8 @@ const INITIAL_FLEXBOX = {
   
   flexItems: [],
   
+  flexItemShown: null,
+  
   highlighted: false,
   
   nodeFront: null,
@@ -34,18 +36,11 @@ const reducers = {
   },
 
   [TOGGLE_FLEX_ITEM_SHOWN](flexbox, { nodeFront }) {
-    return Object.assign({}, flexbox, {
-      flexItems: flexbox.flexItems.map(flexItem => {
-        if (flexItem.nodeFront !== nodeFront) {
-          return Object.assign({}, flexItem, {
-            shown: false,
-          });
-        }
+    const { flexItems } = flexbox;
+    const flexItemShown = flexItems.find(item => item.nodeFront === nodeFront);
 
-        return Object.assign({}, flexItem, {
-          shown: !flexItem.shown,
-        });
-      })
+    return Object.assign({}, flexbox, {
+      flexItemShown: flexItemShown ? flexItemShown.nodeFront.actorID : null,
     });
   },
 

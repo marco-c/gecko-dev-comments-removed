@@ -177,44 +177,38 @@ class FlexboxInspector {
 
 
 
-
-
-
   async onReflow() {
-    if (!this.isPanelVisible() || !this.store || !this.inspector.selection.nodeFront) {
+    if (!this.isPanelVisible() ||
+        !this.store ||
+        !this.inspector.selection.nodeFront ||
+        !this.hasGetCurrentFlexbox) {
       return;
     }
 
-    const { flexbox } = this.store.getState();
-
-    let flexboxFront;
     try {
-      if (!this.hasGetCurrentFlexbox) {
+      const flexboxFront = await this.layoutInspector.getCurrentFlexbox(
+        this.inspector.selection.nodeFront);
+
+      
+      
+      if (!flexboxFront) {
+        this.store.dispatch(clearFlexbox());
         return;
       }
 
-      flexboxFront = await this.layoutInspector.getCurrentFlexbox(
-        this.inspector.selection.nodeFront);
+      const { flexbox } = this.store.getState();
+
+      
+      if (flexbox.actorID == flexboxFront.actorID) {
+        return;
+      }
+
+      
+      this.update(flexboxFront);
     } catch (e) {
       
       
-      return;
     }
-
-    
-    
-    if (!flexboxFront) {
-      this.store.dispatch(clearFlexbox());
-      return;
-    }
-
-    
-    if (flexbox.actorID == flexboxFront.actorID) {
-      return;
-    }
-
-    
-    this.update(flexboxFront);
   }
 
   
@@ -354,7 +348,6 @@ class FlexboxInspector {
 
         flexItems.push({
           actorID: flexItemFront.actorID,
-          shown: false,
           flexItemSizing: flexItemFront.flexItemSizing,
           nodeFront: itemNodeFront,
           properties: flexItemFront.properties,
@@ -370,10 +363,21 @@ class FlexboxInspector {
       const customColors = await this.getCustomFlexboxColors();
       const color = customColors[hostname] ? customColors[hostname] : FLEXBOX_COLOR;
 
+      const { flexbox } = this.store.getState();
+      let { flexItemShown } = flexbox;
+
+      
+      
+      if (flexItemShown &&
+          !flexItemFronts.find(item => item.nodeFront.actorID === flexItemShown)) {
+        flexItemShown = null;
+      }
+
       this.store.dispatch(updateFlexbox({
         actorID: flexboxFront.actorID,
         color,
         flexItems,
+        flexItemShown,
         highlighted,
         nodeFront: containerNodeFront,
         properties: flexboxFront.properties,

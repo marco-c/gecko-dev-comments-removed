@@ -81,9 +81,6 @@ const flexItem = exports.flexItem = {
   
   properties: PropTypes.shape(flexItemProperties),
 
-  
-  shown: PropTypes.bool,
-
 };
 
 
@@ -121,6 +118,9 @@ exports.flexbox = {
 
   
   flexItems: PropTypes.arrayOf(PropTypes.shape(flexItem)),
+
+  
+  flexItemShown: PropTypes.string,
 
   
   highlighted: PropTypes.bool,
