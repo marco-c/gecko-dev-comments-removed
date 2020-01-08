@@ -120,6 +120,7 @@ namespace detail {
 extern MFBT_DATA const char gTwoCharEscapes[256];
 } 
 
+template <class AllocPolicy = MallocAllocPolicy>
 class JSONWriter
 {
   
@@ -142,7 +143,15 @@ class JSONWriter
     
     bool mIsOwned;
     const char* mUnownedStr;
-    UniquePtr<char[]> mOwnedStr;
+
+    struct FreePolicy {
+      AllocPolicy mAllocPolicy;
+      void operator() (void* p) {
+        mAllocPolicy.free_(p);
+      }
+    };
+
+    UniquePtr<char[], FreePolicy> mOwnedStr;
 
     void SanityCheck() const
     {
@@ -154,6 +163,10 @@ class JSONWriter
     {
       u = u & 0xf;
       return u < 10 ? '0' + u : 'a' + (u - 10);
+    }
+
+    AllocPolicy& allocPolicy() {
+      return mOwnedStr.get_deleter().mAllocPolicy;
     }
 
   public:
@@ -189,7 +202,8 @@ class JSONWriter
       
       mIsOwned = true;
       size_t len = (p - aStr) + nExtra;
-      mOwnedStr = MakeUnique<char[]>(len + 1);
+      UniquePtr<char[], FreePolicy> buffer(allocPolicy().template pod_malloc<char>(len + 1));
+      mOwnedStr = std::move(buffer);
 
       p = aStr;
       size_t i = 0;

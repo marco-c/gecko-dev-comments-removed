@@ -13,9 +13,10 @@
 
 namespace mozilla{
 
+template <class AllocPolicy>
 class JSONWriter;
+class MallocAllocPolicy;
 }
-
 
 
 
@@ -81,8 +82,8 @@ GetHistogramSizesOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
 
 
-nsresult SerializeHistograms(mozilla::JSONWriter &aWriter);
-nsresult SerializeKeyedHistograms(mozilla::JSONWriter &aWriter);
+nsresult SerializeHistograms(mozilla::JSONWriter<mozilla::MallocAllocPolicy>& aWriter);
+nsresult SerializeKeyedHistograms(mozilla::JSONWriter<mozilla::MallocAllocPolicy>& aWriter);
 nsresult DeserializeHistograms(JSContext* aCx, JS::HandleValue aData);
 nsresult DeserializeKeyedHistograms(JSContext* aCx, JS::HandleValue aData);
 

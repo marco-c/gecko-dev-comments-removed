@@ -18,7 +18,9 @@
 
 namespace mozilla {
 
+template <class AllocPolicy>
 class JSONWriter;
+class MallocAllocPolicy;
 namespace Telemetry {
   struct ScalarAction;
   struct KeyedScalarAction;
@@ -94,8 +96,8 @@ void AddDynamicScalarDefinitions(const nsTArray<mozilla::Telemetry::DynamicScala
 
 
 
-nsresult SerializeScalars(mozilla::JSONWriter &aWriter);
-nsresult SerializeKeyedScalars(mozilla::JSONWriter &aWriter);
+nsresult SerializeScalars(mozilla::JSONWriter<mozilla::MallocAllocPolicy>& aWriter);
+nsresult SerializeKeyedScalars(mozilla::JSONWriter<mozilla::MallocAllocPolicy>& aWriter);
 nsresult DeserializePersistedScalars(JSContext* aCx, JS::HandleValue aData);
 nsresult DeserializePersistedKeyedScalars(JSContext* aCx, JS::HandleValue aData);
 

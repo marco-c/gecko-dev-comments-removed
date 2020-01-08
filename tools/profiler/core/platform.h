@@ -40,6 +40,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "PlatformMacros.h"
+#include "ProfileJSONWriter.h"
 #include <vector>
 
 
@@ -116,9 +117,11 @@ typedef mozilla::UniquePtr<PlatformData, PlatformDataDestructor>
 UniquePlatformData AllocPlatformData(int aThreadId);
 
 namespace mozilla {
+template <class AllocPolicy>
 class JSONWriter;
+class MallocAllocPolicy;
 }
-void AppendSharedLibraries(mozilla::JSONWriter& aWriter);
+void AppendSharedLibraries(ProfilerJSONWriter& aWriter);
 
 
 uint32_t ParseFeaturesFromStringArray(const char** aFeatures,
