@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "signaling/src/sdp/SdpMediaSection.h"
 #include "signaling/src/sdp/RsdparsaSdpMediaSection.h"
 
