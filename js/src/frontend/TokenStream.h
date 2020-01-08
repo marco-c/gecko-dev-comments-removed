@@ -162,6 +162,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
@@ -1279,6 +1297,29 @@ TokenStreamCharsBase<char16_t>::fillCharBufferWithTemplateStringContents(const c
     return true;
 }
 
+template<typename CharT>
+class SpecializedTokenStreamCharsBase;
+
+template<>
+class SpecializedTokenStreamCharsBase<char16_t>
+  : public TokenStreamCharsBase<char16_t>
+{
+    using CharsBase = TokenStreamCharsBase<char16_t>;
+
+  protected:
+    using CharsBase::CharsBase;
+};
+
+template<>
+class SpecializedTokenStreamCharsBase<mozilla::Utf8Unit>
+  : public TokenStreamCharsBase<mozilla::Utf8Unit>
+{
+    using CharsBase = TokenStreamCharsBase<mozilla::Utf8Unit>;
+
+  protected:
+    using CharsBase::CharsBase;
+};
+
 
 class TokenStart
 {
@@ -1302,9 +1343,10 @@ class TokenStart
 
 template<typename CharT, class AnyCharsAccess>
 class GeneralTokenStreamChars
-  : public TokenStreamCharsBase<CharT>
+  : public SpecializedTokenStreamCharsBase<CharT>
 {
     using CharsBase = TokenStreamCharsBase<CharT>;
+    using SpecializedCharsBase = SpecializedTokenStreamCharsBase<CharT>;
 
     Token* newTokenInternal(TokenKind kind, TokenStart start, TokenKind* out);
 
@@ -1335,7 +1377,7 @@ class GeneralTokenStreamChars
     using typename CharsBase::SourceUnits;
 
   protected:
-    using CharsBase::CharsBase;
+    using SpecializedCharsBase::SpecializedCharsBase;
 
     TokenStreamAnyChars& anyCharsAccess() {
         return AnyCharsAccess::anyChars(this);
