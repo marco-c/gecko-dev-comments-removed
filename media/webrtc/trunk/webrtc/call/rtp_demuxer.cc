@@ -177,6 +177,10 @@ RtpPacketSinkInterface* RtpDemuxer::ResolveSink(
 
   
   
+  
+#if 0
+  
+  
   if (has_mid && known_mids_.find(packet_mid) == known_mids_.end()) {
     return nullptr;
   }
@@ -248,6 +252,7 @@ RtpPacketSinkInterface* RtpDemuxer::ResolveSink(
     }
   }
 
+#endif
   
   
   const auto ssrc_sink_it = sink_by_ssrc_.find(ssrc);
