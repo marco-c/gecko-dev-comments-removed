@@ -5,7 +5,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.getDirectories = getDirectories;
 
-var _utils = require("./utils");
 
 
 
@@ -27,12 +26,11 @@ function findSourceItem(sourceTree, source) {
   return _traverse(sourceTree, source);
 }
 
-function getAncestors(sourceTree, item) {
+function getAncestors(sourceTree, parentMap, item) {
   if (!item) {
     return null;
   }
 
-  const parentMap = (0, _utils.createParentMap)(sourceTree);
   const directories = [];
   directories.push(item);
 
@@ -47,8 +45,8 @@ function getAncestors(sourceTree, item) {
   }
 }
 
-function getDirectories(source, sourceTree) {
+function getDirectories(source, parentMap, sourceTree) {
   const item = findSourceItem(sourceTree, source);
-  const ancestors = getAncestors(sourceTree, item);
+  const ancestors = getAncestors(sourceTree, parentMap, item);
   return ancestors || [sourceTree];
 }

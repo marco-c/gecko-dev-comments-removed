@@ -2,7 +2,7 @@
 
 
 
-requestLongerTimeout(20);
+requestLongerTimeout(30);
 
 
 

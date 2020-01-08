@@ -20,7 +20,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 
 
-const prefsSchemaVersion = "1.0.4";
+const prefsSchemaVersion = "1.0.5";
 const pref = _devtoolsServices2.default.pref;
 
 if ((0, _devtoolsEnvironment.isDevelopment)()) {
@@ -120,7 +120,8 @@ const features = exports.features = new _devtoolsModules.PrefsHelper("devtools.d
   componentPane: ["Bool", "component-pane"]
 });
 const asyncStore = exports.asyncStore = (0, _asyncStoreHelper.asyncStoreHelper)("debugger", {
-  pendingBreakpoints: ["pending-breakpoints", {}]
+  pendingBreakpoints: ["pending-breakpoints", {}],
+  tabs: ["tabs", []]
 });
 
 if (prefs.debuggerPrefsSchemaVersion !== prefsSchemaVersion) {
