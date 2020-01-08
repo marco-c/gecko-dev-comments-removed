@@ -10,6 +10,7 @@
 #include "mozilla/dom/Nullable.h"
 #include "nsIFrame.h"
 #include "nsIPresShell.h"
+#include "nsTransitionManager.h" 
 
 using mozilla::dom::Nullable;
 
@@ -108,6 +109,12 @@ PendingAnimationTracker::TriggerPendingAnimationsNow()
   mHasPlayPendingGeometricAnimations = CheckState::Absent;
 }
 
+static bool
+IsTransition(const Animation& aAnimation) {
+  const dom::CSSTransition* transition = aAnimation.AsCSSTransition();
+  return transition && transition->IsTiedToMarkup();
+}
+
 void
 PendingAnimationTracker::MarkAnimationsThatMightNeedSynchronization()
 {
@@ -125,36 +132,56 @@ PendingAnimationTracker::MarkAnimationsThatMightNeedSynchronization()
   
   
   
-  if (mHasPlayPendingGeometricAnimations == CheckState::Present) {
-    return;
-  }
-
-  if (!HasPlayPendingGeometricAnimations()) {
-    return;
-  }
-
-  for (auto iter = mPlayPendingSet.Iter(); !iter.Done(); iter.Next()) {
-    iter.Get()->GetKey()->NotifyGeometricAnimationsStartingThisFrame();
-  }
-}
-
-bool
-PendingAnimationTracker::HasPlayPendingGeometricAnimations()
-{
+  
+  
+  
+  
+  
   if (mHasPlayPendingGeometricAnimations != CheckState::Indeterminate) {
-    return mHasPlayPendingGeometricAnimations == CheckState::Present;
+    return;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
 
   mHasPlayPendingGeometricAnimations = CheckState::Absent;
   for (auto iter = mPlayPendingSet.ConstIter(); !iter.Done(); iter.Next()) {
     auto animation = iter.Get()->GetKey();
     if (animation->GetEffect() && animation->GetEffect()->AffectsGeometry()) {
-      mHasPlayPendingGeometricAnimations = CheckState::Present;
-      break;
+      mHasPlayPendingGeometricAnimations &= ~CheckState::Absent;
+      mHasPlayPendingGeometricAnimations |= IsTransition(*animation)
+                                            ? CheckState::TransitionsPresent
+                                            : CheckState::AnimationsPresent;
+
+      
+      
+      if (mHasPlayPendingGeometricAnimations ==
+          (CheckState::TransitionsPresent | CheckState::AnimationsPresent)) {
+        break;
+      }
     }
   }
 
-  return mHasPlayPendingGeometricAnimations == CheckState::Present;
+  if (mHasPlayPendingGeometricAnimations == CheckState::Absent) {
+    return;
+  }
+
+  for (auto iter = mPlayPendingSet.Iter(); !iter.Done(); iter.Next()) {
+    auto animation = iter.Get()->GetKey();
+    bool isTransition = IsTransition(*animation);
+    if ((isTransition &&
+         mHasPlayPendingGeometricAnimations & CheckState::TransitionsPresent) ||
+        (!isTransition &&
+         mHasPlayPendingGeometricAnimations & CheckState::AnimationsPresent)) {
+      animation->NotifyGeometricAnimationsStartingThisFrame();
+    }
+  }
 }
 
 void
