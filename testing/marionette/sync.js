@@ -18,6 +18,7 @@ XPCOMUtils.defineLazyGetter(this, "logger", Log.get);
 this.EXPORTED_SYMBOLS = [
   
   "PollPromise",
+  "Sleep",
   "TimedPromise",
 
   
@@ -205,6 +206,27 @@ function TimedPromise(fn, {timeout = 1500, throws = TimeoutError} = {}) {
     timer.cancel();
     throw err;
   });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function Sleep(timeout) {
+  if (typeof timeout != "number") {
+    throw new TypeError();
+  }
+  return new TimedPromise(() => {}, {timeout, throws: null});
 }
 
 
