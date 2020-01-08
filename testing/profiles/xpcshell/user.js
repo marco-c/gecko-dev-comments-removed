@@ -11,3 +11,8 @@ user_pref("geo.provider.testing", true);
 user_pref("media.gmp-manager.updateEnabled", false);
 user_pref("media.gmp-manager.url.override", "http://%(server)s/dummy-gmp-manager.xml");
 user_pref("toolkit.telemetry.server", "https://%(server)s/telemetry-dummy");
+
+
+
+
+user_pref("dom.ipc.processPriorityManager.enabled", false);
