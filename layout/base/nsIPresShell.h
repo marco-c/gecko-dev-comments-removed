@@ -1377,8 +1377,7 @@ class nsIPresShell : public nsStubDocumentObserver {
 
   enum class ChangeOrigin : uint8_t {
     eApz,
-    eRestore,
-    eOther,
+    eMainThread,
   };
   virtual nsresult SetResolutionAndScaleTo(float aResolution,
                                            ChangeOrigin aOrigin) = 0;

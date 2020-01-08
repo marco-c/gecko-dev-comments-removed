@@ -10149,7 +10149,7 @@ void nsIDocument::CleanupFullscreenState() {
   if (nsIPresShell* shell = GetShell()) {
     if (shell->GetMobileViewportManager()) {
       shell->SetResolutionAndScaleTo(mSavedResolution,
-                                     nsIPresShell::ChangeOrigin::eRestore);
+                                     nsIPresShell::ChangeOrigin::eMainThread);
     }
   }
 
@@ -10547,7 +10547,7 @@ bool nsIDocument::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
         
         child->mSavedResolution = shell->GetResolution();
         shell->SetResolutionAndScaleTo(manager->ComputeIntrinsicResolution(),
-                                       nsIPresShell::ChangeOrigin::eOther);
+                                       nsIPresShell::ChangeOrigin::eMainThread);
       }
     }
 
