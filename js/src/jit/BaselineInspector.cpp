@@ -760,25 +760,17 @@ BaselineInspector::hasSeenNonStringIterMore(jsbytecode* pc)
     return stub->toIteratorMore_Fallback()->hasNonStringResult();
 }
 
-
-
-
 bool
-BaselineInspector::hasSeenDoubleResult(jsbytecode* pc, bool defaultIfEmpty)
+BaselineInspector::hasSeenDoubleResult(jsbytecode* pc)
 {
     if (!hasBaselineScript()) {
         return false;
     }
 
     const ICEntry& entry = icEntryFromPC(pc);
-    ICFallbackStub* stub = entry.fallbackStub();
+    ICStub* stub = entry.fallbackStub();
 
     MOZ_ASSERT(stub->isUnaryArith_Fallback() || stub->isBinaryArith_Fallback());
-
-    
-    if (stub->state().numOptimizedStubs() == 0 && !entry.fallbackStub()->state().hasFailures()) {
-        return defaultIfEmpty;
-    }
 
     if (stub->isUnaryArith_Fallback()) {
         return stub->toUnaryArith_Fallback()->sawDoubleResult();
