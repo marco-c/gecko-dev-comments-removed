@@ -44,8 +44,7 @@ using namespace js;
 using namespace js::jit;
 
 #ifdef XP_WIN
-
-#if defined(HAVE_64BIT_BUILD) && defined(_M_X64)
+#if defined(HAVE_64BIT_BUILD)
 #define NEED_JIT_UNWIND_HANDLING
 #endif
 
@@ -83,6 +82,28 @@ JS_FRIEND_API void js::SetJitExceptionHandler(JitExceptionHandler handler) {
   sJitExceptionHandler = handler;
 }
 
+#if defined(_M_ARM64)
+
+
+
+
+
+
+
+struct UnwindInfo {
+  uint32_t functionLength : 18;
+  uint32_t version : 2;
+  uint32_t hasExceptionHandler : 1;
+  uint32_t packedEpilog : 1;
+  uint32_t epilogCount : 5;
+  uint32_t codeWords : 5;
+  uint16_t extEpilogCount;
+  uint8_t extCodeWords;
+  uint8_t reserved;
+  uint32_t exceptionHandler;
+};
+static const unsigned ThunkLength = 20;
+#else
 
 
 struct UnwindInfo {
@@ -94,8 +115,8 @@ struct UnwindInfo {
   uint8_t frameOffset : 4;
   ULONG exceptionHandler;
 };
-
 static const unsigned ThunkLength = 12;
+#endif
 
 struct ExceptionHandlerRecord {
   RUNTIME_FUNCTION runtimeFunction;
@@ -114,6 +135,8 @@ static DWORD ExceptionHandler(PEXCEPTION_RECORD exceptionRecord,
   return sJitExceptionHandler(exceptionRecord, context);
 }
 
+PRUNTIME_FUNCTION RuntimeFunctionCallback(DWORD64 ControlPc, PVOID Context);
+
 
 
 static bool RegisterExecutableMemory(void* p, size_t bytes, size_t pageSize) {
@@ -122,6 +145,14 @@ static bool RegisterExecutableMemory(void* p, size_t bytes, size_t pageSize) {
   }
 
   ExceptionHandlerRecord* r = reinterpret_cast<ExceptionHandlerRecord*>(p);
+  void* handler = JS_FUNC_TO_DATA_PTR(void*, ExceptionHandler);
+
+  
+  
+  
+  
+  
+  
 
   
   
@@ -131,6 +162,30 @@ static bool RegisterExecutableMemory(void* p, size_t bytes, size_t pageSize) {
   
   
 
+#if defined(_M_ARM64)
+  r->runtimeFunction.BeginAddress = pageSize;
+  r->runtimeFunction.UnwindData = offsetof(ExceptionHandlerRecord, unwindInfo);
+  static_assert(offsetof(ExceptionHandlerRecord, unwindInfo) % 4 == 0,
+                "The ARM64 .pdata format requires that exception information "
+                "RVAs be 4-byte aligned.");
+
+  memset(&r->unwindInfo, 0, sizeof(r->unwindInfo));
+  r->unwindInfo.hasExceptionHandler = true;
+  r->unwindInfo.exceptionHandler = offsetof(ExceptionHandlerRecord, thunk);
+
+  uint32_t* thunk = (uint32_t*)r->thunk;
+  uint16_t* addr = (uint16_t*)&handler;
+
+  
+  const uint8_t reg = 16;
+
+  
+  thunk[0] = 0xd2800000 | addr[0] << 5 | reg;  
+  thunk[1] = 0xf2a00000 | addr[1] << 5 | reg;  
+  thunk[2] = 0xf2c00000 | addr[2] << 5 | reg;  
+  thunk[3] = 0xf2e00000 | addr[3] << 5 | reg;  
+  thunk[4] = 0xd61f0000 | reg << 5;            
+#else
   r->runtimeFunction.BeginAddress = pageSize;
   r->runtimeFunction.EndAddress = (DWORD)bytes;
   r->runtimeFunction.UnwindData = offsetof(ExceptionHandlerRecord, unwindInfo);
@@ -146,12 +201,12 @@ static bool RegisterExecutableMemory(void* p, size_t bytes, size_t pageSize) {
   
   r->thunk[0] = 0x48;
   r->thunk[1] = 0xb8;
-  void* handler = JS_FUNC_TO_DATA_PTR(void*, ExceptionHandler);
   memcpy(&r->thunk[2], &handler, 8);
 
   
   r->thunk[10] = 0xff;
   r->thunk[11] = 0xe0;
+#endif
 
   DWORD oldProtect;
   if (!VirtualProtect(p, pageSize, PAGE_EXECUTE_READ, &oldProtect)) {
@@ -162,18 +217,13 @@ static bool RegisterExecutableMemory(void* p, size_t bytes, size_t pageSize) {
   
   
   AutoSuppressStackWalking suppress;
-  return RtlAddFunctionTable(&r->runtimeFunction, 1,
-                             reinterpret_cast<DWORD64>(p));
+  return RtlInstallFunctionTableCallback((DWORD64)p | 0x3, (DWORD64)p, bytes,
+                                         RuntimeFunctionCallback, NULL, NULL);
 }
 
 static void UnregisterExecutableMemory(void* p, size_t bytes, size_t pageSize) {
-  ExceptionHandlerRecord* r = reinterpret_cast<ExceptionHandlerRecord*>(p);
-
   
   
-  
-  AutoSuppressStackWalking suppress;
-  RtlDeleteFunctionTable(&r->runtimeFunction);
 }
 #endif
 
@@ -474,6 +524,8 @@ class ProcessExecutableMemory {
     return true;
   }
 
+  uint8_t* base() const { return base_; }
+
   bool initialized() const { return base_ != nullptr; }
 
   size_t bytesAllocated() const {
@@ -685,3 +737,18 @@ bool js::jit::ReprotectRegion(void* start, size_t size,
   execMemory.assertValidAddress(pageStart, size);
   return true;
 }
+
+#if defined(XP_WIN) && defined(NEED_JIT_UNWIND_HANDLING)
+static PRUNTIME_FUNCTION RuntimeFunctionCallback(DWORD64 ControlPc,
+                                                 PVOID Context) {
+  MOZ_ASSERT(sJitExceptionHandler);
+
+  
+  
+  uint8_t* p = execMemory.base();
+  if (!p) {
+    return nullptr;
+  }
+  return (PRUNTIME_FUNCTION)(p - gc::SystemPageSize());
+}
+#endif
