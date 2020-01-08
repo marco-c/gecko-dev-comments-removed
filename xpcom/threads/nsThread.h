@@ -71,6 +71,9 @@ public:
     return mThread;
   }
 
+  const void* StackBase() const { return mStackBase; }
+  size_t StackSize() const { return mStackSize; }
+
   
   
   bool ShutdownRequired()
@@ -177,6 +180,7 @@ protected:
   PRThread* mThread;
   uint32_t  mNestedEventLoopDepth;
   uint32_t  mStackSize;
+  void*     mStackBase = nullptr;
 
   
   struct nsThreadShutdownContext* mShutdownContext;

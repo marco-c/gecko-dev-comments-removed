@@ -50,9 +50,14 @@
 #include "mozilla/dom/ContentChild.h"
 
 #ifdef XP_LINUX
+#ifdef __GLIBC__
+#include <gnu/libc-version.h>
+#endif
+#include <sys/mman.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sched.h>
+#include <stdio.h>
 #endif
 
 #define HAVE_UALARM _BSD_SOURCE || (_XOPEN_SOURCE >= 500 ||                 \
@@ -412,6 +417,62 @@ nsThread::ThreadFunc(void* aArg)
   if (!initData->name.IsEmpty()) {
     NS_SetCurrentThreadName(initData->name.BeginReading());
   }
+
+#ifdef XP_LINUX
+  {
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_getattr_np(pthread_self(), &attr);
+
+    size_t stackSize;
+    pthread_attr_getstack(&attr, &self->mStackBase, &stackSize);
+
+    
+    
+    
+    
+    
+    static bool sAdjustForGuardSize = ({
+#ifdef __GLIBC__
+      unsigned major, minor;
+      sscanf(gnu_get_libc_version(), "%u.%u", &major, &minor) < 2 ||
+        major < 2 || (major == 2 && minor < 27);
+#else
+      false;
+#endif
+    });
+    if (sAdjustForGuardSize) {
+      size_t guardSize;
+      pthread_attr_getguardsize(&attr, &guardSize);
+
+      
+      
+      
+      
+      self->mStackBase = reinterpret_cast<char*>(self->mStackBase) + guardSize;
+      stackSize -= guardSize;
+    }
+
+    self->mStackSize = stackSize;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    madvise(self->mStackBase, stackSize, MADV_NOHUGEPAGE);
+
+    pthread_attr_destroy(&attr);
+  }
+#endif
 
   
   nsThreadManager::get().RegisterCurrentThread(*self);
