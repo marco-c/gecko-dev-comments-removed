@@ -7,7 +7,6 @@
 #define nsIDocument_h___
 
 #include "mozilla/FlushType.h"           
-#include "nsAttrAndChildArray.h"
 #include "nsAutoPtr.h"                   
 #include "nsCOMArray.h"                  
 #include "nsCompatibility.h"             
@@ -4419,9 +4418,6 @@ protected:
 
   
   nsTHashtable<nsPtrHashKey<nsIObjectLoadingContent>> mPlugins;
-
-  
-  nsAttrAndChildArray mChildren;
 
   RefPtr<mozilla::dom::DocumentTimeline> mDocumentTimeline;
   mozilla::LinkedList<mozilla::dom::DocumentTimeline> mTimelines;

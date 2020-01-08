@@ -16,7 +16,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/UniquePtr.h"
-#include "nsAttrAndChildArray.h"          
+#include "AttrArray.h"                    
 #include "nsCycleCollectionParticipant.h" 
 #include "nsIContent.h"                   
 #include "nsNodeUtils.h"                  
@@ -330,7 +330,7 @@ protected:
   
 
 
-  nsAttrAndChildArray mAttrsAndChildren;
+  AttrArray mAttrs;
 };
 
 } 

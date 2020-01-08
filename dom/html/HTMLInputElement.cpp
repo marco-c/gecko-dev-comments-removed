@@ -4831,7 +4831,7 @@ HTMLInputElement::HandleTypeChange(uint8_t aNewType, bool aNotify)
     CancelImageRequests(aNotify);
 
     
-    mAttrsAndChildren.UpdateMappedAttrRuleMapper(*this);
+    mAttrs.UpdateMappedAttrRuleMapper(*this);
   } else if (mType == NS_FORM_INPUT_IMAGE) {
     if (aNotify) {
       
@@ -4848,7 +4848,7 @@ HTMLInputElement::HandleTypeChange(uint8_t aNewType, bool aNotify)
     }
 
     
-    mAttrsAndChildren.UpdateMappedAttrRuleMapper(*this);
+    mAttrs.UpdateMappedAttrRuleMapper(*this);
   }
 
   if (mType == NS_FORM_INPUT_PASSWORD && IsInComposedDoc()) {

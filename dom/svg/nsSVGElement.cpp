@@ -244,7 +244,7 @@ nsSVGElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
   if (!MayHaveStyle()) {
     return NS_OK;
   }
-  const nsAttrValue* oldVal = mAttrsAndChildren.GetAttr(nsGkAtoms::style);
+  const nsAttrValue* oldVal = mAttrs.GetAttr(nsGkAtoms::style);
 
   if (oldVal && oldVal->Type() == nsAttrValue::eCSSDeclaration) {
     
@@ -261,8 +261,7 @@ nsSVGElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     
     
     bool oldValueSet;
-    rv = mAttrsAndChildren.SetAndSwapAttr(nsGkAtoms::style, attrValue,
-                                          &oldValueSet);
+    rv = mAttrs.SetAndSwapAttr(nsGkAtoms::style, attrValue, &oldValueSet);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -282,7 +281,7 @@ nsSVGElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
   
   
   
-  MOZ_ASSERT(!mAttrsAndChildren.HasMappedAttrs(),
+  MOZ_ASSERT(!mAttrs.HasMappedAttrs(),
              "Unexpected use of nsMappedAttributes within SVG");
 
   
@@ -1249,7 +1248,7 @@ nsSVGElement::UpdateContentDeclarationBlock()
   NS_ASSERTION(!mContentDeclarationBlock,
                "we already have a content declaration block");
 
-  uint32_t attrCount = mAttrsAndChildren.AttrCount();
+  uint32_t attrCount = mAttrs.AttrCount();
   if (!attrCount) {
     
     return;
@@ -1260,7 +1259,7 @@ nsSVGElement::UpdateContentDeclarationBlock()
                                     GetBaseURI(), this);
 
   for (uint32_t i = 0; i < attrCount; ++i) {
-    const nsAttrName* attrName = mAttrsAndChildren.AttrNameAt(i);
+    const nsAttrName* attrName = mAttrs.AttrNameAt(i);
     if (!attrName->IsAtom() || !IsAttributeMapped(attrName->Atom()))
       continue;
 
@@ -1293,7 +1292,7 @@ nsSVGElement::UpdateContentDeclarationBlock()
     }
 
     nsAutoString value;
-    mAttrsAndChildren.AttrAt(i)->ToString(value);
+    mAttrs.AttrAt(i)->ToString(value);
     mappedAttrParser.ParseMappedAttrValue(attrName->Atom(), value);
   }
   mContentDeclarationBlock = mappedAttrParser.GetDeclarationBlock();
@@ -1444,7 +1443,7 @@ nsSVGElement::MaybeSerializeAttrBeforeRemoval(nsAtom* aName, bool aNotify)
     return;
   }
 
-  const nsAttrValue* attrValue = mAttrsAndChildren.GetAttr(aName);
+  const nsAttrValue* attrValue = mAttrs.GetAttr(aName);
   if (!attrValue)
     return;
 
@@ -1452,7 +1451,7 @@ nsSVGElement::MaybeSerializeAttrBeforeRemoval(nsAtom* aName, bool aNotify)
   attrValue->ToString(serializedValue);
   nsAttrValue oldAttrValue(serializedValue);
   bool oldValueSet;
-  mAttrsAndChildren.SetAndSwapAttr(aName, oldAttrValue, &oldValueSet);
+  mAttrs.SetAndSwapAttr(aName, oldAttrValue, &oldValueSet);
 }
 
 
@@ -2457,9 +2456,9 @@ nsSVGElement::ReportAttributeParseFailure(nsIDocument* aDocument,
 void
 nsSVGElement::RecompileScriptEventListeners()
 {
-  int32_t i, count = mAttrsAndChildren.AttrCount();
+  int32_t i, count = mAttrs.AttrCount();
   for (i = 0; i < count; ++i) {
-    const nsAttrName *name = mAttrsAndChildren.AttrNameAt(i);
+    const nsAttrName *name = mAttrs.AttrNameAt(i);
 
     
     if (!name->IsAtom()) {

@@ -297,7 +297,7 @@ HTMLBodyElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
   nsresult rv = nsGenericHTMLElement::BindToTree(aDocument, aParent,
                                                  aBindingParent);
   NS_ENSURE_SUCCESS(rv, rv);
-  return mAttrsAndChildren.ForceMapped(this, OwnerDoc());
+  return mAttrs.ForceMapped(this, OwnerDoc());
 }
 
 nsresult
@@ -314,7 +314,7 @@ HTMLBodyElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   
   
   if (!aValue && IsAttributeMapped(aName)) {
-    nsresult rv = mAttrsAndChildren.ForceMapped(this, OwnerDoc());
+    nsresult rv = mAttrs.ForceMapped(this, OwnerDoc());
     NS_ENSURE_SUCCESS(rv, rv);
   }
 

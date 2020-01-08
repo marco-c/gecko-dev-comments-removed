@@ -164,7 +164,7 @@ nsStyledElement::ReparseStyleAttribute(bool aForceInDataDoc, bool aForceIfAlread
   if (!MayHaveStyle()) {
     return NS_OK;
   }
-  const nsAttrValue* oldVal = mAttrsAndChildren.GetAttr(nsGkAtoms::style);
+  const nsAttrValue* oldVal = mAttrs.GetAttr(nsGkAtoms::style);
   if (oldVal && (aForceIfAlreadyParsed || oldVal->Type() != nsAttrValue::eCSSDeclaration)) {
     nsAttrValue attrValue;
     nsAutoString stringValue;
@@ -173,8 +173,8 @@ nsStyledElement::ReparseStyleAttribute(bool aForceInDataDoc, bool aForceIfAlread
     
     
     bool oldValueSet;
-    nsresult rv = mAttrsAndChildren.SetAndSwapAttr(nsGkAtoms::style, attrValue,
-                                                   &oldValueSet);
+    nsresult rv = mAttrs.SetAndSwapAttr(nsGkAtoms::style, attrValue,
+                                        &oldValueSet);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 

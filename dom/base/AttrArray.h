@@ -8,9 +8,8 @@
 
 
 
-
-#ifndef nsAttrAndChildArray_h___
-#define nsAttrAndChildArray_h___
+#ifndef AttrArray_h___
+#define AttrArray_h___
 
 #include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
@@ -45,12 +44,12 @@ class nsMappedAttributeElement;
 
 #define ATTRSIZE (sizeof(InternalAttr) / sizeof(void*))
 
-class nsAttrAndChildArray
+class AttrArray
 {
   typedef mozilla::dom::BorrowedAttrInfo BorrowedAttrInfo;
 public:
-  nsAttrAndChildArray();
-  ~nsAttrAndChildArray();
+  AttrArray();
+  ~AttrArray();
 
   bool HasAttrs() const
   {
@@ -145,12 +144,12 @@ public:
   
   
   
-  nsresult EnsureCapacityToClone(const nsAttrAndChildArray& aOther,
+  nsresult EnsureCapacityToClone(const AttrArray& aOther,
                                  bool aAllocateChildren);
 
 private:
-  nsAttrAndChildArray(const nsAttrAndChildArray& aOther) = delete;
-  nsAttrAndChildArray& operator=(const nsAttrAndChildArray& aOther) = delete;
+  AttrArray(const AttrArray& aOther) = delete;
+  AttrArray& operator=(const AttrArray& aOther) = delete;
 
   void Clear();
 
