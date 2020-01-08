@@ -195,19 +195,6 @@ protected:
   NS_IMETHOD LogBlockedCORSRequest(const nsAString & aMessage, const nsACString& aCategory) override;
 
 private:
-  
-  
-  uint32_t mCacheKey;
-  nsCOMPtr<nsIChildChannel> mRedirectChannelChild;
-  RefPtr<InterceptStreamListener> mInterceptListener;
-  
-  nsCOMPtr<nsIStreamListener> mInterceptedRedirectListener;
-  nsCOMPtr<nsISupports> mInterceptedRedirectContext;
-
-  
-  void ReleaseMainThreadOnlyReferences();
-
-private:
 
   class OverrideRunnable : public Runnable {
   public:
@@ -299,40 +286,75 @@ private:
   void
   MaybeCallSynthesizedCallback();
 
+private:
+  
+  
+  nsCOMPtr<nsIChildChannel> mRedirectChannelChild;
+  RefPtr<InterceptStreamListener> mInterceptListener;
+  
+  nsCOMPtr<nsIStreamListener> mInterceptedRedirectListener;
+  nsCOMPtr<nsISupports> mInterceptedRedirectContext;
+
+  
+  void ReleaseMainThreadOnlyReferences();
+
+private:
+  nsCString mCachedCharset;
+  nsCString mProtocolVersion;
+
   RequestHeaderTuples mClientSetRequestHeaders;
   RefPtr<nsInputStreamPump> mSynthesizedResponsePump;
   nsCOMPtr<nsIInputStream> mSynthesizedInput;
   nsCOMPtr<nsIInterceptedBodyCallback> mSynthesizedCallback;
-  int64_t mSynthesizedStreamLength;
-
-  bool mIsFromCache;
-  bool mCacheEntryAvailable;
-  uint64_t mCacheEntryId;
-  bool mAltDataCacheEntryAvailable;
-  int32_t      mCacheFetchCount;
-  uint32_t     mCacheExpirationTime;
-  nsCString    mCachedCharset;
-
   nsCOMPtr<nsICacheInfoChannel> mSynthesizedCacheInfo;
-
-  nsCString mProtocolVersion;
-
-  TimeStamp mLastStatusReported;
-
-  
-  bool mSendResumeAt;
-
-  
-  Atomic<bool> mDeletingChannelSent;
-
-  Atomic<bool> mIPCOpen;
-  bool mKeptAlive;            
   RefPtr<ChannelEventQueue> mEventQ;
+
+  
+  Mutex mBgChildMutex;
+
+  
+  RefPtr<HttpBackgroundChannelChild> mBgChild;
+
+  
+  nsCOMPtr<nsIRunnable> mBgInitFailCallback;
+
+  
+  
+  void CleanupBackgroundChannel();
+
+  
+  RefPtr<HttpChannelChild> mInterceptingChannel;
+  
+  RefPtr<OverrideRunnable> mOverrideRunnable;
+
+  
+  nsCOMPtr<nsIEventTarget> mODATarget;
+  
+  Mutex mEventTargetMutex;
 
   
   
   
   nsTArray<UniquePtr<ChannelEvent>> mUnknownDecoderEventQ;
+
+  TimeStamp mLastStatusReported;
+
+  int64_t mSynthesizedStreamLength;
+  uint64_t mCacheEntryId;
+
+  
+  
+  LABELS_HTTP_CHILD_OMT_STATS mOMTResult = LABELS_HTTP_CHILD_OMT_STATS::notRequested;
+
+  uint32_t mCacheKey;
+  int32_t mCacheFetchCount;
+  uint32_t mCacheExpirationTime;
+
+  
+  Atomic<bool> mDeletingChannelSent;
+
+  Atomic<bool> mIPCOpen;
+
   Atomic<bool, ReleaseAcquire> mUnknownDecoderInvolved;
 
   
@@ -340,6 +362,16 @@ private:
   
   
   Atomic<bool, ReleaseAcquire> mFlushedForDiversion;
+
+  bool mIsFromCache;
+  bool mCacheEntryAvailable;
+  bool mAltDataCacheEntryAvailable;
+
+  
+  bool mSendResumeAt;
+
+  bool mKeptAlive; 
+
   
   
   bool mSuspendSent;
@@ -370,29 +402,6 @@ private:
   
   
   bool mSuspendParentAfterSynthesizeResponse;
-
-  
-  Mutex mBgChildMutex;
-
-  
-  RefPtr<HttpBackgroundChannelChild> mBgChild;
-
-  
-  nsCOMPtr<nsIRunnable> mBgInitFailCallback;
-
-  
-  
-  void CleanupBackgroundChannel();
-
-  
-  RefPtr<HttpChannelChild> mInterceptingChannel;
-  
-  RefPtr<OverrideRunnable> mOverrideRunnable;
-
-  
-  nsCOMPtr<nsIEventTarget> mODATarget;
-  
-  Mutex mEventTargetMutex;
 
   void FinishInterceptedRedirect();
   void CleanupRedirectingChannel(nsresult rv);
@@ -465,10 +474,6 @@ private:
 
   
   void CollectOMTTelemetry();
-
-  
-  
-  LABELS_HTTP_CHILD_OMT_STATS mOMTResult = LABELS_HTTP_CHILD_OMT_STATS::notRequested;
 
   friend class AssociateApplicationCacheEvent;
   friend class StartRequestEvent;
