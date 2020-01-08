@@ -5526,11 +5526,6 @@ pref("layout.accessiblecaret.enabled", false);
 pref("layout.accessiblecaret.enabled_on_touch", true);
 
 
-pref("layout.accessiblecaret.width", "34.0");
-pref("layout.accessiblecaret.height", "36.0");
-pref("layout.accessiblecaret.margin-left", "-18.5");
-
-
 pref("layout.accessiblecaret.caret_shown_when_long_tapping_on_empty_content", false);
 
 
