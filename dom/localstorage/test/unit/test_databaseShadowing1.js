@@ -3,11 +3,9 @@
 
 
 
-var testGenerator = testSteps();
-
 loadSubscript("databaseShadowing-shared.js");
 
-function* testSteps()
+async function testSteps()
 {
   enableNextGenLocalStorage();
 
@@ -16,12 +14,10 @@ function* testSteps()
   verifyData([]);
 
   
-  reset(continueToNextStepSync);
-  yield undefined;
+  let request = reset();
+  await requestFinished(request);
 
   exportShadowDatabase("shadowdb.sqlite");
 
   
-
-  finishTest();
 }

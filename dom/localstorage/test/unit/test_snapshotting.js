@@ -3,9 +3,7 @@
 
 
 
-var testGenerator = testSteps();
-
-function* testSteps()
+async function testSteps()
 {
   const url = "http://example.com";
 
@@ -72,8 +70,7 @@ function* testSteps()
     info("Returning to event loop");
 
     
-    continueToNextStep();
-    yield undefined;
+    await returnToEventLoop();
 
     
 
@@ -99,8 +96,7 @@ function* testSteps()
 
     info("Returning to event loop");
 
-    continueToNextStep();
-    yield undefined;
+    await returnToEventLoop();
 
     
 
@@ -136,8 +132,7 @@ function* testSteps()
 
     info("Returning to event loop");
 
-    continueToNextStep();
-    yield undefined;
+    await returnToEventLoop();
 
     
 
@@ -156,8 +151,7 @@ function* testSteps()
 
     info("Returning to event loop");
 
-    continueToNextStep();
-    yield undefined;
+    await returnToEventLoop();
 
     
 
@@ -181,8 +175,7 @@ function* testSteps()
 
     info("Returning to event loop");
 
-    continueToNextStep();
-    yield undefined;
+    await returnToEventLoop();
 
     
     info("Verifying unknown item");
@@ -195,8 +188,7 @@ function* testSteps()
 
     info("Returning to event loop");
 
-    continueToNextStep();
-    yield undefined;
+    await returnToEventLoop();
 
     
 
@@ -205,8 +197,7 @@ function* testSteps()
 
     savedKeys = Object.keys(storage);
 
-    continueToNextStep();
-    yield undefined;
+    await returnToEventLoop();
 
     
 
@@ -228,8 +219,7 @@ function* testSteps()
       is(keys[i], savedKeys[i], "Correct key");
     }
 
-    continueToNextStep();
-    yield undefined;
+    await returnToEventLoop();
 
     
 
@@ -239,9 +229,6 @@ function* testSteps()
 
     info("Returning to event loop");
 
-    continueToNextStep();
-    yield undefined;
+    await returnToEventLoop();
   }
-
-  finishTest();
 }

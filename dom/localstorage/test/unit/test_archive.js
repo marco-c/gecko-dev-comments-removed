@@ -3,9 +3,7 @@
 
 
 
-var testGenerator = testSteps();
-
-function* testSteps()
+async function testSteps()
 {
   const lsArchiveFile = "storage/ls-archive.sqlite";
 
@@ -33,8 +31,8 @@ function* testSteps()
   
   info("Clearing");
 
-  clear(continueToNextStepSync);
-  yield undefined;
+  let request = clear();
+  await requestFinished(request);
 
   let archiveFile = getRelativeFile(lsArchiveFile);
 
@@ -45,8 +43,8 @@ function* testSteps()
   
   info("Clearing");
 
-  clear(continueToNextStepSync);
-  yield undefined;
+  request = clear();
+  await requestFinished(request);
 
   let ostream = Cc["@mozilla.org/network/file-output-stream;1"]
                 .createInstance(Ci.nsIFileOutputStream);
@@ -59,8 +57,8 @@ function* testSteps()
   
   info("Clearing");
 
-  clear(continueToNextStepSync);
-  yield undefined;
+  request = clear();
+  await requestFinished(request);
 
   info("Installing package");
 
@@ -75,6 +73,4 @@ function* testSteps()
   ok(fileSize > 0, "archive file size is greater than zero");
 
   checkStorage();
-
-  finishTest();
 }

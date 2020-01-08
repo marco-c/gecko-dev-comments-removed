@@ -3,11 +3,9 @@
 
 
 
-var testGenerator = testSteps();
-
 loadSubscript("databaseShadowing-shared.js");
 
-function* testSteps()
+async function testSteps()
 {
   enableNextGenLocalStorage();
 
@@ -16,17 +14,15 @@ function* testSteps()
   verifyData([]);
 
   let principal = getPrincipal("http://prefix.test", {});
-  clearOriginsByPrefix(principal, "default", continueToNextStepSync);
-  yield undefined;
+  let request = clearOriginsByPrefix(principal, "default");
+  await requestFinished(request);
 
   
-  reset(continueToNextStepSync);
-  yield undefined;
+  request = reset();
+  await requestFinished(request);
 
   exportShadowDatabase("shadowdb-clearedOriginsByPrefix.sqlite");
 
   
   
-
-  finishTest();
 }

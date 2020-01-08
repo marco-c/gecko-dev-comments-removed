@@ -3,11 +3,9 @@
 
 
 
-var testGenerator = testSteps();
-
 loadSubscript("databaseShadowing-shared.js");
 
-function* testSteps()
+async function testSteps()
 {
   
   
@@ -15,11 +13,8 @@ function* testSteps()
   disableNextGenLocalStorage();
 
   if (!importShadowDatabase("shadowdb-clearedOriginsByPattern.sqlite")) {
-    finishTest();
     return;
   }
 
   verifyData([4,5,6]);
-
-  finishTest();
 }
