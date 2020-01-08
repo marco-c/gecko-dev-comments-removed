@@ -696,6 +696,11 @@ impl ClipStore {
         })
     }
 
+    pub fn clear_old_instances(&mut self) {
+        self.clip_node_instances.clear();
+    }
+
+
     
     
     #[allow(dead_code)]
