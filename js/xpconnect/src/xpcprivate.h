@@ -3059,8 +3059,6 @@ nsIPrincipal* GetObjectPrincipal(JSObject* obj);
 
 
 
-
-
 inline void CleanupValue(const nsXPTType& aType,
                          void* aValue,
                          uint32_t aArrayLen = 0);

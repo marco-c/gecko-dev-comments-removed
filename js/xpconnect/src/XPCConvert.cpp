@@ -1651,23 +1651,10 @@ xpc::InitializeValue(const nsXPTType& aType, void* aValue)
 {
     switch (aType.Tag()) {
         
-        case nsXPTType::T_JSVAL:
-            new (aValue) JS::Value();
-            MOZ_ASSERT(reinterpret_cast<JS::Value*>(aValue)->isUndefined());
-            break;
-
-        case nsXPTType::T_ASTRING:
-        case nsXPTType::T_DOMSTRING:
-            new (aValue) nsString();
-            break;
-        case nsXPTType::T_CSTRING:
-        case nsXPTType::T_UTF8STRING:
-            new (aValue) nsCString();
-            break;
-
-        case nsXPTType::T_ARRAY:
-            new (aValue) xpt::detail::UntypedTArray();
-            break;
+#define XPT_INIT_TYPE(tag, type) \
+    case tag: new (aValue) type(); break;
+XPT_FOR_EACH_COMPLEX_TYPE(XPT_INIT_TYPE)
+#undef XPT_INIT_TYPE
 
         
         default:
