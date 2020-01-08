@@ -319,9 +319,6 @@ class AudioContext final : public DOMEventTargetHelper,
 
   nsTArray<MediaStream*> GetAllStreams() const;
 
-  
-  void EnsureAutoplayRequested();
-
   void ResumeInternal();
   void SuspendInternal(void* aPromise);
 
