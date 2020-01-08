@@ -1154,7 +1154,7 @@ private:
       mIsText(false), mIsGeneratedContent(false),
       mIsAnonymousContentCreatorContent(false),
       mIsRootPopupgroup(false), mIsAllInline(false), mIsBlock(false),
-      mHasInlineEnds(false), mIsPopup(false),
+      mIsPopup(false),
       mIsLineParticipant(false)
     {
       MOZ_COUNT_CTOR(FrameConstructionItem);
@@ -1236,11 +1236,6 @@ private:
     
     
     bool mIsBlock:1;
-    
-    
-    
-    
-    bool mHasInlineEnds:1;
     
     
     bool mIsPopup:1;

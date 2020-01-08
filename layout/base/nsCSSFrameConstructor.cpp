@@ -5816,7 +5816,6 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
     BuildInlineChildItems(aState, *item,
                           aFlags & ITEM_IS_WITHIN_SVG_TEXT,
                           aFlags & ITEM_ALLOWS_TEXT_PATH_CHILD);
-    item->mHasInlineEnds = true;
     item->mIsBlock = false;
   } else {
     
@@ -5837,8 +5836,7 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
     
     
     
-    item->mIsAllInline = item->mHasInlineEnds = isInline ||
-      
+    item->mIsAllInline = isInline ||
       
       
       
@@ -9344,7 +9342,7 @@ nsCSSFrameConstructor::CreateNeededAnonFlexOrGridItems(
                                 wrapperStyle,
                                 true);
 
-    newItem->mIsAllInline = newItem->mHasInlineEnds =
+    newItem->mIsAllInline =
       newItem->mComputedStyle->StyleDisplay()->IsInlineOutsideStyle();
     newItem->mIsBlock = !newItem->mIsAllInline;
 
@@ -9852,8 +9850,7 @@ nsCSSFrameConstructor::WrapItemsInPseudoParent(nsIContent* aParentContent,
   
   
   
-  newItem->mIsAllInline = newItem->mHasInlineEnds =
-    disp->IsInlineOutsideStyle();
+  newItem->mIsAllInline = disp->IsInlineOutsideStyle();
 
   bool isRuby = disp->IsRubyDisplayType();
   
