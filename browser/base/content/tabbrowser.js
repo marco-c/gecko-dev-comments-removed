@@ -710,7 +710,7 @@ window._gBrowser = {
   
 
 
-  _isLocalAboutURI(aURI, aResolvedURI) {
+  isLocalAboutURI(aURI, aResolvedURI) {
     if (!aURI.schemeIs("about")) {
       return false;
     }
@@ -734,6 +734,15 @@ window._gBrowser = {
     } catch (ex) {
       
       return false;
+    }
+  },
+
+  
+
+
+  setDefaultIcon(aTab, aURI) {
+    if (aURI && aURI.spec in FAVICON_DEFAULTS) {
+      this.setIcon(aTab, FAVICON_DEFAULTS[aURI.spec]);
     }
   },
 
@@ -2505,9 +2514,7 @@ window._gBrowser = {
 
     
     
-    if (aURI in FAVICON_DEFAULTS) {
-      this.setIcon(t, FAVICON_DEFAULTS[aURI]);
-    }
+    this.setDefaultIcon(t, aURIObject);
 
     
     
@@ -4816,7 +4823,7 @@ class TabProgressListener {
     
     
     if ((aRequest instanceof Ci.nsIChannel) &&
-        gBrowser._isLocalAboutURI(aRequest.originalURI, aRequest.URI)) {
+        gBrowser.isLocalAboutURI(aRequest.originalURI, aRequest.URI)) {
       return false;
     }
 
