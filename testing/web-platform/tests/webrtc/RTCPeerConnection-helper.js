@@ -251,12 +251,17 @@ function createDataChannelPair(
 
 
 async function waitForRtpAndRtcpStats(pc) {
+  
+  const startTime = performance.now();
   while (true) {
     const report = await pc.getStats();
     const stats = [...report.values()].filter(({type}) => type.endsWith("bound-rtp"));
     
     
     if (stats.length && stats.every(({localId, remoteId}) => localId || remoteId)) {
+      break;
+    }
+    if (performance.now() > startTime + 5000) {
       break;
     }
   }
