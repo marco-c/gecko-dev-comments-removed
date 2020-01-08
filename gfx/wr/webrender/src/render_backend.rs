@@ -1008,7 +1008,7 @@ impl RenderBackend {
                 
                 self.resource_cache.clear(ClearCache::all());
 
-                self.clear_gpu_cache();
+                self.gpu_cache.clear();
 
                 let pending_update = self.resource_cache.pending_updates();
                 let msg = ResultMsg::UpdateResources {
@@ -1121,7 +1121,7 @@ impl RenderBackend {
                         
                         let changed = self.debug_flags ^ flags;
                         if changed.contains(DebugFlags::GPU_CACHE_DBG) {
-                            self.clear_gpu_cache();
+                            self.gpu_cache.clear();
                         }
                         self.debug_flags = flags;
 
@@ -1181,7 +1181,7 @@ impl RenderBackend {
         
         
         if self.gpu_cache.should_reclaim_memory() {
-            self.clear_gpu_cache();
+            self.gpu_cache.clear();
         }
 
         for scene_msg in transaction_msg.scene_ops.drain(..) {
@@ -1547,13 +1547,6 @@ impl RenderBackend {
         
         
         self.scene_tx.send(SceneBuilderRequest::ReportMemory(report, tx)).unwrap();
-    }
-
-    
-    
-    fn clear_gpu_cache(&mut self) {
-        self.gpu_cache.clear();
-        self.result_tx.send(ResultMsg::ClearGpuCache).unwrap();
     }
 }
 

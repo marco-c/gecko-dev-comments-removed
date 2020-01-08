@@ -306,6 +306,9 @@ pub struct GpuCacheUpdateList {
     pub frame_id: FrameId,
     
     
+    pub clear: bool,
+    
+    
     pub height: i32,
     
     pub updates: Vec<GpuCacheUpdate>,
@@ -669,6 +672,9 @@ pub struct GpuCache {
     saved_block_count: usize,
     
     debug_flags: DebugFlags,
+    
+    
+    pending_clear: bool,
 }
 
 impl GpuCache {
@@ -679,6 +685,7 @@ impl GpuCache {
             texture: Texture::new(Epoch(0), debug_flags),
             saved_block_count: 0,
             debug_flags,
+            pending_clear: false,
         }
     }
 
@@ -690,6 +697,7 @@ impl GpuCache {
         next_base_epoch.next();
         self.texture = Texture::new(next_base_epoch, self.debug_flags);
         self.saved_block_count = 0;
+        self.pending_clear = true;
     }
 
     
@@ -805,8 +813,11 @@ impl GpuCache {
 
     
     pub fn extract_updates(&mut self) -> GpuCacheUpdateList {
+        let clear = self.pending_clear;
+        self.pending_clear = false;
         GpuCacheUpdateList {
             frame_id: self.frame_id,
+            clear,
             height: self.texture.height,
             debug_commands: mem::replace(&mut self.texture.debug_commands, Vec::new()),
             updates: mem::replace(&mut self.texture.updates, Vec::new()),
