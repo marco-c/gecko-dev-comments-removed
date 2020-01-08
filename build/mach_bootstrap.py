@@ -201,7 +201,7 @@ def bootstrap(topsrcdir, mozilla_dir=None):
                 mozversioncontrol.MissingVCSTool):
             return None
 
-    def should_skip_dispatch(context, handler):
+    def should_skip_telemetry_submission(handler):
         
         if handler.name in ('bootstrap', 'doctor', 'mach-commands', 'vcs-setup',
                             
@@ -209,17 +209,22 @@ def bootstrap(topsrcdir, mozilla_dir=None):
                             'environment'):
             return True
 
+        
+        if any(e in os.environ for e in ('MOZ_AUTOMATION', 'TASK_ID', 'MACH_TELEMETRY_NO_SUBMIT')):
+            return True
+
         return False
 
     def post_dispatch_handler(context, handler, instance, result,
-                              start_time, end_time, args):
+                              start_time, end_time, depth, args):
         """Perform global operations after command dispatch.
 
 
         For now,  we will use this to handle build system telemetry.
         """
         
-        if should_skip_dispatch(context, handler):
+        
+        if depth != 1 or os.environ.get('MACH_MAIN_PID') != str(os.getpid()):
             return
 
         
@@ -270,8 +275,7 @@ def bootstrap(topsrcdir, mozilla_dir=None):
                       'w') as f:
                 json.dump(data, f, sort_keys=True)
 
-        
-        if 'MOZ_AUTOMATION' in os.environ or 'TASK_ID' in os.environ:
+        if should_skip_telemetry_submission(handler):
             return True
 
         
@@ -319,6 +323,11 @@ def bootstrap(topsrcdir, mozilla_dir=None):
             return resolve_repository()
 
         raise AttributeError(key)
+
+    
+    
+    if 'MACH_MAIN_PID' not in os.environ:
+        os.environ[b'MACH_MAIN_PID'] = str(os.getpid()).encode('ascii')
 
     driver = mach.main.Mach(os.getcwd())
     driver.populate_context_handler = populate_context
