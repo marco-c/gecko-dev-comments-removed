@@ -2800,14 +2800,6 @@ class CompartmentPrivate {
   bool universalXPConnectEnabled;
 
   
-  
-  
-  
-  
-  
-  bool forcePermissiveCOWs;
-
-  
   bool wasShutdown;
 
   
@@ -2867,6 +2859,14 @@ class RealmPrivate {
   
   
   XPCWrappedNativeScope* scope;
+
+  
+  
+  
+  
+  
+  
+  bool forcePermissiveCOWs = false;
 
   const nsACString& GetLocation() {
     if (location.IsEmpty() && locationURI) {
