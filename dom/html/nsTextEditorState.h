@@ -156,7 +156,9 @@ public:
   nsISelectionController* GetSelectionController() const;
   nsFrameSelection* GetConstFrameSelection();
   nsresult BindToFrame(nsTextControlFrame* aFrame);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void UnbindFromFrame(nsTextControlFrame* aFrame);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult PrepareEditor(const nsAString *aValue = nullptr);
   void InitializeKeyboardEventListeners();
 
@@ -182,9 +184,11 @@ public:
     
     eSetValue_ForXUL                = 1 << 4,
   };
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE bool SetValue(const nsAString& aValue,
                              const nsAString* aOldValue,
                              uint32_t aFlags);
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE bool SetValue(const nsAString& aValue,
                              uint32_t aFlags)
   {
@@ -304,6 +308,7 @@ public:
   
   
   
+  MOZ_CAN_RUN_SCRIPT
   void SyncUpSelectionPropertiesBeforeDestruction();
 
   

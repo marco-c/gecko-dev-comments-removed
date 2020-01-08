@@ -2344,6 +2344,10 @@ HTMLInputElement::SetUserInput(const nsAString& aValue,
     return;
   }
 
+  bool isInputEventDispatchedByTextEditorState =
+    GetValueMode() == VALUE_MODE_VALUE &&
+    IsSingleLineTextControl(false);
+
   nsresult rv =
     SetValueInternal(aValue,
       nsTextEditorState::eSetValue_BySetUserInput |
@@ -2351,9 +2355,11 @@ HTMLInputElement::SetUserInput(const nsAString& aValue,
       nsTextEditorState::eSetValue_MoveCursorToEndIfValueChanged);
   NS_ENSURE_SUCCESS_VOID(rv);
 
-  DebugOnly<nsresult> rvIgnored = nsContentUtils::DispatchInputEvent(this);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                       "Failed to dispatch input event");
+  if (!isInputEventDispatchedByTextEditorState) {
+    DebugOnly<nsresult> rvIgnored = nsContentUtils::DispatchInputEvent(this);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                         "Failed to dispatch input event");
+  }
 
   
   
@@ -2810,6 +2816,11 @@ HTMLInputElement::SetValueInternal(const nsAString& aValue,
       }
 
       if (IsSingleLineTextControl(false)) {
+        
+        
+        
+        
+        
         if (!mInputData.mState->SetValue(value, aOldValue, aFlags)) {
           return NS_ERROR_OUT_OF_MEMORY;
         }

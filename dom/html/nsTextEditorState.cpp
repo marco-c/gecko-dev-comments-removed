@@ -61,10 +61,10 @@ SetEditorFlagsIfNecessary(EditorBase& aEditorBase, uint32_t aFlags)
   return aEditorBase.SetFlags(aFlags);
 }
 
-class MOZ_STACK_CLASS ValueSetter
+class MOZ_STACK_CLASS AutoInputEventSuppresser final
 {
 public:
-  explicit ValueSetter(TextEditor* aTextEditor)
+  explicit AutoInputEventSuppresser(TextEditor* aTextEditor)
     : mTextEditor(aTextEditor)
     
     
@@ -73,7 +73,7 @@ public:
   {
     MOZ_ASSERT(aTextEditor);
   }
-  ~ValueSetter()
+  ~AutoInputEventSuppresser()
   {
     mTextEditor->SuppressDispatchingInputEvent(mOuterTransaction);
   }
@@ -2400,6 +2400,10 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
     return false;
   }
 
+  
+  
+  nsCOMPtr<nsITextControlElement> textControlElement(mTextCtrlElement);
+
   if (mTextEditor && mBoundFrame) {
     
     
@@ -2431,7 +2435,7 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
     
     if (!currentValue.Equals(newValue)) {
       RefPtr<TextEditor> textEditor = mTextEditor;
-      ValueSetter valueSetter(textEditor);
+      AutoInputEventSuppresser suppressInputEventDispatching(textEditor);
 
       nsCOMPtr<nsIDocument> document = textEditor->GetDocument();
       if (NS_WARN_IF(!document)) {
@@ -2454,8 +2458,6 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
           return true;
         }
 
-        valueSetter.Init();
-
         
         
         {
@@ -2470,10 +2472,16 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
             
             
             
+            
+            
             DebugOnly<nsresult> rv = textEditor->ReplaceTextAsAction(newValue);
             NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
               "Failed to set the new value");
           } else if (aFlags & eSetValue_ForXUL) {
+            
+            
+            suppressInputEventDispatching.Init();
+
             
             
             
@@ -2511,6 +2519,10 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
                 "Failed to insert the new value");
             }
           } else {
+            
+            
+            suppressInputEventDispatching.Init();
+
             
             
             
@@ -2590,6 +2602,18 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
       if (mBoundFrame) {
         mBoundFrame->UpdateValueDisplay(true);
       }
+
+      
+      
+      if (aFlags & eSetValue_BySetUserInput) {
+        nsCOMPtr<Element> element = do_QueryInterface(textControlElement);
+        MOZ_ASSERT(element);
+        RefPtr<TextEditor> textEditor;
+        DebugOnly<nsresult> rvIgnored =
+          nsContentUtils::DispatchInputEvent(element, textEditor);
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                             "Failed to dispatch input event");
+      }
     } else {
       
       
@@ -2606,8 +2630,10 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
     ValueWasChanged(!!mBoundFrame);
   }
 
-  mTextCtrlElement->OnValueChanged( !!mBoundFrame,
-                                    false);
+  
+  
+  textControlElement->OnValueChanged( !!mBoundFrame,
+                                      false);
 
   return true;
 }
