@@ -82,6 +82,9 @@
 
 
 
+
+
+
 #define FOR_EACH_OPCODE(MACRO)
 
 
@@ -2512,6 +2515,7 @@
 
 
 
+
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
     IF_BIGINT(,MACRO(234)) \
     MACRO(235) \
@@ -2542,6 +2546,7 @@ namespace js {
 
 
 
+
 #define VALUE_AND_VALUE_PLUS_ONE(op, val, ...) \
     val) && (val + 1 ==
 #define TRAILING_VALUE_AND_VALUE_PLUS_ONE(val) \
@@ -2554,6 +2559,7 @@ static_assert((0 ==
               "increase from zero to 255");
 #undef TRAILING_VALUE_AND_VALUE_PLUS_ONE
 #undef VALUE_AND_VALUE_PLUS_ONE
+
 
 
 #define DEFINE_LENGTH_CONSTANT(op, val, name, image, len, ...) \
