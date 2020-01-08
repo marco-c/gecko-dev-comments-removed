@@ -26,7 +26,6 @@
 #include "util/Text.h"
 #include "vm/Printer.h"
 
-class JSAutoByteString;
 class JSDependentString;
 class JSExtensibleString;
 class JSExternalString;
@@ -1687,14 +1686,14 @@ EncodeLatin1(JSContext* cx, JSString* str);
 
 
 extern const char*
-ValueToPrintableLatin1(JSContext* cx, const Value&, JSAutoByteString* bytes,
+ValueToPrintableLatin1(JSContext* cx, const Value&, UniqueChars* bytes,
                        bool asSource = false);
 
 
 
 
 extern const char*
-ValueToPrintableUTF8(JSContext* cx, const Value&, JSAutoByteString* bytes, bool asSource = false);
+ValueToPrintableUTF8(JSContext* cx, const Value&, UniqueChars* bytes, bool asSource = false);
 
 
 
