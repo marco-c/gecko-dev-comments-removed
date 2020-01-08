@@ -539,6 +539,11 @@ nsresult TabChild::Init(mozIDOMWindowProxy* aParent) {
                              nsIWebBrowserChrome::CHROME_REMOTE_WINDOW);
 
   
+  RefPtr<BrowsingContext> browsingContext =
+      nsDocShell::Cast(docShell)->GetBrowsingContext();
+  SendRootBrowsingContext(BrowsingContextId(browsingContext->Id()));
+
+  
   
   
   
