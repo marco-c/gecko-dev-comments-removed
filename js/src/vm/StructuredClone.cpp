@@ -2890,12 +2890,16 @@ JS_StructuredClone(JSContext* cx, HandleValue value, MutableHandleValue vp,
 
     JSAutoStructuredCloneBuffer buf(JS::StructuredCloneScope::SameProcessSameThread, callbacks, closure);
     {
-        
-        
-        
         if (value.isObject()) {
-            AutoRealm ar(cx, &value.toObject());
-            if (!buf.write(cx, value, callbacks, closure))
+            RootedObject obj(cx, &value.toObject());
+            obj = CheckedUnwrap(obj);
+            if (!obj) {
+                ReportAccessDenied(cx);
+                return false;
+            }
+            AutoRealm ar(cx, obj);
+            RootedValue unwrappedVal(cx, ObjectValue(*obj));
+            if (!buf.write(cx, unwrappedVal, callbacks, closure))
                 return false;
         } else {
             if (!buf.write(cx, value, callbacks, closure))
