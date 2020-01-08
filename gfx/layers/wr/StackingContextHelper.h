@@ -32,10 +32,10 @@ public:
                         const ActiveScrolledRoot* aAsr,
                         wr::DisplayListBuilder& aBuilder,
                         const nsTArray<wr::WrFilterOp>& aFilters = nsTArray<wr::WrFilterOp>(),
-                        const LayoutDeviceRect& aBounds = LayoutDeviceRect(),
                         const gfx::Matrix4x4* aBoundTransform = nullptr,
                         const wr::WrAnimationProperty* aAnimation = nullptr,
                         const float* aOpacityPtr = nullptr,
+                        const LayoutDevicePoint& aOrigin = LayoutDevicePoint(),
                         const gfx::Matrix4x4* aTransformPtr = nullptr,
                         const gfx::Matrix4x4* aPerspectivePtr = nullptr,
                         const gfx::CompositionOp& aMixBlendMode = gfx::CompositionOp::OP_OVER,
@@ -69,8 +69,11 @@ public:
   const Maybe<nsDisplayTransform*>& GetDeferredTransformItem() const;
   Maybe<gfx::Matrix4x4> GetDeferredTransformMatrix() const;
 
-  bool AffectsClipPositioning() const { return mAffectsClipPositioning; }
-  Maybe<wr::WrClipId> ReferenceFrameId() const { return mReferenceFrameId; }
+  Maybe<wr::WrClipId> ReferenceFrameId() const;
+
+  const LayoutDevicePoint& GetInheritedStickyOrigin() const {
+    return mInheritedStickyOrigin;
+  }
 
 private:
   wr::DisplayListBuilder* mBuilder;
@@ -80,11 +83,16 @@ private:
   
   
   
+  LayoutDevicePoint mInheritedStickyOrigin;
+
+  
+  
+  
   
   
   gfx::Matrix mSnappingSurfaceTransform;
-  bool mAffectsClipPositioning;
   Maybe<wr::WrClipId> mReferenceFrameId;
+  Maybe<wr::WrClipId> mOriginFrameId;
 
   
   

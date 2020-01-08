@@ -87,7 +87,7 @@ public:
 
   void SetDisplayList(gfx::Color aBgColor,
                       Epoch aEpoch,
-                      mozilla::LayerSize aViewportSize,
+                      LayoutDeviceSize aViewportSize,
                       wr::WrPipelineId pipeline_id,
                       const wr::LayoutSize& content_size,
                       wr::BuiltDisplayListDescriptor dl_descriptor,
@@ -335,8 +335,10 @@ public:
   void Finalize(wr::LayoutSize& aOutContentSize,
                 wr::BuiltDisplayList& aOutDisplayList);
 
+  wr::WrClipId PushOrigin(const wr::LayoutPoint& aOrigin);
+  void PopOrigin();
+
   Maybe<wr::WrClipId> PushStackingContext(
-          const wr::LayoutRect& aBounds, 
           const wr::WrClipId* aClipNodeId,
           const wr::WrAnimationProperty* aAnimation,
           const float* aOpacity,
