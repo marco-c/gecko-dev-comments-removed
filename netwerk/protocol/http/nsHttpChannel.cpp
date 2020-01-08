@@ -404,6 +404,17 @@ nsHttpChannel::LogBlockedCORSRequest(const nsAString &aMessage,
   return NS_ERROR_UNEXPECTED;
 }
 
+NS_IMETHODIMP
+nsHttpChannel::LogMimeTypeMismatch(const nsACString &aMessageName,
+                                   bool aWarning, const nsAString &aURL,
+                                   const nsAString &aContentType) {
+  if (mWarningReporter) {
+    return mWarningReporter->LogMimeTypeMismatch(aMessageName, aWarning, aURL,
+                                                 aContentType);
+  }
+  return NS_ERROR_UNEXPECTED;
+}
+
 
 
 
@@ -1206,22 +1217,18 @@ nsresult nsHttpChannel::SetupTransaction() {
 
 
 
-void ReportTypeBlocking(nsIURI *aURI, nsILoadInfo *aLoadInfo,
-                        const char *aMessageName) {
-  NS_ConvertUTF8toUTF16 specUTF16(aURI->GetSpecOrDefault());
-  const char16_t *params[] = {specUTF16.get()};
-  nsCOMPtr<nsIDocument> doc;
-  if (aLoadInfo) {
-    aLoadInfo->GetLoadingDocument(getter_AddRefs(doc));
-  }
-  nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
-                                  NS_LITERAL_CSTRING("MIMEMISMATCH"), doc,
-                                  nsContentUtils::eSECURITY_PROPERTIES,
-                                  aMessageName, params, ArrayLength(params));
+void ReportTypeBlocking(nsHttpChannel *aChannel, const char *aMessageName,
+                        nsIURI *aURI, const nsACString &aContentType) {
+  NS_ConvertUTF8toUTF16 spec(aURI->GetSpecOrDefault());
+  NS_ConvertUTF8toUTF16 contentType(aContentType);
+
+  aChannel->LogMimeTypeMismatch(nsCString(aMessageName), false, spec,
+                                contentType);
 }
 
 
-nsresult ProcessXCTO(nsIURI *aURI, nsHttpResponseHead *aResponseHead,
+nsresult ProcessXCTO(nsHttpChannel *aChannel, nsIURI *aURI,
+                     nsHttpResponseHead *aResponseHead,
                      nsILoadInfo *aLoadInfo) {
   if (!aURI || !aResponseHead || !aLoadInfo) {
     
@@ -1276,7 +1283,7 @@ nsresult ProcessXCTO(nsIURI *aURI, nsHttpResponseHead *aResponseHead,
     if (contentType.EqualsLiteral(TEXT_CSS)) {
       return NS_OK;
     }
-    ReportTypeBlocking(aURI, aLoadInfo, "MimeTypeMismatch");
+    ReportTypeBlocking(aChannel, "MimeTypeMismatch2", aURI, contentType);
     return NS_ERROR_CORRUPTED_CONTENT;
   }
 
@@ -1286,14 +1293,15 @@ nsresult ProcessXCTO(nsIURI *aURI, nsHttpResponseHead *aResponseHead,
             NS_ConvertUTF8toUTF16(contentType))) {
       return NS_OK;
     }
-    ReportTypeBlocking(aURI, aLoadInfo, "MimeTypeMismatch");
+    ReportTypeBlocking(aChannel, "MimeTypeMismatch2", aURI, contentType);
     return NS_ERROR_CORRUPTED_CONTENT;
   }
   return NS_OK;
 }
 
 
-nsresult EnsureMIMEOfScript(nsIURI *aURI, nsHttpResponseHead *aResponseHead,
+nsresult EnsureMIMEOfScript(nsHttpChannel *aChannel, nsIURI *aURI,
+                            nsHttpResponseHead *aResponseHead,
                             nsILoadInfo *aLoadInfo) {
   if (!aURI || !aResponseHead || !aLoadInfo) {
     
@@ -1425,7 +1433,8 @@ nsresult EnsureMIMEOfScript(nsIURI *aURI, nsHttpResponseHead *aResponseHead,
       return NS_OK;
     }
 
-    ReportTypeBlocking(aURI, aLoadInfo, "BlockScriptWithWrongMimeType");
+    ReportTypeBlocking(aChannel, "BlockScriptWithWrongMimeType2", aURI,
+                       contentType);
     return NS_ERROR_CORRUPTED_CONTENT;
   }
 
@@ -1532,10 +1541,10 @@ nsresult nsHttpChannel::CallOnStartRequest() {
     mOnStartRequestCalled = true;
   });
 
-  nsresult rv = EnsureMIMEOfScript(mURI, mResponseHead, mLoadInfo);
+  nsresult rv = EnsureMIMEOfScript(this, mURI, mResponseHead, mLoadInfo);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = ProcessXCTO(mURI, mResponseHead, mLoadInfo);
+  rv = ProcessXCTO(this, mURI, mResponseHead, mLoadInfo);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
