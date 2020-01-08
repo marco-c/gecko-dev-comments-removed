@@ -138,6 +138,20 @@ public final class GeckoRuntimeSettings implements Parcelable {
             mSettings.mDebugPause = enabled;
             return this;
         }
+        
+
+
+
+
+
+
+
+
+
+        public @NonNull Builder useMaxScreenDepth(boolean enable) {
+            mSettings.mUseMaxScreenDepth = enable;
+            return this;
+        }
 
         
 
@@ -389,6 +403,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
         "browser.safebrowsing.phishing.enabled", true);
 
      boolean mDebugPause;
+     boolean mUseMaxScreenDepth;
      float mDisplayDensityOverride = -1.0f;
      int mDisplayDpiOverride;
      int mScreenWidthOverride;
@@ -432,6 +447,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
         }
 
         mDebugPause = settings.mDebugPause;
+        mUseMaxScreenDepth = settings.mUseMaxScreenDepth;
         mDisplayDensityOverride = settings.mDisplayDensityOverride;
         mDisplayDpiOverride = settings.mDisplayDpiOverride;
         mScreenWidthOverride = settings.mScreenWidthOverride;
@@ -561,6 +577,13 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
     public boolean getPauseForDebuggerEnabled() { return mDebugPause; }
+
+    
+
+
+
+
+    public boolean getUseMaxScreenDepth() { return mUseMaxScreenDepth; }
 
     
 
@@ -836,6 +859,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
         }
 
         ParcelableUtils.writeBoolean(out, mDebugPause);
+        ParcelableUtils.writeBoolean(out, mUseMaxScreenDepth);
         out.writeFloat(mDisplayDensityOverride);
         out.writeInt(mDisplayDpiOverride);
         out.writeInt(mScreenWidthOverride);
@@ -858,6 +882,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
         }
 
         mDebugPause = ParcelableUtils.readBoolean(source);
+        mUseMaxScreenDepth = ParcelableUtils.readBoolean(source);
         mDisplayDensityOverride = source.readFloat();
         mDisplayDpiOverride = source.readInt();
         mScreenWidthOverride = source.readInt();

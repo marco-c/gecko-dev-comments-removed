@@ -206,6 +206,7 @@ public class GeckoAppShell
     static private int sDensityDpi;
     static private Float sDensity;
     static private int sScreenDepth;
+    static private boolean sUseMaxScreenDepth;
 
     
     private static boolean sVibrationMaybePlaying;
@@ -1045,6 +1046,10 @@ public class GeckoAppShell
         return HardwareUtils.getMemSize() > HIGH_MEMORY_DEVICE_THRESHOLD_MB;
     }
 
+    public static synchronized void useMaxScreenDepth(final boolean enable) {
+        sUseMaxScreenDepth = enable;
+    }
+
     
 
 
@@ -1058,7 +1063,7 @@ public class GeckoAppShell
                     getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
             PixelFormat.getPixelFormatInfo(wm.getDefaultDisplay().getPixelFormat(), info);
             if (info.bitsPerPixel >= 24 && isHighMemoryDevice()) {
-                sScreenDepth = 24;
+                sScreenDepth = sUseMaxScreenDepth ? info.bitsPerPixel : 24;
             }
         }
 

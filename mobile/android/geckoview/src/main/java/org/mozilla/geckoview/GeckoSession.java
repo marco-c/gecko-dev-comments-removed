@@ -121,6 +121,8 @@ public class GeckoSession implements Parcelable {
     private int mLeft;
     private int mTop; 
     private int mClientTop; 
+    private int mOffsetX;
+    private int mOffsetY;
     private int mWidth;
     private int mHeight; 
     private int mClientHeight; 
@@ -195,7 +197,7 @@ public class GeckoSession implements Parcelable {
 
         
         @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-        public native void syncResumeResizeCompositor(int width, int height, Object surface);
+        public native void syncResumeResizeCompositor(int x, int y, int width, int height, Object surface);
 
         @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
         public native void setMaxToolbarHeight(int height);
@@ -3924,15 +3926,17 @@ public class GeckoSession implements Parcelable {
                             int virtualId);
     }
 
-     void onSurfaceChanged(final Surface surface, final int width,
+     void onSurfaceChanged(final Surface surface, final int x, final int y, final int width,
                                         final int height) {
         ThreadUtils.assertOnUiThread();
 
+        mOffsetX = x;
+        mOffsetY = y;
         mWidth = width;
         mHeight = height;
 
         if (mCompositorReady) {
-            mCompositor.syncResumeResizeCompositor(width, height, surface);
+            mCompositor.syncResumeResizeCompositor(x, y, width, height, surface);
             onWindowBoundsChanged();
             return;
         }
@@ -3984,7 +3988,7 @@ public class GeckoSession implements Parcelable {
         if (mSurface != null) {
             
             
-            onSurfaceChanged(mSurface, mWidth, mHeight);
+            onSurfaceChanged(mSurface, mOffsetX, mOffsetY, mWidth, mHeight);
         }
 
         mCompositor.sendToolbarAnimatorMessage(IS_COMPOSITOR_CONTROLLER_OPEN);
@@ -4084,7 +4088,7 @@ public class GeckoSession implements Parcelable {
         if (mSurface != null) {
             
             
-            onSurfaceChanged(mSurface, mWidth, mHeight);
+            onSurfaceChanged(mSurface, mOffsetX, mOffsetY, mWidth, mHeight);
             mSurface = null;
         }
 

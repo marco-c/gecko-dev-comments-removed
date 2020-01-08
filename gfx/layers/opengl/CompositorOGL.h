@@ -275,6 +275,14 @@ public:
     return mRenderOffset;
   }
 
+  
+
+
+
+  void SetSurfaceOrigin(const ScreenIntPoint& aOrigin) {
+    mSurfaceOrigin = aOrigin;
+  }
+
 private:
   template<typename Geometry>
   void DrawGeometry(const Geometry& aGeometry,
@@ -303,6 +311,9 @@ private:
   gfx::IntSize mSurfaceSize;
 
   ScreenPoint mRenderOffset;
+
+  
+  ScreenIntPoint mSurfaceOrigin;
 
   already_AddRefed<mozilla::gl::GLContext> CreateContext();
 

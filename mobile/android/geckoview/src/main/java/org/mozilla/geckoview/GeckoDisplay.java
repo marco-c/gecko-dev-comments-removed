@@ -33,16 +33,44 @@ public class GeckoDisplay {
 
 
 
+
+
     @UiThread
     public void surfaceChanged(Surface surface, int width, int height) {
+        surfaceChanged(surface, 0, 0, width, height);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    public void surfaceChanged(Surface surface, int left, int top, int width, int height) {
         ThreadUtils.assertOnUiThread();
 
+        if ((left < 0) || (top < 0)) {
+            throw new IllegalArgumentException("Parameters can not be negative.");
+        }
+
         if (session.getDisplay() == this) {
-            session.onSurfaceChanged(surface, width, height);
+            session.onSurfaceChanged(surface, left, top, width, height);
         }
     }
 
     
+
+
 
 
 
@@ -63,6 +91,8 @@ public class GeckoDisplay {
 
 
 
+
+
     @UiThread
     public void screenOriginChanged(final int left, final int top) {
         ThreadUtils.assertOnUiThread();
@@ -73,6 +103,7 @@ public class GeckoDisplay {
     }
 
     
+
 
 
 
