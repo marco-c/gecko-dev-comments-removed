@@ -17,6 +17,7 @@
 #include "mozilla/TypeTraits.h"
 
 #include <new>
+#include <stddef.h> 
 
 
 
@@ -196,7 +197,8 @@ static const size_t LIFO_ALLOC_ALIGN = 8;
 
 MOZ_ALWAYS_INLINE
 uint8_t*
-AlignPtr(uint8_t* orig) {
+AlignPtr(uint8_t* orig)
+{
     static_assert(mozilla::IsPowerOfTwo(LIFO_ALLOC_ALIGN),
                   "LIFO_ALLOC_ALIGN must be a power of two");
 
@@ -418,6 +420,11 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
     
     
     
+    static inline MOZ_MUST_USE bool allocSizeWithRedZone(size_t amount, size_t* size);
+
+    
+    
+    
     static uint8_t* nextAllocBase(uint8_t* e) {
         return detail::AlignPtr(e);
     }
@@ -472,6 +479,23 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
 
 
 static constexpr size_t BumpChunkReservedSpace = AlignBytes(sizeof(BumpChunk), LIFO_ALLOC_ALIGN);
+
+ inline MOZ_MUST_USE bool
+BumpChunk::allocSizeWithRedZone(size_t amount, size_t* size)
+{
+    constexpr size_t SpaceBefore = BumpChunkReservedSpace;
+    static_assert((SpaceBefore % LIFO_ALLOC_ALIGN) == 0,
+                   "reserved space presumed already aligned");
+
+    constexpr size_t SpaceAfter = RedZoneSize;
+
+    constexpr size_t SpaceBeforeAndAfter = SpaceBefore + SpaceAfter;
+    static_assert(SpaceBeforeAndAfter > SpaceBefore,
+                  "intermediate addition must not overflow");
+
+    *size = SpaceBeforeAndAfter + amount;
+    return MOZ_LIKELY(*size >= SpaceBeforeAndAfter);
+}
 
 inline const uint8_t*
 BumpChunk::begin() const
