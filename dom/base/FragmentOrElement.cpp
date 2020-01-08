@@ -1041,7 +1041,7 @@ nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor)
             
             
             
-            aVisitor.IgnoreCurrentTarget();
+            aVisitor.IgnoreCurrentTargetBecauseOfShadowDOMRetargeting();
             
             
             
@@ -1085,7 +1085,7 @@ nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor)
             
             
             
-            aVisitor.IgnoreCurrentTarget();
+            aVisitor.IgnoreCurrentTargetBecauseOfShadowDOMRetargeting();
             
             
             

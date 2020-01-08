@@ -132,6 +132,7 @@ public:
     , mParentIsSlotInClosedTree(false)
     , mParentIsChromeHandler(false)
     , mRelatedTargetRetargetedInCurrentScope(false)
+    , mIgnoreBecauseOfShadowDOM(false)
     , mParentTarget(nullptr)
     , mEventTargetAtParent(nullptr)
     , mRetargetedRelatedTarget(nullptr)
@@ -156,6 +157,7 @@ public:
     
     
     
+    mIgnoreBecauseOfShadowDOM = false;
     mParentTarget = nullptr;
     mEventTargetAtParent = nullptr;
     mRetargetedRelatedTarget = nullptr;
@@ -175,9 +177,10 @@ public:
     }
   }
 
-  void IgnoreCurrentTarget()
+  void IgnoreCurrentTargetBecauseOfShadowDOMRetargeting()
   {
     mCanHandle = false;
+    mIgnoreBecauseOfShadowDOM = true;
     SetParentTarget(nullptr, false);
     mEventTargetAtParent = nullptr;
   }
@@ -262,6 +265,12 @@ public:
 
 
   bool mRelatedTargetRetargetedInCurrentScope;
+
+  
+
+
+
+  bool mIgnoreBecauseOfShadowDOM;
 private:
   
 
