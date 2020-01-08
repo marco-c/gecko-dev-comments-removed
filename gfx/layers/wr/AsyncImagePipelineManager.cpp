@@ -392,7 +392,7 @@ AsyncImagePipelineManager::ApplyAsyncImageForPipeline(const wr::Epoch& aEpoch,
     nsTArray<wr::WrFilterOp>(),
     true,
     
-    wr::GlyphRasterSpace::Screen());
+    wr::RasterSpace::Screen());
 
   if (aPipeline->mCurrentTexture && !keys.IsEmpty()) {
     LayoutDeviceRect rect(0, 0, aPipeline->mCurrentTexture->GetSize().width, aPipeline->mCurrentTexture->GetSize().height);
