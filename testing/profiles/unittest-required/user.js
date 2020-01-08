@@ -1,5 +1,7 @@
 
 
+
+
 user_pref("accessibility.typeaheadfind.autostart", false);
 
 user_pref("app.normandy.api_url", "");
@@ -38,8 +40,8 @@ user_pref("browser.newtabpage.activity-stream.telemetry", false);
 
 
 user_pref("browser.pagethumbnails.capturing_disabled", true);
-user_pref("browser.ping-centre.production.endpoint", "");
 
+user_pref("browser.ping-centre.production.endpoint", "");
 user_pref("browser.ping-centre.staging.endpoint", "");
 
 user_pref("browser.safebrowsing.downloads.remote.url", "http://{server}/safebrowsing-dummy/update");
@@ -95,13 +97,6 @@ user_pref("devtools.testing", true);
 user_pref("dom.audioworklet.enabled", false);
 user_pref("dom.allow_scripts_to_close_windows", true);
 user_pref("dom.disable_open_during_load", false);
-user_pref("dom.experimental_forms", true); 
-user_pref("dom.forms.color", true); 
-user_pref("dom.forms.datetime", true); 
-user_pref("dom.forms.datetime.others", true); 
-
-user_pref("dom.gamepad.enabled", true);
-user_pref("dom.gamepad.non_standard_events.enabled", true);
 user_pref("dom.ipc.reportProcessHangs", false); 
 
 user_pref("dom.ipc.tabs.shutdownTimeoutSecs", 0);
@@ -119,16 +114,12 @@ user_pref("dom.successive_dialog_time_limit", 0);
 
 
 user_pref("dom.use_xbl_scopes_for_remote_xul", true);
-user_pref("dom.visualviewport.enabled", true); 
-user_pref("dom.w3c_touch_events.enabled", 1);
 user_pref("extensions.autoDisableScopes", 0);
 user_pref("extensions.blocklist.detailsURL", "http://{server}/extensions-dummy/blocklistDetailsURL");
 user_pref("extensions.blocklist.itemURL", "http://{server}/extensions-dummy/blocklistItemURL");
 user_pref("extensions.blocklist.url", "http://{server}/extensions-dummy/blocklistURL");
 
 user_pref("extensions.defaultProviders.enabled", true);
-
-user_pref("extensions.formautofill.available", "on");
 
 user_pref("extensions.getAddons.cache.enabled", false);
 
@@ -170,18 +161,6 @@ user_pref("identity.fxaccounts.remote.root", "https://{server}/");
 user_pref("javascript.options.showInConsole", true);
 user_pref("layout.accessiblecaret.enabled_on_touch", false);
 
-user_pref("layout.css.clip-path-path.enabled", true);
-
-user_pref("layout.css.contain.enabled", true);
-
-user_pref("layout.css.grid-template-subgrid-value.enabled", true);
-
-user_pref("layout.css.initial-letter.enabled", true);
-
-user_pref("layout.css.prefixes.device-pixel-ratio-webkit", true);
-
-user_pref("layout.css.prefixes.webkit", true);
-
 user_pref("layout.css.report_errors", true);
 
 user_pref("layout.spammy_warnings.enabled", false);
@@ -192,23 +171,18 @@ user_pref("lightweightThemes.selectedThemeID", "");
 
 
 user_pref("marionette.prefs.recommended", false);
-user_pref("media.av1.enabled", true);
 user_pref("media.cache_size", 1000);
 user_pref("media.dormant-on-pause-timeout-ms", 0); 
 
 
 
 user_pref("media.eme.chromium-api.video-shmems", 0);
-user_pref("media.eme.enabled", true);
 
 user_pref("media.gmp-manager.url.override", "http://{server}/dummy-gmp-manager.xml");
 user_pref("media.hls.server.url", "http://{server}/tests/dom/media/test/hls");
 
 
 user_pref("media.libavcodec.allow-obsolete", true);
-
-user_pref("media.mediasource.mp4.enabled", true);
-user_pref("media.mediasource.webm.enabled", true);
 user_pref("media.memory_cache_max_size", 32);
 user_pref("media.memory_caches_combined_limit_kb", 256);
 user_pref("media.openUnsupportedTypeWithExternalApp", false);
@@ -234,9 +208,6 @@ user_pref("network.sntp.pools", "{server}");
 
 
 user_pref("places.database.lastMaintenance", 2147483647);
-
-
-user_pref("plugin.load_flash_only", false);
 user_pref("privacy.trackingprotection.introURL", "http://{server}/trackingprotection/tour");
 user_pref("security.default_personal_cert", "Select Automatically"); 
 
