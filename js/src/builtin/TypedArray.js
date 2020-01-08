@@ -1213,7 +1213,7 @@ function TypedArraySort(comparefn) {
     
     var wrappedCompareFn = function(x, y) {
         
-        var v = comparefn(x, y);
+        var v = +comparefn(x, y);
 
         
         var length;
