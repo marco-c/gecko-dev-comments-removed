@@ -31,8 +31,7 @@ const newPropertyBag = LoginHelper.newPropertyBag;
 
 
 
-function run_test()
-{
+function run_test() {
   do_get_profile();
   run_next_test();
 }
@@ -55,8 +54,7 @@ const RecipeHelpers = {
 
 
 
-add_task(async function test_common_initialize()
-{
+add_task(async function test_common_initialize() {
   
   
   

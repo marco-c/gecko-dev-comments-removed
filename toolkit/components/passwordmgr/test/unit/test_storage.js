@@ -13,8 +13,7 @@
 
 
 
-async function reloadAndCheckLoginsGen(aExpectedLogins)
-{
+async function reloadAndCheckLoginsGen(aExpectedLogins) {
   await LoginTestUtils.reloadData();
   LoginTestUtils.checkLogins(aExpectedLogins);
   LoginTestUtils.clearData();
@@ -25,8 +24,7 @@ async function reloadAndCheckLoginsGen(aExpectedLogins)
 
 
 
-add_task(async function test_storage_addLogin_nonascii()
-{
+add_task(async function test_storage_addLogin_nonascii() {
   let hostname = "http://" + String.fromCharCode(355) + ".example.com";
 
   
@@ -52,8 +50,7 @@ add_task(async function test_storage_addLogin_nonascii()
 
 
 
-add_task(async function test_storage_addLogin_newlines()
-{
+add_task(async function test_storage_addLogin_newlines() {
   let loginInfo = TestData.formLogin({
     username: "user\r\nname",
     password: "password\r\n",
@@ -67,8 +64,7 @@ add_task(async function test_storage_addLogin_newlines()
 
 
 
-add_task(async function test_storage_addLogin_dot()
-{
+add_task(async function test_storage_addLogin_dot() {
   let loginInfo = TestData.formLogin({ hostname: ".", passwordField: "." });
   Services.logins.addLogin(loginInfo);
   await reloadAndCheckLoginsGen([loginInfo]);
@@ -83,8 +79,7 @@ add_task(async function test_storage_addLogin_dot()
 
 
 
-add_task(async function test_storage_addLogin_parentheses()
-{
+add_task(async function test_storage_addLogin_parentheses() {
   let loginList = [
     TestData.authLogin({ httpRealm: "(realm" }),
     TestData.authLogin({ httpRealm: "realm)" }),

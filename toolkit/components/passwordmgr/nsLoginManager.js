@@ -395,8 +395,9 @@ LoginManager.prototype = {
       }
     }
 
-    if (count)
-      count.value = disabledHosts.length; 
+    if (count) {
+      count.value = disabledHosts.length;
+    } 
 
     log.debug("getAllDisabledHosts: returning", disabledHosts.length, "disabled hosts.");
     return disabledHosts;

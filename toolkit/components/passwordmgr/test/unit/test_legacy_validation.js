@@ -18,8 +18,7 @@
 
 
 
-add_task(function test_addLogin_invalid_characters_legacy()
-{
+add_task(function test_addLogin_invalid_characters_legacy() {
   
   for (let testValue of ["http://newline\n.example.com",
                          "http://carriagereturn.example.com\r"]) {
@@ -65,8 +64,7 @@ add_task(function test_addLogin_invalid_characters_legacy()
 
 
 
-add_task(function test_setLoginSavingEnabled_invalid_characters_legacy()
-{
+add_task(function test_setLoginSavingEnabled_invalid_characters_legacy() {
   for (let hostname of ["http://newline\n.example.com",
                         "http://carriagereturn.example.com\r",
                         "."]) {

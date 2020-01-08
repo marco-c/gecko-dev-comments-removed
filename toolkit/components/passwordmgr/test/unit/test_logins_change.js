@@ -23,8 +23,7 @@
 
 
 
-function checkLoginInvalid(aLoginInfo, aExpectedError)
-{
+function checkLoginInvalid(aLoginInfo, aExpectedError) {
   
   Assert.throws(() => Services.logins.addLogin(aLoginInfo), aExpectedError);
   LoginTestUtils.checkLogins([]);
@@ -79,8 +78,7 @@ function compareAttributes(objectA, objectB, attributes) {
 
 
 
-add_task(function test_addLogin_removeLogin()
-{
+add_task(function test_addLogin_removeLogin() {
   
   for (let loginInfo of TestData.loginList()) {
     Services.logins.addLogin(loginInfo);
@@ -109,8 +107,7 @@ add_task(function test_addLogin_removeLogin()
 
 
 
-add_task(function test_invalid_httpRealm_formSubmitURL()
-{
+add_task(function test_invalid_httpRealm_formSubmitURL() {
   
   checkLoginInvalid(TestData.formLogin({ formSubmitURL: null }),
                     /without a httpRealm or formSubmitURL/);
@@ -144,8 +141,7 @@ add_task(function test_invalid_httpRealm_formSubmitURL()
 
 
 
-add_task(function test_missing_properties()
-{
+add_task(function test_missing_properties() {
   checkLoginInvalid(TestData.formLogin({ hostname: null }),
                     /null or empty hostname/);
 
@@ -165,8 +161,7 @@ add_task(function test_missing_properties()
 
 
 
-add_task(function test_invalid_characters()
-{
+add_task(function test_invalid_characters() {
   let loginList = [
     TestData.authLogin({ hostname: "http://null\0X.example.com" }),
     TestData.authLogin({ httpRealm: "realm\0" }),
@@ -185,8 +180,7 @@ add_task(function test_invalid_characters()
 
 
 
-add_task(function test_removeLogin_nonexisting()
-{
+add_task(function test_removeLogin_nonexisting() {
   Assert.throws(() => Services.logins.removeLogin(TestData.formLogin()),
                 /No matching logins/);
 });
@@ -194,8 +188,7 @@ add_task(function test_removeLogin_nonexisting()
 
 
 
-add_task(function test_removeAllLogins()
-{
+add_task(function test_removeAllLogins() {
   for (let loginInfo of TestData.loginList()) {
     Services.logins.addLogin(loginInfo);
   }
@@ -209,8 +202,7 @@ add_task(function test_removeAllLogins()
 
 
 
-add_task(function test_modifyLogin_nsILoginInfo()
-{
+add_task(function test_modifyLogin_nsILoginInfo() {
   let loginInfo = TestData.formLogin();
   let updatedLoginInfo = TestData.formLogin({
     username: "new username",
@@ -253,8 +245,7 @@ add_task(function test_modifyLogin_nsILoginInfo()
 
 
 
-add_task(function test_modifyLogin_nsIProperyBag()
-{
+add_task(function test_modifyLogin_nsIProperyBag() {
   let loginInfo = TestData.formLogin();
   let updatedLoginInfo = TestData.formLogin({
     username: "new username",

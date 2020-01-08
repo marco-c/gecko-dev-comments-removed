@@ -23,8 +23,7 @@ var gLooksLikeUUIDRegex = /^\{\w{8}-\w{4}-\w{4}-\w{4}-\w{12}\}$/;
 
 
 
-function retrieveLoginMatching(aLoginInfo)
-{
+function retrieveLoginMatching(aLoginInfo) {
   let logins = Services.logins.findLogins({}, aLoginInfo.hostname, "", "");
   Assert.equal(logins.length, 1);
   return logins[0].QueryInterface(Ci.nsILoginMetaInfo);
@@ -34,8 +33,7 @@ function retrieveLoginMatching(aLoginInfo)
 
 
 
-function assertMetaInfoEqual(aActual, aExpected)
-{
+function assertMetaInfoEqual(aActual, aExpected) {
   Assert.notEqual(aActual, aExpected);
 
   
@@ -69,8 +67,7 @@ var gLoginMetaInfo3;
 
 
 
-add_task(function test_initialize()
-{
+add_task(function test_initialize() {
   
   
   let baseTimeMs = Date.now() - 600000;
@@ -91,8 +88,7 @@ add_task(function test_initialize()
 
 
 
-add_task(function test_addLogin_metainfo()
-{
+add_task(function test_addLogin_metainfo() {
   
   Services.logins.addLogin(gLoginInfo1);
 
@@ -132,8 +128,7 @@ add_task(function test_addLogin_metainfo()
 
 
 
-add_task(function test_addLogin_metainfo_duplicate()
-{
+add_task(function test_addLogin_metainfo_duplicate() {
   let loginInfo = TestData.formLogin({
     hostname: "http://duplicate.example.com",
     guid: gLoginMetaInfo2.guid,
@@ -149,8 +144,7 @@ add_task(function test_addLogin_metainfo_duplicate()
 
 
 
-add_task(function test_modifyLogin_nsILoginInfo_metainfo_ignored()
-{
+add_task(function test_modifyLogin_nsILoginInfo_metainfo_ignored() {
   let newLoginInfo = gLoginInfo1.clone().QueryInterface(Ci.nsILoginMetaInfo);
   newLoginInfo.guid = gUUIDGenerator.generateUUID().toString();
   newLoginInfo.timeCreated = Date.now();
@@ -166,8 +160,7 @@ add_task(function test_modifyLogin_nsILoginInfo_metainfo_ignored()
 
 
 
-add_task(function test_modifyLogin_nsIProperyBag_metainfo()
-{
+add_task(function test_modifyLogin_nsIProperyBag_metainfo() {
   
   let newTimeMs = Date.now() + 120000;
   let newUUIDValue = gUUIDGenerator.generateUUID().toString();
@@ -230,8 +223,7 @@ add_task(function test_modifyLogin_nsIProperyBag_metainfo()
 
 
 
-add_task(function test_modifyLogin_nsIProperyBag_metainfo_duplicate()
-{
+add_task(function test_modifyLogin_nsIProperyBag_metainfo_duplicate() {
   Assert.throws(() => Services.logins.modifyLogin(gLoginInfo1, newPropertyBag({
     guid: gLoginInfo2.guid,
   })), /specified GUID already exists/);
@@ -241,8 +233,7 @@ add_task(function test_modifyLogin_nsIProperyBag_metainfo_duplicate()
 
 
 
-add_task(function test_searchLogins_metainfo()
-{
+add_task(function test_searchLogins_metainfo() {
   
   let logins = Services.logins.searchLogins({}, newPropertyBag({
     guid: gLoginMetaInfo1.guid,
@@ -273,8 +264,7 @@ add_task(function test_searchLogins_metainfo()
 
 
 
-add_task(async function test_storage_metainfo()
-{
+add_task(async function test_storage_metainfo() {
   await LoginTestUtils.reloadData();
   LoginTestUtils.checkLogins([gLoginInfo1, gLoginInfo2, gLoginInfo3]);
 

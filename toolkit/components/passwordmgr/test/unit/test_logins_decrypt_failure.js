@@ -15,8 +15,7 @@
 
 
 
-function resetMasterPassword()
-{
+function resetMasterPassword() {
   let token = Cc["@mozilla.org/security/pk11tokendb;1"]
                 .getService(Ci.nsIPK11TokenDB).getInternalKeyToken();
   token.reset();
@@ -28,8 +27,7 @@ function resetMasterPassword()
 
 
 
-add_task(function test_logins_decrypt_failure()
-{
+add_task(function test_logins_decrypt_failure() {
   let logins = TestData.loginList();
   for (let loginInfo of logins) {
     Services.logins.addLogin(loginInfo);
@@ -79,8 +77,7 @@ add_task(function test_logins_decrypt_failure()
 
 
 
-add_task(function test_add_logins_with_decrypt_failure()
-{
+add_task(function test_add_logins_with_decrypt_failure() {
   
   let login = new LoginInfo("http://www.example2.com", "http://www.example2.com", null,
                             "the username", "the password for www.example.com",

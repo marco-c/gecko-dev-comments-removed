@@ -14,8 +14,7 @@
 
 
 
-add_task(function test_setLoginSavingEnabled_getAllDisabledHosts()
-{
+add_task(function test_setLoginSavingEnabled_getAllDisabledHosts() {
   
   
   let hostname1 = "http://disabled1.example.com";
@@ -48,8 +47,7 @@ add_task(function test_setLoginSavingEnabled_getAllDisabledHosts()
 
 
 
-add_task(function test_setLoginSavingEnabled_getLoginSavingEnabled()
-{
+add_task(function test_setLoginSavingEnabled_getLoginSavingEnabled() {
   let hostname1 = "http://disabled.example.com";
   let hostname2 = "https://disabled.example.com";
 
@@ -76,8 +74,7 @@ add_task(function test_setLoginSavingEnabled_getLoginSavingEnabled()
 
 
 
-add_task(function test_setLoginSavingEnabled_invalid_characters()
-{
+add_task(function test_setLoginSavingEnabled_invalid_characters() {
   let hostname = "http://null\0X.example.com";
   Assert.throws(() => Services.logins.setLoginSavingEnabled(hostname, false),
                 /Invalid hostname/);
@@ -90,8 +87,7 @@ add_task(function test_setLoginSavingEnabled_invalid_characters()
 
 
 
-add_task(function test_rememberSignons()
-{
+add_task(function test_rememberSignons() {
   let hostname1 = "http://example.com";
   let hostname2 = "http://localhost";
 
@@ -144,8 +140,7 @@ add_task(function test_rememberSignons()
 
 
 
-add_task(async function test_storage_setLoginSavingEnabled_nonascii_IDN_is_supported()
-{
+add_task(async function test_storage_setLoginSavingEnabled_nonascii_IDN_is_supported() {
   let hostname = "http://大.net";
   let encoding = "http://xn--pss.net";
 
@@ -171,8 +166,7 @@ add_task(async function test_storage_setLoginSavingEnabled_nonascii_IDN_is_suppo
 
 
 
-add_task(async function test_storage_setLoginSavingEnabled_nonascii_IDN_not_supported()
-{
+add_task(async function test_storage_setLoginSavingEnabled_nonascii_IDN_not_supported() {
   let hostname = "http://√.com";
   let encoding = "http://xn--19g.com";
 

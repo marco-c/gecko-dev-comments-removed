@@ -21,8 +21,7 @@ const TEST_STORE_FILE_NAME = "test-logins.json";
 
 
 
-add_task(async function test_save_reload()
-{
+add_task(async function test_save_reload() {
   let storeForSave = new LoginStore(getTempFile(TEST_STORE_FILE_NAME).path);
 
   
@@ -72,8 +71,7 @@ add_task(async function test_save_reload()
 
 
 
-add_task(async function test_load_empty()
-{
+add_task(async function test_load_empty() {
   let store = new LoginStore(getTempFile(TEST_STORE_FILE_NAME).path);
 
   Assert.equal(false, await OS.File.exists(store.path));
@@ -89,8 +87,7 @@ add_task(async function test_load_empty()
 
 
 
-add_task(async function test_save_empty()
-{
+add_task(async function test_save_empty() {
   let store = new LoginStore(getTempFile(TEST_STORE_FILE_NAME).path);
 
   await store.load();
@@ -107,8 +104,7 @@ add_task(async function test_save_empty()
 
 
 
-add_task(async function test_load_string_predefined()
-{
+add_task(async function test_load_string_predefined() {
   let store = new LoginStore(getTempFile(TEST_STORE_FILE_NAME).path);
 
   let string = "{\"logins\":[{" +
@@ -159,8 +155,7 @@ add_task(async function test_load_string_predefined()
 
 
 
-add_task(async function test_load_string_malformed()
-{
+add_task(async function test_load_string_malformed() {
   let store = new LoginStore(getTempFile(TEST_STORE_FILE_NAME).path);
 
   let string = "{\"logins\":[{\"hostname\":\"http://www.example.com\"," +
@@ -184,8 +179,7 @@ add_task(async function test_load_string_malformed()
 
 
 
-add_task(async function test_load_string_malformed_sync()
-{
+add_task(async function test_load_string_malformed_sync() {
   let store = new LoginStore(getTempFile(TEST_STORE_FILE_NAME).path);
 
   let string = "{\"logins\":[{\"hostname\":\"http://www.example.com\"," +

@@ -83,9 +83,9 @@ add_task(async function test() {
         
         if (showMode) {
           Services.ww.registerNotification(function notification(aSubject, aTopic, aData) {
-            if (aTopic == "domwindowclosed")
+            if (aTopic == "domwindowclosed") {
               Services.ww.unregisterNotification(notification);
-            else if (aTopic == "domwindowopened") {
+            } else if (aTopic == "domwindowopened") {
               let targetWin = aSubject;
               SimpleTest.waitForFocus(function() {
                 EventUtils.sendKey("RETURN", targetWin);
@@ -141,10 +141,11 @@ add_task(async function test() {
 
         function proceed() {
           
-          if (testCounter != tests.length)
+          if (testCounter != tests.length) {
             runNextTest();
-          else
+          } else {
             endFunction();
+          }
         }
 
         function runNextTest() {

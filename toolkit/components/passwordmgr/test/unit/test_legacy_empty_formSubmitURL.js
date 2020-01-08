@@ -43,8 +43,7 @@
 
 
 
-add_task(function test_addLogin_wildcard()
-{
+add_task(function test_addLogin_wildcard() {
   let loginInfo = TestData.formLogin({ hostname: "http://any.example.com",
                                        formSubmitURL: "" });
   Services.logins.addLogin(loginInfo);
@@ -67,8 +66,7 @@ add_task(function test_addLogin_wildcard()
 
 
 
-add_task(function test_search_all_wildcard()
-{
+add_task(function test_search_all_wildcard() {
   
   let matchData = newPropertyBag({ formSubmitURL: "http://www.example.com" });
   Assert.equal(Services.logins.searchLogins({}, matchData).length, 2);
@@ -96,8 +94,7 @@ add_task(function test_search_all_wildcard()
 
 
 
-add_task(function test_searchLogins_wildcard()
-{
+add_task(function test_searchLogins_wildcard() {
   let logins = Services.logins.searchLogins({},
                                             newPropertyBag({ formSubmitURL: "" }));
 
