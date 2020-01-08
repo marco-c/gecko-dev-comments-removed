@@ -534,6 +534,8 @@ public final class GeckoRuntimeSettings implements Parcelable {
     
 
 
+
+
     public int getCrashReportingServiceJobId() {
         return mCrashReportingJobId;
     }
