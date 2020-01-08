@@ -4,6 +4,7 @@
 
 "use strict";
 
+const { Cc, Ci } = require("chrome");
 loader.lazyImporter(this, "BrowserToolboxProcess",
   "resource://devtools/client/framework/ToolboxProcess.jsm");
 loader.lazyImporter(this, "AddonManager", "resource://gre/modules/AddonManager.jsm");
@@ -72,6 +73,10 @@ exports.debugRemoteAddon = async function(addonForm, client) {
   });
 };
 
+
+
+
+
 exports.uninstallAddon = async function(addonID) {
   const addon = await AddonManager.getAddonByID(addonID);
   return addon && addon.uninstall();
@@ -103,4 +108,48 @@ exports.parseFileUri = function(url) {
     return windowsRegex.exec(url)[1];
   }
   return url.slice("file://".length);
+};
+
+exports.getExtensionUuid = function(extension) {
+  const { manifestURL } = extension;
+  
+  return manifestURL ? /moz-extension:\/\/([^/]*)/.exec(manifestURL)[1] : null;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+exports.openTemporaryExtension = function(win, message) {
+  return new Promise(resolve => {
+    const fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+    fp.init(win, message, Ci.nsIFilePicker.modeOpen);
+    fp.open(res => {
+      if (res == Ci.nsIFilePicker.returnCancel || !fp.file) {
+        return;
+      }
+      let file = fp.file;
+      
+      
+      if (!file.isDirectory() &&
+          !file.leafName.endsWith(".xpi") && !file.leafName.endsWith(".zip")) {
+        file = file.parent;
+      }
+
+      resolve(file);
+    });
+  });
 };
