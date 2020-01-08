@@ -1,7 +1,7 @@
 
 
 
-let g = newGlobal('new-compartment');
+let g = newGlobal({newCompartment: true});
 let dbg = new Debugger;
 let gw = dbg.addDebuggee(g);
 

@@ -1,6 +1,6 @@
 
 
-var gi = newGlobal({ invisibleToDebugger: true });
+var gi = newGlobal({ newCompartment: true, invisibleToDebugger: true });
 gi.eval('function f() {}');
 
 var gv = newGlobal();

@@ -1,6 +1,6 @@
 
 
-var g = newGlobal("same-compartment");
+var g = newGlobal({newCompartment: true});
 var dbg = new Debugger;
 g.toggle = function toggle(d) {
     if (d) {

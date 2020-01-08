@@ -8,7 +8,7 @@ load(libdir + "asserts.js");
 
 
 function getAllOffsets(wast) {
-  var sandbox = newGlobal('');
+  var sandbox = newGlobal({newCompartment: true});
   var dbg = new Debugger();
   dbg.addDebuggee(sandbox);
   dbg.allowWasmBinarySource = true;

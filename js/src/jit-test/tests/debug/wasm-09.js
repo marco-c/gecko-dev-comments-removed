@@ -6,7 +6,7 @@ load(libdir + "asserts.js");
 
 
 function getWasmScriptWithoutAllowUnobservedAsmJS(wast) {
-    var sandbox = newGlobal('');
+    var sandbox = newGlobal({newCompartment: true});
     var dbg = new Debugger();
     dbg.allowUnobservedAsmJS = true;
     dbg.addDebuggee(sandbox);

@@ -3,7 +3,7 @@
 
 
 function testStepping(script, expected) {
-    let g = newGlobal();
+    let g = newGlobal({newCompartment: true});
     let f = g.eval(script);
 
     let log = [];
