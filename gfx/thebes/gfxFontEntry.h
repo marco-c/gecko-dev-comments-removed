@@ -27,6 +27,7 @@
 #include <math.h>
 
 typedef struct gr_face gr_face;
+typedef struct FT_MM_Var_ FT_MM_Var;
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -396,6 +397,9 @@ public:
 
     
     void GetFeatureInfo(nsTArray<gfxFontFeatureInfo>& aFeatureInfo);
+
+    
+    virtual FT_MM_Var* GetMMVar() { return nullptr; }
 
     nsString         mName;
     nsString         mFamilyName;
