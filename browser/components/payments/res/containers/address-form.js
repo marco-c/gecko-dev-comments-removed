@@ -4,7 +4,6 @@
 
 
 import LabelledCheckbox from "../components/labelled-checkbox.js";
-import PaymentDialog from "./payment-dialog.js";
 import PaymentRequestPage from "../components/payment-request-page.js";
 import PaymentStateSubscriberMixin from "../mixins/PaymentStateSubscriberMixin.js";
 import paymentRequest from "../paymentRequest.js";
@@ -98,12 +97,6 @@ export default class AddressForm extends PaymentStateSubscriberMixin(PaymentRequ
       this.form.addEventListener("invalid", this);
       this.form.addEventListener("change", this);
 
-      
-      
-      for (let field of this.form.elements) {
-        field.addEventListener("invalid", this);
-      }
-
       this.body.appendChild(this.persistCheckbox);
       this.body.appendChild(this.genericErrorText);
 
@@ -183,9 +176,38 @@ export default class AddressForm extends PaymentStateSubscriberMixin(PaymentRequ
       let container = this.form.querySelector(errorSelector + "-container");
       let field = this.form.querySelector(errorSelector);
       let errorText = (shippingAddressErrors && shippingAddressErrors[errorName]) || "";
+      container.classList.toggle("error", !!errorText);
       field.setCustomValidity(errorText);
-      let span = PaymentDialog.maybeCreateFieldErrorElement(container);
+      let span = container.querySelector(".error-text");
+      if (!span) {
+        span = document.createElement("span");
+        span.className = "error-text";
+        container.appendChild(span);
+      }
       span.textContent = errorText;
+    }
+
+    
+    let formRect = this.form.getBoundingClientRect();
+    let errorSpanData = [...this.form.querySelectorAll(".error-text:not(:empty)")].map(span => {
+      let relatedInput = span.parentNode.querySelector("input, textarea, select");
+      let relatedRect = relatedInput.getBoundingClientRect();
+      return {
+        span,
+        top: relatedRect.height,
+        left: relatedRect.left - formRect.left,
+        right: formRect.right - relatedRect.right,
+      };
+    });
+    let isRTL = this.form.matches(":dir(rtl)");
+    for (let data of errorSpanData) {
+      
+      data.span.style.top = (data.top + 10) + "px";
+      if (isRTL) {
+        data.span.style.right = data.right + "px";
+      } else {
+        data.span.style.left = data.left + "px";
+      }
     }
 
     this.updateSaveButtonState();
@@ -206,12 +228,7 @@ export default class AddressForm extends PaymentStateSubscriberMixin(PaymentRequ
         break;
       }
       case "invalid": {
-        if (event.target instanceof HTMLFormElement) {
-          this.onInvalidForm(event);
-          break;
-        }
-
-        this.onInvalidField(event);
+        this.onInvalid(event);
         break;
       }
     }
@@ -252,22 +269,20 @@ export default class AddressForm extends PaymentStateSubscriberMixin(PaymentRequ
   }
 
   onInput(event) {
-    event.target.setCustomValidity("");
+    let container = event.target.closest(`#${event.target.id}-container`);
+    if (container) {
+      container.classList.remove("error");
+      event.target.setCustomValidity("");
+
+      let span = container.querySelector(".error-text");
+      if (span) {
+        span.textContent = "";
+      }
+    }
     this.updateSaveButtonState();
   }
 
-  
-
-
-
-  onInvalidField(event) {
-    let field = event.target;
-    let container = field.closest(`#${field.id}-container`);
-    let errorTextSpan = PaymentDialog.maybeCreateFieldErrorElement(container);
-    errorTextSpan.textContent = field.validationMessage;
-  }
-
-  onInvalidForm() {
+  onInvalid(event) {
     this.saveButton.disabled = true;
   }
 
