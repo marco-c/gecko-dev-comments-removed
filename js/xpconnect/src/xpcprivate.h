@@ -3066,6 +3066,8 @@ bool IsOutObject(JSContext* cx, JSObject* obj);
 
 nsresult HasInstance(JSContext* cx, JS::HandleObject objArg, const nsID* iid, bool* bp);
 
+
+
 nsIPrincipal* GetObjectPrincipal(JSObject* obj);
 
 
