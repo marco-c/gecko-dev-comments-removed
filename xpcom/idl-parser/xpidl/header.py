@@ -123,7 +123,7 @@ def paramlistAsNative(m, empty='void'):
                 m.params[paramIter].paramtype == "out"):
             t = m.params[paramIter].type
             
-            if t == "AString" or t == "ACString" or t == "DOMString" or t == "AUTF8String":
+            if t == "AString" or t == "ACString" or t == "AUTF8String":
                 break
             l[paramIter] += " = nullptr"
             paramIter -= 1
