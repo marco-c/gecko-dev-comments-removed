@@ -6,6 +6,7 @@
 
 
 #include "PuppetBidiKeyboard.h"
+#include "nsIWidget.h"
 
 using namespace mozilla::widget;
 
@@ -48,4 +49,11 @@ PuppetBidiKeyboard::GetHaveBidiKeyboards(bool* aResult)
 {
   *aResult = mHaveBidiKeyboards;
   return NS_OK;
+}
+
+
+already_AddRefed<nsIBidiKeyboard>
+nsIWidget::CreateBidiKeyboardContentProcess()
+{
+  return do_AddRef(new PuppetBidiKeyboard());
 }
