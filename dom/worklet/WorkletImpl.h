@@ -74,7 +74,8 @@ public:
   WrapWorklet(JSContext* aCx, dom::Worklet* aWorklet,
               JS::Handle<JSObject*> aGivenProto);
 
-  dom::WorkletThread* GetOrCreateThread();
+  nsresult SendControlMessage(already_AddRefed<nsIRunnable> aRunnable);
+
   void NotifyWorkletFinished();
 
   
@@ -83,9 +84,6 @@ public:
   
 
   const WorkletLoadInfo& LoadInfo() const { return mWorkletLoadInfo; }
-
-  
-  nsresult DispatchRunnable(already_AddRefed<nsIRunnable> aRunnable);
 
 protected:
   WorkletImpl(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal);
@@ -99,6 +97,7 @@ protected:
 
   
   RefPtr<dom::WorkletThread> mWorkletThread;
+  bool mTerminated;
 };
 
 } 
