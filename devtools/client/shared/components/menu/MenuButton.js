@@ -70,6 +70,7 @@ class MenuButton extends PureComponent {
     this.onHidden = this.onHidden.bind(this);
     this.onClick = this.onClick.bind(this);
     this.onKeyDown = this.onKeyDown.bind(this);
+    this.onTouchStart = this.onTouchStart.bind(this);
 
     this.buttonRef = createRef();
 
@@ -79,6 +80,7 @@ class MenuButton extends PureComponent {
       isMenuInitialized: flags.testing || false,
       win: props.doc.defaultView.top,
     };
+    this.ignoreNextClick = false;
 
     this.initializeTooltip();
   }
@@ -196,6 +198,44 @@ class MenuButton extends PureComponent {
     });
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  onTouchStart(evt) {
+    const touchend = () => {
+      const anchorRect = this.buttonRef.current.getClientRects()[0];
+      const { clientX, clientY } = evt.changedTouches[0];
+      
+      
+      
+      
+      if (anchorRect.x <= clientX && clientX <= anchorRect.x + anchorRect.width &&
+          anchorRect.y <= clientY && clientY <= anchorRect.y + anchorRect.height) {
+        this.ignoreNextClick = true;
+      }
+    };
+
+    const touchmove = () => {
+      this.state.win.removeEventListener("touchend", touchend);
+    };
+
+    this.state.win.addEventListener("touchend", touchend, { once: true });
+    this.state.win.addEventListener("touchmove", touchmove, { once: true });
+  }
+
   onHidden() {
     this.setState({ expanded: false });
     
@@ -213,7 +253,12 @@ class MenuButton extends PureComponent {
       if (this.buttonRef.current) {
         this.buttonRef.current.style.pointerEvents = "auto";
       }
+      this.state.win.removeEventListener("touchstart",
+                                         this.onTouchStart,
+                                         true);
     }, 0);
+
+    this.state.win.addEventListener("touchstart", this.onTouchStart, true);
 
     if (this.props.onCloseButton) {
       this.props.onCloseButton();
@@ -221,6 +266,11 @@ class MenuButton extends PureComponent {
   }
 
   async onClick(e) {
+    if (this.ignoreNextClick) {
+      this.ignoreNextClick = false;
+      return;
+    }
+
     if (e.target === this.buttonRef.current) {
       
       
