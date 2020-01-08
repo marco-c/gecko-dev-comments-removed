@@ -1047,8 +1047,7 @@ var TPS = {
   Phase: function Test__Phase(phasename, fnlist) {
     if (Object.keys(this._phaselist).length === 0) {
       
-      
-      fnlist.unshift([this.WipeServer]);
+      fnlist.unshift([this.Login]);
     }
     this._phaselist[phasename] = fnlist;
   },
