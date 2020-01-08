@@ -989,9 +989,10 @@ class RunProgram(MachCommandBase):
 
             if debugger:
                 self.debuggerInfo = mozdebug.get_debugger_info(debugger, debugger_args)
-                if not self.debuggerInfo:
-                    print("Could not find a suitable debugger in your PATH.")
-                    return 1
+
+            if not debugger or not self.debuggerInfo:
+                print("Could not find a suitable debugger in your PATH.")
+                return 1
 
             
             
