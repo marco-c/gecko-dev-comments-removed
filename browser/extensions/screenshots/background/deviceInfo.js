@@ -27,7 +27,7 @@ this.deviceInfo = (function() {
       
       userAgent: navigator.userAgent,
       appVendor: appName,
-      appName
+      appName,
     };
   };
 
