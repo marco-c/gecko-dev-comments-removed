@@ -18,7 +18,7 @@ public:
   virtual ~XULMenuitemAccessibleWrap() {}
 
   
-  virtual mozilla::a11y::ENameValueFlag Name(nsString& aName);
+  virtual mozilla::a11y::ENameValueFlag Name(nsString& aName) const override;
 };
 
 } 

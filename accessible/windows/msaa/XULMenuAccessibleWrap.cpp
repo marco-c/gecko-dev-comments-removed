@@ -19,7 +19,7 @@ XULMenuitemAccessibleWrap::
 }
 
 ENameValueFlag
-XULMenuitemAccessibleWrap::Name(nsString& aName)
+XULMenuitemAccessibleWrap::Name(nsString& aName) const
 {
   
   
