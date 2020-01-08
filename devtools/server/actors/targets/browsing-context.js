@@ -1183,7 +1183,14 @@ const browsingContextTargetPrototype = {
       return;
     }
     const windowUtils = this.window.windowUtils;
-    windowUtils.suppressEventHandling(true);
+
+    
+    
+    
+    if (Debugger.recordReplayProcessKind() != "Middleman") {
+      windowUtils.suppressEventHandling(true);
+    }
+
     windowUtils.suspendTimeouts();
   },
 
@@ -1197,7 +1204,9 @@ const browsingContextTargetPrototype = {
     }
     const windowUtils = this.window.windowUtils;
     windowUtils.resumeTimeouts();
-    windowUtils.suppressEventHandling(false);
+    if (Debugger.recordReplayProcessKind() != "Middleman") {
+      windowUtils.suppressEventHandling(false);
+    }
   },
 
   _changeTopLevelDocument(window) {
