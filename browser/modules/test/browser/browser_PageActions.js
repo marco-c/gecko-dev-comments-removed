@@ -18,6 +18,10 @@ add_task(async function init() {
   registerCleanupFunction(async () => {
     BrowserTestUtils.removeTab(tab);
   });
+
+  
+  const addon = await AddonManager.getAddonByID("screenshots@mozilla.org");
+  await addon.disable({allowSystemAddons: true});
 });
 
 
