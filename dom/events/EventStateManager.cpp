@@ -5008,8 +5008,26 @@ EventStateManager::InitAndDispatchClickEvent(WidgetMouseEvent* aMouseUpEvent,
     targetFrame = aOverrideClickTarget->GetPrimaryFrame();
   }
 
-  return aPresShell->HandleEventWithTarget(&event, targetFrame,
-                                           target, aStatus);
+  
+  
+  
+  nsEventStatus status = nsEventStatus_eIgnore;
+  nsresult rv = aPresShell->HandleEventWithTarget(&event, targetFrame,
+                                                  target, &status);
+  
+  
+  if (*aStatus == nsEventStatus_eConsumeNoDefault) {
+    return rv;
+  }
+  
+  
+  if (status == nsEventStatus_eConsumeNoDefault ||
+      status == nsEventStatus_eConsumeDoDefault) {
+    *aStatus = status;
+    return rv;
+  }
+  
+  return rv;
 }
 
 nsresult

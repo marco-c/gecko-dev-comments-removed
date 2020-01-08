@@ -481,6 +481,9 @@ protected:
 
 
 
+
+
+
   MOZ_CAN_RUN_SCRIPT
   static nsresult InitAndDispatchClickEvent(WidgetMouseEvent* aMouseUpEvent,
                                             nsEventStatus* aStatus,
