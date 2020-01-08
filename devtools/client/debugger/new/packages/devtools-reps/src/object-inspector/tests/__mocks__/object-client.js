@@ -1,0 +1,46 @@
+
+
+
+
+function ObjectClient(grip, overrides) {
+  return {
+    grip,
+    enumEntries: function() {
+      return Promise.resolve({
+        iterator: this.getIterator({
+          ownProperties: {}
+        })
+      });
+    },
+    enumProperties: function(options) {
+      return Promise.resolve({
+        iterator: this.getIterator({
+          ownProperties: {}
+        })
+      });
+    },
+    enumSymbols: function() {
+      return Promise.resolve({
+        iterator: this.getIterator({
+          ownSymbols: []
+        })
+      });
+    },
+    getPrototype: function() {
+      return Promise.resolve({
+        prototype: {}
+      });
+    },
+    
+    getIterator(res) {
+      return {
+        slice: function(start, count) {
+          return Promise.resolve(res);
+        }
+      };
+    },
+    ...overrides
+  };
+}
+
+module.exports = ObjectClient;

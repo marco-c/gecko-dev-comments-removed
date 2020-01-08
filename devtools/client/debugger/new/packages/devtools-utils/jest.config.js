@@ -1,0 +1,16 @@
+
+
+
+
+const { resolve } = require("path");
+const rootDir = resolve(__dirname, "src");
+module.exports = {
+  rootDir,
+  displayName: "devtools-utils test",
+  testMatch: ["**/tests/**/*.js"],
+  testPathIgnorePatterns: [],
+  testURL: "http://localhost/",
+  transformIgnorePatterns: [],
+  setupFiles: [],
+  moduleNameMapper: {}
+};

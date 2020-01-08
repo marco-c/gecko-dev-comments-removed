@@ -1,0 +1,10 @@
+
+
+
+
+import type { Frame } from "../../../types";
+
+export type LocalFrame = Frame & {
+  library: string,
+  source: Source
+};

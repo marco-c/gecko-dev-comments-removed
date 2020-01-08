@@ -1,0 +1,16 @@
+
+
+
+
+function documentHasSelection(): boolean {
+  const selection = getSelection();
+  if (!selection) {
+    return false;
+  }
+
+  return selection.type === "Range";
+}
+
+module.exports = {
+  documentHasSelection
+};

@@ -7,7 +7,7 @@
 
 
 
-import Svg from "../../../assets/images/Svg";
+import Svg from "../../../images/Svg";
 
 import "./Svg.css";
 

@@ -1,0 +1,30 @@
+
+
+
+
+
+
+import type { Source } from "../../types";
+
+
+
+
+
+
+export type TreeNode = TreeSource | TreeDirectory;
+
+export type TreeSource = {
+  type: "source",
+  name: string,
+  path: string,
+  contents: Source
+};
+
+export type TreeDirectory = {
+  type: "directory",
+  name: string,
+  path: string,
+  contents: TreeNode[]
+};
+
+export type ParentMap = WeakMap<TreeNode, TreeDirectory>;

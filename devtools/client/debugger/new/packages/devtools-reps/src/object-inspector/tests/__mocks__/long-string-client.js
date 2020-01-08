@@ -1,0 +1,17 @@
+
+
+
+
+function LongStringClient(grip, overrides) {
+  return {
+    grip,
+    substring: function() {
+      return Promise.resolve({
+        fullText: ""
+      });
+    },
+    ...overrides
+  };
+}
+
+module.exports = LongStringClient;

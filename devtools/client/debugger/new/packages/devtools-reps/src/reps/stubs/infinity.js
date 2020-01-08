@@ -1,0 +1,13 @@
+
+
+
+
+const stubs = new Map();
+stubs.set("Infinity", {
+  type: "Infinity"
+});
+stubs.set("NegativeInfinity", {
+  type: "-Infinity"
+});
+
+module.exports = stubs;

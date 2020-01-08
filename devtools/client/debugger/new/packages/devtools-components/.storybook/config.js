@@ -1,0 +1,11 @@
+
+
+
+
+const { configure } = require("@storybook/react");
+
+function loadStories() {
+  require("../stories/index");
+}
+
+configure(loadStories, module);

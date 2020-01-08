@@ -1,0 +1,10 @@
+
+
+
+
+
+
+declare var L10N: {
+  getStr: string => string,
+  getFormatStr: (string, ...any) => string
+};

@@ -1,0 +1,14 @@
+
+
+
+
+
+const { SourceMapConsumer } = require("source-map");
+
+async function createConsumer(map: any, sourceMapUrl: any): SourceMapConsumer {
+  return new SourceMapConsumer(map, sourceMapUrl);
+}
+
+module.exports = {
+  createConsumer
+};
