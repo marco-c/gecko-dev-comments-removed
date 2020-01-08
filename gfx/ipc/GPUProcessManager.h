@@ -24,6 +24,7 @@ class nsBaseWidget;
 
 namespace mozilla {
 class MemoryReportingProcess;
+class PVideoDecoderManagerChild;
 namespace layers {
 class IAPZCTreeManager;
 class CompositorOptions;
@@ -42,7 +43,6 @@ class CompositorWidget;
 namespace dom {
 class ContentParent;
 class TabParent;
-class PVideoDecoderManagerChild;
 }  
 namespace ipc {
 class GeckoChildProcessHost;
@@ -101,7 +101,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
       mozilla::ipc::Endpoint<PCompositorManagerChild>* aOutCompositor,
       mozilla::ipc::Endpoint<PImageBridgeChild>* aOutImageBridge,
       mozilla::ipc::Endpoint<PVRManagerChild>* aOutVRBridge,
-      mozilla::ipc::Endpoint<dom::PVideoDecoderManagerChild>* aOutVideoManager,
+      mozilla::ipc::Endpoint<PVideoDecoderManagerChild>* aOutVideoManager,
       nsTArray<uint32_t>* aNamespaces);
 
   
@@ -191,7 +191,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
       mozilla::ipc::Endpoint<PVRManagerChild>* aOutEndpoint);
   void CreateContentVideoDecoderManager(
       base::ProcessId aOtherProcess,
-      mozilla::ipc::Endpoint<dom::PVideoDecoderManagerChild>* aOutEndPoint);
+      mozilla::ipc::Endpoint<PVideoDecoderManagerChild>* aOutEndPoint);
 
   
   

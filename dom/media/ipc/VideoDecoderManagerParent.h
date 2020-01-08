@@ -3,13 +3,12 @@
 
 
 
-#ifndef include_dom_ipc_VideoDecoderManagerParent_h
-#define include_dom_ipc_VideoDecoderManagerParent_h
+#ifndef include_ipc_VideoDecoderManagerParent_h
+#define include_ipc_VideoDecoderManagerParent_h
 
-#include "mozilla/dom/PVideoDecoderManagerParent.h"
+#include "mozilla/PVideoDecoderManagerParent.h"
 
 namespace mozilla {
-namespace dom {
 
 class VideoDecoderManagerThreadHolder;
 
@@ -62,7 +61,6 @@ class VideoDecoderManagerParent final : public PVideoDecoderManagerParent {
   RefPtr<VideoDecoderManagerThreadHolder> mThreadHolder;
 };
 
-}  
 }  
 
 #endif  

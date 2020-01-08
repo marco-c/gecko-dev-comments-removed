@@ -3,17 +3,16 @@
 
 
 
-#ifndef include_dom_ipc_VideoDecoderManagerChild_h
-#define include_dom_ipc_VideoDecoderManagerChild_h
+#ifndef include_ipc_VideoDecoderManagerChild_h
+#define include_ipc_VideoDecoderManagerChild_h
 
 #include "mozilla/RefPtr.h"
-#include "mozilla/dom/PVideoDecoderManagerChild.h"
+#include "mozilla/PVideoDecoderManagerChild.h"
 
 namespace mozilla {
 namespace gfx {
 class SourceSurface;
 }
-namespace dom {
 
 class VideoDecoderManagerChild final : public PVideoDecoderManagerChild,
                                        public mozilla::ipc::IShmemAllocator {
@@ -93,7 +92,6 @@ class VideoDecoderManagerChild final : public PVideoDecoderManagerChild,
   bool mCanSend;
 };
 
-}  
 }  
 
 #endif  

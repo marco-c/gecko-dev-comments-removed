@@ -3,16 +3,15 @@
 
 
 
-#ifndef include_dom_ipc_VideoDecoderChild_h
-#define include_dom_ipc_VideoDecoderChild_h
+#ifndef include_ipc_VideoDecoderChild_h
+#define include_ipc_VideoDecoderChild_h
 
 #include "MediaResult.h"
 #include "PlatformDecoderModule.h"
-#include "mozilla/dom/PVideoDecoderChild.h"
+#include "mozilla/PVideoDecoderChild.h"
 #include "IRemoteDecoderChild.h"
 
 namespace mozilla {
-namespace dom {
 
 class RemoteVideoDecoder;
 class RemoteDecoderModule;
@@ -88,7 +87,6 @@ class VideoDecoderChild final : public PVideoDecoderChild,
   TimeStamp mGPUCrashTime;
 };
 
-}  
 }  
 
 #endif  

@@ -3,19 +3,18 @@
 
 
 
-#ifndef include_dom_ipc_VideoDecoderParent_h
-#define include_dom_ipc_VideoDecoderParent_h
+#ifndef include_ipc_VideoDecoderParent_h
+#define include_ipc_VideoDecoderParent_h
 
 #include "ImageContainer.h"
 #include "MediaData.h"
 #include "PlatformDecoderModule.h"
 #include "VideoDecoderManagerParent.h"
 #include "mozilla/MozPromise.h"
-#include "mozilla/dom/PVideoDecoderParent.h"
+#include "mozilla/PVideoDecoderParent.h"
 #include "mozilla/layers/TextureForwarder.h"
 
 namespace mozilla {
-namespace dom {
 
 class KnowsCompositorVideo;
 
@@ -62,7 +61,6 @@ class VideoDecoderParent final : public PVideoDecoderParent {
   bool mDestroyed;
 };
 
-}  
 }  
 
 #endif  
