@@ -14,28 +14,17 @@
 #include "nsDebug.h"                    
 #include "nsError.h"                    
 #include "nsIController.h"              
-#include "nsIControllerCommandTable.h"  
 #include "nsIControllerContext.h"       
 #include "nsID.h"                       
 #include "nsISupportsImpl.h"
 #include "nsISupportsUtils.h"           
+#include "nsControllerCommandTable.h"   
 #include "nsServiceManagerUtils.h"      
 #include "nscore.h"                     
 
 using mozilla::EditorSpellCheck;
 
 class nsISupports;
-
-#define NS_HTMLEDITOR_COMMANDTABLE_CID \
-{ 0x13e50d8d, 0x9cee, 0x4ad1, { 0xa3, 0xa2, 0x4a, 0x44, 0x2f, 0xdf, 0x7d, 0xfa } }
-
-#define NS_HTMLEDITOR_DOCSTATE_COMMANDTABLE_CID \
-{ 0xa33982d3, 0x1adf, 0x4162, { 0x99, 0x41, 0xf7, 0x34, 0xbc, 0x45, 0xe4, 0xed } }
-
-
-static NS_DEFINE_CID(kHTMLEditorCommandTableCID, NS_HTMLEDITOR_COMMANDTABLE_CID);
-static NS_DEFINE_CID(kHTMLEditorDocStateCommandTableCID, NS_HTMLEDITOR_DOCSTATE_COMMANDTABLE_CID);
-
 
 
 
@@ -53,17 +42,18 @@ NS_GENERIC_FACTORY_CONSTRUCTOR(EditorSpellCheck)
 
 
 static nsresult
-CreateControllerWithSingletonCommandTable(const nsCID& inCommandTableCID, nsIController **aResult)
+CreateControllerWithSingletonCommandTable(
+    already_AddRefed<nsIControllerCommandTable> aComposerCommandTable,
+    nsIController **aResult)
 {
   nsCOMPtr<nsIController> controller = new nsBaseCommandController();
 
-  nsresult rv;
-  nsCOMPtr<nsIControllerCommandTable> composerCommandTable = do_GetService(inCommandTableCID, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<nsIControllerCommandTable> composerCommandTable(aComposerCommandTable);
 
   
   composerCommandTable->MakeImmutable();
 
+  nsresult rv;
   nsCOMPtr<nsIControllerContext> controllerContext = do_QueryInterface(controller, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -83,7 +73,9 @@ nsHTMLEditorDocStateControllerConstructor(nsISupports *aOuter, REFNSIID aIID,
                                               void **aResult)
 {
   nsCOMPtr<nsIController> controller;
-  nsresult rv = CreateControllerWithSingletonCommandTable(kHTMLEditorDocStateCommandTableCID, getter_AddRefs(controller));
+  nsresult rv = CreateControllerWithSingletonCommandTable(
+                  nsControllerCommandTable::CreateHTMLEditorDocStateCommandTable(),
+                  getter_AddRefs(controller));
   NS_ENSURE_SUCCESS(rv, rv);
 
   return controller->QueryInterface(aIID, aResult);
@@ -95,63 +87,21 @@ static nsresult
 nsHTMLEditorControllerConstructor(nsISupports *aOuter, REFNSIID aIID, void **aResult)
 {
   nsCOMPtr<nsIController> controller;
-  nsresult rv = CreateControllerWithSingletonCommandTable(kHTMLEditorCommandTableCID, getter_AddRefs(controller));
+  nsresult rv = CreateControllerWithSingletonCommandTable(
+                  nsControllerCommandTable::CreateHTMLEditorCommandTable(),
+                  getter_AddRefs(controller));
   NS_ENSURE_SUCCESS(rv, rv);
 
   return controller->QueryInterface(aIID, aResult);
 }
 
-
-static nsresult
-nsHTMLEditorCommandTableConstructor(nsISupports *aOuter, REFNSIID aIID,
-                                              void **aResult)
-{
-  nsresult rv;
-  nsCOMPtr<nsIControllerCommandTable> commandTable =
-      do_CreateInstance(NS_CONTROLLERCOMMANDTABLE_CONTRACTID, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = mozilla::HTMLEditorController::RegisterHTMLEditorCommands(commandTable);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-
-  return commandTable->QueryInterface(aIID, aResult);
-}
-
-
-
-static nsresult
-nsHTMLEditorDocStateCommandTableConstructor(nsISupports *aOuter, REFNSIID aIID,
-                                              void **aResult)
-{
-  nsresult rv;
-  nsCOMPtr<nsIControllerCommandTable> commandTable =
-      do_CreateInstance(NS_CONTROLLERCOMMANDTABLE_CONTRACTID, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = mozilla::HTMLEditorController::RegisterEditorDocStateCommands(
-                                        commandTable);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-
-  return commandTable->QueryInterface(aIID, aResult);
-}
-
 NS_DEFINE_NAMED_CID(NS_HTMLEDITORCONTROLLER_CID);
 NS_DEFINE_NAMED_CID(NS_EDITORDOCSTATECONTROLLER_CID);
-NS_DEFINE_NAMED_CID(NS_HTMLEDITOR_COMMANDTABLE_CID);
-NS_DEFINE_NAMED_CID(NS_HTMLEDITOR_DOCSTATE_COMMANDTABLE_CID);
 NS_DEFINE_NAMED_CID(NS_EDITORSPELLCHECK_CID);
 
 static const mozilla::Module::CIDEntry kComposerCIDs[] = {
   { &kNS_HTMLEDITORCONTROLLER_CID, false, nullptr, nsHTMLEditorControllerConstructor },
   { &kNS_EDITORDOCSTATECONTROLLER_CID, false, nullptr, nsHTMLEditorDocStateControllerConstructor },
-  { &kNS_HTMLEDITOR_COMMANDTABLE_CID, false, nullptr, nsHTMLEditorCommandTableConstructor },
-  { &kNS_HTMLEDITOR_DOCSTATE_COMMANDTABLE_CID, false, nullptr, nsHTMLEditorDocStateCommandTableConstructor },
   { &kNS_EDITORSPELLCHECK_CID, false, nullptr, EditorSpellCheckConstructor },
   { nullptr }
 };

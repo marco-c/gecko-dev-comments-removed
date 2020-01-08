@@ -7,6 +7,7 @@
 #include "nsString.h"
 #include "nsIControllerCommand.h"
 #include "nsControllerCommandTable.h"
+#include "mozilla/HTMLEditorController.h"
 
 nsresult NS_NewControllerCommandTable(nsIControllerCommandTable** aResult);
 
@@ -192,6 +193,39 @@ nsControllerCommandTable::GetSupportedCommands(uint32_t* aCount,
     commands++;
   }
   return NS_OK;
+}
+
+
+already_AddRefed<nsIControllerCommandTable>
+nsControllerCommandTable::CreateHTMLEditorCommandTable()
+{
+  nsCOMPtr<nsIControllerCommandTable> commandTable =
+      new nsControllerCommandTable();
+
+  nsresult rv = mozilla::HTMLEditorController::RegisterHTMLEditorCommands(commandTable);
+  NS_ENSURE_SUCCESS(rv, nullptr);
+
+  
+  
+
+  return commandTable.forget();
+}
+
+
+already_AddRefed<nsIControllerCommandTable>
+nsControllerCommandTable::CreateHTMLEditorDocStateCommandTable()
+{
+  nsCOMPtr<nsIControllerCommandTable> commandTable =
+      new nsControllerCommandTable();
+
+  nsresult rv = mozilla::HTMLEditorController::RegisterEditorDocStateCommands(
+                                        commandTable);
+  NS_ENSURE_SUCCESS(rv, nullptr);
+
+  
+  
+
+  return commandTable.forget();
 }
 
 nsresult
