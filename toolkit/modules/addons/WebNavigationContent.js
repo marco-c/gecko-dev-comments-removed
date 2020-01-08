@@ -13,8 +13,7 @@ function getDocShellOuterWindowId(docShell) {
     return undefined;
   }
 
-  return docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                 .getInterface(Ci.nsIDOMWindow)
+  return docShell.domWindow
                  .windowUtils
                  .outerWindowID;
 }
@@ -120,8 +119,7 @@ var WebProgressListener = {
 
     
     for (let currentDocShell of WebNavigationFrames.iterateDocShellTree(docShell)) {
-      let win = currentDocShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                               .getInterface(Ci.nsIDOMWindow);
+      let win = currentDocShell.domWindow;
       let {currentURI} = currentDocShell.QueryInterface(Ci.nsIWebNavigation);
 
       this.previousURIMap.set(win, currentURI);

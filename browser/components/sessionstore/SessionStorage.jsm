@@ -150,7 +150,7 @@ var SessionStorageInternal = {
       }
 
       let storageManager = aDocShell.QueryInterface(Ci.nsIDOMStorageManager);
-      let window = aDocShell.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow);
+      let window = aDocShell.domWindow;
 
       
       
@@ -179,7 +179,7 @@ var SessionStorageInternal = {
     let hostData = {};
     let storage;
 
-    let window = aDocShell.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow);
+    let window = aDocShell.domWindow;
 
     try {
       let storageManager = aDocShell.QueryInterface(Ci.nsIDOMStorageManager);

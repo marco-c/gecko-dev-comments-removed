@@ -165,8 +165,7 @@ webExtensionTargetPrototype._createFallbackWindow = function() {
   this.fallbackWebNav = Services.appShell.createWindowlessBrowser(true);
 
   
-  this.fallbackWindow = this.fallbackWebNav.QueryInterface(Ci.nsIInterfaceRequestor)
-                                           .getInterface(Ci.nsIDOMWindow);
+  this.fallbackWindow = this.fallbackWebNav.document.defaultView;
 
   
   this.fallbackWindow.document.body.innerText = FALLBACK_DOC_MESSAGE;
@@ -273,11 +272,8 @@ webExtensionTargetPrototype._docShellToWindow = function(docShell) {
   
   
   const addonID = window.document.nodePrincipal.addonId;
-  const sameTypeRootAddonID = docShell.QueryInterface(Ci.nsIDocShellTreeItem)
-                                    .sameTypeRootTreeItem
-                                    .QueryInterface(Ci.nsIInterfaceRequestor)
-                                    .getInterface(Ci.nsIDOMWindow)
-                                    .document.nodePrincipal.addonId;
+  const sameTypeRootAddonID = docShell.sameTypeRootTreeItem.domWindow
+                                      .document.nodePrincipal.addonId;
 
   return Object.assign(baseWindowDetails, {
     addonID,
@@ -304,10 +300,7 @@ webExtensionTargetPrototype.isExtensionWindow = function(window) {
 
 webExtensionTargetPrototype.isExtensionWindowDescendent = function(window) {
   
-  const docShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                       .getInterface(Ci.nsIDocShell);
-  const rootWin = docShell.sameTypeRootTreeItem.QueryInterface(Ci.nsIInterfaceRequestor)
-                                             .getInterface(Ci.nsIDOMWindow);
+  const rootWin = window.document.docShell.sameTypeRootTreeItem.domWindow;
   return this.isExtensionWindow(rootWin);
 };
 

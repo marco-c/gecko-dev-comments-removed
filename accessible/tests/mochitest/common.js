@@ -857,12 +857,7 @@ function shortenString(aString, aMaxLength) {
 
 
 function getMainChromeWindow(aWindow) {
-  return aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                .getInterface(Ci.nsIWebNavigation)
-                .QueryInterface(Ci.nsIDocShellTreeItem)
-                .rootTreeItem
-                .QueryInterface(Ci.nsIInterfaceRequestor)
-                .getInterface(Ci.nsIDOMWindow);
+  return aWindow.document.docShell.rootTreeItem.domWindow;
 }
 
 
