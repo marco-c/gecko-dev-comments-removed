@@ -13,6 +13,9 @@
 
 namespace js {
 
+struct AutoEnterAnalysis;
+class PreliminaryObjectArray;
+
 
 
 static inline size_t
@@ -44,17 +47,16 @@ UnboxedTypeNeedsPostBarrier(JSValueType type)
 class UnboxedLayout : public mozilla::LinkedListElement<UnboxedLayout>
 {
   public:
-    struct Property {
-        PropertyName* name;
-        uint32_t offset;
-        JSValueType type;
+    struct Property
+    {
+        PropertyName* name = nullptr;
+        uint32_t offset = UINT32_MAX;
+        JSValueType type = JSVAL_TYPE_MAGIC;
 
-        Property()
-          : name(nullptr), offset(UINT32_MAX), type(JSVAL_TYPE_MAGIC)
-        {}
+        Property() = default;
     };
 
-    typedef Vector<Property, 0, SystemAllocPolicy> PropertyVector;
+    using PropertyVector = Vector<Property, 0, SystemAllocPolicy>;
 
   private:
     JS::Zone* zone_;
@@ -62,19 +64,19 @@ class UnboxedLayout : public mozilla::LinkedListElement<UnboxedLayout>
     
     
     
-    GCPtrObjectGroup nativeGroup_;
-    GCPtrShape nativeShape_;
+    GCPtrObjectGroup nativeGroup_ = {};
+    GCPtrShape nativeShape_ = {};
 
     
-    GCPtrScript allocationScript_;
-    jsbytecode* allocationPc_;
+    GCPtrScript allocationScript_ = {};
+    jsbytecode* allocationPc_ = {};
 
     
     
     
     
     
-    GCPtrObjectGroup replacementGroup_;
+    GCPtrObjectGroup replacementGroup_ = {};
 
     
 
@@ -82,45 +84,32 @@ class UnboxedLayout : public mozilla::LinkedListElement<UnboxedLayout>
     PropertyVector properties_;
 
     
-    size_t size_;
+    size_t size_ = 0;
 
     
-    TypeNewScript* newScript_;
-
-    
-    
-    int32_t* traceList_;
+    TypeNewScript* newScript_ = nullptr;
 
     
     
+    int32_t* traceList_ = nullptr;
+
     
-    GCPtrJitCode constructorCode_;
+    
+    
+    GCPtrJitCode constructorCode_ = {};
 
   public:
     explicit UnboxedLayout(JS::Zone* zone)
-      : zone_(zone), nativeGroup_(nullptr), nativeShape_(nullptr),
-        allocationScript_(nullptr), allocationPc_(nullptr), replacementGroup_(nullptr),
-        size_(0), newScript_(nullptr), traceList_(nullptr), constructorCode_(nullptr)
+      : zone_(zone)
     {}
+
+    inline ~UnboxedLayout();
 
     JS::Zone* zone() const { return zone_; }
 
     bool initProperties(const PropertyVector& properties, size_t size) {
         size_ = size;
         return properties_.appendAll(properties);
-    }
-
-    ~UnboxedLayout() {
-        if (newScript_) {
-            newScript_->clear();
-        }
-        js_delete(newScript_);
-        js_free(traceList_);
-
-        nativeGroup_.init(nullptr);
-        nativeShape_.init(nullptr);
-        replacementGroup_.init(nullptr);
-        constructorCode_.init(nullptr);
     }
 
     void detachFromRealm();
