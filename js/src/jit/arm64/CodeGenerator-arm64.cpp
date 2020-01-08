@@ -179,7 +179,9 @@ CodeGeneratorARM64::bailoutFrom(Label* label, LSnapshot* snapshot)
 void
 CodeGeneratorARM64::bailout(LSnapshot* snapshot)
 {
-    MOZ_CRASH("bailout");
+    Label label;
+    masm.b(&label);
+    bailoutFrom(&label, snapshot);
 }
 
 void
@@ -192,37 +194,57 @@ CodeGeneratorARM64::visitOutOfLineBailout(OutOfLineBailout* ool)
 void
 CodeGenerator::visitMinMaxD(LMinMaxD* ins)
 {
-    MOZ_CRASH("visitMinMaxD");
+    ARMFPRegister lhs(ToFloatRegister(ins->first()), 64);
+    ARMFPRegister rhs(ToFloatRegister(ins->second()), 64);
+    ARMFPRegister output(ToFloatRegister(ins->output()), 64);
+    if (ins->mir()->isMax()) {
+        masm.Fmax(output, lhs, rhs);
+    } else {
+        masm.Fmin(output, lhs, rhs);
+    }
 }
 
 void
 CodeGenerator::visitMinMaxF(LMinMaxF* ins)
 {
-    MOZ_CRASH("visitMinMaxF");
+    ARMFPRegister lhs(ToFloatRegister(ins->first()), 32);
+    ARMFPRegister rhs(ToFloatRegister(ins->second()), 32);
+    ARMFPRegister output(ToFloatRegister(ins->output()), 32);
+    if (ins->mir()->isMax()) {
+        masm.Fmax(output, lhs, rhs);
+    } else {
+        masm.Fmin(output, lhs, rhs);
+    }
 }
 
 void
 CodeGenerator::visitAbsD(LAbsD* ins)
 {
-    MOZ_CRASH("visitAbsD");
+    ARMFPRegister input(ToFloatRegister(ins->input()), 64);
+    masm.Fabs(input, input);
 }
 
 void
 CodeGenerator::visitAbsF(LAbsF* ins)
 {
-    MOZ_CRASH("visitAbsF");
+    ARMFPRegister input(ToFloatRegister(ins->input()), 32);
+    masm.Fabs(input, input);
 }
 
 void
 CodeGenerator::visitSqrtD(LSqrtD* ins)
 {
-    MOZ_CRASH("visitSqrtD");
+    ARMFPRegister input(ToFloatRegister(ins->input()), 64);
+    ARMFPRegister output(ToFloatRegister(ins->output()), 64);
+    masm.Fsqrt(output, input);
 }
 
 void
 CodeGenerator::visitSqrtF(LSqrtF* ins)
 {
-    MOZ_CRASH("visitSqrtF");
+    ARMFPRegister input(ToFloatRegister(ins->input()), 32);
+    ARMFPRegister output(ToFloatRegister(ins->output()), 32);
+    masm.Fsqrt(output, input);
 }
 
 
@@ -706,13 +728,51 @@ CodeGeneratorARM64::emitTableSwitchDispatch(MTableSwitch* mir, Register index_, 
 void
 CodeGenerator::visitMathD(LMathD* math)
 {
-    MOZ_CRASH("visitMathD");
+    ARMFPRegister lhs(ToFloatRegister(math->lhs()), 64);
+    ARMFPRegister rhs(ToFloatRegister(math->rhs()), 64);
+    ARMFPRegister output(ToFloatRegister(math->output()), 64);
+
+    switch (math->jsop()) {
+      case JSOP_ADD:
+        masm.Fadd(output, lhs, rhs);
+        break;
+      case JSOP_SUB:
+        masm.Fsub(output, lhs, rhs);
+        break;
+      case JSOP_MUL:
+        masm.Fmul(output, lhs, rhs);
+        break;
+      case JSOP_DIV:
+        masm.Fdiv(output, lhs, rhs);
+        break;
+      default:
+        MOZ_CRASH("unexpected opcode");
+    }
 }
 
 void
 CodeGenerator::visitMathF(LMathF* math)
 {
-    MOZ_CRASH("visitMathF");
+    ARMFPRegister lhs(ToFloatRegister(math->lhs()), 32);
+    ARMFPRegister rhs(ToFloatRegister(math->rhs()), 32);
+    ARMFPRegister output(ToFloatRegister(math->output()), 32);
+
+    switch (math->jsop()) {
+      case JSOP_ADD:
+        masm.Fadd(output, lhs, rhs);
+        break;
+      case JSOP_SUB:
+        masm.Fsub(output, lhs, rhs);
+        break;
+      case JSOP_MUL:
+        masm.Fmul(output, lhs, rhs);
+        break;
+      case JSOP_DIV:
+        masm.Fdiv(output, lhs, rhs);
+        break;
+      default:
+        MOZ_CRASH("unexpected opcode");
+    }
 }
 
 void
@@ -794,7 +854,9 @@ CodeGenerator::visitClzI(LClzI* lir)
 void
 CodeGenerator::visitCtzI(LCtzI* lir)
 {
-    MOZ_CRASH("visitCtzI");
+    Register input = ToRegister(lir->input());
+    Register output = ToRegister(lir->output());
+    masm.ctz32(input, output,  false);
 }
 
 void
@@ -806,16 +868,14 @@ CodeGeneratorARM64::emitRoundDouble(FloatRegister src, Register dest, Label* fai
 void
 CodeGenerator::visitTruncateDToInt32(LTruncateDToInt32* ins)
 {
-    MOZ_CRASH("visitTruncateDToInt32");
+    emitTruncateDouble(ToFloatRegister(ins->input()), ToRegister(ins->output()), ins->mir());
 }
 
 void
 CodeGenerator::visitTruncateFToInt32(LTruncateFToInt32* ins)
 {
-    MOZ_CRASH("visitTruncateFToInt32");
+    emitTruncateFloat32(ToFloatRegister(ins->input()), ToRegister(ins->output()), ins->mir());
 }
-
-static const uint32_t FrameSizes[] = { 128, 256, 512, 1024 };
 
 FrameSizeClass
 FrameSizeClass::FromDepth(uint32_t frameDepth)
@@ -943,12 +1003,6 @@ CodeGenerator::visitFloat32(LFloat32* ins)
 }
 
 void
-CodeGeneratorARM64::splitTagForTest(const ValueOperand& value, ScratchTagScope& tag)
-{
-    MOZ_CRASH("splitTagForTest");
-}
-
-void
 CodeGenerator::visitTestDAndBranch(LTestDAndBranch* test)
 {
     MOZ_CRASH("visitTestDAndBranch");
@@ -1011,13 +1065,51 @@ CodeGenerator::visitCompareFAndBranch(LCompareFAndBranch* comp)
 void
 CodeGenerator::visitCompareB(LCompareB* lir)
 {
-    MOZ_CRASH("visitCompareB");
+    MCompare* mir = lir->mir();
+    const ValueOperand lhs = ToValue(lir, LCompareB::Lhs);
+    const LAllocation* rhs = lir->rhs();
+    const Register output = ToRegister(lir->output());
+    const Assembler::Condition cond = JSOpToCondition(mir->compareType(), mir->jsop());
+
+    vixl::UseScratchRegisterScope temps(&masm.asVIXL());
+    const Register scratch = temps.AcquireX().asUnsized();
+
+    MOZ_ASSERT(mir->jsop() == JSOP_STRICTEQ || mir->jsop() == JSOP_STRICTNE);
+
+    
+    if (rhs->isConstant()) {
+        masm.moveValue(rhs->toConstant()->toJSValue(), ValueOperand(scratch));
+    } else {
+        masm.boxValue(JSVAL_TYPE_BOOLEAN, ToRegister(rhs), scratch);
+    }
+
+    
+    masm.cmpPtrSet(cond, lhs.valueReg(), scratch, output);
 }
 
 void
 CodeGenerator::visitCompareBAndBranch(LCompareBAndBranch* lir)
 {
-    MOZ_CRASH("visitCompareBAndBranch");
+    MCompare* mir = lir->cmpMir();
+    const ValueOperand lhs = ToValue(lir, LCompareBAndBranch::Lhs);
+    const LAllocation* rhs = lir->rhs();
+    const Assembler::Condition cond = JSOpToCondition(mir->compareType(), mir->jsop());
+
+    vixl::UseScratchRegisterScope temps(&masm.asVIXL());
+    const Register scratch = temps.AcquireX().asUnsized();
+
+    MOZ_ASSERT(mir->jsop() == JSOP_STRICTEQ || mir->jsop() == JSOP_STRICTNE);
+
+    
+    if (rhs->isConstant()) {
+        masm.moveValue(rhs->toConstant()->toJSValue(), ValueOperand(scratch));
+    } else {
+        masm.boxValue(JSVAL_TYPE_BOOLEAN, ToRegister(rhs), scratch);
+    }
+
+    
+    masm.cmpPtr(lhs.valueReg(), scratch);
+    emitBranch(cond, lir->ifTrue(), lir->ifFalse());
 }
 
 void
@@ -1052,25 +1144,34 @@ CodeGenerator::visitCompareBitwiseAndBranch(LCompareBitwiseAndBranch* lir)
 void
 CodeGenerator::visitBitAndAndBranch(LBitAndAndBranch* baab)
 {
-    MOZ_CRASH("visitBitAndAndBranch");
+    if (baab->right()->isConstant()) {
+        masm.Tst(toWRegister(baab->left()), Operand(ToInt32(baab->right())));
+    } else {
+        masm.Tst(toWRegister(baab->left()), toWRegister(baab->right()));
+    }
+    emitBranch(Assembler::NonZero, baab->ifTrue(), baab->ifFalse());
 }
 
 void
 CodeGenerator::visitWasmUint32ToDouble(LWasmUint32ToDouble* lir)
 {
-    MOZ_CRASH("visitWasmUint32ToDouble");
+    masm.convertUInt32ToDouble(ToRegister(lir->input()), ToFloatRegister(lir->output()));
 }
 
 void
 CodeGenerator::visitWasmUint32ToFloat32(LWasmUint32ToFloat32* lir)
 {
-    MOZ_CRASH("visitWasmUint32ToFloat32");
+    masm.convertUInt32ToFloat32(ToRegister(lir->input()), ToFloatRegister(lir->output()));
 }
 
 void
 CodeGenerator::visitNotI(LNotI* ins)
 {
-    MOZ_CRASH("visitNotI");
+    ARMRegister input = toWRegister(ins->input());
+    ARMRegister output = toWRegister(ins->output());
+
+    masm.Cmp(input, ZeroRegister32);
+    masm.Cset(output, Assembler::Zero);
 }
 
 
@@ -1081,13 +1182,33 @@ CodeGenerator::visitNotI(LNotI* ins)
 void
 CodeGenerator::visitNotD(LNotD* ins)
 {
-    MOZ_CRASH("visitNotD");
+    ARMFPRegister input(ToFloatRegister(ins->input()), 64);
+    ARMRegister output = toWRegister(ins->output());
+
+    
+    masm.Fcmp(input, 0.0);
+    masm.Cset(output, Assembler::Equal);
+
+    
+    
+    
+    masm.Csinc(output, output, ZeroRegister32, Assembler::NoOverflow);
 }
 
 void
 CodeGenerator::visitNotF(LNotF* ins)
 {
-    MOZ_CRASH("visitNotF");
+    ARMFPRegister input(ToFloatRegister(ins->input()), 32);
+    ARMRegister output = toWRegister(ins->output());
+
+    
+    masm.Fcmp(input, 0.0);
+    masm.Cset(output, Assembler::Equal);
+
+    
+    
+    
+    masm.Csinc(output, output, ZeroRegister32, Assembler::NoOverflow);
 }
 
 void
@@ -1178,25 +1299,37 @@ CodeGenerator::visitUMod(LUMod* ins)
 void
 CodeGenerator::visitEffectiveAddress(LEffectiveAddress* ins)
 {
-    MOZ_CRASH("visitEffectiveAddress");
+    const MEffectiveAddress* mir = ins->mir();
+    const ARMRegister base = toXRegister(ins->base());
+    const ARMRegister index = toXRegister(ins->index());
+    const ARMRegister output = toXRegister(ins->output());
+
+    masm.Add(output, base, Operand(index, vixl::LSL, mir->scale()));
+    masm.Add(output, output, Operand(mir->displacement()));
 }
 
 void
 CodeGenerator::visitNegI(LNegI* ins)
 {
-    MOZ_CRASH("visitNegI");
+    const ARMRegister input = toWRegister(ins->input());
+    const ARMRegister output = toWRegister(ins->output());
+    masm.Neg(output, input);
 }
 
 void
 CodeGenerator::visitNegD(LNegD* ins)
 {
-    MOZ_CRASH("visitNegD");
+    const ARMFPRegister input(ToFloatRegister(ins->input()), 64);
+    const ARMFPRegister output(ToFloatRegister(ins->input()), 64);
+    masm.Fneg(output, input);
 }
 
 void
 CodeGenerator::visitNegF(LNegF* ins)
 {
-    MOZ_CRASH("visitNegF");
+    const ARMFPRegister input(ToFloatRegister(ins->input()), 32);
+    const ARMFPRegister output(ToFloatRegister(ins->input()), 32);
+    masm.Fneg(output, input);
 }
 
 void
