@@ -38,7 +38,6 @@ class ProfilerMarker;
   macro(DynamicStringFragment, char*) /* char[kNumChars], really */ \
   macro(JitReturnAddr,         void*) \
   macro(LineNumber,            int) \
-  macro(ColumnNumber,          int) \
   macro(NativeLeafAddr,        void*) \
   macro(Marker,                ProfilerMarker*) \
   macro(Pause,                 double) \
@@ -225,9 +224,8 @@ public:
     }
 
     FrameKey(const char* aLocation, const mozilla::Maybe<unsigned>& aLine,
-             const mozilla::Maybe<unsigned>& aColumn,
              const mozilla::Maybe<unsigned>& aCategory)
-      : mData(NormalFrameData{ nsCString(aLocation), aLine, aColumn, aCategory })
+      : mData(NormalFrameData{ nsCString(aLocation), aLine, aCategory })
     {
     }
 
@@ -246,7 +244,6 @@ public:
 
       nsCString mLocation;
       mozilla::Maybe<unsigned> mLine;
-      mozilla::Maybe<unsigned> mColumn;
       mozilla::Maybe<unsigned> mCategory;
     };
     struct JITFrameData {
@@ -326,7 +323,6 @@ private:
 
   nsTArray<JITFrameInfoForBufferRange> mJITInfoRanges;
 };
-
 
 
 
