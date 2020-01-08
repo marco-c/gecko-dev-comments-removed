@@ -78,8 +78,10 @@ MainProcessSingleton.prototype = {
       
       
       const doc = subject;
-      if (doc.nodePrincipal.isSystemPrincipal &&
-          doc.contentType == "application/vnd.mozilla.xul+xml") {
+      if (doc.nodePrincipal.isSystemPrincipal && (
+            doc.contentType == "application/vnd.mozilla.xul+xml" ||
+            doc.contentType == "application/xhtml+xml"
+        )) {
         Services.scriptloader.loadSubScript(
           "chrome://global/content/customElements.js", doc.ownerGlobal);
       }
