@@ -422,18 +422,6 @@ var XPCOMUtils = {
   
 
 
-
-  enumerateCategoryEntries: function* XPCOMUtils_enumerateCategoryEntries(aCategory)
-  {
-    let category = this.categoryManager.enumerateCategory(aCategory);
-    for (let entry of category) {
-      yield [entry.data, this.categoryManager.getCategoryEntry(aCategory, entry.data)];
-    }
-  },
-
-  
-
-
   _getFactory: function XPCOMUtils__getFactory(component) {
     var factory = component.prototype._xpcom_factory;
     if (!factory) {
@@ -668,7 +656,3 @@ var XPCU_lazyPreferenceObserverQI = ChromeUtils.generateQI([Ci.nsIObserver, Ci.n
 
 ChromeUtils.defineModuleGetter(this, "Services",
                                "resource://gre/modules/Services.jsm");
-
-XPCOMUtils.defineLazyServiceGetter(XPCOMUtils, "categoryManager",
-                                   "@mozilla.org/categorymanager;1",
-                                   "nsICategoryManager");
