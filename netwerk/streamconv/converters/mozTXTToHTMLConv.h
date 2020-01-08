@@ -35,17 +35,6 @@ class mozTXTToHTMLConv : public mozITXTToHTMLConv {
   
 
 
-  void ScanTXT(const char16_t* aInString, int32_t aInStringLength,
-               uint32_t whattodo, nsString& aOutString);
-
-  
-
-
-  void ScanHTML(nsString& aInString, uint32_t whattodo, nsString& aOutString);
-
-  
-
-
   int32_t CiteLevelTXT(const char16_t* line, uint32_t& logLineStart);
 
   
@@ -112,7 +101,7 @@ class mozTXTToHTMLConv : public mozITXTToHTMLConv {
 
 
 
-  void EscapeChar(const char16_t ch, nsString& aStringToAppendto,
+  void EscapeChar(const char16_t ch, nsAString& aStringToAppendto,
                   bool inAttribute);
 
   
@@ -248,7 +237,7 @@ class mozTXTToHTMLConv : public mozITXTToHTMLConv {
   bool StructPhraseHit(const char16_t* aInString, int32_t aInStringLength,
                        bool col0, const char16_t* tagTXT, int32_t aTagTxtLen,
                        const char* tagHTML, const char* attributeHTML,
-                       nsString& aOutputString, uint32_t& openTags);
+                       nsAString& aOutputString, uint32_t& openTags);
 
   
 
@@ -278,7 +267,7 @@ class mozTXTToHTMLConv : public mozITXTToHTMLConv {
 
 
   bool GlyphHit(const char16_t* aInString, int32_t aInLength, bool col0,
-                nsString& aOutString, int32_t& glyphTextLen);
+                nsAString& aOutString, int32_t& glyphTextLen);
 
   
 
