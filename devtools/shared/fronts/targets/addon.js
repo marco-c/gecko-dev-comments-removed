@@ -33,6 +33,19 @@ const AddonTargetFront = protocol.FrontClassWithSpec(addonTargetSpec, {
     }
   },
 
+  isLegacyTemporaryExtension() {
+    if (!this.type) {
+      
+      
+      
+      return false;
+    }
+    return this.type == "extension" &&
+           this.temporarilyInstalled &&
+           !this.isWebExtension &&
+           !this.isAPIExtension;
+  },
+
   attach: custom(async function() {
     const response = await this._attach();
 
