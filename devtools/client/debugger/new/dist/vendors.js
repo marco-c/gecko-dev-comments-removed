@@ -5045,6 +5045,10 @@ class Tree extends Component {
 
       
       
+      autoExpandNodeChildrenLimit: _propTypes2.default.number,
+
+      
+      
       
       
       labelledby: _propTypes2.default.string,
@@ -5134,7 +5138,8 @@ class Tree extends Component {
   }
 
   _autoExpand() {
-    if (!this.props.autoExpandDepth) {
+    const { autoExpandDepth, autoExpandNodeChildrenLimit } = this.props;
+    if (!autoExpandDepth) {
       return;
     }
 
@@ -5142,14 +5147,18 @@ class Tree extends Component {
     
     
     const autoExpand = (item, currentDepth) => {
-      if (currentDepth >= this.props.autoExpandDepth || this.state.seen.has(item)) {
+      if (currentDepth >= autoExpandDepth || this.state.seen.has(item)) {
+        return;
+      }
+
+      const children = this.props.getChildren(item);
+      if (autoExpandNodeChildrenLimit && children.length > autoExpandNodeChildrenLimit) {
         return;
       }
 
       this.props.onExpand(item);
       this.state.seen.add(item);
 
-      const children = this.props.getChildren(item);
       const length = children.length;
       for (let i = 0; i < length; i++) {
         autoExpand(children[i], currentDepth + 1);
