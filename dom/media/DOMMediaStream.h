@@ -61,12 +61,6 @@ class Pledge;
     }                                                \
   }
 
-class OnTracksAvailableCallback {
- public:
-  virtual ~OnTracksAvailableCallback() {}
-  virtual void NotifyTracksAvailable(DOMMediaStream* aStream) = 0;
-};
-
 
 
 
@@ -493,16 +487,6 @@ class DOMMediaStream
                                                    TrackID aCloneTrackID);
 
   
-  
-  
-  
-  
-  
-  
-  
-  void OnTracksAvailable(OnTracksAvailableCallback* aCallback);
-
-  
 
 
 
@@ -550,12 +534,6 @@ class DOMMediaStream
   
   void InitPlaybackStreamCommon(MediaStreamGraph* aGraph);
 
-  void CheckTracksAvailable();
-
-  
-  
-  void NotifyTracksCreated();
-
   
   void NotifyActive();
 
@@ -571,9 +549,6 @@ class DOMMediaStream
   
   nsresult DispatchTrackEvent(const nsAString& aName,
                               const RefPtr<MediaStreamTrack>& aTrack);
-
-  class PlaybackStreamListener;
-  friend class PlaybackStreamListener;
 
   class PlaybackTrackListener;
   friend class PlaybackTrackListener;
@@ -633,13 +608,7 @@ class DOMMediaStream
   size_t mTracksPendingRemoval;
 
   
-  
-  RefPtr<PlaybackStreamListener> mPlaybackListener;
-
-  
   RefPtr<PlaybackTrackListener> mPlaybackTrackListener;
-
-  nsTArray<nsAutoPtr<OnTracksAvailableCallback>> mRunOnTracksAvailable;
 
   
   bool mTracksCreated;
