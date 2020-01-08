@@ -66,8 +66,8 @@ private:
   uint32_t BinSearch(uint32_t start, uint32_t end, uint32_t target) const;
 
   uint32_t CalculatePreallocateSize() const;
-  nsresult WritePrefixes(nsIOutputStream* out) const;
-  nsresult LoadPrefixes(nsIInputStream* in);
+  nsresult WritePrefixes(nsCOMPtr<nsIOutputStream>& out) const;
+  nsresult LoadPrefixes(nsCOMPtr<nsIInputStream>& in);
 
   
   
