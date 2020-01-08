@@ -330,8 +330,6 @@ MatchPattern::Init(JSContext* aCx, const nsAString& aPattern, bool aIgnorePath,
   if (scheme == nsGkAtoms::about || scheme == nsGkAtoms::data) {
     
     
-    mMatchSubdomain = true;
-    
     aIgnorePath = false;
   } else {
     if (!StringHead(tail, 2).EqualsLiteral("//")) {
