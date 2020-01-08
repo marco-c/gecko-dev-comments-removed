@@ -1143,7 +1143,7 @@ InternalEnqueuePromiseJobCallback(JSContext* cx, JS::HandleObject promise,
 {
     MOZ_ASSERT(job);
     JS::JobQueueMayNotBeEmpty(cx);
-    if (!cx->jobQueue->append(job)) {
+    if (!cx->jobQueue->pushBack(job)) {
         ReportOutOfMemory(cx);
         return false;
     }
@@ -1178,7 +1178,7 @@ js::EnqueueJob(JSContext* cx, JS::HandleObject job)
 {
     MOZ_ASSERT(cx->jobQueue);
     JS::JobQueueMayNotBeEmpty(cx);
-    if (!cx->jobQueue->append(job)) {
+    if (!cx->jobQueue->pushBack(job)) {
         ReportOutOfMemory(cx);
         return false;
     }
@@ -1216,30 +1216,19 @@ js::RunJobs(JSContext* cx)
         RootedValue rval(cx);
 
         
-        
-        
-        for (size_t i = 0; i < cx->jobQueue->length(); i++) {
+        while (!cx->jobQueue->empty()) {
             
             
             if (cx->stopDrainingJobQueue) {
                 break;
             }
 
-            job = cx->jobQueue->get()[i];
+            job = cx->jobQueue->front();
+            cx->jobQueue->popFront();
 
             
             
-            
-            
-            if (!job) {
-                continue;
-            }
-
-            cx->jobQueue->get()[i] = nullptr;
-
-            
-            
-            if (i == cx->jobQueue->length() - 1) {
+            if (cx->jobQueue->empty()) {
                 JS::JobQueueIsEmpty(cx);
             }
 
