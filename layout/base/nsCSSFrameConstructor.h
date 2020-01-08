@@ -716,6 +716,12 @@ private:
 
 
 #define FCDATA_IS_WRAPPER_ANON_BOX 0x400000
+  
+
+
+
+
+#define FCDATA_MAY_NEED_BULLET 0x800000
 
   
 
