@@ -58,8 +58,8 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
   
-  toggleToolboxCommand(gBrowser, startTime) {
-    const target = TargetFactory.forTab(gBrowser.selectedTab);
+  async toggleToolboxCommand(gBrowser, startTime) {
+    const target = await TargetFactory.forTab(gBrowser.selectedTab);
     const toolbox = gDevTools.getToolbox(target);
 
     
@@ -202,8 +202,8 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
   
   
-  selectToolCommand(gBrowser, toolId, startTime) {
-    const target = TargetFactory.forTab(gBrowser.selectedTab);
+  async selectToolCommand(gBrowser, toolId, startTime) {
+    const target = await TargetFactory.forTab(gBrowser.selectedTab);
     const toolbox = gDevTools.getToolbox(target);
     const toolDefinition = gDevTools.getToolDefinition(toolId);
 
@@ -243,17 +243,17 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
 
-  onKeyShortcut(window, key, startTime) {
+  async onKeyShortcut(window, key, startTime) {
     
     if (key.toolId) {
-      gDevToolsBrowser.selectToolCommand(window.gBrowser, key.toolId, startTime);
+      await gDevToolsBrowser.selectToolCommand(window.gBrowser, key.toolId, startTime);
       return;
     }
     
     switch (key.id) {
       case "toggleToolbox":
       case "toggleToolboxF12":
-        gDevToolsBrowser.toggleToolboxCommand(window.gBrowser, startTime);
+        await gDevToolsBrowser.toggleToolboxCommand(window.gBrowser, startTime);
         break;
       case "webide":
         gDevToolsBrowser.openWebIDE();
@@ -274,7 +274,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
         ScratchpadManager.openScratchpad();
         break;
       case "inspectorMac":
-        gDevToolsBrowser.selectToolCommand(window.gBrowser, "inspector", startTime);
+        await gDevToolsBrowser.selectToolCommand(window.gBrowser, "inspector", startTime);
         break;
     }
   },
