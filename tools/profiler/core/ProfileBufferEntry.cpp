@@ -1099,7 +1099,10 @@ ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
     }
 
     if (numFrames == 0) {
-      ERROR_AND_CONTINUE("expected one or more frame entries");
+      
+      
+      
+      continue;
     }
 
     sample.mStack = aUniqueStacks.GetOrAddStackIndex(stack);
