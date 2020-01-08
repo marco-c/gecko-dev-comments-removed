@@ -47,7 +47,7 @@ const HTTP_TEMPORARY_REDIRECT = 307;
 
 function matchRequest(channel, filters) {
   
-  if (!filters.outerWindowID && !filters.window && !filters.appId) {
+  if (!filters.outerWindowID && !filters.window) {
     return true;
   }
 
@@ -90,13 +90,6 @@ function matchRequest(channel, filters) {
         
         
       }
-    }
-  }
-
-  if (filters.appId) {
-    const appId = NetworkHelper.getAppIdForRequest(channel);
-    if (appId && appId == filters.appId) {
-      return true;
     }
   }
 
@@ -758,7 +751,6 @@ NetworkResponseListener.prototype = {
     }
   },
 };
-
 
 
 

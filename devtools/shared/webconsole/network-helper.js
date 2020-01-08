@@ -205,22 +205,6 @@ var NetworkHelper = {
 
 
 
-  getAppIdForRequest: function(request) {
-    try {
-      return this.getRequestLoadContext(request).appId;
-    } catch (ex) {
-      
-    }
-    return null;
-  },
-
-  
-
-
-
-
-
-
 
 
   getTopFrameForRequest: function(request) {
