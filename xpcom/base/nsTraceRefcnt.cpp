@@ -198,6 +198,10 @@ static const char kStaticCtorDtorWarning[] =
 static void
 AssertActivityIsLegal()
 {
+  if (recordreplay::IsRecordingOrReplaying()) {
+    
+    return;
+  }
   if (gActivityTLS == BAD_TLS_INDEX || PR_GetThreadPrivate(gActivityTLS)) {
     if (PR_GetEnv("MOZ_FATAL_STATIC_XPCOM_CTORS_DTORS")) {
       MOZ_CRASH_UNSAFE_OOL(kStaticCtorDtorWarning);
@@ -637,6 +641,12 @@ InitTraceLog()
     return;
   }
   gInitialized = true;
+
+  
+  
+  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+    return;
+  }
 
   bool defined = InitLog(ENVVAR("XPCOM_MEM_BLOAT_LOG"), "bloat/leaks", &gBloatLog);
   if (!defined) {
