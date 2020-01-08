@@ -294,7 +294,6 @@ const QuotaCleaner = {
     
     
     
-    
     Services.obs.notifyObservers(null, "browser:purge-domain-data",
                                  aPrincipal.URI.host);
 
@@ -712,6 +711,22 @@ const EMECleaner = {
   },
 };
 
+const ReportsCleaner = {
+  deleteByHost(aHost, aOriginAttributes) {
+    return new Promise(aResolve => {
+      Services.obs.notifyObservers(null, "reporting:purge-host", aHost);
+      aResolve();
+    });
+  },
+
+  deleteAll() {
+    return new Promise(aResolve => {
+      Services.obs.notifyObservers(null, "reporting:purge-all");
+      aResolve();
+    });
+  },
+};
+
 
 const FLAGS_MAP = [
  { flag: Ci.nsIClearDataService.CLEAR_COOKIES,
@@ -770,6 +785,9 @@ const FLAGS_MAP = [
 
  { flag: Ci.nsIClearDataService.CLEAR_EME,
    cleaner: EMECleaner },
+
+ { flag: Ci.nsIClearDataService.CLEAR_REPORTS,
+   cleaner: ReportsCleaner },
 ];
 
 this.ClearDataService = function() {};
