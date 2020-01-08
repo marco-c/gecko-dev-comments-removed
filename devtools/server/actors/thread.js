@@ -1827,7 +1827,11 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     
     
-    if (!url || this.skipBreakpoints || this.sources.isBlackBoxed(url)) {
+    if (this.insideClientEvaluation) {
+      return undefined;
+    }
+
+    if (this.skipBreakpoints || this.sources.isBlackBoxed(url)) {
       return undefined;
     }
 
@@ -1939,11 +1943,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       sourceActor = this.sources.createSourceActor(source);
     }
 
-    const bpActors = [...this.breakpointActorMap.findActors()]
-    .filter((actor) => {
-      const bpSource = actor.generatedLocation.generatedSourceActor;
-      return bpSource.source ? bpSource.source === source : bpSource.url === source.url;
-    });
+    const bpActors = [...this.breakpointActorMap.findActors()];
 
     
     

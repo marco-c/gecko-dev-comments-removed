@@ -35,8 +35,8 @@ function run_test() {
 function test_pause_frame() {
   gThreadClient.pauseOnExceptions(true, false, function() {
     gThreadClient.addOneTimeListener("paused", function(event, packet) {
-      Assert.equal(packet.why.type, "debuggerStatement");
-      Assert.equal(packet.frame.where.line, 8);
+      Assert.equal(packet.why.type, "exception");
+      Assert.equal(packet.why.exception, 42);
       gThreadClient.resume(() => finishClient(gClient));
     });
 
@@ -47,9 +47,7 @@ function test_pause_frame() {
       }                                  
       try {                              
         stopMe();                        
-      } catch (e) {                      
-        debugger;                        
-      }                                  
+      } catch (e) {}                     
     } + ")()");
     
   });

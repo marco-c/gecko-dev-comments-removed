@@ -1030,7 +1030,14 @@ WebConsoleActor.prototype =
     };
     const {mapped} = request;
 
+    
+    
+    this.parentActor.threadActor.insideClientEvaluation = true;
+
     const evalInfo = evalWithDebugger(input, evalOptions, this);
+
+    this.parentActor.threadActor.insideClientEvaluation = false;
+
     const evalResult = evalInfo.result;
     const helperResult = evalInfo.helperResult;
 
