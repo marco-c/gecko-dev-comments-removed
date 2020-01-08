@@ -70,6 +70,25 @@ public:
     const nsAString& aKeyValue,
     const Maybe<uint32_t>& aLocation);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static uint32_t
+  GuessKeyCodeOfPrintableKeyInUSEnglishLayout(const nsAString& aKeyValue,
+                                              const Maybe<uint32_t>& aLocation);
+
 protected:
   virtual ~TextInputProcessor();
 
