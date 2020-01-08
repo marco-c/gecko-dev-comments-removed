@@ -51,8 +51,7 @@ public:
       }
 
       
-      fn.WriteShort(0xff8b);
-      fn.Commit();
+      fn.CommitAndWriteShort(0xff8b);
     }
 
     mPatchedFns.clear();
@@ -206,8 +205,7 @@ public:
                                          sizeof(uint16_t));
 
     
-    writableFn.WriteShort(0xF9EB); 
-    return writableFn.Commit();
+    return writableFn.CommitAndWriteShort(0xF9EB); 
   }
 };
 
