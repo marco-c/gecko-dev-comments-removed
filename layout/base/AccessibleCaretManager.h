@@ -333,10 +333,6 @@ protected:
 
   
   
-  static bool sSelectionBarEnabled;
-
-  
-  
   static bool sExtendSelectionForPhoneNumber;
 
   

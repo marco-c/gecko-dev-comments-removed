@@ -102,10 +102,6 @@ public:
   }
 
   
-  
-  virtual void SetSelectionBarEnabled(bool aEnabled);
-
-  
   enum class PositionChangedResult : uint8_t {
     
     NotChanged,
@@ -141,6 +137,8 @@ public:
   }
 
   
+  
+  
   dom::Element& CaretElement() const
   {
     return mCaretElementHolder->ContentNode();
@@ -155,7 +153,6 @@ protected:
   void SetCaretElementStyle(const nsRect& aRect, float aZoomLevel);
   void SetTextOverlayElementStyle(const nsRect& aRect, float aZoomLevel);
   void SetCaretImageElementStyle(const nsRect& aRect, float aZoomLevel);
-  void SetSelectionBarElementStyle(const nsRect& aRect, float aZoomLevel);
 
   
   float GetZoomLevel();
@@ -170,12 +167,6 @@ protected:
   dom::Element* CaretImageElement() const
   {
     return mCaretElementHolder->GetElementById(sCaretImageElementId);
-  }
-
-  
-  dom::Element* SelectionBarElement() const
-  {
-    return mCaretElementHolder->GetElementById(sSelectionBarElementId);
   }
 
   nsIFrame* RootFrame() const
@@ -219,8 +210,6 @@ protected:
   
   Appearance mAppearance = Appearance::None;
 
-  bool mSelectionBarEnabled = false;
-
   
   
   
@@ -243,10 +232,8 @@ protected:
   static float sWidth;
   static float sHeight;
   static float sMarginLeft;
-  static float sBarWidth;
   static const nsLiteralString sTextOverlayElementId;
   static const nsLiteralString sCaretImageElementId;
-  static const nsLiteralString sSelectionBarElementId;
 
 }; 
 
