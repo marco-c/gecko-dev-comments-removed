@@ -3,6 +3,12 @@
 
 
 
+
+SimpleTest.ignoreAllUncaughtExceptions(true);
+
+
+
+
 const kKeyList = [
   { key: "Escape", keyCode: "VK_ESCAPE", suppressed: true},
   { key: "F11",    keyCode: "VK_F11",    suppressed: false},
