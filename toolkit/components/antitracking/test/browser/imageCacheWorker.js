@@ -2,7 +2,7 @@
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-AntiTracking.runTest("Image cache - should load the image twice.",
+AntiTracking.runTest("Image cache - should load the image three times.",
   
   async _ => {
     
@@ -50,11 +50,15 @@ AntiTracking.runTest("Image cache - should load the image twice.",
 );
 
 
+
+let expected = (blockingByContentBlocking && blockingByContentBlockingUI) ? 2 : 3;
+
+
 add_task(async _ => {
   await fetch("https://tracking.example.org/browser/toolkit/components/antitracking/test/browser/image.sjs?result")
     .then(r => r.text())
     .then(text => {
-      is(text, 2, "The image should be loaded correctly.");
+      is(text, expected, "The image should be loaded correctly.");
     });
 
   await new Promise(resolve => {

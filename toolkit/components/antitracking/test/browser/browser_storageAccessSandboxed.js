@@ -1,5 +1,7 @@
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+let counter = 0;
+
 AntiTracking.runTest("Storage Access API called in a sandboxed iframe",
   
   async _ => {
@@ -62,7 +64,21 @@ AntiTracking.runTest("Storage Access API called in a sandboxed iframe with" +
   },
 
   null, 
-  null, 
+  
+  async _ => {
+    
+    
+    
+    
+    
+    
+    if (++counter % 2 == 0) {
+      return;
+    }
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value => resolve());
+    });
+  },
   [["dom.storage_access.enabled", true]], 
   false, 
   false, 
@@ -157,6 +173,9 @@ AntiTracking.runTest("Verify that non-sandboxed contexts get the" +
   null, 
   
   async _ => {
+    if (++counter % 2 == 1) {
+      return;
+    }
     await new Promise(resolve => {
       Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value => resolve());
     });

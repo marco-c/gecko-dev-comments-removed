@@ -1,7 +1,7 @@
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 let cookieBehavior = BEHAVIOR_REJECT_TRACKER;
-let blockingByContentBlocking = true;
+let blockingByContentBlocking = false;
 let blockingByContentBlockingUI = true;
 let blockingByContentBlockingRTUI = false;
 let blockingByAllowList = false;
