@@ -304,7 +304,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 function getBrowserMessageManager() {
   let browser = window
-        .document.docShell.rootTreeItem.domWindow
+        .docShell.rootTreeItem.domWindow
         .BrowserApp
         .getBrowserForDocument(document);
   if (browser) {

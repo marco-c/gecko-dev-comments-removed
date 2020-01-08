@@ -89,7 +89,7 @@ class ClickEventHandler {
       
       
       json.allowMixedContent = false;
-      let docshell = ownerDoc.docShell;
+      let docshell = ownerDoc.defaultView.docShell;
       if (this.mm.docShell.mixedContentChannel) {
         const sm = Services.scriptSecurityManager;
         try {

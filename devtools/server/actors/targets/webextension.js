@@ -300,7 +300,7 @@ webExtensionTargetPrototype.isExtensionWindow = function(window) {
 
 webExtensionTargetPrototype.isExtensionWindowDescendent = function(window) {
   
-  const rootWin = window.document.docShell.sameTypeRootTreeItem.domWindow;
+  const rootWin = window.docShell.sameTypeRootTreeItem.domWindow;
   return this.isExtensionWindow(rootWin);
 };
 

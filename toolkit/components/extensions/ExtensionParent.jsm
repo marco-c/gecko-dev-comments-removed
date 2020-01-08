@@ -661,7 +661,7 @@ class ExtensionPageContextParent extends ProxyContextParent {
   
   get xulWindow() {
     let win = this.xulBrowser.ownerGlobal;
-    return win.document.docShell.rootTreeItem.domWindow;
+    return win.docShell.rootTreeItem.domWindow;
   }
 
   get currentWindow() {

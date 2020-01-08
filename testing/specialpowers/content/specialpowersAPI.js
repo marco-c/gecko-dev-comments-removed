@@ -1415,7 +1415,7 @@ SpecialPowersAPI.prototype = {
   
   
   _getTopChromeWindow(window) {
-    return window.document.docShell.rootTreeItem.domWindow
+    return window.docShell.rootTreeItem.domWindow
                  .QueryInterface(Ci.nsIDOMChromeWindow);
   },
   _getAutoCompletePopup(window) {

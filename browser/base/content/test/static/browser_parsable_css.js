@@ -356,7 +356,7 @@ add_task(async function checkAllTheCSS() {
   iframe.contentWindow.location = testFile;
   await iframeLoaded;
   let doc = iframe.contentWindow.document;
-  doc.docShell.cssErrorReportingEnabled = true;
+  iframe.contentWindow.docShell.cssErrorReportingEnabled = true;
 
   
   
