@@ -9,18 +9,20 @@
 const Menu = require("devtools/client/framework/menu");
 const MenuItem = require("devtools/client/framework/menu-item");
 
-var stringsLoaded = false;
+
+
+const stringsLoaded = new WeakMap();
 
 
 
 
 function loadEditMenuStrings(win) {
-  if (stringsLoaded) {
+  if (stringsLoaded.has(win)) {
     return;
   }
 
   if (win.MozXULElement) {
-    stringsLoaded = true;
+    stringsLoaded.set(win, true);
     win.MozXULElement.insertFTLIfNeeded("toolkit/main-window/editmenu.ftl");
   }
 }
