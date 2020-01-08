@@ -558,6 +558,7 @@ nsNSSComponent::UnloadFamilySafetyRoot()
 
 
 const char* kFamilySafetyModePref = "security.family_safety.mode";
+const uint32_t kFamilySafetyModeDefault = 0;
 
 
 
@@ -567,16 +568,12 @@ const char* kFamilySafetyModePref = "security.family_safety.mode";
 
 
 void
-nsNSSComponent::MaybeEnableFamilySafetyCompatibility()
+nsNSSComponent::MaybeEnableFamilySafetyCompatibility(uint32_t familySafetyMode)
 {
 #ifdef XP_WIN
   if (!(IsWin8Point1OrLater() && !IsWin10OrLater())) {
     return;
   }
-  
-  const uint32_t FAMILY_SAFETY_MODE_DEFAULT = 0;
-  uint32_t familySafetyMode = Preferences::GetUint(kFamilySafetyModePref,
-                                                   FAMILY_SAFETY_MODE_DEFAULT);
   if (familySafetyMode > 2) {
     familySafetyMode = 0;
   }
@@ -781,10 +778,12 @@ class LoadLoadableRootsTask final : public Runnable
 {
 public:
   explicit LoadLoadableRootsTask(nsNSSComponent* nssComponent,
-                                 bool importEnterpriseRoots)
+                                 bool importEnterpriseRoots,
+                                 uint32_t familySafetyMode)
     : Runnable("LoadLoadableRootsTask")
     , mNSSComponent(nssComponent)
     , mImportEnterpriseRoots(importEnterpriseRoots)
+    , mFamilySafetyMode(familySafetyMode)
   {
     MOZ_ASSERT(nssComponent);
   }
@@ -798,6 +797,7 @@ private:
   nsresult LoadLoadableRoots();
   RefPtr<nsNSSComponent> mNSSComponent;
   bool mImportEnterpriseRoots;
+  uint32_t mFamilySafetyMode;
   nsCOMPtr<nsIThread> mThread;
 };
 
@@ -858,6 +858,7 @@ LoadLoadableRootsTask::Run()
   if (mImportEnterpriseRoots) {
     mNSSComponent->ImportEnterpriseRoots();
   }
+  mNSSComponent->MaybeEnableFamilySafetyCompatibility(mFamilySafetyMode);
   nsresult rv = mNSSComponent->TrustLoaded3rdPartyRoots();
   if (NS_FAILED(rv)) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Error,
@@ -1870,14 +1871,6 @@ nsNSSComponent::InitializeNSS()
 
   DisableMD5();
 
-  
-  
-  
-  
-  
-  
-  MaybeEnableFamilySafetyCompatibility();
-
   ConfigureTLSSessionIdentifiers();
 
   bool requireSafeNegotiation =
@@ -1969,8 +1962,10 @@ nsNSSComponent::InitializeNSS()
 
     bool importEnterpriseRoots = Preferences::GetBool(kEnterpriseRootModePref,
                                                       false);
+    uint32_t familySafetyMode = Preferences::GetUint(kFamilySafetyModePref,
+                                                     kFamilySafetyModeDefault);
     RefPtr<LoadLoadableRootsTask> loadLoadableRootsTask(
-      new LoadLoadableRootsTask(this, importEnterpriseRoots));
+      new LoadLoadableRootsTask(this, importEnterpriseRoots, familySafetyMode));
     rv = loadLoadableRootsTask->Dispatch();
     if (NS_FAILED(rv)) {
       return rv;
@@ -2126,7 +2121,9 @@ nsNSSComponent::Observe(nsISupports* aSubject, const char* aTopic,
       
       
       UnloadFamilySafetyRoot();
-      MaybeEnableFamilySafetyCompatibility();
+      uint32_t familySafetyMode = Preferences::GetUint(
+        kFamilySafetyModePref, kFamilySafetyModeDefault);
+      MaybeEnableFamilySafetyCompatibility(familySafetyMode);
       TrustLoaded3rdPartyRoots();
     } else if (prefName.EqualsLiteral("security.content.signature.root_hash")) {
       MutexAutoLock lock(mMutex);
