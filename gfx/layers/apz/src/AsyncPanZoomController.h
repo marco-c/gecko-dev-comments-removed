@@ -1080,6 +1080,13 @@ public:
 
   AsyncTransformComponentMatrix GetCurrentAsyncTransformWithOverscroll(AsyncTransformConsumer aMode) const;
 
+  
+
+
+
+
+  LayoutDeviceToParentLayerScale GetCurrentPinchZoomScale(AsyncTransformConsumer aMode) const;
+
 private:
   
 

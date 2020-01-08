@@ -614,17 +614,21 @@ APZCTreeManager::SampleForWebRender(wr::TransactionWrapper& aTxn,
 
     ParentLayerPoint layerTranslation = apzc->GetCurrentAsyncTransform(
         AsyncPanZoomController::eForCompositing).mTranslation;
+    LayoutDeviceToParentLayerScale zoom;
+    if (apzc->Metrics().IsRootContent()) {
+      zoom = apzc->GetCurrentPinchZoomScale(AsyncPanZoomController::eForCompositing);
+      aTxn.UpdatePinchZoom(zoom.scale);
+    }
 
     
     
     
     
-    ParentLayerPoint asyncScrollDelta = -layerTranslation;
-    
+    LayoutDevicePoint asyncScrollDelta = -layerTranslation / zoom;
     aTxn.UpdateScrollPosition(
         wr::AsPipelineId(apzc->GetGuid().mLayersId),
         apzc->GetGuid().mScrollId,
-        wr::ToRoundedLayoutPoint(LayoutDevicePoint::FromUnknownPoint(asyncScrollDelta.ToUnknownPoint())));
+        wr::ToRoundedLayoutPoint(asyncScrollDelta));
 
     apzc->ReportCheckerboard(aSampleTime);
   }
