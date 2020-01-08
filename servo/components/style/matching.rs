@@ -604,17 +604,8 @@ trait PrivateMatchMethods: TElement {
 
         let mut all_running_animations = context.running_animations.write();
         for mut running_animation in all_running_animations.get_mut(&this_opaque).unwrap() {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if running_animation.is_expired() {
+            if let Animation::Transition(_, _, ref frame) = *running_animation {
+                possibly_expired_animations.push(frame.property_animation.clone());
                 continue;
             }
 
@@ -626,9 +617,7 @@ trait PrivateMatchMethods: TElement {
             );
 
             match *running_animation {
-                Animation::Transition(_, _, ref frame) => {
-                    possibly_expired_animations.push(frame.property_animation.clone())
-                }
+                Animation::Transition(..) => unreachable!(),
                 Animation::Keyframes(_, _, _, ref mut state) => {
                     match update {
                         AnimationUpdate::Regular => {},
