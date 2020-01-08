@@ -1475,8 +1475,10 @@ public:
       
       
       
+#ifndef ANDROID
       MOZ_ASSERT(mappings[idx].Size() == thread->StackSize(),
                  "Mapping region size doesn't match stack allocation size");
+#endif
 #else
       auto memInfo = MemoryInfo::Get(thread->StackBase(), thread->StackSize());
       size_t privateSize = memInfo.Committed();
