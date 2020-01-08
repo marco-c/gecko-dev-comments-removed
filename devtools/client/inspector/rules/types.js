@@ -13,6 +13,8 @@ const declaration = exports.declaration = {
   
   computedProperties: PropTypes.arrayOf(PropTypes.shape({
     
+    isOverridden: PropTypes.bool,
+    
     name: PropTypes.string,
     
     priority: PropTypes.string,
