@@ -109,66 +109,6 @@ NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(DOMMediaStream::TrackPort, Release)
 
 
 
-class DOMMediaStream::OwnedStreamListener : public MediaStreamListener {
- public:
-  explicit OwnedStreamListener(DOMMediaStream* aStream) : mStream(aStream) {}
-
-  void Forget() { mStream = nullptr; }
-
-  void DoNotifyTrackCreated(MediaStreamGraph* aGraph, TrackID aTrackID,
-                            MediaSegment::Type aType, MediaStream* aInputStream,
-                            TrackID aInputTrackID) {
-    MOZ_ASSERT(NS_IsMainThread());
-
-    if (!mStream) {
-      return;
-    }
-
-    MediaStreamTrack* track =
-        mStream->FindOwnedDOMTrack(aInputStream, aInputTrackID, aTrackID);
-
-    if (track) {
-      LOG(LogLevel::Debug, ("DOMMediaStream %p Track %d from owned stream %p "
-                            "bound to MediaStreamTrack %p.",
-                            mStream, aTrackID, aInputStream, track));
-      return;
-    }
-
-    
-    MOZ_RELEASE_ASSERT(
-        false,
-        "A new track was detected on the input stream; creating a "
-        "corresponding "
-        "MediaStreamTrack. Initial tracks should be added manually to "
-        "immediately and synchronously be available to JS.");
-  }
-
-  void NotifyQueuedTrackChanges(MediaStreamGraph* aGraph, TrackID aID,
-                                StreamTime aTrackOffset,
-                                TrackEventCommand aTrackEvents,
-                                const MediaSegment& aQueuedMedia,
-                                MediaStream* aInputStream,
-                                TrackID aInputTrackID) override {
-    if (aTrackEvents & TrackEventCommand::TRACK_EVENT_CREATED) {
-      aGraph->DispatchToMainThreadAfterStreamStateUpdate(
-          NewRunnableMethod<MediaStreamGraph*, TrackID, MediaSegment::Type,
-                            RefPtr<MediaStream>, TrackID>(
-              "DOMMediaStream::OwnedStreamListener::DoNotifyTrackCreated", this,
-              &OwnedStreamListener::DoNotifyTrackCreated, aGraph, aID,
-              aQueuedMedia.GetType(), aInputStream, aInputTrackID));
-    }
-  }
-
- private:
-  
-  DOMMediaStream* mStream;
-};
-
-
-
-
-
-
 class DOMMediaStream::PlaybackStreamListener : public MediaStreamListener {
  public:
   explicit PlaybackStreamListener(DOMMediaStream* aStream) : mStream(aStream) {}
@@ -314,13 +254,6 @@ DOMMediaStream::~DOMMediaStream() { Destroy(); }
 
 void DOMMediaStream::Destroy() {
   LOG(LogLevel::Debug, ("DOMMediaStream %p Being destroyed.", this));
-  if (mOwnedListener) {
-    if (mOwnedStream) {
-      mOwnedStream->RemoveListener(mOwnedListener);
-    }
-    mOwnedListener->Forget();
-    mOwnedListener = nullptr;
-  }
   if (mPlaybackListener) {
     if (mPlaybackStream) {
       mPlaybackStream->RemoveListener(mPlaybackListener);
@@ -743,10 +676,6 @@ void DOMMediaStream::InitOwnedStreamCommon(MediaStreamGraph* aGraph) {
   if (mInputStream) {
     mOwnedPort = mOwnedStream->AllocateInputPort(mInputStream);
   }
-
-  
-  mOwnedListener = new OwnedStreamListener(this);
-  mOwnedStream->AddListener(mOwnedListener);
 }
 
 void DOMMediaStream::InitPlaybackStreamCommon(MediaStreamGraph* aGraph) {

@@ -572,9 +572,6 @@ class DOMMediaStream
   nsresult DispatchTrackEvent(const nsAString& aName,
                               const RefPtr<MediaStreamTrack>& aTrack);
 
-  class OwnedStreamListener;
-  friend class OwnedStreamListener;
-
   class PlaybackStreamListener;
   friend class PlaybackStreamListener;
 
@@ -634,10 +631,6 @@ class DOMMediaStream
   
   
   size_t mTracksPendingRemoval;
-
-  
-  
-  RefPtr<OwnedStreamListener> mOwnedListener;
 
   
   
