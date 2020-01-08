@@ -877,15 +877,42 @@ where
 }
 
 
+#[derive(Debug)]
+pub struct Recycler {
+    pub num_allocations: usize,
+}
 
-pub fn recycle_vec<T>(vec: &mut Vec<T>) {
-    if vec.capacity() > 2 * vec.len() {
-        
-        
-        
-        vec.shrink_to_fit();
+impl Recycler {
+    
+    
+    const MAX_EXTRA_CAPACITY_PERCENT: usize = 200;
+    
+    const MIN_EXTRA_CAPACITY_PERCENT: usize = 20;
+    
+    const MIN_VECTOR_LENGTH: usize = 16;
+
+    pub fn new() -> Self {
+        Recycler {
+            num_allocations: 0,
+        }
     }
-    vec.clear();
+
+    
+    
+    pub fn recycle_vec<T>(&mut self, vec: &mut Vec<T>) {
+        let extra_capacity = (vec.capacity() - vec.len()) * 100 / vec.len().max(Self::MIN_VECTOR_LENGTH);
+
+        if extra_capacity > Self::MAX_EXTRA_CAPACITY_PERCENT {
+            
+            
+            
+            
+            *vec = Vec::with_capacity(vec.len() + vec.len() * Self::MIN_EXTRA_CAPACITY_PERCENT / 100);
+            self.num_allocations += 1;
+        } else {
+            vec.clear();
+        }
+    }
 }
 
 
