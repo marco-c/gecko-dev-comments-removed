@@ -108,20 +108,6 @@ inline void MOZ_PretendNoReturn()
 
 
 
-
-#ifdef DEBUG
-#define NS_NOTREACHED(str)                                    \
-  do {                                                        \
-    NS_DebugBreak(NS_DEBUG_ASSERTION, str, "Not Reached", __FILE__, __LINE__); \
-    MOZ_PretendNoReturn();                                    \
-  } while(0)
-#else
-#define NS_NOTREACHED(str)             do { /* nothing */ } while(0)
-#endif
-
-
-
-
 #ifdef DEBUG
 #define NS_ERROR(str)                                         \
   do {                                                        \
