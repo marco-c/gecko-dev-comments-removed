@@ -288,6 +288,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "dom.push.enabled",
+   dom_push_enabled,
+  RelaxedAtomicBool, false
+)
+
+
 
 
 
