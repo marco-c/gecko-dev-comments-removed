@@ -15,7 +15,8 @@ const PREFERENCE_NAME = "devtools.toolbox.tabsOrder";
 
 
 class ToolboxTabsOrderManager {
-  constructor(onOrderUpdated, panelDefinitions) {
+  constructor(toolbox, onOrderUpdated, panelDefinitions) {
+    this.toolbox = toolbox;
     this.onOrderUpdated = onOrderUpdated;
     this.currentPanelDefinitions = panelDefinitions || [];
 
@@ -51,6 +52,10 @@ class ToolboxTabsOrderManager {
   isLastTab(tabElement) {
     return !tabElement.nextSibling ||
            tabElement.nextSibling.id === "tools-chevron-menu-button";
+  }
+
+  isRTL() {
+    return this.toolbox.direction === "rtl";
   }
 
   async saveOrderPreference() {
@@ -104,26 +109,34 @@ class ToolboxTabsOrderManager {
 
   onMouseMove(e) {
     const diffPageX = e.pageX - this.previousPageX;
-    const dragTargetCenterX =
+    let dragTargetCenterX =
       this.dragTarget.offsetLeft + diffPageX + this.dragTarget.clientWidth / 2;
     let isDragTargetPreviousSibling = false;
 
-    for (const tabElement of this.toolboxTabsElement.querySelectorAll(".devtools-tab")) {
+    const tabElements = this.toolboxTabsElement.querySelectorAll(".devtools-tab");
+
+    
+    const firstElement = tabElements[0];
+    const firstElementCenterX = firstElement.offsetLeft + firstElement.clientWidth / 2;
+    const lastElement = tabElements[tabElements.length - 1];
+    const lastElementCenterX = lastElement.offsetLeft + lastElement.clientWidth / 2;
+    const max = Math.max(firstElementCenterX, lastElementCenterX);
+    const min = Math.min(firstElementCenterX, lastElementCenterX);
+
+    
+    dragTargetCenterX = Math.min(max, dragTargetCenterX);
+    dragTargetCenterX = Math.max(min, dragTargetCenterX);
+
+    for (const tabElement of tabElements) {
       if (tabElement === this.dragTarget) {
         isDragTargetPreviousSibling = true;
         continue;
       }
 
+      
       const anotherCenterX = tabElement.offsetLeft + tabElement.clientWidth / 2;
-      const isReplaceable =
-        
-        Math.abs(dragTargetCenterX - anotherCenterX) < tabElement.clientWidth / 3 ||
-        
-        
-        (this.isFirstTab(tabElement) && dragTargetCenterX < anotherCenterX) ||
-        
-        
-        (this.isLastTab(tabElement) && anotherCenterX < dragTargetCenterX);
+      const distanceWithDragTarget = Math.abs(dragTargetCenterX - anotherCenterX);
+      const isReplaceable = distanceWithDragTarget < tabElement.clientWidth / 3;
 
       if (isReplaceable) {
         const replaceableElement =
@@ -135,8 +148,15 @@ class ToolboxTabsOrderManager {
 
     let distance = e.pageX - this.dragStartX;
 
-    if ((this.isFirstTab(this.dragTarget) && distance < 0) ||
-        (this.isLastTab(this.dragTarget) && distance > 0)) {
+    
+    
+    
+    const isFirstTab = this.isFirstTab(this.dragTarget);
+    const isLastTab = this.isLastTab(this.dragTarget);
+    const isLeftmostTab = this.isRTL() ? isLastTab : isFirstTab;
+    const isRightmostTab = this.isRTL() ? isFirstTab : isLastTab;
+
+    if ((isLeftmostTab && distance < 0) || (isRightmostTab && distance > 0)) {
       
       
       distance = 0;
