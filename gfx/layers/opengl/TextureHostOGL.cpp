@@ -340,7 +340,14 @@ DirectMapTextureSource::Update(gfx::DataSourceSurface* aSurface,
 bool
 DirectMapTextureSource::Sync(bool aBlocking)
 {
-  gl()->MakeCurrent();
+  if (!gl() || !gl()->MakeCurrent()) {
+    
+    
+    
+    
+    return true;
+  }
+
   if (!gl()->IsDestroyed()) {
     if (aBlocking) {
       gl()->fFinishObjectAPPLE(LOCAL_GL_TEXTURE, mTextureHandle);
@@ -357,7 +364,9 @@ DirectMapTextureSource::UpdateInternal(gfx::DataSourceSurface* aSurface,
                                        gfx::IntPoint* aSrcOffset,
                                        bool aInit)
 {
-  gl()->MakeCurrent();
+  if (!gl() || !gl()->MakeCurrent()) {
+    return false;
+  }
 
   if (aInit) {
     gl()->fGenTextures(1, &mTextureHandle);
