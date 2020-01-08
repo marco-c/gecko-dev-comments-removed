@@ -391,17 +391,18 @@ ContentPrincipal::SetDomain(nsIURI* aDomain)
 }
 
 static nsresult
-GetBaseDomainHelper(const nsCOMPtr<nsIURI>& aCodebase,
-                    bool* aHasBaseDomain,
-                    nsACString& aBaseDomain)
+GetSpecialBaseDomain(const nsCOMPtr<nsIURI>& aCodebase,
+                     bool* aHandled,
+                     nsACString& aBaseDomain)
 {
-  *aHasBaseDomain = false;
+  *aHandled = false;
 
   
   if (NS_URIIsLocalFile(aCodebase)) {
     nsCOMPtr<nsIURL> url = do_QueryInterface(aCodebase);
 
     if (url) {
+      *aHandled = true;
       return url->GetFilePath(aBaseDomain);
     }
   }
@@ -415,17 +416,8 @@ GetBaseDomainHelper(const nsCOMPtr<nsIURI>& aCodebase,
   }
 
   if (hasNoRelativeFlag) {
+    *aHandled = true;
     return aCodebase->GetSpec(aBaseDomain);
-  }
-
-  *aHasBaseDomain = true;
-
-  
-  
-  nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
-    do_GetService(THIRDPARTYUTIL_CONTRACTID);
-  if (thirdPartyUtil) {
-    return thirdPartyUtil->GetBaseDomain(aCodebase, aBaseDomain);
   }
 
   return NS_OK;
@@ -434,20 +426,35 @@ GetBaseDomainHelper(const nsCOMPtr<nsIURI>& aCodebase,
 NS_IMETHODIMP
 ContentPrincipal::GetBaseDomain(nsACString& aBaseDomain)
 {
-  bool hasBaseDomain;
-  return GetBaseDomainHelper(mCodebase, &hasBaseDomain, aBaseDomain);
+  
+  bool handled;
+  nsresult rv = GetSpecialBaseDomain(mCodebase, &handled, aBaseDomain);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (handled) {
+    return NS_OK;
+  }
+
+  
+  nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
+    do_GetService(THIRDPARTYUTIL_CONTRACTID);
+  if (!thirdPartyUtil) {
+    return NS_ERROR_FAILURE;
+  }
+
+  return thirdPartyUtil->GetBaseDomain(mCodebase, aBaseDomain);
 }
 
 NS_IMETHODIMP
 ContentPrincipal::GetSiteOrigin(nsACString& aSiteOrigin)
 {
   
-  bool hasBaseDomain;
   nsAutoCString baseDomain;
-  nsresult rv = GetBaseDomainHelper(mCodebase, &hasBaseDomain, baseDomain);
+  bool handled;
+  nsresult rv = GetSpecialBaseDomain(mCodebase, &handled, baseDomain);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (!hasBaseDomain) {
+  if (handled) {
     
     
     return GetOrigin(aSiteOrigin);
@@ -455,12 +462,38 @@ ContentPrincipal::GetSiteOrigin(nsACString& aSiteOrigin)
 
   
   
+  
+  
+  
+  nsCOMPtr<nsIEffectiveTLDService> tldService =
+    do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
+  if (!tldService) {
+    return NS_ERROR_FAILURE;
+  }
+
+  bool gotBaseDomain = false;
+  rv = tldService->GetBaseDomain(mCodebase, 0, baseDomain);
+  if (NS_SUCCEEDED(rv)) {
+    gotBaseDomain = true;
+  } else {
+    
+    
+    if (rv != NS_ERROR_HOST_IS_IP_ADDRESS &&
+        rv != NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS) {
+      return rv;
+    }
+  }
+
+  
+  
   nsCOMPtr<nsIURI> siteUri;
-  rv = NS_MutateURI(mCodebase)
-    .SetUserPass(EmptyCString())
-    .SetPort(-1)
-    .SetHostPort(baseDomain)
-    .Finalize(siteUri);
+  NS_MutateURI mutator(mCodebase);
+  mutator.SetUserPass(EmptyCString())
+         .SetPort(-1);
+  if (gotBaseDomain) {
+    mutator.SetHost(baseDomain);
+  }
+  rv = mutator.Finalize(siteUri);
   MOZ_ASSERT(NS_SUCCEEDED(rv), "failed to create siteUri");
   NS_ENSURE_SUCCESS(rv, rv);
 
