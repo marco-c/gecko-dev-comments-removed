@@ -44,8 +44,6 @@ class MainFrame extends Component {
   }
 
   componentWillMount() {
-    
-    gToolbox.loadTool("inspector");
     this.props.accessibility.on("init", this.resetAccessibility);
     this.props.accessibility.on("shutdown", this.resetAccessibility);
     this.props.walker.on("document-ready", this.resetAccessibility);
