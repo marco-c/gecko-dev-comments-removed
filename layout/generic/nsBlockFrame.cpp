@@ -6812,8 +6812,7 @@ nsBlockFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   aBuilder->MarkFramesForDisplayList(this, mFloats);
 
   
-  UniquePtr<TextOverflow> textOverflow =
-    TextOverflow::WillProcessLines(aBuilder, this);
+  Maybe<TextOverflow> textOverflow = TextOverflow::WillProcessLines(aBuilder, this);
 
   
   nsDisplayListCollection linesDisplayListCollection(aBuilder);
@@ -6828,7 +6827,7 @@ nsBlockFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   
   
-  nsLineBox* cursor = (aBuilder->ShouldDescendIntoFrame(this, true) || textOverflow) ?
+  nsLineBox* cursor = (aBuilder->ShouldDescendIntoFrame(this, true) || textOverflow.isSome()) ?
     nullptr : GetFirstLineContaining(aBuilder->GetDirtyRect().y);
   LineIterator line_end = LinesEnd();
 
@@ -6843,7 +6842,7 @@ nsBlockFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
         if (lineArea.y >= aBuilder->GetDirtyRect().YMost()) {
           break;
         }
-        MOZ_ASSERT(!textOverflow);
+        MOZ_ASSERT(textOverflow.isNothing());
         DisplayLine(aBuilder, lineArea, line, depth, drawnLines,
                     linesDisplayListCollection, this, nullptr, 0);
       }
@@ -6858,7 +6857,7 @@ nsBlockFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
          ++line) {
       nsRect lineArea = line->GetVisualOverflowArea();
       DisplayLine(aBuilder, lineArea, line, depth, drawnLines,
-                  linesDisplayListCollection, this, textOverflow.get(), lineCount);
+                  linesDisplayListCollection, this, textOverflow.ptrOr(nullptr), lineCount);
       if (!lineArea.IsEmpty()) {
         if (lineArea.y < lastY
             || lineArea.YMost() < lastYMost) {
@@ -6879,7 +6878,7 @@ nsBlockFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   
   
-  if (textOverflow) {
+  if (textOverflow.isSome()) {
     aLists.PositionedDescendants()->AppendToTop(&textOverflow->GetMarkers());
   }
   linesDisplayListCollection.MoveTo(aLists);

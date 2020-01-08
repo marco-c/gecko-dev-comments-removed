@@ -370,7 +370,7 @@ TextOverflow::TextOverflow(nsDisplayListBuilder* aBuilder,
   
 }
 
- UniquePtr<TextOverflow>
+ Maybe<TextOverflow>
 TextOverflow::WillProcessLines(nsDisplayListBuilder*   aBuilder,
                                nsIFrame*               aBlockFrame)
 {
@@ -378,14 +378,14 @@ TextOverflow::WillProcessLines(nsDisplayListBuilder*   aBuilder,
   if (aBuilder->IsForEventDelivery() ||
       aBuilder->IsForFrameVisibility() ||
       !CanHaveTextOverflow(aBlockFrame)) {
-    return nullptr;
+    return Nothing();
   }
   nsIScrollableFrame* scrollableFrame = nsLayoutUtils::GetScrollableFrameFor(aBlockFrame);
   if (scrollableFrame && scrollableFrame->IsTransformingByAPZ()) {
     
-    return nullptr;
+    return Nothing();
   }
-  return MakeUnique<TextOverflow>(aBuilder, aBlockFrame);
+  return Some(TextOverflow(aBuilder, aBlockFrame));
 }
 
 void

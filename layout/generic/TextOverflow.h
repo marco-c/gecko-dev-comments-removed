@@ -27,13 +27,13 @@ namespace css {
 
 
 
-class MOZ_HEAP_CLASS TextOverflow final {
+class TextOverflow final {
  public:
   
 
 
 
-  static UniquePtr<TextOverflow>
+  static Maybe<TextOverflow>
   WillProcessLines(nsDisplayListBuilder* aBuilder,
                    nsIFrame*             aBlockFrame);
 
@@ -44,6 +44,13 @@ class MOZ_HEAP_CLASS TextOverflow final {
 
   TextOverflow(nsDisplayListBuilder* aBuilder,
                nsIFrame* aBlockFrame);
+
+  TextOverflow() = default;
+  ~TextOverflow() = default;
+  TextOverflow(TextOverflow&&) = default;
+  TextOverflow(const TextOverflow&) = delete;
+  TextOverflow& operator=(TextOverflow&&) = default;
+  TextOverflow& operator=(const TextOverflow&) = delete;
 
   
 
