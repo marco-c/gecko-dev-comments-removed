@@ -254,12 +254,12 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
         
         
         kw_options['app'] = self.app
-        if self.app == "firefox" or self.app == "geckoview":
+        if self.app == "firefox" or (self.app == "geckoview" and not self.run_local):
             binary_path = self.binary_path or self.config.get('binary_path')
             if not binary_path:
                 self.fatal("Raptor requires a path to the binary.")
             kw_options['binary'] = binary_path
-        else:
+        else:  
             if not self.run_local:
                 
                 
