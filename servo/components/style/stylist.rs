@@ -1249,7 +1249,8 @@ impl Stylist {
                 }
             }
 
-            if let Some(containing_shadow) = rule_hash_target.containing_shadow() {
+            let mut current_containing_shadow = rule_hash_target.containing_shadow();
+            while let Some(containing_shadow) = current_containing_shadow {
                 let cascade_data = containing_shadow.style_data();
                 let host = containing_shadow.host();
                 if let Some(map) = cascade_data.and_then(|data| data.normal_rules(pseudo_element)) {
@@ -1267,31 +1268,37 @@ impl Stylist {
                     shadow_cascade_order += 1;
                 }
 
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                let host_is_svg_use =
+                let host_is_svg_use_element =
                     host.is_svg_element() &&
                     host.local_name() == &*local_name!("use");
 
-                match_document_author_rules = host_is_svg_use;
+                if !host_is_svg_use_element {
+                    match_document_author_rules = false;
+                    break;
+                }
+
+                debug_assert!(
+                    cascade_data.is_none(),
+                    "We allow no stylesheets in <svg:use> subtrees"
+                );
+
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                current_containing_shadow = host.containing_shadow();
+                match_document_author_rules = current_containing_shadow.is_none();
             }
         }
 
