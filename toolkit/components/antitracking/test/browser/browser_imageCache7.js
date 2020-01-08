@@ -1,13 +1,11 @@
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-
-let uriObj = Services.io.newURI(TEST_DOMAIN);
-Services.perms.add(uriObj, "cookie", Services.perms.ALLOW_ACTION);
-
 let cookieBehavior = BEHAVIOR_REJECT_TRACKER;
-let blockingByContentBlocking = false;
+let blockingByContentBlocking = true;
+let blockingByContentBlockingUI = true;
+let blockingByContentBlockingRTUI = false;
 let blockingByAllowList = false;
-let expectedBlockingNotifications = false;
+let expectedBlockingNotifications = true;
 
 let rootDir = getRootDirectory(gTestPath);
 let jar = getJar(rootDir);
@@ -17,3 +15,4 @@ if (jar) {
 }
 
 Services.scriptloader.loadSubScript(rootDir + "imageCacheWorker.js", this);
+
