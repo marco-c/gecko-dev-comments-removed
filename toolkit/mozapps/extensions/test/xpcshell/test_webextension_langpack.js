@@ -2,8 +2,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
 const { L10nRegistry } = ChromeUtils.import("resource://gre/modules/L10nRegistry.jsm", {});
 

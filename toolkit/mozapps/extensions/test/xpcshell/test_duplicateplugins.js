@@ -2,8 +2,6 @@
 
 
 
-ChromeUtils.import("resource://testing-common/MockRegistrar.jsm");
-
 
 
 

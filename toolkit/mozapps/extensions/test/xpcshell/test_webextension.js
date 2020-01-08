@@ -2,8 +2,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-
 const ID = "webextension1@tests.mozilla.org";
 
 const profileDir = gProfD.clone();
