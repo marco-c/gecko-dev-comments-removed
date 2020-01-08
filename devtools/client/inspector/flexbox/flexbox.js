@@ -345,9 +345,9 @@ class FlexboxInspector {
     const currentUrl = this.inspector.target.url;
     
     
-    const hostName = parseURL(currentUrl).hostName || parseURL(currentUrl).protocol;
+    const hostname = parseURL(currentUrl).hostname || parseURL(currentUrl).protocol;
     const customColors = await this.getCustomHostColors();
-    customColors[hostName] = color;
+    customColors[hostname] = color;
     this._customHostColors = customColors;
     await asyncStorage.setItem("flexboxInspectorHostColors", customColors);
   }
