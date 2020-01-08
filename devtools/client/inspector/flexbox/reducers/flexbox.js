@@ -6,6 +6,7 @@
 
 const {
   CLEAR_FLEXBOX,
+  TOGGLE_FLEX_ITEM_SHOWN,
   UPDATE_FLEXBOX,
   UPDATE_FLEXBOX_COLOR,
   UPDATE_FLEXBOX_HIGHLIGHTED,
@@ -13,44 +14,19 @@ const {
 
 const INITIAL_FLEXBOX = {
   
+  actorID: null,
+  
   color: "",
   
-  flexContainer: {
-    
-    actorID: "",
-    
-    flexItems: [],
-    
-    
-    flexItemShown: null,
-    
-    
-    isFlexItemContainer: false,
-    
-    nodeFront: null,
-    
-    properties: null,
-  },
+  flexItems: [],
   
-  
-  flexItemContainer: {
-    
-    actorID: "",
-    
-    flexItems: [],
-    
-    
-    flexItemShown: null,
-    
-    
-    isFlexItemContainer: true,
-    
-    nodeFront: null,
-    
-    properties: null,
-  },
+  flexItemShown: null,
   
   highlighted: false,
+  
+  nodeFront: null,
+  
+  properties: {},
 };
 
 const reducers = {
@@ -59,22 +35,34 @@ const reducers = {
     return INITIAL_FLEXBOX;
   },
 
+  [TOGGLE_FLEX_ITEM_SHOWN](flexbox, { nodeFront }) {
+    let flexItemShown = null;
+
+    
+    if (nodeFront) {
+      const flexItem = flexbox.flexItems.find(item => item.nodeFront === nodeFront);
+      flexItemShown = flexItem.nodeFront.actorID;
+    }
+
+    return Object.assign({}, flexbox, {
+      flexItemShown,
+    });
+  },
+
   [UPDATE_FLEXBOX](_, { flexbox }) {
     return flexbox;
   },
 
   [UPDATE_FLEXBOX_COLOR](flexbox, { color }) {
-    return {
-      ...flexbox,
+    return Object.assign({}, flexbox, {
       color,
-    };
+    });
   },
 
   [UPDATE_FLEXBOX_HIGHLIGHTED](flexbox, { highlighted }) {
-    return {
-      ...flexbox,
+    return Object.assign({}, flexbox, {
       highlighted,
-    };
+    });
   },
 
 };

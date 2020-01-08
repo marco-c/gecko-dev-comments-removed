@@ -6,6 +6,7 @@
 
 const {
   CLEAR_FLEXBOX,
+  TOGGLE_FLEX_ITEM_SHOWN,
   UPDATE_FLEXBOX,
   UPDATE_FLEXBOX_COLOR,
   UPDATE_FLEXBOX_HIGHLIGHTED,
@@ -19,6 +20,21 @@ module.exports = {
   clearFlexbox() {
     return {
       type: CLEAR_FLEXBOX,
+    };
+  },
+
+  
+
+
+
+
+
+
+
+  toggleFlexItemShown(nodeFront) {
+    return {
+      type: TOGGLE_FLEX_ITEM_SHOWN,
+      nodeFront,
     };
   },
 

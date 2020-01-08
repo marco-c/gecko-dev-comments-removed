@@ -12,7 +12,6 @@ const {
   gridSpec,
   layoutSpec,
 } = require("devtools/shared/specs/layout");
-const { ELEMENT_NODE } = require("devtools/shared/dom-node-constants");
 const { SHOW_ELEMENT } = require("devtools/shared/dom-node-filter-constants");
 const { getStringifiableFragments } =
   require("devtools/server/actors/utils/css-grid-utils");
@@ -103,10 +102,6 @@ const FlexboxActor = ActorClassWithSpec(flexboxSpec, {
 
     for (const line of flex.getLines()) {
       for (const item of line.getItems()) {
-        if (item.node.nodeType !== ELEMENT_NODE) {
-          continue;
-        }
-
         flexItemActors.push(new FlexItemActor(this, item.node, {
           crossMaxSize: item.crossMaxSize,
           crossMinSize: item.crossMinSize,
@@ -157,20 +152,17 @@ const FlexItemActor = ActorClassWithSpec(flexItemSpec, {
       return this.actorID;
     }
 
+    const { flexDirection } = CssLogic.getComputedStyle(this.containerEl);
+    const styles = CssLogic.getComputedStyle(this.element);
+    const clientRect = this.element.getBoundingClientRect();
+    const dimension = flexDirection.startsWith("row") ? "width" : "height";
+
     const form = {
       actor: this.actorID,
       
       flexItemSizing: this.flexItemSizing,
-    };
-
-    if (this.element.nodeType === ELEMENT_NODE) {
-      const { flexDirection } = CssLogic.getComputedStyle(this.containerEl);
-      const styles = CssLogic.getComputedStyle(this.element);
-      const clientRect = this.element.getBoundingClientRect();
-      const dimension = flexDirection.startsWith("row") ? "width" : "height";
-
       
-      form.properties = {
+      properties: {
         "flex-basis": styles.flexBasis,
         "flex-grow": styles.flexGrow,
         "flex-shrink": styles.flexShrink,
@@ -180,8 +172,8 @@ const FlexItemActor = ActorClassWithSpec(flexItemSpec, {
         [`max-${dimension}`]: styles[`max-${dimension}`],
         
         [dimension]: parseFloat(clientRect[dimension.toLowerCase()].toPrecision(6)),
-      };
-    }
+      },
+    };
 
     
     
@@ -309,7 +301,6 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
     }
 
     
-    
     while ((currentNode = treeWalker.parentNode())) {
       if (!currentNode) {
         break;
@@ -360,13 +351,7 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
 
 
 
-
-
-  getCurrentFlexbox(node, onlyLookAtParents) {
-    if (onlyLookAtParents) {
-      node = node.rawNode.parentNode;
-    }
-
+  getCurrentFlexbox(node) {
     return this.getCurrentDisplay(node, "flex");
   },
 
