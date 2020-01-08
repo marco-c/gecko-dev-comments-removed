@@ -80,6 +80,8 @@ rand_int_rng(mp_int* out, const mp_int* max, RandBytesFunc rng_func,
              void* user_data)
 {
   SECStatus rv = SECSuccess;
+  unsigned char* max_bytes = NULL;
+  unsigned char* buf = NULL;
 
   
   if (mp_cmp_z(max) == 0)
@@ -87,32 +89,38 @@ rand_int_rng(mp_int* out, const mp_int* max, RandBytesFunc rng_func,
 
   
   
-  MP_CHECK(mp_sub_d(max, 1, out));
+  MP_CHECKC(mp_sub_d(max, 1, out));
 
   const int nbytes = mp_unsigned_octet_size(out);
 
   
   
-  unsigned char max_bytes[nbytes];
-  MP_CHECK(mp_to_fixlen_octets(out, max_bytes, nbytes));
+  P_CHECKA(max_bytes = calloc(nbytes, sizeof(unsigned char)));
+  MP_CHECKC(mp_to_fixlen_octets(out, max_bytes, nbytes));
   const unsigned char mask = msb_mask(max_bytes[0]);
 
   
-  unsigned char buf[nbytes];
+  P_CHECKA(buf = calloc(nbytes, sizeof(unsigned char)));
 
   do {
     
-    P_CHECK(rng_func(user_data, buf, nbytes));
+    P_CHECKC(rng_func(user_data, buf, nbytes));
 
     
-    P_CHECK(rng_func(user_data, &buf[0], 1));
+    P_CHECKC(rng_func(user_data, &buf[0], 1));
     if (mask)
       buf[0] &= mask;
 
-    MP_CHECK(mp_read_unsigned_octets(out, buf, nbytes));
+    MP_CHECKC(mp_read_unsigned_octets(out, buf, nbytes));
   } while (mp_cmp(out, max) != -1);
 
-  return 0;
+cleanup:
+  if (max_bytes)
+    free(max_bytes);
+  if (buf)
+    free(buf);
+
+  return rv;
 }
 
 void

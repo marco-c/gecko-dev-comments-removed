@@ -24,13 +24,28 @@
 
 
 static SECStatus
-initialize_roots(MPArray arr, const char* values[])
+initialize_roots(MPArray arr, const char values[], bool inverted)
 {
   
   
   
-  for (int i = 0; i < arr->len; i++) {
-    MP_CHECK(mp_read_radix(&arr->data[i], values[i], 16));
+  MP_CHECK(mp_read_radix(&arr->data[0], &values[0], 16));
+  unsigned int len = arr->len;
+  unsigned int n_chars = len * RootWidth;
+
+  if (n_chars != sizeof(Roots)) {
+    return SECFailure;
+  }
+
+  if (inverted) {
+    for (unsigned int i = n_chars - RootWidth, j = 1; i > 0;
+         i -= RootWidth, j++) {
+      MP_CHECK(mp_read_radix(&arr->data[j], &values[i], 16));
+    }
+  } else {
+    for (unsigned int i = RootWidth, j = 1; i < n_chars; i += RootWidth, j++) {
+      MP_CHECK(mp_read_radix(&arr->data[j], &values[i], 16));
+    }
   }
 
   return SECSuccess;
@@ -74,8 +89,8 @@ PrioConfig_new(int n_fields, PublicKey server_a, PublicKey server_b,
 
   P_CHECKA(cfg->roots = MPArray_new(cfg->n_roots));
   P_CHECKA(cfg->rootsInv = MPArray_new(cfg->n_roots));
-  MP_CHECKC(initialize_roots(cfg->roots, Roots));
-  MP_CHECKC(initialize_roots(cfg->rootsInv, RootsInv));
+  MP_CHECKC(initialize_roots(cfg->roots, Roots, false));
+  MP_CHECKC(initialize_roots(cfg->rootsInv, Roots, true));
 
 cleanup:
   if (rv != SECSuccess) {
