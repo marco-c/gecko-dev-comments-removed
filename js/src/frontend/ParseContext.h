@@ -19,6 +19,16 @@ namespace frontend {
 
 class ParserBase;
 
+const char*
+DeclarationKindString(DeclarationKind kind);
+
+
+bool
+DeclarationKindIsVar(DeclarationKind kind);
+
+bool
+DeclarationKindIsParameter(DeclarationKind kind);
+
 
 
 
@@ -678,6 +688,14 @@ class ParseContext : public Nestable<ParseContext>
                              mozilla::Maybe<DeclarationKind>* redeclaredKind, uint32_t* prevPos);
 
 };
+
+
+
+inline
+Directives::Directives(ParseContext* parent)
+  : strict_(parent->sc()->strict()),
+    asmJS_(parent->useAsmOrInsideUseAsm())
+{}
 
 } 
 
