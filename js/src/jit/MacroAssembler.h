@@ -351,6 +351,7 @@ class MacroAssembler : public MacroAssemblerSpecific
 #endif
 
     
+    
   public:
     
     
@@ -2135,6 +2136,7 @@ class MacroAssembler : public MacroAssemblerSpecific
     void speculationBarrier() PER_SHARED_ARCH;
 
     
+    
   public:
 
     
@@ -2901,6 +2903,7 @@ class IonHeapMacroAssembler : public MacroAssembler
 };
 
 
+
 inline uint32_t
 MacroAssembler::framePushed() const
 {
@@ -2927,6 +2930,7 @@ MacroAssembler::implicitPop(uint32_t bytes)
     MOZ_ASSERT(bytes <= INT32_MAX);
     adjustFrame(-int32_t(bytes));
 }
+
 
 
 static inline Assembler::DoubleCondition

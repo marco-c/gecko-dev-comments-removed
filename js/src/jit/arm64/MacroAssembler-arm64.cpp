@@ -417,6 +417,7 @@ MacroAssembler::Push(RegisterOrSP reg)
 
 
 
+
 void
 MacroAssembler::flush()
 {
@@ -2022,6 +2023,7 @@ MacroAssembler::speculationBarrier()
     
     csdb();
 }
+
 
 
 

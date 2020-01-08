@@ -307,6 +307,7 @@ MacroAssembler::subFromStackPtr(Imm32 imm32)
 
 
 
+
 void
 MacroAssembler::setupUnalignedABICall(Register scratch)
 {
@@ -1036,5 +1037,6 @@ MacroAssembler::wasmAtomicEffectOp64(const wasm::MemoryAccessDesc& access, Atomi
       default:               MOZ_CRASH();
     }
 }
+
 
 

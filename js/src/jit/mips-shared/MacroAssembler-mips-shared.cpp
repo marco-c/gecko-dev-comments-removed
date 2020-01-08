@@ -1443,6 +1443,7 @@ MacroAssemblerMIPSShared::asMasm() const
 
 
 
+
 void
 MacroAssembler::flush()
 {
@@ -2927,4 +2928,5 @@ MacroAssembler::speculationBarrier()
 {
     MOZ_CRASH();
 }
+
 
