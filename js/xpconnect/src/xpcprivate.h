@@ -2808,6 +2808,9 @@ class CompartmentPrivate {
   bool forcePermissiveCOWs;
 
   
+  bool wasShutdown;
+
+  
   
   bool wrapperDenialWarnings[WrapperDenialTypeCount];
 
