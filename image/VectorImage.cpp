@@ -51,13 +51,13 @@ using namespace layers;
 namespace image {
 
 
-class SVGRootRenderingObserver final : public nsSVGRenderingObserver {
+class SVGRootRenderingObserver final : public SVGRenderingObserver {
 public:
   NS_DECL_ISUPPORTS
 
   SVGRootRenderingObserver(SVGDocumentWrapper* aDocWrapper,
                            VectorImage*        aVectorImage)
-    : nsSVGRenderingObserver()
+    : SVGRenderingObserver()
     , mDocWrapper(aDocWrapper)
     , mVectorImage(aVectorImage)
     , mHonoringInvalidations(true)

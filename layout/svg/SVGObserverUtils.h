@@ -48,18 +48,18 @@ namespace mozilla {
 
 
 
-class nsSVGRenderingObserver : public nsStubMutationObserver
+class SVGRenderingObserver : public nsStubMutationObserver
 {
 
 protected:
-  virtual ~nsSVGRenderingObserver()
-    {}
+  virtual ~SVGRenderingObserver() = default;
 
 public:
   typedef mozilla::dom::Element Element;
-  nsSVGRenderingObserver()
+
+  SVGRenderingObserver()
     : mInObserverList(false)
-    {}
+  {}
 
   
   NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
@@ -132,7 +132,7 @@ protected:
 
 
 
-class nsSVGIDRenderingObserver : public nsSVGRenderingObserver
+class nsSVGIDRenderingObserver : public SVGRenderingObserver
 {
 public:
   typedef mozilla::dom::Element Element;
@@ -424,12 +424,12 @@ public:
     MOZ_COUNT_DTOR(nsSVGRenderingObserverList);
   }
 
-  void Add(nsSVGRenderingObserver* aObserver)
+  void Add(SVGRenderingObserver* aObserver)
   { mObservers.PutEntry(aObserver); }
-  void Remove(nsSVGRenderingObserver* aObserver)
+  void Remove(SVGRenderingObserver* aObserver)
   { mObservers.RemoveEntry(aObserver); }
 #ifdef DEBUG
-  bool Contains(nsSVGRenderingObserver* aObserver)
+  bool Contains(SVGRenderingObserver* aObserver)
   { return (mObservers.GetEntry(aObserver) != nullptr); }
 #endif
   bool IsEmpty()
@@ -454,7 +454,7 @@ public:
   void RemoveAll();
 
 private:
-  nsTHashtable<nsPtrHashKey<nsSVGRenderingObserver> > mObservers;
+  nsTHashtable<nsPtrHashKey<SVGRenderingObserver>> mObservers;
 };
 
 class SVGObserverUtils
@@ -604,11 +604,13 @@ public:
   
 
 
-  static void AddRenderingObserver(Element* aElement, nsSVGRenderingObserver *aObserver);
+  static void AddRenderingObserver(Element* aElement,
+                                   SVGRenderingObserver *aObserver);
   
 
 
-  static void RemoveRenderingObserver(Element* aElement, nsSVGRenderingObserver *aObserver);
+  static void RemoveRenderingObserver(Element* aElement,
+                                      SVGRenderingObserver *aObserver);
 
   
 
