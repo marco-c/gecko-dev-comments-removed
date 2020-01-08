@@ -105,13 +105,14 @@ static inline bool IsMiddleman() { return false; }
 
 
 
-static inline void BeginOrderedAtomicAccess();
+
+static inline void BeginOrderedAtomicAccess(const void* aValue);
 static inline void EndOrderedAtomicAccess();
 
 
 struct MOZ_RAII AutoOrderedAtomicAccess
 {
-  AutoOrderedAtomicAccess() { BeginOrderedAtomicAccess(); }
+  explicit AutoOrderedAtomicAccess(const void* aValue) { BeginOrderedAtomicAccess(aValue); }
   ~AutoOrderedAtomicAccess() { EndOrderedAtomicAccess(); }
 };
 
@@ -430,7 +431,7 @@ NoteContentParse16(const void* aToken,
 
 #endif
 
-MOZ_MakeRecordReplayWrapperVoid(BeginOrderedAtomicAccess, (), ())
+MOZ_MakeRecordReplayWrapperVoid(BeginOrderedAtomicAccess, (const void* aValue), (aValue))
 MOZ_MakeRecordReplayWrapperVoid(EndOrderedAtomicAccess, (), ())
 MOZ_MakeRecordReplayWrapperVoid(BeginPassThroughThreadEvents, (), ())
 MOZ_MakeRecordReplayWrapperVoid(EndPassThroughThreadEvents, (), ())
