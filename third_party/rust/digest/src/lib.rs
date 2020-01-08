@@ -4,30 +4,53 @@
 
 
 
-#![cfg_attr(not(feature = "std"), no_std)]
-pub extern crate generic_array;
 
+
+
+
+
+
+
+
+#![no_std]
+#![doc(html_logo_url =
+    "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
+pub extern crate generic_array;
 #[cfg(feature = "std")]
-use std as core;
+#[macro_use] extern crate std;
+#[cfg(feature = "dev")]
+pub extern crate blobby;
 use generic_array::{GenericArray, ArrayLength};
+#[cfg(feature = "std")]
+use std::vec::Vec;
 
 mod digest;
+mod dyn_digest;
 mod errors;
 #[cfg(feature = "dev")]
 pub mod dev;
 
-pub use errors::{InvalidOutputSize, InvalidBufferLength};
+pub use errors::InvalidOutputSize;
 pub use digest::Digest;
-
-
-
+#[cfg(feature = "std")]
+pub use dyn_digest::DynDigest;
 
 
 pub trait Input {
     
     
-    fn process(&mut self, input: &[u8]);
+    
+    
+    fn input<B: AsRef<[u8]>>(&mut self, data: B);
+
+    
+    fn chain<B: AsRef<[u8]>>(mut self, data: B) -> Self where Self: Sized {
+        self.input(data);
+        self
+    }
 }
+
+
 
 
 
@@ -44,15 +67,13 @@ pub trait FixedOutput {
 }
 
 
-#[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub struct InvalidLength;
-
-
 pub trait VariableOutput: core::marker::Sized {
     
     
     
-    fn new(output_size: usize) -> Result<Self, InvalidLength>;
+    
+    
+    fn new(output_size: usize) -> Result<Self, InvalidOutputSize>;
 
     
     fn output_size(&self) -> usize;
@@ -60,7 +81,16 @@ pub trait VariableOutput: core::marker::Sized {
     
     
     
-    fn variable_result(self, buffer: &mut [u8]) -> Result<&[u8], InvalidLength>;
+    
+    fn variable_result<F: FnOnce(&[u8])>(self, f: F);
+
+    
+    #[cfg(feature = "std")]
+    fn vec_result(self) -> Vec<u8> {
+        let mut buf = Vec::with_capacity(self.output_size());
+        self.variable_result(|res| buf.extend_from_slice(res));
+        buf
+    }
 }
 
 
@@ -71,27 +101,40 @@ pub trait XofReader {
 }
 
 
-
-
-pub trait ExtendableOutput {
+pub trait ExtendableOutput: core::marker::Sized {
     type Reader: XofReader;
 
     
     fn xof_result(self) -> Self::Reader;
+
+    
+    #[cfg(feature = "std")]
+    fn vec_result(self, n: usize) -> Vec<u8> {
+        let mut buf = vec![0u8; n];
+        self.xof_result().read(&mut buf);
+        buf
+    }
 }
 
 
-
-
+pub trait Reset {
+    
+    fn reset(&mut self);
+}
 
 #[macro_export]
-macro_rules! impl_opaque_debug {
-    ($state:ty) => {
-        impl ::core::fmt::Debug for $state {
-            fn fmt(&self, f: &mut ::core::fmt::Formatter)
-                -> Result<(), ::core::fmt::Error>
-            {
-                write!(f, concat!(stringify!($state), " {{ ... }}"))
+
+macro_rules! impl_write {
+    ($hasher:ident) => {
+        #[cfg(feature = "std")]
+        impl ::std::io::Write for $hasher {
+            fn write(&mut self, buf: &[u8]) -> ::std::io::Result<usize> {
+                Input::input(self, buf);
+                Ok(buf.len())
+            }
+
+            fn flush(&mut self) -> ::std::io::Result<()> {
+                Ok(())
             }
         }
     }

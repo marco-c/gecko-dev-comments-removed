@@ -1,86 +1,86 @@
-use super::{Input, BlockInput, FixedOutput};
-use generic_array::GenericArray;
-#[cfg(feature = "std")]
-use std::io;
-
-type Output<N> = GenericArray<u8, N>;
+use super::{Input, FixedOutput, Reset};
+use generic_array::{GenericArray, ArrayLength};
+use generic_array::typenum::Unsigned;
 
 
 
 
 
-pub trait Digest: Input + BlockInput + FixedOutput + Default {
+pub trait Digest {
+    type OutputSize: ArrayLength<u8>;
     
+    fn new() -> Self;
+
+    
+    
+    
+    fn input<B: AsRef<[u8]>>(&mut self, data: B);
+
+    
+    fn chain<B: AsRef<[u8]>>(self, data: B) -> Self where Self: Sized;
+
+    
+    fn result(self) -> GenericArray<u8, Self::OutputSize>;
+
+    
+    
+    
+    
+    fn result_reset(&mut self) -> GenericArray<u8, Self::OutputSize>;
+
+    
+    fn reset(&mut self);
+
+    
+    fn output_size() -> usize;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    fn digest(data: &[u8]) -> GenericArray<u8, Self::OutputSize>;
+}
+
+impl<D: Input + FixedOutput + Reset + Clone + Default> Digest for D {
+    type OutputSize = <Self as FixedOutput>::OutputSize;
+
     fn new() -> Self {
         Self::default()
     }
 
-    
-    
-    fn input(&mut self, input: &[u8]) {
-        self.process(input);
+    fn input<B: AsRef<[u8]>>(&mut self, data: B) {
+        Input::input(self, data);
     }
 
-    
-    fn result(self) -> Output<Self::OutputSize> {
+    fn chain<B: AsRef<[u8]>>(self, data: B) -> Self where Self: Sized {
+        Input::chain(self, data)
+    }
+
+    fn result(self) -> GenericArray<u8, Self::OutputSize> {
         self.fixed_result()
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    fn digest(data: &[u8]) -> Output<Self::OutputSize> {
+    fn result_reset(&mut self) -> GenericArray<u8, Self::OutputSize> {
+        let res = self.clone().fixed_result();
+        self.reset();
+        res
+    }
+
+    fn reset(&mut self) {
+        <Self as Reset>::reset(self)
+    }
+
+    fn output_size() -> usize {
+        Self::OutputSize::to_usize()
+    }
+
+    fn digest(data: &[u8]) -> GenericArray<u8, Self::OutputSize> {
         let mut hasher = Self::default();
-        hasher.process(data);
+        Input::input(&mut hasher, data);
         hasher.fixed_result()
     }
-
-    
-    
-    #[inline]
-    fn digest_str(str: &str) -> Output<Self::OutputSize> {
-        Self::digest(str.as_bytes())
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "std")]
-    #[inline]
-    fn digest_reader(source: &mut io::Read)
-        -> io::Result<Output<Self::OutputSize>>
-    {
-        let mut hasher = Self::default();
-
-        let mut buf = [0u8; 8 * 1024];
-
-        loop {
-            let len = match source.read(&mut buf) {
-                Ok(0) => return Ok(hasher.result()),
-                Ok(len) => len,
-                Err(ref e) if e.kind() == io::ErrorKind::Interrupted => continue,
-                Err(e) => Err(e)?,
-            };
-            hasher.process(&buf[..len]);
-        }
-    }
 }
-
-impl<D: Input + FixedOutput + BlockInput + Default> Digest for D {}
