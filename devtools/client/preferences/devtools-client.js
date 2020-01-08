@@ -291,6 +291,13 @@ pref("devtools.webconsole.jsterm.codeMirror", false);
 #endif
 
 
+#if defined(NIGHTLY_BUILD)
+pref("devtools.webconsole.jsterm.reverse-search", true);
+#else
+pref("devtools.webconsole.jsterm.reverse-search", false);
+#endif
+
+
 pref("devtools.performance.new-panel-enabled", false);
 
 
