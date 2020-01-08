@@ -18,7 +18,9 @@
 
 
 #include <userenv.h>
+#ifndef __MINGW32__
 #pragma comment(lib, "userenv.lib")
+#endif
 
 
 
