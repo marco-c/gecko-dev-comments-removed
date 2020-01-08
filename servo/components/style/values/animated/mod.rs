@@ -114,6 +114,7 @@ pub fn animate_multiplicative_factor(
 
 
 
+
 pub trait Animate: Sized {
     
     fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()>;
