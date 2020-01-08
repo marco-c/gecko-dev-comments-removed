@@ -9,7 +9,7 @@
 
 add_task(async function() {
   
-  const iframe = document.createElement("browser");
+  const iframe = document.createXULElement("browser");
   iframe.setAttribute("type", "content");
   document.documentElement.appendChild(iframe);
 
@@ -19,7 +19,7 @@ add_task(async function() {
   is(iframe.contentWindow.document.body.innerHTML, "document to debug");
 
   
-  const toolboxIframe = document.createElement("iframe");
+  const toolboxIframe = document.createXULElement("iframe");
   document.documentElement.appendChild(toolboxIframe);
 
   
