@@ -289,6 +289,16 @@ bool AnimationSurfaceProvider::CheckForNewFrameAtYield() {
     
     AnimationFrameBuffer::InsertStatus status =
         mFrames->Insert(std::move(frame));
+
+    
+    
+    
+    
+    if (mFrames->HasRedecodeError()) {
+      mDecoder = nullptr;
+      return false;
+    }
+
     switch (status) {
       case AnimationFrameBuffer::InsertStatus::DISCARD_CONTINUE:
         continueDecoding = true;
@@ -353,6 +363,13 @@ bool AnimationSurfaceProvider::CheckForNewFrameAtTerminalState() {
     
     AnimationFrameBuffer::InsertStatus status =
         mFrames->Insert(std::move(frame));
+
+    
+    
+    if (mFrames->HasRedecodeError()) {
+      return false;
+    }
+
     switch (status) {
       case AnimationFrameBuffer::InsertStatus::DISCARD_CONTINUE:
       case AnimationFrameBuffer::InsertStatus::DISCARD_YIELD:
