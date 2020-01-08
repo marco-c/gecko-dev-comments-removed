@@ -89,6 +89,36 @@ bool WaiveXrayWrapper::nativeCall(JSContext* cx, JS::IsAcceptableThis test,
          WrapperFactory::WaiveXrayAndWrap(cx, args.rval());
 }
 
+bool WaiveXrayWrapper::hasInstance(JSContext* cx, HandleObject wrapper,
+                                   MutableHandleValue v, bool* bp) const {
+  if (v.isObject() && WrapperFactory::IsXrayWrapper(&v.toObject())) {
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    if (!JS::IsCallable(wrapper)) {
+      RootedValue wrapperv(cx, JS::ObjectValue(*wrapper));
+      js::ReportIsNotFunction(cx, wrapperv);
+      return false;
+    }
+
+    *bp = false;
+    return true;
+  }
+
+  
+  return CrossCompartmentWrapper::hasInstance(cx, wrapper, v, bp);
+}
+
 bool WaiveXrayWrapper::getPrototype(JSContext* cx, HandleObject wrapper,
                                     MutableHandleObject protop) const {
   return CrossCompartmentWrapper::getPrototype(cx, wrapper, protop) &&

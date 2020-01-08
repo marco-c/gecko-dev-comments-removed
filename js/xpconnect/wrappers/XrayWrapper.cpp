@@ -2235,6 +2235,19 @@ bool XrayWrapper<Base, Traits>::getBuiltinClass(JSContext* cx,
 }
 
 template <typename Base, typename Traits>
+bool XrayWrapper<Base, Traits>::hasInstance(JSContext* cx,
+                                            JS::HandleObject wrapper,
+                                            JS::MutableHandleValue v,
+                                            bool* bp) const {
+  assertEnteredPolicy(cx, wrapper, JSID_VOID, BaseProxyHandler::GET);
+
+  
+  
+  
+  return JS::InstanceofOperator(cx, wrapper, v, bp);
+}
+
+template <typename Base, typename Traits>
 const char* XrayWrapper<Base, Traits>::className(JSContext* cx,
                                                  HandleObject wrapper) const {
   return Traits::className(cx, wrapper, Base::singleton);
