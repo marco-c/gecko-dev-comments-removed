@@ -27,6 +27,11 @@ add_task(async function test_unhandled_dom_exception() {
     await new Promise(executeSoon);
   });
 
+  
+  
+  messages = messages.filter(msg => !msg.message.includes(
+    "No chrome package registered for chrome://branding/locale/brand.properties"));
+
   equal(messages.length, 1, "Got one console message");
 
   let [msg] = messages;
