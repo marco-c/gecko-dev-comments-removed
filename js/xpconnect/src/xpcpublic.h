@@ -522,6 +522,7 @@ WindowOrNull(JSObject* aObj);
 
 
 
+
 nsGlobalWindowInner*
 WindowGlobalOrNull(JSObject* aObj);
 
