@@ -310,7 +310,8 @@ void MediaEngineDefaultVideoSource::GenerateFrame() {
 void MediaEngineDefaultVideoSource::Pull(
     const RefPtr<const AllocationHandle>& aHandle,
     const RefPtr<SourceMediaStream>& aStream, TrackID aTrackID,
-    StreamTime aDesiredTime, const PrincipalHandle& aPrincipalHandle) {
+    StreamTime aEndOfAppendedData, StreamTime aDesiredTime,
+    const PrincipalHandle& aPrincipalHandle) {
   TRACE_AUDIO_CALLBACK_COMMENT("SourceMediaStream %p track %i", aStream.get(),
                                aTrackID);
   
@@ -334,15 +335,15 @@ void MediaEngineDefaultVideoSource::Pull(
     }
   }
 
-  StreamTime delta = aDesiredTime - aStream->GetEndOfAppendedData(aTrackID);
-  if (delta > 0) {
-    
-    IntSize size(mOpts.mWidth, mOpts.mHeight);
-    segment.AppendFrame(image.forget(), delta, size, aPrincipalHandle);
-    
-    
-    aStream->AppendToTrack(aTrackID, &segment);
-  }
+  StreamTime delta = aDesiredTime - aEndOfAppendedData;
+  MOZ_ASSERT(delta > 0);
+
+  
+  IntSize size(mOpts.mWidth, mOpts.mHeight);
+  segment.AppendFrame(image.forget(), delta, size, aPrincipalHandle);
+  
+  
+  aStream->AppendToTrack(aTrackID, &segment);
 }
 
 
@@ -499,7 +500,8 @@ void MediaEngineDefaultAudioSource::AppendToSegment(
 void MediaEngineDefaultAudioSource::Pull(
     const RefPtr<const AllocationHandle>& aHandle,
     const RefPtr<SourceMediaStream>& aStream, TrackID aTrackID,
-    StreamTime aDesiredTime, const PrincipalHandle& aPrincipalHandle) {
+    StreamTime aEndOfAppendedData, StreamTime aDesiredTime,
+    const PrincipalHandle& aPrincipalHandle) {
   TRACE_AUDIO_CALLBACK_COMMENT("SourceMediaStream %p track %i", aStream.get(),
                                aTrackID);
   AudioSegment segment;
