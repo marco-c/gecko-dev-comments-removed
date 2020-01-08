@@ -52,6 +52,14 @@ const DATA = [
 
 add_task(async function() {
   
+  
+  
+  
+  
+  
+  await pushPref("devtools.inspector.activeSidebar", "computedview");
+
+  
   Services.telemetry.clearEvents();
 
   
