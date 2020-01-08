@@ -19,6 +19,7 @@
 
 
 
+
 var p1 = new Proxy({}, {});
 
 assert.sameValue(

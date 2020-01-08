@@ -7,6 +7,7 @@
 
 
 
+
 assert.sameValue(
   Object.getPrototypeOf(Reflect),
   Object.prototype,

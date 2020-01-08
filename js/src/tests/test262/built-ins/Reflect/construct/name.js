@@ -12,6 +12,7 @@
 
 
 
+
 assert.sameValue(
   Reflect.construct.name, 'construct',
   'The value of `Reflect.construct.name` is `"construct"`'

@@ -14,6 +14,7 @@
 
 
 
+
 assert(
   compareArray(Reflect.ownKeys([]), ['length']),
   'return non enumerable `length` from empty array'

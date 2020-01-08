@@ -15,6 +15,7 @@
 
 
 
+
 var target = {
   foo: 1
 };

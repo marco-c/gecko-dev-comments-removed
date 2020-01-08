@@ -10,6 +10,7 @@
 
 
 
+
 function Target(a, b) {
   this.sum = a + b;
 };

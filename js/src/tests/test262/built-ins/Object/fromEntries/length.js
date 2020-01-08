@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.fromEntries.length, 1);
+
+verifyNotEnumerable(Object.fromEntries, "length");
+verifyNotWritable(Object.fromEntries, "length");
+verifyConfigurable(Object.fromEntries, "length");
+
+reportCompare(0, 0);

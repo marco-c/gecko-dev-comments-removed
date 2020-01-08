@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+function testcase() {
+        "use strict";
+
+        assert.throws(ReferenceError, function() {
+            test262unresolvable = null;
+        });
+    }
+testcase();
+
+reportCompare(0, 0);

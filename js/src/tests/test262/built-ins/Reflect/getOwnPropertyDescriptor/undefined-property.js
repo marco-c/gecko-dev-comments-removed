@@ -17,6 +17,7 @@
 
 
 
+
 var result = Reflect.getOwnPropertyDescriptor({}, undefined);
 assert.sameValue(result, undefined);
 

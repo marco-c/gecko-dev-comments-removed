@@ -12,6 +12,7 @@
 
 
 
+
 verifyNotEnumerable(Reflect, 'getPrototypeOf');
 verifyWritable(Reflect, 'getPrototypeOf');
 verifyConfigurable(Reflect, 'getPrototypeOf');

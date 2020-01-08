@@ -11,6 +11,7 @@
 
 
 
+
 var target = {};
 var p = new Proxy(target, {
   deleteProperty: function() {

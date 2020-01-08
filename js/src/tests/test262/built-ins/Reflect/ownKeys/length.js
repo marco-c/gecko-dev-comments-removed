@@ -7,6 +7,7 @@
 
 
 
+
 assert.sameValue(
   Reflect.ownKeys.length, 1,
   'The value of `Reflect.ownKeys.length` is `1`'

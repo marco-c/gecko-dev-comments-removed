@@ -12,6 +12,7 @@
 
 
 
+
 assert.sameValue(
   Reflect.getPrototypeOf.name, 'getPrototypeOf',
   'The value of `Reflect.getPrototypeOf.name` is `"getPrototypeOf"`'

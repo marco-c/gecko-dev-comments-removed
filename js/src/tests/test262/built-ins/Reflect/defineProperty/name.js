@@ -12,6 +12,7 @@
 
 
 
+
 assert.sameValue(
   Reflect.defineProperty.name, 'defineProperty',
   'The value of `Reflect.defineProperty.name` is `"defineProperty"`'

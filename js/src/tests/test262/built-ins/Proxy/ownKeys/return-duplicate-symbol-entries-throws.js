@@ -14,7 +14,7 @@
 
 var s = Symbol();
 var p = new Proxy({}, {
-  ownKeys() {
+  ownKeys: function() {
     return [s, s];
   }
 });

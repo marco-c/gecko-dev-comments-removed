@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+var iterable = {
+  [Symbol.iterator]: function() {
+    return {
+      next: function() {
+        return null;
+      },
+      return: function() {
+        throw new Test262Error('should not call return');
+      },
+    };
+  },
+};
+
+assert.throws(TypeError, function() {
+  Object.fromEntries(iterable);
+});
+
+reportCompare(0, 0);
