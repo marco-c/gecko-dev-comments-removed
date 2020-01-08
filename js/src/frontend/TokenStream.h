@@ -1140,8 +1140,24 @@ class SourceUnits
     }
 
     
+
+
+
+
+
+
+
+
+
+    static constexpr size_t WindowRadius = ErrorMetadata::lineOfContextRadius;
+
     
-    size_t findEOLMax(size_t start, size_t max);
+
+
+
+
+
+    size_t findWindowEnd(size_t offset);
 
   private:
     
