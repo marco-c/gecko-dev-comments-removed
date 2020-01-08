@@ -13,6 +13,7 @@
 #include "Units.h"                      
 #include "gfxRect.h"                    
 #include "gfxUtils.h"                   
+#include "mozilla/ArrayUtils.h"         
 #include "mozilla/gfx/BaseSize.h"       
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/mozalloc.h"           

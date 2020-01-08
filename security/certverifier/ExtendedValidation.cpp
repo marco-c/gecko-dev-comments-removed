@@ -1102,17 +1102,17 @@ CertIsAuthoritativeForEVPolicy(const UniqueCERTCertificate& cert,
     
     
     
-    if (!PodEqual(fingerprint, entry.sha256Fingerprint)) {
+    if (!ArrayEqual(fingerprint, entry.sha256Fingerprint)) {
       continue;
     }
 
     if (cabforumOIDData && cabforumOIDData->oid.len == policy.numBytes &&
-        PodEqual(cabforumOIDData->oid.data, policy.bytes, policy.numBytes)) {
+        ArrayEqual(cabforumOIDData->oid.data, policy.bytes, policy.numBytes)) {
       return true;
     }
     const SECOidData* oidData = SECOID_FindOIDByTag(sEVInfoOIDTags[i]);
     if (oidData && oidData->oid.len == policy.numBytes &&
-        PodEqual(oidData->oid.data, policy.bytes, policy.numBytes)) {
+        ArrayEqual(oidData->oid.data, policy.bytes, policy.numBytes)) {
       return true;
     }
   }
@@ -1188,7 +1188,7 @@ LoadExtendedValidationInfo()
       if (srv != SECSuccess) {
         return NS_ERROR_FAILURE;
       }
-      bool same = PodEqual(certFingerprint, entry.sha256Fingerprint);
+      bool same = ArrayEqual(certFingerprint, entry.sha256Fingerprint);
       MOZ_ASSERT(same, "EV root fingerprint mismatch");
       if (!same) {
         return NS_ERROR_FAILURE;
