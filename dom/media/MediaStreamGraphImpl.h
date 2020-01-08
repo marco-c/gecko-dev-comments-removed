@@ -545,6 +545,8 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
   already_AddRefed<MediaInputPort> ConnectToCaptureStream(
       uint64_t aWindowId, MediaStream* aMediaStream);
 
+  Watchable<GraphTime>& CurrentTime() override;
+
   class StreamSet {
    public:
     class iterator {
@@ -879,6 +881,18 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
   bool mCanRunMessagesSynchronously;
 #endif
+
+  
+
+
+
+  Watchable<GraphTime> mMainThreadGraphTime;
+
+  
+
+
+
+  GraphTime mNextMainThreadGraphTime = 0;
 };
 
 }  

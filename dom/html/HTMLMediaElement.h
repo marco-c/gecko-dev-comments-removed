@@ -848,7 +848,6 @@ protected:
   class MediaLoadListener;
   class MediaStreamTracksAvailableCallback;
   class MediaStreamTrackListener;
-  class StreamListener;
   class VideoFrameListener;
   class ShutdownObserver;
 
@@ -934,6 +933,12 @@ protected:
 
   enum { REMOVING_SRC_STREAM = 0x1 };
   void UpdateSrcMediaStreamPlaying(uint32_t aFlags = 0);
+
+  
+
+
+
+  void UpdateSrcStreamTime();
 
   
 
@@ -1432,7 +1437,11 @@ protected:
 
   
   
-  double mSrcStreamPausedCurrentTime = -1;
+  GraphTime mSrcStreamPausedGraphTime = GRAPH_TIME_MAX;
+
+  
+  
+  GraphTime mSrcStreamGraphTimeOffset = 0;
 
   
   
@@ -1445,9 +1454,6 @@ protected:
   
   nsTArray<OutputMediaStream> mOutputStreams;
 
-  
-  
-  RefPtr<StreamListener> mMediaStreamListener;
   
   
   RefPtr<VideoFrameListener> mVideoFrameListener;

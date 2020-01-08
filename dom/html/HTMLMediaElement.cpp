@@ -2967,10 +2967,11 @@ double
 HTMLMediaElement::CurrentTime() const
 {
   if (MediaStream* stream = GetSrcMediaStream()) {
-    if (mSrcStreamPausedCurrentTime >= 0) {
-      return mSrcStreamPausedCurrentTime;
-    }
-    return stream->StreamTimeToSeconds(stream->GetCurrentTime());
+    MediaStreamGraph* graph = stream->Graph();
+    GraphTime currentTime = mSrcStreamPausedGraphTime == GRAPH_TIME_MAX ?
+      graph->CurrentTime() - mSrcStreamGraphTimeOffset :
+      mSrcStreamPausedGraphTime;
+    return stream->StreamTimeToSeconds(currentTime);
   }
 
   if (mDefaultPlaybackStartPosition == 0.0 && mDecoder) {
@@ -5184,60 +5185,6 @@ HTMLMediaElement::FinishDecoderSetup(MediaDecoder* aDecoder)
   return NS_OK;
 }
 
-class HTMLMediaElement::StreamListener : public MediaStreamListener
-{
-public:
-  StreamListener(HTMLMediaElement* aElement, const char* aName)
-    : mElement(aElement)
-    , mMutex(aName)
-    , mPendingNotifyOutput(false)
-  {
-  }
-
-  void Forget()
-  {
-    mElement = nullptr;
-  }
-
-  
-
-  void DoNotifyOutput()
-  {
-    MOZ_ASSERT(NS_IsMainThread());
-    {
-      MutexAutoLock lock(mMutex);
-      mPendingNotifyOutput = false;
-    }
-    if (mElement && mElement->ReadyState() >= HAVE_CURRENT_DATA) {
-      mElement->FireTimeUpdate(true);
-    }
-  }
-
-  
-  
-  virtual void NotifyOutput(MediaStreamGraph* aGraph,
-                            GraphTime aCurrentTime) override
-  {
-    MutexAutoLock lock(mMutex);
-    if (mPendingNotifyOutput) {
-      return;
-    }
-    mPendingNotifyOutput = true;
-    aGraph->DispatchToMainThreadAfterStreamStateUpdate(
-      NewRunnableMethod("dom::HTMLMediaElement::StreamListener::DoNotifyOutput",
-                        this,
-                        &StreamListener::DoNotifyOutput));
-  }
-
-private:
-  
-  HTMLMediaElement* mElement;
-
-  
-  Mutex mMutex;
-  bool mPendingNotifyOutput;
-};
-
 class HTMLMediaElement::MediaStreamTracksAvailableCallback
   : public OnTracksAvailableCallback
 {
@@ -5311,9 +5258,6 @@ public:
          mElement.get(),
          mElement->mSrcStream.get()));
     MOZ_ASSERT(!mElement->mSrcStream->Active());
-    if (mElement->mMediaStreamListener) {
-      mElement->mMediaStreamListener->Forget();
-    }
     mElement->PlaybackEnded();
     mElement->UpdateReadyStateInternal();
   }
@@ -5332,6 +5276,7 @@ HTMLMediaElement::UpdateSrcMediaStreamPlaying(uint32_t aFlags)
   
 
   MediaStream* stream = GetSrcMediaStream();
+  MediaStreamGraph* graph = stream ? stream->Graph() : nullptr;
   bool shouldPlay = !(aFlags & REMOVING_SRC_STREAM) && !mPaused &&
                     !mPausedForInactiveDocumentOrChannel && stream;
   if (shouldPlay == mSrcStreamIsPlaying) {
@@ -5347,11 +5292,11 @@ HTMLMediaElement::UpdateSrcMediaStreamPlaying(uint32_t aFlags)
 
   if (shouldPlay) {
     mSrcStreamPlaybackEnded = false;
-    mSrcStreamPausedCurrentTime = -1;
+    mSrcStreamGraphTimeOffset =
+      graph->CurrentTime() - mSrcStreamPausedGraphTime;
+    mSrcStreamPausedGraphTime = GRAPH_TIME_MAX;
 
-    mMediaStreamListener =
-      new StreamListener(this, "HTMLMediaElement::mMediaStreamListener");
-    stream->AddListener(mMediaStreamListener);
+    mWatchManager.Watch(graph->CurrentTime(), &HTMLMediaElement::UpdateSrcStreamTime);
 
     stream->AddAudioOutput(this);
     SetVolumeInternal();
@@ -5370,9 +5315,9 @@ HTMLMediaElement::UpdateSrcMediaStreamPlaying(uint32_t aFlags)
     SetAudibleState(true);
   } else {
     if (stream) {
-      mSrcStreamPausedCurrentTime = CurrentTime();
+      mSrcStreamPausedGraphTime = graph->CurrentTime() - mSrcStreamGraphTimeOffset;
 
-      stream->RemoveListener(mMediaStreamListener);
+      mWatchManager.Unwatch(graph->CurrentTime(), &HTMLMediaElement::UpdateSrcStreamTime);
 
       stream->RemoveAudioOutput(this);
       VideoFrameContainer* container = GetVideoFrameContainer();
@@ -5384,17 +5329,23 @@ HTMLMediaElement::UpdateSrcMediaStreamPlaying(uint32_t aFlags)
     }
     
     
-
-    mMediaStreamListener->Forget();
-    mMediaStreamListener = nullptr;
   }
+}
+
+void
+HTMLMediaElement::UpdateSrcStreamTime()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(mSrcStreamPausedGraphTime == GRAPH_TIME_MAX);
+  MOZ_ASSERT(!mPaused);
+  MOZ_ASSERT(!mSrcStreamPlaybackEnded);
+  FireTimeUpdate(true);
 }
 
 void
 HTMLMediaElement::SetupSrcMediaStreamPlayback(DOMMediaStream* aStream)
 {
-  NS_ASSERTION(!mSrcStream && !mMediaStreamListener &&
-                 !mVideoFrameListener,
+  NS_ASSERTION(!mSrcStream && !mVideoFrameListener,
                "Should have been ended already");
 
   mSrcStream = aStream;
@@ -5402,6 +5353,14 @@ HTMLMediaElement::SetupSrcMediaStreamPlayback(DOMMediaStream* aStream)
   nsPIDOMWindowInner* window = OwnerDoc()->GetInnerWindow();
   if (!window) {
     return;
+  }
+
+  mSrcStreamPausedGraphTime = 0;
+  if (MediaStream* stream = GetSrcMediaStream()) {
+    if (MediaStreamGraph* graph = stream->Graph()) {
+      
+      mSrcStreamPausedGraphTime = graph->CurrentTime();
+    }
   }
 
   UpdateSrcMediaStreamPlaying();
