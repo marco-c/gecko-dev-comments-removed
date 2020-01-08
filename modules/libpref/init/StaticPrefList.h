@@ -882,8 +882,29 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
+  "media.opus.enabled",
+   MediaOpusEnabled,
+  RelaxedAtomicBool, true
+)
+
+
+VARCACHE_PREF(
+  "media.wave.enabled",
+   MediaWaveEnabled,
+  RelaxedAtomicBool, true
+)
+
+
+VARCACHE_PREF(
   "media.ogg.enabled",
    MediaOggEnabled,
+  RelaxedAtomicBool, true
+)
+
+
+VARCACHE_PREF(
+  "media.webm.enabled",
+   MediaWebMEnabled,
   RelaxedAtomicBool, true
 )
 
@@ -920,7 +941,7 @@ VARCACHE_PREF(
 #endif
 VARCACHE_PREF(
   "media.mp4.enabled",
-   mediaMp4Enabled,
+   MediaMp4Enabled,
   RelaxedAtomicBool, PREF_VALUE
 )
 #undef PREF_VALUE
