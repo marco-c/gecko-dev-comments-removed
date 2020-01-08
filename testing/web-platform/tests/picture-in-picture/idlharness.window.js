@@ -8,24 +8,19 @@
 
 
 
-promise_test(async () => {
-  try {
+idl_test(
+  ['picture-in-picture'],
+  ['html', 'dom'],
+  async idl_array => {
+    idl_array.add_objects({
+      Document: ['document'],
+      DocumentOrShadowRoot: ['document'],
+      HTMLVideoElement: ['video'],
+      PictureInPictureWindow: ['pipw'],
+    });
+
     self.video = await loadVideo();
     self.pipw = await requestPictureInPictureWithTrustedClick(video);
-  } catch (e) {
-    
-  }
-
-  idl_test(
-    ['picture-in-picture'],
-    ['html', 'dom'],
-    idl_array => {
-      idl_array.add_objects({
-        Document: ['document'],
-        DocumentOrShadowRoot: ['document'],
-        HTMLVideoElement: ['video'],
-        PictureInPictureWindow: ['pipw'],
-      });
-    },
-    'picture-in-picture interfaces.');
-})
+  },
+  'picture-in-picture interfaces.'
+);
