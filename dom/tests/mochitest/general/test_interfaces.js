@@ -666,8 +666,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "MediaStreamTrack", insecureContext: true},
 
-    {name: "MenuBoxObject", insecureContext: true, xbl: true},
-
     {name: "MessageChannel", insecureContext: true},
 
     {name: "MessageEvent", insecureContext: true},
@@ -1261,6 +1259,8 @@ var interfaceNamesInGlobalScope =
     {name: "XULElement", insecureContext: true, xbl: true},
 
     {name: "XULFrameElement", insecureContext: true, xbl: true},
+
+    {name: "XULMenuElement", insecureContext: true, xbl: true},
 
     {name: "XULPopupElement", insecureContext: true, xbl: true},
 
