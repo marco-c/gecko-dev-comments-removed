@@ -144,27 +144,17 @@ function initSession(testCases) {
 
 
 
-function runTests(testCases) {
-    var session = initSession(testCases);
+function runTests(testCases, sendData = self.sendData) {
+    const session = initSession(testCases);
 
     testCases.forEach(function(testCase, testIndex) {
         
         
-        var testCaseCopy = Object.assign({ session: session }, testCase);
+        const testCaseCopy = Object.assign({ session: session }, testCase);
 
-        
-        var testId = testCase.id;
-        if (self.buildId) {
-            testId = self.buildId(testId);
-        }
-        testCaseCopy.origId = testCaseCopy.id;
-        testCaseCopy.id = testId;
         testCaseCopy.index = testIndex;
 
-        session.add(testCaseCopy);
-
-        
-        async_test(function(test) {
+        async_test((test) => {
             
             
             testCaseCopy.test = test;
@@ -174,22 +164,15 @@ function runTests(testCases) {
             if (self.buildBaseUrl) {
                 baseUrl = self.buildBaseUrl(baseUrl);
             }
-            var targetUrl = `${baseUrl}/beacon/resources/beacon.py?cmd=store&sid=${session.id}&tid=${testId}&tidx=${testIndex}`;
+            var targetUrl = `${baseUrl}/beacon/resources/beacon.py?cmd=store&sid=${session.id}&tid=${testCaseCopy.id}&tidx=${testIndex}`;
             if (self.buildTargetUrl) {
                 targetUrl = self.buildTargetUrl(targetUrl);
             }
             
             testCaseCopy.url = targetUrl;
 
-            
-            var sendFunc = test.step_func(function sendImmediately(testCase) {
-                var sendResult = sendData(testCase);
-                continueAfterSendingBeacon(sendResult, testCase);
-            });
-            if (self.sendFunc) {
-                sendFunc = test.step_func(self.sendFunc);
-            }
-            sendFunc(testCaseCopy);
+            assert_true(sendData(testCaseCopy), 'sendBeacon should succeed');
+            waitForResult(testCaseCopy).then(() => test.done(), test.step_func((e) => {throw e;}));
         }, `Verify 'navigator.sendbeacon()' successfully sends for variant: ${testCaseCopy.id}`);
     });
 }
@@ -201,161 +184,54 @@ function runTests(testCases) {
 
 
 function sendData(testCase) {
-    var sent = false;
-    if (testCase.data) {
-        sent = self.navigator.sendBeacon(testCase.url, testCase.data);
-    } else {
-        sent = self.navigator.sendBeacon(testCase.url)
-    }
-    return sent;
+    return self.navigator.sendBeacon(testCase.url, testCase.data);
 }
 
 
+async function waitForResult(testCase) {
+    const session = testCase.session;
+    const index = testCase.index;
+    const url = `resources/beacon.py?cmd=stat&sid=${session.id}&tidx_min=${index}&tidx_max=${index}`;
+    for (let i = 0; i < 30; ++i) {
+        const response = await fetch(url);
+        const text = await response.text();
+        const results = JSON.parse(text);
 
-
-
-
-function continueAfterSendingBeacon(sendResult, testCase) {
-    var session = testCase.session;
-
-    
-    if (sendResult) {
-        session.sentCount++;
-    } else {
-        session.totalCount--;
-    }
-
-    
-    
-    
-    if (session.sentCount == session.totalCount) {
-        
-        
-        step_timeout(waitForResults.bind(this, session), 0);
-    }
-
-    
-    
-    assert_true(sendResult, "'sendbeacon' function call must succeed");
-}
-
-
-
-
-function waitForResults(session) {
-    
-    fetch(`resources/beacon.py?cmd=stat&sid=${session.id}&tidx_min=0&tidx_max=${session.totalCount-1}`).then(
-        function(response) {
-            
-            
-            response.text().then(function(rawResponse) {
-                
-                var results;
-                var failure;
-                try {
-                    results = JSON.parse(rawResponse);
-
-                    if (results.length === undefined) {
-                        failure = `bad validation response schema: rawResponse='${rawResponse}'`;
-                    }
-                } catch (e) {
-                    failure = `bad validation response: rawResponse='${rawResponse}', got parse error '${e}'`;
-                }
-
-                if (failure) {
-                    
-                    
-                    failSession(session, failure);
-                    return;
-                }
-
-                
-                
-                results.forEach(function(result) {
-                    var testCase = session.testCaseLookup[result.id];
-
-                    
-                    
-                    
-                    if (!testCase.done) {
-                        testCase.done = true;
-                        session.doneCount++;
-                    }
-
-                    
-                    var test = testCase.test;
-                    test.step(function() {
-                        
-                        assert_equals(result.error, null, "'sendbeacon' data must not fail validation");
-                    });
-
-                    test.done();
-                });
-
-                
-                if (session.doneCount < session.sentCount) {
-                    
-                    
-                    
-                    step_timeout(waitForResults.bind(this, session), 100);
-                }
-            }).catch(function(error) {
-                failSession(session, `unexpected error reading response, error='${error}'`);
-            });
+        if (results.length === 0) {
+          await new Promise(resolve => step_timeout(resolve, 100));
+          continue;
         }
-    );
+        assert_equals(results.length, 1, `bad response: '${text}'`);;
+        
+        assert_equals(results[0].error, null, "'sendbeacon' data must not fail validation");
+        return;
+    }
+    assert_true(false, 'timeout');
 }
 
 
 
-function failSession(session, reason) {
-    session.testCases.forEach(function(testCase) {
-        var test = testCase.test;
-        test.unreached_func(reason)();
-    });
-}
 
-
-
-
-
-
-function runSendInIframeAndNavigateTests(funcName) {
+function runSendInIframeAndNavigateTests() {
     var iframe = document.createElement("iframe");
     iframe.id = "iframe";
     iframe.onload = function() {
-        var tests = Array();
-
         
-        this.onload = null;
-
+        iframe.onload = null;
+        function sendData(testCase) {
+            return iframe.contentWindow.navigator.sendBeacon(testCase.url, testCase.data);
+        }
+        const tests = [];
+        for (const test of sampleTests) {
+            const copy = Object.assign({}, test);
+            copy.id = `${test.id}-NAVIGATE`;
+            tests.push(copy);
+        }
+        runTests(tests, sendData);
         
-        
-        self.buildId = function(baseId) {
-            return `${baseId}-${funcName}-NAVIGATE`;
-        };
-
-        window.onmessage = function(e) {
-            
-            var testCase = tests[e.data];
-            continueAfterSendingBeacon(true , testCase);
-        };
-
-        
-        
-        self.sendFunc = function(testCase) {
-            var iframeWindow = document.getElementById("iframe").contentWindow;
-            
-            
-            
-            
-            tests[testCase.origId] = testCase;
-            iframeWindow.postMessage([testCase.origId, testCase.url, funcName], "*");
-        };
-
-        runTests(sampleTests);
+        iframe.contentWindow.location = "http://{{host}}:{{ports[http][0]}}/";
     };
 
-    iframe.src = "navigate.iFrame.sub.html";
+    iframe.srcdoc = '<html></html>';
     document.body.appendChild(iframe);
 }

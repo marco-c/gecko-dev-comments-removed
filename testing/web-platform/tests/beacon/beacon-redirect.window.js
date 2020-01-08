@@ -9,17 +9,16 @@
 [307, 308].forEach(function(status) {
     
     
-    self.buildId = function(baseId) {
-        return `${baseId}-${status}`;
-    };
-
-    
-    
     self.buildTargetUrl = function(targetUrl) {
         return `/common/redirect.py?status=${status}&location=${encodeURIComponent(targetUrl)}`;
     };
-
-    runTests(sampleTests);
+    const tests = [];
+    for (const test of sampleTests) {
+        const copy = Object.assign({}, test);
+        copy.id = `${test.id}-${status}`;
+        tests.push(copy);
+    }
+    runTests(tests);
 });
 
 done();

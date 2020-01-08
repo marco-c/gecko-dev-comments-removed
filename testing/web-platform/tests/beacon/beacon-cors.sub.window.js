@@ -9,12 +9,6 @@
 [true, false].forEach(function(allowCors) {
     
     
-    self.buildId = function(baseId) {
-        return `${baseId}-${allowCors ? "CORS-ALLOW" : "CORS-FORBID"}`;
-    };
-
-    
-    
     self.buildBaseUrl = function(baseUrl) {
         return "http://{{domains[www]}}:{{ports[http][0]}}";
     };
@@ -35,7 +29,13 @@
         return allowCors ? `${targetUrl}&origin=http://{{host}}:{{ports[http][0]}}&credentials=true` : targetUrl;
     }
 
-    runTests(sampleTests);
+    const tests = [];
+    for (const test of sampleTests) {
+        const copy = Object.assign({}, test);
+        copy.id = `${test.id}-${allowCors ? "CORS-ALLOW" : "CORS-FORBID"}`;
+        tests.push(copy);
+    }
+    runTests(tests);
 });
 
 
@@ -43,12 +43,6 @@
 
 
 {
-    
-    
-    self.buildId = function (baseId) {
-        return `${baseId}-PREFLIGHT-ALLOW`;
-    };
-
     
     
     self.buildBaseUrl = function (baseUrl) {
@@ -60,8 +54,13 @@
     self.buildTargetUrl = function (targetUrl) {
         return `${targetUrl}&origin=http://{{host}}:{{ports[http][0]}}&credentials=true&preflightExpected=true`;
     }
-
-    runTests(preflightTests);
+    const tests = [];
+    for (const test of preflightTests) {
+        const copy = Object.assign({}, test);
+        copy.id = `${test.id}-PREFLIGHT-ALLOW`;
+        tests.push(copy);
+    }
+    runTests(tests);
 }
 
 done();
