@@ -713,6 +713,52 @@ FloatMarginISize(const ReflowInput& aCBReflowInput,
            ConvertTo(cbwm, wm).ISize(cbwm);
 }
 
+
+
+
+
+
+
+
+
+
+struct ShapeInvalidationData
+{
+
+  StyleShapeSource mShapeOutside;
+  float mShapeImageThreshold = 0.0;
+  nsStyleCoord mShapeMargin;
+
+  ShapeInvalidationData() = default;
+
+  explicit ShapeInvalidationData(const nsStyleDisplay& aDisplay)
+  {
+    Update(aDisplay);
+  }
+
+  static bool IsNeeded(const nsStyleDisplay& aDisplay)
+  {
+    return aDisplay.mShapeOutside.GetType() != StyleShapeSourceType::None;
+  }
+
+  void Update(const nsStyleDisplay& aDisplay)
+  {
+    MOZ_ASSERT(IsNeeded(aDisplay));
+    mShapeOutside = aDisplay.mShapeOutside;
+    mShapeImageThreshold = aDisplay.mShapeImageThreshold;
+    mShapeMargin = aDisplay.mShapeMargin;
+  }
+
+  bool Matches(const nsStyleDisplay& aDisplay) const
+  {
+    return mShapeOutside == aDisplay.mShapeOutside &&
+           mShapeImageThreshold == aDisplay.mShapeImageThreshold &&
+           mShapeMargin == aDisplay.mShapeMargin;
+  }
+};
+
+NS_DECLARE_FRAME_PROPERTY_DELETABLE(ShapeInvalidationDataProperty, ShapeInvalidationData)
+
 bool
 BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
 {
@@ -732,6 +778,9 @@ BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
   
   LogicalRect oldRegion = nsFloatManager::GetRegionFor(wm, aFloat,
                                                        ContainerSize());
+
+  ShapeInvalidationData* invalidationData =
+    aFloat->GetProperty(ShapeInvalidationDataProperty());
 
   
   
@@ -996,9 +1045,14 @@ BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
   
   nsFloatManager::StoreRegionFor(wm, aFloat, region, ContainerSize());
 
+  const bool invalidationDataNeeded =
+    ShapeInvalidationData::IsNeeded(*floatDisplay);
+
   
   
-  if (!region.IsEqualEdges(oldRegion)) {
+  if (!region.IsEqualEdges(oldRegion) ||
+      !!invalidationData != invalidationDataNeeded ||
+      (invalidationData && !invalidationData->Matches(*floatDisplay))) {
     
     
     
@@ -1006,6 +1060,18 @@ BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
     nscoord blockStart = std::min(region.BStart(wm), oldRegion.BStart(wm));
     nscoord blockEnd = std::max(region.BEnd(wm), oldRegion.BEnd(wm));
     FloatManager()->IncludeInDamage(blockStart, blockEnd);
+  }
+
+  if (invalidationDataNeeded) {
+    if (invalidationData) {
+      invalidationData->Update(*floatDisplay);
+    } else {
+      aFloat->SetProperty(ShapeInvalidationDataProperty(),
+                          new ShapeInvalidationData(*floatDisplay));
+    }
+  } else if (invalidationData) {
+    invalidationData = nullptr;
+    aFloat->DeleteProperty(ShapeInvalidationDataProperty());
   }
 
   if (!reflowStatus.IsFullyComplete()) {

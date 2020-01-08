@@ -3737,17 +3737,7 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
       
       
       
-      
-      
-      
-      
-      
-      
-
-      
-      
-      hint |= nsChangeHint_ReflowHintsForFloatAreaChange |
-              nsChangeHint_ScrollbarChange;
+      hint |= nsChangeHint_ReflowHintsForFloatAreaChange;
     } else {
       
       
