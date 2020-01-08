@@ -151,6 +151,7 @@ enum {
   JS_TELEMETRY_GC_NURSERY_BYTES,
   JS_TELEMETRY_GC_PRETENURE_COUNT,
   JS_TELEMETRY_GC_NURSERY_PROMOTION_RATE,
+  JS_TELEMETRY_GC_MARK_RATE,
   JS_TELEMETRY_PRIVILEGED_PARSER_COMPILE_LAZY_AFTER_MS,
   JS_TELEMETRY_WEB_PARSER_COMPILE_LAZY_AFTER_MS,
   JS_TELEMETRY_END
@@ -2606,8 +2607,7 @@ extern JS_FRIEND_API JSObject* GetJSMEnvironmentOfScriptedCaller(JSContext* cx);
 
 extern JS_FRIEND_API bool IsJSMEnvironment(JSObject* obj);
 
-
-#if defined(XP_WIN) && defined(HAVE_64BIT_BUILD) && defined(_M_X64)
+#if defined(XP_WIN) && defined(_WIN64)
 
 
 typedef long (*JitExceptionHandler)(void* exceptionRecord,  
