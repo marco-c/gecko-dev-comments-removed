@@ -1,0 +1,10 @@
+
+
+
+#ifndef __7Z_PRECOMP_H
+#define __7Z_PRECOMP_H
+
+#include "Compiler.h"
+
+
+#endif

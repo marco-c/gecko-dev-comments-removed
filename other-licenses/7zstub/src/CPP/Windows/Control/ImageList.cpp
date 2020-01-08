@@ -1,0 +1,10 @@
+
+
+#include "StdAfx.h"
+
+#include "ImageList.h"
+
+namespace NWindows {
+namespace NControl {
+
+}}
