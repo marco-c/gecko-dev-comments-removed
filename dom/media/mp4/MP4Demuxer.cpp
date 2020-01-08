@@ -458,16 +458,6 @@ already_AddRefed<MediaRawData> MP4TrackDemuxer::GetNextSample() {
     }
   }
 
-  if (sample->mCrypto.IsEncrypted()) {
-    UniquePtr<MediaRawDataWriter> writer(sample->CreateWriter());
-
-    
-    
-    if (writer->mCrypto.mKeyId.Length() == 0) {
-      writer->mCrypto.mIVSize = mInfo->mCrypto.mIVSize;
-      writer->mCrypto.mKeyId.AppendElements(mInfo->mCrypto.mKeyId);
-    }
-  }
   return sample.forget();
 }
 
