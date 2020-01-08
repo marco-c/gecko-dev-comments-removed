@@ -1277,6 +1277,11 @@ class ListNode : public ParseNode
         pn_u.list.count++;
     }
 
+    void prependAndUpdatePos(ParseNode* item) {
+        prepend(item);
+        pn_pos.begin = item->pn_pos.begin;
+    }
+
     
     
     ParseNode** unsafeHeadReference() {
