@@ -2578,7 +2578,8 @@ void DebugEnvironments::checkHashTablesAfterMovingGC() {
   for (MissingEnvironmentMap::Range r = missingEnvs.all(); !r.empty();
        r.popFront()) {
     CheckGCThingAfterMovingGC(r.front().key().scope());
-    CheckGCThingAfterMovingGC(r.front().value().get());
+    
+    CheckGCThingAfterMovingGC(r.front().value().unbarrieredGet());
   }
   for (LiveEnvironmentMap::Range r = liveEnvs.all(); !r.empty(); r.popFront()) {
     CheckGCThingAfterMovingGC(r.front().key());
