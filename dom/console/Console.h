@@ -45,9 +45,14 @@ public:
   Create(JSContext* aCx, nsPIDOMWindowInner* aWindow, ErrorResult& aRv);
 
   static already_AddRefed<Console>
-  CreateForWorklet(JSContext* aCx, nsIGlobalObject* aGlobal,
-                   uint64_t aOuterWindowID, uint64_t aInnerWindowID,
-                   ErrorResult& aRv);
+  CreateForWorklet(JSContext* aCx, uint64_t aOuterWindowID,
+                   uint64_t aInnerWindowID, ErrorResult& aRv);
+
+  
+  nsPIDOMWindowInner* GetParentObject() const
+  {
+    return mWindow;
+  }
 
   static void
   Log(const GlobalObject& aGlobal, const Sequence<JS::Value>& aData);
@@ -135,7 +140,7 @@ public:
   SetConsoleEventHandler(AnyCallback* aHandler);
 
 private:
-  Console(JSContext* aCx, nsIGlobalObject* aGlobal,
+  Console(JSContext* aCx, nsPIDOMWindowInner* aWindow,
           uint64_t aOuterWindowID, uint64_t aInnerWIndowID);
   ~Console();
 
@@ -441,8 +446,7 @@ private:
   InternalLogLevelToInteger(MethodName aName) const;
 
   
-  nsCOMPtr<nsIGlobalObject> mGlobal;
-  
+  nsCOMPtr<nsPIDOMWindowInner> mWindow;
   nsCOMPtr<nsIConsoleAPIStorage> mStorage;
   RefPtr<JSObjectHolder> mSandbox;
 
@@ -497,7 +501,6 @@ private:
   friend class ConsoleProfileWorkletRunnable;
   friend class ConsoleRunnable;
   friend class ConsoleWorkerRunnable;
-  friend class ConsoleWorkletRunnable;
 };
 
 } 
