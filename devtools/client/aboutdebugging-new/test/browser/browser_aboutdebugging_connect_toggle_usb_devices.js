@@ -4,7 +4,7 @@
 "use strict";
 
 const { AddonManager } = require("resource://gre/modules/AddonManager.jsm");
-const { ADB } = require("devtools/shared/adb/adb");
+const { adbProcess } = require("devtools/shared/adb/adb-process");
 
 
 
@@ -48,7 +48,7 @@ add_task(async function() {
   
   
   info("Wait until ADB has started.");
-  await waitUntil(() => ADB.ready);
+  await waitUntil(() => adbProcess.ready);
 
   info("Click on the toggle button");
   usbToggleButton.click();

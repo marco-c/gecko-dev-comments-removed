@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { Cc, Ci } = require("chrome");
@@ -11,35 +9,43 @@ const { dumpn } = require("devtools/shared/DevToolsUtils");
 const { getFileForBinary } = require("./adb-binary");
 const { setTimeout } = require("resource://gre/modules/Timer.jsm");
 const { Services } = require("resource://gre/modules/Services.jsm");
-const { runCommand } = require("./commands/index");
-loader.lazyRequireGetter(this, "check",
-                         "devtools/shared/adb/adb-running-checker", true);
 
-let ready = false;
-let didRunInitially = false;
+loader.lazyRequireGetter(this, "runCommand", "devtools/shared/adb/commands/index", true);
+loader.lazyRequireGetter(this, "check", "devtools/shared/adb/adb-running-checker", true);
 
-const ADB = {
-  get didRunInitially() {
-    return didRunInitially;
-  },
-  set didRunInitially(newVal) {
-    didRunInitially = newVal;
-  },
+
+
+async function waitUntil(predicate, retry = 20) {
+  let count = 0;
+  while (count++ < retry) {
+    if (await predicate()) {
+      return true;
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  
+  return false;
+}
+
+
+class AdbProcess {
+  constructor() {
+    this._ready = false;
+    this._didRunInitially = false;
+  }
 
   get ready() {
-    return ready;
-  },
-  set ready(newVal) {
-    ready = newVal;
-  },
+    return this._ready;
+  }
 
-  get adbFilePromise() {
+  _getAdbFile() {
     if (this._adbFilePromise) {
       return this._adbFilePromise;
     }
     this._adbFilePromise = getFileForBinary();
     return this._adbFilePromise;
-  },
+  }
 
   async _runProcess(process, params) {
     return new Promise((resolve, reject) => {
@@ -56,22 +62,7 @@ const ADB = {
         },
       }, false);
     });
-  },
-
-  
-  
-  async _waitUntil(predicate, retry = 20) {
-    let count = 0;
-    while (count++ < retry) {
-      if (await predicate()) {
-        return true;
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    
-    return false;
-  },
+  }
 
   
   
@@ -79,7 +70,7 @@ const ADB = {
     return new Promise(async (resolve, reject) => {
       const onSuccessfulStart = () => {
         Services.obs.notifyObservers(null, "adb-ready");
-        this.ready = true;
+        this._ready = true;
         resolve();
       };
 
@@ -91,11 +82,11 @@ const ADB = {
       }
       dumpn("Didn't find ADB process running, restarting");
 
-      this.didRunInitially = true;
-      const process = Cc["@mozilla.org/process/util;1"]
-                      .createInstance(Ci.nsIProcess);
+      this._didRunInitially = true;
+      const process = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
+
       
-      const adbFile = await this.adbFilePromise;
+      const adbFile = await this._getAdbFile();
       process.init(adbFile);
       
       process.startHidden = true;
@@ -104,29 +95,29 @@ const ADB = {
       let isStarted = false;
       try {
         await this._runProcess(process, params);
-        isStarted = await this._waitUntil(check);
+        isStarted = await waitUntil(check);
       } catch (e) {
       }
 
       if (isStarted) {
         onSuccessfulStart();
       } else {
-        this.ready = false;
+        this._ready = false;
         reject();
       }
     });
-  },
+  }
 
   
 
 
 
   async stop() {
-    if (!this.didRunInitially) {
+    if (!this._didRunInitially) {
       return; 
     }
     await this.kill();
-  },
+  }
 
   
 
@@ -138,9 +129,9 @@ const ADB = {
       dumpn("Failed to send host:kill command");
     }
     dumpn("adb server was terminated by host:kill");
-    this.ready = false;
-    this.didRunInitially = false;
-  },
-};
+    this._ready = false;
+    this._didRunInitially = false;
+  }
+}
 
-exports.ADB = ADB;
+exports.adbProcess = new AdbProcess();

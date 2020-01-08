@@ -30,8 +30,8 @@ registerCleanupFunction(async function() {
   } catch (e) {
     
   }
-  const { ADB } = require("devtools/shared/adb/adb");
-  await ADB.kill();
+  const { adbProcess } = require("devtools/shared/adb/adb-process");
+  await adbProcess.kill();
 
   const { remoteClientManager } =
     require("devtools/client/shared/remote-debugging/remote-client-manager");
