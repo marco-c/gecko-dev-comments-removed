@@ -401,6 +401,7 @@ enum ReactionRecordSlots {
     
     
     
+    
     ReactionRecordSlot_OnFulfilled,
     ReactionRecordSlot_OnRejected,
 
@@ -427,7 +428,10 @@ enum ReactionRecordSlots {
     
     
     
-    ReactionRecordSlot_Generator,
+    
+    
+    
+    ReactionRecordSlot_GeneratorOrPromiseToResolve,
 
     ReactionRecordSlots,
 };
@@ -437,6 +441,7 @@ class PromiseReactionRecord : public NativeObject
 {
   static constexpr size_t REACTION_FLAG_RESOLVED = 0x1;
   static constexpr size_t REACTION_FLAG_FULFILLED = 0x2;
+  static constexpr size_t REACTION_FLAG_DEFAULT_RESOLVING_HANDLER = 0x4;
   static constexpr size_t REACTION_FLAG_ASYNC_FUNCTION = 0x8;
   static constexpr size_t REACTION_FLAG_ASYNC_GENERATOR = 0x10;
   static constexpr size_t REACTION_FLAG_DEBUGGER_DUMMY = 0x20;
@@ -470,6 +475,19 @@ class PromiseReactionRecord : public NativeObject
             flags |= REACTION_FLAG_FULFILLED;
         setFixedSlot(ReactionRecordSlot_Flags, Int32Value(flags));
     }
+    void setIsDefaultResolvingHandler(PromiseObject* promiseToResolve) {
+        setFlagOnInitialState(REACTION_FLAG_DEFAULT_RESOLVING_HANDLER);
+        setFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve, ObjectValue(*promiseToResolve));
+    }
+    bool isDefaultResolvingHandler() {
+        int32_t flags = this->flags();
+        return flags & REACTION_FLAG_DEFAULT_RESOLVING_HANDLER;
+    }
+    PromiseObject* defaultResolvingPromise() {
+        MOZ_ASSERT(isDefaultResolvingHandler());
+        const Value& promiseToResolve = getFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve);
+        return &promiseToResolve.toObject().as<PromiseObject>();
+    }
     void setIsAsyncFunction() {
         setFlagOnInitialState(REACTION_FLAG_ASYNC_FUNCTION);
     }
@@ -479,7 +497,7 @@ class PromiseReactionRecord : public NativeObject
     }
     void setIsAsyncGenerator(AsyncGeneratorObject* asyncGenObj) {
         setFlagOnInitialState(REACTION_FLAG_ASYNC_GENERATOR);
-        setFixedSlot(ReactionRecordSlot_Generator, ObjectValue(*asyncGenObj));
+        setFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve, ObjectValue(*asyncGenObj));
     }
     bool isAsyncGenerator() {
         int32_t flags = this->flags();
@@ -487,7 +505,7 @@ class PromiseReactionRecord : public NativeObject
     }
     AsyncGeneratorObject* asyncGenerator() {
         MOZ_ASSERT(isAsyncGenerator());
-        const Value& generator = getFixedSlot(ReactionRecordSlot_Generator);
+        const Value& generator = getFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve);
         return &generator.toObject().as<AsyncGeneratorObject>();
     }
     void setIsDebuggerDummy() {
@@ -1198,6 +1216,54 @@ TriggerPromiseReactions(JSContext* cx, HandleValue reactionsVal, JS::PromiseStat
     return true;
 }
 
+
+
+
+static MOZ_MUST_USE bool
+DefaultResolvingPromiseReactionJob(JSContext* cx, Handle<PromiseReactionRecord*> reaction,
+                                   MutableHandleValue rval)
+{
+    MOZ_ASSERT(reaction->targetState() != JS::PromiseState::Pending);
+
+    Rooted<PromiseObject*> promiseToResolve(cx, reaction->defaultResolvingPromise());
+
+    
+    
+    
+    
+    
+    ResolutionMode resolutionMode = ResolveMode;
+    RootedValue handlerResult(cx, UndefinedValue());
+    if (promiseToResolve->state() == JS::PromiseState::Pending) {
+        RootedValue argument(cx, reaction->handlerArg());
+
+        
+        bool ok;
+        if (reaction->targetState() == JS::PromiseState::Fulfilled)
+            ok = ResolvePromiseInternal(cx, promiseToResolve, argument);
+        else
+            ok = RejectMaybeWrappedPromise(cx, promiseToResolve, argument);
+
+        if (!ok) {
+            resolutionMode = RejectMode;
+            if (!MaybeGetAndClearException(cx, &handlerResult))
+                return false;
+        }
+    }
+
+    
+    size_t hookSlot = resolutionMode == RejectMode
+                      ? ReactionRecordSlot_Reject
+                      : ReactionRecordSlot_Resolve;
+    RootedObject callee(cx, reaction->getFixedSlot(hookSlot).toObjectOrNull());
+    RootedObject promiseObj(cx, reaction->promise());
+    if (!RunResolutionFunction(cx, callee, handlerResult, resolutionMode, promiseObj))
+        return false;
+
+    rval.setUndefined();
+    return true;
+}
+
 static MOZ_MUST_USE bool
 AsyncFunctionPromiseReactionJob(JSContext* cx, Handle<PromiseReactionRecord*> reaction,
                                 MutableHandleValue rval)
@@ -1318,6 +1384,8 @@ PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp)
 
     
     Rooted<PromiseReactionRecord*> reaction(cx, &reactionObj->as<PromiseReactionRecord>());
+    if (reaction->isDefaultResolvingHandler())
+        return DefaultResolvingPromiseReactionJob(cx, reaction, args.rval());
     if (reaction->isAsyncFunction())
         return AsyncFunctionPromiseReactionJob(cx, reaction, args.rval());
     if (reaction->isAsyncGenerator())
@@ -1439,6 +1507,10 @@ PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp)
     return Call(cx, rejectVal, UndefinedHandleValue, rejectArgs, &rval);
 }
 
+static MOZ_MUST_USE bool
+OriginalPromiseThenWithoutSettleHandlers(JSContext* cx, Handle<PromiseObject*> promise,
+                                         Handle<PromiseObject*> promiseToResolve);
+
 
 
 
@@ -1465,19 +1537,11 @@ PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc, Value* vp)
     MOZ_ASSERT(thenable->is<PromiseObject>());
 
     
-    RootedObject resolveFn(cx);
-    RootedObject rejectFn(cx);
-    if (!CreateResolvingFunctions(cx, promise, &resolveFn, &rejectFn))
-        return false;
 
     
-    RootedValue resolveVal(cx, ObjectValue(*resolveFn));
-    RootedValue rejectVal(cx, ObjectValue(*rejectFn));
-
     
-    RootedObject resultPromise(cx);
-    if (OriginalPromiseThen(cx, thenable.as<PromiseObject>(), resolveVal, rejectVal,
-                            &resultPromise, CreateDependentPromise::SkipIfCtorUnobservable))
+    if (OriginalPromiseThenWithoutSettleHandlers(cx, thenable.as<PromiseObject>(),
+                                                 promise.as<PromiseObject>()))
     {
         return true;
     }
@@ -1487,10 +1551,15 @@ PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc, Value* vp)
     if (!MaybeGetAndClearException(cx, &exception))
         return false;
 
-    FixedInvokeArgs<1> rejectArgs(cx);
-    rejectArgs[0].set(exception);
+    
+    
+    
+    
+    
+    if (promise->as<PromiseObject>().state() != JS::PromiseState::Pending)
+        return true;
 
-    return Call(cx, rejectVal, UndefinedHandleValue, rejectArgs, &exception);
+    return RejectMaybeWrappedPromise(cx, promise, exception);
 }
 
 
@@ -1965,6 +2034,12 @@ static MOZ_MUST_USE bool PerformPromiseThen(JSContext* cx, Handle<PromiseObject*
                                             HandleValue onFulfilled_, HandleValue onRejected_,
                                             HandleObject resultPromise,
                                             HandleObject resolve, HandleObject reject);
+
+static MOZ_MUST_USE bool
+PerformPromiseThenWithoutSettleHandlers(JSContext* cx, Handle<PromiseObject*> promise,
+                                        Handle<PromiseObject*> promiseToResolve,
+                                        HandleObject resultPromise, HandleObject resolve,
+                                        HandleObject reject);
 
 static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc, Value* vp);
 
@@ -2684,6 +2759,30 @@ IsPromiseSpecies(JSContext* cx, JSFunction* species)
     return species->maybeNative() == Promise_static_species;
 }
 
+static bool
+PromiseThenNewPromiseCapability(JSContext* cx, HandleObject promiseObj,
+                                CreateDependentPromise createDependent,
+                                MutableHandleObject resultPromise,
+                                MutableHandleObject resolve, MutableHandleObject reject)
+{
+    if (createDependent != CreateDependentPromise::Never) {
+        
+        RootedObject C(cx, SpeciesConstructor(cx, promiseObj, JSProto_Promise, IsPromiseSpecies));
+        if (!C)
+            return false;
+
+        if (createDependent == CreateDependentPromise::Always ||
+            !IsNativeFunction(C, PromiseConstructor))
+        {
+            
+            if (!NewPromiseCapability(cx, C, resultPromise, resolve, reject, true))
+                return false;
+        }
+    }
+
+    return true;
+}
+
 
 MOZ_MUST_USE bool
 js::OriginalPromiseThen(JSContext* cx, Handle<PromiseObject*> promise,
@@ -2696,23 +2795,14 @@ js::OriginalPromiseThen(JSContext* cx, Handle<PromiseObject*> promise,
             return false;
     }
 
+    
     RootedObject resultPromise(cx);
     RootedObject resolve(cx);
     RootedObject reject(cx);
-
-    if (createDependent != CreateDependentPromise::Never) {
-        
-        RootedObject C(cx, SpeciesConstructor(cx, promiseObj, JSProto_Promise, IsPromiseSpecies));
-        if (!C)
-            return false;
-
-        if (createDependent == CreateDependentPromise::Always ||
-            !IsNativeFunction(C, PromiseConstructor))
-        {
-            
-            if (!NewPromiseCapability(cx, C, &resultPromise, &resolve, &reject, true))
-                return false;
-        }
+    if (!PromiseThenNewPromiseCapability(cx, promiseObj, createDependent, &resultPromise,
+                                         &resolve, &reject))
+    {
+        return false;
     }
 
     
@@ -2721,6 +2811,27 @@ js::OriginalPromiseThen(JSContext* cx, Handle<PromiseObject*> promise,
 
     dependent.set(resultPromise);
     return true;
+}
+
+static MOZ_MUST_USE bool
+OriginalPromiseThenWithoutSettleHandlers(JSContext* cx, Handle<PromiseObject*> promise,
+                                         Handle<PromiseObject*> promiseToResolve)
+{
+    assertSameCompartment(cx, promise);
+
+    
+    RootedObject resultPromise(cx);
+    RootedObject resolve(cx);
+    RootedObject reject(cx);
+    if (!PromiseThenNewPromiseCapability(cx, promise, CreateDependentPromise::SkipIfCtorUnobservable,
+                                         &resultPromise, &resolve, &reject))
+    {
+        return false;
+    }
+
+    
+    return PerformPromiseThenWithoutSettleHandlers(cx, promise, promiseToResolve, resultPromise,
+                                                   resolve, reject);
 }
 
 static MOZ_MUST_USE bool PerformPromiseThenWithReaction(JSContext* cx,
@@ -3407,6 +3518,34 @@ PerformPromiseThen(JSContext* cx, Handle<PromiseObject*> promise, HandleValue on
                                                                   IncumbentGlobalObject::Yes));
     if (!reaction)
         return false;
+
+    return PerformPromiseThenWithReaction(cx, promise, reaction);
+}
+
+static MOZ_MUST_USE bool
+PerformPromiseThenWithoutSettleHandlers(JSContext* cx, Handle<PromiseObject*> promise,
+                                        Handle<PromiseObject*> promiseToResolve,
+                                        HandleObject resultPromise, HandleObject resolve,
+                                        HandleObject reject)
+{
+    
+    
+
+    
+    HandleValue onFulfilled = NullHandleValue;
+
+    
+    HandleValue onRejected = NullHandleValue;
+
+    
+    Rooted<PromiseReactionRecord*> reaction(cx, NewReactionRecord(cx, resultPromise,
+                                                                  onFulfilled, onRejected,
+                                                                  resolve, reject,
+                                                                  IncumbentGlobalObject::Yes));
+    if (!reaction)
+        return false;
+
+    reaction->setIsDefaultResolvingHandler(promiseToResolve);
 
     return PerformPromiseThenWithReaction(cx, promise, reaction);
 }
