@@ -367,6 +367,7 @@ typedef struct SSLResumptionTokenInfoStr {
     PRUint8 *alpnSelection;
     PRUint32 alpnSelectionLen;
     PRUint32 maxEarlyDataSize;
+    PRTime expirationTime; 
 } SSLResumptionTokenInfo;
 
 

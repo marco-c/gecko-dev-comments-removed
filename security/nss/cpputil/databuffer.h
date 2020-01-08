@@ -34,7 +34,7 @@ class DataBuffer {
 
   void Allocate(size_t l) {
     delete[] data_;
-    data_ = new uint8_t[l ? l : 1];  
+    data_ = new uint8_t[l ? l : 1]();  
     len_ = l;
   }
 

@@ -4771,7 +4771,7 @@ ssl3_SendClientHello(sslSocket *ss, sslClientHelloType type)
 
     if (ss->sec.ci.sid && ss->sec.ci.sid->cached == in_external_cache) {
         PORT_Assert(!ss->sec.isServer);
-        sid = ss->sec.ci.sid;
+        sid = ssl_ReferenceSID(ss->sec.ci.sid);
         SSL_TRC(3, ("%d: SSL3[%d]: using external resumption token in ClientHello",
                     SSL_GETPID(), ss->fd));
     } else if (!ss->opt.noCache) {
@@ -4919,9 +4919,7 @@ ssl3_SendClientHello(sslSocket *ss, sslClientHelloType type)
     }
     ssl_ReleaseSpecWriteLock(ss);
 
-    if (ss->sec.ci.sid != NULL) {
-        ssl_FreeSID(ss->sec.ci.sid); 
-    }
+    ssl_FreeSID(ss->sec.ci.sid); 
     ss->sec.ci.sid = sid;
 
     

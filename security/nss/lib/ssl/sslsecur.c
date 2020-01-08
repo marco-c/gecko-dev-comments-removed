@@ -691,31 +691,13 @@ ssl_SecureConnect(sslSocket *ss, const PRNetAddr *sa)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 int
 ssl_SecureClose(sslSocket *ss)
 {
     int rv;
 
     if (!(ss->shutdownHow & ssl_SHUTDOWN_SEND) &&
-        ss->firstHsDone &&
-        !ss->recvdCloseNotify) {
+        ss->firstHsDone) {
 
         
         if (!ss->delayDisabled) {
@@ -744,8 +726,7 @@ ssl_SecureShutdown(sslSocket *ss, int nsprHow)
 
     if ((sslHow & ssl_SHUTDOWN_SEND) != 0 &&
         !(ss->shutdownHow & ssl_SHUTDOWN_SEND) &&
-        ss->firstHsDone &&
-        !ss->recvdCloseNotify) {
+        ss->firstHsDone) {
 
         (void)SSL3_SendAlert(ss, alert_warning, close_notify);
     }
