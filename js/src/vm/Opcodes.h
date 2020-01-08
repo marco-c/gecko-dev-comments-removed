@@ -2268,7 +2268,18 @@
 
  \
     macro(JSOP_ITERNEXT,      222, "iternext",   NULL,  1,  1,  1,  JOF_BYTE) \
-    macro(JSOP_UNUSED223,     223, "unused223",  NULL,  1,  0,  0,  JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+ \
+    macro(JSOP_TRYSKIPAWAIT,  223,"tryskipawait",  NULL,  1,  1,  2,  JOF_BYTE) \
     \
     
 

@@ -958,6 +958,13 @@ DoConcatStringObject(JSContext* cx, HandleValue lhs, HandleValue rhs,
                      MutableHandleValue res);
 
 
+
+
+
+MOZ_MUST_USE bool
+TrySkipAwait(JSContext* cx, HandleValue val, MutableHandleValue resolved);
+
+
 extern const VMFunction DoConcatStringObjectInfo;
 
 extern const VMFunction StringsEqualInfo;

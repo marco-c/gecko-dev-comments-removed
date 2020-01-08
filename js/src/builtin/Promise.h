@@ -159,6 +159,12 @@ AsyncFunctionThrown(JSContext* cx, Handle<PromiseObject*> resultPromise);
 MOZ_MUST_USE bool
 AsyncFunctionAwait(JSContext* cx, Handle<PromiseObject*> resultPromise, HandleValue value);
 
+
+
+
+MOZ_MUST_USE bool
+TrySkipAwait(JSContext* cx, HandleValue val, bool* canSkip, MutableHandleValue resolved);
+
 class AsyncGeneratorObject;
 
 MOZ_MUST_USE bool
