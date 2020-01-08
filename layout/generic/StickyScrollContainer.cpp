@@ -320,6 +320,12 @@ void StickyScrollContainer::GetScrollRanges(nsIFrame* aFrame,
   
   
   *aInner = aInner->Intersect(*aOuter);
+  if (aInner->IsEmpty()) {
+    
+    
+    
+    *aInner = aInner->MoveInsideAndClamp(*aOuter);
+  }
 }
 
 void StickyScrollContainer::PositionContinuations(nsIFrame* aFrame) {
