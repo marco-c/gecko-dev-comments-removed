@@ -70,10 +70,7 @@ function hideAutocompletePopup(jsterm) {
 function setJsTermValueForCompletion(jsterm, value) {
   
   
-  
-  
   jsterm.setInputValue(value);
-  jsterm.lastInputValue = null;
-  jsterm.updateAutocompletion();
+  jsterm.fetchAutocompletionProperties();
 }
 

@@ -1,0 +1,13 @@
+
+
+
+
+"use strict";
+
+function getAutocompleteState(state) {
+  return state.autocomplete;
+}
+
+module.exports = {
+  getAutocompleteState,
+};

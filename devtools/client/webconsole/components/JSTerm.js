@@ -39,7 +39,9 @@ const {
   getHistory,
   getHistoryValue,
 } = require("devtools/client/webconsole/selectors/history");
+const {getAutocompleteState} = require("devtools/client/webconsole/selectors/autocomplete");
 const historyActions = require("devtools/client/webconsole/actions/history");
+const autocompleteActions = require("devtools/client/webconsole/actions/autocomplete");
 
 
 const {
@@ -77,6 +79,10 @@ class JSTerm extends Component {
       codeMirrorEnabled: PropTypes.bool,
       
       updateHistoryPosition: PropTypes.func.isRequired,
+      
+      autocompleteUpdate: PropTypes.func.isRequired,
+      
+      autocompleteData: PropTypes.object.isRequired,
     };
   }
 
@@ -94,6 +100,7 @@ class JSTerm extends Component {
     this._inputEventHandler = this._inputEventHandler.bind(this);
     this._blurEventHandler = this._blurEventHandler.bind(this);
     this.onContextMenu = this.onContextMenu.bind(this);
+    this.imperativeUpdate = this.imperativeUpdate.bind(this);
 
     this.SELECTED_FRAME = -1;
 
@@ -101,32 +108,7 @@ class JSTerm extends Component {
 
 
 
-
-    this._autocompleteCache = null;
-
-    
-
-
-
-
-
-    this._autocompleteQuery = null;
-
-    
-
-
-
-
-
-    this._lastFrameActorId = null;
-
-    
-
-
-
     this.lastInputValue = "";
-
-    this.currentAutoCompletionRequestId = null;
 
     this.autocompletePopup = null;
     this.inputNode = null;
@@ -356,7 +338,7 @@ class JSTerm extends Component {
 
             "Ctrl-Space": () => {
               if (!this.autocompletePopup.isOpen) {
-                this.updateAutocompletion(true);
+                this.fetchAutocompletionProperties(true);
                 return null;
               }
 
@@ -403,11 +385,30 @@ class JSTerm extends Component {
     this.lastInputValue && this.setInputValue(this.lastInputValue);
   }
 
-  shouldComponentUpdate(nextProps, nextState) {
+  componentWillReceiveProps(nextProps) {
+    this.imperativeUpdate(nextProps);
+  }
+
+  shouldComponentUpdate(nextProps) {
     
     
     
     return false;
+  }
+
+  
+
+
+
+
+  imperativeUpdate(nextProps) {
+    if (
+      nextProps &&
+      nextProps.autocompleteData !== this.props.autocompleteData &&
+      nextProps.autocompleteData.pendingRequestId === null
+    ) {
+      this.updateAutocompletionPopup(nextProps.autocompleteData);
+    }
   }
 
   
@@ -773,7 +774,7 @@ class JSTerm extends Component {
     const value = this.getInputValue();
     if (this.lastInputValue !== value) {
       this.resizeInput();
-      this.updateAutocompletion();
+      this.fetchAutocompletionProperties();
       this.lastInputValue = value;
     }
   }
@@ -860,7 +861,7 @@ class JSTerm extends Component {
 
       if (event.key === " " && !this.autocompletePopup.isOpen) {
         
-        this.updateAutocompletion(true);
+        this.fetchAutocompletionProperties(true);
         event.preventDefault();
       }
 
@@ -1108,94 +1109,33 @@ class JSTerm extends Component {
 
 
 
-  async updateAutocompletion(force = false) {
-    const inputValue = this.getInputValue();
-    const {editor, inputNode} = this;
-    const frameActor = this.getFrameActor(this.SELECTED_FRAME);
 
+
+
+
+
+  async fetchAutocompletionProperties(force = false) {
+    const inputValue = this.getInputValue();
+    const frameActorId = this.getFrameActor(this.SELECTED_FRAME);
     const cursor = this.getSelectionStart();
 
-    
-    
-    
-    
-    
-    
-    if (!force && (
-      !inputValue ||
+    const {editor, inputNode} = this;
+    if (
       (inputNode && inputNode.selectionStart != inputNode.selectionEnd) ||
-      (editor && editor.getSelection()) ||
-      (
-        !force &&
-        this.lastInputValue === inputValue &&
-        frameActor === this._lastFrameActorId
-      ) ||
-      /^[a-zA-Z0-9_$]/.test(inputValue.substring(cursor))
-    )) {
+      (editor && editor.getSelection())
+    ) {
       this.clearCompletion();
       this.emit("autocomplete-updated");
       return;
     }
 
-    const input = this.getInputValueBeforeCursor();
-
-    
-    
-    
-    
-
-    
-    if (!/[a-zA-Z0-9]$/.test(input) || frameActor != this._lastFrameActorId) {
-      this._autocompleteQuery = null;
-      this._autocompleteCache = null;
-    }
-
-    if (this._autocompleteQuery && input.startsWith(this._autocompleteQuery)) {
-      let filterBy = input;
-      if (this._autocompleteCache.isElementAccess) {
-        
-        
-        filterBy = input.substring(input.lastIndexOf("[") + 1);
-      } else {
-        
-        const lastNonAlpha = input.match(/[^a-zA-Z0-9_$:][a-zA-Z0-9_$:]*$/);
-        
-        
-        if (lastNonAlpha) {
-          filterBy = input.substring(input.lastIndexOf(lastNonAlpha) + 1);
-        }
-      }
-
-      const stripWrappingQuotes = s => s.replace(/^['"`](.+(?=['"`]$))['"`]$/g, "$1");
-      const filterByLc = filterBy.toLocaleLowerCase();
-      const looseMatching = !filterBy || filterBy[0].toLocaleLowerCase() === filterBy[0];
-      const needStripQuote = this._autocompleteCache.isElementAccess
-        && !/^[`"']/.test(filterBy);
-      const newList = this._autocompleteCache.matches.filter(l => {
-        if (needStripQuote) {
-          l = stripWrappingQuotes(l);
-        }
-
-        if (looseMatching) {
-          return l.toLocaleLowerCase().startsWith(filterByLc);
-        }
-
-        return l.startsWith(filterBy);
-      });
-
-      this._receiveAutocompleteProperties(null, {
-        matches: newList,
-        matchProp: filterBy,
-        isElementAccess: this._autocompleteCache.isElementAccess,
-      });
-      return;
-    }
-    const requestId = gSequenceId();
-    this._lastFrameActorId = frameActor;
-    this.currentAutoCompletionRequestId = requestId;
-
-    const message = await this.webConsoleClient.autocomplete(input, cursor, frameActor);
-    this._receiveAutocompleteProperties(requestId, message);
+    this.props.autocompleteUpdate({
+      inputValue,
+      cursor,
+      frameActorId,
+      force,
+      client: this.webConsoleClient,
+    });
   }
 
   
@@ -1209,31 +1149,19 @@ class JSTerm extends Component {
 
 
 
-  _receiveAutocompleteProperties(requestId, message) {
-    if (this.currentAutoCompletionRequestId !== requestId) {
-      return;
-    }
-    this.currentAutoCompletionRequestId = null;
 
-    
-    
-    const inputUntilCursor = this.getInputValueBeforeCursor();
 
-    if (requestId != null && /[a-zA-Z0-9.\[]$/.test(inputUntilCursor)) {
-      this._autocompleteCache = {
-        matches: message.matches,
-        matchProp: message.matchProp,
-        isElementAccess: message.isElementAccess,
-      };
-      this._autocompleteQuery = inputUntilCursor;
-    }
 
-    const {matches, matchProp, isElementAccess} = message;
+
+  updateAutocompletionPopup(data) {
+    const {matches, matchProp, isElementAccess} = data;
     if (!matches.length) {
       this.clearCompletion();
       this.emit("autocomplete-updated");
       return;
     }
+
+    const inputUntilCursor = this.getInputValueBeforeCursor();
 
     const items = matches.map(label => {
       let preLabel = label.substring(0, matchProp.length);
@@ -1673,15 +1601,27 @@ function mapStateToProps(state) {
   return {
     history: getHistory(state),
     getValueFromHistory: (direction) => getHistoryValue(state, direction),
+    autocompleteData: getAutocompleteState(state),
   };
 }
 
 function mapDispatchToProps(dispatch) {
   return {
+
     appendToHistory: (expr) => dispatch(historyActions.appendToHistory(expr)),
     clearHistory: () => dispatch(historyActions.clearHistory()),
     updateHistoryPosition: (direction, expression) =>
       dispatch(historyActions.updateHistoryPosition(direction, expression)),
+    autocompleteUpdate: ({inputValue, cursor, frameActorId, force, client}) => dispatch(
+      autocompleteActions.autocompleteUpdate({
+        inputValue,
+        cursor,
+        frameActorId,
+        force,
+        client,
+      })
+    ),
+    autocompleteBailOut: () => dispatch(autocompleteActions.autocompleteBailOut()),
   };
 }
 
