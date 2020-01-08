@@ -86,6 +86,9 @@ function bindEvents(element, resolveEventName, rejectEventName) {
       resolve(e);
     });
     element.addEventListener(rejectEventName || "error", function(e) {
+      
+      
+      e.preventDefault();
       reject(e);
     });
   });
