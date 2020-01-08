@@ -9175,7 +9175,7 @@ IonBuilder::addTypedArrayLengthAndData(MDefinition* obj,
     }
 
     if (tarr) {
-        SharedMem<void*> data = tarr->as<TypedArrayObject>().viewDataEither();
+        SharedMem<void*> data = tarr->as<TypedArrayObject>().dataPointerEither();
         
         
         bool isTenured = !tarr->runtimeFromMainThread()->gc.nursery().isInside(data);

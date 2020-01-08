@@ -492,6 +492,14 @@ class ArrayBufferViewObject : public NativeObject
     
     static constexpr size_t DATA_SLOT = 3;
 
+  private:
+    void* dataPointerEither_() const {
+        
+        
+        return static_cast<void*>(getPrivate(DATA_SLOT));
+    }
+
+  public:
     static ArrayBufferObjectMaybeShared* bufferObject(JSContext* cx, Handle<ArrayBufferViewObject*> obj);
 
     void notifyBufferDetached(JSContext* cx, void* newData);
@@ -500,6 +508,31 @@ class ArrayBufferViewObject : public NativeObject
     
     uint8_t* dataPointerUnshared(const JS::AutoRequireNoGC&);
     void setDataPointerUnshared(uint8_t* data);
+
+    void initDataPointer(SharedMem<uint8_t*> viewData) {
+        
+        
+        
+        
+        
+        
+        
+        initPrivate(viewData.unwrap());
+    }
+
+    SharedMem<void*> dataPointerShared() const {
+        return SharedMem<void*>::shared(dataPointerEither_());
+    }
+    SharedMem<void*> dataPointerEither() const {
+        if (isSharedMemory()) {
+            return SharedMem<void*>::shared(dataPointerEither_());
+        }
+        return SharedMem<void*>::unshared(dataPointerEither_());
+    }
+    void* dataPointerUnshared() const {
+        MOZ_ASSERT(!isSharedMemory());
+        return dataPointerEither_();
+    }
 
     static void trace(JSTracer* trc, JSObject* obj);
 };

@@ -120,7 +120,7 @@ TypedArrayObject::ensureHasBuffer(JSContext* cx, Handle<TypedArrayObject*> tarra
     }
 
     
-    memcpy(buffer->dataPointer(), tarray->viewDataUnshared(), tarray->byteLength());
+    memcpy(buffer->dataPointer(), tarray->dataPointerUnshared(), tarray->byteLength());
 
     
     
@@ -501,7 +501,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject
         }
 
         if (buffer) {
-            obj->initViewData(buffer->dataPointerEither() + byteOffset);
+            obj->initDataPointer(buffer->dataPointerEither() + byteOffset);
 
             
             
@@ -543,7 +543,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject
             
             if (IsArrayBuffer(buffer.get())) {
                 MOZ_ASSERT_IF(!AsArrayBuffer(buffer.get()).isDetached(),
-                              buffer->dataPointerEither().unwrap() <= obj->viewDataEither().unwrap());
+                              buffer->dataPointerEither().unwrap() <= obj->dataPointerEither().unwrap());
             }
             MOZ_ASSERT(bufferByteLength - arrayByteOffset >= arrayByteLength);
             MOZ_ASSERT(arrayByteOffset <= bufferByteLength);
@@ -1039,14 +1039,14 @@ class TypedArrayObjectTemplate : public TypedArrayObject
     getIndex(TypedArrayObject* tarray, uint32_t index)
     {
         MOZ_ASSERT(index < tarray->length());
-        return jit::AtomicOperations::loadSafeWhenRacy(tarray->viewDataEither().cast<NativeType*>() + index);
+        return jit::AtomicOperations::loadSafeWhenRacy(tarray->dataPointerEither().cast<NativeType*>() + index);
     }
 
     static void
     setIndex(TypedArrayObject& tarray, uint32_t index, NativeType val)
     {
         MOZ_ASSERT(index < tarray.length());
-        jit::AtomicOperations::storeSafeWhenRacy(tarray.viewDataEither().cast<NativeType*>() + index, val);
+        jit::AtomicOperations::storeSafeWhenRacy(tarray.dataPointerEither().cast<NativeType*>() + index, val);
     }
 
     static Value getIndexValue(TypedArrayObject* tarray, uint32_t index);
@@ -2028,7 +2028,7 @@ IMPL_TYPED_ARRAY_JSAPI_CONSTRUCTORS(Float64, double)
       TypedArrayObject* tarr = &obj->as<TypedArrayObject>();                                \
       *length = tarr->length();                                                             \
       *isShared = tarr->isSharedMemory();                                                         \
-      *data = static_cast<ExternalType*>(tarr->viewDataEither().unwrap(/*safe - caller sees isShared flag*/)); \
+      *data = static_cast<ExternalType*>(tarr->dataPointerEither().unwrap(/*safe - caller sees isShared flag*/)); \
                                                                                             \
       return obj;                                                                           \
   }
@@ -2204,7 +2204,7 @@ js::IsBufferSource(JSObject* object, SharedMem<uint8_t*>* dataPointer, size_t* b
 {
     if (object->is<TypedArrayObject>()) {
         TypedArrayObject& view = object->as<TypedArrayObject>();
-        *dataPointer = view.viewDataEither().cast<uint8_t*>();
+        *dataPointer = view.dataPointerEither().cast<uint8_t*>();
         *byteLength = view.byteLength();
         return true;
     }
@@ -2437,7 +2437,7 @@ JS_GetInt8ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequireNo
     TypedArrayObject* tarr = &obj->as<TypedArrayObject>();
     MOZ_ASSERT((int32_t) tarr->type() == Scalar::Int8);
     *isSharedMemory = tarr->isSharedMemory();
-    return static_cast<int8_t*>(tarr->viewDataEither().unwrap());
+    return static_cast<int8_t*>(tarr->dataPointerEither().unwrap());
 }
 
 JS_FRIEND_API(uint8_t*)
@@ -2450,7 +2450,7 @@ JS_GetUint8ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequireN
     TypedArrayObject* tarr = &obj->as<TypedArrayObject>();
     MOZ_ASSERT((int32_t) tarr->type() == Scalar::Uint8);
     *isSharedMemory = tarr->isSharedMemory();
-    return static_cast<uint8_t*>(tarr->viewDataEither().unwrap());
+    return static_cast<uint8_t*>(tarr->dataPointerEither().unwrap());
 }
 
 JS_FRIEND_API(uint8_t*)
@@ -2463,7 +2463,7 @@ JS_GetUint8ClampedArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoR
     TypedArrayObject* tarr = &obj->as<TypedArrayObject>();
     MOZ_ASSERT((int32_t) tarr->type() == Scalar::Uint8Clamped);
     *isSharedMemory = tarr->isSharedMemory();
-    return static_cast<uint8_t*>(tarr->viewDataEither().unwrap());
+    return static_cast<uint8_t*>(tarr->dataPointerEither().unwrap());
 }
 
 JS_FRIEND_API(int16_t*)
@@ -2476,7 +2476,7 @@ JS_GetInt16ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequireN
     TypedArrayObject* tarr = &obj->as<TypedArrayObject>();
     MOZ_ASSERT((int32_t) tarr->type() == Scalar::Int16);
     *isSharedMemory = tarr->isSharedMemory();
-    return static_cast<int16_t*>(tarr->viewDataEither().unwrap());
+    return static_cast<int16_t*>(tarr->dataPointerEither().unwrap());
 }
 
 JS_FRIEND_API(uint16_t*)
@@ -2489,7 +2489,7 @@ JS_GetUint16ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequire
     TypedArrayObject* tarr = &obj->as<TypedArrayObject>();
     MOZ_ASSERT((int32_t) tarr->type() == Scalar::Uint16);
     *isSharedMemory = tarr->isSharedMemory();
-    return static_cast<uint16_t*>(tarr->viewDataEither().unwrap());
+    return static_cast<uint16_t*>(tarr->dataPointerEither().unwrap());
 }
 
 JS_FRIEND_API(int32_t*)
@@ -2502,7 +2502,7 @@ JS_GetInt32ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequireN
     TypedArrayObject* tarr = &obj->as<TypedArrayObject>();
     MOZ_ASSERT((int32_t) tarr->type() == Scalar::Int32);
     *isSharedMemory = tarr->isSharedMemory();
-    return static_cast<int32_t*>(tarr->viewDataEither().unwrap());
+    return static_cast<int32_t*>(tarr->dataPointerEither().unwrap());
 }
 
 JS_FRIEND_API(uint32_t*)
@@ -2515,7 +2515,7 @@ JS_GetUint32ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequire
     TypedArrayObject* tarr = &obj->as<TypedArrayObject>();
     MOZ_ASSERT((int32_t) tarr->type() == Scalar::Uint32);
     *isSharedMemory = tarr->isSharedMemory();
-    return static_cast<uint32_t*>(tarr->viewDataEither().unwrap());
+    return static_cast<uint32_t*>(tarr->dataPointerEither().unwrap());
 }
 
 JS_FRIEND_API(float*)
@@ -2528,7 +2528,7 @@ JS_GetFloat32ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequir
     TypedArrayObject* tarr = &obj->as<TypedArrayObject>();
     MOZ_ASSERT((int32_t) tarr->type() == Scalar::Float32);
     *isSharedMemory = tarr->isSharedMemory();
-    return static_cast<float*>(tarr->viewDataEither().unwrap());
+    return static_cast<float*>(tarr->dataPointerEither().unwrap());
 }
 
 JS_FRIEND_API(double*)
@@ -2541,5 +2541,5 @@ JS_GetFloat64ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequir
     TypedArrayObject* tarr = &obj->as<TypedArrayObject>();
     MOZ_ASSERT((int32_t) tarr->type() == Scalar::Float64);
     *isSharedMemory = tarr->isSharedMemory();
-    return static_cast<double*>(tarr->viewDataEither().unwrap());
+    return static_cast<double*>(tarr->dataPointerEither().unwrap());
 }

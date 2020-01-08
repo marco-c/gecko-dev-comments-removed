@@ -76,10 +76,7 @@ DataViewObject::create(JSContext* cx, uint32_t byteOffset, uint32_t byteLength,
     obj->setFixedSlot(BUFFER_SLOT, ObjectValue(*arrayBuffer));
 
     SharedMem<uint8_t*> ptr = arrayBuffer->dataPointerEither();
-    
-    
-    
-    obj->initPrivate(ptr.unwrap() + byteOffset);
+    obj->initDataPointer(ptr + byteOffset);
 
     
     

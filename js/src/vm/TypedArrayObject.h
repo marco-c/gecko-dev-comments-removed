@@ -188,30 +188,6 @@ class TypedArrayObject : public ArrayBufferViewObject
         return &obj->as<ArrayBufferObject>();
     }
 
-    SharedMem<void*> viewDataShared() const {
-        return SharedMem<void*>::shared(viewDataEither_());
-    }
-    SharedMem<void*> viewDataEither() const {
-        if (isSharedMemory()) {
-            return SharedMem<void*>::shared(viewDataEither_());
-        }
-        return SharedMem<void*>::unshared(viewDataEither_());
-    }
-    void initViewData(SharedMem<uint8_t*> viewData) {
-        
-        
-        
-        
-        
-        
-        
-        initPrivate(viewData.unwrap());
-    }
-    void* viewDataUnshared() const {
-        MOZ_ASSERT(!isSharedMemory());
-        return viewDataEither_();
-    }
-
     bool hasDetachedBuffer() const {
         
         if (isSharedMemory()) {
@@ -228,14 +204,6 @@ class TypedArrayObject : public ArrayBufferViewObject
         return buffer->isDetached();
     }
 
-  private:
-    void* viewDataEither_() const {
-        
-        
-        return static_cast<void*>(getPrivate(DATA_SLOT));
-    }
-
-  public:
     static void trace(JSTracer* trc, JSObject* obj);
     static void finalize(FreeOp* fop, JSObject* obj);
     static size_t objectMoved(JSObject* obj, JSObject* old);
