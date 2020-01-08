@@ -46,46 +46,6 @@ nsXMLPrettyPrinter::PrettyPrint(nsIDocument* aDocument,
     *aDidPrettyPrint = false;
 
     
-    nsCOMPtr<nsIPresShell> shell = aDocument->GetShell();
-    if (!shell) {
-        return NS_OK;
-    }
-
-    
-    nsPIDOMWindowOuter *internalWin = aDocument->GetWindow();
-    nsCOMPtr<Element> frameElem;
-    if (internalWin) {
-        frameElem = internalWin->GetFrameElementInternal();
-    }
-
-    if (frameElem) {
-        nsCOMPtr<nsICSSDeclaration> computedStyle;
-        if (nsIDocument* frameOwnerDoc = frameElem->OwnerDoc()) {
-            nsPIDOMWindowOuter* window = frameOwnerDoc->GetDefaultView();
-            if (window) {
-                nsCOMPtr<nsPIDOMWindowInner> innerWindow =
-                    window->GetCurrentInnerWindow();
-
-                ErrorResult dummy;
-                computedStyle = innerWindow->GetComputedStyle(*frameElem,
-                                                              EmptyString(),
-                                                              dummy);
-                dummy.SuppressException();
-            }
-        }
-
-        if (computedStyle) {
-            nsAutoString visibility;
-            computedStyle->GetPropertyValue(NS_LITERAL_STRING("visibility"),
-                                            visibility);
-            if (!visibility.EqualsLiteral("visible")) {
-
-                return NS_OK;
-            }
-        }
-    }
-
-    
     if (!Preferences::GetBool("layout.xml.prettyprint", true)) {
         return NS_OK;
     }
