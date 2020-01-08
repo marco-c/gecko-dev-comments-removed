@@ -1711,8 +1711,6 @@ StartRemoteClient(const char* aDesktopStartupID,
     client = new XRemoteClient();
   }
 
-  
-  
   nsresult rv = client ? client->Init() : NS_ERROR_FAILURE;
   if (NS_FAILED(rv))
     return REMOTE_NOT_FOUND;
