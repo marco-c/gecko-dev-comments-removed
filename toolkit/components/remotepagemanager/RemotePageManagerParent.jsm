@@ -290,7 +290,8 @@ var RemotePageManagerInternal = {
   },
 
   updateProcessUrls() {
-    Services.ppmm.initialProcessData["RemotePageManager:urls"] = Array.from(this.pages.keys());
+    Services.ppmm.sharedData.set("RemotePageManager:urls", new Set(this.pages.keys()));
+    Services.ppmm.sharedData.flush();
   },
 
   
@@ -303,9 +304,6 @@ var RemotePageManagerInternal = {
 
     this.pages.set(url, callback);
     this.updateProcessUrls();
-
-    
-    Services.ppmm.broadcastAsyncMessage("RemotePage:Register", { urls: [url] });
   },
 
   
@@ -314,8 +312,6 @@ var RemotePageManagerInternal = {
       throw new Error("Remote page is not registered: " + url);
     }
 
-    
-    Services.ppmm.broadcastAsyncMessage("RemotePage:Unregister", { urls: [url] });
     this.pages.delete(url);
     this.updateProcessUrls();
   },

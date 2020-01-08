@@ -28,8 +28,6 @@ if (gInContentProcess) {
   TOPICS.push("xpcom-shutdown");
 }
 
-let registeredURLs = new Set(Services.cpmm.initialProcessData["RemotePageManager:urls"]);
-
 let ProcessObserver = {
   init() {
     for (let topic of TOPICS) {
@@ -51,6 +49,8 @@ let ProcessObserver = {
         
         let window = subject;
         let url = window.document.documentURI.replace(/[\#|\?].*$/, "");
+
+        let registeredURLs = Services.cpmm.sharedData.get("RemotePageManager:urls");
 
         if (!registeredURLs.has(url))
           return;
@@ -87,15 +87,3 @@ let ProcessObserver = {
 };
 
 ProcessObserver.init();
-
-
-Services.cpmm.addMessageListener("RemotePage:Register", ({ data }) => {
-  for (let url of data.urls)
-    registeredURLs.add(url);
-});
-
-
-Services.cpmm.addMessageListener("RemotePage:Unregister", ({ data }) => {
-  for (let url of data.urls)
-    registeredURLs.delete(url);
-});
