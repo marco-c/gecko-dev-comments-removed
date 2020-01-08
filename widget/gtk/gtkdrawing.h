@@ -328,6 +328,8 @@ typedef enum {
   
   MOZ_GTK_HEADER_BAR_MAXIMIZED,
   
+  MOZ_GTK_HEADER_BAR_BUTTON_BOX,
+  
 
 
 
