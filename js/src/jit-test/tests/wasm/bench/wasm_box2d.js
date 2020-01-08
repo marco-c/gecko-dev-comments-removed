@@ -10,7 +10,7 @@ if (build['debug'] && isSimulator)
 
 
 
-function runBox2d(cacheEntry) {
+function runBox2d(cacheEntryOrModule) {
 
 
 
@@ -1499,12 +1499,15 @@ function integrateWasmJS(Module) {
     Module['printErr']('asynchronously preparing wasm');
     addRunDependency('wasm-instantiate'); 
 
-    (wasmStreamingIsSupported()
-     ? WebAssembly.instantiateStreaming(cacheEntry, info)
-     : WebAssembly.instantiate(cacheEntry.getBuffer(), info))
+    (cacheEntryOrModule instanceof WebAssembly.Module
+     ? WebAssembly.instantiate(cacheEntryOrModule, info)
+       .then(instance => ({instance, module:cacheEntryOrModule}))
+     : wasmStreamingIsSupported()
+       ? WebAssembly.instantiateStreaming(cacheEntryOrModule, info)
+       : WebAssembly.instantiate(cacheEntryOrModule.getBuffer(), info))
     .then(function(output) {
-      if (!cacheEntry.module)
-        cacheEntry.module = output.module;
+      if (!cacheEntryOrModule.module)
+        cacheEntryOrModule.module = output.module;
 
       
       receiveInstance(output.instance);
@@ -3044,8 +3047,10 @@ drainJobQueue();
 
 };  
 
+const bytecode = os.file.readFile(scriptdir + 'wasm_box2d.wasm', 'binary');
+
 setBufferStreamParams( 1,  1000);
-const cacheEntry = streamCacheEntry(os.file.readFile(scriptdir + 'wasm_box2d.wasm', 'binary'));
+const cacheEntry = streamCacheEntry(bytecode);
 
 runBox2d(cacheEntry);
 
@@ -3053,3 +3058,7 @@ while (!wasmHasTier2CompilationCompleted(cacheEntry.module)) sleep(1);
 assertEq(cacheEntry.cached, wasmCachingIsSupported());
 
 runBox2d(cacheEntry);
+
+if (wasmCachingIsSupported()) {
+    runBox2d(wasmCompileInSeparateProcess(bytecode));
+}

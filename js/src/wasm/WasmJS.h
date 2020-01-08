@@ -67,6 +67,18 @@ Eval(JSContext* cx, Handle<TypedArrayObject*> code, HandleObject importObj,
 
 
 
+
+
+
+MOZ_MUST_USE bool
+CompileAndSerialize(const ShareableBytes& bytecode, Bytes* serialized);
+
+MOZ_MUST_USE bool
+DeserializeModule(JSContext* cx, const Bytes& serialized, MutableHandleObject module);
+
+
+
+
 extern bool
 IsExportedFunction(JSFunction* fun);
 
