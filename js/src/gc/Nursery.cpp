@@ -1235,7 +1235,7 @@ js::Nursery::maybeResizeNursery(JS::gcreason::Reason reason)
         
         
         growAllocableSpace();
-    } else if (promotionRate < ShrinkThreshold) {
+    } else if (maxChunkCount() > 1 && promotionRate < ShrinkThreshold) {
         shrinkAllocableSpace(maxChunkCount() - 1);
     }
 }
@@ -1269,8 +1269,10 @@ js::Nursery::shrinkAllocableSpace(unsigned newCount)
 #endif
 
     
+    MOZ_ASSERT(newCount != 0);
+
     
-    if ((newCount == 0) || (newCount == maxChunkCount())) {
+    if (newCount == maxChunkCount()) {
         return;
     }
 
