@@ -211,7 +211,7 @@ void CacheObserver::AttachToPreferences() {
 
 
 uint32_t CacheObserver::MemoryCacheCapacity() {
-  if (sMemoryCacheCapacity >= 0) return sMemoryCacheCapacity << 10;
+  if (sMemoryCacheCapacity >= 0) return sMemoryCacheCapacity;
 
   if (sAutoMemoryCacheCapacity != -1) return sAutoMemoryCacheCapacity;
 
@@ -234,7 +234,7 @@ uint32_t CacheObserver::MemoryCacheCapacity() {
   if (x > 0) {
     capacity = (int32_t)(x * x / 3.0 + x + 2.0 / 3 + 0.1);  
     if (capacity > 32) capacity = 32;
-    capacity <<= 20;
+    capacity <<= 10;
   }
 
   
@@ -243,7 +243,7 @@ uint32_t CacheObserver::MemoryCacheCapacity() {
 
 
 void CacheObserver::SetDiskCacheCapacity(uint32_t aCapacity) {
-  sDiskCacheCapacity = aCapacity >> 10;
+  sDiskCacheCapacity = aCapacity;
 
   if (!sSelf) {
     return;
@@ -385,8 +385,8 @@ bool CacheObserver::EntryIsTooBig(int64_t aSize, bool aUsingDisk) {
   
   
   int64_t derivedLimit =
-      aUsingDisk ? (static_cast<int64_t>(DiskCacheCapacity() >> 3))
-                 : (static_cast<int64_t>(MemoryCacheCapacity() >> 3));
+      aUsingDisk ? DiskCacheCapacity() : MemoryCacheCapacity();
+  derivedLimit <<= (10 - 3);
 
   if (aSize > derivedLimit) return true;
 

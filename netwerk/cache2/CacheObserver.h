@@ -29,36 +29,37 @@ class CacheObserver : public nsIObserver, public nsSupportsWeakReference {
   static bool UseMemoryCache() { return sUseMemoryCache; }
   static uint32_t MetadataMemoryLimit()  
   {
-    return sMetadataMemoryLimit << 10;
+    return sMetadataMemoryLimit;
   }
   static uint32_t MemoryCacheCapacity();  
   static uint32_t DiskCacheCapacity()     
   {
-    return sDiskCacheCapacity << 10;
+    return sDiskCacheCapacity;
   }
   static void SetDiskCacheCapacity(uint32_t);  
   static uint32_t DiskFreeSpaceSoftLimit()     
   {
-    return sDiskFreeSpaceSoftLimit << 10;
+    return sDiskFreeSpaceSoftLimit;
   }
   static uint32_t DiskFreeSpaceHardLimit()  
   {
-    return sDiskFreeSpaceHardLimit << 10;
+    return sDiskFreeSpaceHardLimit;
   }
   static bool SmartCacheSizeEnabled() { return sSmartCacheSizeEnabled; }
   static uint32_t PreloadChunkCount() { return sPreloadChunkCount; }
   static uint32_t MaxMemoryEntrySize()  
   {
-    return sMaxMemoryEntrySize << 10;
+    return sMaxMemoryEntrySize;
   }
   static uint32_t MaxDiskEntrySize()  
   {
-    return sMaxDiskEntrySize << 10;
+    return sMaxDiskEntrySize;
   }
-  static uint32_t MaxDiskChunksMemoryUsage(bool aPriority)  
+  static uint32_t MaxDiskChunksMemoryUsage(
+      bool aPriority)  
   {
-    return aPriority ? sMaxDiskPriorityChunksMemoryUsage << 10
-                     : sMaxDiskChunksMemoryUsage << 10;
+    return aPriority ? sMaxDiskPriorityChunksMemoryUsage
+                     : sMaxDiskChunksMemoryUsage;
   }
   static uint32_t CompressionLevel() { return sCompressionLevel; }
   static uint32_t HalfLifeSeconds() { return sHalfLifeHours * 60.0F * 60.0F; }
