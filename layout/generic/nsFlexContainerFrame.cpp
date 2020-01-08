@@ -1079,7 +1079,8 @@ public:
 
 private:
   
-  void FreezeItemsEarly(bool aIsUsingFlexGrow);
+  void FreezeItemsEarly(bool aIsUsingFlexGrow,
+                        ComputedFlexLineInfo* aLineInfo);
 
   void FreezeOrRestoreEachFlexibleSize(const nscoord aTotalViolation,
                                        bool aIsFinalIteration);
@@ -2503,7 +2504,8 @@ nsFlexContainerFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 }
 
 void
-FlexLine::FreezeItemsEarly(bool aIsUsingFlexGrow)
+FlexLine::FreezeItemsEarly(bool aIsUsingFlexGrow,
+                           ComputedFlexLineInfo* aLineInfo)
 {
   
   
@@ -2532,7 +2534,13 @@ FlexLine::FreezeItemsEarly(bool aIsUsingFlexGrow)
     if (!item->IsFrozen()) {
       numUnfrozenItemsToBeSeen--;
       bool shouldFreeze = (0.0f == item->GetFlexFactor(aIsUsingFlexGrow));
-      if (!shouldFreeze) {
+      
+      
+      
+      
+      
+      
+      if (!shouldFreeze && !aLineInfo) {
         if (aIsUsingFlexGrow) {
           if (item->GetFlexBaseSize() > item->GetMainSize()) {
             shouldFreeze = true;
@@ -2624,7 +2632,7 @@ FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
 
   
   
-  FreezeItemsEarly(isUsingFlexGrow);
+  FreezeItemsEarly(isUsingFlexGrow, aLineInfo);
 
   if ((mNumFrozenItems == mNumItems) && !aLineInfo) {
     
