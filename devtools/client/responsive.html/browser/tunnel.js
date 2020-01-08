@@ -458,7 +458,6 @@ MessageManagerTunnel.prototype = {
     "PageInfo:",
     
     "Printing:",
-    "PageMetadata:",
     
     "ViewSource:",
   ],
@@ -480,7 +479,6 @@ MessageManagerTunnel.prototype = {
     "PageInfo:",
     
     "Printing:",
-    "PageMetadata:",
     
     "ViewSource:",
   ],
