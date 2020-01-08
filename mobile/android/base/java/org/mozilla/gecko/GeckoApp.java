@@ -7,7 +7,6 @@ package org.mozilla.gecko;
 
 import org.mozilla.gecko.AppConstants.Versions;
 import org.mozilla.gecko.GeckoProfileDirectories.NoMozillaDirectoryException;
-import org.mozilla.gecko.GeckoScreenOrientation.ScreenOrientation;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.health.HealthRecorder;
@@ -41,6 +40,7 @@ import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.gecko.util.ViewUtil;
 import org.mozilla.gecko.widget.ActionModePresenter;
 import org.mozilla.gecko.widget.AnchoredPopup;
+import org.mozilla.geckoview.GeckoRuntime;
 import org.mozilla.geckoview.GeckoSession;
 import org.mozilla.geckoview.GeckoSessionSettings;
 import org.mozilla.geckoview.GeckoView;
@@ -113,7 +113,6 @@ public abstract class GeckoApp extends GeckoActivity
                                           BundleEventListener,
                                           GeckoMenu.Callback,
                                           GeckoMenu.MenuPresenter,
-                                          GeckoScreenOrientation.OrientationChangeListener,
                                           GeckoSession.ContentDelegate,
                                           ScreenOrientationDelegate,
                                           Tabs.OnTabsChangedListener,
@@ -983,7 +982,6 @@ public abstract class GeckoApp extends GeckoActivity
         } catch (ClassNotFoundException e) { }
 
         GeckoAppShell.setScreenOrientationDelegate(this);
-        GeckoScreenOrientation.getInstance().addListener(this);
 
         
         
@@ -1066,6 +1064,8 @@ public abstract class GeckoApp extends GeckoActivity
         }
 
         super.onCreate(savedInstanceState);
+
+        GeckoScreenOrientation.getInstance().update(getResources().getConfiguration().orientation);
 
         setContentView(getLayout());
 
@@ -1930,6 +1930,11 @@ public abstract class GeckoApp extends GeckoActivity
 
         GeckoAppShell.setScreenOrientationDelegate(this);
 
+        int newOrientation = getResources().getConfiguration().orientation;
+        if (GeckoScreenOrientation.getInstance().update(newOrientation)) {
+            refreshChrome();
+        }
+
         
         
         
@@ -2129,8 +2134,6 @@ public abstract class GeckoApp extends GeckoActivity
         Tabs.unregisterOnTabsChangedListener(this);
         Tabs.getInstance().detachFromContext();
 
-        GeckoScreenOrientation.getInstance().removeListener(this);
-
         if (mShutdownOnDestroy) {
             GeckoApplication.shutdown(!mRestartOnShutdown ? null : new Intent(
                     Intent.ACTION_MAIN,  null, getApplicationContext(), getClass()));
@@ -2173,6 +2176,19 @@ public abstract class GeckoApp extends GeckoActivity
         final Locale changed = localeManager.onSystemConfigurationChanged(this, getResources(), newConfig, mLastLocale);
         if (changed != null) {
             onLocaleChanged(Locales.getLanguageTag(changed));
+        }
+
+        
+        
+        
+        if (GeckoScreenOrientation.getInstance().update(newConfig.orientation)) {
+            if (mFormAssistPopup != null)
+                mFormAssistPopup.hide();
+            refreshChrome();
+        }
+
+        if (mPromptService != null) {
+            mPromptService.changePromptOrientation(newConfig.orientation);
         }
 
         super.onConfigurationChanged(newConfig);
@@ -2511,13 +2527,5 @@ public abstract class GeckoApp extends GeckoActivity
         }
         setRequestedOrientation(requestedActivityInfoOrientation);
         return true;
-    }
-
-    @Override
-    public void onScreenOrientationChanged(ScreenOrientation newOrientation) {
-        if (mFormAssistPopup != null) {
-            mFormAssistPopup.hide();
-        }
-        refreshChrome();
     }
 }
