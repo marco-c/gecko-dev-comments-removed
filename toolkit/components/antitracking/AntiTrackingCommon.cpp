@@ -564,6 +564,42 @@ AntiTrackingCommon::SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(n
   LOG(("Result: %s", NS_SUCCEEDED(rv) ? "success" : "failure"));
 }
 
+
+bool
+AntiTrackingCommon::IsStorageAccessPermission(nsIPermission* aPermission,
+                                              nsIPrincipal* aPrincipal)
+{
+  MOZ_ASSERT(aPermission);
+  MOZ_ASSERT(aPrincipal);
+
+  nsAutoCString origin;
+  nsresult rv = aPrincipal->GetOriginNoSuffix(origin);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsAutoCString permissionKey;
+  CreatePermissionKey(origin, origin, permissionKey);
+
+  nsAutoCString type;
+  rv = aPermission->GetType(type);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
+  }
+
+  return StringBeginsWith(type, permissionKey);
+}
+
 bool
 AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsPIDOMWindowInner* aWindow,
                                                         nsIURI* aURI,

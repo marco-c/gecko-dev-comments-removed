@@ -27,6 +27,7 @@
 #include "nsIBrowserDOMWindow.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIDOMChromeWindow.h"
+#include "nsIObserver.h"
 #include "nsIScriptGlobalObject.h"
 #include "nsIScriptObjectPrincipal.h"
 #include "nsITimer.h"
@@ -172,6 +173,7 @@ class nsGlobalWindowOuter final
   , public nsSupportsWeakReference
   , public nsIInterfaceRequestor
   , public PRCListStr
+  , public nsIObserver
 {
 public:
   typedef nsDataHashtable<nsUint64HashKey, nsGlobalWindowOuter*> OuterWindowByIdTable;
@@ -360,6 +362,9 @@ public:
 
   
   NS_DECL_NSIINTERFACEREQUESTOR
+
+  
+  NS_DECL_NSIOBSERVER
 
   already_AddRefed<nsPIDOMWindowOuter> IndexedGetterOuter(uint32_t aIndex);
 

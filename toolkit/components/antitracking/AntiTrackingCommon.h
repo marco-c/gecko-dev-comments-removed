@@ -13,6 +13,7 @@
 
 class nsIChannel;
 class nsIHttpChannel;
+class nsIPermission;
 class nsIPrincipal;
 class nsIURI;
 class nsPIDOMWindowInner;
@@ -107,6 +108,11 @@ public:
   AddFirstPartyStorageAccessGrantedFor(nsIPrincipal* aPrincipal,
                                        nsPIDOMWindowInner* aParentWindow,
                                        StorageAccessGrantedReason aReason);
+
+  
+  
+  static bool
+  IsStorageAccessPermission(nsIPermission* aPermission, nsIPrincipal* aPrincipal);
 
   static void
   StoreUserInteractionFor(nsIPrincipal* aPrincipal);

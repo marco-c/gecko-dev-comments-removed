@@ -13669,31 +13669,6 @@ nsIDocument::HasStorageAccess(mozilla::ErrorResult& aRv)
     return promise.forget();
   }
 
-  if (AntiTrackingCommon::ShouldHonorContentBlockingCookieRestrictions() &&
-      StaticPrefs::network_cookie_cookieBehavior() ==
-        nsICookieService::BEHAVIOR_REJECT_TRACKER) {
-    
-    
-    
-    
-    
-    
-    if (!nsContentUtils::StorageDisabledByAntiTracking(this, nullptr)) {
-      
-      
-      
-      bool isOnAllowList = false;
-      if (NS_SUCCEEDED(AntiTrackingCommon::IsOnContentBlockingAllowList(
-                         topLevelDoc->GetDocumentURI(),
-                         AntiTrackingCommon::eStorageChecks,
-                         isOnAllowList)) &&
-          !isOnAllowList) {
-        promise->MaybeResolve(true);
-        return promise.forget();
-      }
-    }
-  }
-
   nsPIDOMWindowInner* inner = GetInnerWindow();
   nsGlobalWindowOuter* outer = nullptr;
   if (inner) {
