@@ -212,7 +212,10 @@ def bootstrap(topsrcdir, mozilla_dir=None):
 
     def should_skip_dispatch(context, handler):
         
-        if handler.name in ('bootstrap', 'doctor', 'mach-commands', 'vcs-setup'):
+        if handler.name in ('bootstrap', 'doctor', 'mach-commands', 'vcs-setup',
+                            
+                            
+                            'environment'):
             return True
 
         
@@ -233,11 +236,6 @@ def bootstrap(topsrcdir, mozilla_dir=None):
         """
         
         if should_skip_dispatch(context, handler):
-            return
-
-        
-        
-        if handler.name in ('environment'):
             return
 
         
