@@ -9,7 +9,6 @@
 #include "gfxContext.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/ServoStyleSet.h"
-#include "nsAutoPtr.h"
 #include "nscore.h"
 #include "nsCOMPtr.h"
 #include "nsCRT.h"
@@ -484,7 +483,7 @@ protected:
   RefPtr<nsPrintJob>               mPrintJob;
   float                            mOriginalPrintPreviewScale;
   float                            mPrintPreviewZoom;
-  nsAutoPtr<AutoPrintEventDispatcher> mAutoBeforeAndAfterPrint;
+  UniquePtr<AutoPrintEventDispatcher> mAutoBeforeAndAfterPrint;
 #endif 
 
 #endif 
@@ -3869,8 +3868,8 @@ nsDocumentViewer::Print(nsIPrintSettings*       aPrintSettings,
   
   MOZ_ASSERT(!mAutoBeforeAndAfterPrint,
              "We don't want to dispatch nested beforeprint/afterprint");
-  nsAutoPtr<AutoPrintEventDispatcher> autoBeforeAndAfterPrint(
-    new AutoPrintEventDispatcher(mDocument));
+  auto autoBeforeAndAfterPrint =
+    MakeUnique<AutoPrintEventDispatcher>(mDocument);
   NS_ENSURE_STATE(!GetIsPrinting());
   
   
@@ -3899,7 +3898,7 @@ nsDocumentViewer::Print(nsIPrintSettings*       aPrintSettings,
   if (printJob->HasPrintCallbackCanvas()) {
     
     
-    mAutoBeforeAndAfterPrint = autoBeforeAndAfterPrint;
+    mAutoBeforeAndAfterPrint = std::move(autoBeforeAndAfterPrint);
   }
   dom::Element* root = mDocument->GetRootElement();
   if (root && root->HasAttr(kNameSpaceID_None, nsGkAtoms::mozdisallowselectionprint)) {
@@ -3954,9 +3953,9 @@ nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings,
   
   
   
-  nsAutoPtr<AutoPrintEventDispatcher> autoBeforeAndAfterPrint;
+  UniquePtr<AutoPrintEventDispatcher> autoBeforeAndAfterPrint;
   if (!mAutoBeforeAndAfterPrint) {
-    autoBeforeAndAfterPrint = new AutoPrintEventDispatcher(doc);
+    autoBeforeAndAfterPrint = MakeUnique<AutoPrintEventDispatcher>(doc);
   }
   NS_ENSURE_STATE(!GetIsPrinting());
   
@@ -3984,7 +3983,7 @@ nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings,
       printJob->HasPrintCallbackCanvas()) {
     
     
-    mAutoBeforeAndAfterPrint = autoBeforeAndAfterPrint;
+    mAutoBeforeAndAfterPrint = std::move(autoBeforeAndAfterPrint);
   }
   dom::Element* root = doc->GetRootElement();
   if (root && root->HasAttr(kNameSpaceID_None, nsGkAtoms::mozdisallowselectionprint)) {
