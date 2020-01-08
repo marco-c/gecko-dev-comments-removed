@@ -18,32 +18,48 @@ const OKAY = 0x59414b4f;
 
 
 
+class TrackDevicesCommand extends EventEmitter {
+  run() {
+    this._waitForFirst = true;
+    this._devices = {};
+    this._socket = client.connect();
 
-const trackDevices = function() {
-  dumpn("trackDevices");
-  const socket = client.connect();
-  let waitForFirst = true;
-  const devices = {};
+    this._socket.s.onopen = this._onOpen.bind(this);
+    this._socket.s.onerror = this._onError.bind(this);
+    this._socket.s.onclose = this._onClose.bind(this);
+    this._socket.s.ondata = this._onData.bind(this);
+  }
 
-  socket.s.onopen = function() {
+  stop() {
+    if (this._socket) {
+      this._socket.close();
+
+      this._socket.s.onopen = null;
+      this._socket.s.onerror = null;
+      this._socket.s.onclose = null;
+      this._socket.s.ondata = null;
+    }
+  }
+
+  _onOpen() {
     dumpn("trackDevices onopen");
     Services.obs.notifyObservers(null, "adb-track-devices-start");
     const req = client.createRequest("host:track-devices");
-    socket.send(req);
-  };
+    this._socket.send(req);
+  }
 
-  socket.s.onerror = function(event) {
+  _onError(event) {
     dumpn("trackDevices onerror: " + event);
     Services.obs.notifyObservers(null, "adb-track-devices-stop");
-  };
+  }
 
-  socket.s.onclose = function() {
+  _onClose() {
     dumpn("trackDevices onclose");
 
     
-    for (const dev in devices) {
-      devices[dev] = false;
-      EventEmitter.emit(ADB, "device-disconnected", dev);
+    for (const dev in this._devices) {
+      this._devices[dev] = false;
+      this.emit("device-disconnected", dev);
     }
 
     Services.obs.notifyObservers(null, "adb-track-devices-stop");
@@ -51,17 +67,21 @@ const trackDevices = function() {
     
     
     
-    setTimeout(function() { 
-      if (ADB.ready) { 
-        ADB.start().then(function() { 
-                                       
-          trackDevices(); 
+
+    
+    setTimeout(() => {
+      
+      if (ADB.ready) {
+        
+        ADB.start().then(() => {
+          
+          this.run();
         });
       }
     }, 2000);
-  };
+  }
 
-  socket.s.ondata = function(event) {
+  _onData(event) {
     dumpn("trackDevices ondata");
     const data = event.data;
     dumpn("length=" + data.byteLength);
@@ -69,21 +89,21 @@ const trackDevices = function() {
     dumpn(dec.decode(new Uint8Array(data)).trim());
 
     
-    if (waitForFirst) {
+    if (this._waitForFirst) {
       if (!client.checkResponse(data, OKAY)) {
-        socket.close();
+        this._socket.close();
         return;
       }
     }
 
-    const packet = client.unpackPacket(data, !waitForFirst);
-    waitForFirst = false;
+    const packet = client.unpackPacket(data, !this._waitForFirst);
+    this._waitForFirst = false;
 
     if (packet.data == "") {
       
-      for (const dev in devices) {
-        devices[dev] = false;
-        EventEmitter.emit(ADB, "device-disconnected", dev);
+      for (const dev in this._devices) {
+        this._devices[dev] = false;
+        this.emit("device-disconnected", dev);
       }
     } else {
       
@@ -99,16 +119,16 @@ const trackDevices = function() {
       });
       
       for (const dev in newDev) {
-        if (devices[dev] != newDev[dev]) {
-          if (dev in devices || newDev[dev]) {
+        if (this._devices[dev] != newDev[dev]) {
+          if (dev in this._devices || newDev[dev]) {
             const topic = newDev[dev] ? "device-connected"
                                       : "device-disconnected";
-            EventEmitter.emit(ADB, topic, dev);
+            this.emit(topic, dev);
           }
-          devices[dev] = newDev[dev];
+          this._devices[dev] = newDev[dev];
         }
       }
     }
-  };
-};
-exports.trackDevices = trackDevices;
+  }
+}
+exports.TrackDevicesCommand = TrackDevicesCommand;
