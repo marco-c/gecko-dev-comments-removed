@@ -33,7 +33,7 @@ pref("devtools.command-button-noautohide.enabled", false);
 
 pref("devtools.inspector.enabled", true);
 
-pref("devtools.inspector.activeSidebar", "layoutview");
+pref("devtools.inspector.activeSidebar", "ruleview");
 pref("devtools.inspector.remote", false);
 
 
