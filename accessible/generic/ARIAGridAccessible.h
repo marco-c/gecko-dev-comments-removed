@@ -16,13 +16,13 @@ namespace a11y {
 
 
 
-class ARIAGridAccessible : public HyperTextAccessibleWrap,
+class ARIAGridAccessible : public AccessibleWrap,
                            public TableAccessible
 {
 public:
   ARIAGridAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(ARIAGridAccessible, HyperTextAccessibleWrap)
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(ARIAGridAccessible, AccessibleWrap)
 
   
   virtual a11y::role NativeRole() const override;
@@ -68,12 +68,12 @@ protected:
 
 
 
-class ARIARowAccessible : public HyperTextAccessibleWrap
+class ARIARowAccessible : public AccessibleWrap
 {
 public:
   ARIARowAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(ARIARowAccessible, HyperTextAccessibleWrap)
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(ARIARowAccessible, AccessibleWrap)
 
   
   virtual a11y::role NativeRole() const override;
