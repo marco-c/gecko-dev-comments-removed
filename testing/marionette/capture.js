@@ -72,14 +72,12 @@ capture.element = function(node, highlights = []) {
 
 
 capture.viewport = function(win, highlights = []) {
-  let rootNode = win.document.documentElement;
-
   return capture.canvas(
       win,
       win.pageXOffset,
       win.pageYOffset,
-      rootNode.clientWidth,
-      rootNode.clientHeight,
+      win.innerWidth,
+      win.innerHeight,
       {highlights});
 };
 
