@@ -2,6 +2,13 @@
 
 
 
+
+
+
+
+
+
+
 from __future__ import absolute_import
 
 import os
@@ -19,14 +26,6 @@ from mozrunner import Runner, FennecEmulatorRunner
 from six import reraise
 
 from . import errors
-
-
-
-
-
-
-
-
 
 
 class GeckoInstance(object):
