@@ -15,6 +15,12 @@ this.sitehelper = (function() {
   });
 
 
+  const capabilities = {};
+  function registerListener(name, func) {
+    capabilities[name] = name;
+    document.addEventListener(name, func);
+  }
+
   function sendCustomEvent(name, detail) {
     if (typeof detail === "object") {
       
@@ -50,29 +56,39 @@ this.sitehelper = (function() {
     };
   }
 
-  document.addEventListener("delete-everything", catcher.watchFunction((event) => {
+  registerListener("delete-everything", catcher.watchFunction((event) => {
     
   }, false));
 
-  document.addEventListener("request-login", catcher.watchFunction((event) => {
+  registerListener("request-login", catcher.watchFunction((event) => {
     const shotId = event.detail;
     catcher.watchPromise(callBackground("getAuthInfo", shotId || null).then((info) => {
-      sendBackupCookieRequest(info.authHeaders);
-      sendCustomEvent("login-successful", {deviceId: info.deviceId, isOwner: info.isOwner, backupCookieRequest: true});
+      if (info) {
+        sendBackupCookieRequest(info.authHeaders);
+        sendCustomEvent("login-successful", {deviceId: info.deviceId, accountId: info.accountId, isOwner: info.isOwner, backupCookieRequest: true});
+      }
     }));
   }));
 
-  document.addEventListener("request-onboarding", catcher.watchFunction((event) => {
+  registerListener("request-onboarding", catcher.watchFunction((event) => {
     callBackground("requestOnboarding");
   }));
 
-  
-  
-  document.addEventListener("request-addon-present", catcher.watchFunction(() => {
-    sendCustomEvent("addon-present");
+  registerListener("copy-to-clipboard", catcher.watchFunction(event => {
+    catcher.watchPromise(callBackground("copyShotToClipboard", event.detail));
   }));
 
-  sendCustomEvent("addon-present");
+  registerListener("show-notification", catcher.watchFunction(event => {
+    catcher.watchPromise(callBackground("showNotification", event.detail));
+  }));
+
+  
+  
+  registerListener("request-addon-present", catcher.watchFunction(() => {
+    sendCustomEvent("addon-present", capabilities);
+  }));
+
+  sendCustomEvent("addon-present", capabilities);
 
 })();
 null;

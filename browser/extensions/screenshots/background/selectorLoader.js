@@ -89,19 +89,19 @@ this.selectorLoader = (function() {
     }));
   };
 
-  
-  
   function downloadOnlyCheck(tabId) {
-    return communication.sendToBootstrap("isHistoryEnabled").then((historyEnabled) => {
-      return communication.sendToBootstrap("isUploadDisabled").then((uploadDisabled) => {
-        return browser.tabs.get(tabId).then(tab => {
-          const downloadOnly = !historyEnabled || uploadDisabled || tab.incognito;
-          return browser.tabs.executeScript(tabId, {
-            
-            
-            
-            code: `window.downloadOnly = ${downloadOnly}`,
-            runAt: "document_start"
+    return browser.experiments.screenshots.isHistoryEnabled().then((historyEnabled) => {
+      return browser.experiments.screenshots.isUploadDisabled().then((uploadDisabled) => {
+        return browser.experiments.screenshots.getUpdateChannel().then((channel) => {
+          return browser.tabs.get(tabId).then(tab => {
+            const downloadOnly = !historyEnabled || uploadDisabled || channel === "esr" || tab.incognito;
+            return browser.tabs.executeScript(tabId, {
+              
+              
+              
+              code: `window.downloadOnly = ${downloadOnly}`,
+              runAt: "document_start"
+            });
           });
         });
       });
