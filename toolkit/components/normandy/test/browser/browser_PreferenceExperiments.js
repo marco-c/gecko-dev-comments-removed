@@ -1077,7 +1077,7 @@ decorate_task(
       "Preference should be absent",
     );
   },
-);
+).skip();
 
 
 decorate_task(
