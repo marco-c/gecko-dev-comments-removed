@@ -3419,6 +3419,60 @@ window._gBrowser = {
     return window.openDialog(getBrowserURL(), "_blank", options, aTab);
   },
 
+  
+
+
+
+
+  replaceTabsWithWindow(contextTab) {
+    let tabs;
+    if (contextTab.multiselected) {
+      tabs = this.selectedTabs;
+    } else {
+      tabs = [gBrowser.selectedTab];
+    }
+
+    if (this.tabs.length == tabs.length) {
+      return null;
+    }
+
+    if (tabs.length == 1) {
+      return this.replaceTabWithWindow(tabs[0]);
+    }
+
+    
+    
+    
+    let activeTab = gBrowser.selectedTab;
+    let inactiveTabs = tabs.filter(t => t != activeTab);
+    let activeTabNewIndex = tabs.indexOf(activeTab);
+
+
+    
+    
+    if (this.animationsEnabled) {
+      for (let tab of tabs) {
+        tab.style.maxWidth = ""; 
+        tab.removeAttribute("fadein");
+      }
+    }
+
+    let win;
+    let firstInactiveTab = inactiveTabs[0];
+    firstInactiveTab.linkedBrowser.addEventListener("EndSwapDocShells", function() {
+      for (let i = 1; i < inactiveTabs.length; i++) {
+        win.gBrowser.adoptTab(inactiveTabs[i], i);
+      }
+
+      if (activeTabNewIndex > -1) {
+        win.gBrowser.adoptTab(activeTab, activeTabNewIndex, true );
+      }
+    }, { once: true });
+
+    win = this.replaceTabWithWindow(firstInactiveTab);
+    return win;
+  },
+
   _updateTabsAfterInsert() {
     for (let i = 0; i < this.tabs.length; i++) {
       this.tabs[i]._tPos = i;
@@ -3690,7 +3744,7 @@ window._gBrowser = {
     if (!_multiSelectedTabsSet.has(selectedTab)) {
       tabs.push(selectedTab);
     }
-    return tabs;
+    return tabs.sort((a, b) => a._tPos > b._tPos);
   },
 
   get multiSelectedTabsCount() {
