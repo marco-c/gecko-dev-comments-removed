@@ -11,6 +11,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/TextUtils.h"
+#include "mozilla/Utf8.h"
 
 #include <ctype.h>
 #include <stddef.h>
@@ -207,6 +208,23 @@ JSString* EncodeURI(JSContext* cx, const char* chars, size_t length);
 
 
 bool ContainsFlag(const char* str, const char* flag);
+
+namespace unicode {
+
+
+extern size_t CountCodePoints(const mozilla::Utf8Unit* begin,
+                              const mozilla::Utf8Unit* end);
+
+
+
+
+
+
+
+
+extern size_t CountCodePoints(const char16_t* begin, const char16_t* end);
+
+}  
 
 }  
 
