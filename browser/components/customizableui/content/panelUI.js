@@ -700,7 +700,12 @@ const PanelUI = {
     if (this.panel.state == "showing" || this.panel.state == "open") {
       
       
-      doorhangers.forEach(n => { n.dismissed = true; });
+      doorhangers.forEach(n => {
+        n.dismissed = true;
+        if (n.options.onDismissed) {
+          n.options.onDismissed();
+        }
+      });
       this._hidePopup();
       this._clearBadge();
       if (!notifications[0].options.badgeOnly) {
