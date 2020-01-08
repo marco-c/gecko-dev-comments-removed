@@ -1384,6 +1384,10 @@ protected:
 
   
   
+  void DispatchEventsWhenPlayWasNotAllowed();
+
+  
+  
   RefPtr<MediaDecoder> mDecoder;
 
   
