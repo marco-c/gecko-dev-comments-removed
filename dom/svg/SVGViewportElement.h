@@ -18,7 +18,7 @@
 #include "nsSVGLength2.h"
 #include "nsISVGPoint.h"
 #include "SVGPreserveAspectRatio.h"
-#include "nsSVGViewBox.h"
+#include "SVGViewBox.h"
 
 class nsSVGOuterSVGFrame;
 class nsSVGViewportFrame;
@@ -126,7 +126,7 @@ class SVGViewportElement : public SVGGraphicsElement {
   
   already_AddRefed<SVGAnimatedRect> ViewBox();
   already_AddRefed<DOMSVGAnimatedPreserveAspectRatio> PreserveAspectRatio();
-  virtual nsSVGViewBox* GetViewBox() override;
+  virtual SVGViewBox* GetViewBox() override;
 
  protected:
   
@@ -162,8 +162,8 @@ class SVGViewportElement : public SVGGraphicsElement {
 
 
 
-  nsSVGViewBoxRect GetViewBoxWithSynthesis(float aViewportWidth,
-                                           float aViewportHeight) const;
+  SVGViewBoxRect GetViewBoxWithSynthesis(float aViewportWidth,
+                                         float aViewportHeight) const;
 
   
 
@@ -178,11 +178,11 @@ class SVGViewportElement : public SVGGraphicsElement {
 
   virtual SVGAnimatedPreserveAspectRatio* GetPreserveAspectRatio() override;
 
-  virtual const nsSVGViewBox& GetViewBoxInternal() const { return mViewBox; }
+  virtual const SVGViewBox& GetViewBoxInternal() const { return mViewBox; }
   virtual SVGAnimatedTransformList* GetTransformInternal() const {
     return mTransforms;
   }
-  nsSVGViewBox mViewBox;
+  SVGViewBox mViewBox;
   SVGAnimatedPreserveAspectRatio mPreserveAspectRatio;
 
   

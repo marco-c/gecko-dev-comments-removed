@@ -9447,8 +9447,8 @@ static nsRect ComputeSVGReferenceRect(nsIFrame* aFrame,
         
         
         
-        nsSVGViewBox* viewBox = svgElement->GetViewBox();
-        const nsSVGViewBoxRect& value = viewBox->GetAnimValue();
+        SVGViewBox* viewBox = svgElement->GetViewBox();
+        const SVGViewBoxRect& value = viewBox->GetAnimValue();
         r = nsRect(nsPresContext::CSSPixelsToAppUnits(value.x),
                    nsPresContext::CSSPixelsToAppUnits(value.y),
                    nsPresContext::CSSPixelsToAppUnits(value.width),
