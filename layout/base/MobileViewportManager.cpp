@@ -242,8 +242,9 @@ ZoomToResolution(CSSToScreenScale aZoom,
 void
 MobileViewportManager::UpdateResolution(const nsViewportInfo& aViewportInfo,
                                         const ScreenIntSize& aDisplaySize,
-                                        const CSSSize& aViewport,
-                                        const Maybe<float>& aDisplayWidthChangeRatio)
+                                        const CSSSize& aViewportOrContentSize,
+                                        const Maybe<float>& aDisplayWidthChangeRatio,
+                                        UpdateType aType)
 {
   CSSToLayoutDeviceScale cssToDev =
       mPresShell->GetPresContext()->CSSToDevPixelScale();
@@ -251,70 +252,80 @@ MobileViewportManager::UpdateResolution(const nsViewportInfo& aViewportInfo,
   CSSToScreenScale zoom = ResolutionToZoom(res, cssToDev);
   Maybe<CSSToScreenScale> newZoom;
 
-  if (mIsFirstPaint) {
-    ScreenIntSize compositionSize = GetCompositionSize(aDisplaySize);
+  ScreenIntSize compositionSize = GetCompositionSize(aDisplaySize);
+  CSSToScreenScale intrinsicScale = ComputeIntrinsicScale(aViewportInfo,
+                                                          compositionSize,
+                                                          aViewportOrContentSize);
 
-    CSSToScreenScale defaultZoom;
-    if (mRestoreResolution) {
-      LayoutDeviceToLayerScale restoreResolution(mRestoreResolution.value());
-      CSSToScreenScale restoreZoom = ResolutionToZoom(restoreResolution, cssToDev);
-      if (mRestoreDisplaySize) {
-        CSSSize prevViewport = mDocument->GetViewportInfo(mRestoreDisplaySize.value()).GetSize();
-        float restoreDisplayWidthChangeRatio = (mRestoreDisplaySize.value().width > 0)
-          ? (float)compositionSize.width / (float)mRestoreDisplaySize.value().width : 1.0f;
+  if (aType == UpdateType::ViewportSize) {
+    const CSSSize& viewportSize = aViewportOrContentSize;
+    if (mIsFirstPaint) {
+      CSSToScreenScale defaultZoom;
+      if (mRestoreResolution) {
+        LayoutDeviceToLayerScale restoreResolution(mRestoreResolution.value());
+        CSSToScreenScale restoreZoom = ResolutionToZoom(restoreResolution, cssToDev);
+        if (mRestoreDisplaySize) {
+          CSSSize prevViewport = mDocument->GetViewportInfo(mRestoreDisplaySize.value()).GetSize();
+          float restoreDisplayWidthChangeRatio = (mRestoreDisplaySize.value().width > 0)
+            ? (float)compositionSize.width / (float)mRestoreDisplaySize.value().width : 1.0f;
 
-        restoreZoom =
-          ScaleZoomWithDisplayWidth(restoreZoom,
-                                    restoreDisplayWidthChangeRatio,
-                                    aViewport,
-                                    prevViewport);
+          restoreZoom =
+            ScaleZoomWithDisplayWidth(restoreZoom,
+                                      restoreDisplayWidthChangeRatio,
+                                      viewportSize,
+                                      prevViewport);
+        }
+        defaultZoom = restoreZoom;
+        MVM_LOG("%p: restored zoom is %f\n", this, defaultZoom.scale);
+        defaultZoom = ClampZoom(defaultZoom, aViewportInfo);
+      } else {
+        defaultZoom = aViewportInfo.GetDefaultZoom();
+        MVM_LOG("%p: default zoom from viewport is %f\n", this, defaultZoom.scale);
+        if (!aViewportInfo.IsDefaultZoomValid()) {
+          defaultZoom = intrinsicScale;
+        }
       }
-      defaultZoom = restoreZoom;
-      MVM_LOG("%p: restored zoom is %f\n", this, defaultZoom.scale);
-      defaultZoom = ClampZoom(defaultZoom, aViewportInfo);
+      MOZ_ASSERT(aViewportInfo.GetMinZoom() <= defaultZoom &&
+        defaultZoom <= aViewportInfo.GetMaxZoom());
+
+      
+      newZoom = Some(defaultZoom);
     } else {
-      defaultZoom = aViewportInfo.GetDefaultZoom();
-      MVM_LOG("%p: default zoom from viewport is %f\n", this, defaultZoom.scale);
-      if (!aViewportInfo.IsDefaultZoomValid()) {
-        defaultZoom = ComputeIntrinsicScale(aViewportInfo,
-                                            compositionSize,
-                                            aViewport);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (aDisplayWidthChangeRatio) {
+        newZoom = Some(ScaleZoomWithDisplayWidth(zoom, aDisplayWidthChangeRatio.value(),
+          viewportSize, mMobileViewportSize));
       }
     }
-    MOZ_ASSERT(aViewportInfo.GetMinZoom() <= defaultZoom &&
-      defaultZoom <= aViewportInfo.GetMaxZoom());
-
-    
-    newZoom = Some(defaultZoom);
-  } else {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (aDisplayWidthChangeRatio) {
-      newZoom = Some(ScaleZoomWithDisplayWidth(zoom, aDisplayWidthChangeRatio.value(),
-        aViewport, mMobileViewportSize));
+  } else {  
+    MOZ_ASSERT(aType == UpdateType::ContentSize);
+    MOZ_ASSERT(aDisplayWidthChangeRatio.isNothing());
+    if (zoom != intrinsicScale) {
+      newZoom = Some(intrinsicScale);
     }
   }
 
@@ -467,7 +478,8 @@ MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution)
     mIsFirstPaint, mMobileViewportSize != viewport);
 
   if (gfxPrefs::APZAllowZooming()) {
-    UpdateResolution(viewportInfo, displaySize, viewport, displayWidthChangeRatio);
+    UpdateResolution(viewportInfo, displaySize, viewport,
+        displayWidthChangeRatio, UpdateType::ViewportSize);
   }
   if (gfxPlatform::AsyncPanZoomEnabled()) {
     UpdateDisplayPortMargins();
@@ -518,6 +530,7 @@ MobileViewportManager::ShrinkToDisplaySizeIfNeeded(
       nsLayoutUtils::CalculateScrollableRectForFrame(rootScrollableFrame,
                                                      nullptr);
     CSSSize contentSize = CSSSize::FromAppUnits(scrollableRect.Size());
-    UpdateResolution(aViewportInfo, aDisplaySize, contentSize, Nothing());
+    UpdateResolution(aViewportInfo, aDisplaySize, contentSize, Nothing(),
+        UpdateType::ContentSize);
   }
 }
