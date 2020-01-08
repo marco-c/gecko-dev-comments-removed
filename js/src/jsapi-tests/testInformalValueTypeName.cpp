@@ -5,6 +5,7 @@
 
 
 
+#include "js/Symbol.h"
 #include "jsapi-tests/tests.h"
 
 BEGIN_TEST(testInformalValueTypeName)
