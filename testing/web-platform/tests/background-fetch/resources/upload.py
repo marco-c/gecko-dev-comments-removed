@@ -1,0 +1,3 @@
+
+def main(request, response):
+    return 200, [("Content-Type", request.headers['content-type'])], request.body
