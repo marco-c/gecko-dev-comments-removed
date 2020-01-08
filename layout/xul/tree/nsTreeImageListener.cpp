@@ -37,6 +37,15 @@ nsTreeImageListener::Notify(imgIRequest *aRequest, int32_t aType, const nsIntRec
     
     
     aRequest->IncrementAnimationConsumers();
+
+    if (mTreeFrame) {
+      nsCOMPtr<imgIContainer> image;
+      aRequest->GetImage(getter_AddRefs(image));
+      if (image) {
+        nsPresContext* presContext = mTreeFrame->PresContext();
+        image->SetAnimationMode(presContext->ImageAnimationMode());
+      }
+    }
   }
 
   if (aType == imgINotificationObserver::FRAME_UPDATE) {

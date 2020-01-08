@@ -851,6 +851,8 @@ nsImageBoxFrame::OnSizeAvailable(imgIRequest* aRequest, imgIContainer* aImage)
   
   aRequest->IncrementAnimationConsumers();
 
+  aImage->SetAnimationMode(PresContext()->ImageAnimationMode());
+
   nscoord w, h;
   aImage->GetWidth(&w);
   aImage->GetHeight(&h);
