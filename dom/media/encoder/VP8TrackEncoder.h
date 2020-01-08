@@ -77,7 +77,8 @@ private:
   RefPtr<layers::Image> mMuteFrame;
 
   
-  nsTArray<uint8_t> mI420Frame;
+  UniquePtr<uint8_t[]> mI420Frame;
+  size_t mI420FrameSize = 0;
 
   
 
