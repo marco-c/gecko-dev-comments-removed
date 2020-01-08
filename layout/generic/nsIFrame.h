@@ -1727,8 +1727,14 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  bool HasOpacity(mozilla::EffectSet* aEffectSet = nullptr) const {
-    return HasOpacityInternal(1.0f, aEffectSet);
+
+
+
+
+  bool HasOpacity(const nsStyleDisplay* aStyleDisplay,
+                  const nsStyleEffects* aStyleEffects,
+                  mozilla::EffectSet* aEffectSet = nullptr) const {
+    return HasOpacityInternal(1.0f, aStyleDisplay, aStyleEffects, aEffectSet);
   }
   
 
@@ -1737,11 +1743,17 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  bool HasVisualOpacity(mozilla::EffectSet* aEffectSet = nullptr) const {
+
+
+
+
+  bool HasVisualOpacity(const nsStyleDisplay* aStyleDisplay,
+                        const nsStyleEffects* aStyleEffects,
+                        mozilla::EffectSet* aEffectSet = nullptr) const {
     
     
     
-    return HasOpacityInternal(0.99f, aEffectSet);
+    return HasOpacityInternal(0.99f, aStyleDisplay, aStyleEffects, aEffectSet);
   }
 
   
@@ -1773,10 +1785,14 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
+
+
   bool Extend3DContext(const nsStyleDisplay* aStyleDisplay,
+                       const nsStyleEffects* aStyleEffects,
                        mozilla::EffectSet* aEffectSet = nullptr) const;
   bool Extend3DContext(mozilla::EffectSet* aEffectSet = nullptr) const {
-    return Extend3DContext(StyleDisplay(), aEffectSet);
+    return Extend3DContext(StyleDisplay(), StyleEffects(), aEffectSet);
   }
 
   
@@ -1804,7 +1820,7 @@ class nsIFrame : public nsQueryFrame {
   bool IsPreserve3DLeaf(const nsStyleDisplay* aStyleDisplay,
                         mozilla::EffectSet* aEffectSet = nullptr) const {
     return Combines3DTransformWithAncestors(aStyleDisplay) &&
-           !Extend3DContext(aStyleDisplay, aEffectSet);
+           !Extend3DContext(aStyleDisplay, StyleEffects(), aEffectSet);
   }
   bool IsPreserve3DLeaf(mozilla::EffectSet* aEffectSet = nullptr) const {
     return IsPreserve3DLeaf(StyleDisplay(), aEffectSet);
@@ -3427,8 +3443,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  bool IsStackingContext(mozilla::EffectSet* aEffectSet,
-                         const nsStyleDisplay* aStyleDisplay,
+  bool IsStackingContext(const nsStyleDisplay* aStyleDisplay,
                          const nsStylePosition* aStylePosition,
                          const nsStyleEffects* aStyleEffects,
                          bool aIsPositioned);
@@ -4425,7 +4440,8 @@ class nsIFrame : public nsQueryFrame {
   template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
   static nsIFrame* MergeSort(nsIFrame* aSource);
 
-  bool HasOpacityInternal(float aThreshold,
+  bool HasOpacityInternal(float aThreshold, const nsStyleDisplay* aStyleDisplay,
+                          const nsStyleEffects* aStyleEffects,
                           mozilla::EffectSet* aEffectSet = nullptr) const;
 
   
