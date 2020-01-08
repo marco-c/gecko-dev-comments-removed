@@ -22,6 +22,7 @@
 
 
 
+
 namespace mozilla {
 namespace wr {
 
@@ -672,7 +673,7 @@ void DisplayListBuilder::Finalize(wr::LayoutSize& aOutContentSize,
 }
 
 Maybe<wr::WrSpatialId> DisplayListBuilder::PushStackingContext(
-    const wr::LayoutRect& aBounds, const wr::WrClipId* aClipNodeId,
+    const wr::LayoutRect& aBounds, const wr::WrStackingContextClip& aClip,
     const WrAnimationProperty* aAnimation, const float* aOpacity,
     const gfx::Matrix4x4* aTransform, wr::TransformStyle aTransformStyle,
     const gfx::Matrix4x4* aPerspective, const wr::MixBlendMode& aMixBlendMode,
@@ -698,8 +699,8 @@ Maybe<wr::WrSpatialId> DisplayListBuilder::PushStackingContext(
            aTransform ? Stringify(*aTransform).c_str() : "none");
 
   auto spatialId = wr_dp_push_stacking_context(
-      mWrState, aBounds, mCurrentSpaceAndClipChain.space, aClipNodeId,
-      aAnimation, aOpacity, maybeTransform, aTransformStyle, maybePerspective,
+      mWrState, aBounds, mCurrentSpaceAndClipChain.space, &aClip, aAnimation,
+      aOpacity, maybeTransform, aTransformStyle, maybePerspective,
       aMixBlendMode, aFilters.Elements(), aFilters.Length(), aIsBackfaceVisible,
       aRasterSpace);
 

@@ -5834,13 +5834,12 @@ static bool IsItemTooSmallForActiveLayer(nsIFrame* aFrame) {
 }
 
  bool nsDisplayOpacity::NeedsActiveLayer(
-    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-    bool aEnforceMinimumSize) {
+    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame) {
   if (EffectCompositor::HasAnimationsForCompositor(aFrame,
                                                    eCSSProperty_opacity) ||
       (ActiveLayerTracker::IsStyleAnimated(aBuilder, aFrame,
                                            eCSSProperty_opacity) &&
-       !(aEnforceMinimumSize && IsItemTooSmallForActiveLayer(aFrame)))) {
+       !IsItemTooSmallForActiveLayer(aFrame))) {
     return true;
   }
   return false;
@@ -7879,7 +7878,7 @@ bool nsDisplayTransform::CreateWebRenderCommands(
       animationsId ? &prop : nullptr, nullptr, transformForSC, nullptr,
       gfx::CompositionOp::OP_OVER, !BackfaceIsHidden(),
       mFrame->Extend3DContext() && !mNoExtendContext, deferredTransformItem,
-      nullptr, animated);
+      wr::WrStackingContextClip::None(), animated);
 
   return mStoredList.CreateWebRenderCommands(aBuilder, aResources, sc, aManager,
                                              aDisplayListBuilder);
@@ -7963,8 +7962,7 @@ already_AddRefed<Layer> nsDisplayTransform::BuildLayer(
   return container.forget();
 }
 
-bool nsDisplayTransform::MayBeAnimated(nsDisplayListBuilder* aBuilder,
-                                       bool aEnforceMinimumSize) const {
+bool nsDisplayTransform::MayBeAnimated(nsDisplayListBuilder* aBuilder) const {
   
   
   
@@ -7976,7 +7974,7 @@ bool nsDisplayTransform::MayBeAnimated(nsDisplayListBuilder* aBuilder,
                                                    eCSSProperty_transform) ||
       (ActiveLayerTracker::IsStyleAnimated(aBuilder, mFrame,
                                            eCSSProperty_transform) &&
-       !(aEnforceMinimumSize && IsItemTooSmallForActiveLayer(mFrame)))) {
+       !IsItemTooSmallForActiveLayer(mFrame))) {
     return true;
   }
   return false;
@@ -9073,7 +9071,7 @@ bool nsDisplayMasksAndClipPaths::CreateWebRenderCommands(
                    true,
                    false,
                    Nothing(),
-                   &clipId);
+                   wr::WrStackingContextClip::ClipId(clipId));
     sc = layer.ptr();
   }
 
@@ -9350,15 +9348,13 @@ bool nsDisplayFilters::CreateWebRenderCommands(
     return false;
   }
 
-  wr::WrClipId clipId =
-      aBuilder.DefineClip(Nothing(), wr::ToLayoutRect(postFilterBounds));
-
   float opacity = mFrame->StyleEffects()->mOpacity;
   StackingContextHelper sc(
       aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder, wrFilters,
       LayoutDeviceRect(), nullptr, nullptr,
       opacity != 1.0f && mHandleOpacity ? &opacity : nullptr, nullptr, nullptr,
-      gfx::CompositionOp::OP_OVER, true, false, Nothing(), &clipId);
+      gfx::CompositionOp::OP_OVER, true, false, Nothing(),
+      wr::WrStackingContextClip::ClipChain(aBuilder.CurrentClipChainId()));
 
   nsDisplayEffectsBase::CreateWebRenderCommands(aBuilder, aResources, sc,
                                                 aManager, aDisplayListBuilder);
