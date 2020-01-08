@@ -1,5 +1,6 @@
 
-import urlparse, json
+from six.moves import urllib
+import json
 from mod_pywebsocket import common, msgutil, util
 from mod_pywebsocket.handshake import hybi
 from wptserve import stash
@@ -15,7 +16,7 @@ def web_socket_transfer_data(request):
         line = request.ws_stream.receive_message()
         if line == "echo":
             query = request.unparsed_uri.split('?')[1]
-            GET = dict(urlparse.parse_qsl(query))
+            GET = dict(urllib.parse.parse_qsl(query))
 
             
             
