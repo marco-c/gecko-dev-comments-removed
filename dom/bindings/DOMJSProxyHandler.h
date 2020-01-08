@@ -177,10 +177,11 @@ GetArrayIndexFromId(JSContext* cx, JS::Handle<jsid> id)
   
   
   
+  
   if (MOZ_LIKELY(JSID_IS_INT(id))) {
     return JSID_TO_INT(id);
   }
-  if (MOZ_LIKELY(id == s_length_id)) {
+  if (MOZ_LIKELY(id.get() == s_length_id)) {
     return UINT32_MAX;
   }
   if (MOZ_UNLIKELY(!JSID_IS_ATOM(id))) {

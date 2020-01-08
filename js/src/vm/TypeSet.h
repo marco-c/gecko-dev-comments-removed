@@ -21,6 +21,7 @@
 
 #include "jit/IonTypes.h" 
 #include "js/GCAnnotations.h" 
+#include "js/Id.h"
 #include "js/TracingAPI.h" 
 #include "js/TypeDecls.h" 
 #include "js/Utility.h" 
@@ -29,7 +30,6 @@
 #include "vm/TaggedProto.h" 
 
 struct JSContext;
-struct jsid;
 class JSObject;
 
 namespace JS {
