@@ -14,10 +14,6 @@
 void GrGLSLFragmentProcessor::setData(const GrGLSLProgramDataManager& pdman,
                                       const GrFragmentProcessor& processor) {
     this->onSetData(pdman, processor);
-    SkASSERT(fChildProcessors.count() == processor.numChildProcessors());
-    for (int i = 0; i < fChildProcessors.count(); ++i) {
-        fChildProcessors[i]->setData(pdman, processor.childProcessor(i));
-    }
 }
 
 void GrGLSLFragmentProcessor::emitChild(int childIndex, const char* inputColor, EmitArgs& args) {
@@ -35,10 +31,20 @@ void GrGLSLFragmentProcessor::emitChild(int childIndex, const char* inputColor,
 
 void GrGLSLFragmentProcessor::internalEmitChild(int childIndex, const char* inputColor,
                                                 const char* outputColor, EmitArgs& args) {
-    SkASSERT(inputColor);
     GrGLSLFPFragmentBuilder* fragBuilder = args.fFragBuilder;
 
     fragBuilder->onBeforeChildProcEmitCode();  
+
+    
+    
+    SkString inputName;
+    if (inputColor&& strcmp("half4(1.0)", inputColor) != 0 && strcmp("half4(1)", inputColor) != 0) {
+        
+        
+        
+        inputName.appendf("_childInput%s", fragBuilder->getMangleString().c_str());
+        fragBuilder->codeAppendf("half4 %s = %s;", inputName.c_str(), inputColor);
+    }
 
     const GrFragmentProcessor& childProc = args.fFp.childProcessor(childIndex);
 
@@ -48,16 +54,16 @@ void GrGLSLFragmentProcessor::internalEmitChild(int childIndex, const char* inpu
                              fragBuilder->getMangleString().c_str(), childProc.name());
     TransformedCoordVars coordVars = args.fTransformedCoords.childInputs(childIndex);
     TextureSamplers textureSamplers = args.fTexSamplers.childInputs(childIndex);
-    TexelBuffers texelBuffers = args.fTexelBuffers.childInputs(childIndex);
+
+    
     EmitArgs childArgs(fragBuilder,
                        args.fUniformHandler,
                        args.fShaderCaps,
                        childProc,
                        outputColor,
-                       inputColor,
+                       inputName.size() > 0 ? inputName.c_str() : nullptr,
                        coordVars,
-                       textureSamplers,
-                       texelBuffers);
+                       textureSamplers);
     this->childProcessor(childIndex)->emitCode(childArgs);
     fragBuilder->codeAppend("}\n");
 

@@ -80,6 +80,12 @@ void SkImage_unpinAsTexture(const SkImage*, GrContext*);
 
 
 
+SkIRect SkImage_getSubset(const SkImage*);
+
+
+
+
+
 
 sk_sp<SkImage> SkImageMakeRasterCopyAndAssignColorSpace(const SkImage*, SkColorSpace*);
 

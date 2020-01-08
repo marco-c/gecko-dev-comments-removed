@@ -5,12 +5,14 @@
 
 
 
-
 #ifndef SkTSort_DEFINED
 #define SkTSort_DEFINED
 
-#include "SkTypes.h"
 #include "SkMathPriv.h"
+#include "SkTo.h"
+#include "SkTypes.h"
+
+#include <utility>
 
 
 template <typename T> struct SkTCompareLT {
@@ -104,7 +106,8 @@ template <typename T, typename C> void SkTHeapSort(T array[], size_t count, C le
     }
 
     for (size_t i = count - 1; i > 0; --i) {
-        SkTSwap<T>(array[0], array[i]);
+        using std::swap;
+        swap(array[0], array[i]);
         SkTHeapSort_SiftUp(array, 1, i, lessThan);
     }
 }
@@ -136,17 +139,18 @@ template <typename T, typename C> static void SkTInsertionSort(T* left, T* right
 
 template <typename T, typename C>
 static T* SkTQSort_Partition(T* left, T* right, T* pivot, C lessThan) {
+    using std::swap;
     T pivotValue = *pivot;
-    SkTSwap(*pivot, *right);
+    swap(*pivot, *right);
     T* newPivot = left;
     while (left < right) {
         if (lessThan(*left, pivotValue)) {
-            SkTSwap(*left, *newPivot);
+            swap(*left, *newPivot);
             newPivot += 1;
         }
         left += 1;
     }
-    SkTSwap(*newPivot, *right);
+    swap(*newPivot, *right);
     return newPivot;
 }
 

@@ -23,8 +23,6 @@ class SkWStream;
 
 
 
-
-
 sk_sp<SkData> SkCopyStreamToData(SkStream* stream);
 
 

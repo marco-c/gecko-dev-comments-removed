@@ -20,7 +20,7 @@ enum SkFilterQuality {
     kMedium_SkFilterQuality,    
     kHigh_SkFilterQuality,      
 
-    kLast_SkFilterQuality = kHigh_SkFilterQuality
+    kLast_SkFilterQuality = kHigh_SkFilterQuality,
 };
 
 #endif

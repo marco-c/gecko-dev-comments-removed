@@ -34,8 +34,19 @@ public:
 
 
 
-    bool next(SkRect* src, SkRect* dst, bool* isFixedColor = nullptr,
+    bool next(SkIRect* src, SkRect* dst, bool* isFixedColor = nullptr,
               SkColor* fixedColor = nullptr);
+
+    
+    bool next(SkRect* src, SkRect* dst, bool* isFixedColor = nullptr,
+              SkColor* fixedColor = nullptr) {
+        SkIRect isrcR;
+        if (this->next(&isrcR, dst, isFixedColor, fixedColor)) {
+            *src = SkRect::Make(isrcR);
+            return true;
+        }
+        return false;
+    }
 
     
 
@@ -50,8 +61,8 @@ public:
     }
 
 private:
-    SkTArray<SkScalar> fSrcX;
-    SkTArray<SkScalar> fSrcY;
+    SkTArray<int> fSrcX;
+    SkTArray<int> fSrcY;
     SkTArray<SkScalar> fDstX;
     SkTArray<SkScalar> fDstY;
     SkTArray<SkCanvas::Lattice::RectType> fRectTypes;

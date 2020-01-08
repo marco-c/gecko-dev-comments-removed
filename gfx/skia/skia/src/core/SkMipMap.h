@@ -29,16 +29,8 @@ typedef SkDiscardableMemory* (*SkDiscardableFactoryProc)(size_t bytes);
 
 class SkMipMap : public SkCachedData {
 public:
-    static SkMipMap* Build(const SkPixmap& src, SkDestinationSurfaceColorMode,
-                           SkDiscardableFactoryProc);
-    static SkMipMap* Build(const SkBitmap& src, SkDestinationSurfaceColorMode,
-                           SkDiscardableFactoryProc);
-
-    static SkDestinationSurfaceColorMode DeduceColorMode(const SkShaderBase::ContextRec& rec) {
-        return (SkShaderBase::ContextRec::kPMColor_DstType == rec.fPreferredDstType)
-            ? SkDestinationSurfaceColorMode::kLegacy
-            : SkDestinationSurfaceColorMode::kGammaAndColorSpaceAware;
-    }
+    static SkMipMap* Build(const SkPixmap& src, SkDiscardableFactoryProc);
+    static SkMipMap* Build(const SkBitmap& src, SkDiscardableFactoryProc);
 
     
     

@@ -5,13 +5,15 @@
 
 
 
-
 #ifndef SkBuffer_DEFINED
 #define SkBuffer_DEFINED
 
+#include "SkNoncopyable.h"
 #include "SkSafeMath.h"
 #include "SkScalar.h"
 #include "SkTypes.h"
+
+#include <limits>
 
 
 

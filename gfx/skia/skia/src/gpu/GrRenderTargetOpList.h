@@ -32,7 +32,8 @@ private:
     using DstProxy = GrXferProcessor::DstProxy;
 
 public:
-    GrRenderTargetOpList(GrRenderTargetProxy*, GrResourceProvider*, GrAuditTrail*);
+    GrRenderTargetOpList(GrResourceProvider*, sk_sp<GrOpMemoryPool>,
+                         GrRenderTargetProxy*, GrAuditTrail*);
 
     ~GrRenderTargetOpList() override;
 
@@ -60,6 +61,10 @@ public:
     void onPrepare(GrOpFlushState* flushState) override;
     bool onExecute(GrOpFlushState* flushState) override;
 
+    
+
+
+
     uint32_t addOp(std::unique_ptr<GrOp> op, const GrCaps& caps) {
         auto addDependency = [ &caps, this ] (GrSurfaceProxy* p) {
             this->addDependency(p, caps);
@@ -67,10 +72,12 @@ public:
 
         op->visitProxies(addDependency);
 
-        this->recordOp(std::move(op), caps);
-
-        return this->uniqueID();
+        return this->recordOp(std::move(op), caps);
     }
+
+    
+
+
 
     uint32_t addOp(std::unique_ptr<GrOp> op, const GrCaps& caps,
                    GrAppliedClip&& clip, const DstProxy& dstProxy) {
@@ -80,16 +87,17 @@ public:
 
         op->visitProxies(addDependency);
         clip.visitProxies(addDependency);
+        if (dstProxy.proxy()) {
+            addDependency(dstProxy.proxy());
+        }
 
-        this->recordOp(std::move(op), caps, clip.doesClip() ? &clip : nullptr, &dstProxy);
-
-        return this->uniqueID();
+        return this->recordOp(std::move(op), caps, clip.doesClip() ? &clip : nullptr, &dstProxy);
     }
 
     void discard();
 
     
-    void fullClear(const GrCaps& caps, GrColor color);
+    void fullClear(GrContext*, GrColor color);
 
     
 
@@ -101,7 +109,7 @@ public:
 
 
 
-    bool copySurface(const GrCaps& caps,
+    bool copySurface(GrContext*,
                      GrSurfaceProxy* dst,
                      GrSurfaceProxy* src,
                      const SkIRect& srcRect,
@@ -109,7 +117,7 @@ public:
 
     GrRenderTargetOpList* asRenderTargetOpList() override { return this; }
 
-    SkDEBUGCODE(void dump() const override;)
+    SkDEBUGCODE(void dump(bool printDependencies) const override;)
 
     SkDEBUGCODE(int numOps() const override { return fRecordedOps.count(); })
     SkDEBUGCODE(int numClips() const override { return fNumClips; })
@@ -118,6 +126,8 @@ public:
 private:
     friend class GrRenderTargetContextPriv; 
 
+    void deleteOps();
+
     struct RecordedOp {
         RecordedOp(std::unique_ptr<GrOp> op, GrAppliedClip* appliedClip, const DstProxy* dstProxy)
                 : fOp(std::move(op)), fAppliedClip(appliedClip) {
@@ -125,6 +135,13 @@ private:
                 fDstProxy = *dstProxy;
             }
         }
+
+        ~RecordedOp() {
+            
+            SkASSERT(!fOp);
+        }
+
+        void deleteOp(GrOpMemoryPool* opMemoryPool);
 
         void visitProxies(const GrOp::VisitProxyFunc& func) const {
             if (fOp) {
@@ -139,29 +156,30 @@ private:
         }
 
         std::unique_ptr<GrOp> fOp;
-        DstProxy fDstProxy;
-        GrAppliedClip* fAppliedClip;
+        DstProxy              fDstProxy;
+        GrAppliedClip*        fAppliedClip;
     };
 
     void purgeOpsWithUninstantiatedProxies() override;
 
     void gatherProxyIntervals(GrResourceAllocator*) const override;
 
-    void recordOp(std::unique_ptr<GrOp>, const GrCaps& caps,
-                  GrAppliedClip* = nullptr, const DstProxy* = nullptr);
+    
+    
+    uint32_t recordOp(std::unique_ptr<GrOp>, const GrCaps& caps,
+                      GrAppliedClip* = nullptr, const DstProxy* = nullptr);
 
     void forwardCombine(const GrCaps&);
 
-    
-    bool combineIfPossible(const RecordedOp& a, GrOp* b, const GrAppliedClip* bClip,
-                           const DstProxy* bDstTexture, const GrCaps&);
+    GrOp::CombineResult combineIfPossible(const RecordedOp& a, GrOp* b, const GrAppliedClip* bClip,
+                                          const DstProxy* bDstTexture, const GrCaps&);
 
     uint32_t                       fLastClipStackGenID;
     SkIRect                        fLastDevClipBounds;
     int                            fLastClipNumAnalyticFPs;
 
     
-    SkSTArray<5, RecordedOp, true> fRecordedOps;
+    SkSTArray<25, RecordedOp, true> fRecordedOps;
 
     
     

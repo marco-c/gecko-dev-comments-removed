@@ -5,15 +5,17 @@
 
 
 
-
 #ifndef GrResourceKey_DEFINED
 #define GrResourceKey_DEFINED
 
 #include "../private/SkOnce.h"
 #include "../private/SkTemplates.h"
+#include "../private/SkTo.h"
 #include "GrTypes.h"
 #include "SkData.h"
 #include "SkString.h"
+
+#include <new>
 
 uint32_t GrResourceKeyHash(const uint32_t* data, size_t size);
 
@@ -79,6 +81,22 @@ protected:
         return &fKey[kMetaDataCnt];
     }
 
+#ifdef SK_DEBUG
+    void dump() const {
+        if (!this->isValid()) {
+            SkDebugf("Invalid Key\n");
+        } else {
+            SkDebugf("hash: %d ", this->hash());
+            SkDebugf("domain: %d ", this->domain());
+            SkDebugf("size: %dB ", this->internalSize());
+            for (size_t i = 0; i < this->internalSize(); ++i) {
+                SkDebugf("%d ", fKey[i]);
+            }
+            SkDebugf("\n");
+        }
+    }
+#endif
+
     
     class Builder {
     public:
@@ -140,8 +158,7 @@ private:
     friend class TestResource; 
 
     
-    
-    SkAutoSTMalloc<kMetaDataCnt + 7, uint32_t> fKey;
+    SkAutoSTMalloc<kMetaDataCnt + 5, uint32_t> fKey;
 };
 
 
@@ -229,7 +246,7 @@ public:
     static Domain GenerateDomain();
 
     
-    GrUniqueKey() {}
+    GrUniqueKey() : fTag(nullptr) {}
 
     GrUniqueKey(const GrUniqueKey& that) { *this = that; }
 
@@ -241,7 +258,7 @@ public:
     GrUniqueKey& operator=(const GrUniqueKey& that) {
         this->INHERITED::operator=(that);
         this->setCustomData(sk_ref_sp(that.getCustomData()));
-        SkDEBUGCODE(fTag = that.fTag;)
+        fTag = that.fTag;
         return *this;
     }
 
@@ -257,14 +274,20 @@ public:
         return fData.get();
     }
 
-    SkDEBUGCODE(const char* tag() const { return fTag.c_str(); })
+    const char* tag() const { return fTag; }
+
+#ifdef SK_DEBUG
+    void dump(const char* label) const {
+        SkDebugf("%s tag: %s\n", label, fTag ? fTag : "None");
+        this->INHERITED::dump();
+    }
+#endif
 
     class Builder : public INHERITED::Builder {
     public:
         Builder(GrUniqueKey* key, Domain type, int data32Count, const char* tag = nullptr)
                 : INHERITED::Builder(key, type, data32Count) {
-            SkDEBUGCODE(key->fTag = tag;)
-            (void) tag;  
+            key->fTag = tag;
         }
 
         
@@ -277,8 +300,7 @@ public:
             const uint32_t* srcData = innerKey.data();
             (*innerKeyData++) = innerKey.domain();
             memcpy(innerKeyData, srcData, innerKey.dataSize());
-            SkDEBUGCODE(key->fTag = tag;)
-            (void) tag;  
+            key->fTag = tag;
         }
 
     private:
@@ -290,7 +312,7 @@ public:
 
 private:
     sk_sp<SkData> fData;
-    SkDEBUGCODE(SkString fTag;)
+    const char* fTag;
 };
 
 
@@ -316,18 +338,22 @@ static inline void gr_init_static_unique_key_once(SkAlignedSTStorage<1,GrUniqueK
 
 class GrUniqueKeyInvalidatedMessage {
 public:
-    explicit GrUniqueKeyInvalidatedMessage(const GrUniqueKey& key) : fKey(key) {}
-
-    GrUniqueKeyInvalidatedMessage(const GrUniqueKeyInvalidatedMessage& that) : fKey(that.fKey) {}
-
-    GrUniqueKeyInvalidatedMessage& operator=(const GrUniqueKeyInvalidatedMessage& that) {
-        fKey = that.fKey;
-        return *this;
+    GrUniqueKeyInvalidatedMessage(const GrUniqueKey& key, uint32_t contextUniqueID)
+            : fKey(key), fContextID(contextUniqueID) {
+        SkASSERT(SK_InvalidUniqueID != contextUniqueID);
     }
+
+    GrUniqueKeyInvalidatedMessage(const GrUniqueKeyInvalidatedMessage&) = default;
+
+    GrUniqueKeyInvalidatedMessage& operator=(const GrUniqueKeyInvalidatedMessage&) = default;
 
     const GrUniqueKey& key() const { return fKey; }
 
+    bool shouldSend(uint32_t inboxID) const { return fContextID == inboxID; }
+
 private:
     GrUniqueKey fKey;
+    uint32_t fContextID;
 };
+
 #endif

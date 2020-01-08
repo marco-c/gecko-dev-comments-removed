@@ -135,30 +135,36 @@ void SkStrokeRec::applyToPaint(SkPaint* paint) const {
     paint->setStrokeJoin((SkPaint::Join)fJoin);
 }
 
-static inline SkScalar get_inflation_bounds(SkPaint::Join join,
-                                            SkScalar strokeWidth,
-                                            SkScalar miterLimit) {
-    if (strokeWidth < 0) {  
-        return 0;
-    } else if (0 == strokeWidth) {
-        return SK_Scalar1;
-    }
-    
-    SkScalar radius = SkScalarHalf(strokeWidth);
-    if (SkPaint::kMiter_Join == join) {
-        if (miterLimit > SK_Scalar1) {
-            radius *= miterLimit;
-        }
-    }
-    return radius;
-}
-
 SkScalar SkStrokeRec::getInflationRadius() const {
-    return get_inflation_bounds((SkPaint::Join)fJoin, fWidth, fMiterLimit);
+    return GetInflationRadius((SkPaint::Join)fJoin, fMiterLimit, (SkPaint::Cap)fCap, fWidth);
 }
 
 SkScalar SkStrokeRec::GetInflationRadius(const SkPaint& paint, SkPaint::Style style) {
     SkScalar width = SkPaint::kFill_Style == style ? -SK_Scalar1 : paint.getStrokeWidth();
-    return get_inflation_bounds(paint.getStrokeJoin(), width, paint.getStrokeMiter());
+    return GetInflationRadius(paint.getStrokeJoin(), paint.getStrokeMiter(), paint.getStrokeCap(),
+                              width);
 
 }
+
+SkScalar SkStrokeRec::GetInflationRadius(SkPaint::Join join, SkScalar miterLimit, SkPaint::Cap cap,
+                                         SkScalar strokeWidth) {
+    if (strokeWidth < 0) {  
+        return 0;
+    } else if (0 == strokeWidth) {
+        
+        
+        
+        return SK_Scalar1;
+    }
+
+    
+    SkScalar multiplier = SK_Scalar1;
+    if (SkPaint::kMiter_Join == join) {
+        multiplier = SkTMax(multiplier, miterLimit);
+    }
+    if (SkPaint::kSquare_Cap == cap) {
+        multiplier = SkTMax(multiplier, SK_ScalarSqrt2);
+    }
+    return strokeWidth/2 * multiplier;
+}
+

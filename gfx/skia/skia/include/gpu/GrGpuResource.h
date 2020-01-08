@@ -9,6 +9,7 @@
 #define GrGpuResource_DEFINED
 
 #include "../private/GrTypesPriv.h"
+#include "../private/SkNoncopyable.h"
 #include "GrResourceKey.h"
 
 class GrContext;
@@ -132,8 +133,6 @@ private:
     mutable int32_t fPendingReads;
     mutable int32_t fPendingWrites;
 
-    
-    friend class GrGpuResourceRef;
     friend class GrResourceCache; 
 
     template <typename, GrIOType> friend class GrPendingIOResource;
@@ -249,6 +248,15 @@ public:
 
     virtual void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const;
 
+    
+
+
+
+
+
+
+    virtual const char* getResourceType() const = 0;
+
     static uint32_t CreateUniqueID();
 
 protected:
@@ -276,14 +284,21 @@ protected:
     
 
 
+    virtual void setMemoryBacking(SkTraceMemoryDump*, const SkString&) const {}
 
-    void didChangeGpuMemorySize() const;
+    
+
+
+    SkString getResourceName() const;
 
     
 
 
 
-    virtual void setMemoryBacking(SkTraceMemoryDump*, const SkString&) const {}
+
+    void dumpMemoryStatisticsPriv(SkTraceMemoryDump* traceMemoryDump, const SkString& resourceName,
+                                  const char* type, size_t size) const;
+
 
 private:
     
@@ -320,7 +335,6 @@ private:
     
     
     uint32_t fTimestamp;
-    uint32_t fExternalFlushCntWhenBecamePurgeable;
     GrStdSteadyClock::time_point fTimeWhenBecamePurgeable;
 
     static const size_t kInvalidGpuMemorySize = ~static_cast<size_t>(0);

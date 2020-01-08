@@ -86,8 +86,9 @@ public:
         return false;
     }
 
-    static void AddGenIDChangeListener(const SkPath& path, SkPathRef::GenIDChangeListener* listener) {
-        path.fPathRef->addGenIDChangeListener(listener);
+    static void AddGenIDChangeListener(const SkPath& path,
+                                       sk_sp<SkPathRef::GenIDChangeListener> listener) {
+        path.fPathRef->addGenIDChangeListener(std::move(listener));
     }
 
     
@@ -104,6 +105,12 @@ public:
 
     static void CreateDrawArcPath(SkPath* path, const SkRect& oval, SkScalar startAngle,
                                   SkScalar sweepAngle, bool useCenter, bool isFillNoPathEffect);
+
+    
+
+
+
+    static bool DrawArcIsConvex(SkScalar sweepAngle, bool useCenter, bool isFillNoPathEffect);
 
     
 
@@ -210,6 +217,48 @@ public:
             *dir = isCCW ? SkPath::kCCW_Direction : SkPath::kCW_Direction;
         }
         return result;
+    }
+
+    
+    static bool IsBadForDAA(const SkPath& path) { return path.fIsBadForDAA; }
+    static void SetIsBadForDAA(SkPath& path, bool isBadForDAA) { path.fIsBadForDAA = isBadForDAA; }
+
+    
+
+
+
+
+
+
+
+    static bool TooBigForMath(const SkRect& bounds) {
+        
+        
+        constexpr SkScalar scale_down_to_allow_for_small_multiplies = 0.25f;
+        constexpr SkScalar max = SK_ScalarMax * scale_down_to_allow_for_small_multiplies;
+
+        
+        return !(bounds.fLeft >= -max && bounds.fTop >= -max &&
+                 bounds.fRight <= max && bounds.fBottom <= max);
+    }
+    static bool TooBigForMath(const SkPath& path) {
+        return TooBigForMath(path.getBounds());
+    }
+
+    
+    static int PtsInIter(unsigned verb) {
+        static const uint8_t gPtsInVerb[] = {
+            1,  
+            2,  
+            3,  
+            3,  
+            4,  
+            0,  
+            0   
+        };
+
+        SkASSERT(verb < SK_ARRAY_COUNT(gPtsInVerb));
+        return gPtsInVerb[verb];
     }
 };
 

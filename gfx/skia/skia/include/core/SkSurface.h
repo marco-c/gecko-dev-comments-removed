@@ -5,6 +5,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #ifndef SkSurface_DEFINED
 #define SkSurface_DEFINED
 
@@ -20,6 +30,7 @@ class SkPaint;
 class SkSurfaceCharacterization;
 class GrBackendRenderTarget;
 class GrBackendSemaphore;
+class GrBackendTexture;
 class GrContext;
 class GrRenderTarget;
 
@@ -178,33 +189,6 @@ public:
 
 
 
-    static sk_sp<SkSurface> MakeFromBackendTexture(GrContext* context,
-                                                   const GrBackendTexture& backendTexture,
-                                                   GrSurfaceOrigin origin, int sampleCnt,
-                                                   sk_sp<SkColorSpace> colorSpace,
-                                                   const SkSurfaceProps* surfaceProps);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -219,31 +203,6 @@ public:
 
     
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static sk_sp<SkSurface> MakeFromBackendRenderTarget(GrContext* context,
-                                                const GrBackendRenderTarget& backendRenderTarget,
-                                                GrSurfaceOrigin origin,
-                                                sk_sp<SkColorSpace> colorSpace,
-                                                const SkSurfaceProps* surfaceProps);
-
-    
 
 
 
@@ -283,22 +242,6 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-    static sk_sp<SkSurface> MakeFromBackendTextureAsRenderTarget(GrContext* context,
-                                                            const GrBackendTexture& backendTexture,
-                                                            GrSurfaceOrigin origin,
-                                                            int sampleCnt,
-                                                            sk_sp<SkColorSpace> colorSpace,
-                                                            const SkSurfaceProps* surfaceProps);
-
-    
 
 
 
@@ -420,6 +363,18 @@ public:
 
 
 
+
+    static sk_sp<SkSurface> MakeRenderTarget(GrContext* context,
+                                             const SkSurfaceCharacterization& characterization,
+                                             SkBudgeted budgeted);
+
+    
+
+
+
+
+
+
     static sk_sp<SkSurface> MakeNull(int width, int height);
 
     
@@ -447,9 +402,7 @@ public:
 
     enum ContentChangeMode {
         kDiscard_ContentChangeMode, 
-
-        
-        kRetain_ContentChangeMode,
+        kRetain_ContentChangeMode,  
     };
 
     
@@ -493,7 +446,7 @@ public:
 
 
 
-    GrBackendObject getTextureHandle(BackendHandleAccess backendHandleAccess);
+    GrBackendTexture getBackendTexture(BackendHandleAccess backendHandleAccess);
 
     
 
@@ -506,13 +459,7 @@ public:
 
 
 
-
-
-
-
-
-    bool getRenderTargetHandle(GrBackendObject* backendObject,
-                               BackendHandleAccess backendHandleAccess);
+    GrBackendRenderTarget getBackendRenderTarget(BackendHandleAccess backendHandleAccess);
 
     
 
@@ -669,9 +616,13 @@ public:
 
 
 
+
+
     void writePixels(const SkPixmap& src, int dstX, int dstY);
 
     
+
+
 
 
 

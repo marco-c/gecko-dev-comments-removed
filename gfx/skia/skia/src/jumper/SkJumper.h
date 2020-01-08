@@ -16,29 +16,6 @@
 
 
 
-#if defined(JUMPER_IS_OFFLINE) && defined(WIN) && defined(__x86_64__)
-    #define MAYBE_MSABI __attribute__((ms_abi))                   // Use MS' ABI, not System V.
-#elif defined(JUMPER_IS_OFFLINE) && defined(WIN) && defined(__i386__)
-    #define MAYBE_MSABI __attribute__((force_align_arg_pointer))  // Re-align stack 4 -> 16 bytes.
-#else
-    #define MAYBE_MSABI
-#endif
-
-
-#if defined(__ARM_NEON) && defined(__arm__)
-    
-    #define ABI __attribute__((pcs("aapcs-vfp")))
-#else
-    #define ABI
-#endif
-
-
-
-
-
-#if defined(__clang__) && defined(__ARM_NEON)
-    #define JUMPER_HAS_NEON_LOWP
-#endif
 
 static const int SkJumper_kMaxStride = 16;
 
@@ -76,22 +53,12 @@ struct SkJumper_DecalTileCtx {
 };
 
 struct SkJumper_CallbackCtx {
-    MAYBE_MSABI void (*fn)(SkJumper_CallbackCtx* self, int active_pixels);
+    void (*fn)(SkJumper_CallbackCtx* self, int active_pixels);
 
     
     
     float rgba[4*SkJumper_kMaxStride];
     float* read_from = rgba;
-};
-
-struct SkJumper_LoadTablesCtx {
-    const void* src;
-    const float *r, *g, *b;
-};
-
-struct SkJumper_TableCtx {
-    const float* table;
-    int          size;
 };
 
 
@@ -104,6 +71,13 @@ struct SkJumper_GradientCtx {
     float* fs[4];
     float* bs[4];
     float* ts;
+    bool interpolatedInPremul;
+};
+
+struct SkJumper_EvenlySpaced2StopGradientCtx {
+    float f[4];
+    float b[4];
+    bool interpolatedInPremul;
 };
 
 struct SkJumper_2PtConicalCtx {
@@ -115,11 +89,6 @@ struct SkJumper_2PtConicalCtx {
 struct SkJumper_UniformColorCtx {
     float r,g,b,a;
     uint16_t rgba[4];  
-};
-
-struct SkJumper_ColorLookupTableCtx {
-    const float* table;
-    int limits[4];
 };
 
 #endif

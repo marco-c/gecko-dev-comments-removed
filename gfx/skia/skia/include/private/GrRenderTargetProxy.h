@@ -12,6 +12,7 @@
 #include "GrTypesPriv.h"
 
 class GrResourceProvider;
+class GrRenderTargetProxyPriv;
 
 
 
@@ -27,12 +28,10 @@ public:
 
     GrFSAAType fsaaType() const {
         if (fSampleCnt <= 1) {
-            SkASSERT(!(fRenderTargetFlags & GrRenderTargetFlags::kMixedSampled));
+            SkASSERT(!this->hasMixedSamples());
             return GrFSAAType::kNone;
         }
-        return (fRenderTargetFlags & GrRenderTargetFlags::kMixedSampled)
-                                                             ? GrFSAAType::kMixedSamples
-                                                             : GrFSAAType::kUnifiedMSAA;
+        return this->hasMixedSamples() ? GrFSAAType::kMixedSamples : GrFSAAType::kUnifiedMSAA;
     }
 
     
@@ -55,17 +54,20 @@ public:
 
     int maxWindowRectangles(const GrCaps& caps) const;
 
-    GrRenderTargetFlags testingOnly_getFlags() const;
-
     
     bool refsWrappedObjects() const;
 
+    
+    GrRenderTargetProxyPriv rtPriv();
+    const GrRenderTargetProxyPriv rtPriv() const;
+
 protected:
     friend class GrProxyProvider;  
+    friend class GrRenderTargetProxyPriv;
 
     
-    GrRenderTargetProxy(const GrCaps&, const GrSurfaceDesc&,
-                        SkBackingFit, SkBudgeted, uint32_t flags);
+    GrRenderTargetProxy(const GrCaps&, const GrSurfaceDesc&, GrSurfaceOrigin, SkBackingFit,
+                        SkBudgeted, GrInternalSurfaceFlags);
 
     
     
@@ -78,8 +80,8 @@ protected:
     
     
     GrRenderTargetProxy(LazyInstantiateCallback&&, LazyInstantiationType lazyType,
-                        const GrSurfaceDesc&, SkBackingFit, SkBudgeted, uint32_t flags,
-                        GrRenderTargetFlags renderTargetFlags);
+                        const GrSurfaceDesc&, GrSurfaceOrigin, SkBackingFit, SkBudgeted,
+                        GrInternalSurfaceFlags);
 
     
     GrRenderTargetProxy(sk_sp<GrSurface>, GrSurfaceOrigin);
@@ -87,8 +89,36 @@ protected:
     sk_sp<GrSurface> createSurface(GrResourceProvider*) const override;
 
 private:
+    void setHasMixedSamples() {
+        fSurfaceFlags |= GrInternalSurfaceFlags::kMixedSampled;
+    }
+    bool hasMixedSamples() const { return fSurfaceFlags & GrInternalSurfaceFlags::kMixedSampled; }
+
+    void setSupportsWindowRects() {
+        fSurfaceFlags |= GrInternalSurfaceFlags::kWindowRectsSupport;
+    }
+    bool supportsWindowRects() const {
+        return fSurfaceFlags & GrInternalSurfaceFlags::kWindowRectsSupport;
+    }
+
+    void setGLRTFBOIDIs0() {
+        fSurfaceFlags |= GrInternalSurfaceFlags::kGLRTFBOIDIs0;
+    }
+    bool glRTFBOIDIs0() const {
+        return fSurfaceFlags & GrInternalSurfaceFlags::kGLRTFBOIDIs0;
+    }
+
+
     size_t onUninstantiatedGpuMemorySize() const override;
-    SkDEBUGCODE(void validateLazySurface(const GrSurface*) override;)
+    SkDEBUGCODE(void onValidateSurface(const GrSurface*) override;)
+
+    
+    
+    
+    
+    
+    
+    
 
     int                 fSampleCnt;
     bool                fNeedsStencil;
@@ -96,13 +126,6 @@ private:
     
     
     
-
-    
-    
-    
-    
-    
-    GrRenderTargetFlags fRenderTargetFlags;
 
     typedef GrSurfaceProxy INHERITED;
 };

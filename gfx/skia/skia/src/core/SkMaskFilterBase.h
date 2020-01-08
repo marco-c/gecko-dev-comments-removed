@@ -12,19 +12,22 @@
 #include "SkFlattenable.h"
 #include "SkMask.h"
 #include "SkMaskFilter.h"
+#include "SkNoncopyable.h"
 #include "SkPaint.h"
 #include "SkStrokeRec.h"
 
 class GrClip;
 class GrContext;
 struct GrFPArgs;
-class GrRenderTargetContext;
-class GrPaint;
 class GrFragmentProcessor;
+class GrPaint;
 class GrRenderTarget;
+class GrRenderTargetContext;
 class GrResourceProvider;
+class GrShape;
 class GrTexture;
 class GrTextureProxy;
+
 class SkBitmap;
 class SkBlitter;
 class SkCachedData;
@@ -54,7 +57,7 @@ public:
 
 
     virtual bool filterMask(SkMask* dst, const SkMask& src, const SkMatrix&,
-                            SkIPoint* margin) const;
+                            SkIPoint* margin) const = 0;
 
 #if SK_SUPPORT_GPU
     
@@ -95,36 +98,22 @@ public:
 
 
 
-
-
-    virtual bool canFilterMaskGPU(const SkRRect& devRRect,
+    virtual bool canFilterMaskGPU(const GrShape&,
+                                  const SkIRect& devSpaceShapeBounds,
                                   const SkIRect& clipBounds,
                                   const SkMatrix& ctm,
-                                  SkRect* maskRect) const;
+                                  SkIRect* maskRect) const;
 
     
 
 
 
     virtual bool directFilterMaskGPU(GrContext*,
-                                     GrRenderTargetContext* renderTargetContext,
+                                     GrRenderTargetContext*,
                                      GrPaint&& paint,
                                      const GrClip&,
                                      const SkMatrix& viewMatrix,
-                                     const SkStrokeRec& strokeRec,
-                                     const SkPath& path) const;
-    
-
-
-
-    virtual bool directFilterRRectMaskGPU(GrContext*,
-                                          GrRenderTargetContext* renderTargetContext,
-                                          GrPaint&& paint,
-                                          const GrClip&,
-                                          const SkMatrix& viewMatrix,
-                                          const SkStrokeRec& strokeRec,
-                                          const SkRRect& rrect,
-                                          const SkRRect& devRRect) const;
+                                     const GrShape& shape) const;
 
     
 
@@ -155,7 +144,6 @@ public:
     struct BlurRec {
         SkScalar        fSigma;
         SkBlurStyle     fStyle;
-        SkBlurQuality   fQuality;
     };
     
 

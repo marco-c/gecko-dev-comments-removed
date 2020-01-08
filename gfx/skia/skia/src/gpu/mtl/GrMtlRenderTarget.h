@@ -18,10 +18,9 @@ class GrMtlGpu;
 
 class GrMtlRenderTarget: public GrRenderTarget {
 public:
-    static sk_sp<GrMtlRenderTarget> CreateNewRenderTarget(GrMtlGpu*, const GrSurfaceDesc&,
-                                                          SkBudgeted);
-
-    static sk_sp<GrMtlRenderTarget> MakeWrappedRenderTarget(GrMtlGpu*, const GrSurfaceDesc&);
+    static sk_sp<GrMtlRenderTarget> MakeWrappedRenderTarget(GrMtlGpu*,
+                                                            const GrSurfaceDesc&,
+                                                            id<MTLTexture>);
 
     ~GrMtlRenderTarget() override;
 
@@ -40,11 +39,9 @@ public:
         return true;
     }
 
-    GrBackendObject getRenderTargetHandle() const override;
+    id<MTLTexture> mtlRenderTexture() const { return fRenderTexture; }
 
-    GrBackendRenderTarget getBackendRenderTarget() const override {
-        return GrBackendRenderTarget(); 
-    }
+    GrBackendRenderTarget getBackendRenderTarget() const override;
 
 protected:
     GrMtlRenderTarget(GrMtlGpu* gpu,
@@ -65,6 +62,8 @@ protected:
     size_t onGpuMemorySize() const override {
         int numColorSamples = this->numColorSamples();
         
+        
+        
         if (numColorSamples > 1) {
             ++numColorSamples;
         }
@@ -77,19 +76,19 @@ protected:
 
 private:
     GrMtlRenderTarget(GrMtlGpu* gpu,
-                      const GrSurfaceDesc& desc,
                       SkBudgeted,
+                      const GrSurfaceDesc& desc,
                       id<MTLTexture> renderTexture,
                       id<MTLTexture> resolveTexture);
 
     GrMtlRenderTarget(GrMtlGpu* gpu,
-                      const GrSurfaceDesc& desc,
                       SkBudgeted,
+                      const GrSurfaceDesc& desc,
                       id<MTLTexture> renderTexture);
 
     static sk_sp<GrMtlRenderTarget> Make(GrMtlGpu*,
-                                         const GrSurfaceDesc&,
                                          SkBudgeted,
+                                         const GrSurfaceDesc&,
                                          id<MTLTexture> renderTexture,
                                          bool isWrapped);
 

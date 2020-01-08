@@ -13,4 +13,20 @@
 
 
 
+typedef unsigned int GrMTLPixelFormat;
+
+
+
+
+
+
+struct GrMtlTextureInfo {
+public:
+    const void* fTexture; 
+
+    bool operator==(const GrMtlTextureInfo& that) const {
+        return fTexture == that.fTexture;
+    }
+};
+
 #endif

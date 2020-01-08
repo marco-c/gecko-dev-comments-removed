@@ -60,7 +60,7 @@ typedef float SkScalar;
 #define SkScalarToFloat(x)      static_cast<float>(x)
 #define SkFloatToScalar(x)      static_cast<SkScalar>(x)
 #define SkScalarToDouble(x)     static_cast<double>(x)
-#define SkDoubleToScalar(x)     static_cast<SkScalar>(x)
+#define SkDoubleToScalar(x)     sk_double_to_float(x)
 
 #define SK_ScalarMin            (-SK_ScalarMax)
 
@@ -68,22 +68,10 @@ static inline bool SkScalarIsNaN(SkScalar x) { return x != x; }
 
 
 
-static inline bool SkScalarIsFinite(SkScalar x) {
-    
-    
-    
-    
-    SkScalar prod = x * 0;
-    
-    return !SkScalarIsNaN(prod);
-}
+static inline bool SkScalarIsFinite(SkScalar x) { return sk_float_isfinite(x); }
 
 static inline bool SkScalarsAreFinite(SkScalar a, SkScalar b) {
-    SkScalar prod = 0;
-    prod *= a;
-    prod *= b;
-    
-    return !SkScalarIsNaN(prod);
+    return sk_float_isfinite(a) && sk_float_isfinite(b);
 }
 
 static inline bool SkScalarsAreFinite(const SkScalar array[], int count) {
@@ -92,7 +80,7 @@ static inline bool SkScalarsAreFinite(const SkScalar array[], int count) {
         prod *= array[i];
     }
     
-    return !SkScalarIsNaN(prod);
+    return prod == 0;   
 }
 
 

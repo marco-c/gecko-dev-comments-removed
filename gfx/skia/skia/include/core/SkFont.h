@@ -62,14 +62,6 @@ enum SkTextEncoding {
 
 
 
-
-
-
-
-
-
-
-
 class SkFont : public SkRefCnt {
 public:
     enum Flags {
@@ -106,9 +98,8 @@ public:
         kUseNonlinearMetrics_Flag   = 1 << 3,
 
         kVertical_Flag              = 1 << 4,
-        kGenA8FromLCD_Flag          = 1 << 5,
+
         kEmbolden_Flag              = 1 << 6,
-        kDevKern_Flag               = 1 << 7,   
     };
 
     enum MaskType {
@@ -143,7 +134,6 @@ public:
     bool isEnableAutoHints() const { return SkToBool(fFlags & kEnableAutoHints_Flag); }
     bool isEnableByteCodeHints() const { return SkToBool(fFlags & kEnableByteCodeHints_Flag); }
     bool isUseNonLinearMetrics() const { return SkToBool(fFlags & kUseNonlinearMetrics_Flag); }
-    bool isDevKern() const { return SkToBool(fFlags & kDevKern_Flag); }
 
     int textToGlyphs(const void* text, size_t byteLength, SkTextEncoding,
                      SkGlyphID glyphs[], int maxGlyphCount) const;
@@ -157,9 +147,7 @@ public:
     static sk_sp<SkFont> Testing_CreateFromPaint(const SkPaint&);
 
 private:
-    enum {
-        kAllFlags = 0xFF,
-    };
+    static constexpr int kAllFlags = 0xFF;
 
     SkFont(sk_sp<SkTypeface>, SkScalar size, SkScalar scaleX, SkScalar skewX, MaskType,
            uint32_t flags);

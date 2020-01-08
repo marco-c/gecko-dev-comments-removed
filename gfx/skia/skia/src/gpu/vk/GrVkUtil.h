@@ -10,9 +10,10 @@
 
 #include "GrColor.h"
 #include "GrTypes.h"
-#include "vk/GrVkDefines.h"
-#include "vk/GrVkInterface.h"
+#include "GrVkInterface.h"
+#include "SkMacros.h"
 #include "ir/SkSLProgram.h"
+#include "vk/GrVkDefines.h"
 
 class GrVkGpu;
 
@@ -32,23 +33,12 @@ class GrVkGpu;
 
 bool GrPixelConfigToVkFormat(GrPixelConfig config, VkFormat* format);
 
-
-
-
-GrPixelConfig GrVkFormatToPixelConfig(VkFormat format);
-
 bool GrVkFormatIsSupported(VkFormat);
 
 
 
 
 bool GrVkFormatPixelConfigPairIsValid(VkFormat, GrPixelConfig);
-
-
-
-
-
-bool GrVkFormatIsSRGB(VkFormat format, VkFormat* linearFormat);
 
 bool GrSampleCountToVkSampleCount(uint32_t samples, VkSampleCountFlagBits* vkSamples);
 

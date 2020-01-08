@@ -9,59 +9,108 @@
 #ifndef GrVkTypes_DEFINED
 #define GrVkTypes_DEFINED
 
+#include <functional>
 #include "GrTypes.h"
-#include "vk/GrVkDefines.h"
+#include "GrVkDefines.h"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+typedef intptr_t GrVkBackendMemory;
 
 
 
 
 
 struct GrVkAlloc {
-    VkDeviceMemory fMemory = VK_NULL_HANDLE;  
-    VkDeviceSize   fOffset = 0;
-    VkDeviceSize   fSize = 0;    
-    uint32_t       fFlags= 0;
+    GrVkAlloc()
+            : fMemory(VK_NULL_HANDLE)
+            , fOffset(0)
+            , fSize(0)
+            , fFlags(0)
+            , fBackendMemory(0)
+            , fUsesSystemHeap(false) {}
+
+    GrVkAlloc(VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size, uint32_t flags)
+            : fMemory(memory)
+            , fOffset(offset)
+            , fSize(size)
+            , fFlags(flags)
+            , fBackendMemory(0)
+            , fUsesSystemHeap(false) {}
+
+    VkDeviceMemory    fMemory;  
+    VkDeviceSize      fOffset;
+    VkDeviceSize      fSize;    
+    uint32_t          fFlags;
+    GrVkBackendMemory fBackendMemory; 
 
     enum Flag {
         kNoncoherent_Flag = 0x1,   
+        kMappable_Flag    = 0x2,   
     };
+
+    bool operator==(const GrVkAlloc& that) const {
+        return fMemory == that.fMemory && fOffset == that.fOffset && fSize == that.fSize &&
+               fFlags == that.fFlags && fUsesSystemHeap == that.fUsesSystemHeap;
+    }
+
 private:
     friend class GrVkHeap; 
-    bool fUsesSystemHeap = false;
+    bool fUsesSystemHeap;
 };
-
 struct GrVkImageInfo {
-    
-
-
-
     VkImage        fImage;
     GrVkAlloc      fAlloc;
     VkImageTiling  fImageTiling;
     VkImageLayout  fImageLayout;
     VkFormat       fFormat;
     uint32_t       fLevelCount;
+    uint32_t       fCurrentQueueFamily;
+
+    GrVkImageInfo()
+            : fImage(VK_NULL_HANDLE)
+            , fAlloc()
+            , fImageTiling(VK_IMAGE_TILING_OPTIMAL)
+            , fImageLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+            , fFormat(VK_FORMAT_UNDEFINED)
+            , fLevelCount(0)
+            , fCurrentQueueFamily(VK_QUEUE_FAMILY_IGNORED) {}
+
+    GrVkImageInfo(VkImage image, GrVkAlloc alloc, VkImageTiling imageTiling, VkImageLayout layout,
+                  VkFormat format, uint32_t levelCount,
+                  uint32_t currentQueueFamily = VK_QUEUE_FAMILY_IGNORED)
+            : fImage(image)
+            , fAlloc(alloc)
+            , fImageTiling(imageTiling)
+            , fImageLayout(layout)
+            , fFormat(format)
+            , fLevelCount(levelCount)
+            , fCurrentQueueFamily(currentQueueFamily) {}
+
+    GrVkImageInfo(const GrVkImageInfo& info, VkImageLayout layout)
+            : fImage(info.fImage)
+            , fAlloc(info.fAlloc)
+            , fImageTiling(info.fImageTiling)
+            , fImageLayout(layout)
+            , fFormat(info.fFormat)
+            , fLevelCount(info.fLevelCount)
+            , fCurrentQueueFamily(info.fCurrentQueueFamily) {}
 
     
     
     
     void updateImageLayout(VkImageLayout layout) { fImageLayout = layout; }
+
+    bool operator==(const GrVkImageInfo& that) const {
+        return fImage == that.fImage && fAlloc == that.fAlloc &&
+               fImageTiling == that.fImageTiling && fImageLayout == that.fImageLayout &&
+               fFormat == that.fFormat && fLevelCount == that.fLevelCount;
+    }
 };
 
-GR_STATIC_ASSERT(sizeof(GrBackendObject) >= sizeof(const GrVkImageInfo*));
+using GrVkGetProc = std::function<PFN_vkVoidFunction(
+        const char*, 
+        VkInstance,  
+        VkDevice     
+        )>;
+
 
 #endif

@@ -9,25 +9,17 @@
 #ifndef GrGLProgram_DEFINED
 #define GrGLProgram_DEFINED
 
-#include "GrGLContext.h"
-#include "GrProgramDesc.h"
-#include "GrGLTexture.h"
 #include "GrGLProgramDataManager.h"
 #include "glsl/GrGLSLProgramDataManager.h"
 #include "glsl/GrGLSLUniformHandler.h"
 
-#include "SkString.h"
-
-#include "builders/GrGLProgramBuilder.h"
-
-class GrGLInstalledProcessors;
-class GrGLProgramBuilder;
+class GrGLSLFragmentProcessor;
+class GrGLSLPrimitiveProcessor;
+class GrGLSLXferProcessor;
 class GrPipeline;
-
-
-
-
-
+class GrPrimitiveProcessor;
+class GrRenderTargetProxy;
+class GrTextureProxy;
 
 
 
@@ -35,7 +27,41 @@ class GrPipeline;
 
 class GrGLProgram : public SkRefCnt {
 public:
-    typedef GrGLSLProgramBuilder::BuiltinUniformHandles BuiltinUniformHandles;
+    
+
+
+
+
+    struct Attribute {
+        GrVertexAttribType fCPUType;
+        GrSLType fGPUType;
+        size_t fOffset;
+        GrGLint fLocation;
+    };
+
+    using UniformHandle = GrGLSLProgramDataManager::UniformHandle;
+    using UniformInfoArray = GrGLProgramDataManager::UniformInfoArray;
+    using VaryingInfoArray = GrGLProgramDataManager::VaryingInfoArray;
+
+    
+
+
+
+    GrGLProgram(GrGLGpu*,
+                const GrGLSLBuiltinUniformHandles&,
+                GrGLuint programID,
+                const UniformInfoArray& uniforms,
+                const UniformInfoArray& textureSamplers,
+                const VaryingInfoArray&, 
+                std::unique_ptr<GrGLSLPrimitiveProcessor> geometryProcessor,
+                std::unique_ptr<GrGLSLXferProcessor> xferProcessor,
+                std::unique_ptr<std::unique_ptr<GrGLSLFragmentProcessor>[]> fragmentProcessors,
+                int fragmentProcessorCnt,
+                std::unique_ptr<Attribute[]>,
+                int vertexAttributeCnt,
+                int instanceAttributeCnt,
+                int vertexStride,
+                int instanceStride);
 
     ~GrGLProgram();
 
@@ -43,8 +69,6 @@ public:
 
 
     void abandon();
-
-    const GrProgramDesc& getDesc() { return fDesc; }
 
     
 
@@ -93,63 +117,56 @@ public:
 
 
 
-    void setData(const GrPrimitiveProcessor&, const GrPipeline&);
 
+    void updateUniformsAndTextureBindings(const GrPrimitiveProcessor&, const GrPipeline&,
+                                          const GrTextureProxy* const primitiveProcessorTextures[]);
+
+    void updatePrimitiveProcessorTextureBindings(const GrPrimitiveProcessor&,
+                                                 const GrTextureProxy* const[]);
+
+    int vertexStride() const { return fVertexStride; }
+    int instanceStride() const { return fInstanceStride; }
+
+    int numVertexAttributes() const { return fVertexAttributeCnt; }
+    const Attribute& vertexAttribute(int i) const {
+        SkASSERT(i >= 0 && i < fVertexAttributeCnt);
+        return fAttributes[i];
+    }
+
+    int numInstanceAttributes() const { return fInstanceAttributeCnt; }
+    const Attribute& instanceAttribute(int i) const {
+        SkASSERT(i >= 0 && i < fInstanceAttributeCnt);
+        return fAttributes[i + fVertexAttributeCnt];
+    }
+
+private:
     
-
-
-
-    void generateMipmaps(const GrPrimitiveProcessor&, const GrPipeline&);
-
-protected:
-    using UniformHandle    = GrGLSLProgramDataManager::UniformHandle ;
-    using UniformInfoArray = GrGLProgramDataManager::UniformInfoArray;
-    using VaryingInfoArray = GrGLProgramDataManager::VaryingInfoArray;
-
-    GrGLProgram(GrGLGpu*,
-                const GrProgramDesc&,
-                const BuiltinUniformHandles&,
-                GrGLuint programID,
-                const UniformInfoArray& uniforms,
-                const UniformInfoArray& textureSamplers,
-                const UniformInfoArray& texelBuffers,
-                const VaryingInfoArray&, 
-                std::unique_ptr<GrGLSLPrimitiveProcessor> geometryProcessor,
-                std::unique_ptr<GrGLSLXferProcessor> xferProcessor,
-                const GrGLSLFragProcs& fragmentProcessors);
-
-    
-    void setFragmentData(const GrPrimitiveProcessor&, const GrPipeline&, int* nextTexSamplerIdx,
-                         int* nextTexelBufferIdx);
+    void setFragmentData(const GrPipeline&, int* nextTexSamplerIdx);
 
     
     void setRenderTargetState(const GrPrimitiveProcessor&, const GrRenderTargetProxy*);
 
     
-    void bindTextures(const GrResourceIOProcessor&, bool allowSRGBInputs, int* nextSamplerIdx,
-                      int* nextTexelBufferIdx);
-
-    
-    void generateMipmaps(const GrResourceIOProcessor&, bool allowSRGBInputs);
-
-    
     RenderTargetState fRenderTargetState;
-    BuiltinUniformHandles fBuiltinUniformHandles;
+    GrGLSLBuiltinUniformHandles fBuiltinUniformHandles;
     GrGLuint fProgramID;
 
     
-    std::unique_ptr<GrGLSLPrimitiveProcessor> fGeometryProcessor;
+    std::unique_ptr<GrGLSLPrimitiveProcessor> fPrimitiveProcessor;
     std::unique_ptr<GrGLSLXferProcessor> fXferProcessor;
-    GrGLSLFragProcs fFragmentProcessors;
+    std::unique_ptr<std::unique_ptr<GrGLSLFragmentProcessor>[]> fFragmentProcessors;
+    int fFragmentProcessorCnt;
 
-    GrProgramDesc fDesc;
+    std::unique_ptr<Attribute[]> fAttributes;
+    int fVertexAttributeCnt;
+    int fInstanceAttributeCnt;
+    int fVertexStride;
+    int fInstanceStride;
+
     GrGLGpu* fGpu;
     GrGLProgramDataManager fProgramDataManager;
 
     int fNumTextureSamplers;
-    int fNumTexelBuffers;
-
-    friend class GrGLProgramBuilder;
 
     typedef SkRefCnt INHERITED;
 };

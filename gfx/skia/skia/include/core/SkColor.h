@@ -5,9 +5,20 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #ifndef SkColor_DEFINED
 #define SkColor_DEFINED
 
+#include "SkImageInfo.h"
 #include "SkScalar.h"
 #include "SkTypes.h"
 
@@ -24,7 +35,20 @@ typedef uint8_t SkAlpha;
 
 
 
+
+
+
+
+
 typedef uint32_t SkColor;
+
+
+
+
+
+
+
+
 
 
 
@@ -33,22 +57,33 @@ static constexpr inline SkColor SkColorSetARGB(U8CPU a, U8CPU r, U8CPU g, U8CPU 
            (a << 24) | (r << 16) | (g << 8) | (b << 0);
 }
 
-#define SkColorSetARGBInline SkColorSetARGB
-#define SkColorSetARGBMacro  SkColorSetARGB
-
 
 
 
 #define SkColorSetRGB(r, g, b)  SkColorSetARGB(0xFF, r, g, b)
 
 
+
 #define SkColorGetA(color)      (((color) >> 24) & 0xFF)
+
+
 
 #define SkColorGetR(color)      (((color) >> 16) & 0xFF)
 
+
+
 #define SkColorGetG(color)      (((color) >>  8) & 0xFF)
 
+
+
 #define SkColorGetB(color)      (((color) >>  0) & 0xFF)
+
+
+
+
+
+
+
 
 static constexpr inline SkColor SkColorSetA(SkColor c, U8CPU a) {
     return (c & 0x00FFFFFF) | (a << 24);
@@ -57,37 +92,65 @@ static constexpr inline SkColor SkColorSetA(SkColor c, U8CPU a) {
 
 
 
-#define SK_AlphaTRANSPARENT static_cast<SkAlpha>(0x00)
-
-#define SK_AlphaOPAQUE      static_cast<SkAlpha>(0xFF)
+constexpr SkAlpha SK_AlphaTRANSPARENT = 0x00;
 
 
-#define SK_ColorTRANSPARENT static_cast<SkColor>(0x00000000)
 
 
-#define SK_ColorBLACK       static_cast<SkColor>(0xFF000000)
-
-#define SK_ColorDKGRAY      static_cast<SkColor>(0xFF444444)
-
-#define SK_ColorGRAY        static_cast<SkColor>(0xFF888888)
-
-#define SK_ColorLTGRAY      static_cast<SkColor>(0xFFCCCCCC)
-
-#define SK_ColorWHITE       static_cast<SkColor>(0xFFFFFFFF)
+constexpr SkAlpha SK_AlphaOPAQUE      = 0xFF;
 
 
-#define SK_ColorRED         static_cast<SkColor>(0xFFFF0000)
 
-#define SK_ColorGREEN       static_cast<SkColor>(0xFF00FF00)
 
-#define SK_ColorBLUE        static_cast<SkColor>(0xFF0000FF)
+constexpr SkColor SK_ColorTRANSPARENT = SkColorSetARGB(0x00, 0x00, 0x00, 0x00);
 
-#define SK_ColorYELLOW      static_cast<SkColor>(0xFFFFFF00)
 
-#define SK_ColorCYAN        static_cast<SkColor>(0xFF00FFFF)
 
-#define SK_ColorMAGENTA     static_cast<SkColor>(0xFFFF00FF)
+constexpr SkColor SK_ColorBLACK       = SkColorSetARGB(0xFF, 0x00, 0x00, 0x00);
 
+
+
+
+constexpr SkColor SK_ColorDKGRAY      = SkColorSetARGB(0xFF, 0x44, 0x44, 0x44);
+
+
+
+
+constexpr SkColor SK_ColorGRAY        = SkColorSetARGB(0xFF, 0x88, 0x88, 0x88);
+
+
+
+
+constexpr SkColor SK_ColorLTGRAY      = SkColorSetARGB(0xFF, 0xCC, 0xCC, 0xCC);
+
+
+
+constexpr SkColor SK_ColorWHITE       = SkColorSetARGB(0xFF, 0xFF, 0xFF, 0xFF);
+
+
+
+constexpr SkColor SK_ColorRED         = SkColorSetARGB(0xFF, 0xFF, 0x00, 0x00);
+
+
+
+
+constexpr SkColor SK_ColorGREEN       = SkColorSetARGB(0xFF, 0x00, 0xFF, 0x00);
+
+
+
+constexpr SkColor SK_ColorBLUE        = SkColorSetARGB(0xFF, 0x00, 0x00, 0xFF);
+
+
+
+constexpr SkColor SK_ColorYELLOW      = SkColorSetARGB(0xFF, 0xFF, 0xFF, 0x00);
+
+
+
+constexpr SkColor SK_ColorCYAN        = SkColorSetARGB(0xFF, 0x00, 0xFF, 0xFF);
+
+
+
+constexpr SkColor SK_ColorMAGENTA     = SkColorSetARGB(0xFF, 0xFF, 0x00, 0xFF);
 
 
 
@@ -100,6 +163,7 @@ static constexpr inline SkColor SkColorSetA(SkColor c, U8CPU a) {
 
 
 SK_API void SkRGBToHSV(U8CPU red, U8CPU green, U8CPU blue, SkScalar hsv[3]);
+
 
 
 
@@ -121,7 +185,11 @@ static inline void SkColorToHSV(SkColor color, SkScalar hsv[3]) {
 
 
 
+
+
 SK_API SkColor SkHSVToColor(U8CPU alpha, const SkScalar hsv[3]);
+
+
 
 
 
@@ -140,8 +208,13 @@ static inline SkColor SkHSVToColor(const SkScalar hsv[3]) {
 
 
 
-
 typedef uint32_t SkPMColor;
+
+
+
+
+
+
 
 
 
@@ -150,42 +223,78 @@ SK_API SkPMColor SkPreMultiplyARGB(U8CPU a, U8CPU r, U8CPU g, U8CPU b);
 
 
 
+
+
+
 SK_API SkPMColor SkPreMultiplyColor(SkColor c);
 
-
-
-struct SkPM4f;
-
-
-
-
-struct SK_API SkColor4f {
+template <SkAlphaType kAT>
+struct SkRGBA4f {
     float fR;
     float fG;
     float fB;
     float fA;
 
-    bool operator==(const SkColor4f& other) const {
+    bool operator==(const SkRGBA4f& other) const {
         return fA == other.fA && fR == other.fR && fG == other.fG && fB == other.fB;
     }
-    bool operator!=(const SkColor4f& other) const {
+    bool operator!=(const SkRGBA4f& other) const {
         return !(*this == other);
     }
 
-    const float* vec() const { return &fR; }
-    float* vec() { return &fR; }
-
-    static SkColor4f Pin(float r, float g, float b, float a);
-    
-    static SkColor4f FromColor(SkColor);
-
-    SkColor toSkColor() const;
-
-    SkColor4f pin() const {
-        return Pin(fR, fG, fB, fA);
+    SkRGBA4f operator*(float scale) const {
+        return { fR * scale, fG * scale, fB * scale, fA * scale };
     }
 
-    SkPM4f premul() const;
+    SkRGBA4f operator*(const SkRGBA4f& scale) const {
+        return { fR * scale.fR, fG * scale.fG, fB * scale.fB, fA * scale.fA };
+    }
+
+    const float* vec() const { return &fR; }
+          float* vec()       { return &fR; }
+
+    float operator[](int index) const {
+        SkASSERT(index >= 0 && index < 4);
+        return this->vec()[index];
+    }
+
+    float& operator[](int index) {
+        SkASSERT(index >= 0 && index < 4);
+        return this->vec()[index];
+    }
+
+    bool isOpaque() const {
+        SkASSERT(fA <= 1.0f && fA >= 0.0f);
+        return fA == 1.0f;
+    }
+
+    static SkRGBA4f Pin(float r, float g, float b, float a);  
+    SkRGBA4f pin() const { return Pin(fR, fG, fB, fA); }
+
+    static SkRGBA4f FromColor(SkColor);  
+    SkColor toSkColor() const;  
+
+    static SkRGBA4f FromPMColor(SkPMColor);  
+
+    SkRGBA4f<kPremul_SkAlphaType> premul() const {
+        static_assert(kAT == kUnpremul_SkAlphaType, "");
+        return { fR * fA, fG * fA, fB * fA, fA };
+    }
+
+    SkRGBA4f<kUnpremul_SkAlphaType> unpremul() const {
+        static_assert(kAT == kPremul_SkAlphaType, "");
+
+        if (fA == 0.0f) {
+            return { 0, 0, 0, 0 };
+        } else {
+            float invAlpha = 1 / fA;
+            return { fR * invAlpha, fG * invAlpha, fB * invAlpha, fA };
+        }
+    }
 };
+
+using SkColor4f = SkRGBA4f<kUnpremul_SkAlphaType>;
+template <> SK_API SkColor4f SkColor4f::FromColor(SkColor);
+template <> SK_API SkColor   SkColor4f::toSkColor() const;
 
 #endif

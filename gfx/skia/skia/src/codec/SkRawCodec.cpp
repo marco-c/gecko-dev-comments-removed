@@ -98,16 +98,12 @@ public:
     explicit SkDngHost(dng_memory_allocator* allocater) : dng_host(allocater) {}
 
     void PerformAreaTask(dng_area_task& task, const dng_rect& area) override {
-        
-        
-        
-        const int maxTasks = static_cast<int>(task.MaxThreads());
-
         SkTaskGroup taskGroup;
 
         
         const dng_point tileSize(task.FindTileSize(area));
-        const std::vector<dng_rect> taskAreas = compute_task_areas(maxTasks, area, tileSize);
+        const std::vector<dng_rect> taskAreas = compute_task_areas(this->PerformAreaTaskThreads(),
+                                                                   area, tileSize);
         const int numTasks = static_cast<int>(taskAreas.size());
 
         SkMutex mutex;
@@ -137,8 +133,16 @@ public:
     }
 
     uint32 PerformAreaTaskThreads() override {
+#ifdef SK_BUILD_FOR_ANDROID
         
+        
+        
+        
+        
+        return 1;
+#else
         return kMaxMPThreads;
+#endif
     }
 
 private:
@@ -159,21 +163,6 @@ bool safe_add_to_size_t(T arg1, T arg2, size_t* result) {
     }
     return false;
 }
-
-class SkDngMemoryAllocator : public dng_memory_allocator {
-public:
-    ~SkDngMemoryAllocator() override {}
-
-    dng_memory_block* Allocate(uint32 size) override {
-        
-        
-        
-        if (size > 300 * 1024 * 1024) {  
-            ThrowMemoryFull();
-        }
-        return dng_memory_allocator::Allocate(size);
-    }
-};
 
 bool is_asset_stream(const SkStream& stream) {
     return stream.hasLength() && stream.hasPosition();
@@ -515,10 +504,6 @@ public:
         }
     }
 
-    const SkEncodedInfo& getEncodedInfo() const {
-        return fEncodedInfo;
-    }
-
     int width() const {
         return fWidth;
     }
@@ -613,11 +598,9 @@ private:
 
     SkDngImage(SkRawStream* stream)
         : fStream(stream)
-        , fEncodedInfo(SkEncodedInfo::Make(SkEncodedInfo::kRGB_Color,
-                                           SkEncodedInfo::kOpaque_Alpha, 8))
     {}
 
-    SkDngMemoryAllocator fAllocator;
+    dng_memory_allocator fAllocator;
     std::unique_ptr<SkRawStream> fStream;
     std::unique_ptr<dng_host> fHost;
     std::unique_ptr<dng_info> fInfo;
@@ -626,10 +609,20 @@ private:
 
     int fWidth;
     int fHeight;
-    SkEncodedInfo fEncodedInfo;
     bool fIsScalable;
     bool fIsXtransImage;
 };
+
+static constexpr skcms_Matrix3x3 gAdobe_RGB_to_XYZD50 = {{
+    
+    
+    
+    
+    { SkFixedToFloat(0x9c18), SkFixedToFloat(0x348d), SkFixedToFloat(0x2631) }, 
+    { SkFixedToFloat(0x4fa5), SkFixedToFloat(0xa02c), SkFixedToFloat(0x102f) }, 
+    { SkFixedToFloat(0x04fc), SkFixedToFloat(0x0f95), SkFixedToFloat(0xbe9c) }, 
+}};
+
 
 
 
@@ -655,15 +648,15 @@ std::unique_ptr<SkCodec> SkRawCodec::MakeFromStream(std::unique_ptr<SkStream> st
             return nullptr;
         }
 
-        sk_sp<SkColorSpace> colorSpace;
-        switch (imageData.color_space) {
-            case ::piex::PreviewImageData::kSrgb:
-                colorSpace = SkColorSpace::MakeSRGB();
-                break;
-            case ::piex::PreviewImageData::kAdobeRgb:
-                colorSpace = SkColorSpace::MakeRGB(g2Dot2_TransferFn,
-                                                   SkColorSpace::kAdobeRGB_Gamut);
-                break;
+        std::unique_ptr<SkEncodedInfo::ICCProfile> profile;
+        if (imageData.color_space == ::piex::PreviewImageData::kAdobeRgb) {
+            constexpr skcms_TransferFunction twoDotTwo =
+                    { 2.2f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+            skcms_ICCProfile skcmsProfile;
+            skcms_Init(&skcmsProfile);
+            skcms_SetTransferFunction(&skcmsProfile, &twoDotTwo);
+            skcms_SetXYZD50(&skcmsProfile, &gAdobe_RGB_to_XYZD50);
+            profile = SkEncodedInfo::ICCProfile::Make(skcmsProfile);
         }
 
         
@@ -681,7 +674,7 @@ std::unique_ptr<SkCodec> SkRawCodec::MakeFromStream(std::unique_ptr<SkStream> st
                 return nullptr;
             }
             return SkJpegCodec::MakeFromStream(std::move(memoryStream), result,
-                                               std::move(colorSpace));
+                                               std::move(profile));
         }
     }
 
@@ -757,7 +750,7 @@ SkCodec::Result SkRawCodec::onGetPixels(const SkImageInfo& dstInfo, void* dst,
         if (this->colorXform()) {
             swizzler->swizzle(xformBuffer.get(), &srcRow[0]);
 
-            this->applyColorXform(dstRow, xformBuffer.get(), dstInfo.width(), kOpaque_SkAlphaType);
+            this->applyColorXform(dstRow, xformBuffer.get(), dstInfo.width());
         } else {
             swizzler->swizzle(dstRow, &srcRow[0]);
         }
@@ -769,7 +762,7 @@ SkCodec::Result SkRawCodec::onGetPixels(const SkImageInfo& dstInfo, void* dst,
 SkISize SkRawCodec::onGetScaledDimensions(float desiredScale) const {
     SkASSERT(desiredScale <= 1.f);
 
-    const SkISize dim = this->getInfo().dimensions();
+    const SkISize dim = this->dimensions();
     SkASSERT(dim.fWidth != 0 && dim.fHeight != 0);
 
     if (!fDngImage->isScalable()) {
@@ -795,7 +788,7 @@ SkISize SkRawCodec::onGetScaledDimensions(float desiredScale) const {
 }
 
 bool SkRawCodec::onDimensionsSupported(const SkISize& dim) {
-    const SkISize fullDim = this->getInfo().dimensions();
+    const SkISize fullDim = this->dimensions();
     const float fullShortEdge = static_cast<float>(SkTMin(fullDim.fWidth, fullDim.fHeight));
     const float shortEdge = static_cast<float>(SkTMin(dim.fWidth, dim.fHeight));
 
@@ -807,7 +800,8 @@ bool SkRawCodec::onDimensionsSupported(const SkISize& dim) {
 SkRawCodec::~SkRawCodec() {}
 
 SkRawCodec::SkRawCodec(SkDngImage* dngImage)
-    : INHERITED(dngImage->width(), dngImage->height(), dngImage->getEncodedInfo(),
-                SkColorSpaceXform::kRGBA_8888_ColorFormat, nullptr,
-                SkColorSpace::MakeSRGB())
+    : INHERITED(SkEncodedInfo::Make(dngImage->width(), dngImage->height(),
+                                    SkEncodedInfo::kRGB_Color,
+                                    SkEncodedInfo::kOpaque_Alpha, 8),
+                skcms_PixelFormat_RGBA_8888, nullptr)
     , fDngImage(dngImage) {}

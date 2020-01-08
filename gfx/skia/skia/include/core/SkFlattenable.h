@@ -23,61 +23,6 @@ struct SkDeserialProcs;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define SK_DECLARE_FLATTENABLE_REGISTRAR_GROUP() static void InitializeFlattenables();
-
-#define SK_DEFINE_FLATTENABLE_REGISTRAR_GROUP_START(flattenable) \
-    void flattenable::InitializeFlattenables() {
-
-#define SK_DEFINE_FLATTENABLE_REGISTRAR_GROUP_END \
-    }
-
-#define SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(flattenable) \
-    SkFlattenable::Register(#flattenable, flattenable::CreateProc, \
-                            flattenable::GetFlattenableType());
-
-#define SK_DECLARE_PUBLIC_FLATTENABLE_DESERIALIZATION_PROCS(flattenable)    \
-    private:                                                                \
-    static sk_sp<SkFlattenable> CreateProc(SkReadBuffer&);                        \
-    friend class SkFlattenable::PrivateInitializer;                         \
-    public:                                                                 \
-    Factory getFactory() const override { return CreateProc; }
-
-
-
-
-#define SK_DEFINE_FLATTENABLE_TYPE(flattenable) \
-    static Type GetFlattenableType() {          \
-        return k##flattenable##_Type;           \
-    }                                           \
-    Type getFlattenableType() const override {  \
-        return k##flattenable##_Type;           \
-    }                                           \
-    static sk_sp<flattenable> Deserialize(const void* data, size_t size,                \
-                                          const SkDeserialProcs* procs = nullptr) {     \
-        return sk_sp<flattenable>(static_cast<flattenable*>(                            \
-                                  SkFlattenable::Deserialize(                           \
-                                  k##flattenable##_Type, data, size, procs).release()));\
-    }
-
-
-
-
-
-
-
 class SK_API SkFlattenable : public SkRefCnt {
 public:
     enum Type {
@@ -92,7 +37,7 @@ public:
         kSkShaderBase_Type,
         kSkUnused_Type,     
         kSkUnused_Type2,
-        kSkUnused_Type3,    
+        kSkNormalSource_Type,
     };
 
     typedef sk_sp<SkFlattenable> (*Factory)(SkReadBuffer&);
@@ -113,7 +58,15 @@ public:
 
 
 
-    virtual const char* getTypeName() const { return FactoryToName(getFactory()); }
+    virtual const char* getTypeName() const {
+    #ifdef SK_DISABLE_READBUFFER
+        
+        SkASSERT(false);
+        return nullptr;
+    #else
+        return FactoryToName(getFactory());
+    #endif
+    }
 
     static Factory NameToFactory(const char name[]);
     static const char* FactoryToName(Factory);
@@ -135,6 +88,8 @@ public:
     
     
     sk_sp<SkData> serialize(const SkSerialProcs* = nullptr) const;
+    size_t serialize(void* memory, size_t memory_size,
+                     const SkSerialProcs* = nullptr) const;
     static sk_sp<SkFlattenable> Deserialize(Type, const void* data, size_t length,
                                             const SkDeserialProcs* procs = nullptr);
 
@@ -143,6 +98,7 @@ protected:
     public:
         static void InitCore();
         static void InitEffects();
+        static void InitImageFilters();
     };
 
 private:

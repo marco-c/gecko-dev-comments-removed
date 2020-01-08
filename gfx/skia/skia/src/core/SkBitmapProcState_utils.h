@@ -8,6 +8,8 @@
 #ifndef SkBitmapProcState_utils_DEFINED
 #define SkBitmapProcState_utils_DEFINED
 
+#include "SkTo.h"
+
 
 
 
@@ -50,7 +52,7 @@ static inline bool can_truncate_to_fixed_for_decal(SkFixed fx,
     
     const uint64_t lastFx = fx + sk_64_mul(dx, count - 1);
 
-    return sk_64_isS32(lastFx) && (unsigned)SkFixedFloorToInt(sk_64_asS32(lastFx)) < max;
+    return SkTFitsIn<int32_t>(lastFx) && (unsigned)SkFixedFloorToInt(SkTo<int32_t>(lastFx)) < max;
 }
 
 #endif 

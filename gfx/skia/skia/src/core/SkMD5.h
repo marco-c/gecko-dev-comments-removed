@@ -9,6 +9,7 @@
 #define SkMD5_DEFINED
 
 #include "SkStream.h"
+#include "SkTo.h"
 
 
 class SkMD5 : public SkWStream {

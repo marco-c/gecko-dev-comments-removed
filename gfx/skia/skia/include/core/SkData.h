@@ -169,10 +169,7 @@ private:
     ~SkData();
 
     
-    void operator delete(void* p) { ::operator delete(p); }
-
-    
-    friend SkData* sk_new_empty_data();
+    void operator delete(void* p);
 
     
     static sk_sp<SkData> PrivateNewWithCopy(const void* srcOrNull, size_t length);

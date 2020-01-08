@@ -100,11 +100,11 @@ GrVkCopyPipeline* GrVkCopyPipeline::Create(GrVkGpu* gpu,
     };
 
     static const VkPipelineColorBlendAttachmentState attachmentState = {
-        VK_TRUE,                                             
-        VK_BLEND_FACTOR_ONE,                                 
+        VK_FALSE,                                             
+        VK_BLEND_FACTOR_ONE,                                  
         VK_BLEND_FACTOR_ZERO,                                 
         VK_BLEND_OP_ADD,                                      
-        VK_BLEND_FACTOR_ONE,                                 
+        VK_BLEND_FACTOR_ONE,                                  
         VK_BLEND_FACTOR_ZERO,                                 
         VK_BLEND_OP_ADD,                                      
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | 

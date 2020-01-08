@@ -8,11 +8,11 @@
 #ifndef SkCodec_DEFINED
 #define SkCodec_DEFINED
 
+#include "../private/SkNoncopyable.h"
 #include "../private/SkTemplates.h"
 #include "../private/SkEncodedInfo.h"
 #include "SkCodecAnimation.h"
 #include "SkColor.h"
-#include "SkColorSpaceXform.h"
 #include "SkEncodedImageFormat.h"
 #include "SkEncodedOrigin.h"
 #include "SkImageInfo.h"
@@ -34,7 +34,6 @@ namespace DM {
 class CodecSrc;
 class ColorCodecSrc;
 }
-class ColorCodecBench;
 
 
 
@@ -172,7 +171,12 @@ public:
     
 
 
-    const SkImageInfo& getInfo() const { return fSrcInfo; }
+    SkImageInfo getInfo() const { return fEncodedInfo.makeImageInfo(); }
+
+    SkISize dimensions() const { return {fEncodedInfo.width(), fEncodedInfo.height()}; }
+    SkIRect bounds() const {
+        return SkIRect::MakeWH(fEncodedInfo.width(), fEncodedInfo.height());
+    }
 
     
 
@@ -197,7 +201,7 @@ public:
         
         
         if (desiredScale >= 1.0f) {
-            return this->getInfo().dimensions();
+            return this->dimensions();
         }
         return this->onGetScaledDimensions(desiredScale);
     }
@@ -252,8 +256,7 @@ public:
             : fZeroInitialized(kNo_ZeroInitialized)
             , fSubset(nullptr)
             , fFrameIndex(0)
-            , fPriorFrame(kNone)
-            , fPremulBehavior(SkTransferFunctionBehavior::kRespect)
+            , fPriorFrame(kNoFrame)
         {}
 
         ZeroInitialized            fZeroInitialized;
@@ -297,14 +300,6 @@ public:
 
 
         int                        fPriorFrame;
-
-        
-
-
-
-
-
-        SkTransferFunctionBehavior fPremulBehavior;
     };
 
     
@@ -582,7 +577,15 @@ public:
 
     
     
-    static constexpr int kNone = -1;
+    
+    
+    
+    static constexpr int kNoFrame = -1;
+
+    
+#ifdef SK_LEGACY_SKCODEC_NONE_ENUM
+    static constexpr int kNone = kNoFrame;
+#endif
 
     
 
@@ -660,6 +663,11 @@ public:
 
 
 
+
+
+
+
+
     int getRepetitionCount() {
         return this->onGetRepetitionCount();
     }
@@ -667,28 +675,16 @@ public:
 protected:
     const SkEncodedInfo& getEncodedInfo() const { return fEncodedInfo; }
 
-    using XformFormat = SkColorSpaceXform::ColorFormat;
+    using XformFormat = skcms_PixelFormat;
 
-    SkCodec(int width,
-            int height,
-            const SkEncodedInfo&,
-            XformFormat srcFormat,
-            std::unique_ptr<SkStream>,
-            sk_sp<SkColorSpace>,
-            SkEncodedOrigin = kTopLeft_SkEncodedOrigin);
-
-    
-
-
-    SkCodec(const SkEncodedInfo&,
-            const SkImageInfo&,
+    SkCodec(SkEncodedInfo&&,
             XformFormat srcFormat,
             std::unique_ptr<SkStream>,
             SkEncodedOrigin = kTopLeft_SkEncodedOrigin);
 
     virtual SkISize onGetScaledDimensions(float ) const {
         
-        return this->getInfo().dimensions();
+        return this->dimensions();
     }
 
     
@@ -749,34 +745,6 @@ protected:
     
 
 
-
-
-
-
-
-
-
-
-    uint64_t getFillValue(const SkImageInfo& dstInfo) const {
-        return this->onGetFillValue(dstInfo);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-    virtual uint64_t onGetFillValue(const SkImageInfo& dstInfo) const;
-
-    
-
-
     SkStream* stream() {
         return fStream.get();
     }
@@ -804,17 +772,14 @@ protected:
 
     virtual int onOutputScanline(int inputScanline) const;
 
-    bool initializeColorXform(const SkImageInfo& dstInfo, SkEncodedInfo::Alpha,
-                              SkTransferFunctionBehavior premulBehavior);
     
     
     
     virtual bool usesColorXform() const { return true; }
-    void applyColorXform(void* dst, const void* src, int count, SkAlphaType) const;
     void applyColorXform(void* dst, const void* src, int count) const;
 
-    SkColorSpaceXform* colorXform() const { return fColorXform.get(); }
-    bool xformOnDecode() const { return fXformOnDecode; }
+    bool colorXform() const { return fXformTime != kNo_XformTime; }
+    bool xformOnDecode() const { return fXformTime == kDecodeRow_XformTime; }
 
     virtual int onGetFrameCount() {
         return 1;
@@ -830,7 +795,6 @@ protected:
 
 private:
     const SkEncodedInfo                fEncodedInfo;
-    const SkImageInfo                  fSrcInfo;
     const XformFormat                  fSrcXformFormat;
     std::unique_ptr<SkStream>          fStream;
     bool                               fNeedsRewind;
@@ -838,9 +802,16 @@ private:
 
     SkImageInfo                        fDstInfo;
     Options                            fOptions;
+
+    enum XformTime {
+        kNo_XformTime,
+        kPalette_XformTime,
+        kDecodeRow_XformTime,
+    };
+    XformTime                          fXformTime;
     XformFormat                        fDstXformFormat; 
-    std::unique_ptr<SkColorSpaceXform> fColorXform;
-    bool                               fXformOnDecode;
+    skcms_ICCProfile                   fDstProfile;
+    skcms_AlphaFormat                  fDstXformAlphaFormat;
 
     
     int                                fCurrScanline;
@@ -852,8 +823,11 @@ private:
 
 
 
-    virtual bool conversionSupported(const SkImageInfo& dst, SkColorType srcColor,
-                                     bool srcIsOpaque, const SkColorSpace* srcCS) const;
+    virtual bool conversionSupported(const SkImageInfo& dst, bool srcIsOpaque,
+                                     bool needsColorXform);
+
+    bool initializeColorXform(const SkImageInfo& dstInfo, SkEncodedInfo::Alpha, bool srcIsOpaque);
+
     
 
 
@@ -864,7 +838,7 @@ private:
 
 
     bool dimensionsSupported(const SkISize& dim) {
-        return dim == fSrcInfo.dimensions() || this->onDimensionsSupported(dim);
+        return dim == this->dimensions() || this->onDimensionsSupported(dim);
     }
 
     

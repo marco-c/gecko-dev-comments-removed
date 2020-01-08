@@ -30,10 +30,21 @@ typedef sk_sp<SkData> (*SkSerialTypefaceProc)(SkTypeface*, void* ctx);
 
 
 
-
-
 typedef sk_sp<SkPicture> (*SkDeserialPictureProc)(const void* data, size_t length, void* ctx);
+
+
+
+
+
+
+
+
 typedef sk_sp<SkImage> (*SkDeserialImageProc)(const void* data, size_t length, void* ctx);
+
+
+
+
+
 typedef sk_sp<SkTypeface> (*SkDeserialTypefaceProc)(const void* data, size_t length, void* ctx);
 
 struct SK_API SkSerialProcs {

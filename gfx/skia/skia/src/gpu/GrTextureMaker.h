@@ -18,18 +18,6 @@ class GrTextureMaker : public GrTextureProducer {
 public:
     enum class AllowedTexGenType : bool { kCheap, kAny };
 
-    
-
-
-
-
-
-
-    sk_sp<GrTextureProxy> refTextureProxyForParams(const GrSamplerState&,
-                                                   SkColorSpace* dstColorSpace,
-                                                   sk_sp<SkColorSpace>* texColorSpace,
-                                                   SkScalar scaleAdjust[2]);
-
     std::unique_ptr<GrFragmentProcessor> createFragmentProcessor(
             const SkMatrix& textureMatrix,
             const SkRect& constraintRect,
@@ -40,8 +28,7 @@ public:
 
 protected:
     GrTextureMaker(GrContext* context, int width, int height, bool isAlphaOnly)
-        : INHERITED(width, height, isAlphaOnly)
-        , fContext(context) {}
+        : INHERITED(context, width, height, isAlphaOnly) {}
 
     
 
@@ -60,24 +47,14 @@ protected:
 
     virtual sk_sp<SkColorSpace> getColorSpace(SkColorSpace* dstColorSpace) = 0;
 
-    
-
-
-
-
-
-
-
-
-
-    virtual sk_sp<GrTextureProxy> generateTextureProxyForParams(const CopyParams&,
-                                                                bool willBeMipped,
-                                                                SkColorSpace* dstColorSpace);
-
     GrContext* context() const { return fContext; }
 
 private:
-    GrContext*  fContext;
+    sk_sp<GrTextureProxy> onRefTextureProxyForParams(const GrSamplerState&,
+                                                     SkColorSpace* dstColorSpace,
+                                                     sk_sp<SkColorSpace>* proxyColorSpace,
+                                                     bool willBeMipped,
+                                                     SkScalar scaleAdjust[2]) override;
 
     typedef GrTextureProducer INHERITED;
 };

@@ -5,12 +5,14 @@
 
 
 
+#include "SkXMLParser.h"
+
 #include "expat.h"
 
 #include "SkStream.h"
 #include "SkString.h"
+#include "SkTo.h"
 #include "SkTypes.h"
-#include "SkXMLParser.h"
 
 static char const* const gErrorStrings[] = {
     "empty or missing file ",

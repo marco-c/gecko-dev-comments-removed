@@ -36,29 +36,27 @@ public:
     virtual void insertEventMarker(const char*) = 0;
 
     virtual GrGpuRTCommandBuffer* asRTCommandBuffer() { return nullptr; }
-
-    
-    
-    virtual void submit() = 0;
-
-protected:
-    GrGpuCommandBuffer(GrSurfaceOrigin origin) : fOrigin(origin) {}
-
-    GrSurfaceOrigin fOrigin;
 };
 
 class GrGpuTextureCommandBuffer : public GrGpuCommandBuffer{
 public:
-    virtual ~GrGpuTextureCommandBuffer() {}
+    void set(GrTexture* texture, GrSurfaceOrigin origin) {
+        SkASSERT(!fTexture);
 
-    virtual void submit() = 0;
+        fOrigin = origin;
+        fTexture = texture;
+    }
 
 protected:
-    GrGpuTextureCommandBuffer(GrTexture* texture, GrSurfaceOrigin origin)
-            : INHERITED(origin)
-            , fTexture(texture) {}
+    GrGpuTextureCommandBuffer() : fOrigin(kTopLeft_GrSurfaceOrigin), fTexture(nullptr) {}
 
-    GrTexture* fTexture;
+    GrGpuTextureCommandBuffer(GrTexture* texture, GrSurfaceOrigin origin)
+            : fOrigin(origin)
+            , fTexture(texture) {
+    }
+
+    GrSurfaceOrigin fOrigin;
+    GrTexture*      fTexture;
 
 private:
     typedef GrGpuCommandBuffer INHERITED;
@@ -85,8 +83,6 @@ public:
         GrStoreOp fStoreOp;
     };
 
-    virtual ~GrGpuRTCommandBuffer() {}
-
     GrGpuRTCommandBuffer* asRTCommandBuffer() { return this; }
 
     virtual void begin() = 0;
@@ -97,10 +93,11 @@ public:
     
     
     
-    bool draw(const GrPipeline&,
-              const GrPrimitiveProcessor&,
+    bool draw(const GrPrimitiveProcessor&,
+              const GrPipeline&,
+              const GrPipeline::FixedDynamicState*,
+              const GrPipeline::DynamicStateArrays*,
               const GrMesh[],
-              const GrPipeline::DynamicState[],
               int meshCount,
               const SkRect& bounds);
 
@@ -121,21 +118,32 @@ public:
     virtual void discard() = 0;
 
 protected:
+    GrGpuRTCommandBuffer() : fOrigin(kTopLeft_GrSurfaceOrigin), fRenderTarget(nullptr) {}
+
     GrGpuRTCommandBuffer(GrRenderTarget* rt, GrSurfaceOrigin origin)
-            : INHERITED(origin)
+            : fOrigin(origin)
             , fRenderTarget(rt) {
     }
 
+    void set(GrRenderTarget* rt, GrSurfaceOrigin origin) {
+        SkASSERT(!fRenderTarget);
+
+        fRenderTarget = rt;
+        fOrigin = origin;
+    }
+
+    GrSurfaceOrigin fOrigin;
     GrRenderTarget* fRenderTarget;
 
 private:
     virtual GrGpu* gpu() = 0;
 
     
-    virtual void onDraw(const GrPipeline&,
-                        const GrPrimitiveProcessor&,
+    virtual void onDraw(const GrPrimitiveProcessor&,
+                        const GrPipeline&,
+                        const GrPipeline::FixedDynamicState*,
+                        const GrPipeline::DynamicStateArrays*,
                         const GrMesh[],
-                        const GrPipeline::DynamicState[],
                         int meshCount,
                         const SkRect& bounds) = 0;
 

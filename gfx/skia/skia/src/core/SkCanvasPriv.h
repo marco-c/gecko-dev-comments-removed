@@ -25,6 +25,10 @@ private:
 
 class SkCanvasPriv {
 public:
+    enum {
+        kDontClipToLayer_SaveLayerFlag = SkCanvas::kDontClipToLayer_PrivateSaveLayerFlag,
+    };
+
     
     static bool ReadLattice(SkReadBuffer&, SkCanvas::Lattice*);
 
@@ -33,6 +37,9 @@ public:
     
     
     static size_t WriteLattice(void* storage, const SkCanvas::Lattice&);
+
+    static SkCanvas::SaveLayerFlags LegacySaveFlagsToSaveLayerFlags(uint32_t legacySaveFlags);
+
 };
 
 #endif

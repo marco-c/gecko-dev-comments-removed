@@ -13,25 +13,21 @@
 
 class SkBitmapProvider {
 public:
-    explicit SkBitmapProvider(const SkImage* img, SkColorSpace* dstColorSpace)
-        : fImage(img)
-        , fDstColorSpace(dstColorSpace) {
+    explicit SkBitmapProvider(const SkImage* img)
+        : fImage(img) {
         SkASSERT(img);
     }
     SkBitmapProvider(const SkBitmapProvider& other)
         : fImage(other.fImage)
-        , fDstColorSpace(other.fDstColorSpace)
     {}
 
     int width() const;
     int height() const;
     uint32_t getID() const;
-    SkColorSpace* dstColorSpace() const { return fDstColorSpace; }
 
     SkImageInfo info() const;
     bool isVolatile() const;
 
-    SkBitmapCacheDesc makeCacheDesc(int w, int h) const;
     SkBitmapCacheDesc makeCacheDesc() const;
     void notifyAddedToCache() const;
 
@@ -47,7 +43,6 @@ private:
     
     
     const SkImage* fImage;
-    SkColorSpace*  fDstColorSpace;
 };
 
 #endif

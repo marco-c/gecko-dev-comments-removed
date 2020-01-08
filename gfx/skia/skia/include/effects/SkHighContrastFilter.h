@@ -72,12 +72,13 @@ struct SkHighContrastConfig {
 
 
 
+
 class SK_API SkHighContrastFilter {
 public:
     
     static sk_sp<SkColorFilter> Make(const SkHighContrastConfig& config);
 
-    SK_DECLARE_FLATTENABLE_REGISTRAR_GROUP()
+    static void InitializeFlattenables();
 };
 
 #endif

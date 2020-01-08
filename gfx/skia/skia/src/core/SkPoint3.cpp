@@ -49,10 +49,11 @@ bool SkPoint3::normalize() {
         this->set(0, 0, 0);
         return false;
     }
-
-    float scale;
-    if (SkScalarIsFinite(magSq)) {
-        scale = 1.0f / sk_float_sqrt(magSq);
+    
+    
+    double invScale;
+    if (sk_float_isfinite(magSq)) {
+        invScale = magSq;
     } else {
         
         
@@ -60,21 +61,16 @@ bool SkPoint3::normalize() {
         double xx = fX;
         double yy = fY;
         double zz = fZ;
-#ifdef SK_CPU_FLUSH_TO_ZERO
-        
-        
-        
-        double dscale = 1.0f / sqrt(xx * xx + yy * yy + zz * zz);
-        fX = x * dscale;
-        fY = y * dscale;
-        fZ = z * dscale;
-        return true;
-#else
-        scale = (float)(1.0f / sqrt(xx * xx + yy * yy + zz * zz));
-#endif
+        invScale = xx * xx + yy * yy + zz * zz;
     }
+    
+    double scale = 1 / sqrt(invScale);
     fX *= scale;
     fY *= scale;
     fZ *= scale;
+    if (!sk_float_isfinite(fX) || !sk_float_isfinite(fY) || !sk_float_isfinite(fZ)) {
+        this->set(0, 0, 0);
+        return false;
+    }
     return true;
 }

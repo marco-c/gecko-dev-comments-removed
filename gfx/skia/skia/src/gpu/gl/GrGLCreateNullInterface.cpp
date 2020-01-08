@@ -5,12 +5,13 @@
 
 
 
-
-#include "GrNonAtomicRef.h"
-#include "gl/GrGLInterface.h"
 #include "GrGLTestInterface.h"
+#include "GrNonAtomicRef.h"
 #include "SkMutex.h"
 #include "SkTDArray.h"
+#include "SkTo.h"
+#include "gl/GrGLInterface.h"
+
 #include <type_traits>
 
 
@@ -403,6 +404,9 @@ public:
         Framebuffer* framebuffer = fFramebufferManager.lookUp(id);
 
         GrAlwaysAssert(GR_GL_RENDERBUFFER == renderbuffertarget);
+        if (!renderBufferID && !fCurrRenderbuffer) {
+           return;
+        }
         GrAlwaysAssert(fCurrRenderbuffer);
         Renderbuffer* renderbuffer = fRenderbufferManager.lookUp(fCurrRenderbuffer);
 

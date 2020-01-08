@@ -8,20 +8,22 @@
 #ifndef SkImage_Base_DEFINED
 #define SkImage_Base_DEFINED
 
-#include "SkAtomics.h"
 #include "SkImage.h"
 #include "SkSurface.h"
+#include <atomic>
 
 #if SK_SUPPORT_GPU
-    #include "GrTextureProxy.h"
+#include "GrTextureProxy.h"
+#include "SkTDArray.h"
 
-    class GrTexture;
+class GrTexture;
 #endif
 
 #include <new>
 
 class GrSamplerState;
-class SkImageCacherator;
+class SkCachedData;
+struct SkYUVSizeInfo;
 
 enum {
     kNeedNewImageUniqueID = 0
@@ -35,7 +37,10 @@ public:
     
     
     virtual SkImageInfo onImageInfo() const = 0;
-    virtual SkAlphaType onAlphaType() const = 0;
+
+    virtual SkIRect onGetSubset() const {
+        return { 0, 0, this->width(), this->height() };
+    }
 
     virtual bool onPeekPixels(SkPixmap*) const { return false; }
 
@@ -54,13 +59,11 @@ public:
     virtual sk_sp<GrTextureProxy> refPinnedTextureProxy(uint32_t* uniqueID) const {
         return nullptr;
     }
-    virtual GrBackendObject onGetTextureHandle(bool flushPendingGrContextIO,
-                                               GrSurfaceOrigin* origin) const {
-        return 0;
-    }
+
     virtual GrTexture* onGetTexture() const { return nullptr; }
 #endif
-    virtual SkImageCacherator* peekCacherator() const { return nullptr; }
+    virtual GrBackendTexture onGetBackendTexture(bool flushPendingGrContextIO,
+                                                 GrSurfaceOrigin* origin) const;
 
     
     
@@ -69,7 +72,8 @@ public:
 
     virtual sk_sp<SkImage> onMakeSubset(const SkIRect&) const = 0;
 
-    virtual SkData* onRefEncoded() const { return nullptr; }
+    virtual sk_sp<SkCachedData> getPlanes(SkYUVSizeInfo*, SkYUVColorSpace*, const void* planes[3]);
+    virtual sk_sp<SkData> onRefEncoded() const { return nullptr; }
 
     virtual bool onAsLegacyBitmap(SkBitmap*) const;
 
@@ -77,12 +81,9 @@ public:
     virtual bool onIsLazyGenerated() const { return false; }
 
     
-    virtual bool onCanLazyGenerateOnGPU() const { return false; }
-
     
-    
-    void notifyAddedToCache() const {
-        fAddedToCache.store(true);
+    void notifyAddedToRasterCache() const {
+        fAddedToRasterCache.store(true);
     }
 
     virtual bool onIsValid(GrContext*) const = 0;
@@ -90,14 +91,13 @@ public:
     virtual bool onPinAsTexture(GrContext*) const { return false; }
     virtual void onUnpinAsTexture(GrContext*) const {}
 
-    virtual sk_sp<SkImage> onMakeColorSpace(sk_sp<SkColorSpace>, SkColorType,
-                                            SkTransferFunctionBehavior) const = 0;
+    virtual sk_sp<SkImage> onMakeColorSpace(sk_sp<SkColorSpace>) const = 0;
 protected:
     SkImage_Base(int width, int height, uint32_t uniqueID);
 
 private:
     
-    mutable SkAtomic<bool> fAddedToCache;
+    mutable std::atomic<bool> fAddedToRasterCache;
 
     typedef SkImage INHERITED;
 };

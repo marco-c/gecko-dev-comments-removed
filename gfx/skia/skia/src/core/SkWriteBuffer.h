@@ -67,7 +67,7 @@ protected:
     SkDeduper*      fDeduper = nullptr;
     SkSerialProcs   fProcs;
 
-    friend class SkPicture; 
+    friend class SkPicturePriv; 
 };
 
 
@@ -91,6 +91,10 @@ public:
     }
 
     size_t bytesWritten() const { return fWriter.bytesWritten(); }
+
+    
+    
+    bool usingInitialStorage() const;
 
     void writeByteArray(const void* data, size_t size) override;
     void writeBool(bool value) override;
@@ -118,17 +122,17 @@ public:
     void writeTypeface(SkTypeface* typeface) override;
     void writePaint(const SkPaint& paint) override;
 
-    bool writeToStream(SkWStream*);
-    void writeToMemory(void* dst) { fWriter.flatten(dst); }
+    bool writeToStream(SkWStream*) const;
+    void writeToMemory(void* dst) const { fWriter.flatten(dst); }
 
-    SkFactorySet* setFactoryRecorder(SkFactorySet*);
-    SkRefCntSet* setTypefaceRecorder(SkRefCntSet*);
+    void setFactoryRecorder(sk_sp<SkFactorySet>);
+    void setTypefaceRecorder(sk_sp<SkRefCntSet>);
 
 private:
-    SkFactorySet* fFactorySet;
-    SkWriter32 fWriter;
+    sk_sp<SkFactorySet> fFactorySet;
+    sk_sp<SkRefCntSet> fTFSet;
 
-    SkRefCntSet*    fTFSet;
+    SkWriter32 fWriter;
 
     
     SkTHashMap<SkString, uint32_t> fFlattenableDict;

@@ -11,20 +11,15 @@
 #include "../private/SkAtomics.h"
 #include "GrBuffer.h"
 #include "GrColor.h"
-#include "GrGpuResourceRef.h"
 #include "GrProcessorUnitTest.h"
-#include "GrProgramElement.h"
 #include "GrSamplerState.h"
 #include "GrShaderVar.h"
 #include "GrSurfaceProxyPriv.h"
-#include "GrSurfaceProxyRef.h"
 #include "GrTextureProxy.h"
 #include "SkMath.h"
 #include "SkString.h"
 
 class GrContext;
-class GrCoordTransform;
-class GrInvariantOutput;
 class GrResourceProvider;
 
 
@@ -68,13 +63,16 @@ public:
     enum ClassID {
         kBigKeyProcessor_ClassID,
         kBlockInputFragmentProcessor_ClassID,
+        kButtCapStrokedCircleGeometryProcessor_ClassID,
         kCircleGeometryProcessor_ClassID,
         kCircularRRectEffect_ClassID,
+        kClockwiseTestProcessor_ClassID,
         kColorMatrixEffect_ClassID,
         kColorTableEffect_ClassID,
         kComposeOneFragmentProcessor_ClassID,
         kComposeTwoFragmentProcessor_ClassID,
         kCoverageSetOpXP_ClassID,
+        kCubicStrokeProcessor_ClassID,
         kCustomXP_ClassID,
         kDashingCircleEffect_ClassID,
         kDashingLineEffect_ClassID,
@@ -85,6 +83,7 @@ public:
         kEllipseGeometryProcessor_ClassID,
         kEllipticalRRectEffect_ClassID,
         kGP_ClassID,
+        kVertexColorSpaceBenchGP_ClassID,
         kGrAARectEffect_ClassID,
         kGrAlphaThresholdFragmentProcessor_ClassID,
         kGrArithmeticFP_ClassID,
@@ -96,6 +95,7 @@ public:
         kGrCCPathProcessor_ClassID,
         kGrCircleBlurFragmentProcessor_ClassID,
         kGrCircleEffect_ClassID,
+        kGrClampedGradientEffect_ClassID,
         kGrColorSpaceXformEffect_ClassID,
         kGrConfigConversionEffect_ClassID,
         kGrConicEffect_ClassID,
@@ -109,17 +109,18 @@ public:
         kGrDistanceFieldLCDTextGeoProc_ClassID,
         kGrDistanceFieldPathGeoProc_ClassID,
         kGrDitherEffect_ClassID,
+        kGrDualIntervalGradientColorizer_ClassID,
         kGrEllipseEffect_ClassID,
         kGrGaussianConvolutionFragmentProcessor_ClassID,
         kGrImprovedPerlinNoiseEffect_ClassID,
         kGrLightingEffect_ClassID,
         kGrLinearGradient_ClassID,
+        kGrLinearGradientLayout_ClassID,
         kGrLumaColorFilterEffect_ClassID,
         kGrMagnifierEffect_ClassID,
         kGrMatrixConvolutionEffect_ClassID,
         kGrMeshTestProcessor_ClassID,
         kGrMorphologyEffect_ClassID,
-        kGrNonlinearColorSpaceXformEffect_ClassID,
         kGrOverdrawFragmentProcessor_ClassID,
         kGrPathProcessor_ClassID,
         kGrPerlinNoise2Effect_ClassID,
@@ -127,18 +128,27 @@ public:
         kGrPremulInputFragmentProcessor_ClassID,
         kGrQuadEffect_ClassID,
         kGrRadialGradient_ClassID,
+        kGrRadialGradientLayout_ClassID,
         kGrRectBlurEffect_ClassID,
         kGrRRectBlurEffect_ClassID,
         kGrRRectShadowGeoProc_ClassID,
         kGrSimpleTextureEffect_ClassID,
+        kGrSingleIntervalGradientColorizer_ClassID,
+        kGrSkSLFP_ClassID,
         kGrSpecularLightingEffect_ClassID,
         kGrSRGBEffect_ClassID,
         kGrSweepGradient_ClassID,
+        kGrSweepGradientLayout_ClassID,
         kGrTextureDomainEffect_ClassID,
+        kGrTextureGradientColorizer_ClassID,
+        kGrTiledGradientEffect_ClassID,
+        kGrTwoPointConicalGradientLayout_ClassID,
         kGrUnpremulInputFragmentProcessor_ClassID,
+        kGrUnrolledBinaryGradientColorizer_ClassID,
         kGrYUVtoRGBEffect_ClassID,
         kHighContrastFilterEffect_ClassID,
         kInstanceProcessor_ClassID,
+        kLatticeGP_ClassID,
         kLumaColorFilterEffect_ClassID,
         kMSAAQuadProcessor_ClassID,
         kPDLCDXferProcessor_ClassID,
@@ -152,6 +162,10 @@ public:
         kSwizzleFragmentProcessor_ClassID,
         kTestFP_ClassID,
         kTextureGeometryProcessor_ClassID,
+        kFlatNormalsFP_ClassID,
+        kMappedNormalsFP_ClassID,
+        kLightingFP_ClassID,
+        kLinearStrokeProcessor_ClassID,
     };
 
     virtual ~GrProcessor() = default;
@@ -190,181 +204,6 @@ private:
     GrProcessor& operator=(const GrProcessor&) = delete;
 
     ClassID fClassID;
-};
-
-
-class GrResourceIOProcessor : public GrProcessor {
-public:
-    class TextureSampler;
-    class BufferAccess;
-
-    int numTextureSamplers() const { return fTextureSamplers.count(); }
-
-    
-
-    const TextureSampler& textureSampler(int index) const { return *fTextureSamplers[index]; }
-
-    int numBuffers() const { return fBufferAccesses.count(); }
-
-    
-
-    const BufferAccess& bufferAccess(int index) const { return *fBufferAccesses[index]; }
-
-    bool instantiate(GrResourceProvider* resourceProvider) const;
-
-protected:
-    GrResourceIOProcessor(ClassID classID)
-    : INHERITED(classID) {}
-
-    
-
-
-
-
-
-    void addTextureSampler(const TextureSampler*);
-    void addBufferAccess(const BufferAccess*);
-
-    bool hasSameSamplersAndAccesses(const GrResourceIOProcessor&) const;
-
-    
-    void addPendingIOs() const;
-    void removeRefs() const;
-    void pendingIOComplete() const;
-
-private:
-    SkSTArray<4, const TextureSampler*, true> fTextureSamplers;
-    SkSTArray<1, const BufferAccess*, true> fBufferAccesses;
-
-    typedef GrProcessor INHERITED;
-};
-
-
-
-
-
-
-class GrResourceIOProcessor::TextureSampler {
-public:
-    
-
-
-    TextureSampler();
-    
-
-
-
-
-    explicit TextureSampler(const TextureSampler& that)
-            : fProxyRef(sk_ref_sp(that.fProxyRef.get()), that.fProxyRef.ioType())
-            , fSamplerState(that.fSamplerState)
-            , fVisibility(that.fVisibility) {}
-
-    TextureSampler(sk_sp<GrTextureProxy>, const GrSamplerState&);
-
-    explicit TextureSampler(sk_sp<GrTextureProxy>,
-                            GrSamplerState::Filter = GrSamplerState::Filter::kNearest,
-                            GrSamplerState::WrapMode wrapXAndY = GrSamplerState::WrapMode::kClamp,
-                            GrShaderFlags visibility = kFragment_GrShaderFlag);
-
-    TextureSampler& operator=(const TextureSampler&) = delete;
-
-    void reset(sk_sp<GrTextureProxy>, const GrSamplerState&,
-               GrShaderFlags visibility = kFragment_GrShaderFlag);
-    void reset(sk_sp<GrTextureProxy>,
-               GrSamplerState::Filter = GrSamplerState::Filter::kNearest,
-               GrSamplerState::WrapMode wrapXAndY = GrSamplerState::WrapMode::kClamp,
-               GrShaderFlags visibility = kFragment_GrShaderFlag);
-
-    bool operator==(const TextureSampler& that) const {
-        return this->proxy()->underlyingUniqueID() == that.proxy()->underlyingUniqueID() &&
-               fSamplerState == that.fSamplerState && fVisibility == that.fVisibility;
-    }
-
-    bool operator!=(const TextureSampler& other) const { return !(*this == other); }
-
-    
-    bool instantiate(GrResourceProvider* resourceProvider) const {
-        return SkToBool(fProxyRef.get()->instantiate(resourceProvider));
-    }
-
-    
-    GrTexture* peekTexture() const {
-        SkASSERT(fProxyRef.get()->priv().peekTexture());
-        return fProxyRef.get()->priv().peekTexture();
-    }
-
-    GrTextureProxy* proxy() const { return fProxyRef.get()->asTextureProxy(); }
-    GrShaderFlags visibility() const { return fVisibility; }
-    const GrSamplerState& samplerState() const { return fSamplerState; }
-
-    bool isInitialized() const { return SkToBool(fProxyRef.get()); }
-    
-
-
-    const GrSurfaceProxyRef* programProxy() const { return &fProxyRef; }
-
-private:
-    GrSurfaceProxyRef fProxyRef;
-    GrSamplerState fSamplerState;
-    GrShaderFlags fVisibility;
-};
-
-
-
-
-
-class GrResourceIOProcessor::BufferAccess {
-public:
-    BufferAccess() = default;
-    BufferAccess(GrPixelConfig texelConfig, GrBuffer* buffer,
-                 GrShaderFlags visibility = kFragment_GrShaderFlag) {
-        this->reset(texelConfig, buffer, visibility);
-    }
-    
-
-
-
-
-    explicit BufferAccess(const BufferAccess& that) {
-        this->reset(that.fTexelConfig, that.fBuffer.get(), that.fVisibility);
-    }
-
-    BufferAccess& operator=(const BufferAccess&) = delete;
-
-    
-
-
-    void reset(GrPixelConfig texelConfig, GrBuffer* buffer,
-               GrShaderFlags visibility = kFragment_GrShaderFlag) {
-        fTexelConfig = texelConfig;
-        fBuffer.set(SkRef(buffer), kRead_GrIOType);
-        fVisibility = visibility;
-    }
-
-    bool operator==(const BufferAccess& that) const {
-        return fTexelConfig == that.fTexelConfig &&
-               this->buffer() == that.buffer() &&
-               fVisibility == that.fVisibility;
-    }
-
-    bool operator!=(const BufferAccess& that) const { return !(*this == that); }
-
-    GrPixelConfig texelConfig() const { return fTexelConfig; }
-    GrBuffer* buffer() const { return fBuffer.get(); }
-    GrShaderFlags visibility() const { return fVisibility; }
-
-    
-
-
-    const GrGpuResourceRef* programBuffer() const { return &fBuffer;}
-
-private:
-    GrPixelConfig fTexelConfig;
-    GrTGpuResourceRef<GrBuffer> fBuffer;
-    GrShaderFlags fVisibility;
-
-    typedef SkNoncopyable INHERITED;
 };
 
 #endif

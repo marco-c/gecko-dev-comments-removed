@@ -43,11 +43,15 @@ private:
 
     void writeSwizzle(const Swizzle& swizzle) override;
 
+    void writeFieldAccess(const FieldAccess& access) override;
+
     void writeVariableReference(const VariableReference& ref) override;
 
     String getSamplerHandle(const Variable& var);
 
     void writeIfStatement(const IfStatement& s) override;
+
+    void writeReturnStatement(const ReturnStatement& s) override;
 
     void writeSwitchStatement(const SwitchStatement& s) override;
 
@@ -66,6 +70,8 @@ private:
 
     void writeVarInitializer(const Variable& var, const Expression& value) override;
 
+    void writeInputVars() override;
+
     void writePrivateVars();
 
     void writePrivateVarValues();
@@ -78,18 +84,54 @@ private:
 
     void writeGetKey();
 
+    void writeOnTextureSampler();
+
     void writeClone();
 
     void writeTest();
 
+    
+    
+    
+    
+    
+    
+    String convertSKSLExpressionToCPP(const Expression& e, const String& cppVar);
+
+    
+    
+    
+    
+    
+    
+    void flushEmittedCode();
+
+    
+    
+    
+    
+    void newExtraEmitCodeBlock();
+
+    
+    void addExtraEmitCodeLine(const String& toAppend);
+
+    int getChildFPIndex(const VariableReference& reference) const;
+
     String fName;
     String fFullName;
     SectionAndParameterHelper fSectionAndParameterHelper;
-    String fExtraEmitCodeCode;
+    std::vector<String> fExtraEmitCodeBlocks;
+
     std::vector<String> fFormatArgs;
     std::set<int> fWrittenTransformedCoords;
     
     bool fCPPMode = false;
+    bool fInMain = false;
+
+    
+    
+    
+    OutputStream* fCPPBuffer = nullptr;
 
     typedef GLSLCodeGenerator INHERITED;
 };

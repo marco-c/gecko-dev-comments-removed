@@ -8,12 +8,24 @@
 #ifndef SkEncodedInfo_DEFINED
 #define SkEncodedInfo_DEFINED
 
+#include "SkData.h"
 #include "SkImageInfo.h"
-
-class SkColorSpace;
+#include "../../third_party/skcms/skcms.h"
 
 struct SkEncodedInfo {
 public:
+    class ICCProfile {
+    public:
+        static std::unique_ptr<ICCProfile> Make(sk_sp<SkData>);
+        static std::unique_ptr<ICCProfile> Make(const skcms_ICCProfile&);
+
+        const skcms_ICCProfile* profile() const { return &fProfile; }
+    private:
+        ICCProfile(const skcms_ICCProfile&, sk_sp<SkData> = nullptr);
+
+        skcms_ICCProfile fProfile;
+        sk_sp<SkData>    fData;
+    };
 
     enum Alpha {
         kOpaque_Alpha,
@@ -38,6 +50,20 @@ public:
 
         
         kGrayAlpha_Color,
+
+        
+        
+        
+        
+        
+        kXAlpha_Color,
+
+        
+        
+        
+        
+        
+        k565_Color,
 
         
         kPalette_Color,
@@ -67,7 +93,13 @@ public:
         kYCCK_Color,
     };
 
-    static SkEncodedInfo Make(Color color, Alpha alpha, int bitsPerComponent) {
+    static SkEncodedInfo Make(int width, int height, Color color, Alpha alpha,
+            int bitsPerComponent) {
+        return Make(width, height, color, alpha, bitsPerComponent, nullptr);
+    }
+
+    static SkEncodedInfo Make(int width, int height, Color color, Alpha alpha,
+            int bitsPerComponent, std::unique_ptr<ICCProfile> profile) {
         SkASSERT(1 == bitsPerComponent ||
                  2 == bitsPerComponent ||
                  4 == bitsPerComponent ||
@@ -105,29 +137,51 @@ public:
                 SkASSERT(kOpaque_Alpha != alpha);
                 SkASSERT(8 == bitsPerComponent);
                 break;
+            case kXAlpha_Color:
+                SkASSERT(kUnpremul_Alpha == alpha);
+                SkASSERT(8 == bitsPerComponent);
+                break;
+            case k565_Color:
+                SkASSERT(kOpaque_Alpha == alpha);
+                SkASSERT(8 == bitsPerComponent);
+                break;
             default:
                 SkASSERT(false);
                 break;
         }
 
-        return SkEncodedInfo(color, alpha, bitsPerComponent);
+        return SkEncodedInfo(width, height, color, alpha, bitsPerComponent, std::move(profile));
     }
 
     
 
 
 
-    SkImageInfo makeImageInfo(int width, int height, sk_sp<SkColorSpace> colorSpace) const {
-        auto ct = kGray_Color == fColor ? kGray_8_SkColorType   :
-                                          kN32_SkColorType      ;
+
+    SkImageInfo makeImageInfo() const {
+        auto ct =  kGray_Color == fColor ? kGray_8_SkColorType   :
+                 kXAlpha_Color == fColor ? kAlpha_8_SkColorType  :
+                    k565_Color == fColor ? kRGB_565_SkColorType  :
+                                           kN32_SkColorType      ;
         auto alpha = kOpaque_Alpha == fAlpha ? kOpaque_SkAlphaType
                                              : kUnpremul_SkAlphaType;
-        return SkImageInfo::Make(width, height, ct, alpha, std::move(colorSpace));
+        sk_sp<SkColorSpace> cs = fProfile ? SkColorSpace::Make(*fProfile->profile())
+                                          : nullptr;
+        if (!cs) {
+            cs = SkColorSpace::MakeSRGB();
+        }
+        return SkImageInfo::Make(fWidth, fHeight, ct, alpha, std::move(cs));
     }
 
-    Color color() const { return fColor; }
-    Alpha alpha() const { return fAlpha; }
+    int   width() const { return fWidth;  }
+    int  height() const { return fHeight; }
+    Color color() const { return fColor;  }
+    Alpha alpha() const { return fAlpha;  }
     bool opaque() const { return fAlpha == kOpaque_Alpha; }
+    const skcms_ICCProfile* profile() const {
+        if (!fProfile) return nullptr;
+        return fProfile->profile();
+    }
 
     uint8_t bitsPerComponent() const { return fBitsPerComponent; }
 
@@ -135,6 +189,7 @@ public:
         switch (fColor) {
             case kGray_Color:
                 return fBitsPerComponent;
+            case kXAlpha_Color:
             case kGrayAlpha_Color:
                 return 2 * fBitsPerComponent;
             case kPalette_Color:
@@ -142,6 +197,7 @@ public:
             case kRGB_Color:
             case kBGR_Color:
             case kYUV_Color:
+            case k565_Color:
                 return 3 * fBitsPerComponent;
             case kRGBA_Color:
             case kBGRA_Color:
@@ -156,17 +212,38 @@ public:
         }
     }
 
-private:
+    SkEncodedInfo(const SkEncodedInfo& orig) = delete;
+    SkEncodedInfo& operator=(const SkEncodedInfo&) = delete;
 
-    SkEncodedInfo(Color color, Alpha alpha, uint8_t bitsPerComponent)
-        : fColor(color)
+    SkEncodedInfo(SkEncodedInfo&& orig) = default;
+    SkEncodedInfo& operator=(SkEncodedInfo&&) = default;
+
+    
+    SkEncodedInfo copy() const {
+        auto copy = SkEncodedInfo::Make(fWidth, fHeight, fColor, fAlpha, fBitsPerComponent);
+        if (fProfile) {
+            copy.fProfile.reset(new ICCProfile(*fProfile.get()));
+        }
+        return copy;
+    }
+
+private:
+    SkEncodedInfo(int width, int height, Color color, Alpha alpha,
+            uint8_t bitsPerComponent, std::unique_ptr<ICCProfile> profile)
+        : fWidth(width)
+        , fHeight(height)
+        , fColor(color)
         , fAlpha(alpha)
         , fBitsPerComponent(bitsPerComponent)
+        , fProfile(std::move(profile))
     {}
 
-    Color   fColor;
-    Alpha   fAlpha;
-    uint8_t fBitsPerComponent;
+    int                         fWidth;
+    int                         fHeight;
+    Color                       fColor;
+    Alpha                       fAlpha;
+    uint8_t                     fBitsPerComponent;
+    std::unique_ptr<ICCProfile> fProfile;
 };
 
 #endif

@@ -12,6 +12,7 @@
 
 class GrContext;
 class GrGpu;
+class GrResourceProvider;
 
 
 

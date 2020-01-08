@@ -35,9 +35,6 @@ SkPixelRef::SkPixelRef(int width, int height, void* pixels, size_t rowBytes)
     , fHeight(height)
     , fPixels(pixels)
     , fRowBytes(rowBytes)
-#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
-    , fStableID(SkNextID::ImageID())
-#endif
 {
 #ifdef SK_TRACE_PIXELREF_LIFETIME
     SkDebugf(" pixelref %d\n", sk_atomic_inc(&gInstCounter));
@@ -75,7 +72,7 @@ uint32_t SkPixelRef::getGenerationID() const {
     uint32_t id = fTaggedGenID.load();
     if (0 == id) {
         uint32_t next = SkNextID::ImageID() | 1u;
-        if (fTaggedGenID.compare_exchange(&id, next)) {
+        if (fTaggedGenID.compare_exchange_strong(id, next)) {
             id = next;  
         } else {
             
@@ -92,11 +89,13 @@ void SkPixelRef::addGenIDChangeListener(GenIDChangeListener* listener) {
         delete listener;
         return;
     }
+    SkAutoMutexAcquire lock(fGenIDChangeListenersMutex);
     *fGenIDChangeListeners.append() = listener;
 }
 
 
 void SkPixelRef::callGenIDChangeListeners() {
+    SkAutoMutexAcquire lock(fGenIDChangeListenersMutex);
     
     if (this->genIDIsUnique()) {
         for (int i = 0; i < fGenIDChangeListeners.count(); i++) {
@@ -121,7 +120,6 @@ void SkPixelRef::notifyPixelsChanged() {
 #endif
     this->callGenIDChangeListeners();
     this->needsNewGenID();
-    this->onNotifyPixelsChanged();
 }
 
 void SkPixelRef::setImmutable() {
@@ -148,5 +146,3 @@ void SkPixelRef::restoreMutability() {
     SkASSERT(fMutability != kImmutable);
     fMutability = kMutable;
 }
-
-void SkPixelRef::onNotifyPixelsChanged() { }

@@ -10,15 +10,43 @@
 
 #include "SkMath.h"
 
-#if defined(SK_BUILD_FOR_IOS) && (defined(SK_BUILD_FOR_ARM32) || defined(SK_BUILD_FOR_ARM64))
+
+
+
+int32_t SkSqrtBits(int32_t value, int bitBias);
+
+
+
+static inline int32_t SkSqrt32(int32_t n) { return SkSqrtBits(n, 15); }
 
 
 
 
+static inline int SkClampPos(int value) {
+    return value & ~(value >> 31);
+}
 
 
-#define SK_CPU_FLUSH_TO_ZERO
+
+
+template <typename In, typename Out>
+inline void SkTDivMod(In numer, In denom, Out* div, Out* mod) {
+#ifdef SK_CPU_ARM32
+    
+    
+    
+    
+    
+    
+    const In d = numer/denom;
+    *div = static_cast<Out>(d);
+    *mod = static_cast<Out>(numer-d*denom);
+#else
+    
+    *div = static_cast<Out>(numer/denom);
+    *mod = static_cast<Out>(numer%denom);
 #endif
+}
 
 
 

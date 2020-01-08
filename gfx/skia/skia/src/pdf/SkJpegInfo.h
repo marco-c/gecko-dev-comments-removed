@@ -7,25 +7,19 @@
 #ifndef SkJpegInfo_DEFINED
 #define SkJpegInfo_DEFINED
 
+#include "SkEncodedInfo.h"
+#include "SkEncodedOrigin.h"
 #include "SkSize.h"
 
-class SkData;
-
-struct SkJFIFInfo {
-    SkISize fSize;
-    enum Type {
-        kGrayscale,
-        kYCbCr,
-    } fType;
-};
 
 
 
 
 
 
-
-
-bool SkIsJFIF(const SkData* skdata, SkJFIFInfo* info);
+bool SkGetJpegInfo(const void* data, size_t len,
+                   SkISize* size,
+                   SkEncodedInfo::Color* colorType,
+                   SkEncodedOrigin* orientation);
 
 #endif  

@@ -99,6 +99,7 @@ private:
     
     friend class SkInternalAtlasTextContext;
     friend class GrOpFlushState;
+    friend class TestingUploadTarget;
 
     
     GrDeferredUploadToken issueDrawToken() { return ++fLastIssuedToken; }

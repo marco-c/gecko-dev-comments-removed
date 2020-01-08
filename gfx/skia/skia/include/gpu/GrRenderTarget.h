@@ -38,11 +38,10 @@ public:
     GrFSAAType fsaaType() const {
         SkASSERT(fSampleCnt >= 1);
         if (fSampleCnt <= 1) {
-            SkASSERT(!(fFlags & GrRenderTargetFlags::kMixedSampled));
+            SkASSERT(!this->hasMixedSamples());
             return GrFSAAType::kNone;
         }
-        return (fFlags & GrRenderTargetFlags::kMixedSampled) ? GrFSAAType::kMixedSamples
-                                                             : GrFSAAType::kUnifiedMSAA;
+        return this->hasMixedSamples() ? GrFSAAType::kMixedSamples : GrFSAAType::kUnifiedMSAA;
     }
 
     
@@ -100,12 +99,6 @@ public:
     };
     virtual ResolveType getResolveType() const = 0;
 
-    
-
-
-
-    virtual GrBackendObject getRenderTargetHandle() const = 0;
-
     virtual GrBackendRenderTarget getBackendRenderTarget() const = 0;
 
     
@@ -116,9 +109,8 @@ public:
     const GrRenderTargetPriv renderTargetPriv() const;
 
 protected:
-    GrRenderTarget(GrGpu*, const GrSurfaceDesc&,
-                   GrRenderTargetFlags = GrRenderTargetFlags::kNone,
-                   GrStencilAttachment* = nullptr);
+    GrRenderTarget(GrGpu*, const GrSurfaceDesc&, GrStencilAttachment* = nullptr);
+    ~GrRenderTarget() override;
 
     
     void onAbandon() override;
@@ -134,8 +126,7 @@ private:
     friend class GrRenderTargetPriv;
 
     int                  fSampleCnt;
-    GrStencilAttachment* fStencilAttachment;
-    GrRenderTargetFlags  fFlags;
+    sk_sp<GrStencilAttachment> fStencilAttachment;
 
     SkIRect              fResolveRect;
 

@@ -8,19 +8,24 @@
 #ifndef SkMessageBus_DEFINED
 #define SkMessageBus_DEFINED
 
+#include "../private/SkNoncopyable.h"
 #include "SkMutex.h"
 #include "SkOnce.h"
 #include "SkTArray.h"
 #include "SkTDArray.h"
 #include "SkTypes.h"
 
+
+
+
+
+
 template <typename Message>
 class SkMessageBus : SkNoncopyable {
 public:
     
     
-    
-    static void Post(const Message& m, uint32_t destID = SK_InvalidUniqueID);
+    static void Post(const Message& m);
 
     class Inbox {
     public:
@@ -65,7 +70,7 @@ SkMessageBus<Message>::Inbox::Inbox(uint32_t uniqueID) : fUniqueID(uniqueID) {
     
     SkMessageBus<Message>* bus = SkMessageBus<Message>::Get();
     SkAutoMutexAcquire lock(bus->fInboxesMutex);
-    bus->fInboxes.push(this);
+    bus->fInboxes.push_back(this);
 }
 
 template<typename Message>
@@ -93,7 +98,7 @@ void SkMessageBus<Message>::Inbox::poll(SkTArray<Message>* messages) {
     SkASSERT(messages);
     messages->reset();
     SkAutoMutexAcquire lock(fMessagesMutex);
-    fMessages.swap(messages);
+    fMessages.swap(*messages);
 }
 
 
@@ -102,11 +107,11 @@ template <typename Message>
 SkMessageBus<Message>::SkMessageBus() {}
 
 template <typename Message>
- void SkMessageBus<Message>::Post(const Message& m, uint32_t destID) {
+ void SkMessageBus<Message>::Post(const Message& m) {
     SkMessageBus<Message>* bus = SkMessageBus<Message>::Get();
     SkAutoMutexAcquire lock(bus->fInboxesMutex);
     for (int i = 0; i < bus->fInboxes.count(); i++) {
-        if (SK_InvalidUniqueID == destID || bus->fInboxes[i]->fUniqueID == destID) {
+        if (m.shouldSend(bus->fInboxes[i]->fUniqueID)) {
             bus->fInboxes[i]->receive(m);
         }
     }

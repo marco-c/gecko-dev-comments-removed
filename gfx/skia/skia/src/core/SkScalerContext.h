@@ -11,6 +11,7 @@
 #include <memory>
 
 #include "SkGlyph.h"
+#include "SkMacros.h"
 #include "SkMask.h"
 #include "SkMaskFilter.h"
 #include "SkMaskGamma.h"
@@ -45,7 +46,7 @@ struct SkScalerContextEffects {
     SkMaskFilter*   fMaskFilter;
 };
 
-enum SkAxisAlignment {
+enum SkAxisAlignment : uint32_t {
     kNone_SkAxisAlignment,
     kX_SkAxisAlignment,
     kY_SkAxisAlignment
@@ -55,8 +56,11 @@ enum SkAxisAlignment {
 
 
 
-struct SkScalerContextRec {
 
+
+
+SK_BEGIN_REQUIRE_DENSE
+struct SkScalerContextRec {
     uint32_t    fFontID;
     SkScalar    fTextSize, fPreScaleX, fPreSkewX;
     SkScalar    fPost2x2[2][2];
@@ -136,6 +140,8 @@ public:
                    fPost2x2[0][1], fPost2x2[1][0], fPost2x2[1][1]);
         msg.appendf("  frame %g miter %g format %d join %d cap %d flags %#hx\n",
                    fFrameWidth, fMiterLimit, fMaskFormat, fStrokeJoin, fStrokeCap, fFlags);
+        msg.appendf("  lum bits %x, device gamma %d, paint gamma %d contrast %d\n", fLumBits,
+                    fDeviceGamma, fPaintGamma, fContrast);
         return msg;
     }
 
@@ -188,6 +194,8 @@ public:
                          SkMatrix* remainingRotation = nullptr,
                          SkMatrix* total = nullptr);
 
+    SkAxisAlignment computeAxisAlignmentForHText() const;
+
     inline SkPaint::Hinting getHinting() const;
     inline void setHinting(SkPaint::Hinting);
 
@@ -209,6 +217,7 @@ private:
         fLumBits = c;
     }
 };
+SK_END_REQUIRE_DENSE
 
 
 
@@ -221,7 +230,7 @@ class SkScalerContext {
 public:
     enum Flags {
         kFrameAndFill_Flag        = 0x0001,
-        kDevKernText_Flag         = 0x0002,
+        kUnused                   = 0x0002,
         kEmbeddedBitmapText_Flag  = 0x0004,
         kEmbolden_Flag            = 0x0008,
         kSubpixelPositioning_Flag = 0x0010,
@@ -286,7 +295,7 @@ public:
     void        getAdvance(SkGlyph*);
     void        getMetrics(SkGlyph*);
     void        getImage(const SkGlyph&);
-    void        getPath(SkPackedGlyphID, SkPath*);
+    bool SK_WARN_UNUSED_RESULT getPath(SkPackedGlyphID, SkPath*);
     void        getFontMetrics(SkPaint::FontMetrics*);
 
     
@@ -307,7 +316,8 @@ public:
                                   const SkMatrix* deviceMatrix,
                                   SkScalerContextFlags scalerContextFlags,
                                   SkScalerContextRec* rec,
-                                  SkScalerContextEffects* effects);
+                                  SkScalerContextEffects* effects,
+                                  bool enableTypefaceFiltering = true);
 
     static SkDescriptor*  MakeDescriptorForPaths(SkFontID fontID,
                                                  SkAutoDescriptor* ad);
@@ -338,7 +348,7 @@ public:
 
 
 
-    SkAxisAlignment computeAxisAlignmentForHText();
+    SkAxisAlignment computeAxisAlignmentForHText() const;
 
     static SkDescriptor* CreateDescriptorAndEffectsUsingPaint(
         const SkPaint& paint, const SkSurfaceProps* surfaceProps,
@@ -352,7 +362,7 @@ protected:
     
 
 
-    virtual void generateAdvance(SkGlyph* glyph) = 0;
+    virtual bool generateAdvance(SkGlyph* glyph) = 0;
 
     
 
@@ -376,7 +386,7 @@ protected:
 
 
 
-    virtual void generatePath(SkGlyphID glyphId, SkPath* path) = 0;
+    virtual bool SK_WARN_UNUSED_RESULT generatePath(SkGlyphID glyphId, SkPath* path) = 0;
 
     
     virtual void generateFontMetrics(SkPaint::FontMetrics*) = 0;
@@ -413,8 +423,7 @@ private:
     bool fGenerateImageFromPath;
 
     
-    bool internalGetPath(SkPackedGlyphID id, SkPath* fillPath,
-                         SkPath* devPath, SkMatrix* fillToDevMatrix);
+    bool internalGetPath(SkPackedGlyphID id, SkPath* devPath);
 
     
 protected:
@@ -427,8 +436,7 @@ private:
 };
 
 #define kRec_SkDescriptorTag            SkSetFourByteTag('s', 'r', 'e', 'c')
-#define kPathEffect_SkDescriptorTag     SkSetFourByteTag('p', 't', 'h', 'e')
-#define kMaskFilter_SkDescriptorTag     SkSetFourByteTag('m', 's', 'k', 'f')
+#define kEffects_SkDescriptorTag        SkSetFourByteTag('e', 'f', 'c', 't')
 
 
 

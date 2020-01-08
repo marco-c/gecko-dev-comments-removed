@@ -9,88 +9,199 @@
 #define SkRemoteGlyphCache_DEFINED
 
 #include <memory>
+#include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+#include "../private/SkTHash.h"
 #include "SkData.h"
-#include "SkDescriptor.h"
+#include "SkDevice.h"
+#include "SkDrawLooper.h"
+#include "SkMakeUnique.h"
+#include "SkNoDrawCanvas.h"
+#include "SkRefCnt.h"
 #include "SkSerialProcs.h"
-#include "SkTHash.h"
 #include "SkTypeface.h"
-#include "SkTypeface_remote.h"
 
-class SkScalerContextRecDescriptor {
+class Serializer;
+enum SkAxisAlignment : uint32_t;
+class SkDescriptor;
+class SkGlyphCache;
+struct SkPackedGlyphID;
+enum SkScalerContextFlags : uint32_t;
+class SkStrikeCache;
+class SkTypefaceProxy;
+struct WireTypeface;
+
+class SkStrikeServer;
+
+struct SkDescriptorMapOperators {
+    size_t operator()(const SkDescriptor* key) const;
+    bool operator()(const SkDescriptor* lhs, const SkDescriptor* rhs) const;
+};
+
+template <typename T>
+using SkDescriptorMap = std::unordered_map<const SkDescriptor*, T, SkDescriptorMapOperators,
+                                           SkDescriptorMapOperators>;
+
+using SkDescriptorSet =
+        std::unordered_set<const SkDescriptor*, SkDescriptorMapOperators, SkDescriptorMapOperators>;
+
+
+
+class SK_API SkTextBlobCacheDiffCanvas : public SkNoDrawCanvas {
 public:
-    SkScalerContextRecDescriptor() {}
-    explicit SkScalerContextRecDescriptor(const SkScalerContextRec& rec) {
-        auto desc = reinterpret_cast<SkDescriptor*>(&fDescriptor);
-        desc->init();
-        desc->addEntry(kRec_SkDescriptorTag, sizeof(rec), &rec);
-        SkASSERT(sizeof(fDescriptor) == desc->getLength());
-    }
+    struct SK_API Settings {
+        Settings();
 
-    SkScalerContextRecDescriptor& operator=(const SkScalerContextRecDescriptor& rhs) {
-        memcpy(&fDescriptor, &rhs.fDescriptor, rhs.desc().getLength());
-        return *this;
-    }
+        bool fContextSupportsDistanceFieldText = true;
+        SkScalar fMinDistanceFieldFontSize = -1.f;
+        SkScalar fMaxDistanceFieldFontSize = -1.f;
+        int fMaxTextureSize = 0;
+        size_t fMaxTextureBytes = 0u;
+    };
+    SkTextBlobCacheDiffCanvas(int width, int height, const SkSurfaceProps& props,
+                              SkStrikeServer* strikeServer, Settings settings = Settings());
 
-    const SkDescriptor& desc() const {
-        return *reinterpret_cast<const SkDescriptor*>(&fDescriptor);
-    }
+    
+    SkTextBlobCacheDiffCanvas(int width, int height, const SkMatrix& deviceMatrix,
+                              const SkSurfaceProps& props, SkStrikeServer* strikeserver,
+                              Settings settings = Settings());
+    ~SkTextBlobCacheDiffCanvas() override;
 
-    struct Hash {
-        uint32_t operator()(SkScalerContextRecDescriptor const& s) const {
-            return s.desc().getChecksum();
-        }
+protected:
+    SkCanvas::SaveLayerStrategy getSaveLayerStrategy(const SaveLayerRec& rec) override;
+    void onDrawTextBlob(const SkTextBlob* blob, SkScalar x, SkScalar y,
+                        const SkPaint& paint) override;
+
+private:
+    class TrackLayerDevice;
+
+
+};
+
+using SkDiscardableHandleId = uint32_t;
+
+
+class SK_API SkStrikeServer {
+public:
+    
+    
+    class SK_API DiscardableHandleManager {
+    public:
+        virtual ~DiscardableHandleManager() = default;
+
+        
+        
+        virtual SkDiscardableHandleId createHandle() = 0;
+
+        
+        
+        
+        
+        
+        
+        virtual bool lockHandle(SkDiscardableHandleId) = 0;
+
+        
+        
+        
+        virtual bool isHandleDeleted(SkDiscardableHandleId) { return false; }
     };
 
-    friend bool operator==(const SkScalerContextRecDescriptor& lhs,
-                           const SkScalerContextRecDescriptor& rhs ) {
-        return lhs.desc() == rhs.desc();
+    explicit SkStrikeServer(DiscardableHandleManager* discardableHandleManager);
+    ~SkStrikeServer();
+
+    
+    sk_sp<SkData> serializeTypeface(SkTypeface*);
+
+    
+    
+    
+    void writeStrikeData(std::vector<uint8_t>* memory);
+
+    
+    class SkGlyphCacheState;
+
+    SkGlyphCacheState* getOrCreateCache(const SkPaint&, const SkSurfaceProps&, const SkMatrix&,
+                                        SkScalerContextFlags flags,
+                                        SkScalerContextEffects* effects);
+
+    void setMaxEntriesInDescriptorMapForTesting(size_t count) {
+        fMaxEntriesInDescriptorMap = count;
     }
+    size_t remoteGlyphStateMapSizeForTesting() const { return fRemoteGlyphStateMap.size(); }
 
 private:
+    static constexpr size_t kMaxEntriesInDescriptorMap = 2000u;
+
+    void checkForDeletedEntries();
+
+    SkDescriptorMap<std::unique_ptr<SkGlyphCacheState>> fRemoteGlyphStateMap;
+    DiscardableHandleManager* const fDiscardableHandleManager;
+    SkTHashSet<SkFontID> fCachedTypefaces;
+    size_t fMaxEntriesInDescriptorMap = kMaxEntriesInDescriptorMap;
+
     
-    
-    template <typename T>
-    using storageFor = typename std::aligned_storage<sizeof(T), alignof(T)>::type;
-    struct {
-        storageFor<SkDescriptor>        dummy1;
-        storageFor<SkDescriptor::Entry> dummy2;
-        storageFor<SkScalerContextRec>  dummy3;
-    } fDescriptor;
+    SkDescriptorSet fLockedDescs;
+    std::vector<WireTypeface> fTypefacesToSend;
 };
 
-class SkRemoteGlyphCacheRenderer {
+class SK_API SkStrikeClient {
 public:
-    void prepareSerializeProcs(SkSerialProcs* procs);
-
-    SkScalerContext* generateScalerContext(
-        const SkScalerContextRecDescriptor& desc, SkFontID typefaceId);
-
-private:
-    sk_sp<SkData> encodeTypeface(SkTypeface* tf);
-
-    SkTHashMap<SkFontID, sk_sp<SkTypeface>> fTypefaceMap;
-
-    using DescriptorToContextMap =
-    SkTHashMap<
-    SkScalerContextRecDescriptor,
-    std::unique_ptr<SkScalerContext>,
-    SkScalerContextRecDescriptor::Hash>;
-
-    DescriptorToContextMap fScalerContextMap;
-};
-
-class SkRemoteGlyphCacheGPU {
-public:
-    explicit SkRemoteGlyphCacheGPU(std::unique_ptr<SkRemoteScalerContext> remoteScalerContext);
-
-    void prepareDeserializeProcs(SkDeserialProcs* procs);
-
-private:
-    sk_sp<SkTypeface> decodeTypeface(const void* buf, size_t len);
-
-    std::unique_ptr<SkRemoteScalerContext> fRemoteScalerContext;
     
-    SkTHashMap<SkFontID, sk_sp<SkTypefaceProxy>> fMapIdToTypeface;
+    
+    enum CacheMissType : uint32_t {
+        
+        kFontMetrics = 0,
+        kGlyphMetrics = 1,
+        kGlyphImage = 2,
+        kGlyphPath = 3,
+
+        
+        kGlyphMetricsFallback = 4,
+        kGlyphPathFallback = 5,
+
+        kLast = kGlyphPathFallback
+    };
+
+    
+    class DiscardableHandleManager : public SkRefCnt {
+    public:
+        virtual ~DiscardableHandleManager() = default;
+
+        
+        
+        virtual bool deleteHandle(SkDiscardableHandleId) = 0;
+
+        virtual void notifyCacheMiss(CacheMissType) {}
+    };
+
+    explicit SkStrikeClient(sk_sp<DiscardableHandleManager>,
+                            bool isLogging = true,
+                            SkStrikeCache* strikeCache = nullptr);
+    ~SkStrikeClient();
+
+    
+    
+    sk_sp<SkTypeface> deserializeTypeface(const void* data, size_t length);
+
+    
+    
+    
+    
+    bool readStrikeData(const volatile void* memory, size_t memorySize);
+
+private:
+    class DiscardableStrikePinner;
+
+    sk_sp<SkTypeface> addTypeface(const WireTypeface& wire);
+
+    SkTHashMap<SkFontID, sk_sp<SkTypeface>> fRemoteFontIdToTypeface;
+    sk_sp<DiscardableHandleManager> fDiscardableHandleManager;
+    SkStrikeCache* const fStrikeCache;
+    const bool fIsLogging;
 };
 
 #endif  

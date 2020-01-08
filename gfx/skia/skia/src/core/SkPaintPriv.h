@@ -9,11 +9,14 @@
 #define SkPaintPriv_DEFINED
 
 #include "SkImageInfo.h"
-#include "SkPaint.h"
 #include "SkMatrix.h"
+#include "SkPaint.h"
+#include "SkTypeface.h"
 
 class SkBitmap;
 class SkImage;
+class SkReadBuffer;
+class SkWriteBuffer;
 
 class SkPaintPriv {
 public:
@@ -67,6 +70,33 @@ public:
 
     
     static int ValidCountText(const void* text, size_t length, SkPaint::TextEncoding);
+
+    static SkTypeface* GetTypefaceOrDefault(const SkPaint& paint) {
+        return paint.getTypeface() ? paint.getTypeface() : SkTypeface::GetDefaultTypeface();
+    }
+
+    static sk_sp<SkTypeface> RefTypefaceOrDefault(const SkPaint& paint) {
+        return paint.getTypeface() ? paint.refTypeface() : SkTypeface::MakeDefault();
+    }
+
+    
+
+
+
+
+    static void Flatten(const SkPaint& paint, SkWriteBuffer& buffer);
+
+    
+
+
+
+
+
+
+
+
+    static bool Unflatten(SkPaint* paint, SkReadBuffer& buffer);
+
 };
 
 #endif

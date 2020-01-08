@@ -5,12 +5,14 @@
 
 
 
-#include <emmintrin.h>
 #include "SkBitmapProcState_opts_SSE2.h"
 #include "SkBitmapProcState_utils.h"
 #include "SkColorData.h"
 #include "SkPaint.h"
-#include "SkUtils.h"
+#include "SkTo.h"
+#include "SkUTF.h"
+
+#include <emmintrin.h>
 
 void S32_opaque_D32_filter_DX_SSE2(const SkBitmapProcState& s,
                                    const uint32_t* xy,
@@ -234,11 +236,18 @@ void S32_alpha_D32_filter_DX_SSE2(const SkBitmapProcState& s,
     } while (--count > 0);
 }
 
+
+
+static inline int32_t safe_fixed_add_shift(SkFixed a, SkFixed b) {
+    int64_t tmp = a;
+    return SkToS32((tmp + b) >> 16);
+}
+
 static inline uint32_t ClampX_ClampY_pack_filter(SkFixed f, unsigned max,
                                                  SkFixed one) {
     unsigned i = SkClampMax(f >> 16, max);
     i = (i << 4) | ((f >> 12) & 0xF);
-    return (i << 14) | SkClampMax((f + one) >> 16, max);
+    return (i << 14) | SkClampMax(safe_fixed_add_shift(f, one), max);
 }
 
 
@@ -354,9 +363,30 @@ void ClampX_ClampY_filter_scale_SSE2(const SkBitmapProcState& s, uint32_t xy[],
             } 
         } 
 
-        while (count-- > 0) {
-            *xy++ = ClampX_ClampY_pack_filter(fx, maxX, one);
-            fx += dx;
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        for (int i = 0; i < count; ++i) {
+            *xy++ = ClampX_ClampY_pack_filter(fx + i*dx, maxX, one);
         }
     }
 }

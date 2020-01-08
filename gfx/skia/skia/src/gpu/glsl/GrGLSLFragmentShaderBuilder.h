@@ -119,6 +119,7 @@ private:
     void enableSecondaryOutput();
     const char* getPrimaryColorOutputName() const;
     const char* getSecondaryColorOutputName() const;
+    bool primaryColorOutputIsInOut() const;
 
 #ifdef SK_DEBUG
     

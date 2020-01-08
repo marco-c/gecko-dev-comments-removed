@@ -56,7 +56,7 @@ SkColor SkColorFilter::filterColor(SkColor c) const {
         SkColorGetG(c) * inv255,
         SkColorGetB(c) * inv255,
         SkColorGetA(c) * inv255,
-    });
+    }, nullptr);
     return SkColorSetARGB(sk_float_round2int(c4.fA*255),
                           sk_float_round2int(c4.fR*255),
                           sk_float_round2int(c4.fG*255),
@@ -64,14 +64,14 @@ SkColor SkColorFilter::filterColor(SkColor c) const {
 }
 
 #include "SkRasterPipeline.h"
-SkColor4f SkColorFilter::filterColor4f(const SkColor4f& c) const {
-    SkPM4f dst, src = c.premul();
+SkColor4f SkColorFilter::filterColor4f(const SkColor4f& c, SkColorSpace* colorSpace) const {
+    SkPMColor4f dst, src = c.premul();
 
     SkSTArenaAlloc<128> alloc;
     SkRasterPipeline    pipeline(&alloc);
 
-    pipeline.append_constant_color(&alloc, src);
-    this->onAppendStages(&pipeline, nullptr, &alloc, c.fA == 1);
+    pipeline.append_constant_color(&alloc, src.vec());
+    this->onAppendStages(&pipeline, colorSpace, &alloc, c.fA == 1);
     SkJumper_MemoryCtx dstPtr = { &dst, 0 };
     pipeline.append(SkRasterPipeline::store_f32, &dstPtr);
     pipeline.run(0,0, 1,1);
@@ -97,17 +97,6 @@ public:
         
         return fOuter->getFlags() & fInner->getFlags();
     }
-
-#ifndef SK_IGNORE_TO_STRING
-    void toString(SkString* str) const override {
-        SkString outerS, innerS;
-        fOuter->toString(&outerS);
-        fInner->toString(&innerS);
-        
-        str->append(SkStringPrintf("SkComposeColorFilter: outer(%s) inner(%s)", outerS.c_str(),
-                                   innerS.c_str()));
-    }
-#endif
 
     void onAppendStages(SkRasterPipeline* p, SkColorSpace* dst, SkArenaAlloc* scratch,
                         bool shaderIsOpaque) const override {
@@ -227,8 +216,6 @@ public:
     }
 #endif
 
-    SK_TO_STRING_OVERRIDE()
-
     SK_DECLARE_PUBLIC_FLATTENABLE_DESERIALIZATION_PROCS(SkSRGBGammaColorFilter)
 
     void onAppendStages(SkRasterPipeline* p, SkColorSpace*, SkArenaAlloc* alloc,
@@ -263,18 +250,11 @@ private:
 
 sk_sp<SkFlattenable> SkSRGBGammaColorFilter::CreateProc(SkReadBuffer& buffer) {
     uint32_t dir = buffer.read32();
-    if (dir <= 1) {
-        return sk_sp<SkFlattenable>(new SkSRGBGammaColorFilter(static_cast<Direction>(dir)));
+    if (!buffer.validate(dir <= 1)) {
+        return nullptr;
     }
-    buffer.validate(false);
-    return nullptr;
+    return sk_sp<SkFlattenable>(new SkSRGBGammaColorFilter(static_cast<Direction>(dir)));
 }
-
-#ifndef SK_IGNORE_TO_STRING
-void SkSRGBGammaColorFilter::toString(SkString* str) const {
-    str->append("srgbgamma");
-}
-#endif
 
 template <SkSRGBGammaColorFilter::Direction dir>
 sk_sp<SkColorFilter> MakeSRGBGammaCF() {

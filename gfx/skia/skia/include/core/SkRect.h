@@ -5,6 +5,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #ifndef SkRect_DEFINED
 #define SkRect_DEFINED
 
@@ -12,6 +22,8 @@
 #include "SkSize.h"
 #include "../private/SkSafe32.h"
 #include "../private/SkTFitsIn.h"
+
+#include <utility>
 
 struct SkRect;
 
@@ -23,26 +35,10 @@ struct SkRect;
 
 
 struct SK_API SkIRect {
-
-    
-
-
-    int32_t fLeft;
-
-    
-
-
-    int32_t fTop;
-
-    
-
-
-    int32_t fRight;
-
-    
-
-
-    int32_t fBottom;
+    int32_t fLeft;   
+    int32_t fTop;    
+    int32_t fRight;  
+    int32_t fBottom; 
 
     
 
@@ -181,24 +177,6 @@ struct SK_API SkIRect {
 
 
 
-
-    int32_t centerX() const { return SkToS32(((int64_t)fRight + fLeft) >> 1); }
-
-    
-
-
-
-
-
-
-    int32_t centerY() const { return SkToS32(((int64_t)fBottom + fTop) >> 1); }
-
-    
-
-
-
-
-
     int64_t width64() const { return (int64_t)fRight - (int64_t)fLeft; }
 
     
@@ -228,7 +206,7 @@ struct SK_API SkIRect {
             return true;
         }
         
-        return !sk_64_isS32(w | h);
+        return !SkTFitsIn<int32_t>(w | h);
     }
 
     
@@ -251,16 +229,6 @@ struct SK_API SkIRect {
 
     friend bool operator!=(const SkIRect& a, const SkIRect& b) {
         return !(a == b);
-    }
-
-    
-
-
-
-
-    bool is16Bit() const {
-        return  SkTFitsIn<int16_t>(fLeft) && SkTFitsIn<int16_t>(fTop) &&
-                SkTFitsIn<int16_t>(fRight) && SkTFitsIn<int16_t>(fBottom);
     }
 
     
@@ -454,8 +422,15 @@ struct SK_API SkIRect {
 
 
 
-    bool quickReject(int l, int t, int r, int b) const {
-        return l >= fRight || fLeft >= r || t >= fBottom || fTop >= b;
+
+
+
+
+    void adjust(int32_t dL, int32_t dT, int32_t dR, int32_t dB) {
+        fLeft   = Sk32_sat_add(fLeft,   dL);
+        fTop    = Sk32_sat_add(fTop,    dT);
+        fRight  = Sk32_sat_add(fRight,  dR);
+        fBottom = Sk32_sat_add(fBottom, dB);
     }
 
     
@@ -673,11 +648,12 @@ struct SK_API SkIRect {
 
 
     void sort() {
+        using std::swap;
         if (fLeft > fRight) {
-            SkTSwap<int32_t>(fLeft, fRight);
+            swap(fLeft, fRight);
         }
         if (fTop > fBottom) {
-            SkTSwap<int32_t>(fTop, fBottom);
+            swap(fTop, fBottom);
         }
     }
 
@@ -710,26 +686,10 @@ struct SK_API SkIRect {
 
 
 struct SK_API SkRect {
-
-    
-
-
-    SkScalar fLeft;
-
-    
-
-
-    SkScalar fTop;
-
-    
-
-
-    SkScalar fRight;
-
-    
-
-
-    SkScalar fBottom;
+    SkScalar fLeft;   
+    SkScalar fTop;    
+    SkScalar fRight;  
+    SkScalar fBottom; 
 
     
 
@@ -813,20 +773,9 @@ struct SK_API SkRect {
 
 
 
-    static constexpr SkRect SK_WARN_UNUSED_RESULT MakeXYWH(SkScalar x, SkScalar y, SkScalar w, SkScalar h) {
+    static constexpr SkRect SK_WARN_UNUSED_RESULT MakeXYWH(SkScalar x, SkScalar y, SkScalar w,
+                                                           SkScalar h) {
         return SkRect {x, y, x + w, y + h};
-    }
-
-    
-
-    SK_ATTR_DEPRECATED("use Make()")
-    static SkRect SK_WARN_UNUSED_RESULT MakeFromIRect(const SkIRect& irect) {
-        SkRect r;
-        r.set(SkIntToScalar(irect.fLeft),
-              SkIntToScalar(irect.fTop),
-              SkIntToScalar(irect.fRight),
-              SkIntToScalar(irect.fBottom));
-        return r;
     }
 
     
@@ -956,14 +905,20 @@ struct SK_API SkRect {
 
 
 
-    SkScalar    centerX() const { return SkScalarHalf(fLeft + fRight); }
+    SkScalar centerX() const {
+        
+        return SkScalarHalf(fLeft) + SkScalarHalf(fRight);
+    }
 
     
 
 
 
 
-    SkScalar    centerY() const { return SkScalarHalf(fTop + fBottom); }
+    SkScalar centerY() const {
+        
+        return SkScalarHalf(fTop) + SkScalarHalf(fBottom);
+    }
 
     
 
@@ -1121,6 +1076,14 @@ struct SK_API SkRect {
 
 
     bool setBoundsCheck(const SkPoint pts[], int count);
+
+    
+
+
+
+
+
+    void setBoundsNoCheck(const SkPoint pts[], int count);
 
     
 
@@ -1487,6 +1450,7 @@ public:
 
 
 
+
     void roundOut(SkIRect* dst) const {
         SkASSERT(dst);
         dst->set(SkScalarFloorToInt(fLeft), SkScalarFloorToInt(fTop),
@@ -1494,6 +1458,7 @@ public:
     }
 
     
+
 
 
 
@@ -1537,6 +1502,7 @@ public:
 
 
 
+
     SkIRect roundOut() const {
         SkIRect ir;
         this->roundOut(&ir);
@@ -1548,12 +1514,13 @@ public:
 
 
     void sort() {
+        using std::swap;
         if (fLeft > fRight) {
-            SkTSwap<SkScalar>(fLeft, fRight);
+            swap(fLeft, fRight);
         }
 
         if (fTop > fBottom) {
-            SkTSwap<SkScalar>(fTop, fBottom);
+            swap(fTop, fBottom);
         }
     }
 

@@ -9,6 +9,9 @@
 #define GrMemoryPool_DEFINED
 
 #include "GrTypes.h"
+
+#include "SkRefCnt.h"
+
 #ifdef SK_DEBUG
 #include "SkTHash.h"
 #endif
@@ -121,69 +124,32 @@ protected:
     };
 };
 
+class GrOp;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <class T>
-class GrObjectMemoryPool: public GrMemoryPool {
+class GrOpMemoryPool : public SkRefCnt {
 public:
-    
-
-
-
-    GrObjectMemoryPool(size_t preallocCount, size_t minAllocCount)
-        : GrMemoryPool(CountToSize(preallocCount),
-                       CountToSize(SkTMax(minAllocCount, kSmallestMinAllocCount))) {
+    GrOpMemoryPool(size_t preallocSize, size_t minAllocSize)
+            : fMemoryPool(preallocSize, minAllocSize) {
     }
 
-    
+    template <typename Op, typename... OpArgs>
+    std::unique_ptr<Op> allocate(OpArgs&&... opArgs) {
+        char* mem = (char*) fMemoryPool.allocate(sizeof(Op));
+        return std::unique_ptr<Op>(new (mem) Op(std::forward<OpArgs>(opArgs)...));
+    }
 
+    void* allocate(size_t size) {
+        return fMemoryPool.allocate(size);
+    }
 
+    void release(std::unique_ptr<GrOp> op);
 
-    T* allocate() { return static_cast<T*>(GrMemoryPool::allocate(sizeof(T))); }
+    bool isEmpty() const { return fMemoryPool.isEmpty(); }
 
 private:
-    constexpr static size_t kTotalObjectSize =
-        kPerAllocPad + GR_CT_ALIGN_UP(sizeof(T), kAlignment);
-
-    constexpr static size_t CountToSize(size_t count) {
-        return kHeaderSize + count * kTotalObjectSize;
-    }
-
-public:
-    
-
-
-    constexpr static size_t kSmallestMinAllocCount =
-        (GrMemoryPool::kSmallestMinAllocSize - kHeaderSize + kTotalObjectSize - 1) /
-            kTotalObjectSize;
+    GrMemoryPool fMemoryPool;
 };
-
-template <class T>
-constexpr size_t GrObjectMemoryPool<T>::kSmallestMinAllocCount;
 
 #endif

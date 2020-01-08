@@ -47,14 +47,6 @@ public:
 
     
 
-    U16CPU nextU16() { return this->nextU() >> 16; }
-
-    
-
-    S16CPU nextS16() { return this->nextS() >> 16; }
-
-    
-
 
     float nextF() {
         unsigned int floatint = 0x3f800000 | (this->nextU() >> 9);
@@ -125,14 +117,6 @@ public:
     bool nextBiasedBool(SkScalar fractionTrue) {
         SkASSERT(fractionTrue >= 0 && fractionTrue <= SK_Scalar1);
         return this->nextUScalar1() <= fractionTrue;
-    }
-
-    
-
-
-    int64_t next64() {
-        int64_t hi = this->nextS();
-        return (hi << 32) | this->nextU();
     }
 
     

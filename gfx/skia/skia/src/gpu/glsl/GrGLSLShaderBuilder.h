@@ -26,7 +26,6 @@ public:
     virtual ~GrGLSLShaderBuilder() {}
 
     using SamplerHandle      = GrGLSLUniformHandler::SamplerHandle;
-    using TexelBufferHandle  = GrGLSLUniformHandler::TexelBufferHandle;
 
     
 
@@ -68,14 +67,6 @@ public:
     
 
 
-    void appendTexelFetch(SkString* out, TexelBufferHandle, const char* coordExpr) const;
-
-    
-    void appendTexelFetch(TexelBufferHandle, const char* coordExpr);
-
-    
-
-
     void defineConstant(const char* type, const char* name, const char* value) {
         this->definitions().appendf("const %s %s = %s;\n", type, name, value);
     }
@@ -110,6 +101,8 @@ public:
     }
 
     void codeAppend(const char* str) { this->code().append(str); }
+
+    void codeAppend(const char* str, size_t length) { this->code().append(str, length); }
 
     void codePrependf(const char format[], ...) SK_PRINTF_LIKE(2, 3) {
        va_list args;
@@ -169,8 +162,6 @@ protected:
         kFragCoordConventions_GLSLPrivateFeature,
         kBlendEquationAdvanced_GLSLPrivateFeature,
         kBlendFuncExtended_GLSLPrivateFeature,
-        kExternalTexture_GLSLPrivateFeature,
-        kTexelBuffer_GLSLPrivateFeature,
         kFramebufferFetch_GLSLPrivateFeature,
         kNoPerspectiveInterpolation_GLSLPrivateFeature,
         kLastGLSLPrivateFeature = kNoPerspectiveInterpolation_GLSLPrivateFeature
@@ -250,10 +241,12 @@ protected:
     int fCodeIndex;
     bool fFinalized;
 
+    friend class GrCCCoverageProcessor; 
     friend class GrGLSLProgramBuilder;
     friend class GrGLProgramBuilder;
     friend class GrGLSLVaryingHandler; 
     friend class GrGLPathProgramBuilder; 
     friend class GrVkPipelineStateBuilder;
+    friend class GrMtlPipelineStateBuilder;
 };
 #endif

@@ -31,7 +31,7 @@ public:
 
 
 
-    SkBmpMaskCodec(int width, int height, const SkEncodedInfo& info, std::unique_ptr<SkStream>,
+    SkBmpMaskCodec(SkEncodedInfo&& info, std::unique_ptr<SkStream>,
             uint16_t bitsPerPixel, SkMasks* masks,
             SkCodec::SkScanlineOrder rowOrder);
 

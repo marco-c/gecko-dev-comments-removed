@@ -10,9 +10,7 @@
 
 #include "SkBitmaskEnum.h"
 #include "SkRect.h"
-#include "SkRefCnt.h"
 #include "SkString.h"
-#include "SkTDArray.h"
 
 
 
@@ -21,11 +19,8 @@
 
 
 struct SkAdvancedTypefaceMetrics {
-    SkAdvancedTypefaceMetrics() {}
-    SkAdvancedTypefaceMetrics(const SkAdvancedTypefaceMetrics&) = delete;
-    SkAdvancedTypefaceMetrics& operator=(const SkAdvancedTypefaceMetrics&) = delete;
-    ~SkAdvancedTypefaceMetrics() {}
-
+    
+    SkString fPostScriptName;
     SkString fFontName;
 
     
@@ -68,12 +63,6 @@ struct SkAdvancedTypefaceMetrics {
     int16_t fCapHeight = 0;    
 
     SkIRect fBBox = {0, 0, 0, 0};  
-
-    
-    SkTArray<SkString> fGlyphNames;
-
-    
-    SkTDArray<SkUnichar> fGlyphToUnicode;
 };
 
 namespace skstd {

@@ -34,17 +34,19 @@ namespace SkOpts {
     extern void (*blit_row_s32a_opaque)(SkPMColor*, const SkPMColor*, int, U8CPU);
 
     
-    typedef void (*Swizzle_8888)(uint32_t*, const void*, int);
-    extern Swizzle_8888 RGBA_to_BGRA,          
-                        RGBA_to_rgbA,          
-                        RGBA_to_bgrA,          
-                        RGB_to_RGB1,           
-                        RGB_to_BGR1,           
-                        gray_to_RGB1,          
-                        grayA_to_RGBA,         
-                        grayA_to_rgbA,         
-                        inverted_CMYK_to_RGB1, 
-                        inverted_CMYK_to_BGR1; 
+    typedef void (*Swizzle_8888_u32)(uint32_t*, const uint32_t*, int);
+    extern Swizzle_8888_u32 RGBA_to_BGRA,          
+                            RGBA_to_rgbA,          
+                            RGBA_to_bgrA,          
+                            inverted_CMYK_to_RGB1, 
+                            inverted_CMYK_to_BGR1; 
+
+    typedef void (*Swizzle_8888_u8)(uint32_t*, const uint8_t*, int);
+    extern Swizzle_8888_u8 RGB_to_RGB1,     
+                           RGB_to_BGR1,     
+                           gray_to_RGB1,    
+                           grayA_to_RGBA,   
+                           grayA_to_rgbA;   
 
     extern void (*memset16)(uint16_t[], uint16_t, int);
     extern void SK_API (*memset32)(uint32_t[], uint32_t, int);
@@ -55,6 +57,17 @@ namespace SkOpts {
     static inline uint32_t hash(const void* data, size_t bytes, uint32_t seed=0) {
         return hash_fn(data, bytes, seed);
     }
+
+#define M(st) +1
+    
+    
+    using StageFn = void(*)(void);
+    extern StageFn stages_highp[SK_RASTER_PIPELINE_STAGES(M)], just_return_highp;
+    extern StageFn stages_lowp [SK_RASTER_PIPELINE_STAGES(M)], just_return_lowp;
+
+    extern void (*start_pipeline_highp)(size_t,size_t,size_t,size_t, void**);
+    extern void (*start_pipeline_lowp )(size_t,size_t,size_t,size_t, void**);
+#undef M
 
     extern void (*convolve_vertically)(const SkConvolutionFilter1D::ConvolutionFixed* filter_values,
                                        int filter_length, unsigned char* const* source_data_rows,

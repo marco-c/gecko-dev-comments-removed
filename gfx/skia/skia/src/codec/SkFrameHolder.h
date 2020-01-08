@@ -37,6 +37,17 @@ public:
     
 
 
+
+
+
+
+
+
+    SkFrame(SkFrame&&) = default;
+
+    
+
+
     int frameId() const { return fId; }
 
     

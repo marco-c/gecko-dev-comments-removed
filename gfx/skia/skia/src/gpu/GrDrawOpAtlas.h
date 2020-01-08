@@ -8,7 +8,11 @@
 #ifndef GrDrawOpAtlas_DEFINED
 #define GrDrawOpAtlas_DEFINED
 
-#include "SkPoint.h"
+#include <cmath>
+
+#include "SkGlyphRun.h"
+#include "SkIPoint16.h"
+#include "SkSize.h"
 #include "SkTDArray.h"
 #include "SkTInternalLList.h"
 
@@ -17,13 +21,68 @@
 class GrOnFlushResourceProvider;
 class GrRectanizer;
 
-struct GrDrawOpAtlasConfig {
-    int numPlotsX() const { return fWidth / fPlotWidth; }
-    int numPlotsY() const { return fHeight / fPlotWidth; }
-    int fWidth;
-    int fHeight;
-    int fPlotWidth;
-    int fPlotHeight;
+
+
+
+
+class GrDrawOpAtlasConfig {
+public:
+    GrDrawOpAtlasConfig(int maxDimension, size_t maxBytes)
+            : fPlotsPerLongDimension{PlotsPerLongDimensionForARGB(maxDimension, maxBytes)} {
+        SkASSERT(kPlotSize >= SkGlyphCacheCommon::kSkSideTooBigForAtlas);
+    }
+
+    
+    GrDrawOpAtlasConfig() : fPlotsPerLongDimension{1} {
+        SkASSERT(kPlotSize >= SkGlyphCacheCommon::kSkSideTooBigForAtlas);
+    }
+
+    SkISize numPlots(GrMaskFormat type) const {
+        switch(type) {
+            case kA8_GrMaskFormat:
+                return {fPlotsPerLongDimension, fPlotsPerLongDimension};
+            case kA565_GrMaskFormat:
+            case kARGB_GrMaskFormat: {
+                int plotsPerWidth = std::max(1, fPlotsPerLongDimension / 2);
+                return {plotsPerWidth, fPlotsPerLongDimension};
+            }
+        }
+
+        
+        return {1,1};
+    }
+
+    SkISize atlasDimensions(GrMaskFormat type) const {
+        SkISize plots = this->numPlots(type);
+        return {plots.width() * kPlotSize, plots.height() * kPlotSize};
+    }
+
+private:
+    static int PlotsPerLongDimensionForARGB(size_t maxDimension, size_t maxBytes) {
+        
+        
+        
+        double fitsHeight =
+                std::sqrt(2.0 * maxBytes /  GrMaskFormatBytesPerPixel(kARGB_GrMaskFormat));
+
+        
+        maxDimension = std::min(maxDimension, SkTo<size_t>(2048));
+
+        
+        double height = std::max(std::min(fitsHeight, (double)maxDimension), (double)kPlotSize);
+
+        
+        double alignedHeight = std::exp2(std::floor(std::log2(height)));
+
+        
+        return (int)alignedHeight / kPlotSize;
+    }
+
+    
+    static constexpr int kPlotSize = 512;
+
+    
+    const int fPlotsPerLongDimension;
 };
 
 
@@ -54,6 +113,7 @@ struct GrDrawOpAtlasConfig {
 class GrDrawOpAtlas {
 private:
     static constexpr auto kMaxMultitexturePages = 4;
+
 
 public:
     
@@ -91,7 +151,8 @@ public:
 
 
 
-    static std::unique_ptr<GrDrawOpAtlas> Make(GrContext*, GrPixelConfig, int width, int height,
+    static std::unique_ptr<GrDrawOpAtlas> Make(GrProxyProvider*, GrPixelConfig,
+                                               int width, int height,
                                                int numPlotsX, int numPlotsY,
                                                AllowMultitexturing allowMultitexturing,
                                                GrDrawOpAtlas::EvictionFunc func, void* data);
@@ -108,19 +169,32 @@ public:
 
 
 
-    bool addToAtlas(AtlasID*, GrDeferredUploadTarget*, int width, int height, const void* image,
-                    SkIPoint16* loc);
 
-    GrContext* context() const { return fContext; }
+
+
+
+    enum class ErrorCode {
+        kError,
+        kSucceeded,
+        kTryAgain
+    };
+
+    ErrorCode addToAtlas(GrResourceProvider*, AtlasID*, GrDeferredUploadTarget*,
+                         int width, int height,
+                         const void* image, SkIPoint16* loc);
+
     const sk_sp<GrTextureProxy>* getProxies() const { return fProxies; }
 
     uint64_t atlasGeneration() const { return fAtlasGeneration; }
 
     inline bool hasID(AtlasID id) {
+        if (kInvalidAtlasID == id) {
+            return false;
+        }
         uint32_t plot = GetPlotIndexFromID(id);
         SkASSERT(plot < fNumPlots);
         uint32_t page = GetPageIndexFromID(id);
-        SkASSERT(page < fNumPages);
+        SkASSERT(page < fNumActivePages);
         return fPages[page].fPlotArray[plot]->genID() == GetGenerationFromID(id);
     }
 
@@ -130,7 +204,7 @@ public:
         uint32_t plotIdx = GetPlotIndexFromID(id);
         SkASSERT(plotIdx < fNumPlots);
         uint32_t pageIdx = GetPageIndexFromID(id);
-        SkASSERT(pageIdx < fNumPages);
+        SkASSERT(pageIdx < fNumActivePages);
         Plot* plot = fPages[pageIdx].fPlotArray[plotIdx].get();
         this->makeMRU(plot, pageIdx);
         plot->setLastUseToken(token);
@@ -142,7 +216,7 @@ public:
         data->fData = userData;
     }
 
-    uint32_t pageCount() { return fNumPages; }
+    uint32_t numActivePages() { return fNumActivePages; }
 
     
 
@@ -204,7 +278,7 @@ public:
             const BulkUseTokenUpdater::PlotData& pd = updater.fPlotsToUpdate[i];
             
             
-            if (pd.fPageIndex < fNumPages) {
+            if (pd.fPageIndex < fNumActivePages) {
                 Plot* plot = fPages[pd.fPageIndex].fPlotArray[pd.fPlotIndex].get();
                 this->makeMRU(plot, pd.fPageIndex);
                 plot->setLastUseToken(token);
@@ -214,23 +288,21 @@ public:
 
     void compact(GrDeferredUploadToken startTokenForNextFlush);
 
-    static constexpr auto kGlyphMaxDim = 256;
-    static bool GlyphTooLargeForAtlas(int width, int height) {
-        return width > kGlyphMaxDim || height > kGlyphMaxDim;
-    }
-
     static uint32_t GetPageIndexFromID(AtlasID id) {
         return id & 0xff;
     }
 
     void instantiate(GrOnFlushResourceProvider*);
 
-private:
     uint32_t maxPages() const {
-        return AllowMultitexturing::kYes == fAllowMultitexturing ? kMaxMultitexturePages : 1;
+        return fMaxPages;
     }
 
-    GrDrawOpAtlas(GrContext*, GrPixelConfig config, int width, int height, int numPlotsX,
+    int numAllocated_TestingOnly() const;
+    void setMaxPages_TestingOnly(uint32_t maxPages);
+
+private:
+    GrDrawOpAtlas(GrProxyProvider*, GrPixelConfig, int width, int height, int numPlotsX,
                   int numPlotsY, AllowMultitexturing allowMultitexturing);
 
     
@@ -354,8 +426,12 @@ private:
         
     }
 
-    bool createNewPage();
-    void deleteLastPage();
+    bool uploadToPage(unsigned int pageIdx, AtlasID* id, GrDeferredUploadTarget* target,
+                      int width, int height, const void* image, SkIPoint16* loc);
+
+    bool createPages(GrProxyProvider*);
+    bool activateNewPage(GrResourceProvider*);
+    void deactivateLastPage();
 
     void processEviction(AtlasID);
     inline void processEvictionAndResetRects(Plot* plot) {
@@ -363,7 +439,6 @@ private:
         plot->resetRects();
     }
 
-    GrContext*            fContext;
     GrPixelConfig         fPixelConfig;
     int                   fTextureWidth;
     int                   fTextureHeight;
@@ -391,8 +466,9 @@ private:
     
     sk_sp<GrTextureProxy> fProxies[kMaxMultitexturePages];
     Page fPages[kMaxMultitexturePages];
-    AllowMultitexturing fAllowMultitexturing;
-    uint32_t fNumPages;
+    uint32_t fMaxPages;
+
+    uint32_t fNumActivePages;
 };
 
 #endif

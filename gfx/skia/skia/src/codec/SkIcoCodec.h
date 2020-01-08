@@ -48,8 +48,7 @@ protected:
 
     SkScanlineOrder onGetScanlineOrder() const override;
 
-    bool conversionSupported(const SkImageInfo&, SkColorType, bool,
-                             const SkColorSpace*) const override {
+    bool conversionSupported(const SkImageInfo&, bool, bool) override {
         
         return true;
     }
@@ -87,8 +86,7 @@ private:
 
 
 
-    SkIcoCodec(int width, int height, const SkEncodedInfo& info,
-            SkTArray<std::unique_ptr<SkCodec>, true>* embeddedCodecs, sk_sp<SkColorSpace> colorSpace);
+    SkIcoCodec(SkEncodedInfo&& info, SkTArray<std::unique_ptr<SkCodec>, true>* embeddedCodecs);
 
     std::unique_ptr<SkTArray<std::unique_ptr<SkCodec>, true>> fEmbeddedCodecs;
 

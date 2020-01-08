@@ -5,12 +5,12 @@
 
 
 
-
 #ifndef SkFloatBits_DEFINED
 #define SkFloatBits_DEFINED
 
 #include "SkTypes.h"
 #include "SkSafe_math.h"
+
 #include <float.h>
 
 
@@ -54,6 +54,18 @@ static inline float SkBits2Float(int32_t floatAsBits) {
     SkFloatIntUnion data;
     data.fSignBitInt = floatAsBits;
     return data.fFloat;
+}
+
+constexpr int32_t gFloatBits_exponent_mask = 0x7F800000;
+constexpr int32_t gFloatBits_matissa_mask  = 0x007FFFFF;
+
+static inline bool SkFloatBits_IsFinite(int32_t bits) {
+    return (bits & gFloatBits_exponent_mask) != gFloatBits_exponent_mask;
+}
+
+static inline bool SkFloatBits_IsInf(int32_t bits) {
+    return ((bits & gFloatBits_exponent_mask) == gFloatBits_exponent_mask) &&
+            (bits & gFloatBits_matissa_mask) == 0;
 }
 
 

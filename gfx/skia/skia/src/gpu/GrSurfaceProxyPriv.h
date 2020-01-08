@@ -17,25 +17,11 @@
 
 class GrSurfaceProxyPriv {
 public:
-    bool isInstantiated() const { return SkToBool(fProxy->fTarget); }
-
-    
-    GrSurface* peekSurface() const {
-        SkASSERT(fProxy->fTarget);
-        return fProxy->fTarget;
-    }
-
     
     
-    GrTexture* peekTexture() const {
-        return fProxy->fTarget ? fProxy->fTarget->asTexture() : nullptr;
-    }
-
     
-    GrRenderTarget* peekRenderTarget() const {
-        SkASSERT(fProxy->fTarget && fProxy->fTarget->asRenderTarget());
-        return fProxy->fTarget ? fProxy->fTarget->asRenderTarget() : nullptr;
-    }
+    
+    int32_t getProxyRefCnt() const { return fProxy->getProxyRefCnt(); }
 
     
     
@@ -59,7 +45,7 @@ public:
     void assign(sk_sp<GrSurface> surface) { fProxy->assign(std::move(surface)); }
 
     bool requiresNoPendingIO() const {
-        return fProxy->fFlags & GrResourceProvider::kNoPendingIO_Flag;
+        return fProxy->fSurfaceFlags & GrInternalSurfaceFlags::kNoPendingIO;
     }
 
     
@@ -74,11 +60,14 @@ public:
         return fProxy->fLazyInstantiationType;
     }
 
-    void testingOnly_setLazyInstantiationType(GrSurfaceProxy::LazyInstantiationType lazyType) {
-        fProxy->fLazyInstantiationType = lazyType;
+    bool isSafeToUninstantiate() const {
+        return SkToBool(fProxy->fTarget) &&
+               SkToBool(fProxy->fLazyInstantiateCallback) &&
+               GrSurfaceProxy::LazyInstantiationType::kUninstantiate == lazyInstantiationType();
     }
 
-    static bool AttachStencilIfNeeded(GrResourceProvider*, GrSurface*, bool needsStencil);
+    static bool SK_WARN_UNUSED_RESULT AttachStencilIfNeeded(GrResourceProvider*, GrSurface*,
+                                                            bool needsStencil);
 
 private:
     explicit GrSurfaceProxyPriv(GrSurfaceProxy* proxy) : fProxy(proxy) {}

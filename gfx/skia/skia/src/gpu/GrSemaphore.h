@@ -8,32 +8,32 @@
 #ifndef GrSemaphore_DEFINED
 #define GrSemaphore_DEFINED
 
-#include "SkRefCnt.h"
+#include "GrBackendSemaphore.h"
+#include "GrGpuResource.h"
 
-class GrBackendSemaphore;
-class GrGpu;
 
-class GrSemaphore : public SkRefCnt {
-private:
-    
-    
-    
-    
-    void resetGpu(const GrGpu* gpu) { fGpu = gpu; }
 
+
+
+
+
+
+class GrSemaphore : public GrGpuResource {
+public:
     
     
     
-    virtual void setBackendSemaphore(GrBackendSemaphore*) const = 0;
+    virtual GrBackendSemaphore backendSemaphore() const = 0;
+
+    const char* getResourceType() const override { return "semaphore"; }
 
 protected:
-    explicit GrSemaphore(const GrGpu* gpu) : fGpu(gpu) {}
+    explicit GrSemaphore(GrGpu* gpu) : INHERITED(gpu) {}
 
-    friend class GrGpu; 
-    friend class GrRenderTargetContext; 
-    friend class GrResourceProvider; 
+private:
+    size_t onGpuMemorySize() const override { return 0; }
 
-    const GrGpu* fGpu;
+    typedef GrGpuResource INHERITED;
 };
 
 #endif

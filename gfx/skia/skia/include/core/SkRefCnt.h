@@ -8,11 +8,13 @@
 #ifndef SkRefCnt_DEFINED
 #define SkRefCnt_DEFINED
 
-#include "../private/SkTLogic.h"
 #include "SkTypes.h"
+
 #include <atomic>
+#include <cstddef>
 #include <functional>
 #include <memory>
+#include <ostream>
 #include <type_traits>
 #include <utility>
 
@@ -26,7 +28,7 @@
 
 
 
-class SK_API SkRefCntBase : SkNoncopyable {
+class SK_API SkRefCntBase {
 public:
     
 
@@ -42,12 +44,12 @@ public:
 #endif
     }
 
+#ifdef SK_DEBUG
     
     int32_t getRefCnt() const {
         return fRefCnt.load(std::memory_order_relaxed);
     }
 
-#ifdef SK_DEBUG
     void validate() const {
         SkASSERT(getRefCnt() > 0);
     }
@@ -114,7 +116,10 @@ private:
 
     mutable std::atomic<int32_t> fRefCnt;
 
-    typedef SkNoncopyable INHERITED;
+    SkRefCntBase(SkRefCntBase&&) = delete;
+    SkRefCntBase(const SkRefCntBase&) = delete;
+    SkRefCntBase& operator=(SkRefCntBase&&) = delete;
+    SkRefCntBase& operator=(const SkRefCntBase&) = delete;
 };
 
 #ifdef SK_REF_CNT_MIXIN_INCLUDE
@@ -131,42 +136,6 @@ class SK_API SkRefCnt : public SkRefCntBase {
 };
 #endif
 
-
-
-
-
-
-
-
-#if defined(SK_BUILD_FOR_ANDROID_FRAMEWORK)
-
-
-
-
-#define SkRefCnt_SafeAssign(dst, src)   \
-    do {                                \
-        typedef typename std::remove_reference<decltype(dst)>::type \
-                SkRefCntPtrT;  \
-        SkRefCntPtrT old_dst = *const_cast<SkRefCntPtrT volatile *>(&dst); \
-        if (src) src->ref();            \
-        if (old_dst) old_dst->unref();          \
-        if (old_dst != *const_cast<SkRefCntPtrT volatile *>(&dst)) { \
-            SkDebugf("Detected racing Skia calls at %s:%d\n", \
-                    __FILE__, __LINE__); \
-        } \
-        dst = src;                      \
-    } while (0)
-
-#else 
-
-#define SkRefCnt_SafeAssign(dst, src)   \
-    do {                                \
-        if (src) src->ref();            \
-        if (dst) dst->unref();          \
-        dst = src;                      \
-    } while (0)
-
-#endif
 
 
 
@@ -194,19 +163,12 @@ template <typename T> static inline void SkSafeUnref(T* obj) {
     }
 }
 
-template<typename T> static inline void SkSafeSetNull(T*& obj) {
-    if (obj) {
-        obj->unref();
-        obj = nullptr;
-    }
-}
-
 
 
 
 
 template <typename Derived>
-class SkNVRefCnt : SkNoncopyable {
+class SkNVRefCnt {
 public:
     SkNVRefCnt() : fRefCnt(1) {}
     ~SkNVRefCnt() { SkASSERTF(1 == getRefCnt(), "NVRefCnt was %d", getRefCnt()); }
@@ -232,6 +194,11 @@ private:
     int32_t getRefCnt() const {
         return fRefCnt.load(std::memory_order_relaxed);
     }
+
+    SkNVRefCnt(SkNVRefCnt&&) = delete;
+    SkNVRefCnt(const SkNVRefCnt&) = delete;
+    SkNVRefCnt& operator=(SkNVRefCnt&&) = delete;
+    SkNVRefCnt& operator=(const SkNVRefCnt&) = delete;
 };
 
 
@@ -244,8 +211,6 @@ private:
 
 
 template <typename T> class sk_sp {
-    
-    using unspecified_bool_type = T* sk_sp::*;
 public:
     using element_type = T;
 
@@ -257,7 +222,8 @@ public:
 
 
     sk_sp(const sk_sp<T>& that) : fPtr(SkSafeRef(that.get())) {}
-    template <typename U, typename = skstd::enable_if_t<std::is_convertible<U*, T*>::value>>
+    template <typename U,
+              typename = typename std::enable_if<std::is_convertible<U*, T*>::value>::type>
     sk_sp(const sk_sp<U>& that) : fPtr(SkSafeRef(that.get())) {}
 
     
@@ -266,7 +232,8 @@ public:
 
 
     sk_sp(sk_sp<T>&& that) : fPtr(that.release()) {}
-    template <typename U, typename = skstd::enable_if_t<std::is_convertible<U*, T*>::value>>
+    template <typename U,
+              typename = typename std::enable_if<std::is_convertible<U*, T*>::value>::type>
     sk_sp(sk_sp<U>&& that) : fPtr(that.release()) {}
 
     
@@ -291,10 +258,13 @@ public:
 
 
     sk_sp<T>& operator=(const sk_sp<T>& that) {
-        this->reset(SkSafeRef(that.get()));
+        if (this != &that) {
+            this->reset(SkSafeRef(that.get()));
+        }
         return *this;
     }
-    template <typename U, typename = skstd::enable_if_t<std::is_convertible<U*, T*>::value>>
+    template <typename U,
+              typename = typename std::enable_if<std::is_convertible<U*, T*>::value>::type>
     sk_sp<T>& operator=(const sk_sp<U>& that) {
         this->reset(SkSafeRef(that.get()));
         return *this;
@@ -309,7 +279,8 @@ public:
         this->reset(that.release());
         return *this;
     }
-    template <typename U, typename = skstd::enable_if_t<std::is_convertible<U*, T*>::value>>
+    template <typename U,
+              typename = typename std::enable_if<std::is_convertible<U*, T*>::value>::type>
     sk_sp<T>& operator=(sk_sp<U>&& that) {
         this->reset(that.release());
         return *this;
@@ -320,12 +291,7 @@ public:
         return *this->get();
     }
 
-    
-    
-    
-    
-    operator unspecified_bool_type() const { return this->get() ? &sk_sp::fPtr : nullptr; }
-    bool operator!() const { return this->get() == nullptr; }
+    explicit operator bool() const { return this->get() != nullptr; }
 
     T* get() const { return fPtr; }
     T* operator->() const { return fPtr; }
@@ -391,7 +357,7 @@ template <typename T, typename U> inline bool operator<(const sk_sp<T>& a, const
     
     
     
-    return std::less<skstd::common_type_t<T*, U*>>()(a.get(), b.get());
+    return std::less<typename std::common_type<T*, U*>::type>()(a.get(), b.get());
 }
 template <typename T> inline bool operator<(const sk_sp<T>& a, std::nullptr_t) {
     return std::less<T*>()(a.get(), nullptr);
@@ -428,6 +394,11 @@ template <typename T> inline bool operator>=(const sk_sp<T>& a, std::nullptr_t) 
 }
 template <typename T> inline bool operator>=(std::nullptr_t, const sk_sp<T>& b) {
     return !(nullptr < b);
+}
+
+template <typename C, typename CT, typename T>
+auto operator<<(std::basic_ostream<C, CT>& os, const sk_sp<T>& sp) -> decltype(os << sp.get()) {
+    return os << sp.get();
 }
 
 template <typename T, typename... Args>

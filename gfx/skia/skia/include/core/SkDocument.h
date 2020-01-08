@@ -8,23 +8,15 @@
 #ifndef SkDocument_DEFINED
 #define SkDocument_DEFINED
 
-#include "SkBitmap.h"
-#include "SkPicture.h"
-#include "SkRect.h"
 #include "SkRefCnt.h"
-#include "SkString.h"
-#include "SkTime.h"
+#include "SkScalar.h"
 
 class SkCanvas;
 class SkWStream;
-
-#ifdef SK_BUILD_FOR_WIN
-struct IXpsOMObjectFactory;
-#endif
+struct SkRect;
 
 
-
-#define SK_ScalarDefaultRasterDPI           72.0f
+static constexpr SkScalar SK_ScalarDefaultRasterDPI = 72.0f;
 
 
 
@@ -38,122 +30,6 @@ struct IXpsOMObjectFactory;
 
 class SK_API SkDocument : public SkRefCnt {
 public:
-    struct OptionalTimestamp {
-        SkTime::DateTime fDateTime;
-        bool fEnabled;
-        OptionalTimestamp() : fEnabled(false) {}
-    };
-
-    
-
-
-    struct PDFMetadata {
-        
-
-
-        SkString fTitle;
-        
-
-
-        SkString fAuthor;
-        
-
-
-        SkString fSubject;
-        
-
-
-
-        SkString fKeywords;
-        
-
-
-
-
-        SkString fCreator;
-        
-
-
-
-
-        SkString fProducer;
-        
-
-
-        OptionalTimestamp fCreation;
-        
-
-
-        OptionalTimestamp fModified;
-
-        
-
-
-
-
-
-
-
-
-        SkScalar fRasterDPI = SK_ScalarDefaultRasterDPI;
-
-        
-
-
-
-        bool fPDFA = false;
-
-        
-
-
-
-
-
-        int fEncodingQuality = 101;
-    };
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    static sk_sp<SkDocument> MakePDF(SkWStream* stream, const PDFMetadata& metadata);
-    static sk_sp<SkDocument> MakePDF(SkWStream* stream);
-
-#ifdef SK_BUILD_FOR_WIN
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static sk_sp<SkDocument> MakeXPS(SkWStream* stream,
-                                     IXpsOMObjectFactory* xpsFactory,
-                                     SkScalar dpi = SK_ScalarDefaultRasterDPI);
-#endif
 
     
 

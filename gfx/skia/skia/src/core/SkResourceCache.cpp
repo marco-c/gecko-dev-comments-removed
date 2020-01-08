@@ -5,12 +5,14 @@
 
 
 
+#include "SkResourceCache.h"
+
 #include "SkDiscardableMemory.h"
 #include "SkMessageBus.h"
 #include "SkMipMap.h"
 #include "SkMutex.h"
 #include "SkOpts.h"
-#include "SkResourceCache.h"
+#include "SkTo.h"
 #include "SkTraceMemoryDump.h"
 
 #include <stddef.h>
@@ -195,7 +197,7 @@ void SkResourceCache::purgeAsNeeded(bool forcePurge) {
 
     if (fDiscardableFactory) {
         countLimit = SK_DISCARDABLEMEMORY_SCALEDIMAGECACHE_COUNT_LIMIT;
-        byteLimit = SK_MaxU32;  
+        byteLimit = UINT32_MAX;  
     } else {
         countLimit = SK_MaxS32; 
         byteLimit = fTotalByteLimit;

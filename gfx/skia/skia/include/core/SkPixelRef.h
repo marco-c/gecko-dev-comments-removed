@@ -8,7 +8,6 @@
 #ifndef SkPixelRef_DEFINED
 #define SkPixelRef_DEFINED
 
-#include "../private/SkAtomics.h"
 #include "../private/SkMutex.h"
 #include "../private/SkTDArray.h"
 #include "SkBitmap.h"
@@ -18,6 +17,8 @@
 #include "SkRefCnt.h"
 #include "SkSize.h"
 #include "SkString.h"
+
+#include <atomic>
 
 struct SkIRect;
 
@@ -44,18 +45,6 @@ public:
 
 
     uint32_t getGenerationID() const;
-
-#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
-    
-
-
-
-
-
-
-
-    uint32_t getStableID() const { return fStableID; }
-#endif
 
     
 
@@ -100,9 +89,6 @@ public:
     virtual SkDiscardableMemory* diagnostic_only_getDiscardable() const { return nullptr; }
 
 protected:
-    
-    virtual void onNotifyPixelsChanged();
-
     void android_only_reset(int width, int height, size_t rowBytes);
 
 private:
@@ -113,18 +99,15 @@ private:
 
     
     bool genIDIsUnique() const { return SkToBool(fTaggedGenID.load() & 1); }
-    mutable SkAtomic<uint32_t> fTaggedGenID;
+    mutable std::atomic<uint32_t> fTaggedGenID;
 
-#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
-    const uint32_t fStableID;
-#endif
-
+    SkMutex                         fGenIDChangeListenersMutex;
     SkTDArray<GenIDChangeListener*> fGenIDChangeListeners;  
 
     
-    SkAtomic<bool> fAddedToCache;
+    std::atomic<bool> fAddedToCache;
 
-    enum {
+    enum Mutability {
         kMutable,               
         kTemporarilyImmutable,  
         kImmutable,             

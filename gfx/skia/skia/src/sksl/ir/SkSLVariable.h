@@ -37,7 +37,15 @@ struct Variable : public Symbol {
     , fStorage(storage)
     , fInitialValue(initialValue)
     , fReadCount(0)
-    , fWriteCount(0) {}
+    , fWriteCount(initialValue ? 1 : 0) {}
+
+    ~Variable() override {
+        
+        if (fInitialValue) {
+            --fWriteCount;
+        }
+        SkASSERT(!fReadCount && !fWriteCount);
+    }
 
     virtual String description() const override {
         return fModifiers.description() + fType.fName + " " + fName;

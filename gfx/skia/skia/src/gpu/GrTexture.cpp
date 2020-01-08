@@ -25,14 +25,8 @@ void GrTexture::markMipMapsDirty() {
 }
 
 void GrTexture::markMipMapsClean() {
-    const bool sizeChanged = GrMipMapsStatus::kNotAllocated == fMipMapsStatus;
+    SkASSERT(GrMipMapsStatus::kNotAllocated != fMipMapsStatus);
     fMipMapsStatus = GrMipMapsStatus::kValid;
-    if (sizeChanged) {
-        
-        this->didChangeGpuMemorySize();
-        
-        
-    }
 }
 
 size_t GrTexture::onGpuMemorySize() const {
@@ -41,15 +35,9 @@ size_t GrTexture::onGpuMemorySize() const {
 }
 
 
-GrTexture::GrTexture(GrGpu* gpu, const GrSurfaceDesc& desc, GrSLType samplerType,
-                     GrSamplerState::Filter highestFilterMode,
+GrTexture::GrTexture(GrGpu* gpu, const GrSurfaceDesc& desc, GrTextureType textureType,
                      GrMipMapsStatus mipMapsStatus)
-        : INHERITED(gpu, desc)
-        , fSamplerType(samplerType)
-        , fHighestFilterMode(highestFilterMode)
-        , fMipMapsStatus(mipMapsStatus)
-        
-        , fMipColorMode(SkDestinationSurfaceColorMode::kLegacy) {
+        : INHERITED(gpu, desc), fTextureType(textureType), fMipMapsStatus(mipMapsStatus) {
     if (GrMipMapsStatus::kNotAllocated == fMipMapsStatus) {
         fMaxMipMapLevel = 0;
     } else {

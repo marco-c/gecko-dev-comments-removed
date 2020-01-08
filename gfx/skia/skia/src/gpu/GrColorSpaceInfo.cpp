@@ -6,6 +6,7 @@
 
 
 #include "GrColorSpaceInfo.h"
+#include "SkColorSpacePriv.h"
 
 GrColorSpaceInfo::GrColorSpaceInfo(sk_sp<SkColorSpace> colorSpace, GrPixelConfig config)
         : fColorSpace(std::move(colorSpace))
@@ -16,9 +17,8 @@ GrColorSpaceXform* GrColorSpaceInfo::colorSpaceXformFromSRGB() const {
     
     if (!fInitializedColorSpaceXformFromSRGB) {
         
-        auto srgbColorSpace = SkColorSpace::MakeSRGB();
-        fColorXformFromSRGB = GrColorSpaceXform::MakeGamutXform(srgbColorSpace.get(),
-                                                                fColorSpace.get());
+        fColorXformFromSRGB = GrColorSpaceXform::Make(sk_srgb_singleton(), kUnpremul_SkAlphaType,
+                                                      fColorSpace.get(),   kUnpremul_SkAlphaType);
         fInitializedColorSpaceXformFromSRGB = true;
     }
     

@@ -7,6 +7,14 @@
 
 
 
+
+
+
+
+
+
+
+
 #ifndef SkRegion_DEFINED
 #define SkRegion_DEFINED
 
@@ -15,12 +23,7 @@
 class SkPath;
 class SkRgnBuilder;
 
-namespace android {
-    class Region;
-}
 
-#define SkRegion_gEmptyRunHeadPtr   ((SkRegion::RunHead*)-1)
-#define SkRegion_gRectRunHeadPtr    nullptr
 
 
 
@@ -28,20 +31,58 @@ namespace android {
 
 
 class SK_API SkRegion {
-public:
     typedef int32_t RunType;
-    enum {
-        kRunTypeSentinel = 0x7FFFFFFF
-    };
-
-    SkRegion();
-    SkRegion(const SkRegion&);
-    explicit SkRegion(const SkIRect&);
-    ~SkRegion();
-
-    SkRegion& operator=(const SkRegion&);
+public:
 
     
+
+
+
+
+    SkRegion();
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    SkRegion(const SkRegion& region);
+
+    
+
+
+
+
+    explicit SkRegion(const SkIRect& rect);
+
+    
+
+    ~SkRegion();
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    SkRegion& operator=(const SkRegion& region);
+
+    
+
+
 
 
 
@@ -50,11 +91,21 @@ public:
     
 
 
+
+
     bool operator!=(const SkRegion& other) const {
         return !(*this == other);
     }
 
     
+
+
+
+
+
+
+
+
 
 
 
@@ -67,24 +118,43 @@ public:
 
 
 
-    void swap(SkRegion&);
+
+
+
+
+
+    void swap(SkRegion& other);
 
     
-    bool isEmpty() const { return fRunHead == SkRegion_gEmptyRunHeadPtr; }
+
+
+
+
+
+
+    bool isEmpty() const { return fRunHead == emptyRunHeadPtr(); }
 
     
-    bool isRect() const { return fRunHead == SkRegion_gRectRunHeadPtr; }
+
+
+
+    bool isRect() const { return fRunHead == kRectRunHeadPtr; }
 
     
+
+
+
     bool isComplex() const { return !this->isEmpty() && !this->isRect(); }
 
     
 
 
 
+
     const SkIRect& getBounds() const { return fBounds; }
 
     
+
 
 
 
@@ -99,9 +169,12 @@ public:
 
 
 
+
+
     bool getBoundaryPath(SkPath* path) const;
 
     
+
 
 
 
@@ -111,9 +184,17 @@ public:
 
 
 
-    bool setRect(const SkIRect&);
+
+
+    bool setRect(const SkIRect& rect);
 
     
+
+
+
+
+
+
 
 
 
@@ -127,13 +208,24 @@ public:
 
 
 
+
+
+
     bool setRects(const SkIRect rects[], int count);
 
     
 
 
 
-    bool setRegion(const SkRegion&);
+
+
+
+
+
+
+
+
+    bool setRegion(const SkRegion& region);
 
     
 
@@ -141,21 +233,33 @@ public:
 
 
 
-    bool setPath(const SkPath&, const SkRegion& clip);
+
+
+
+
+    bool setPath(const SkPath& path, const SkRegion& clip);
 
     
 
 
 
-    bool intersects(const SkIRect&) const;
+
+
+    bool intersects(const SkIRect& rect) const;
 
     
 
 
 
-    bool intersects(const SkRegion&) const;
+
+
+    bool intersects(const SkRegion& other) const;
 
     
+
+
+
+
 
 
     bool contains(int32_t x, int32_t y) const;
@@ -166,7 +270,7 @@ public:
 
 
 
-    bool contains(const SkIRect&) const;
+    bool contains(const SkIRect& other) const;
 
     
 
@@ -174,7 +278,7 @@ public:
 
 
 
-    bool contains(const SkRegion&) const;
+    bool contains(const SkRegion& other) const;
 
     
 
@@ -193,18 +297,24 @@ public:
 
 
 
+
+
+
+
     bool quickContains(int32_t left, int32_t top, int32_t right,
                        int32_t bottom) const {
         SkASSERT(this->isEmpty() == fBounds.isEmpty()); 
 
         return left < right && top < bottom &&
-               fRunHead == SkRegion_gRectRunHeadPtr &&  
+               fRunHead == kRectRunHeadPtr &&  
                
                fBounds.fLeft <= left && fBounds.fTop <= top &&
                fBounds.fRight >= right && fBounds.fBottom >= bottom;
     }
 
     
+
+
 
 
 
@@ -219,15 +329,23 @@ public:
 
 
 
+
+
     bool quickReject(const SkRegion& rgn) const {
         return this->isEmpty() || rgn.isEmpty() ||
                !SkIRect::Intersects(fBounds, rgn.fBounds);
     }
 
     
+
+
+
+
     void translate(int dx, int dy) { this->translate(dx, dy, this); }
 
     
+
+
 
 
 
@@ -239,20 +357,22 @@ public:
 
 
     enum Op {
-        kDifference_Op, 
-        kIntersect_Op,  
-        kUnion_Op,      
-        kXOR_Op,        
-        
-        kReverseDifference_Op,
-        kReplace_Op,    
-
-        kLastOp = kReplace_Op
+        kDifference_Op,                      
+        kIntersect_Op,                       
+        kUnion_Op,                           
+        kXOR_Op,                             
+        kReverseDifference_Op,               
+        kReplace_Op,                         
+        kLastOp               = kReplace_Op, 
     };
 
     static const int kOpCnt = kLastOp + 1;
 
     
+
+
+
+
 
 
 
@@ -272,6 +392,13 @@ public:
 
 
 
+
+
+
+
+
+
+
     bool op(int left, int top, int right, int bottom, Op op) {
         SkIRect rect;
         rect.set(left, top, right, bottom);
@@ -283,6 +410,10 @@ public:
 
 
 
+
+
+
+
     bool op(const SkRegion& rgn, Op op) { return this->op(*this, rgn, op); }
 
     
@@ -290,16 +421,31 @@ public:
 
 
 
-    bool op(const SkIRect& rect, const SkRegion& rgn, Op);
+
+
+
+
+
+    bool op(const SkIRect& rect, const SkRegion& rgn, Op op);
 
     
 
 
 
 
-    bool op(const SkRegion& rgn, const SkIRect& rect, Op);
+
+
+
+
+
+    bool op(const SkRegion& rgn, const SkIRect& rect, Op op);
 
     
+
+
+
+
+
 
 
 
@@ -308,6 +454,8 @@ public:
 
 #ifdef SK_BUILD_FOR_ANDROID
     
+
+
 
     char* toString();
 #endif
@@ -318,22 +466,61 @@ public:
 
     class SK_API Iterator {
     public:
+
+        
+
+
+
+
         Iterator() : fRgn(nullptr), fDone(true) {}
-        Iterator(const SkRegion&);
+
         
+
+
+
+
+        Iterator(const SkRegion& region);
+
+        
+
+
+
+
         bool rewind();
+
         
-        void reset(const SkRegion&);
+
+
+
+        void reset(const SkRegion& region);
+
+        
+
+
+
         bool done() const { return fDone; }
-        void next();
-        const SkIRect& rect() const { return fRect; }
+
         
+
+        void next();
+
+        
+
+
+
+
+        const SkIRect& rect() const { return fRect; }
+
+        
+
+
+
         const SkRegion* rgn() const { return fRgn; }
 
     private:
         const SkRegion* fRgn;
-        const RunType*  fRuns;
-        SkIRect         fRect;
+        const SkRegion::RunType*  fRuns;
+        SkIRect         fRect = {0, 0, 0, 0};
         bool            fDone;
     };
 
@@ -343,25 +530,63 @@ public:
 
     class SK_API Cliperator {
     public:
-        Cliperator(const SkRegion&, const SkIRect& clip);
+
+        
+
+
+
+
+
+        Cliperator(const SkRegion& region, const SkIRect& clip);
+
+        
+
+
+
         bool done() { return fDone; }
+
+        
+
         void  next();
+
+        
+
+
+
+
+
         const SkIRect& rect() const { return fRect; }
 
     private:
         Iterator    fIter;
         SkIRect     fClip;
-        SkIRect     fRect;
+        SkIRect     fRect = {0, 0, 0, 0};
         bool        fDone;
     };
 
     
 
 
-
     class Spanerator {
     public:
-        Spanerator(const SkRegion&, int y, int left, int right);
+
+        
+
+
+
+
+
+
+
+        Spanerator(const SkRegion& region, int y, int left, int right);
+
+        
+
+
+
+
+
+
         bool next(int* left, int* right);
 
     private:
@@ -374,9 +599,11 @@ public:
 
 
 
-    size_t writeToMemory(void* buffer) const;
-    
 
+
+    size_t writeToMemory(void* buffer) const;
+
+    
 
 
 
@@ -385,39 +612,25 @@ public:
 
     size_t readFromMemory(const void* buffer, size_t length);
 
-    
-
-
-
-    static const SkRegion& GetEmptyRegion();
-
-    SkDEBUGCODE(void dump() const;)
-    SkDEBUGCODE(void validate() const;)
-    SkDEBUGCODE(static void UnitTest();)
-
-    
-    SkDEBUGCODE(bool debugSetRuns(const RunType runs[], int count);)
-
 private:
-    enum {
-        kOpCount = kReplace_Op + 1
-    };
+    static constexpr int kOpCount = kReplace_Op + 1;
 
-    enum {
-        
-        
-        
-        kRectRegionRuns = 7
-    };
-
-    friend class android::Region;    
+    
+    
+    
+    static constexpr int kRectRegionRuns = 7;
 
     struct RunHead;
+
+    static RunHead* emptyRunHeadPtr() { return (SkRegion::RunHead*) -1; }
+    static constexpr RunHead* kRectRunHeadPtr = nullptr;
 
     
     void allocateRuns(int count);
     void allocateRuns(int count, int ySpanCount, int intervalCount);
     void allocateRuns(const RunHead& src);
+
+    SkDEBUGCODE(void dump() const;)
 
     SkIRect     fBounds;
     RunHead*    fRunHead;

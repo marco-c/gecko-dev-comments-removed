@@ -69,6 +69,20 @@ bool SK_API TightBounds(const SkPath& path, SkRect* result);
 
 
 
+
+
+
+
+
+
+
+
+
+
+bool SK_API AsWinding(const SkPath& path, SkPath* result);
+
+
+
 class SK_API SkOpBuilder {
 public:
     

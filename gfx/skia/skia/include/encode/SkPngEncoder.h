@@ -58,13 +58,6 @@ public:
 
 
 
-        SkTransferFunctionBehavior fUnpremulBehavior = SkTransferFunctionBehavior::kRespect;
-
-        
-
-
-
-
         sk_sp<SkDataTable> fComments;
     };
 

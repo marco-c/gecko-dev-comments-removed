@@ -28,41 +28,71 @@ class SkStrokeRec;
 namespace GrRectOpFactory {
 
 
-std::unique_ptr<GrDrawOp> MakeAAFill(GrPaint&&, const SkMatrix&, const SkRect&,
+std::unique_ptr<GrDrawOp> MakeAAFill(GrContext*,
+                                     GrPaint&&,
+                                     const SkMatrix&,
+                                     const SkRect&,
                                      const GrUserStencilSettings* = nullptr);
 
-std::unique_ptr<GrDrawOp> MakeAAFillWithLocalMatrix(GrPaint&&, const SkMatrix& viewMatrix,
-                                                    const SkMatrix& localMatrix, const SkRect&);
+std::unique_ptr<GrDrawOp> MakeAAFillWithLocalMatrix(GrContext*,
+                                                    GrPaint&&,
+                                                    const SkMatrix& viewMatrix,
+                                                    const SkMatrix& localMatrix,
+                                                    const SkRect&);
 
-std::unique_ptr<GrDrawOp> MakeAAFillWithLocalRect(GrPaint&&, const SkMatrix&, const SkRect& rect,
+std::unique_ptr<GrDrawOp> MakeAAFillWithLocalRect(GrContext*,
+                                                  GrPaint&&,
+                                                  const SkMatrix&,
+                                                  const SkRect& rect,
                                                   const SkRect& localRect);
 
 
 
-std::unique_ptr<GrDrawOp> MakeNonAAFill(GrPaint&&, const SkMatrix& viewMatrix, const SkRect& rect,
-                                        GrAAType, const GrUserStencilSettings* = nullptr);
+std::unique_ptr<GrDrawOp> MakeNonAAFill(GrContext*,
+                                        GrPaint&&,
+                                        const SkMatrix& viewMatrix,
+                                        const SkRect& rect,
+                                        GrAAType,
+                                        const GrUserStencilSettings* = nullptr);
 
-std::unique_ptr<GrDrawOp> MakeNonAAFillWithLocalMatrix(GrPaint&&, const SkMatrix& viewMatrix,
-                                                       const SkMatrix& localMatrix, const SkRect&,
+std::unique_ptr<GrDrawOp> MakeNonAAFillWithLocalMatrix(GrContext*,
+                                                       GrPaint&&,
+                                                       const SkMatrix& viewMatrix,
+                                                       const SkMatrix& localMatrix,
+                                                       const SkRect&,
                                                        GrAAType,
                                                        const GrUserStencilSettings* = nullptr);
 
-std::unique_ptr<GrDrawOp> MakeNonAAFillWithLocalRect(GrPaint&&, const SkMatrix&, const SkRect& rect,
-                                                     const SkRect& localRect, GrAAType);
+std::unique_ptr<GrDrawOp> MakeNonAAFillWithLocalRect(GrContext*,
+                                                     GrPaint&&,
+                                                     const SkMatrix&,
+                                                     const SkRect& rect,
+                                                     const SkRect& localRect,
+                                                     GrAAType);
 
 
 
-std::unique_ptr<GrDrawOp> MakeAAStroke(GrPaint&&, const SkMatrix&, const SkRect&,
+std::unique_ptr<GrDrawOp> MakeAAStroke(GrContext*,
+                                       GrPaint&&,
+                                       const SkMatrix&,
+                                       const SkRect&,
                                        const SkStrokeRec&);
 
 
 
-std::unique_ptr<GrDrawOp> MakeAAFillNestedRects(GrPaint&&, const SkMatrix&, const SkRect rects[2]);
+std::unique_ptr<GrDrawOp> MakeAAFillNestedRects(GrContext*,
+                                                GrPaint&&,
+                                                const SkMatrix&,
+                                                const SkRect rects[2]);
 
 
 
-std::unique_ptr<GrDrawOp> MakeNonAAStroke(GrPaint&&, const SkMatrix&, const SkRect&,
-                                          const SkStrokeRec&, GrAAType);
+std::unique_ptr<GrDrawOp> MakeNonAAStroke(GrContext*,
+                                          GrPaint&&,
+                                          const SkMatrix&,
+                                          const SkRect&,
+                                          const SkStrokeRec&,
+                                          GrAAType);
 
 }  
 

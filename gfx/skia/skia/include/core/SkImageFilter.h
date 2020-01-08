@@ -14,6 +14,7 @@
 #include "SkColorSpace.h"
 #include "SkFilterQuality.h"
 #include "SkFlattenable.h"
+#include "SkImageInfo.h"
 #include "SkMatrix.h"
 #include "SkRect.h"
 
@@ -41,11 +42,14 @@ public:
     
     class OutputProperties {
     public:
-        explicit OutputProperties(SkColorSpace* colorSpace) : fColorSpace(colorSpace) {}
+        explicit OutputProperties(SkColorType colorType, SkColorSpace* colorSpace)
+            : fColorType(colorType), fColorSpace(colorSpace) {}
 
+        SkColorType colorType() const { return fColorType; }
         SkColorSpace* colorSpace() const { return fColorSpace; }
 
     private:
+        SkColorType fColorType;
         
         
         SkColorSpace* fColorSpace;
@@ -97,9 +101,6 @@ public:
             : fRect(rect), fFlags(flags) {}
         uint32_t flags() const { return fFlags; }
         const SkRect& rect() const { return fRect; }
-#ifndef SK_IGNORE_TO_STRING
-        void toString(SkString* str) const;
-#endif
 
         
 
@@ -158,8 +159,12 @@ public:
 
 
 
+
+
+
+
     SkIRect filterBounds(const SkIRect& src, const SkMatrix& ctm,
-                         MapDirection = kReverse_MapDirection) const;
+                         MapDirection, const SkIRect* inputRect = nullptr) const;
 
 #if SK_SUPPORT_GPU
     static sk_sp<SkSpecialImage> DrawWithFP(GrContext* context,
@@ -247,9 +252,22 @@ public:
                                                  SkFilterQuality quality,
                                                  sk_sp<SkImageFilter> input);
 
-    SK_TO_STRING_PUREVIRT()
-    SK_DEFINE_FLATTENABLE_TYPE(SkImageFilter)
-    SK_DECLARE_FLATTENABLE_REGISTRAR_GROUP()
+    static void InitializeFlattenables();
+
+    static SkFlattenable::Type GetFlattenableType() {
+        return kSkImageFilter_Type;
+    }
+
+    SkFlattenable::Type getFlattenableType() const override {
+        return kSkImageFilter_Type;
+    }
+
+    static sk_sp<SkImageFilter> Deserialize(const void* data, size_t size,
+                                          const SkDeserialProcs* procs = nullptr) {
+        return sk_sp<SkImageFilter>(static_cast<SkImageFilter*>(
+                                  SkFlattenable::Deserialize(
+                                  kSkImageFilter_Type, data, size, procs).release()));
+    }
 
 protected:
     class Common {
@@ -266,16 +284,14 @@ protected:
 
         const CropRect& cropRect() const { return fCropRect; }
         int             inputCount() const { return fInputs.count(); }
-        sk_sp<SkImageFilter>* inputs() const { return fInputs.get(); }
+        sk_sp<SkImageFilter>* inputs() { return fInputs.begin(); }
 
-        sk_sp<SkImageFilter>  getInput(int index) const { return fInputs[index]; }
+        sk_sp<SkImageFilter> getInput(int index) { return fInputs[index]; }
 
     private:
         CropRect fCropRect;
         
-        SkAutoSTArray<2, sk_sp<SkImageFilter>> fInputs;
-
-        void allocInputs(int count);
+        SkSTArray<2, sk_sp<SkImageFilter>, true> fInputs;
     };
 
     SkImageFilter(sk_sp<SkImageFilter> const* inputs, int inputCount, const CropRect* cropRect);
@@ -330,7 +346,11 @@ protected:
 
 
 
-    virtual SkIRect onFilterBounds(const SkIRect&, const SkMatrix&, MapDirection) const;
+
+
+
+    virtual SkIRect onFilterBounds(const SkIRect&, const SkMatrix& ctm,
+                                   MapDirection, const SkIRect* inputRect) const;
 
     
 
@@ -345,7 +365,11 @@ protected:
 
 
 
-    virtual SkIRect onFilterNodeBounds(const SkIRect&, const SkMatrix&, MapDirection) const;
+
+
+
+    virtual SkIRect onFilterNodeBounds(const SkIRect&, const SkMatrix& ctm,
+                                       MapDirection, const SkIRect* inputRect) const;
 
     
     
@@ -389,8 +413,8 @@ protected:
 
 
 
-    sk_sp<SkSpecialImage> applyCropRect(const Context&, SkSpecialImage* src, SkIPoint* srcOffset,
-                                        SkIRect* bounds) const;
+    sk_sp<SkSpecialImage> applyCropRectAndPad(const Context&, SkSpecialImage* src,
+                                              SkIPoint* srcOffset, SkIRect* bounds) const;
 
     
 
@@ -421,6 +445,15 @@ protected:
         return sk_ref_sp(const_cast<SkImageFilter*>(this));
     }
 
+    
+    
+    
+    
+    static SkIRect DetermineRepeatedSrcBound(const SkIRect& srcBounds,
+                                             const SkIVector& filterOffset,
+                                             const SkISize& filterSize,
+                                             const SkIRect& originalSrcBounds);
+
 private:
     
     friend class SkColorSpaceXformer;
@@ -439,8 +472,7 @@ private:
     bool fUsesSrcInput;
     CropRect fCropRect;
     uint32_t fUniqueID; 
-    mutable SkTArray<SkImageFilterCacheKey> fCacheKeys;
-    mutable SkMutex fMutex;
+
     typedef SkFlattenable INHERITED;
 };
 

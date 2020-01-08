@@ -22,14 +22,9 @@ public:
     GrGeometryProcessor(ClassID classID)
         : INHERITED(classID)
         , fWillUseGeoShader(false)
-        , fLocalCoordsType(kUnused_LocalCoordsType)
         , fSampleShading(0.0) {}
 
     bool willUseGeoShader() const final { return fWillUseGeoShader; }
-
-    bool hasExplicitLocalCoords() const final {
-        return kHasExplicit_LocalCoordsType == fLocalCoordsType;
-    }
 
     
 
@@ -40,36 +35,42 @@ public:
 
 protected:
     void setWillUseGeoShader() { fWillUseGeoShader = true; }
+    void setSampleShading(float sampleShading) {
+        fSampleShading = sampleShading;
+    }
 
     
 
 
 
-
-
-
-    enum LocalCoordsType {
-        kUnused_LocalCoordsType,
-        kHasExplicit_LocalCoordsType,
-        kHasTransformed_LocalCoordsType
-    };
-
-    void setHasExplicitLocalCoords() {
-        SkASSERT(kUnused_LocalCoordsType == fLocalCoordsType);
-        fLocalCoordsType = kHasExplicit_LocalCoordsType;
-    }
-    void setHasTransformedLocalCoords() {
-        SkASSERT(kUnused_LocalCoordsType == fLocalCoordsType);
-        fLocalCoordsType = kHasTransformed_LocalCoordsType;
+    template <typename... Args>
+    static const Attribute& IthAttribute(int i, const Attribute& attr0, const Args&... attrs) {
+        SkASSERT(attr0.isInitialized());
+        return (0 == i) ? attr0 : IthAttribute(i - 1, attrs...);
     }
 
-    void setSampleShading(float sampleShading) {
-        fSampleShading = sampleShading;
+    static const Attribute& IthAttribute(int i) {
+        SK_ABORT("Illegal attribute Index");
+        static constexpr Attribute kBogus;
+        return kBogus;
     }
+
+    template <typename... Args>
+    static const Attribute& IthInitializedAttribute(int i, const Attribute& attr0,
+                                                    const Args&... attrs) {
+        if (attr0.isInitialized()) {
+            if (0 == i) {
+                return attr0;
+            }
+            i -= 1;
+        }
+        return IthInitializedAttribute(i, attrs...);
+    }
+
+    static const Attribute& IthInitializedAttribute(int i) { return IthAttribute(i); }
 
 private:
     bool fWillUseGeoShader;
-    LocalCoordsType fLocalCoordsType;
     float fSampleShading;
 
     typedef GrPrimitiveProcessor INHERITED;

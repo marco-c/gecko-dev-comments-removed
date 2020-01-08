@@ -9,31 +9,12 @@
 #define SkTypes_DEFINED
 
 
-
-
-
-
-
-
-
-
-
-#include <ciso646>  
-#if defined(__GNUC__) && __GNUC__ == 4 \
- && ((defined(__arm__) && (defined(__ARM_NEON__) || defined(__ARM_NEON))) || defined(__aarch64__)) \
- && defined(_LIBCPP_VERSION)
-    typedef float float32_t;
-    #include <memory>
-#endif
-
 #include "SkPreConfig.h"
 #include "SkUserConfig.h"
 #include "SkPostConfig.h"
 #include <stddef.h>
 #include <stdint.h>
 
-
-#include <string.h>
 
 
 
@@ -50,8 +31,6 @@
 
 
 SK_API extern void sk_abort_no_print(void);
-
-#define SK_INIT_TO_AVOID_WARNING    = 0
 
 #ifndef SkDebugf
     SK_API void SkDebugf(const char format[], ...);
@@ -79,7 +58,7 @@ SK_API extern void sk_abort_no_print(void);
     #define SkDEBUGFAIL(message)        SK_ABORT(message)
     #define SkDEBUGFAILF(fmt, ...)      SkASSERTF(false, fmt, ##__VA_ARGS__)
     #define SkDEBUGCODE(...)            __VA_ARGS__
-    #define SkDEBUGF(args       )       SkDebugf args
+    #define SkDEBUGF(...)               SkDebugf(__VA_ARGS__)
     #define SkAssertResult(cond)        SkASSERT(cond)
 #else
     #define SkASSERT(cond)            static_cast<void>(0)
@@ -87,78 +66,13 @@ SK_API extern void sk_abort_no_print(void);
     #define SkDEBUGFAIL(message)
     #define SkDEBUGFAILF(fmt, ...)
     #define SkDEBUGCODE(...)
-    #define SkDEBUGF(args)
+    #define SkDEBUGF(...)
 
     
     
     #define SkAssertResult(cond)         if (cond) {} do {} while(false)
 #endif
 
-#ifdef SK_IGNORE_TO_STRING
-    #define SK_TO_STRING_NONVIRT()
-    #define SK_TO_STRING_VIRT()
-    #define SK_TO_STRING_PUREVIRT()
-    #define SK_TO_STRING_OVERRIDE()
-#else
-    class SkString;
-    
-    
-    #define SK_TO_STRING_NONVIRT() void toString(SkString* str) const;
-    #define SK_TO_STRING_VIRT() virtual void toString(SkString* str) const;
-    #define SK_TO_STRING_PUREVIRT() virtual void toString(SkString* str) const = 0;
-    #define SK_TO_STRING_OVERRIDE() void toString(SkString* str) const override;
-#endif
-
-
-
-
-
-
-
-#define SK_MACRO_CONCAT(X, Y)           SK_MACRO_CONCAT_IMPL_PRIV(X, Y)
-#define SK_MACRO_CONCAT_IMPL_PRIV(X, Y)  X ## Y
-
-
-
-
-
-
-
-#define SK_MACRO_APPEND_LINE(name)  SK_MACRO_CONCAT(name, __LINE__)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define SK_REQUIRE_LOCAL_VAR(classname) \
-    static_assert(false, "missing name for " #classname)
-
-
-
-
-
-
-
-typedef int S8CPU;
 
 
 
@@ -169,59 +83,30 @@ typedef unsigned U8CPU;
 
 
 
-
-typedef int S16CPU;
-
-
-
-
-
 typedef unsigned U16CPU;
 
 
 
+template <typename T> static constexpr bool SkToBool(const T& x) { return 0 != x; }
 
-typedef uint8_t SkBool8;
+static constexpr int16_t SK_MaxS16 = INT16_MAX;
+static constexpr int16_t SK_MinS16 = -SK_MaxS16;
 
-#include "../private/SkTFitsIn.h"
-template <typename D, typename S> constexpr D SkTo(S s) {
-    return SkASSERT(SkTFitsIn<D>(s)),
-           static_cast<D>(s);
-}
-#define SkToS8(x)    SkTo<int8_t>(x)
-#define SkToU8(x)    SkTo<uint8_t>(x)
-#define SkToS16(x)   SkTo<int16_t>(x)
-#define SkToU16(x)   SkTo<uint16_t>(x)
-#define SkToS32(x)   SkTo<int32_t>(x)
-#define SkToU32(x)   SkTo<uint32_t>(x)
-#define SkToInt(x)   SkTo<int>(x)
-#define SkToUInt(x)  SkTo<unsigned>(x)
-#define SkToSizeT(x) SkTo<size_t>(x)
+static constexpr int32_t SK_MaxS32 = INT32_MAX;
+static constexpr int32_t SK_MinS32 = -SK_MaxS32;
+static constexpr int32_t SK_NaN32  = INT32_MIN;
 
-
-
-#define SkToBool(cond)  ((cond) != 0)
-
-#define SK_MaxS16   32767
-#define SK_MinS16   -32767
-#define SK_MaxU16   0xFFFF
-#define SK_MinU16   0
-#define SK_MaxS32   0x7FFFFFFF
-#define SK_MinS32   -SK_MaxS32
-#define SK_MaxU32   0xFFFFFFFF
-#define SK_MinU32   0
-#define SK_NaN32    ((int) (1U << 31))
-#define SK_MaxSizeT SIZE_MAX
-static constexpr int64_t SK_MaxS64 = 0x7FFFFFFFFFFFFFFF;
+static constexpr int64_t SK_MaxS64 = INT64_MAX;
 static constexpr int64_t SK_MinS64 = -SK_MaxS64;
 
-static inline int32_t SkLeftShift(int32_t value, int32_t shift) {
+static inline constexpr int32_t SkLeftShift(int32_t value, int32_t shift) {
     return (int32_t) ((uint32_t) value << shift);
 }
 
-static inline int64_t SkLeftShift(int64_t value, int32_t shift) {
+static inline constexpr int64_t SkLeftShift(int64_t value, int32_t shift) {
     return (int64_t) ((uint64_t) value << shift);
 }
+
 
 
 
@@ -230,32 +115,28 @@ template <typename T, size_t N> char (&SkArrayCountHelper(T (&array)[N]))[N];
 #define SK_ARRAY_COUNT(array) (sizeof(SkArrayCountHelper(array)))
 
 
-#if defined(__clang__)  
-    #define SK_BEGIN_REQUIRE_DENSE _Pragma("GCC diagnostic push") \
-                                   _Pragma("GCC diagnostic error \"-Wpadded\"")
-    #define SK_END_REQUIRE_DENSE   _Pragma("GCC diagnostic pop")
-#else
-    #define SK_BEGIN_REQUIRE_DENSE
-    #define SK_END_REQUIRE_DENSE
-#endif
 
-#define SkAlign2(x)     (((x) + 1) >> 1 << 1)
-#define SkIsAlign2(x)   (0 == ((x) & 1))
+template <typename T> static constexpr T SkAlign2(T x) { return (x + 1) >> 1 << 1; }
+template <typename T> static constexpr T SkAlign4(T x) { return (x + 3) >> 2 << 2; }
+template <typename T> static constexpr T SkAlign8(T x) { return (x + 7) >> 3 << 3; }
 
-#define SkAlign4(x)     (((x) + 3) >> 2 << 2)
-#define SkIsAlign4(x)   (0 == ((x) & 3))
+template <typename T> static constexpr bool SkIsAlign2(T x) { return 0 == (x & 1); }
+template <typename T> static constexpr bool SkIsAlign4(T x) { return 0 == (x & 3); }
+template <typename T> static constexpr bool SkIsAlign8(T x) { return 0 == (x & 7); }
 
-#define SkAlign8(x)     (((x) + 7) >> 3 << 3)
-#define SkIsAlign8(x)   (0 == ((x) & 7))
-
-#define SkAlign16(x)     (((x) + 15) >> 4 << 4)
-#define SkIsAlign16(x)   (0 == ((x) & 15))
-
-#define SkAlignPtr(x)   (sizeof(void*) == 8 ?   SkAlign8(x) :   SkAlign4(x))
-#define SkIsAlignPtr(x) (sizeof(void*) == 8 ? SkIsAlign8(x) : SkIsAlign4(x))
+template <typename T> static constexpr T SkAlignPtr(T x) {
+    return sizeof(void*) == 8 ? SkAlign8(x) : SkAlign4(x);
+}
+template <typename T> static constexpr bool SkIsAlignPtr(T x) {
+    return sizeof(void*) == 8 ? SkIsAlign8(x) : SkIsAlign4(x);
+}
 
 typedef uint32_t SkFourByteTag;
-#define SkSetFourByteTag(a, b, c, d)    (((a) << 24) | ((b) << 16) | ((c) << 8) | (d))
+static inline constexpr SkFourByteTag SkSetFourByteTag(char a, char b, char c, char d) {
+    return (((uint8_t)a << 24) | ((uint8_t)b << 16) | ((uint8_t)c << 8) | (uint8_t)d);
+}
+
+
 
 
 
@@ -271,42 +152,16 @@ typedef uint16_t SkGlyphID;
 typedef uint32_t SkMSec;
 
 
-#define SK_MSec1 1000
 
-
-#define SK_MSecMax 0x7FFFFFFF
-
-
-#define SkMSec_LT(a, b)     ((int32_t)(a) - (int32_t)(b) < 0)
-
-
-#define SkMSec_LE(a, b)     ((int32_t)(a) - (int32_t)(b) <= 0)
+static constexpr SkMSec SK_MSecMax = INT32_MAX;
 
 
 
-#define SK_InvalidGenID     0
-
-
-#define SK_InvalidUniqueID  0
+static constexpr uint32_t SK_InvalidGenID = 0;
 
 
 
-
-#ifdef __cplusplus
-
-
-
-static inline constexpr int Sk32ToBool(uint32_t n) {
-    return (n | (0-n)) >> 31;
-}
-
-
-
-template <typename T> static inline void SkTSwap(T& a, T& b) {
-    T c(std::move(a));
-    a = std::move(b);
-    b = std::move(c);
-}
+static constexpr uint32_t SK_InvalidUniqueID = 0;
 
 static inline int32_t SkAbs32(int32_t value) {
     SkASSERT(value != SK_NaN32);  
@@ -343,23 +198,15 @@ template <typename T> constexpr const T& SkTMax(const T& a, const T& b) {
     return (b < a) ? a : b;
 }
 
-static inline int32_t SkSign32(int32_t a) {
-    return (a >> 31) | ((unsigned) -a >> 31);
+template <typename T> constexpr const T& SkTClamp(const T& x, const T& lo, const T& hi) {
+    return (x < lo) ? lo : SkTMin(x, hi);
 }
 
-static inline int32_t SkFastMin32(int32_t value, int32_t max) {
-    if (value > max) {
-        value = max;
-    }
-    return value;
-}
 
 
 template <typename T> static constexpr const T& SkTPin(const T& value, const T& min, const T& max) {
     return SkTMax(SkTMin(value, max), min);
 }
-
-
 
 
 
@@ -373,51 +220,9 @@ enum class SkBudgeted : bool {
 
 
 
-
 enum class SkBackingFit {
     kApprox,
     kExact
 };
-
-
-
-
-
-template <typename T>
-T SkTBitOr(T a, T b) {
-    return (T)(a | b);
-}
-
-
-
-
-template <typename Dst> Dst SkTCast(const void* ptr) {
-    union {
-        const void* src;
-        Dst dst;
-    } data;
-    data.src = ptr;
-    return data.dst;
-}
-
-
-
-
-
-
-
-
-class SK_API SkNoncopyable {
-public:
-    SkNoncopyable() = default;
-
-    SkNoncopyable(SkNoncopyable&&) = default;
-    SkNoncopyable& operator =(SkNoncopyable&&) = default;
-
-    SkNoncopyable(const SkNoncopyable&) = delete;
-    SkNoncopyable& operator=(const SkNoncopyable&) = delete;
-};
-
-#endif 
 
 #endif

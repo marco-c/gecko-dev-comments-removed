@@ -24,7 +24,7 @@ enum class SkCoverageMode {
     kReverseDifference, 
     kXor,               
 
-    kLast = kXor
+    kLast = kXor,
 };
 
 #endif

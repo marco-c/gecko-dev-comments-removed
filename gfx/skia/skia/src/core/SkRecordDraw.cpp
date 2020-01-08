@@ -122,11 +122,10 @@ DRAW(DrawRect, drawRect(r.rect, r.paint));
 DRAW(DrawRegion, drawRegion(r.region, r.paint));
 DRAW(DrawText, drawText(r.text, r.byteLength, r.x, r.y, r.paint));
 DRAW(DrawTextBlob, drawTextBlob(r.blob.get(), r.x, r.y, r.paint));
-DRAW(DrawTextOnPath, drawTextOnPath(r.text, r.byteLength, r.path, &r.matrix, r.paint));
 DRAW(DrawTextRSXform, drawTextRSXform(r.text, r.byteLength, r.xforms, r.cull, r.paint));
 DRAW(DrawAtlas, drawAtlas(r.atlas.get(),
                           r.xforms, r.texs, r.colors, r.count, r.mode, r.cull, r.paint));
-DRAW(DrawVertices, drawVertices(r.vertices, r.bmode, r.paint));
+DRAW(DrawVertices, drawVertices(r.vertices, r.bones, r.boneCount, r.bmode, r.paint));
 DRAW(DrawShadowRec, private_draw_shadow_rec(r.path, r.rec));
 DRAW(DrawAnnotation, drawAnnotation(r.rect, r.key.c_str(), r.value.get()));
 #undef DRAW
@@ -167,7 +166,9 @@ public:
         , fCullRect(cullRect)
         , fBounds(bounds) {
         fCTM = SkMatrix::I();
-        fCurrentClipBounds = fCullRect;
+
+        
+        fSaveStack.push_back({ 0, Bounds::MakeEmpty(), nullptr, fCTM });
     }
 
     void cleanUp() {
@@ -188,7 +189,6 @@ public:
 
     template <typename T> void operator()(const T& op) {
         this->updateCTM(op);
-        this->updateClipBounds(op);
         this->trackBounds(op);
     }
 
@@ -207,20 +207,20 @@ public:
         
         if (!AdjustForPaint(paint, &rect)) {
             
-            return fCurrentClipBounds;
+            return fCullRect;
         }
 
         
         if (!this->adjustForSaveLayerPaints(&rect)) {
             
-            return fCurrentClipBounds;
+            return fCullRect;
         }
 
         
         fCTM.mapRect(&rect);
 
         
-        if (!rect.intersect(fCurrentClipBounds)) {
+        if (!rect.intersect(fCullRect)) {
             return Bounds::MakeEmpty();
         }
 
@@ -241,50 +241,6 @@ private:
     void updateCTM(const SetMatrix& op) { fCTM = op.matrix; }
     void updateCTM(const Concat& op)    { fCTM.preConcat(op.matrix); }
     void updateCTM(const Translate& op) { fCTM.preTranslate(op.dx, op.dy); }
-
-    
-    template <typename T> void updateClipBounds(const T&) {}
-
-    
-    void updateClipBounds(const ClipPath&   op) { this->updateClipBoundsForClipOp(op.devBounds); }
-    void updateClipBounds(const ClipRRect&  op) { this->updateClipBoundsForClipOp(op.devBounds); }
-    void updateClipBounds(const ClipRect&   op) { this->updateClipBoundsForClipOp(op.devBounds); }
-    void updateClipBounds(const ClipRegion& op) { this->updateClipBoundsForClipOp(op.devBounds); }
-
-    
-    void updateClipBoundsForClipOp(const SkIRect& devBounds) {
-        Bounds clip = SkRect::Make(devBounds);
-        
-        
-        if (this->adjustForSaveLayerPaints(&clip)) {
-            fCurrentClipBounds = clip.intersect(fCullRect) ? clip : Bounds::MakeEmpty();
-        } else {
-            fCurrentClipBounds = fCullRect;
-        }
-    }
-
-    
-    void updateClipBounds(const Restore& op) {
-        
-        
-        
-        
-        const int kSavesToIgnore = 1;
-        Bounds clip = SkRect::Make(op.devBounds);
-        if (this->adjustForSaveLayerPaints(&clip, kSavesToIgnore)) {
-            fCurrentClipBounds = clip.intersect(fCullRect) ? clip : Bounds::MakeEmpty();
-        } else {
-            fCurrentClipBounds = fCullRect;
-        }
-    }
-
-    
-    void updateClipBounds(const SaveLayer& op)  {
-        if (op.bounds) {
-            
-            fCurrentClipBounds = this->adjustAndMap(*op.bounds, op.paint);
-        }
-    }
 
     
     
@@ -314,11 +270,11 @@ private:
         
         
         sb.bounds =
-            PaintMayAffectTransparentBlack(paint) ? fCurrentClipBounds : Bounds::MakeEmpty();
+            PaintMayAffectTransparentBlack(paint) ? fCullRect : Bounds::MakeEmpty();
         sb.paint = paint;
         sb.ctm = this->fCTM;
 
-        fSaveStack.push(sb);
+        fSaveStack.push_back(sb);
         this->pushControl();
     }
 
@@ -372,7 +328,7 @@ private:
     }
 
     void pushControl() {
-        fControlIndices.push(fCurrentOp);
+        fControlIndices.push_back(fCurrentOp);
         if (!fSaveStack.isEmpty()) {
             fSaveStack.top().controlOps++;
         }
@@ -390,12 +346,12 @@ private:
         }
     }
 
-    Bounds bounds(const Flush&) const { return fCurrentClipBounds; }
+    Bounds bounds(const Flush&) const { return fCullRect; }
 
     
-    Bounds bounds(const DrawText&) const { return fCurrentClipBounds; }
+    Bounds bounds(const DrawText&) const { return fCullRect; }
 
-    Bounds bounds(const DrawPaint&) const { return fCurrentClipBounds; }
+    Bounds bounds(const DrawPaint&) const { return fCullRect; }
     Bounds bounds(const NoOp&)  const { return Bounds::MakeEmpty(); }    
 
     Bounds bounds(const DrawRect& op) const { return this->adjustAndMap(op.rect, &op.paint); }
@@ -428,7 +384,7 @@ private:
         return this->adjustAndMap(op.dst, op.paint);
     }
     Bounds bounds(const DrawPath& op) const {
-        return op.path.isInverseFillType() ? fCurrentClipBounds
+        return op.path.isInverseFillType() ? fCullRect
                                            : this->adjustAndMap(op.path.getBounds(), &op.paint);
     }
     Bounds bounds(const DrawPoints& op) const {
@@ -456,7 +412,7 @@ private:
             
             return this->adjustAndMap(*op.cull, op.paint);
         } else {
-            return fCurrentClipBounds;
+            return fCullRect;
         }
     }
 
@@ -498,27 +454,12 @@ private:
         AdjustTextForFontMetrics(&dst, op.paint);
         return this->adjustAndMap(dst, &op.paint);
     }
-    Bounds bounds(const DrawTextOnPath& op) const {
-        SkRect dst = op.path.getBounds();
-
-        
-        SkRect pad = { 0, 0, 0, 0};
-        AdjustTextForFontMetrics(&pad, op.paint);
-
-        
-        SkASSERT(pad.fLeft == -pad.fRight);
-        SkASSERT(pad.fTop  == -pad.fBottom);
-        SkASSERT(pad.fRight > pad.fBottom);
-        dst.outset(pad.fRight, pad.fRight);
-
-        return this->adjustAndMap(dst, &op.paint);
-    }
 
     Bounds bounds(const DrawTextRSXform& op) const {
         if (op.cull) {
             return this->adjustAndMap(*op.cull, nullptr);
         } else {
-            return fCurrentClipBounds;
+            return fCullRect;
         }
     }
 
@@ -598,10 +539,8 @@ private:
 
     
     
-    
     int fCurrentOp;
     SkMatrix fCTM;
-    Bounds fCurrentClipBounds;
 
     
     SkTDArray<SaveBounds> fSaveStack;

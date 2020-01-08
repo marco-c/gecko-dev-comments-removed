@@ -31,8 +31,8 @@ struct Sk4fGradientInterval {
     
     
     
-    SkPM4f   fCb, fCg;
-    SkScalar fT0, fT1;
+    SkPMColor4f fCb, fCg;
+    SkScalar    fT0, fT1;
 };
 
 class Sk4fGradientIntervalBuffer {

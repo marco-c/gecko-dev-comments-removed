@@ -8,53 +8,42 @@
 #ifndef SkPDFResourceDict_DEFINED
 #define SkPDFResourceDict_DEFINED
 
-#include "SkRefCnt.h"
-#include "SkTDArray.h"
+#include "SkPDFFont.h"
+
+#include <vector>
 
 class SkPDFDict;
 class SkPDFObject;
+class SkWStream;
 
-
-
-
-
-
-
-class SkPDFResourceDict {
-public:
-    enum SkPDFResourceType {
-        kExtGState_ResourceType,
-        kPattern_ResourceType,
-        kXObject_ResourceType,
-        kFont_ResourceType,
-        
-        
-        kResourceTypeCount
-    };
-
-    static char GetResourceTypePrefix(SkPDFResourceDict::SkPDFResourceType type);
-
+enum class SkPDFResourceType {
+    kExtGState = 0,
+    kPattern = 1,
+    kXObject = 2,
+    kFont = 3,
     
-
-
-
-
-
-    static sk_sp<SkPDFDict> Make(
-        const SkTDArray<SkPDFObject*>* gStateResources,
-        const SkTDArray<SkPDFObject*>* patternResources,
-        const SkTDArray<SkPDFObject*>* xObjectResources,
-        const SkTDArray<SkPDFObject*>* fontResources);
-
     
-
-
-
-
-
-
-
-    static SkString getResourceName(SkPDFResourceType type, int key);
 };
+
+
+
+
+
+
+
+
+sk_sp<SkPDFDict> SkPDFMakeResourceDict(std::vector<sk_sp<SkPDFObject>> graphicStateResources,
+                                       std::vector<sk_sp<SkPDFObject>> shaderResources,
+                                       std::vector<sk_sp<SkPDFObject>> xObjectResources,
+                                       std::vector<sk_sp<SkPDFFont>> fontResources);
+
+
+
+
+
+
+
+
+void SkPDFWriteResourceName(SkWStream*, SkPDFResourceType type, int key);
 
 #endif

@@ -28,7 +28,6 @@ struct GrContextOptions;
 class GrGLContext;
 class GrMesh;
 class GrPath;
-class GrPathRange;
 class GrPathRenderer;
 class GrPathRendererChain;
 class GrPathRendering;
@@ -44,15 +43,6 @@ class SkJSONWriter;
 
 class GrGpu : public SkRefCnt {
 public:
-    
-
-
-
-
-    static sk_sp<GrGpu> Make(GrBackend, GrBackendContext, const GrContextOptions&, GrContext*);
-
-    
-
     GrGpu(GrContext* context);
     ~GrGpu() override;
 
@@ -103,8 +93,8 @@ public:
 
 
 
-    sk_sp<GrTexture> createTexture(const GrSurfaceDesc&, SkBudgeted,
-                                   const GrMipLevel texels[], int mipLevelCount);
+    sk_sp<GrTexture> createTexture(const GrSurfaceDesc&, SkBudgeted, const GrMipLevel texels[],
+                                   int mipLevelCount);
 
     
 
@@ -153,103 +143,8 @@ public:
 
     
 
-    struct ReadPixelTempDrawInfo {
-        
 
-
-
-
-        GrSurfaceDesc   fTempSurfaceDesc;
-        
-
-
-
-        SkBackingFit    fTempSurfaceFit;
-        
-
-
-
-        GrSwizzle       fSwizzle;
-        
-
-
-
-
-
-        GrColorType     fReadColorType;
-    };
-
-    
-    enum DrawPreference {
-        
-
-
-
-        kNoDraw_DrawPreference,
-        
-
-
-
-
-
-        kCallerPrefersDraw_DrawPreference,
-        
-
-
-
-
-        kGpuPrefersDraw_DrawPreference,
-        
-
-
-
-
-        kRequireDraw_DrawPreference
-    };
-
-    
-
-
-
-
-
-    bool getReadPixelsInfo(GrSurface*, GrSurfaceOrigin, int width, int height, size_t rowBytes,
-                           GrColorType, GrSRGBConversion, DrawPreference*, ReadPixelTempDrawInfo*);
-
-    
-
-
-
-    struct WritePixelTempDrawInfo {
-        
-
-
-
-
-
-        GrSurfaceDesc   fTempSurfaceDesc;
-        
-
-
-
-        GrSwizzle       fSwizzle;
-        
-
-
-
-
-
-        GrColorType     fWriteColorType;
-    };
-
-    
-
-
-
-
-
-    bool getWritePixelsInfo(GrSurface*, GrSurfaceOrigin, int width, int height, GrColorType,
-                            GrSRGBConversion, DrawPreference*, WritePixelTempDrawInfo*);
+    bool regenerateMipMapLevels(GrTexture*);
 
     
 
@@ -270,7 +165,7 @@ public:
 
 
 
-    bool readPixels(GrSurface* surface, GrSurfaceOrigin, int left, int top, int width, int height,
+    bool readPixels(GrSurface* surface, int left, int top, int width, int height,
                     GrColorType dstColorType, void* buffer, size_t rowBytes);
 
     
@@ -285,25 +180,16 @@ public:
 
 
 
-    bool writePixels(GrSurface* surface, GrSurfaceOrigin origin, int left, int top, int width,
-                     int height, GrColorType srcColorType, const GrMipLevel texels[],
-                     int mipLevelCount);
+    bool writePixels(GrSurface* surface, int left, int top, int width, int height,
+                     GrColorType srcColorType, const GrMipLevel texels[], int mipLevelCount);
 
     
-
-
-
-    bool writePixels(GrSurface*, GrSurfaceOrigin, int left, int top, int width, int height,
-                     GrColorType, const void* buffer, size_t rowBytes);
-
-    
-
 
 
     bool writePixels(GrSurface* surface, int left, int top, int width, int height,
                      GrColorType srcColorType, const void* buffer, size_t rowBytes) {
-        return this->writePixels(surface, kTopLeft_GrSurfaceOrigin, left, top, width, height,
-                                 srcColorType, buffer, rowBytes);
+        GrMipLevel mipLevel = {buffer, rowBytes};
+        return this->writePixels(surface, left, top, width, height, srcColorType, &mipLevel, 1);
     }
 
     
@@ -346,27 +232,31 @@ public:
     
     
     
+    
     bool copySurface(GrSurface* dst, GrSurfaceOrigin dstOrigin,
                      GrSurface* src, GrSurfaceOrigin srcOrigin,
                      const SkIRect& srcRect,
-                     const SkIPoint& dstPoint);
+                     const SkIPoint& dstPoint,
+                     bool canDiscardOutsideDstRect = false);
 
     
     
-    virtual GrGpuRTCommandBuffer* createCommandBuffer(
+    virtual GrGpuRTCommandBuffer* getCommandBuffer(
             GrRenderTarget*, GrSurfaceOrigin,
             const GrGpuRTCommandBuffer::LoadAndStoreInfo&,
             const GrGpuRTCommandBuffer::StencilLoadAndStoreInfo&) = 0;
 
     
     
-    virtual GrGpuTextureCommandBuffer* createCommandBuffer(GrTexture*, GrSurfaceOrigin) = 0;
+    virtual GrGpuTextureCommandBuffer* getCommandBuffer(GrTexture*, GrSurfaceOrigin) = 0;
 
     
     
     
     
     GrSemaphoresSubmitted finishFlush(int numSemaphores, GrBackendSemaphore backendSemaphores[]);
+
+    virtual void submit(GrGpuCommandBuffer*) = 0;
 
     virtual GrFence SK_WARN_UNUSED_RESULT insertFence() = 0;
     virtual bool waitFence(GrFence, uint64_t timeout = 1000) = 0;
@@ -448,25 +338,43 @@ public:
     Stats* stats() { return &fStats; }
     void dumpJSON(SkJSONWriter*) const;
 
+#if GR_TEST_UTILS
+    GrBackendTexture createTestingOnlyBackendTexture(const void* pixels, int w, int h,
+                                                     SkColorType, bool isRenderTarget,
+                                                     GrMipMapped, size_t rowBytes = 0);
+
     
 
 
-    GrBackendTexture createTestingOnlyBackendTexture(void* pixels, int w, int h, SkColorType,
-                                                     bool isRenderTarget, GrMipMapped);
+    virtual GrBackendTexture createTestingOnlyBackendTexture(const void* pixels, int w, int h,
+                                                             GrColorType, bool isRenderTarget,
+                                                             GrMipMapped, size_t rowBytes = 0) = 0;
 
-    
-    virtual GrBackendTexture createTestingOnlyBackendTexture(
-                                                      void* pixels, int w, int h,
-                                                      GrPixelConfig config,
-                                                      bool isRenderTarget,
-                                                      GrMipMapped mipMapped) = 0;
     
     virtual bool isTestingOnlyBackendTexture(const GrBackendTexture&) const = 0;
     
 
 
-    virtual void deleteTestingOnlyBackendTexture(GrBackendTexture*,
-                                                 bool abandonTexture = false) = 0;
+
+    virtual void deleteTestingOnlyBackendTexture(const GrBackendTexture&) = 0;
+
+    virtual GrBackendRenderTarget createTestingOnlyBackendRenderTarget(int w, int h,
+                                                                       GrColorType) = 0;
+
+    virtual void deleteTestingOnlyBackendRenderTarget(const GrBackendRenderTarget&) = 0;
+
+    
+    virtual const GrGLContext* glContextForTesting() const { return nullptr; }
+
+    
+    virtual void resetShaderCacheForTesting() const {}
+
+    
+
+
+
+    virtual void testingOnly_flushGpuAndSync() = 0;
+#endif
 
     
     
@@ -474,35 +382,22 @@ public:
     virtual GrStencilAttachment* createStencilAttachmentForRenderTarget(const GrRenderTarget*,
                                                                         int width,
                                                                         int height) = 0;
+
     
-    virtual void clearStencil(GrRenderTarget* target, int clearValue) = 0;
+    
+    static bool IsACopyNeededForRepeatWrapMode(const GrCaps*, GrTextureProxy* texProxy,
+                                               int width, int height,
+                                               GrSamplerState::Filter,
+                                               GrTextureProducer::CopyParams*,
+                                               SkScalar scaleAdjust[2]);
 
     
     
     
-    bool isACopyNeededForTextureParams(int width, int height, const GrSamplerState&,
-                                       GrTextureProducer::CopyParams*,
-                                       SkScalar scaleAdjust[2]) const;
-
     
-    
-    
-    
-    bool isACopyNeededForTextureParams(GrTextureProxy* proxy, const GrSamplerState& params,
-                                       GrTextureProducer::CopyParams* copyParams,
-                                       SkScalar scaleAdjust[2]) const {
-        if (this->isACopyNeededForTextureParams(proxy->width(), proxy->height(), params,
-                                                copyParams, scaleAdjust)) {
-            return true;
-        }
-        return this->onIsACopyNeededForTextureParams(proxy, params, copyParams, scaleAdjust);
-    }
-
-    
-    virtual const GrGLContext* glContextForTesting() const { return nullptr; }
-
-    
-    virtual void resetShaderCacheForTesting() const {}
+    static bool IsACopyNeededForMips(const GrCaps* caps, const GrTextureProxy* texProxy,
+                                     GrSamplerState::Filter filter,
+                                     GrTextureProducer::CopyParams* copyParams);
 
     void handleDirtyContext() {
         if (fResetBits) {
@@ -511,16 +406,6 @@ public:
     }
 
 protected:
-    static void ElevateDrawPreference(GrGpu::DrawPreference* preference,
-                                      GrGpu::DrawPreference elevation) {
-        GR_STATIC_ASSERT(GrGpu::kCallerPrefersDraw_DrawPreference > GrGpu::kNoDraw_DrawPreference);
-        GR_STATIC_ASSERT(GrGpu::kGpuPrefersDraw_DrawPreference >
-                         GrGpu::kCallerPrefersDraw_DrawPreference);
-        GR_STATIC_ASSERT(GrGpu::kRequireDraw_DrawPreference >
-                         GrGpu::kGpuPrefersDraw_DrawPreference);
-        *preference = SkTMax(*preference, elevation);
-    }
-
     
     void didWriteToSurface(GrSurface* surface, GrSurfaceOrigin origin, const SkIRect* bounds,
                            uint32_t mipLevels = 1) const;
@@ -544,8 +429,7 @@ private:
     
     
     virtual sk_sp<GrTexture> onCreateTexture(const GrSurfaceDesc&, SkBudgeted,
-                                             const GrMipLevel texels[],
-                                             int mipLevelCount) = 0;
+                                             const GrMipLevel texels[], int mipLevelCount) = 0;
 
     virtual sk_sp<GrTexture> onWrapBackendTexture(const GrBackendTexture&, GrWrapOwnership) = 0;
     virtual sk_sp<GrTexture> onWrapRenderableBackendTexture(const GrBackendTexture&,
@@ -557,26 +441,13 @@ private:
     virtual GrBuffer* onCreateBuffer(size_t size, GrBufferType intendedType, GrAccessPattern,
                                      const void* data) = 0;
 
-    virtual bool onIsACopyNeededForTextureParams(GrTextureProxy* proxy, const GrSamplerState&,
-                                                 GrTextureProducer::CopyParams*,
-                                                 SkScalar scaleAdjust[2]) const {
-        return false;
-    }
-
-    virtual bool onGetReadPixelsInfo(GrSurface*, GrSurfaceOrigin, int width, int height,
-                                     size_t rowBytes, GrColorType, DrawPreference*,
-                                     ReadPixelTempDrawInfo*) = 0;
-    virtual bool onGetWritePixelsInfo(GrSurface*, GrSurfaceOrigin, int width, int height,
-                                      GrColorType, DrawPreference*, WritePixelTempDrawInfo*) = 0;
+    
+    virtual bool onReadPixels(GrSurface*, int left, int top, int width, int height, GrColorType,
+                              void* buffer, size_t rowBytes) = 0;
 
     
-    virtual bool onReadPixels(GrSurface*, GrSurfaceOrigin, int left, int top, int width, int height,
-                              GrColorType, void* buffer, size_t rowBytes) = 0;
-
-    
-    virtual bool onWritePixels(GrSurface*, GrSurfaceOrigin, int left, int top, int width,
-                               int height, GrColorType, const GrMipLevel texels[],
-                               int mipLevelCount) = 0;
+    virtual bool onWritePixels(GrSurface*, int left, int top, int width, int height, GrColorType,
+                               const GrMipLevel texels[], int mipLevelCount) = 0;
 
     
     virtual bool onTransferPixels(GrTexture*, int left, int top, int width, int height,
@@ -587,13 +458,19 @@ private:
     virtual void onResolveRenderTarget(GrRenderTarget* target) = 0;
 
     
+    virtual bool onRegenerateMipMapLevels(GrTexture*) = 0;
+
+    
     virtual bool onCopySurface(GrSurface* dst, GrSurfaceOrigin dstOrigin,
                                GrSurface* src, GrSurfaceOrigin srcOrigin,
-                               const SkIRect& srcRect, const SkIPoint& dstPoint) = 0;
+                               const SkIRect& srcRect, const SkIPoint& dstPoint,
+                               bool canDiscardOutsideDstRect) = 0;
 
     virtual void onFinishFlush(bool insertedSemaphores) = 0;
 
+#ifdef SK_ENABLE_DUMP_GPU
     virtual void onDumpJSON(SkJSONWriter*) const {}
+#endif
 
     void resetContext() {
         this->onResetContext(fResetBits);

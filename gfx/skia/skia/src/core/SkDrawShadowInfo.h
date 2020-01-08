@@ -30,8 +30,19 @@ namespace SkDrawShadowMetrics {
 static constexpr auto kAmbientHeightFactor = 1.0f / 128.0f;
 static constexpr auto kAmbientGeomFactor = 64.0f;
 
+
+
+static constexpr auto kMaxAmbientRadius = 300*kAmbientHeightFactor*kAmbientGeomFactor;
+
+static inline float divide_and_pin(float numer, float denom, float min, float max) {
+    float result = SkTPin(sk_ieee_float_divide(numer, denom), min, max);
+    
+    SkASSERT(result >= min && result <= max);
+    return result;
+}
+
 inline SkScalar AmbientBlurRadius(SkScalar height) {
-    return height*kAmbientHeightFactor*kAmbientGeomFactor;
+    return SkTMin(height*kAmbientHeightFactor*kAmbientGeomFactor, kMaxAmbientRadius);
 }
 
 inline SkScalar AmbientRecipAlpha(SkScalar height) {
@@ -39,17 +50,24 @@ inline SkScalar AmbientRecipAlpha(SkScalar height) {
 }
 
 inline SkScalar SpotBlurRadius(SkScalar occluderZ, SkScalar lightZ, SkScalar lightRadius) {
-    return lightRadius*SkTPin(occluderZ / (lightZ - occluderZ), 0.0f, 0.95f);
+    return lightRadius*divide_and_pin(occluderZ, lightZ - occluderZ, 0.0f, 0.95f);
 }
 
 inline void GetSpotParams(SkScalar occluderZ, SkScalar lightX, SkScalar lightY, SkScalar lightZ,
                           SkScalar lightRadius,
                           SkScalar* blurRadius, SkScalar* scale, SkVector* translate) {
-    SkScalar zRatio = SkTPin(occluderZ / (lightZ - occluderZ), 0.0f, 0.95f);
+    SkScalar zRatio = divide_and_pin(occluderZ, lightZ - occluderZ, 0.0f, 0.95f);
     *blurRadius = lightRadius*zRatio;
-    *scale = SkTMax(lightZ / (lightZ - occluderZ), 1.0f);
+    *scale = divide_and_pin(lightZ, lightZ - occluderZ, 1.0f, 1.95f);
     *translate = SkVector::Make(-zRatio * lightX, -zRatio * lightY);
 }
+
+
+
+
+bool GetSpotShadowTransform(const SkPoint3& lightPos, SkScalar lightRadius,
+                            const SkMatrix& ctm, const SkPoint3& zPlaneParams,
+                            const SkRect& pathBounds, SkMatrix* shadowTransform, SkScalar* radius);
 
 
 void GetLocalBounds(const SkPath&, const SkDrawShadowRec&, const SkMatrix& ctm, SkRect* bounds);

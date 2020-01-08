@@ -58,22 +58,9 @@ private:
     uint32_t timestamp() const { return fResource->fTimestamp; }
     void setTimestamp(uint32_t ts) { fResource->fTimestamp = ts; }
 
-    
-    void setFlushCntWhenResourceBecamePurgeable(uint32_t cnt) {
-        SkASSERT(fResource->isPurgeable());
-        fResource->fExternalFlushCntWhenBecamePurgeable = cnt;
-    }
     void setTimeWhenResourceBecomePurgeable() {
         SkASSERT(fResource->isPurgeable());
         fResource->fTimeWhenBecamePurgeable = GrStdSteadyClock::now();
-    }
-    
-
-
-
-    uint32_t flushCntWhenResourceBecamePurgeable() {
-        SkASSERT(fResource->isPurgeable());
-        return fResource->fExternalFlushCntWhenBecamePurgeable;
     }
     
 

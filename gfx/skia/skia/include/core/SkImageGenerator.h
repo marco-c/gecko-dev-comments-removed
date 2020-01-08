@@ -24,7 +24,7 @@ class SkMatrix;
 class SkPaint;
 class SkPicture;
 
-class SK_API SkImageGenerator : public SkNoncopyable {
+class SK_API SkImageGenerator {
 public:
     
 
@@ -41,7 +41,7 @@ public:
 
 
 
-    SkData* refEncodedData() {
+    sk_sp<SkData> refEncodedData() {
         return this->onRefEncodedData();
     }
 
@@ -78,20 +78,6 @@ public:
 
 
 
-
-
-
-
-    struct Options {
-        Options()
-            : fBehavior(SkTransferFunctionBehavior::kIgnore)
-        {}
-
-        SkTransferFunctionBehavior fBehavior;
-    };
-    bool getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes, const Options* options);
-
-    
 
 
     bool getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes);
@@ -148,7 +134,6 @@ public:
 
     sk_sp<GrTextureProxy> generateTexture(GrContext*, const SkImageInfo& info,
                                           const SkIPoint& origin,
-                                          SkTransferFunctionBehavior behavior,
                                           bool willNeedMipMaps);
 #endif
 
@@ -170,13 +155,12 @@ public:
                                                              sk_sp<SkColorSpace>);
 
 protected:
-    enum {
-        kNeedNewImageUniqueID = 0
-    };
+    static constexpr int kNeedNewImageUniqueID = 0;
 
     SkImageGenerator(const SkImageInfo& info, uint32_t uniqueId = kNeedNewImageUniqueID);
 
-    virtual SkData* onRefEncodedData() { return nullptr; }
+    virtual sk_sp<SkData> onRefEncodedData() { return nullptr; }
+    struct Options {};
     virtual bool onGetPixels(const SkImageInfo&, void*, size_t, const Options&) { return false; }
     virtual bool onIsValid(GrContext*) const { return true; }
     virtual bool onQueryYUV8(SkYUVSizeInfo*, SkYUVColorSpace*) const { return false; }
@@ -191,7 +175,6 @@ protected:
 
     virtual TexGenType onCanGenerateTexture() const { return TexGenType::kNone; }
     virtual sk_sp<GrTextureProxy> onGenerateTexture(GrContext*, const SkImageInfo&, const SkIPoint&,
-                                                    SkTransferFunctionBehavior,
                                                     bool willNeedMipMaps);  
 #endif
 
@@ -205,6 +188,11 @@ private:
     
     
     static std::unique_ptr<SkImageGenerator> MakeFromEncodedImpl(sk_sp<SkData>);
+
+    SkImageGenerator(SkImageGenerator&&) = delete;
+    SkImageGenerator(const SkImageGenerator&) = delete;
+    SkImageGenerator& operator=(SkImageGenerator&&) = delete;
+    SkImageGenerator& operator=(const SkImageGenerator&) = delete;
 };
 
 #endif  

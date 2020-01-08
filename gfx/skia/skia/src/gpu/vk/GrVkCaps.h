@@ -12,8 +12,9 @@
 #include "GrVkStencilAttachment.h"
 #include "vk/GrVkDefines.h"
 
-struct GrVkInterface;
 class GrShaderCaps;
+class GrVkExtensions;
+struct GrVkInterface;
 
 
 
@@ -27,7 +28,8 @@ public:
 
 
     GrVkCaps(const GrContextOptions& contextOptions, const GrVkInterface* vkInterface,
-             VkPhysicalDevice device, uint32_t featureFlags, uint32_t extensionFlags);
+             VkPhysicalDevice device, const VkPhysicalDeviceFeatures2& features,
+             uint32_t instanceVersion, const GrVkExtensions& extensions);
 
     bool isConfigTexturable(GrPixelConfig config) const override {
         return SkToBool(ConfigInfo::kTextureable_Flag & fConfigTable[config].fOptimalFlags);
@@ -40,7 +42,8 @@ public:
     int getRenderTargetSampleCount(int requestedCount, GrPixelConfig config) const override;
     int maxRenderTargetSampleCount(GrPixelConfig config) const override;
 
-    bool surfaceSupportsWritePixels(const GrSurface* surface) const override;
+    bool surfaceSupportsWritePixels(const GrSurface*) const override;
+    bool surfaceSupportsReadPixels(const GrSurface*) const override { return true; }
 
     bool isConfigTexturableLinearly(GrPixelConfig config) const {
         return SkToBool(ConfigInfo::kTextureable_Flag & fConfigTable[config].fLinearFlags);
@@ -64,19 +67,9 @@ public:
     }
 
     
-    bool canUseGLSLForShaderModule() const {
-        return fCanUseGLSLForShaderModule;
-    }
-
-    
     
     bool mustDoCopiesFromOrigin() const {
         return fMustDoCopiesFromOrigin;
-    }
-
-    
-    bool supportsCopiesAsDraws() const {
-        return fSupportsCopiesAsDraws;
     }
 
     
@@ -101,20 +94,63 @@ public:
     }
 
     
-    
-    
-    bool canUseWholeSizeOnFlushMappedMemory() const {
-        return fCanUseWholeSizeOnFlushMappedMemory;
+    bool shouldAlwaysUseDedicatedImageMemory() const {
+        return fShouldAlwaysUseDedicatedImageMemory;
     }
 
     
 
 
-    const StencilFormat& preferedStencilFormat() const {
-        return fPreferedStencilFormat;
+    const StencilFormat& preferredStencilFormat() const {
+        return fPreferredStencilFormat;
     }
 
-    bool initDescForDstCopy(const GrRenderTargetProxy* src, GrSurfaceDesc* desc,
+    
+    bool supportsPhysicalDeviceProperties2() const { return fSupportsPhysicalDeviceProperties2; }
+    
+    bool supportsMemoryRequirements2() const { return fSupportsMemoryRequirements2; }
+
+    
+    bool supportsBindMemory2() const { return fSupportsBindMemory2; }
+
+    
+    
+    bool supportsMaintenance1() const { return fSupportsMaintenance1; }
+    bool supportsMaintenance2() const { return fSupportsMaintenance2; }
+    bool supportsMaintenance3() const { return fSupportsMaintenance3; }
+
+    
+    
+    
+    bool supportsDedicatedAllocation() const { return fSupportsDedicatedAllocation; }
+
+    
+    bool supportsExternalMemory() const { return fSupportsExternalMemory; }
+    
+    bool supportsAndroidHWBExternalMemory() const { return fSupportsAndroidHWBExternalMemory; }
+
+    
+
+
+
+
+    bool canCopyImage(GrPixelConfig dstConfig, int dstSampleCnt, GrSurfaceOrigin dstOrigin,
+                      GrPixelConfig srcConfig, int srcSamplecnt, GrSurfaceOrigin srcOrigin) const;
+
+    bool canCopyAsBlit(GrPixelConfig dstConfig, int dstSampleCnt, bool dstIsLinear,
+                       GrPixelConfig srcConfig, int srcSampleCnt, bool srcIsLinear) const;
+
+    bool canCopyAsResolve(GrPixelConfig dstConfig, int dstSampleCnt, GrSurfaceOrigin dstOrigin,
+                          GrPixelConfig srcConfig, int srcSamplecnt,
+                          GrSurfaceOrigin srcOrigin) const;
+
+    bool canCopyAsDraw(GrPixelConfig dstConfig, bool dstIsRenderable,
+                       GrPixelConfig srcConfig, bool srcIsTextureable) const;
+
+    bool canCopySurface(const GrSurfaceProxy* dst, const GrSurfaceProxy* src,
+                        const SkIRect& srcRect, const SkIPoint& dstPoint) const override;
+
+    bool initDescForDstCopy(const GrRenderTargetProxy* src, GrSurfaceDesc* desc, GrSurfaceOrigin*,
                             bool* rectsMustMatch, bool* disallowSubrect) const override;
 
     bool validateBackendTexture(const GrBackendTexture&, SkColorType,
@@ -136,11 +172,18 @@ private:
     };
 
     void init(const GrContextOptions& contextOptions, const GrVkInterface* vkInterface,
-              VkPhysicalDevice device, uint32_t featureFlags, uint32_t extensionFlags);
-    void initGrCaps(const VkPhysicalDeviceProperties&,
+              VkPhysicalDevice device, const VkPhysicalDeviceFeatures2&, const GrVkExtensions&);
+    void initGrCaps(const GrVkInterface* vkInterface,
+                    VkPhysicalDevice physDev,
+                    const VkPhysicalDeviceProperties&,
                     const VkPhysicalDeviceMemoryProperties&,
-                    uint32_t featureFlags);
-    void initShaderCaps(const VkPhysicalDeviceProperties&, uint32_t featureFlags);
+                    const VkPhysicalDeviceFeatures2&,
+                    const GrVkExtensions&);
+    void initShaderCaps(const VkPhysicalDeviceProperties&, const VkPhysicalDeviceFeatures2&);
+
+#ifdef GR_TEST_UTILS
+    GrBackendFormat onCreateFormatFromBackendTexture(const GrBackendTexture&) const override;
+#endif
 
     void initConfigTable(const GrVkInterface*, VkPhysicalDevice, const VkPhysicalDeviceProperties&);
     void initStencilFormat(const GrVkInterface* iface, VkPhysicalDevice physDev);
@@ -170,21 +213,24 @@ private:
     };
     ConfigInfo fConfigTable[kGrPixelConfigCnt];
 
-    StencilFormat fPreferedStencilFormat;
+    StencilFormat fPreferredStencilFormat;
 
-    bool fCanUseGLSLForShaderModule;
+    bool fMustDoCopiesFromOrigin = false;
+    bool fMustSubmitCommandsBeforeCopyOp = false;
+    bool fMustSleepOnTearDown = false;
+    bool fNewCBOnPipelineChange = false;
+    bool fShouldAlwaysUseDedicatedImageMemory = false;
 
-    bool fMustDoCopiesFromOrigin;
+    bool fSupportsPhysicalDeviceProperties2 = false;
+    bool fSupportsMemoryRequirements2 = false;
+    bool fSupportsBindMemory2 = false;
+    bool fSupportsMaintenance1 = false;
+    bool fSupportsMaintenance2 = false;
+    bool fSupportsMaintenance3 = false;
 
-    bool fSupportsCopiesAsDraws;
-
-    bool fMustSubmitCommandsBeforeCopyOp;
-
-    bool fMustSleepOnTearDown;
-
-    bool fNewCBOnPipelineChange;
-
-    bool fCanUseWholeSizeOnFlushMappedMemory;
+    bool fSupportsDedicatedAllocation = false;
+    bool fSupportsExternalMemory = false;
+    bool fSupportsAndroidHWBExternalMemory = false;
 
     typedef GrCaps INHERITED;
 };

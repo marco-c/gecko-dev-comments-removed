@@ -133,40 +133,38 @@ std::unique_ptr<SkCodec> SkHeifCodec::MakeFromStream(
         return nullptr;
     }
 
-    SkEncodedInfo info = SkEncodedInfo::Make(
-            SkEncodedInfo::kYUV_Color, SkEncodedInfo::kOpaque_Alpha, 8);
+    std::unique_ptr<SkEncodedInfo::ICCProfile> profile = nullptr;
+    if ((frameInfo.mIccSize > 0) && (frameInfo.mIccData != nullptr)) {
+        
+        auto icc = SkData::MakeWithCopy(frameInfo.mIccData.get(), frameInfo.mIccSize);
+        profile = SkEncodedInfo::ICCProfile::Make(std::move(icc));
+    }
+    if (profile && profile->profile()->data_color_space != skcms_Signature_RGB) {
+        
+        profile = nullptr;
+    }
 
+    SkEncodedInfo info = SkEncodedInfo::Make(frameInfo.mWidth, frameInfo.mHeight,
+            SkEncodedInfo::kYUV_Color, SkEncodedInfo::kOpaque_Alpha, 8, std::move(profile));
     SkEncodedOrigin orientation = get_orientation(frameInfo);
 
-    sk_sp<SkColorSpace> colorSpace = nullptr;
-    if ((frameInfo.mIccSize > 0) && (frameInfo.mIccData != nullptr)) {
-        colorSpace = SkColorSpace::MakeICC(frameInfo.mIccData.get(),
-                                           frameInfo.mIccSize);
-    }
-    if (!colorSpace || colorSpace->type() != SkColorSpace::kRGB_Type) {
-        colorSpace = SkColorSpace::MakeSRGB();
-    }
-
     *result = kSuccess;
-    return std::unique_ptr<SkCodec>(new SkHeifCodec(frameInfo.mWidth, frameInfo.mHeight,
-            info, heifDecoder.release(), std::move(colorSpace), orientation));
+    return std::unique_ptr<SkCodec>(new SkHeifCodec(std::move(info), heifDecoder.release(),
+                                                    orientation));
 }
 
-SkHeifCodec::SkHeifCodec(int width, int height, const SkEncodedInfo& info,
-        HeifDecoder* heifDecoder, sk_sp<SkColorSpace> colorSpace, SkEncodedOrigin origin)
-    : INHERITED(width, height, info, SkColorSpaceXform::kRGBA_8888_ColorFormat,
-            nullptr, std::move(colorSpace), origin)
+SkHeifCodec::SkHeifCodec(SkEncodedInfo&& info, HeifDecoder* heifDecoder, SkEncodedOrigin origin)
+    : INHERITED(std::move(info), skcms_PixelFormat_RGBA_8888, nullptr, origin)
     , fHeifDecoder(heifDecoder)
     , fSwizzleSrcRow(nullptr)
     , fColorXformSrcRow(nullptr)
 {}
 
 
+bool SkHeifCodec::conversionSupported(const SkImageInfo& dstInfo, bool srcIsOpaque,
+                                      bool needsColorXform) {
+    SkASSERT(srcIsOpaque);
 
-
-
-
-bool SkHeifCodec::setOutputColorFormat(const SkImageInfo& dstInfo) {
     if (kUnknown_SkAlphaType == dstInfo.alphaType()) {
         return false;
     }
@@ -184,18 +182,14 @@ bool SkHeifCodec::setOutputColorFormat(const SkImageInfo& dstInfo) {
             return fHeifDecoder->setOutputColor(kHeifColorFormat_BGRA_8888);
 
         case kRGB_565_SkColorType:
-            if (this->colorXform()) {
+            if (needsColorXform) {
                 return fHeifDecoder->setOutputColor(kHeifColorFormat_RGBA_8888);
             } else {
                 return fHeifDecoder->setOutputColor(kHeifColorFormat_RGB565);
             }
 
         case kRGBA_F16_SkColorType:
-            SkASSERT(this->colorXform());
-
-            if (!dstInfo.colorSpace()->gammaIsLinear()) {
-                return false;
-            }
+            SkASSERT(needsColorXform);
             return fHeifDecoder->setOutputColor(kHeifColorFormat_RGBA_8888);
 
         default:
@@ -244,7 +238,7 @@ int SkHeifCodec::readRows(const SkImageInfo& dstInfo, void* dst, size_t rowBytes
         }
 
         if (this->colorXform()) {
-            this->applyColorXform(dst, swizzleDst, dstWidth, kOpaque_SkAlphaType);
+            this->applyColorXform(dst, swizzleDst, dstWidth);
             dst = SkTAddOffset<void>(dst, rowBytes);
         }
 
@@ -267,11 +261,6 @@ SkCodec::Result SkHeifCodec::onGetPixels(const SkImageInfo& dstInfo,
         
         
         return kUnimplemented;
-    }
-
-    
-    if (!this->setOutputColorFormat(dstInfo)) {
-        return kInvalidConversion;
     }
 
     if (!fHeifDecoder->decode(&fFrameInfo)) {
@@ -317,15 +306,13 @@ void SkHeifCodec::allocateStorage(const SkImageInfo& dstInfo) {
 
 void SkHeifCodec::initializeSwizzler(
         const SkImageInfo& dstInfo, const Options& options) {
-    SkEncodedInfo swizzlerInfo = this->getEncodedInfo();
-
     SkImageInfo swizzlerDstInfo = dstInfo;
     if (this->colorXform()) {
         
         swizzlerDstInfo = swizzlerDstInfo.makeColorType(kRGBA_8888_SkColorType);
     }
 
-    fSwizzler.reset(SkSwizzler::CreateSwizzler(swizzlerInfo, nullptr,
+    fSwizzler.reset(SkSwizzler::CreateSwizzler(this->getEncodedInfo(), nullptr,
             swizzlerDstInfo, options, nullptr, true));
     SkASSERT(fSwizzler);
 }
@@ -343,11 +330,6 @@ SkSampler* SkHeifCodec::getSampler(bool createIfNecessary) {
 
 SkCodec::Result SkHeifCodec::onStartScanlineDecode(
         const SkImageInfo& dstInfo, const Options& options) {
-    
-    if (!this->setOutputColorFormat(dstInfo)) {
-        return kInvalidConversion;
-    }
-
     
     
     

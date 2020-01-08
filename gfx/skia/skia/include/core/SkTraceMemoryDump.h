@@ -50,6 +50,10 @@ public:
                                   const char* units,
                                   uint64_t value) = 0;
 
+    virtual void dumpStringValue(const char* ,
+                                 const char* ,
+                                 const char* ) { }
+
     
 
 
@@ -72,6 +76,12 @@ public:
 
 
     virtual LevelOfDetail getRequestedDetails() const = 0;
+
+    
+
+
+
+    virtual bool shouldDumpWrappedObjects() const { return true; }
 
 protected:
     virtual ~SkTraceMemoryDump() { }

@@ -139,7 +139,6 @@ void GrGLBuffer::onRelease() {
             GL_CALL(DeleteBuffers(1, &fBufferID));
             fBufferID = 0;
             fGLSizeInBytes = 0;
-            this->glGpu()->notifyBufferReleased(this);
         }
         fMapPtr = nullptr;
         VALIDATE();
@@ -175,7 +174,7 @@ void GrGLBuffer::onMap() {
         case GrGLCaps::kMapBuffer_MapBufferType: {
             GrGLenum target = this->glGpu()->bindBuffer(fIntendedType, this);
             
-            if (GR_GL_USE_BUFFER_DATA_NULL_HINT || fGLSizeInBytes != this->sizeInBytes()) {
+            if (this->glCaps().useBufferDataNullHint() || fGLSizeInBytes != this->sizeInBytes()) {
                 GL_CALL(BufferData(target, this->sizeInBytes(), nullptr, fUsage));
             }
             GL_CALL_RET(fMapPtr, MapBuffer(target, readOnly ? GR_GL_READ_ONLY : GR_GL_WRITE_ONLY));
@@ -257,28 +256,28 @@ bool GrGLBuffer::onUpdateData(const void* src, size_t srcSizeInBytes) {
     
     GrGLenum target = this->glGpu()->bindBuffer(fIntendedType, this);
 
-#if GR_GL_USE_BUFFER_DATA_NULL_HINT
-    if (this->sizeInBytes() == srcSizeInBytes) {
-        GL_CALL(BufferData(target, (GrGLsizeiptr) srcSizeInBytes, src, fUsage));
+    if (this->glCaps().useBufferDataNullHint()) {
+        if (this->sizeInBytes() == srcSizeInBytes) {
+            GL_CALL(BufferData(target, (GrGLsizeiptr) srcSizeInBytes, src, fUsage));
+        } else {
+            
+            
+            
+            
+            
+            
+            
+            GL_CALL(BufferData(target, this->sizeInBytes(), nullptr, fUsage));
+            GL_CALL(BufferSubData(target, 0, (GrGLsizeiptr) srcSizeInBytes, src));
+        }
+        fGLSizeInBytes = this->sizeInBytes();
     } else {
         
         
         
-        
-        
-        
-        
-        GL_CALL(BufferData(target, this->sizeInBytes(), nullptr, fUsage));
-        GL_CALL(BufferSubData(target, 0, (GrGLsizeiptr) srcSizeInBytes, src));
+        GL_CALL(BufferData(target, srcSizeInBytes, src, fUsage));
+        fGLSizeInBytes = srcSizeInBytes;
     }
-    fGLSizeInBytes = this->sizeInBytes();
-#else
-    
-    
-    
-    GL_CALL(BufferData(target, srcSizeInBytes, src, fUsage));
-    fGLSizeInBytes = srcSizeInBytes;
-#endif
     VALIDATE();
     return true;
 }

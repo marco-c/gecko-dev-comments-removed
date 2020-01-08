@@ -211,8 +211,7 @@ sk_sp<const GrXferProcessor> GrCoverageSetOpXPFactory::makeXferProcessor(
         const GrProcessorAnalysisColor&,
         GrProcessorAnalysisCoverage,
         bool hasMixedSamples,
-        const GrCaps& caps,
-        GrPixelConfigIsClamped dstIsClamped) const {
+        const GrCaps& caps) const {
     
     
     

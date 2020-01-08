@@ -6,13 +6,13 @@
 
 
 
-
 #ifndef SkString_DEFINED
 #define SkString_DEFINED
 
 #include "../private/SkTArray.h"
-#include "SkScalar.h"
+#include "../private/SkTo.h"
 #include "SkRefCnt.h"
+#include "SkScalar.h"
 
 #include <atomic>
 #include <stdarg.h>
@@ -186,8 +186,6 @@ public:
     void set(const SkString& src) { *this = src; }
     void set(const char text[]);
     void set(const char text[], size_t len);
-    void setUTF16(const uint16_t[]);
-    void setUTF16(const uint16_t[], size_t len);
 
     void insert(size_t offset, const SkString& src) { this->insert(offset, src.c_str(), src.size()); }
     void insert(size_t offset, const char text[]);
@@ -276,9 +274,7 @@ SkString SkStringPrintf(const char* format, ...);
 
 static inline SkString SkStringPrintf() { return SkString(); }
 
-
-
-template <> inline void SkTSwap(SkString& a, SkString& b) {
+static inline void swap(SkString& a, SkString& b) {
     a.swap(b);
 }
 

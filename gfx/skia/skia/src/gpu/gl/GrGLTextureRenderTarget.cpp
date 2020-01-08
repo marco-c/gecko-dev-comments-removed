@@ -6,8 +6,8 @@
 
 
 #include "GrGLTextureRenderTarget.h"
-
 #include "GrContext.h"
+#include "GrContextPriv.h"
 #include "GrGLGpu.h"
 #include "GrTexturePriv.h"
 #include "SkTraceMemoryDump.h"
@@ -35,39 +35,24 @@ GrGLTextureRenderTarget::GrGLTextureRenderTarget(GrGLGpu* gpu,
     this->registerWithCacheWrapped();
 }
 
-
 void GrGLTextureRenderTarget::dumpMemoryStatistics(
     SkTraceMemoryDump* traceMemoryDump) const {
-  GrGLRenderTarget::dumpMemoryStatistics(traceMemoryDump);
-
-  
-  
-  
-  SkString dumpName("skia/gpu_resources/resource_");
-  dumpName.appendU32(this->uniqueID().asUInt());
-  dumpName.append("/texture");
-
-  
-  
-  size_t size = GrGLTexture::gpuMemorySize();
-
-  traceMemoryDump->dumpNumericValue(dumpName.c_str(), "size", "bytes", size);
-
-  if (this->isPurgeable()) {
-    traceMemoryDump->dumpNumericValue(dumpName.c_str(), "purgeable_size",
-                                      "bytes", size);
-  }
-
-  SkString texture_id;
-  texture_id.appendU32(this->textureID());
-  traceMemoryDump->setMemoryBacking(dumpName.c_str(), "gl_texture",
-                                    texture_id.c_str());
+#ifndef SK_BUILD_FOR_ANDROID_FRAMEWORK
+    
+    GrGLRenderTarget::dumpMemoryStatistics(traceMemoryDump);
+    GrGLTexture::dumpMemoryStatistics(traceMemoryDump);
+#else
+    SkString resourceName = this->getResourceName();
+    resourceName.append("/texture_renderbuffer");
+    this->dumpMemoryStatisticsPriv(traceMemoryDump, resourceName, "RenderTarget",
+                                   this->gpuMemorySize());
+#endif
 }
 
 bool GrGLTextureRenderTarget::canAttemptStencilAttachment() const {
     
     
-    return !this->getGpu()->getContext()->caps()->avoidStencilBuffers();
+    return !this->getGpu()->getContext()->contextPriv().caps()->avoidStencilBuffers();
 }
 
 sk_sp<GrGLTextureRenderTarget> GrGLTextureRenderTarget::MakeWrapped(

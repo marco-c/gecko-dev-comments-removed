@@ -16,14 +16,7 @@ enum SkBlurStyle {
     kOuter_SkBlurStyle,   
     kInner_SkBlurStyle,   
 
-    kLastEnum_SkBlurStyle = kInner_SkBlurStyle
-};
-
-enum SkBlurQuality {
-    kLow_SkBlurQuality,     
-    kHigh_SkBlurQuality,    
-
-    kLastEnum_SkBlurQuality
+    kLastEnum_SkBlurStyle = kInner_SkBlurStyle,
 };
 
 #endif

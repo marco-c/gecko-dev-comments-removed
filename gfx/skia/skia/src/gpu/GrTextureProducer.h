@@ -11,6 +11,7 @@
 #include "GrResourceKey.h"
 #include "GrSamplerState.h"
 #include "SkImageInfo.h"
+#include "SkNoncopyable.h"
 
 class GrContext;
 class GrFragmentProcessor;
@@ -69,6 +70,50 @@ public:
             const GrSamplerState::Filter* filterOrNullForBicubic,
             SkColorSpace* dstColorSpace) = 0;
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    sk_sp<GrTextureProxy> refTextureProxyForParams(const GrSamplerState&,
+                                                   SkColorSpace* dstColorSpace,
+                                                   sk_sp<SkColorSpace>* proxyColorSpace,
+                                                   SkScalar scaleAdjust[2]);
+
+    sk_sp<GrTextureProxy> refTextureProxyForParams(GrSamplerState::Filter filter,
+                                                   SkColorSpace* dstColorSpace,
+                                                   sk_sp<SkColorSpace>* proxyColorSpace,
+                                                   SkScalar scaleAdjust[2]) {
+        return this->refTextureProxyForParams(
+                GrSamplerState(GrSamplerState::WrapMode::kClamp, filter), dstColorSpace,
+                proxyColorSpace, scaleAdjust);
+    }
+
+    
+
+
+
+
+
+
+    
+    
+    
+    
+    sk_sp<GrTextureProxy> refTextureProxy(GrMipMapped willNeedMips,
+                                          SkColorSpace* dstColorSpace,
+                                          sk_sp<SkColorSpace>* proxyColorSpace);
+
     virtual ~GrTextureProducer() {}
 
     int width() const { return fWidth; }
@@ -79,8 +124,9 @@ public:
 protected:
     friend class GrTextureProducer_TestAccess;
 
-    GrTextureProducer(int width, int height, bool isAlphaOnly)
-        : fWidth(width)
+    GrTextureProducer(GrContext* context, int width, int height, bool isAlphaOnly)
+        : fContext(context)
+        , fWidth(width)
         , fHeight(height)
         , fIsAlphaOnly(isAlphaOnly) {}
 
@@ -106,16 +152,14 @@ protected:
 
 
 
-    virtual void makeCopyKey(const CopyParams&, GrUniqueKey* copyKey,
-                             SkColorSpace* dstColorSpace) = 0;
+    virtual void makeCopyKey(const CopyParams&, GrUniqueKey* copyKey) = 0;
 
     
 
 
 
 
-    virtual void didCacheCopy(const GrUniqueKey& copyKey) = 0;
-
+    virtual void didCacheCopy(const GrUniqueKey& copyKey, uint32_t contextUniqueID) = 0;
 
     enum DomainMode {
         kNoDomain_DomainMode,
@@ -141,7 +185,15 @@ protected:
             const SkRect& domain,
             const GrSamplerState::Filter* filterOrNullForBicubic);
 
+    GrContext* fContext;
+
 private:
+    virtual sk_sp<GrTextureProxy> onRefTextureProxyForParams(const GrSamplerState&,
+                                                             SkColorSpace* dstColorSpace,
+                                                             sk_sp<SkColorSpace>* proxyColorSpace,
+                                                             bool willBeMipped,
+                                                             SkScalar scaleAdjust[2]) = 0;
+
     const int   fWidth;
     const int   fHeight;
     const bool  fIsAlphaOnly;

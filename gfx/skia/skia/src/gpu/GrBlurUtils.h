@@ -8,13 +8,14 @@
 #ifndef GrBlurUtils_DEFINED
 #define GrBlurUtils_DEFINED
 
-#include "GrTypes.h"
+#include "GrTypesPriv.h"
 
 class GrClip;
 class GrContext;
 class GrPaint;
 class GrRenderTarget;
 class GrRenderTargetContext;
+class GrShape;
 class GrStyle;
 struct SkIRect;
 class SkMaskFilter;
@@ -31,30 +32,24 @@ namespace GrBlurUtils {
     
 
 
-    void drawPathWithMaskFilter(GrContext* context,
-                                GrRenderTargetContext* renderTargetContext,
-                                const GrClip& clip,
-                                const SkPath& origSrcPath,
-                                const SkPaint& paint,
-                                const SkMatrix& origViewMatrix,
-                                const SkMatrix* prePathMatrix,
-                                const SkIRect& clipBounds,
-                                bool pathIsMutable);
+    void drawShapeWithMaskFilter(GrContext*,
+                                 GrRenderTargetContext*,
+                                 const GrClip&,
+                                 const SkPaint&,
+                                 const SkMatrix& viewMatrix,
+                                 const GrShape&);
 
     
 
 
 
-    void drawPathWithMaskFilter(GrContext*,
-                                GrRenderTargetContext*,
-                                const GrClip&,
-                                const SkPath& path,
-                                GrPaint&&,
-                                GrAA,
-                                const SkMatrix& viewMatrix,
-                                const SkMaskFilter*,
-                                const GrStyle&,
-                                bool pathIsMutable);
+    void drawShapeWithMaskFilter(GrContext*,
+                                 GrRenderTargetContext*,
+                                 const GrClip&,
+                                 const GrShape&,
+                                 GrPaint&&,
+                                 const SkMatrix& viewMatrix,
+                                 const SkMaskFilter*);
 };
 
 #endif

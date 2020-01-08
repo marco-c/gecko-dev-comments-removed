@@ -11,10 +11,32 @@
 #include "GrTypes.h"
 #include "gl/GrGLTypes.h"
 #include "mock/GrMockTypes.h"
-
-#ifdef SK_VULKAN
 #include "vk/GrVkTypes.h"
+#include "../private/GrVkTypesPriv.h"
+
+class GrVkImageLayout;
+
+#ifdef SK_METAL
+#include "mtl/GrMtlTypes.h"
 #endif
+
+#if !SK_SUPPORT_GPU
+
+
+class SK_API GrBackendTexture {
+public:
+    GrBackendTexture() {}
+
+    bool isValid() const { return false; }
+};
+
+class SK_API GrBackendRenderTarget {
+public:
+    GrBackendRenderTarget() {}
+
+    bool isValid() const { return false; }
+};
+#else
 
 class SK_API GrBackendFormat {
 public:
@@ -25,8 +47,12 @@ public:
         return GrBackendFormat(format, target);
     }
 
-#ifdef SK_VULKAN
-    static GrBackendFormat MakeVK(VkFormat format) {
+    static GrBackendFormat MakeVk(VkFormat format) {
+        return GrBackendFormat(format);
+    }
+
+#ifdef SK_METAL
+    static GrBackendFormat MakeMtl(GrMTLPixelFormat format) {
         return GrBackendFormat(format);
     }
 #endif
@@ -42,10 +68,14 @@ public:
     const GrGLenum* getGLFormat() const;
     const GrGLenum* getGLTarget() const;
 
-#ifdef SK_VULKAN
     
     
     const VkFormat* getVkFormat() const;
+
+#ifdef SK_METAL
+    
+    
+    const GrMTLPixelFormat* getMtlFormat() const;
 #endif
 
     
@@ -58,8 +88,10 @@ public:
 private:
     GrBackendFormat(GrGLenum format, GrGLenum target);
 
-#ifdef SK_VULKAN
     GrBackendFormat(const VkFormat vkFormat);
+
+#ifdef SK_METAL
+    GrBackendFormat(const GrMTLPixelFormat mtlFormat);
 #endif
 
     GrBackendFormat(const GrPixelConfig config);
@@ -72,32 +104,18 @@ private:
             GrGLenum fTarget; 
             GrGLenum fFormat; 
         } fGL;
-#ifdef SK_VULKAN
-        VkFormat      fVkFormat;
+        VkFormat         fVkFormat;
+#ifdef SK_METAL
+        GrMTLPixelFormat fMtlFormat;
 #endif
-        GrPixelConfig fMockFormat;
+        GrPixelConfig    fMockFormat;
     };
 };
 
 class SK_API GrBackendTexture {
 public:
     
-    GrBackendTexture() : fConfig(kUnknown_GrPixelConfig) {}
-
-    
-    
-    GrBackendTexture(int width,
-                     int height,
-                     GrPixelConfig config,
-                     const GrGLTextureInfo& glInfo);
-
-    
-    
-    GrBackendTexture(int width,
-                     int height,
-                     GrPixelConfig config,
-                     GrMipMapped,
-                     const GrGLTextureInfo& glInfo);
+    GrBackendTexture() : fIsValid(false) {}
 
     
     GrBackendTexture(int width,
@@ -105,22 +123,27 @@ public:
                      GrMipMapped,
                      const GrGLTextureInfo& glInfo);
 
-#ifdef SK_VULKAN
     GrBackendTexture(int width,
                      int height,
                      const GrVkImageInfo& vkInfo);
+
+#ifdef SK_METAL
+    GrBackendTexture(int width,
+                     int height,
+                     GrMipMapped,
+                     const GrMtlTextureInfo& mtlInfo);
 #endif
 
     GrBackendTexture(int width,
                      int height,
-                     GrPixelConfig config,
-                     const GrMockTextureInfo& mockInfo);
-
-    GrBackendTexture(int width,
-                     int height,
-                     GrPixelConfig config,
                      GrMipMapped,
                      const GrMockTextureInfo& mockInfo);
+
+    GrBackendTexture(const GrBackendTexture& that);
+
+    ~GrBackendTexture();
+
+    GrBackendTexture& operator=(const GrBackendTexture& that);
 
     int width() const { return fWidth; }
     int height() const { return fHeight; }
@@ -129,34 +152,74 @@ public:
 
     
     
-    const GrGLTextureInfo* getGLTextureInfo() const;
+    bool getGLTextureInfo(GrGLTextureInfo*) const;
 
-#ifdef SK_VULKAN
     
     
-    const GrVkImageInfo* getVkImageInfo() const;
+    
+    bool getVkImageInfo(GrVkImageInfo*) const;
+
+    
+    
+    void setVkImageLayout(VkImageLayout);
+
+#ifdef SK_METAL
+    
+    
+    bool getMtlTextureInfo(GrMtlTextureInfo*) const;
 #endif
 
     
     
-    const GrMockTextureInfo* getMockTextureInfo() const;
+    bool getMockTextureInfo(GrMockTextureInfo*) const;
 
     
-    bool isValid() const { return fConfig != kUnknown_GrPixelConfig; }
+    bool isValid() const { return fIsValid; }
 
-    GrPixelConfig testingOnly_getPixelConfig() const;
+#if GR_TEST_UTILS
+    
+    
+    
+    GrPixelConfig pixelConfig() const { return fConfig; }
+    void setPixelConfig(GrPixelConfig config) { fConfig = config; }
+
+    static bool TestingOnly_Equals(const GrBackendTexture& , const GrBackendTexture&);
+#endif
 
 private:
     
     friend class SkImage;
+    friend class SkImage_Gpu;
+    friend class SkImage_GpuBase;
+    friend class SkImage_GpuYUVA;
+    friend class SkPromiseImageHelper;
     friend class SkSurface;
+    friend class GrAHardwareBufferImageGenerator;
     friend class GrBackendTextureImageGenerator;
     friend class GrProxyProvider;
     friend class GrGpu;
     friend class GrGLGpu;
     friend class GrVkGpu;
+    friend class GrMtlGpu;
+    friend class PromiseImageHelper;
+
     GrPixelConfig config() const { return fConfig; }
 
+   
+   sk_sp<GrVkImageLayout> getGrVkImageLayout() const;
+
+   friend class GrVkTexture;
+#ifdef SK_VULKAN
+   GrBackendTexture(int width,
+                    int height,
+                    const GrVkImageInfo& vkInfo,
+                    sk_sp<GrVkImageLayout> layout);
+#endif
+
+    
+    void cleanup();
+
+    bool fIsValid;
     int fWidth;         
     int fHeight;        
     GrPixelConfig fConfig;
@@ -165,8 +228,9 @@ private:
 
     union {
         GrGLTextureInfo fGLInfo;
-#ifdef SK_VULKAN
-        GrVkImageInfo   fVkInfo;
+        GrVkBackendSurfaceInfo fVkInfo;
+#ifdef SK_METAL
+        GrMtlTextureInfo fMtlInfo;
 #endif
         GrMockTextureInfo fMockInfo;
     };
@@ -175,16 +239,7 @@ private:
 class SK_API GrBackendRenderTarget {
 public:
     
-    GrBackendRenderTarget() : fConfig(kUnknown_GrPixelConfig) {}
-
-    
-    
-    GrBackendRenderTarget(int width,
-                          int height,
-                          int sampleCnt,
-                          int stencilBits,
-                          GrPixelConfig config,
-                          const GrGLFramebufferInfo& glInfo);
+    GrBackendRenderTarget() : fIsValid(false) {}
 
     
     GrBackendRenderTarget(int width,
@@ -193,13 +248,31 @@ public:
                           int stencilBits,
                           const GrGLFramebufferInfo& glInfo);
 
-#ifdef SK_VULKAN
+    
     GrBackendRenderTarget(int width,
                           int height,
                           int sampleCnt,
                           int stencilBits,
                           const GrVkImageInfo& vkInfo);
+    GrBackendRenderTarget(int width, int height, int sampleCnt, const GrVkImageInfo& vkInfo);
+
+#ifdef SK_METAL
+    GrBackendRenderTarget(int width,
+                          int height,
+                          int sampleCnt,
+                          const GrMtlTextureInfo& mtlInfo);
 #endif
+
+    GrBackendRenderTarget(int width,
+                          int height,
+                          int sampleCnt,
+                          int stencilBits,
+                          const GrMockRenderTargetInfo& mockInfo);
+
+    ~GrBackendRenderTarget();
+
+    GrBackendRenderTarget(const GrBackendRenderTarget& that);
+    GrBackendRenderTarget& operator=(const GrBackendRenderTarget&);
 
     int width() const { return fWidth; }
     int height() const { return fHeight; }
@@ -209,18 +282,40 @@ public:
 
     
     
-    const GrGLFramebufferInfo* getGLFramebufferInfo() const;
+    bool getGLFramebufferInfo(GrGLFramebufferInfo*) const;
 
-#ifdef SK_VULKAN
     
     
-    const GrVkImageInfo* getVkImageInfo() const;
+    
+    bool getVkImageInfo(GrVkImageInfo*) const;
+
+    
+    
+    void setVkImageLayout(VkImageLayout);
+
+#ifdef SK_METAL
+    
+    
+    bool getMtlTextureInfo(GrMtlTextureInfo*) const;
 #endif
 
     
-    bool isValid() const { return fConfig != kUnknown_GrPixelConfig; }
+    
+    bool getMockRenderTargetInfo(GrMockRenderTargetInfo*) const;
 
-    GrPixelConfig testingOnly_getPixelConfig() const;
+    
+    bool isValid() const { return fIsValid; }
+
+
+#if GR_TEST_UTILS
+    
+    
+    
+    GrPixelConfig pixelConfig() const { return fConfig; }
+    void setPixelConfig(GrPixelConfig config) { fConfig = config; }
+
+    static bool TestingOnly_Equals(const GrBackendRenderTarget&, const GrBackendRenderTarget&);
+#endif
 
 private:
     
@@ -231,8 +326,20 @@ private:
     friend class GrGLGpu;
     friend class GrProxyProvider;
     friend class GrVkGpu;
+    friend class GrMtlGpu;
     GrPixelConfig config() const { return fConfig; }
 
+   
+   sk_sp<GrVkImageLayout> getGrVkImageLayout() const;
+
+   friend class GrVkRenderTarget;
+   GrBackendRenderTarget(int width, int height, int sampleCnt, const GrVkImageInfo& vkInfo,
+                         sk_sp<GrVkImageLayout> layout);
+
+    
+    void cleanup();
+
+    bool fIsValid;
     int fWidth;         
     int fHeight;        
 
@@ -244,11 +351,15 @@ private:
 
     union {
         GrGLFramebufferInfo fGLInfo;
-#ifdef SK_VULKAN
-        GrVkImageInfo   fVkInfo;
+        GrVkBackendSurfaceInfo fVkInfo;
+#ifdef SK_METAL
+        GrMtlTextureInfo fMtlInfo;
 #endif
+        GrMockRenderTargetInfo fMockInfo;
     };
 };
+
+#endif
 
 #endif
 

@@ -8,17 +8,16 @@
 #ifndef GrVkPipelineStateBuilder_DEFINED
 #define GrVkPipelineStateBuilder_DEFINED
 
-#include "glsl/GrGLSLProgramBuilder.h"
-
 #include "GrPipeline.h"
+#include "GrProgramDesc.h"
 #include "GrVkPipelineState.h"
 #include "GrVkUniformHandler.h"
 #include "GrVkVaryingHandler.h"
 #include "SkSLCompiler.h"
+#include "glsl/GrGLSLProgramBuilder.h"
 
 #include "vk/GrVkDefines.h"
 
-class GrProgramDesc;
 class GrVkGpu;
 class GrVkRenderPass;
 
@@ -32,13 +31,39 @@ public:
 
 
 
+
+
+
+
+
+    class Desc : public GrProgramDesc {
+    public:
+        static bool Build(Desc*,
+                          const GrPrimitiveProcessor&,
+                          const GrPipeline&,
+                          const GrStencilSettings&,
+                          GrPrimitiveType primitiveType,
+                          const GrShaderCaps&);
+
+    private:
+        typedef GrProgramDesc INHERITED;
+    };
+
+    
+
+
+
+
+
+
+
     static GrVkPipelineState* CreatePipelineState(GrVkGpu*,
+                                                  const GrPrimitiveProcessor&,
                                                   const GrPipeline&,
                                                   const GrStencilSettings&,
-                                                  const GrPrimitiveProcessor&,
                                                   GrPrimitiveType,
-                                                  GrVkPipelineState::Desc*,
-                                                  const GrVkRenderPass& renderPass);
+                                                  Desc*,
+                                                  VkRenderPass compatibleRenderPass);
 
     const GrCaps* caps() const override;
 
@@ -55,23 +80,23 @@ private:
 
     GrVkPipelineState* finalize(const GrStencilSettings&,
                                 GrPrimitiveType primitiveType,
-                                const GrVkRenderPass& renderPass,
-                                GrVkPipelineState::Desc*);
+                                VkRenderPass compatibleRenderPass,
+                                Desc*);
 
     bool createVkShaderModule(VkShaderStageFlagBits stage,
                               const GrGLSLShaderBuilder& builder,
                               VkShaderModule* shaderModule,
                               VkPipelineShaderStageCreateInfo* stageInfo,
                               const SkSL::Program::Settings& settings,
-                              GrVkPipelineState::Desc* desc);
+                              Desc* desc);
 
     GrGLSLUniformHandler* uniformHandler() override { return &fUniformHandler; }
     const GrGLSLUniformHandler* uniformHandler() const override { return &fUniformHandler; }
     GrGLSLVaryingHandler* varyingHandler() override { return &fVaryingHandler; }
 
     GrVkGpu* fGpu;
-    GrVkVaryingHandler        fVaryingHandler;
-    GrVkUniformHandler        fUniformHandler;
+    GrVkVaryingHandler fVaryingHandler;
+    GrVkUniformHandler fUniformHandler;
 
     typedef GrGLSLProgramBuilder INHERITED;
 };

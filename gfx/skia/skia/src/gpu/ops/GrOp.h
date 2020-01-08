@@ -11,6 +11,7 @@
 #include "../private/SkAtomics.h"
 #include "GrGpuResource.h"
 #include "GrNonAtomicRef.h"
+#include "GrTracing.h"
 #include "GrXferProcessor.h"
 #include "SkMatrix.h"
 #include "SkRect.h"
@@ -40,8 +41,6 @@ class GrRenderTargetOpList;
 
 
 
-
-
 #define GR_OP_SPEW 0
 #if GR_OP_SPEW
     #define GrOP_SPEW(code) code
@@ -52,6 +51,9 @@ class GrRenderTargetOpList;
 #endif
 
 
+#define GR_FLUSH_TIME_OP_SPEW 0
+
+
 #define DEFINE_OP_CLASS_ID \
     static uint32_t ClassID() { \
         static uint32_t kClassID = GenOpClassID(); \
@@ -60,7 +62,6 @@ class GrRenderTargetOpList;
 
 class GrOp : private SkNoncopyable {
 public:
-    GrOp(uint32_t classID);
     virtual ~GrOp();
 
     virtual const char* name() const = 0;
@@ -71,13 +72,27 @@ public:
         
     }
 
-    bool combineIfPossible(GrOp* that, const GrCaps& caps) {
-        if (this->classID() != that->classID()) {
-            return false;
-        }
+    enum class CombineResult {
+        
 
-        return this->onCombineIfPossible(that, caps);
-    }
+
+
+
+
+        kMerged,
+        
+
+
+
+
+        kMayChain,
+        
+
+
+        kCannotCombine
+    };
+
+    CombineResult combineIfPossible(GrOp* that, const GrCaps& caps);
 
     const SkRect& bounds() const {
         SkASSERT(kUninitialized_BoundsFlag != fBoundsFlags);
@@ -100,6 +115,8 @@ public:
         return SkToBool(fBoundsFlags & kZeroArea_BoundsFlag);
     }
 
+#ifdef SK_DEBUG
+    
     void* operator new(size_t size);
     void operator delete(void* target);
 
@@ -109,6 +126,7 @@ public:
     void operator delete(void* target, void* placement) {
         ::operator delete(target, placement);
     }
+#endif
 
     
 
@@ -137,18 +155,13 @@ public:
 
 
 
-
-
-    virtual void wasRecorded(GrRenderTargetOpList*) {}
-
-    
-
-
-
     void prepare(GrOpFlushState* state) { this->onPrepare(state); }
 
     
-    void execute(GrOpFlushState* state) { this->onExecute(state); }
+    void execute(GrOpFlushState* state) {
+        TRACE_EVENT0("skia", name());
+        this->onExecute(state);
+    }
 
     
     virtual SkString dumpInfo() const {
@@ -158,7 +171,48 @@ public:
         return string;
     }
 
+    
+
+
+
+
+
+
+    template <typename OpSubclass> class ChainRange {
+    private:
+        class Iter {
+        public:
+            explicit Iter(const GrOp* head) : fCurr(head) {}
+            inline Iter& operator++() { return *this = Iter(fCurr->nextInChain()); }
+            const OpSubclass& operator*() const { return fCurr->cast<OpSubclass>(); }
+            bool operator!=(const Iter& that) const { return fCurr != that.fCurr; }
+
+        private:
+            const GrOp* fCurr;
+        };
+        const GrOp* fHead;
+
+    public:
+        explicit ChainRange(const GrOp* head) : fHead(head) {}
+        Iter begin() { return Iter(fHead); }
+        Iter end() { return Iter(nullptr); }
+    };
+
+    void setNextInChain(GrOp*);
+    
+    bool isChainHead() const { return !fChainHead || (fChainHead == this); }
+    
+    const GrOp* chainHead() const { return fChainHead ? fChainHead : this; }
+    
+    bool isChainTail() const { return !fNextInChain; }
+    
+    bool isChained() const { return SkToBool(fChainHead); }
+    
+    const GrOp* nextInChain() const { return fNextInChain; }
+
 protected:
+    GrOp(uint32_t classID);
+
     
 
 
@@ -209,7 +263,9 @@ protected:
     static uint32_t GenOpClassID() { return GenID(&gCurrOpClassID); }
 
 private:
-    virtual bool onCombineIfPossible(GrOp*, const GrCaps& caps) = 0;
+    virtual CombineResult onCombineIfPossible(GrOp*, const GrCaps&) {
+        return CombineResult::kCannotCombine;
+    }
 
     virtual void onPrepare(GrOpFlushState*) = 0;
     virtual void onExecute(GrOpFlushState*) = 0;
@@ -241,11 +297,13 @@ private:
         SkDEBUGCODE(kUninitialized_BoundsFlag   = 0x4)
     };
 
+    GrOp*                               fNextInChain = nullptr;
+    GrOp*                               fChainHead = nullptr;    
     const uint16_t                      fClassID;
     uint16_t                            fBoundsFlags;
 
     static uint32_t GenOpID() { return GenID(&gCurrOpUniqueID); }
-    mutable uint32_t                    fUniqueID;
+    mutable uint32_t                    fUniqueID = SK_InvalidUniqueID;
     SkRect                              fBounds;
 
     static int32_t                      gCurrOpUniqueID;

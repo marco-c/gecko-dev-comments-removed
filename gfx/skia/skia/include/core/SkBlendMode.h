@@ -5,54 +5,71 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #ifndef SkBlendMode_DEFINED
 #define SkBlendMode_DEFINED
 
 #include "SkTypes.h"
 
 enum class SkBlendMode {
-    kClear,    
-    kSrc,      
-    kDst,      
-    kSrcOver,  
-    kDstOver,  
-    kSrcIn,    
-    kDstIn,    
-    kSrcOut,   
-    kDstOut,   
-    kSrcATop,  
-    kDstATop,  
-    kXor,      
-    kPlus,     
-    kModulate, 
-
-    
-    
-    kScreen,
-    kLastCoeffMode = kScreen,
-
-    kOverlay,
-    kDarken,
-    kLighten,
-    kColorDodge,
-    kColorBurn,
-    kHardLight,
-    kSoftLight,
-    kDifference,
-    kExclusion,
-    kMultiply,
-    kLastSeparableMode = kMultiply,
-
-    kHue,
-    kSaturation,
-    kColor,
-    kLuminosity,
-    kLastMode = kLuminosity
+    kClear,                           
+    kSrc,                             
+    kDst,                             
+    kSrcOver,                         
+    kDstOver,                         
+    kSrcIn,                           
+    kDstIn,                           
+    kSrcOut,                          
+    kDstOut,                          
+    kSrcATop,                         
+    kDstATop,                         
+    kXor,                             
+    kPlus,                            
+    kModulate,                        
+    kScreen,                
+    kLastCoeffMode     = kScreen,     
+    kOverlay,                         
+    kDarken,                          
+    kLighten,                         
+    kColorDodge,                      
+    kColorBurn,                       
+    kHardLight,                       
+    kSoftLight,                       
+    kDifference,                      
+    kExclusion,                       
+    kMultiply,                        
+    kLastSeparableMode = kMultiply,   
+    kHue,                           
+    kSaturation,                    
+    kColor,                         
+    kLuminosity,                    
+    kLastMode          = kLuminosity, 
 };
 
 
 
 
-SK_API const char* SkBlendMode_Name(SkBlendMode);
+
+
+
+
+
+
+
+
+
+
+
+
+SK_API const char* SkBlendMode_Name(SkBlendMode blendMode);
 
 #endif

@@ -34,13 +34,6 @@ namespace SkWebpEncoder {
 
         Compression fCompression = Compression::kLossy;
         float fQuality = 100.0f;
-
-        
-
-
-
-
-        SkTransferFunctionBehavior fUnpremulBehavior = SkTransferFunctionBehavior::kRespect;
     };
 
     

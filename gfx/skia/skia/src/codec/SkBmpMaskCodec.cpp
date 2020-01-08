@@ -12,11 +12,11 @@
 
 
 
-SkBmpMaskCodec::SkBmpMaskCodec(int width, int height, const SkEncodedInfo& info,
+SkBmpMaskCodec::SkBmpMaskCodec(SkEncodedInfo&& info,
                                std::unique_ptr<SkStream> stream,
                                uint16_t bitsPerPixel, SkMasks* masks,
                                SkCodec::SkScanlineOrder rowOrder)
-    : INHERITED(width, height, info, std::move(stream), bitsPerPixel, rowOrder)
+    : INHERITED(std::move(info), std::move(stream), bitsPerPixel, rowOrder)
     , fMasks(masks)
     , fMaskSwizzler(nullptr)
 {}
@@ -32,7 +32,7 @@ SkCodec::Result SkBmpMaskCodec::onGetPixels(const SkImageInfo& dstInfo,
         
         return kUnimplemented;
     }
-    if (dstInfo.dimensions() != this->getInfo().dimensions()) {
+    if (dstInfo.dimensions() != this->dimensions()) {
         SkCodecPrintf("Error: scaling not supported.\n");
         return kInvalidScale;
     }
@@ -64,8 +64,8 @@ SkCodec::Result SkBmpMaskCodec::onPrepareToDecode(const SkImageInfo& dstInfo,
         }
     }
 
-    
-    fMaskSwizzler.reset(SkMaskSwizzler::CreateMaskSwizzler(swizzlerInfo, this->getInfo(),
+    bool srcIsOpaque = this->getEncodedInfo().opaque();
+    fMaskSwizzler.reset(SkMaskSwizzler::CreateMaskSwizzler(swizzlerInfo, srcIsOpaque,
             fMasks.get(), this->bitsPerPixel(), options));
     SkASSERT(fMaskSwizzler);
 

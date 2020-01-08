@@ -9,16 +9,13 @@
 #ifndef GrVkPipelineState_DEFINED
 #define GrVkPipelineState_DEFINED
 
-#include "GrProgramDesc.h"
-#include "GrStencilSettings.h"
 #include "GrVkDescriptorSetManager.h"
-#include "GrVkImage.h"
 #include "GrVkPipelineStateDataManager.h"
 #include "glsl/GrGLSLProgramBuilder.h"
-
 #include "vk/GrVkDefines.h"
 
 class GrPipeline;
+class GrStencilSettings;
 class GrVkBufferView;
 class GrVkCommandBuffer;
 class GrVkDescriptorPool;
@@ -26,7 +23,9 @@ class GrVkDescriptorSet;
 class GrVkGpu;
 class GrVkImageView;
 class GrVkPipeline;
+class GrVkPipelineLayout;
 class GrVkSampler;
+class GrVkTexture;
 class GrVkUniformBuffer;
 
 
@@ -37,83 +36,46 @@ class GrVkUniformBuffer;
 
 class GrVkPipelineState : public SkRefCnt {
 public:
-    typedef GrGLSLProgramBuilder::BuiltinUniformHandles BuiltinUniformHandles;
+    using UniformInfoArray = GrVkPipelineStateDataManager::UniformInfoArray;
+    using UniformHandle = GrGLSLProgramDataManager::UniformHandle;
+
+    GrVkPipelineState(
+            GrVkGpu* gpu,
+            GrVkPipeline* pipeline,
+            VkPipelineLayout layout,
+            const GrVkDescriptorSetManager::Handle& samplerDSHandle,
+            const GrGLSLBuiltinUniformHandles& builtinUniformHandles,
+            const UniformInfoArray& uniforms,
+            uint32_t geometryUniformSize,
+            uint32_t fragmentUniformSize,
+            uint32_t numSamplers,
+            std::unique_ptr<GrGLSLPrimitiveProcessor> geometryProcessor,
+            std::unique_ptr<GrGLSLXferProcessor> xferProcessor,
+            std::unique_ptr<std::unique_ptr<GrGLSLFragmentProcessor>[]> fragmentProcessors,
+            int fFragmentProcessorCnt);
 
     ~GrVkPipelineState();
 
-    GrVkPipeline* vkPipeline() const { return fPipeline; }
+    void setAndBindUniforms(GrVkGpu*, const GrPrimitiveProcessor&, const GrPipeline&,
+                            GrVkCommandBuffer*);
+    
 
-    void setData(GrVkGpu*, const GrPrimitiveProcessor&, const GrPipeline&);
 
-    void bind(const GrVkGpu* gpu, GrVkCommandBuffer* commandBuffer);
 
-    void addUniformResources(GrVkCommandBuffer&);
+    void setAndBindTextures(GrVkGpu*, const GrPrimitiveProcessor&, const GrPipeline&,
+                            const GrTextureProxy* const primitiveProcessorTextures[],
+                            GrVkCommandBuffer*);
+
+    void bindPipeline(const GrVkGpu* gpu, GrVkCommandBuffer* commandBuffer);
+
+    void addUniformResources(GrVkCommandBuffer&, GrVkSampler*[], GrVkTexture*[], int numTextures);
 
     void freeGPUResources(const GrVkGpu* gpu);
 
-    
-    
-    void freeTempResources(const GrVkGpu* gpu);
-
     void abandonGPUResources();
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    class Desc : public GrProgramDesc {
-    public:
-        static bool Build(Desc*,
-                          const GrPrimitiveProcessor&,
-                          const GrPipeline&,
-                          const GrStencilSettings&,
-                          GrPrimitiveType primitiveType,
-                          const GrShaderCaps&);
-    private:
-        typedef GrProgramDesc INHERITED;
-    };
-
-    const Desc& getDesc() { return fDesc; }
-
 private:
-    typedef GrVkPipelineStateDataManager::UniformInfoArray UniformInfoArray;
-    typedef GrGLSLProgramDataManager::UniformHandle UniformHandle;
-
-    GrVkPipelineState(GrVkGpu* gpu,
-                      const GrVkPipelineState::Desc&,
-                      GrVkPipeline* pipeline,
-                      VkPipelineLayout layout,
-                      const GrVkDescriptorSetManager::Handle& samplerDSHandle,
-                      const GrVkDescriptorSetManager::Handle& texelBufferDSHandle,
-                      const BuiltinUniformHandles& builtinUniformHandles,
-                      const UniformInfoArray& uniforms,
-                      uint32_t geometryUniformSize,
-                      uint32_t fragmentUniformSize,
-                      uint32_t numSamplers,
-                      uint32_t numTexelBuffers,
-                      std::unique_ptr<GrGLSLPrimitiveProcessor> geometryProcessor,
-                      std::unique_ptr<GrGLSLXferProcessor> xferProcessor,
-                      const GrGLSLFragProcs& fragmentProcessors);
-
     void writeUniformBuffers(const GrVkGpu* gpu);
-
-    void writeSamplers(
-            GrVkGpu* gpu,
-            const SkTArray<const GrResourceIOProcessor::TextureSampler*>& textureBindings,
-            bool allowSRGBInputs);
-
-    void writeTexelBuffers(
-            GrVkGpu* gpu,
-            const SkTArray<const GrResourceIOProcessor::BufferAccess*>& bufferAccesses);
 
     
 
@@ -159,7 +121,7 @@ private:
 
     
     
-    VkPipelineLayout fPipelineLayout;
+    GrVkPipelineLayout* fPipelineLayout;
 
     
     
@@ -170,40 +132,25 @@ private:
 
     const GrVkDescriptorSet* fUniformDescriptorSet;
     const GrVkDescriptorSet* fSamplerDescriptorSet;
-    const GrVkDescriptorSet* fTexelBufferDescriptorSet;
 
     const GrVkDescriptorSetManager::Handle fSamplerDSHandle;
-    const GrVkDescriptorSetManager::Handle fTexelBufferDSHandle;
 
     std::unique_ptr<GrVkUniformBuffer> fGeometryUniformBuffer;
     std::unique_ptr<GrVkUniformBuffer> fFragmentUniformBuffer;
 
     
-    SkTDArray<GrVkSampler*> fSamplers;
-    SkTDArray<const GrVkImageView*> fTextureViews;
-    SkTDArray<const GrVkResource*> fTextures;
-
-    
-    SkTDArray<const GrVkBufferView*> fBufferViews;
-    SkTDArray<const GrVkResource*> fTexelBuffers;
-
-    
     RenderTargetState fRenderTargetState;
-    BuiltinUniformHandles fBuiltinUniformHandles;
+    GrGLSLBuiltinUniformHandles fBuiltinUniformHandles;
 
     
     std::unique_ptr<GrGLSLPrimitiveProcessor> fGeometryProcessor;
     std::unique_ptr<GrGLSLXferProcessor> fXferProcessor;
-    GrGLSLFragProcs fFragmentProcessors;
-
-    Desc fDesc;
+    std::unique_ptr<std::unique_ptr<GrGLSLFragmentProcessor>[]> fFragmentProcessors;
+    int fFragmentProcessorCnt;
 
     GrVkPipelineStateDataManager fDataManager;
 
     int fNumSamplers;
-    int fNumTexelBuffers;
-
-    friend class GrVkPipelineStateBuilder;
 };
 
 #endif

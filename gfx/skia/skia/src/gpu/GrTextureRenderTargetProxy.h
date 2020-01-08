@@ -21,20 +21,20 @@
 
 
 
-class GrTextureRenderTargetProxy : public GrTextureProxy, public GrRenderTargetProxy {
+class GrTextureRenderTargetProxy : public GrRenderTargetProxy, public GrTextureProxy {
 private:
     
     friend class GrSurfaceProxy; 
     friend class GrProxyProvider; 
 
     
-    GrTextureRenderTargetProxy(const GrCaps&, const GrSurfaceDesc&, GrMipMapped,
-                               SkBackingFit, SkBudgeted, uint32_t flags);
+    GrTextureRenderTargetProxy(const GrCaps&, const GrSurfaceDesc&, GrSurfaceOrigin, GrMipMapped,
+                               GrTextureType, SkBackingFit, SkBudgeted, GrInternalSurfaceFlags);
 
     
     GrTextureRenderTargetProxy(LazyInstantiateCallback&&, LazyInstantiationType,
-                               const GrSurfaceDesc& desc, GrMipMapped, SkBackingFit, SkBudgeted,
-                               uint32_t flags, GrRenderTargetFlags);
+                               const GrSurfaceDesc& desc, GrSurfaceOrigin, GrMipMapped,
+                               GrTextureType, SkBackingFit, SkBudgeted, GrInternalSurfaceFlags);
 
     
     GrTextureRenderTargetProxy(sk_sp<GrSurface>, GrSurfaceOrigin);
@@ -44,7 +44,7 @@ private:
 
     size_t onUninstantiatedGpuMemorySize() const override;
 
-    SkDEBUGCODE(void validateLazySurface(const GrSurface*) override;)
+    SkDEBUGCODE(void onValidateSurface(const GrSurface*) override;)
 };
 
 #ifdef SK_BUILD_FOR_WIN

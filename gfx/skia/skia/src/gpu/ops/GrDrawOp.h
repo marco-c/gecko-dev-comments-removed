@@ -44,8 +44,7 @@ public:
 
 
 
-    virtual RequiresDstTexture finalize(const GrCaps&, const GrAppliedClip*,
-                                        GrPixelConfigIsClamped) = 0;
+    virtual RequiresDstTexture finalize(const GrCaps&, const GrAppliedClip*) = 0;
 
 private:
     typedef GrOp INHERITED;

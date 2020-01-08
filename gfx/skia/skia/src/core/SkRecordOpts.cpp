@@ -7,6 +7,7 @@
 
 #include "SkRecordOpts.h"
 
+#include "SkCanvasPriv.h"
 #include "SkRecordPattern.h"
 #include "SkRecords.h"
 #include "SkTDArray.h"
@@ -192,7 +193,8 @@ struct SaveLayerDrawRestoreNooper {
             return false;
         }
 
-        if (match->first<SaveLayer>()->saveLayerFlags & (1U << 31)) {
+        if (match->first<SaveLayer>()->saveLayerFlags &
+                SkCanvasPriv::kDontClipToLayer_SaveLayerFlag) {
             
             return false;
         }

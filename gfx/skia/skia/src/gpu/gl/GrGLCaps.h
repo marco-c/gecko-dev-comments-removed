@@ -10,14 +10,12 @@
 #define GrGLCaps_DEFINED
 
 #include <functional>
-
 #include "GrCaps.h"
 #include "GrGLStencilAttachment.h"
 #include "GrSwizzle.h"
 #include "SkChecksum.h"
 #include "SkTHash.h"
 #include "SkTArray.h"
-#include "../private/GrGLSL.h"
 
 class GrGLContextInfo;
 class GrGLRenderTarget;
@@ -124,7 +122,7 @@ public:
         
         
         
-        return this->isConfigRenderable(config, false);
+        return this->canConfigBeFBOColorAttachment(config);
     }
 
     bool canConfigBeFBOColorAttachment(GrPixelConfig config) const {
@@ -133,10 +131,6 @@ public:
 
     bool isConfigTexSupportEnabled(GrPixelConfig config) const {
         return SkToBool(fConfigTable[config].fFlags & ConfigInfo::kCanUseTexStorage_Flag);
-    }
-
-    bool canUseConfigWithTexelBuffer(GrPixelConfig config) const {
-        return SkToBool(fConfigTable[config].fFlags & ConfigInfo::kCanUseWithTexelBuffer_Flag);
     }
 
     
@@ -155,7 +149,8 @@ public:
     bool getReadPixelsFormat(GrPixelConfig surfaceConfig, GrPixelConfig externalConfig,
                              GrGLenum* externalFormat, GrGLenum* externalType) const;
 
-    bool getRenderbufferFormat(GrPixelConfig config, GrGLenum* internalFormat) const;
+    void getRenderbufferFormat(GrPixelConfig config, GrGLenum* internalFormat) const;
+    void getSizedInternalFormat(GrPixelConfig config, GrGLenum* internalFormat) const;
 
     
     GrGLenum getImageFormat(GrPixelConfig config) const {
@@ -208,7 +203,7 @@ public:
 
 
     void markConfigAsValidColorAttachment(GrPixelConfig config) {
-        fConfigTable[config].fFlags |= ConfigInfo::kVerifiedColorAttachment_Flag;
+        fConfigTable[config].fVerifiedColorAttachment = true;
     }
 
     
@@ -216,7 +211,7 @@ public:
 
 
     bool isConfigVerifiedColorAttachment(GrPixelConfig config) const {
-        return SkToBool(fConfigTable[config].fFlags & ConfigInfo::kVerifiedColorAttachment_Flag);
+        return fConfigTable[config].fVerifiedColorAttachment;
     }
 
     
@@ -316,7 +311,9 @@ public:
     
     bool useNonVBOVertexAndIndexDynamicData() const { return fUseNonVBOVertexAndIndexDynamicData; }
 
-    bool surfaceSupportsWritePixels(const GrSurface* surface) const override;
+    bool surfaceSupportsWritePixels(const GrSurface*) const override;
+    bool surfaceSupportsReadPixels(const GrSurface*) const override;
+    GrColorType supportedReadPixelsColorType(GrPixelConfig, GrColorType) const override;
 
     
     bool readPixelsSupported(GrPixelConfig surfaceConfig,
@@ -341,8 +338,6 @@ public:
 
     bool doManualMipmapping() const { return fDoManualMipmapping; }
 
-    bool srgbDecodeDisableAffectsMipmaps() const { return fSRGBDecodeDisableAffectsMipmaps; }
-
     void onDumpJSON(SkJSONWriter*) const override;
 
     bool rgba8888PixelsOpsAreSlow() const { return fRGBA8888PixelsOpsAreSlow; }
@@ -350,6 +345,8 @@ public:
     bool rgbaToBgraReadbackConversionsAreSlow() const {
         return fRGBAToBGRAReadbackConversionsAreSlow;
     }
+
+    bool useBufferDataNullHint() const { return fUseBufferDataNullHint; }
 
     
     bool clearToBoundaryValuesIsBroken() const { return fClearToBoundaryValuesIsBroken; }
@@ -390,14 +387,42 @@ public:
 
     
     
-    
-    
-    int maxInstancesPerDrawArraysWithoutCrashing(int pendingInstanceCount) const {
-        return fMaxInstancesPerDrawArraysWithoutCrashing ? fMaxInstancesPerDrawArraysWithoutCrashing
-                                                         : pendingInstanceCount;
+    bool requiresFlushBetweenNonAndInstancedDraws() const {
+        return fRequiresFlushBetweenNonAndInstancedDraws;
     }
 
-    bool initDescForDstCopy(const GrRenderTargetProxy* src, GrSurfaceDesc* desc,
+    
+    bool detachStencilFromMSAABuffersBeforeReadPixels() const {
+        return fDetachStencilFromMSAABuffersBeforeReadPixels;
+    }
+
+    
+    
+    
+    int maxInstancesPerDrawWithoutCrashing(int pendingInstanceCount) const {
+        return (fMaxInstancesPerDrawWithoutCrashing)
+                ? fMaxInstancesPerDrawWithoutCrashing : pendingInstanceCount;
+    }
+
+    bool canCopyTexSubImage(GrPixelConfig dstConfig, bool dstHasMSAARenderBuffer,
+                            bool dstIsTextureable, bool dstIsGLTexture2D,
+                            GrSurfaceOrigin dstOrigin,
+                            GrPixelConfig srcConfig, bool srcHasMSAARenderBuffer,
+                            bool srcIsTextureable, bool srcIsGLTexture2D,
+                            GrSurfaceOrigin srcOrigin) const;
+    bool canCopyAsBlit(GrPixelConfig dstConfig, int dstSampleCnt,
+                       bool dstIsTextureable, bool dstIsGLTexture2D,
+                       GrSurfaceOrigin dstOrigin,
+                       GrPixelConfig srcConfig, int srcSampleCnt,
+                       bool srcIsTextureable, bool srcIsGLTexture2D,
+                       GrSurfaceOrigin srcOrigin, const SkRect& srcBounds,
+                       const SkIRect& srcRect, const SkIPoint& dstPoint) const;
+    bool canCopyAsDraw(GrPixelConfig dstConfig, bool srcIsTextureable) const;
+
+    bool canCopySurface(const GrSurfaceProxy* dst, const GrSurfaceProxy* src,
+                        const SkIRect& srcRect, const SkIPoint& dstPoint) const override;
+
+    bool initDescForDstCopy(const GrRenderTargetProxy* src, GrSurfaceDesc* desc, GrSurfaceOrigin*,
                             bool* rectsMustMatch, bool* disallowSubrect) const override;
 
     bool programBinarySupport() const {
@@ -412,12 +437,16 @@ public:
     bool getConfigFromBackendFormat(const GrBackendFormat&, SkColorType,
                                     GrPixelConfig*) const override;
 
+#if GR_TEST_UTILS
+    GrGLStandard standard() const { return fStandard; }
+#endif
+
 private:
     enum ExternalFormatUsage {
         kTexImage_ExternalFormatUsage,
-        kOther_ExternalFormatUsage,
+        kReadPixels_ExternalFormatUsage,
 
-        kLast_ExternalFormatUsage = kOther_ExternalFormatUsage
+        kLast_ExternalFormatUsage = kReadPixels_ExternalFormatUsage
     };
     static const int kExternalFormatUsageCnt = kLast_ExternalFormatUsage + 1;
     bool getExternalFormat(GrPixelConfig surfaceConfig, GrPixelConfig memoryConfig,
@@ -433,7 +462,10 @@ private:
 
     void onApplyOptionsOverrides(const GrContextOptions& options) override;
 
-    bool onIsMixedSamplesSupportedForRT(const GrBackendRenderTarget&) const override;
+#ifdef GR_TEST_UTILS
+    GrBackendFormat onCreateFormatFromBackendTexture(const GrBackendTexture&) const override;
+#endif
+
     bool onIsWindowRectanglesSupportedForRT(const GrBackendRenderTarget&) const override;
 
     void initFSAASupport(const GrContextOptions& contextOptions, const GrGLContextInfo&,
@@ -480,12 +512,12 @@ private:
     bool fTextureSwizzleSupport : 1;
     bool fMipMapLevelAndLodControlSupport : 1;
     bool fRGBAToBGRAReadbackConversionsAreSlow : 1;
+    bool fUseBufferDataNullHint                : 1;
     bool fClearTextureSupport : 1;
     bool fProgramBinarySupport : 1;
 
     
     bool fDoManualMipmapping : 1;
-    bool fSRGBDecodeDisableAffectsMipmaps : 1;
     bool fClearToBoundaryValuesIsBroken : 1;
     bool fDrawArraysBaseVertexIsBroken : 1;
     bool fUseDrawToClearColor : 1;
@@ -493,7 +525,9 @@ private:
     bool fDisallowTexSubImageForUnormConfigTexturesEverBoundToFBO : 1;
     bool fUseDrawInsteadOfAllRenderTargetWrites : 1;
     bool fRequiresCullFaceEnableDisableWhenDrawingLinesAfterNonLines : 1;
-    int fMaxInstancesPerDrawArraysWithoutCrashing;
+    bool fRequiresFlushBetweenNonAndInstancedDraws : 1;
+    bool fDetachStencilFromMSAABuffersBeforeReadPixels : 1;
+    int fMaxInstancesPerDrawWithoutCrashing;
 
     uint32_t fBlitFramebufferFlags;
 
@@ -501,7 +535,6 @@ private:
     enum FormatType {
         kNormalizedFixedPoint_FormatType,
         kFloat_FormatType,
-        kInteger_FormatType,
     };
 
     struct ReadPixelsFormat {
@@ -557,17 +590,19 @@ private:
         SkTDArray<int> fColorSampleCounts;
 
         enum {
-            kVerifiedColorAttachment_Flag = 0x1,
-            kTextureable_Flag             = 0x2,
-            kRenderable_Flag              = 0x4,
-            kRenderableWithMSAA_Flag      = 0x8,
+            kTextureable_Flag             = 0x1,
+            kRenderable_Flag              = 0x2,
+            kRenderableWithMSAA_Flag      = 0x4,
             
 
-            kFBOColorAttachment_Flag      = 0x10,
-            kCanUseTexStorage_Flag        = 0x20,
-            kCanUseWithTexelBuffer_Flag   = 0x40,
+            kFBOColorAttachment_Flag      = 0x8,
+            kCanUseTexStorage_Flag        = 0x10,
         };
         uint32_t fFlags;
+
+        
+        
+        bool fVerifiedColorAttachment = false;
 
         GrSwizzle fSwizzle;
     };

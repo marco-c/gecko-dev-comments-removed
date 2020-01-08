@@ -5,6 +5,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #ifndef SkPoint_DEFINED
 #define SkPoint_DEFINED
 
@@ -12,49 +22,11 @@
 #include "SkScalar.h"
 #include "../private/SkSafe32.h"
 
-
-
-
-struct SkIPoint16 {
-    int16_t fX; 
-
-    int16_t fY; 
-
-    
-
-
-
-
-
-
-    static constexpr SkIPoint16 Make(int x, int y) {
-        return {SkToS16(x), SkToS16(y)};
-    }
-
-    
-
-
-
-    int16_t x() const { return fX; }
-
-    
-
-
-
-    int16_t y() const { return fY; }
-
-    
-
-
-
-
-    void set(int x, int y) {
-        fX = SkToS16(x);
-        fY = SkToS16(y);
-    }
-};
-
 struct SkIPoint;
+
+
+
+
 typedef SkIPoint SkIVector;
 
 
@@ -62,7 +34,6 @@ typedef SkIPoint SkIVector;
 
 struct SkIPoint {
     int32_t fX; 
-
     int32_t fY; 
 
     
@@ -180,28 +151,25 @@ struct SkIPoint {
 
 
 
+
     friend SkIPoint operator+(const SkIPoint& a, const SkIVector& b) {
         return { Sk32_sat_add(a.fX, b.fX), Sk32_sat_add(a.fY, b.fY) };
     }
 };
 
 struct SkPoint;
+
+
+
+
 typedef SkPoint SkVector;
 
 
 
 
 struct SK_API SkPoint {
-
-    
-
-
-    SkScalar fX;
-
-    
-
-
-    SkScalar fY;
+    SkScalar fX; 
+    SkScalar fY; 
 
     
 
@@ -495,6 +463,7 @@ struct SK_API SkPoint {
     }
 
     
+
 
 
 

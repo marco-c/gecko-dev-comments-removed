@@ -8,6 +8,7 @@
 #include "GrColor.h"
 #include "GrSamplerState.h"
 #include "GrTypesPriv.h"
+#include "SkCanvas.h"
 #include "SkRefCnt.h"
 
 class GrColorSpaceXform;
@@ -23,8 +24,18 @@ namespace GrTextureOp {
 
 
 
-std::unique_ptr<GrDrawOp> Make(sk_sp<GrTextureProxy>, GrSamplerState::Filter, GrColor,
-                               const SkRect& srcRect, const SkRect& dstRect, GrAAType,
-                               const SkMatrix& viewMatrix, sk_sp<GrColorSpaceXform>,
-                               bool allowSRGBInputs);
+
+
+std::unique_ptr<GrDrawOp> Make(GrContext*,
+                               sk_sp<GrTextureProxy>,
+                               GrSamplerState::Filter,
+                               GrColor,
+                               const SkRect& srcRect,
+                               const SkRect& dstRect,
+                               GrAAType,
+                               GrQuadAAFlags,
+                               SkCanvas::SrcRectConstraint,
+                               const SkMatrix& viewMatrix,
+                               sk_sp<GrColorSpaceXform> textureXform,
+                               sk_sp<GrColorSpaceXform> paintXform);
 }

@@ -127,7 +127,7 @@ public:
         *eOut = between(s1->fT, end2->fT, e1->fT) ? end2
                 : between(s2->fT, end1->fT, e2->fT) ? end1 : nullptr;
         if (*sOut == *eOut) {
-            SkASSERT(start1->fT >= end2->fT || start2->fT >= end1->fT);
+            SkOPOBJASSERT(s1, start1->fT >= end2->fT || start2->fT >= end1->fT);
             return false;
         }
         SkASSERT(!*sOut || *sOut != *eOut);
@@ -177,7 +177,12 @@ protected:
 
 class SkOpSpanBase {
 public:
-    SkOpSpanBase* active();
+    enum class Collapsed {
+        kNo,
+        kYes,
+        kError,
+    };
+
     void addOpp(SkOpSpanBase* opp);
 
     void bumpSpanAdds() {
@@ -194,7 +199,7 @@ public:
         return fCoinEnd;
     }
 
-    bool collapsed(double s, double e) const;
+    Collapsed collapsed(double s, double e) const;
     bool contains(const SkOpSpanBase* ) const;
     const SkOpPtT* contains(const SkOpSegment* ) const;
 
@@ -416,7 +421,6 @@ public:
         if (fAlreadyAdded) {
             return true;
         }
-        fAlreadyAdded = true;
         return false;
     }
 
@@ -482,6 +486,10 @@ public:
     bool isCoincident() const {
         SkASSERT(!final());
         return fCoincident != this;
+    }
+
+    void markAdded() {
+        fAlreadyAdded = true;
     }
 
     SkOpSpanBase* next() const {
@@ -564,7 +572,7 @@ private:
     int fOppValue;  
     int fTopTTry; 
     bool fDone;  
-    mutable bool fAlreadyAdded;
+    bool fAlreadyAdded;
 };
 
 #endif

@@ -8,11 +8,13 @@
 #include "SkRWBuffer.h"
 
 #include "SkAtomics.h"
-#include "SkMalloc.h"
 #include "SkMakeUnique.h"
+#include "SkMalloc.h"
 #include "SkStream.h"
+#include "SkTo.h"
 
 #include <atomic>
+#include <new>
 
 
 static const size_t kMinAllocSize = 4096;

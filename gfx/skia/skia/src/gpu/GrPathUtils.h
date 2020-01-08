@@ -108,6 +108,7 @@ namespace GrPathUtils {
     
     
     
+    
     void convertCubicToQuads(const SkPoint p[4],
                              SkScalar tolScale,
                              SkTArray<SkPoint, true>* quads);

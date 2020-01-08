@@ -23,14 +23,14 @@ static bool is_valid_sample_size(int sampleSize) {
 
 
 
-static void load_gamut(SkPoint rgb[], const SkMatrix44& xyz) {
+static void load_gamut(SkPoint rgb[], const skcms_Matrix3x3& xyz) {
     
     
     
     for (int rgbIdx = 0; rgbIdx < 3; rgbIdx++) {
-        float sum = xyz.get(0, rgbIdx) + xyz.get(1, rgbIdx) + xyz.get(2, rgbIdx);
-        rgb[rgbIdx].fX = xyz.get(0, rgbIdx) / sum;
-        rgb[rgbIdx].fY = xyz.get(1, rgbIdx) / sum;
+        float sum = xyz.vals[rgbIdx][0] + xyz.vals[rgbIdx][1] + xyz.vals[rgbIdx][2];
+        rgb[rgbIdx].fX = xyz.vals[rgbIdx][0] / sum;
+        rgb[rgbIdx].fY = xyz.vals[rgbIdx][1] / sum;
     }
 }
 
@@ -46,13 +46,12 @@ static float calculate_area(SkPoint abc[]) {
 
 static constexpr float kSRGB_D50_GamutArea = 0.084f;
 
-static bool is_wide_gamut(const SkColorSpace* colorSpace) {
+static bool is_wide_gamut(const skcms_ICCProfile& profile) {
     
     
-    const SkMatrix44* toXYZD50 = colorSpace->toXYZD50();
-    if (toXYZD50) {
+    if (profile.has_toXYZD50) {
         SkPoint rgb[3];
-        load_gamut(rgb, *toXYZD50);
+        load_gamut(rgb, profile.toXYZD50);
         return calculate_area(rgb) > kSRGB_D50_GamutArea;
     }
 
@@ -177,16 +176,18 @@ sk_sp<SkColorSpace> SkAndroidCodec::computeOutputColorSpace(SkColorType outputCo
                 return prefColorSpace;
             }
 
-            SkColorSpace* encodedSpace = fCodec->getInfo().colorSpace();
-            if (encodedSpace->isNumericalTransferFn(&fn)) {
-                
-                
-                return sk_ref_sp(encodedSpace);
-            }
+            const skcms_ICCProfile* encodedProfile = fCodec->getEncodedInfo().profile();
+            if (encodedProfile) {
+                if (auto encodedSpace = SkColorSpace::Make(*encodedProfile)) {
+                    
+                    
+                    return encodedSpace;
+                }
 
-            if (is_wide_gamut(encodedSpace)) {
-                return SkColorSpace::MakeRGB(SkColorSpace::kSRGB_RenderTargetGamma,
-                                             SkColorSpace::kDCIP3_D65_Gamut);
+                if (is_wide_gamut(*encodedProfile)) {
+                    return SkColorSpace::MakeRGB(SkColorSpace::kSRGB_RenderTargetGamma,
+                                                 SkColorSpace::kDCIP3_D65_Gamut);
+                }
             }
 
             return SkColorSpace::MakeSRGB();

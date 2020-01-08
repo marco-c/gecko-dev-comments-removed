@@ -44,26 +44,35 @@ struct SkOTUtils {
     class LocalizedStrings_NameTable : public SkTypeface::LocalizedStrings {
     public:
         
-        LocalizedStrings_NameTable(SkOTTableName* nameTableData,
-                                   SkOTTableName::Record::NameID::Predefined::Value types[],
+        LocalizedStrings_NameTable(std::unique_ptr<uint8_t[]> nameTableData, size_t size,
+                                   SK_OT_USHORT types[],
                                    int typesCount)
             : fTypes(types), fTypesCount(typesCount), fTypesIndex(0)
-            , fNameTableData(nameTableData), fFamilyNameIter(*nameTableData, fTypes[fTypesIndex])
+            , fNameTableData(std::move(nameTableData))
+            , fFamilyNameIter(fNameTableData.get(), size, fTypes[fTypesIndex])
         { }
 
         
 
 
-        static LocalizedStrings_NameTable* CreateForFamilyNames(const SkTypeface& typeface);
+        static sk_sp<LocalizedStrings_NameTable> Make(
+            const SkTypeface& typeface,
+            SK_OT_USHORT types[],
+            int typesCount);
+
+        
+
+
+        static sk_sp<LocalizedStrings_NameTable> MakeForFamilyNames(const SkTypeface& typeface);
 
         bool next(SkTypeface::LocalizedString* localizedString) override;
     private:
-        static SkOTTableName::Record::NameID::Predefined::Value familyNameTypes[3];
+        static SK_OT_USHORT familyNameTypes[3];
 
-        SkOTTableName::Record::NameID::Predefined::Value* fTypes;
+        SK_OT_USHORT* fTypes;
         int fTypesCount;
         int fTypesIndex;
-        std::unique_ptr<SkOTTableName[]> fNameTableData;
+        std::unique_ptr<uint8_t[]> fNameTableData;
         SkOTTableName::Iterator fFamilyNameIter;
     };
 

@@ -72,6 +72,17 @@ public:
     }
 
     
+    Type(String name, std::vector<Field> fields)
+    : INHERITED(-1, kType_Kind, StringFragment())
+    , fNameString(std::move(name))
+    , fTypeKind(kOther_Kind)
+    , fNumberKind(kNonnumeric_NumberKind)
+    , fFields(std::move(fields)) {
+        fName.fChars = fNameString.c_str();
+        fName.fLength = fNameString.size();
+    }
+
+    
     Type(String name, Kind kind)
     : INHERITED(-1, kType_Kind, StringFragment())
     , fNameString(std::move(name))
@@ -264,7 +275,7 @@ public:
 
 
     const Type& componentType() const {
-        ASSERT(fComponentType);
+        SkASSERT(fComponentType);
         return *fComponentType;
     }
 
@@ -274,7 +285,7 @@ public:
 
 
     int columns() const {
-        ASSERT(fTypeKind == kScalar_Kind || fTypeKind == kVector_Kind ||
+        SkASSERT(fTypeKind == kScalar_Kind || fTypeKind == kVector_Kind ||
                fTypeKind == kMatrix_Kind || fTypeKind == kArray_Kind);
         return fColumns;
     }
@@ -284,12 +295,12 @@ public:
 
 
     int rows() const {
-        ASSERT(fRows > 0);
+        SkASSERT(fRows > 0);
         return fRows;
     }
 
     const std::vector<Field>& fields() const {
-        ASSERT(fTypeKind == kStruct_Kind);
+        SkASSERT(fTypeKind == kStruct_Kind || fTypeKind == kOther_Kind);
         return fFields;
     }
 
@@ -298,32 +309,32 @@ public:
 
 
     const std::vector<const Type*>& coercibleTypes() const {
-        ASSERT(fCoercibleTypes.size() > 0);
+        SkASSERT(fCoercibleTypes.size() > 0);
         return fCoercibleTypes;
     }
 
     SpvDim_ dimensions() const {
-        ASSERT(kSampler_Kind == fTypeKind);
+        SkASSERT(kSampler_Kind == fTypeKind);
         return fDimensions;
     }
 
     bool isDepth() const {
-        ASSERT(kSampler_Kind == fTypeKind);
+        SkASSERT(kSampler_Kind == fTypeKind);
         return fIsDepth;
     }
 
     bool isArrayed() const {
-        ASSERT(kSampler_Kind == fTypeKind);
+        SkASSERT(kSampler_Kind == fTypeKind);
         return fIsArrayed;
     }
 
     bool isMultisampled() const {
-        ASSERT(kSampler_Kind == fTypeKind);
+        SkASSERT(kSampler_Kind == fTypeKind);
         return fIsMultisampled;
     }
 
     bool isSampled() const {
-        ASSERT(kSampler_Kind == fTypeKind);
+        SkASSERT(kSampler_Kind == fTypeKind);
         return fIsSampled;
     }
 

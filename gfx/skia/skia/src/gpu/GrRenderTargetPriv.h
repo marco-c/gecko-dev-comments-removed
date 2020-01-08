@@ -21,18 +21,18 @@ public:
     
 
 
-    GrStencilAttachment* getStencilAttachment() const { return fRenderTarget->fStencilAttachment; }
+    GrStencilAttachment* getStencilAttachment() const {
+        return fRenderTarget->fStencilAttachment.get();
+    }
 
     
 
 
 
 
-    bool attachStencilAttachment(sk_sp<GrStencilAttachment> stencil);
+    void attachStencilAttachment(sk_sp<GrStencilAttachment> stencil);
 
     int numStencilBits() const;
-
-    GrRenderTargetFlags flags() const { return fRenderTarget->fFlags; }
 
 private:
     explicit GrRenderTargetPriv(GrRenderTarget* renderTarget) : fRenderTarget(renderTarget) {}

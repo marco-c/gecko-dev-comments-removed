@@ -12,7 +12,9 @@
 #include "GrSharedEnums.h"
 #include "GrTypes.h"
 #include "SkImageInfo.h"
+#include "SkImageInfoPriv.h"
 #include "SkRefCnt.h"
+#include "SkWeakRefCnt.h"
 
 class GrCaps;
 
@@ -49,6 +51,189 @@ using GrStdSteadyClock = std::chrono::steady_clock;
 
 
 
+
+
+
+enum GrPixelConfig {
+    kUnknown_GrPixelConfig,
+    kAlpha_8_GrPixelConfig,
+    kGray_8_GrPixelConfig,
+    kRGB_565_GrPixelConfig,
+    kRGBA_4444_GrPixelConfig,
+    kRGBA_8888_GrPixelConfig,
+    kRGB_888_GrPixelConfig,
+    kBGRA_8888_GrPixelConfig,
+    kSRGBA_8888_GrPixelConfig,
+    kSBGRA_8888_GrPixelConfig,
+    kRGBA_1010102_GrPixelConfig,
+    kRGBA_float_GrPixelConfig,
+    kRG_float_GrPixelConfig,
+    kAlpha_half_GrPixelConfig,
+    kRGBA_half_GrPixelConfig,
+
+    
+    kPrivateConfig1_GrPixelConfig,
+    kPrivateConfig2_GrPixelConfig,
+    kPrivateConfig3_GrPixelConfig,
+    kPrivateConfig4_GrPixelConfig,
+    kPrivateConfig5_GrPixelConfig,
+
+    kLast_GrPixelConfig = kPrivateConfig5_GrPixelConfig
+};
+static const int kGrPixelConfigCnt = kLast_GrPixelConfig + 1;
+
+
+#if SK_PMCOLOR_BYTE_ORDER(B,G,R,A)
+static const GrPixelConfig kSkia8888_GrPixelConfig = kBGRA_8888_GrPixelConfig;
+#elif SK_PMCOLOR_BYTE_ORDER(R,G,B,A)
+static const GrPixelConfig kSkia8888_GrPixelConfig = kRGBA_8888_GrPixelConfig;
+#else
+static const GrPixelConfig kSkia8888_GrPixelConfig = kBGRA_8888_GrPixelConfig;
+#endif
+
+
+
+
+enum class GrPrimitiveType {
+    kTriangles,
+    kTriangleStrip,
+    kPoints,
+    kLines,          
+    kLineStrip,      
+    kLinesAdjacency  
+};
+static constexpr int kNumGrPrimitiveTypes = (int)GrPrimitiveType::kLinesAdjacency + 1;
+
+static constexpr bool GrIsPrimTypeLines(GrPrimitiveType type) {
+    return GrPrimitiveType::kLines == type ||
+           GrPrimitiveType::kLineStrip == type ||
+           GrPrimitiveType::kLinesAdjacency == type;
+}
+
+static constexpr bool GrIsPrimTypeTris(GrPrimitiveType type) {
+    return GrPrimitiveType::kTriangles == type || GrPrimitiveType::kTriangleStrip == type;
+}
+
+static constexpr bool GrPrimTypeRequiresGeometryShaderSupport(GrPrimitiveType type) {
+    return GrPrimitiveType::kLinesAdjacency == type;
+}
+
+enum class GrPrimitiveRestart : bool {
+    kNo = false,
+    kYes = true
+};
+
+
+
+
+enum GrMaskFormat {
+    kA8_GrMaskFormat,    
+    kA565_GrMaskFormat,  
+    kARGB_GrMaskFormat,  
+
+    kLast_GrMaskFormat = kARGB_GrMaskFormat
+};
+static const int kMaskFormatCount = kLast_GrMaskFormat + 1;
+
+
+
+
+static inline int GrMaskFormatBytesPerPixel(GrMaskFormat format) {
+    SkASSERT(format < kMaskFormatCount);
+    
+    
+    
+    static const int sBytesPerPixel[] = {1, 2, 4};
+    static_assert(SK_ARRAY_COUNT(sBytesPerPixel) == kMaskFormatCount, "array_size_mismatch");
+    static_assert(kA8_GrMaskFormat == 0, "enum_order_dependency");
+    static_assert(kA565_GrMaskFormat == 1, "enum_order_dependency");
+    static_assert(kARGB_GrMaskFormat == 2, "enum_order_dependency");
+
+    return sBytesPerPixel[(int)format];
+}
+
+
+
+
+enum GrSurfaceFlags {
+    kNone_GrSurfaceFlags = 0x0,
+    
+
+
+
+    kRenderTarget_GrSurfaceFlag = 0x1,
+    
+
+
+
+    kPerformInitialClear_GrSurfaceFlag = 0x2
+};
+GR_MAKE_BITFIELD_OPS(GrSurfaceFlags)
+
+typedef GrSurfaceFlags GrSurfaceDescFlags;
+
+
+
+
+struct GrSurfaceDesc {
+    GrSurfaceDesc()
+            : fFlags(kNone_GrSurfaceFlags)
+            , fWidth(0)
+            , fHeight(0)
+            , fConfig(kUnknown_GrPixelConfig)
+            , fSampleCnt(1) {}
+
+    GrSurfaceDescFlags     fFlags;  
+    int                    fWidth;  
+    int                    fHeight; 
+
+    
+
+
+
+    GrPixelConfig          fConfig;
+
+    
+
+
+
+
+
+
+    int                    fSampleCnt;
+};
+
+
+enum GrWrapOwnership {
+    
+    kBorrow_GrWrapOwnership,
+
+    
+    kAdopt_GrWrapOwnership,
+};
+
+
+
+
+enum GrClipType {
+    kRect_ClipType,
+    kPath_ClipType
+};
+
+enum class GrScissorTest : bool {
+    kDisabled = false,
+    kEnabled = true
+};
+
+struct GrMipLevel {
+    const void* fPixels;
+    size_t fRowBytes;
+};
+
+
+
+
+
 enum class GrLoadOp {
     kLoad,
     kClear,
@@ -58,9 +243,18 @@ enum class GrLoadOp {
 
 
 
+
 enum class GrStoreOp {
     kStore,
     kDiscard,
+};
+
+
+
+
+enum class GrAA : bool {
+    kNo = false,
+    kYes = true
 };
 
 
@@ -115,10 +309,22 @@ GrAAType GrChooseAAType(GrAA, GrFSAAType, GrAllowMixedSamples, const GrCaps&);
 
 
 
-enum class GrPixelConfigIsClamped : bool {
-    kNo = false,   
-    kYes = true,  
+enum class GrQuadAAFlags : unsigned {
+    kLeft   = 0b0001,
+    kTop    = 0b0010,
+    kRight  = 0b0100,
+    kBottom = 0b1000,
+
+    kNone   = 0b0000,
+    kAll    = 0b1111,
+
+    kTopLeft     = kTop    | kLeft,
+    kTopRight    = kTop    | kRight,
+    kBottomRight = kBottom | kRight,
+    kBottomLeft  = kBottom | kLeft,
 };
+
+GR_MAKE_BITFIELD_CLASS_OPS(GrQuadAAFlags)
 
 
 
@@ -127,6 +333,14 @@ enum class GrPixelConfigIsClamped : bool {
 enum GrSLType {
     kVoid_GrSLType,
     kBool_GrSLType,
+    kByte_GrSLType,
+    kByte2_GrSLType,
+    kByte3_GrSLType,
+    kByte4_GrSLType,
+    kUByte_GrSLType,
+    kUByte2_GrSLType,
+    kUByte3_GrSLType,
+    kUByte4_GrSLType,
     kShort_GrSLType,
     kShort2_GrSLType,
     kShort3_GrSLType,
@@ -158,9 +372,17 @@ enum GrSLType {
     kTexture2DSampler_GrSLType,
     kTextureExternalSampler_GrSLType,
     kTexture2DRectSampler_GrSLType,
-    kBufferSampler_GrSLType,
-    kTexture2D_GrSLType,
-    kSampler_GrSLType,
+};
+
+
+
+
+
+
+enum class GrTextureType {
+    k2D,
+    kRectangle,
+    kExternal
 };
 
 enum GrShaderType {
@@ -225,8 +447,15 @@ static inline bool GrSLTypeIsFloatType(GrSLType type) {
         case kTexture2DSampler_GrSLType:
         case kTextureExternalSampler_GrSLType:
         case kTexture2DRectSampler_GrSLType:
-        case kBufferSampler_GrSLType:
         case kBool_GrSLType:
+        case kByte_GrSLType:
+        case kByte2_GrSLType:
+        case kByte3_GrSLType:
+        case kByte4_GrSLType:
+        case kUByte_GrSLType:
+        case kUByte2_GrSLType:
+        case kUByte3_GrSLType:
+        case kUByte4_GrSLType:
         case kShort_GrSLType:
         case kShort2_GrSLType:
         case kShort3_GrSLType:
@@ -241,8 +470,6 @@ static inline bool GrSLTypeIsFloatType(GrSLType type) {
         case kInt4_GrSLType:
         case kUint_GrSLType:
         case kUint2_GrSLType:
-        case kTexture2D_GrSLType:
-        case kSampler_GrSLType:
             return false;
     }
     SK_ABORT("Unexpected type");
@@ -255,6 +482,8 @@ static inline int GrSLTypeVecLength(GrSLType type) {
         case kFloat_GrSLType:
         case kHalf_GrSLType:
         case kBool_GrSLType:
+        case kByte_GrSLType:
+        case kUByte_GrSLType:
         case kShort_GrSLType:
         case kUShort_GrSLType:
         case kInt_GrSLType:
@@ -263,6 +492,8 @@ static inline int GrSLTypeVecLength(GrSLType type) {
 
         case kFloat2_GrSLType:
         case kHalf2_GrSLType:
+        case kByte2_GrSLType:
+        case kUByte2_GrSLType:
         case kShort2_GrSLType:
         case kUShort2_GrSLType:
         case kInt2_GrSLType:
@@ -271,6 +502,8 @@ static inline int GrSLTypeVecLength(GrSLType type) {
 
         case kFloat3_GrSLType:
         case kHalf3_GrSLType:
+        case kByte3_GrSLType:
+        case kUByte3_GrSLType:
         case kShort3_GrSLType:
         case kUShort3_GrSLType:
         case kInt3_GrSLType:
@@ -278,6 +511,8 @@ static inline int GrSLTypeVecLength(GrSLType type) {
 
         case kFloat4_GrSLType:
         case kHalf4_GrSLType:
+        case kByte4_GrSLType:
+        case kUByte4_GrSLType:
         case kShort4_GrSLType:
         case kUShort4_GrSLType:
         case kInt4_GrSLType:
@@ -293,58 +528,36 @@ static inline int GrSLTypeVecLength(GrSLType type) {
         case kTexture2DSampler_GrSLType:
         case kTextureExternalSampler_GrSLType:
         case kTexture2DRectSampler_GrSLType:
-        case kBufferSampler_GrSLType:
-        case kTexture2D_GrSLType:
-        case kSampler_GrSLType:
             return -1;
     }
     SK_ABORT("Unexpected type");
     return -1;
 }
 
-static inline bool GrSLTypeIs2DCombinedSamplerType(GrSLType type) {
+static inline GrSLType GrSLCombinedSamplerTypeForTextureType(GrTextureType type) {
     switch (type) {
-        case kTexture2DSampler_GrSLType:
-        case kTextureExternalSampler_GrSLType:
-        case kTexture2DRectSampler_GrSLType:
-            return true;
-
-        case kVoid_GrSLType:
-        case kFloat_GrSLType:
-        case kFloat2_GrSLType:
-        case kFloat3_GrSLType:
-        case kFloat4_GrSLType:
-        case kFloat2x2_GrSLType:
-        case kFloat3x3_GrSLType:
-        case kFloat4x4_GrSLType:
-        case kHalf_GrSLType:
-        case kHalf2_GrSLType:
-        case kHalf3_GrSLType:
-        case kHalf4_GrSLType:
-        case kHalf2x2_GrSLType:
-        case kHalf3x3_GrSLType:
-        case kHalf4x4_GrSLType:
-        case kInt_GrSLType:
-        case kInt2_GrSLType:
-        case kInt3_GrSLType:
-        case kInt4_GrSLType:
-        case kUint_GrSLType:
-        case kUint2_GrSLType:
-        case kBufferSampler_GrSLType:
-        case kBool_GrSLType:
-        case kShort_GrSLType:
-        case kShort2_GrSLType:
-        case kShort3_GrSLType:
-        case kShort4_GrSLType:
-        case kUShort_GrSLType:
-        case kUShort2_GrSLType:
-        case kUShort3_GrSLType:
-        case kUShort4_GrSLType:
-        case kTexture2D_GrSLType:
-        case kSampler_GrSLType:
-            return false;
+        case GrTextureType::k2D:
+            return kTexture2DSampler_GrSLType;
+        case GrTextureType::kRectangle:
+            return kTexture2DRectSampler_GrSLType;
+        case GrTextureType::kExternal:
+            return kTextureExternalSampler_GrSLType;
     }
-    SK_ABORT("Unexpected type");
+    SK_ABORT("Unexpected texture type");
+    return kTexture2DSampler_GrSLType;
+}
+
+
+static inline bool GrTextureTypeHasRestrictedSampling(GrTextureType type) {
+    switch (type) {
+        case GrTextureType::k2D:
+            return false;
+        case GrTextureType::kRectangle:
+            return true;
+        case GrTextureType::kExternal:
+            return true;
+    }
+    SK_ABORT("Unexpected texture type");
     return false;
 }
 
@@ -353,7 +566,6 @@ static inline bool GrSLTypeIsCombinedSamplerType(GrSLType type) {
         case kTexture2DSampler_GrSLType:
         case kTextureExternalSampler_GrSLType:
         case kTexture2DRectSampler_GrSLType:
-        case kBufferSampler_GrSLType:
             return true;
 
         case kVoid_GrSLType:
@@ -378,6 +590,14 @@ static inline bool GrSLTypeIsCombinedSamplerType(GrSLType type) {
         case kUint_GrSLType:
         case kUint2_GrSLType:
         case kBool_GrSLType:
+        case kByte_GrSLType:
+        case kByte2_GrSLType:
+        case kByte3_GrSLType:
+        case kByte4_GrSLType:
+        case kUByte_GrSLType:
+        case kUByte2_GrSLType:
+        case kUByte3_GrSLType:
+        case kUByte4_GrSLType:
         case kShort_GrSLType:
         case kShort2_GrSLType:
         case kShort3_GrSLType:
@@ -386,8 +606,6 @@ static inline bool GrSLTypeIsCombinedSamplerType(GrSLType type) {
         case kUShort2_GrSLType:
         case kUShort3_GrSLType:
         case kUShort4_GrSLType:
-        case kTexture2D_GrSLType:
-        case kSampler_GrSLType:
             return false;
     }
     SK_ABORT("Unexpected type");
@@ -399,13 +617,18 @@ static inline bool GrSLTypeAcceptsPrecision(GrSLType type) {
         case kTexture2DSampler_GrSLType:
         case kTextureExternalSampler_GrSLType:
         case kTexture2DRectSampler_GrSLType:
-        case kBufferSampler_GrSLType:
-        case kTexture2D_GrSLType:
-        case kSampler_GrSLType:
             return true;
 
         case kVoid_GrSLType:
         case kBool_GrSLType:
+        case kByte_GrSLType:
+        case kByte2_GrSLType:
+        case kByte3_GrSLType:
+        case kByte4_GrSLType:
+        case kUByte_GrSLType:
+        case kUByte2_GrSLType:
+        case kUByte3_GrSLType:
+        case kUByte4_GrSLType:
         case kShort_GrSLType:
         case kShort2_GrSLType:
         case kShort3_GrSLType:
@@ -469,13 +692,18 @@ static inline bool GrSLTypeTemporarilyAcceptsPrecision(GrSLType type) {
         case kTexture2DSampler_GrSLType:
         case kTextureExternalSampler_GrSLType:
         case kTexture2DRectSampler_GrSLType:
-        case kBufferSampler_GrSLType:
-        case kTexture2D_GrSLType:
-        case kSampler_GrSLType:
             return true;
 
         case kVoid_GrSLType:
         case kBool_GrSLType:
+        case kByte_GrSLType:
+        case kByte2_GrSLType:
+        case kByte3_GrSLType:
+        case kByte4_GrSLType:
+        case kUByte_GrSLType:
+        case kUByte2_GrSLType:
+        case kUByte3_GrSLType:
+        case kUByte4_GrSLType:
         case kShort2_GrSLType:
         case kShort3_GrSLType:
         case kShort4_GrSLType:
@@ -507,11 +735,23 @@ enum GrVertexAttribType {
     kInt3_GrVertexAttribType,   
     kInt4_GrVertexAttribType,   
 
+
+    kByte_GrVertexAttribType,  
+    kByte2_GrVertexAttribType, 
+    kByte3_GrVertexAttribType, 
+    kByte4_GrVertexAttribType, 
+    kUByte_GrVertexAttribType,  
+    kUByte2_GrVertexAttribType, 
+    kUByte3_GrVertexAttribType, 
+    kUByte4_GrVertexAttribType, 
+
     kUByte_norm_GrVertexAttribType,  
     kUByte4_norm_GrVertexAttribType, 
                                      
 
     kShort2_GrVertexAttribType,       
+    kShort4_GrVertexAttribType,       
+
     kUShort2_GrVertexAttribType,      
     kUShort2_norm_GrVertexAttribType, 
 
@@ -521,95 +761,6 @@ enum GrVertexAttribType {
     kLast_GrVertexAttribType = kUint_GrVertexAttribType
 };
 static const int kGrVertexAttribTypeCount = kLast_GrVertexAttribType + 1;
-
-
-
-
-static inline size_t GrVertexAttribTypeSize(GrVertexAttribType type) {
-    switch (type) {
-        case kFloat_GrVertexAttribType:
-            return sizeof(float);
-        case kFloat2_GrVertexAttribType:
-            return 2 * sizeof(float);
-        case kFloat3_GrVertexAttribType:
-            return 3 * sizeof(float);
-        case kFloat4_GrVertexAttribType:
-            return 4 * sizeof(float);
-        case kHalf_GrVertexAttribType:
-            return sizeof(float);
-        case kHalf2_GrVertexAttribType:
-            return 2 * sizeof(float);
-        case kHalf3_GrVertexAttribType:
-            return 3 * sizeof(float);
-        case kHalf4_GrVertexAttribType:
-            return 4 * sizeof(float);
-        case kInt2_GrVertexAttribType:
-            return 2 * sizeof(int32_t);
-        case kInt3_GrVertexAttribType:
-            return 3 * sizeof(int32_t);
-        case kInt4_GrVertexAttribType:
-            return 4 * sizeof(int32_t);
-        case kUByte_norm_GrVertexAttribType:
-            return 1 * sizeof(char);
-        case kUByte4_norm_GrVertexAttribType:
-            return 4 * sizeof(char);
-        case kShort2_GrVertexAttribType:
-            return 2 * sizeof(int16_t);
-        case kUShort2_GrVertexAttribType: 
-        case kUShort2_norm_GrVertexAttribType:
-            return 2 * sizeof(uint16_t);
-        case kInt_GrVertexAttribType:
-            return sizeof(int32_t);
-        case kUint_GrVertexAttribType:
-            return sizeof(uint32_t);
-    }
-    SK_ABORT("Unexpected attribute type");
-    return 0;
-}
-
-
-
-
-static inline GrSLType GrVertexAttribTypeToSLType(GrVertexAttribType type) {
-    switch (type) {
-        case kShort2_GrVertexAttribType:
-            return kShort2_GrSLType;
-        case kUShort2_GrVertexAttribType:
-            return kUShort2_GrSLType;
-        case kUShort2_norm_GrVertexAttribType:
-            return kFloat2_GrSLType;
-        case kUByte_norm_GrVertexAttribType:   
-        case kFloat_GrVertexAttribType:
-            return kFloat_GrSLType;
-        case kFloat2_GrVertexAttribType:
-            return kFloat2_GrSLType;
-        case kFloat3_GrVertexAttribType:
-            return kFloat3_GrSLType;
-        case kFloat4_GrVertexAttribType:
-            return kFloat4_GrSLType;
-        case kHalf_GrVertexAttribType:
-            return kHalf_GrSLType;
-        case kHalf2_GrVertexAttribType:
-            return kHalf2_GrSLType;
-        case kHalf3_GrVertexAttribType:
-            return kHalf3_GrSLType;
-        case kHalf4_GrVertexAttribType:
-        case kUByte4_norm_GrVertexAttribType:
-            return kHalf4_GrSLType;
-        case kInt2_GrVertexAttribType:
-            return kInt2_GrSLType;
-        case kInt3_GrVertexAttribType:
-            return kInt3_GrSLType;
-        case kInt4_GrVertexAttribType:
-            return kInt4_GrSLType;
-        case kInt_GrVertexAttribType:
-            return kInt_GrSLType;
-        case kUint_GrVertexAttribType:
-            return kUint_GrSLType;
-    }
-    SK_ABORT("Unsupported type conversion");
-    return kVoid_GrSLType;
-}
 
 
 
@@ -692,8 +843,15 @@ enum GrAccessPattern {
 };
 
 
-enum class GrRenderTargetFlags {
-    kNone               = 0,
+enum class GrInternalSurfaceFlags {
+    kNone                           = 0,
+
+    
+    kNoPendingIO                    = 1 << 0,
+
+    kSurfaceMask                    = kNoPendingIO,
+
+    
 
     
     
@@ -701,16 +859,21 @@ enum class GrRenderTargetFlags {
     
     
     
-    kMixedSampled       = 1 << 0,
+    kMixedSampled                   = 1 << 2,
 
     
     
     
     
     
-    kWindowRectsSupport = 1 << 1
+    kWindowRectsSupport             = 1 << 3,
+
+    
+    kGLRTFBOIDIs0                   = 1 << 4,
+
+    kRenderTargetMask               = kMixedSampled | kWindowRectsSupport | kGLRTFBOIDIs0,
 };
-GR_MAKE_BITFIELD_CLASS_OPS(GrRenderTargetFlags)
+GR_MAKE_BITFIELD_CLASS_OPS(GrInternalSurfaceFlags)
 
 #ifdef SK_DEBUG
 
@@ -750,15 +913,14 @@ enum class GpuPathRenderers {
     kNone              = 0, 
     kDashLine          = 1 << 0,
     kStencilAndCover   = 1 << 1,
-    kMSAA              = 1 << 2,
-    kAAConvex          = 1 << 3,
-    kAALinearizing     = 1 << 4,
-    kSmall             = 1 << 5,
-    kCoverageCounting  = 1 << 6,
+    kCoverageCounting  = 1 << 2,
+    kAAHairline        = 1 << 3,
+    kAAConvex          = 1 << 4,
+    kAALinearizing     = 1 << 5,
+    kSmall             = 1 << 6,
     kTessellating      = 1 << 7,
 
-    kAll               = (kTessellating | (kTessellating - 1)),
-    kDefault           = kAll
+    kAll               = (kTessellating | (kTessellating - 1))
 };
 
 
@@ -816,8 +978,10 @@ static inline GrSRGBEncoded GrPixelConfigIsSRGBEncoded(GrPixelConfig config) {
         case kGray_8_as_Red_GrPixelConfig:
         case kRGB_565_GrPixelConfig:
         case kRGBA_4444_GrPixelConfig:
+        case kRGB_888_GrPixelConfig:
         case kRGBA_8888_GrPixelConfig:
         case kBGRA_8888_GrPixelConfig:
+        case kRGBA_1010102_GrPixelConfig:
         case kRGBA_float_GrPixelConfig:
         case kRG_float_GrPixelConfig:
         case kAlpha_half_GrPixelConfig:
@@ -831,37 +995,6 @@ static inline GrSRGBEncoded GrPixelConfigIsSRGBEncoded(GrPixelConfig config) {
 
 static inline bool GrPixelConfigIsSRGB(GrPixelConfig config) {
     return GrSRGBEncoded::kYes == GrPixelConfigIsSRGBEncoded(config);
-}
-
-
-static inline GrPixelConfig GrPixelConfigSwapRAndB(GrPixelConfig config) {
-    switch (config) {
-        case kBGRA_8888_GrPixelConfig:
-            return kRGBA_8888_GrPixelConfig;
-        case kRGBA_8888_GrPixelConfig:
-            return kBGRA_8888_GrPixelConfig;
-        case kSBGRA_8888_GrPixelConfig:
-            return kSRGBA_8888_GrPixelConfig;
-        case kSRGBA_8888_GrPixelConfig:
-            return kSBGRA_8888_GrPixelConfig;
-        case kUnknown_GrPixelConfig:
-        case kAlpha_8_GrPixelConfig:
-        case kAlpha_8_as_Alpha_GrPixelConfig:
-        case kAlpha_8_as_Red_GrPixelConfig:
-        case kGray_8_GrPixelConfig:
-        case kGray_8_as_Lum_GrPixelConfig:
-        case kGray_8_as_Red_GrPixelConfig:
-        case kRGB_565_GrPixelConfig:
-        case kRGBA_4444_GrPixelConfig:
-        case kRGBA_float_GrPixelConfig:
-        case kRG_float_GrPixelConfig:
-        case kAlpha_half_GrPixelConfig:
-        case kAlpha_half_as_Red_GrPixelConfig:
-        case kRGBA_half_GrPixelConfig:
-            return kUnknown_GrPixelConfig;
-    }
-    SK_ABORT("Invalid pixel config");
-    return kUnknown_GrPixelConfig;
 }
 
 static inline size_t GrBytesPerPixel(GrPixelConfig config) {
@@ -879,9 +1012,11 @@ static inline size_t GrBytesPerPixel(GrPixelConfig config) {
         case kAlpha_half_as_Red_GrPixelConfig:
             return 2;
         case kRGBA_8888_GrPixelConfig:
+        case kRGB_888_GrPixelConfig:  
         case kBGRA_8888_GrPixelConfig:
         case kSRGBA_8888_GrPixelConfig:
         case kSBGRA_8888_GrPixelConfig:
+        case kRGBA_1010102_GrPixelConfig:
             return 4;
         case kRGBA_half_GrPixelConfig:
             return 8;
@@ -899,6 +1034,7 @@ static inline size_t GrBytesPerPixel(GrPixelConfig config) {
 static inline bool GrPixelConfigIsOpaque(GrPixelConfig config) {
     switch (config) {
         case kRGB_565_GrPixelConfig:
+        case kRGB_888_GrPixelConfig:
         case kGray_8_GrPixelConfig:
         case kGray_8_as_Lum_GrPixelConfig:
         case kGray_8_as_Red_GrPixelConfig:
@@ -914,6 +1050,7 @@ static inline bool GrPixelConfigIsOpaque(GrPixelConfig config) {
         case kBGRA_8888_GrPixelConfig:
         case kSRGBA_8888_GrPixelConfig:
         case kSBGRA_8888_GrPixelConfig:
+        case kRGBA_1010102_GrPixelConfig:
         case kRGBA_half_GrPixelConfig:
         case kRGBA_float_GrPixelConfig:
         case kUnknown_GrPixelConfig:
@@ -938,63 +1075,11 @@ static inline bool GrPixelConfigIsAlphaOnly(GrPixelConfig config) {
         case kRGB_565_GrPixelConfig:
         case kRGBA_4444_GrPixelConfig:
         case kRGBA_8888_GrPixelConfig:
+        case kRGB_888_GrPixelConfig:
         case kBGRA_8888_GrPixelConfig:
         case kSRGBA_8888_GrPixelConfig:
         case kSBGRA_8888_GrPixelConfig:
-        case kRGBA_float_GrPixelConfig:
-        case kRG_float_GrPixelConfig:
-        case kRGBA_half_GrPixelConfig:
-            return false;
-    }
-    SK_ABORT("Invalid pixel config.");
-    return false;
-}
-
-static inline bool GrPixelConfigIsFloatingPoint(GrPixelConfig config) {
-    switch (config) {
-        case kRGBA_float_GrPixelConfig:
-        case kRG_float_GrPixelConfig:
-        case kAlpha_half_GrPixelConfig:
-        case kAlpha_half_as_Red_GrPixelConfig:
-        case kRGBA_half_GrPixelConfig:
-            return true;
-        case kUnknown_GrPixelConfig:
-        case kAlpha_8_GrPixelConfig:
-        case kAlpha_8_as_Alpha_GrPixelConfig:
-        case kAlpha_8_as_Red_GrPixelConfig:
-        case kGray_8_GrPixelConfig:
-        case kGray_8_as_Lum_GrPixelConfig:
-        case kGray_8_as_Red_GrPixelConfig:
-        case kRGB_565_GrPixelConfig:
-        case kRGBA_4444_GrPixelConfig:
-        case kRGBA_8888_GrPixelConfig:
-        case kBGRA_8888_GrPixelConfig:
-        case kSRGBA_8888_GrPixelConfig:
-        case kSBGRA_8888_GrPixelConfig:
-            return false;
-    }
-    SK_ABORT("Invalid pixel config");
-    return false;
-}
-
-static inline bool GrPixelConfigIsUnorm(GrPixelConfig config) {
-    switch (config) {
-        case kAlpha_8_GrPixelConfig:
-        case kAlpha_8_as_Alpha_GrPixelConfig:
-        case kAlpha_8_as_Red_GrPixelConfig:
-        case kGray_8_GrPixelConfig:
-        case kGray_8_as_Lum_GrPixelConfig:
-        case kGray_8_as_Red_GrPixelConfig:
-        case kRGB_565_GrPixelConfig:
-        case kRGBA_4444_GrPixelConfig:
-        case kRGBA_8888_GrPixelConfig:
-        case kBGRA_8888_GrPixelConfig:
-        case kSRGBA_8888_GrPixelConfig:
-        case kSBGRA_8888_GrPixelConfig:
-            return true;
-        case kUnknown_GrPixelConfig:
-        case kAlpha_half_GrPixelConfig:
-        case kAlpha_half_as_Red_GrPixelConfig:
+        case kRGBA_1010102_GrPixelConfig:
         case kRGBA_float_GrPixelConfig:
         case kRG_float_GrPixelConfig:
         case kRGBA_half_GrPixelConfig:
@@ -1019,6 +1104,7 @@ static inline GrSLPrecision GrSLSamplerPrecision(GrPixelConfig config) {
         case kRGB_565_GrPixelConfig:
         case kRGBA_4444_GrPixelConfig:
         case kRGBA_8888_GrPixelConfig:
+        case kRGB_888_GrPixelConfig:
         case kBGRA_8888_GrPixelConfig:
         case kSRGBA_8888_GrPixelConfig:
         case kSBGRA_8888_GrPixelConfig:
@@ -1029,15 +1115,11 @@ static inline GrSLPrecision GrSLSamplerPrecision(GrPixelConfig config) {
         case kAlpha_half_GrPixelConfig:
         case kAlpha_half_as_Red_GrPixelConfig:
         case kRGBA_half_GrPixelConfig:
+        case kRGBA_1010102_GrPixelConfig:
             return kMedium_GrSLPrecision;
     }
     SK_ABORT("Unexpected type");
     return kHigh_GrSLPrecision;
-}
-
-static inline GrPixelConfigIsClamped GrGetPixelConfigIsClamped(GrPixelConfig config) {
-    return GrPixelConfigIsFloatingPoint(config) ? GrPixelConfigIsClamped::kNo
-                                                : GrPixelConfigIsClamped::kYes;
 }
 
 
@@ -1053,7 +1135,9 @@ enum class GrColorType {
     kRGB_565,
     kABGR_4444,  
     kRGBA_8888,
+    kRGB_888x,
     kBGRA_8888,
+    kRGBA_1010102,
     kGray_8,
     kAlpha_F16,
     kRGBA_F16,
@@ -1063,17 +1147,19 @@ enum class GrColorType {
 
 static inline SkColorType GrColorTypeToSkColorType(GrColorType ct) {
     switch (ct) {
-        case GrColorType::kUnknown:   return kUnknown_SkColorType;
-        case GrColorType::kAlpha_8:   return kAlpha_8_SkColorType;
-        case GrColorType::kRGB_565:   return kRGB_565_SkColorType;
-        case GrColorType::kABGR_4444: return kARGB_4444_SkColorType;
-        case GrColorType::kRGBA_8888: return kRGBA_8888_SkColorType;
-        case GrColorType::kBGRA_8888: return kBGRA_8888_SkColorType;
-        case GrColorType::kGray_8:    return kGray_8_SkColorType;
-        case GrColorType::kAlpha_F16: return kUnknown_SkColorType;
-        case GrColorType::kRGBA_F16:  return kRGBA_F16_SkColorType;
-        case GrColorType::kRG_F32:    return kUnknown_SkColorType;
-        case GrColorType::kRGBA_F32:  return kUnknown_SkColorType;
+        case GrColorType::kUnknown:      return kUnknown_SkColorType;
+        case GrColorType::kAlpha_8:      return kAlpha_8_SkColorType;
+        case GrColorType::kRGB_565:      return kRGB_565_SkColorType;
+        case GrColorType::kABGR_4444:    return kARGB_4444_SkColorType;
+        case GrColorType::kRGBA_8888:    return kRGBA_8888_SkColorType;
+        case GrColorType::kRGB_888x:     return kRGB_888x_SkColorType;
+        case GrColorType::kBGRA_8888:    return kBGRA_8888_SkColorType;
+        case GrColorType::kRGBA_1010102: return kRGBA_1010102_SkColorType;
+        case GrColorType::kGray_8:       return kGray_8_SkColorType;
+        case GrColorType::kAlpha_F16:    return kUnknown_SkColorType;
+        case GrColorType::kRGBA_F16:     return kRGBA_F16_SkColorType;
+        case GrColorType::kRG_F32:       return kUnknown_SkColorType;
+        case GrColorType::kRGBA_F32:     return kRGBA_F32_SkColorType;
     }
     SK_ABORT("Invalid GrColorType");
     return kUnknown_SkColorType;
@@ -1086,51 +1172,65 @@ static inline GrColorType SkColorTypeToGrColorType(SkColorType ct) {
         case kRGB_565_SkColorType:      return GrColorType::kRGB_565;
         case kARGB_4444_SkColorType:    return GrColorType::kABGR_4444;
         case kRGBA_8888_SkColorType:    return GrColorType::kRGBA_8888;
+        case kRGB_888x_SkColorType:     return GrColorType::kRGB_888x;
         case kBGRA_8888_SkColorType:    return GrColorType::kBGRA_8888;
-        case kRGB_888x_SkColorType:     return GrColorType::kUnknown;
         case kGray_8_SkColorType:       return GrColorType::kGray_8;
         case kRGBA_F16_SkColorType:     return GrColorType::kRGBA_F16;
-        case kRGBA_1010102_SkColorType: return GrColorType::kUnknown;
+        case kRGBA_1010102_SkColorType: return GrColorType::kRGBA_1010102;
         case kRGB_101010x_SkColorType:  return GrColorType::kUnknown;
+        case kRGBA_F32_SkColorType:     return GrColorType::kRGBA_F32;
     }
     SK_ABORT("Invalid SkColorType");
     return GrColorType::kUnknown;
 }
 
+static inline uint32_t GrColorTypeComponentFlags(GrColorType ct) {
+    switch (ct) {
+        case GrColorType::kUnknown:      return 0;
+        case GrColorType::kAlpha_8:      return kAlpha_SkColorTypeComponentFlag;
+        case GrColorType::kRGB_565:      return kRGB_SkColorTypeComponentFlags;
+        case GrColorType::kABGR_4444:    return kRGBA_SkColorTypeComponentFlags;
+        case GrColorType::kRGBA_8888:    return kRGBA_SkColorTypeComponentFlags;
+        case GrColorType::kRGB_888x:     return kRGB_SkColorTypeComponentFlags;
+        case GrColorType::kBGRA_8888:    return kRGBA_SkColorTypeComponentFlags;
+        case GrColorType::kRGBA_1010102: return kRGBA_SkColorTypeComponentFlags;
+        case GrColorType::kGray_8:       return kGray_SkColorTypeComponentFlag;
+        case GrColorType::kAlpha_F16:    return kAlpha_SkColorTypeComponentFlag;
+        case GrColorType::kRGBA_F16:     return kRGBA_SkColorTypeComponentFlags;
+        case GrColorType::kRG_F32:       return kRed_SkColorTypeComponentFlag |
+                                                kGreen_SkColorTypeComponentFlag;
+        case GrColorType::kRGBA_F32:     return kRGBA_SkColorTypeComponentFlags;
+    }
+    SK_ABORT("Invalid GrColorType");
+    return kUnknown_SkColorType;
+}
+
+static inline bool GrColorTypeIsAlphaOnly(GrColorType ct) {
+    return kAlpha_SkColorTypeComponentFlag == GrColorTypeComponentFlags(ct);
+}
+
+static inline bool GrColorTypeHasAlpha(GrColorType ct) {
+    return kAlpha_SkColorTypeComponentFlag & GrColorTypeComponentFlags(ct);
+}
+
 static inline int GrColorTypeBytesPerPixel(GrColorType ct) {
     switch (ct) {
-        case GrColorType::kUnknown:   return 0;
-        case GrColorType::kAlpha_8:   return 1;
-        case GrColorType::kRGB_565:   return 2;
-        case GrColorType::kABGR_4444: return 2;
-        case GrColorType::kRGBA_8888: return 4;
-        case GrColorType::kBGRA_8888: return 4;
-        case GrColorType::kGray_8:    return 1;
-        case GrColorType::kAlpha_F16: return 2;
-        case GrColorType::kRGBA_F16:  return 8;
-        case GrColorType::kRG_F32:    return 8;
-        case GrColorType::kRGBA_F32:  return 16;
+        case GrColorType::kUnknown:      return 0;
+        case GrColorType::kAlpha_8:      return 1;
+        case GrColorType::kRGB_565:      return 2;
+        case GrColorType::kABGR_4444:    return 2;
+        case GrColorType::kRGBA_8888:    return 4;
+        case GrColorType::kRGB_888x:     return 4;
+        case GrColorType::kBGRA_8888:    return 4;
+        case GrColorType::kRGBA_1010102: return 4;
+        case GrColorType::kGray_8:       return 1;
+        case GrColorType::kAlpha_F16:    return 2;
+        case GrColorType::kRGBA_F16:     return 8;
+        case GrColorType::kRG_F32:       return 8;
+        case GrColorType::kRGBA_F32:     return 16;
     }
     SK_ABORT("Invalid GrColorType");
     return 0;
-}
-
-static inline int GrColorTypeIsAlphaOnly(GrColorType ct) {
-    switch (ct) {
-        case GrColorType::kUnknown:   return false;
-        case GrColorType::kAlpha_8:   return true;
-        case GrColorType::kRGB_565:   return false;
-        case GrColorType::kABGR_4444: return false;
-        case GrColorType::kRGBA_8888: return false;
-        case GrColorType::kBGRA_8888: return false;
-        case GrColorType::kGray_8:    return false;
-        case GrColorType::kAlpha_F16: return true;
-        case GrColorType::kRGBA_F16:  return false;
-        case GrColorType::kRG_F32:    return false;
-        case GrColorType::kRGBA_F32:  return false;
-    }
-    SK_ABORT("Invalid GrColorType");
-    return false;
 }
 
 static inline GrColorType GrPixelConfigToColorTypeAndEncoding(GrPixelConfig config,
@@ -1154,6 +1254,9 @@ static inline GrColorType GrPixelConfigToColorTypeAndEncoding(GrPixelConfig conf
         case kRGBA_8888_GrPixelConfig:
             *srgbEncoded = GrSRGBEncoded::kNo;
             return GrColorType::kRGBA_8888;
+        case kRGB_888_GrPixelConfig:
+            *srgbEncoded = GrSRGBEncoded::kNo;
+            return GrColorType::kRGB_888x;
         case kBGRA_8888_GrPixelConfig:
             *srgbEncoded = GrSRGBEncoded::kNo;
             return GrColorType::kBGRA_8888;
@@ -1163,6 +1266,9 @@ static inline GrColorType GrPixelConfigToColorTypeAndEncoding(GrPixelConfig conf
         case kSBGRA_8888_GrPixelConfig:
             *srgbEncoded = GrSRGBEncoded::kYes;
             return GrColorType::kBGRA_8888;
+        case kRGBA_1010102_GrPixelConfig:
+            *srgbEncoded = GrSRGBEncoded::kNo;
+            return GrColorType::kRGBA_1010102;
         case kRGBA_float_GrPixelConfig:
             *srgbEncoded = GrSRGBEncoded::kNo;
             return GrColorType::kRGBA_F32;
@@ -1225,9 +1331,17 @@ static inline GrPixelConfig GrColorTypeToPixelConfig(GrColorType config,
             return (GrSRGBEncoded::kYes == srgbEncoded) ? kSRGBA_8888_GrPixelConfig
                                                         : kRGBA_8888_GrPixelConfig;
 
+        case GrColorType::kRGB_888x:
+            return (GrSRGBEncoded::kYes == srgbEncoded) ? kUnknown_GrPixelConfig
+                                                        : kRGB_888_GrPixelConfig;
+
         case GrColorType::kBGRA_8888:
             return (GrSRGBEncoded::kYes == srgbEncoded) ? kSBGRA_8888_GrPixelConfig
                                                         : kBGRA_8888_GrPixelConfig;
+
+        case GrColorType::kRGBA_1010102:
+            return (GrSRGBEncoded::kYes == srgbEncoded) ? kUnknown_GrPixelConfig
+                                                        : kRGBA_1010102_GrPixelConfig;
 
         case GrColorType::kRGBA_F32:
             return (GrSRGBEncoded::kYes == srgbEncoded) ? kUnknown_GrPixelConfig
@@ -1249,14 +1363,16 @@ static inline GrPixelConfig GrColorTypeToPixelConfig(GrColorType config,
     return kUnknown_GrPixelConfig;
 }
 
-class GrReleaseProcHelper : public SkRefCnt {
+class GrReleaseProcHelper : public SkWeakRefCnt {
 public:
     
     typedef void* ReleaseCtx;
     typedef void (*ReleaseProc)(ReleaseCtx);
 
     GrReleaseProcHelper(ReleaseProc proc, ReleaseCtx ctx) : fReleaseProc(proc), fReleaseCtx(ctx) {}
-    ~GrReleaseProcHelper() override {
+    ~GrReleaseProcHelper() override {}
+
+    void weak_dispose() const override {
         fReleaseProc(fReleaseCtx);
     }
 

@@ -10,34 +10,22 @@
 
 #include "GrColor.h"
 #include "GrFragmentProcessor.h"
-#include "SkColorSpace.h"
-#include "SkMatrix44.h"
+#include "SkColorSpaceXformSteps.h"
 #include "SkRefCnt.h"
+
+class SkColorSpace;
 
  
 
 
 class GrColorSpaceXform : public SkRefCnt {
 public:
-    GrColorSpaceXform(const SkColorSpaceTransferFn&, const SkMatrix44&, uint32_t);
+    GrColorSpaceXform(const SkColorSpaceXformSteps& steps) : fSteps(steps) {}
 
-    static sk_sp<GrColorSpaceXform> Make(const SkColorSpace* src,
-                                         GrPixelConfig srcConfig,
-                                         const SkColorSpace* dst);
-    static sk_sp<GrColorSpaceXform> MakeGamutXform(const SkColorSpace* src,
-                                                   const SkColorSpace* dst) {
-        auto result = Make(src, kUnknown_GrPixelConfig, dst);
-        SkASSERT(!result || 0 == (result->fFlags & ~kApplyGamutXform_Flag));
-        return result;
-    }
+    static sk_sp<GrColorSpaceXform> Make(SkColorSpace* src, SkAlphaType srcAT,
+                                         SkColorSpace* dst, SkAlphaType dstAT);
 
-    const SkColorSpaceTransferFn& transferFn() const { return fSrcTransferFn; }
-    const float* transferFnCoeffs() const {
-        static_assert(0 == offsetof(SkColorSpaceTransferFn, fG), "TransferFn layout");
-        return &fSrcTransferFn.fG;
-    }
-
-    const SkMatrix44& gamutXform() const { return fGamutXform; }
+    const SkColorSpaceXformSteps& steps() const { return fSteps; }
 
     
 
@@ -45,30 +33,18 @@ public:
 
     static uint32_t XformKey(const GrColorSpaceXform* xform) {
         
-        return SkToBool(xform) ? xform->fFlags : 0;
+        return xform ? xform->fSteps.flags.mask() : 0;
     }
 
     static bool Equals(const GrColorSpaceXform* a, const GrColorSpaceXform* b);
 
-    GrColor4f unclampedXform(const GrColor4f& srcColor);
-    GrColor4f clampedXform(const GrColor4f& srcColor);
+    GrColor4f apply(const GrColor4f& srcColor);
+    SkColor4f apply(const SkColor4f& srcColor);
 
 private:
     friend class GrGLSLColorSpaceXformHelper;
 
-    enum Flags {
-        kApplyTransferFn_Flag = 0x1,
-        kApplyGamutXform_Flag = 0x2,
-
-        
-        
-        
-        kApplyInverseSRGB_Flag = 0x4,
-    };
-
-    SkColorSpaceTransferFn fSrcTransferFn;
-    SkMatrix44 fGamutXform;
-    uint32_t fFlags;
+    SkColorSpaceXformSteps fSteps;
 };
 
 class GrColorSpaceXformEffect : public GrFragmentProcessor {
@@ -76,11 +52,16 @@ public:
     
 
 
+    static std::unique_ptr<GrFragmentProcessor> Make(SkColorSpace* src, SkAlphaType srcAT,
+                                                     SkColorSpace* dst, SkAlphaType dstAT);
+
+    
+
+
 
     static std::unique_ptr<GrFragmentProcessor> Make(std::unique_ptr<GrFragmentProcessor> child,
-                                                     const SkColorSpace* src,
-                                                     GrPixelConfig srcConfig,
-                                                     const SkColorSpace* dst);
+                                                     SkColorSpace* src, SkAlphaType srcAT,
+                                                     SkColorSpace* dst);
 
     const char* name() const override { return "ColorSpaceXform"; }
     std::unique_ptr<GrFragmentProcessor> clone() const override;

@@ -104,7 +104,7 @@ public:
 
 
 
-    void addPassThroughAttribute(const GrGeometryProcessor::Attribute*, const char* output,
+    void addPassThroughAttribute(const GrGeometryProcessor::Attribute&, const char* output,
                                  Interpolation = Interpolation::kInterpolated);
 
     void emitAttributes(const GrGeometryProcessor& gp);

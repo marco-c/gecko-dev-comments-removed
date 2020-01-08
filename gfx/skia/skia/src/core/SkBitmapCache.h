@@ -20,26 +20,22 @@ void SkNotifyBitmapGenIDIsStale(uint32_t bitmapGenID);
 
 struct SkBitmapCacheDesc {
     uint32_t    fImageID;       
-    int32_t     fScaledWidth;   
-    int32_t     fScaledHeight;  
+    SkColorType fColorType;
+    uint32_t    fCSXYZHash;
+    uint32_t    fCSTransferFnHash;
     SkIRect     fSubset;        
 
     void validate() const {
         SkASSERT(fImageID);
-        if (fScaledWidth || fScaledHeight) {
-            SkASSERT(fScaledWidth && fScaledHeight);
-        }
         SkASSERT(fSubset.fLeft >= 0 && fSubset.fTop >= 0);
         SkASSERT(fSubset.width() > 0 && fSubset.height() > 0);
+        SkASSERT(kUnknown_SkColorType != fColorType);
     }
 
-    static SkBitmapCacheDesc Make(const SkBitmap&, int scaledWidth, int scaledHeight);
     static SkBitmapCacheDesc Make(const SkBitmap&);
-    static SkBitmapCacheDesc Make(const SkImage*, int scaledWidth, int scaledHeight);
     static SkBitmapCacheDesc Make(const SkImage*);
-
-    
-    static SkBitmapCacheDesc Make(uint32_t genID, int origWidth, int origHeight);
+    static SkBitmapCacheDesc Make(uint32_t genID, SkColorType, SkColorSpace*,
+                                  const SkIRect& subset);
 };
 
 class SkBitmapCache {
@@ -63,11 +59,9 @@ private:
 
 class SkMipMapCache {
 public:
-    
-    static const SkMipMap* FindAndRef(const SkBitmapCacheDesc&, SkDestinationSurfaceColorMode,
+    static const SkMipMap* FindAndRef(const SkBitmapCacheDesc&,
                                       SkResourceCache* localCache = nullptr);
-    static const SkMipMap* AddAndRef(const SkBitmap& src, SkDestinationSurfaceColorMode,
-                                     SkResourceCache* localCache = nullptr);
+    static const SkMipMap* AddAndRef(const SkBitmap& src, SkResourceCache* localCache = nullptr);
 };
 
 #endif

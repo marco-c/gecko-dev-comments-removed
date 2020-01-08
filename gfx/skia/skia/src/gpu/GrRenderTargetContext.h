@@ -16,9 +16,10 @@
 #include "GrSurfaceContext.h"
 #include "GrTypesPriv.h"
 #include "GrXferProcessor.h"
+#include "SkCanvas.h"
 #include "SkRefCnt.h"
 #include "SkSurfaceProps.h"
-#include "text/GrTextUtils.h"
+#include "text/GrTextTarget.h"
 
 class GrBackendSemaphore;
 class GrCCPRAtlas;
@@ -35,8 +36,8 @@ class GrShape;
 class GrStyle;
 class GrTextureProxy;
 struct GrUserStencilSettings;
-class SkDrawFilter;
 struct SkDrawShadowRec;
+class SkGlyphRunList;
 struct SkIPoint;
 struct SkIRect;
 class SkLatticeIter;
@@ -58,22 +59,7 @@ class SK_API GrRenderTargetContext : public GrSurfaceContext {
 public:
     ~GrRenderTargetContext() override;
 
-    
-    
-    
-    
-    
-    virtual void drawText(const GrClip&, const SkPaint&, const SkMatrix& viewMatrix,
-                          const char text[], size_t byteLength, SkScalar x, SkScalar y,
-                          const SkIRect& clipBounds);
-    virtual void drawPosText(const GrClip&, const SkPaint&, const SkMatrix& viewMatrix,
-                             const char text[], size_t byteLength, const SkScalar pos[],
-                             int scalarsPerPosition, const SkPoint& offset,
-                             const SkIRect& clipBounds);
-    virtual void drawTextBlob(const GrClip&, const SkPaint&,
-                              const SkMatrix& viewMatrix, const SkTextBlob*,
-                              SkScalar x, SkScalar y,
-                              SkDrawFilter*, const SkIRect& clipBounds);
+    virtual void drawGlyphRunList(const GrClip&, const SkMatrix& viewMatrix, const SkGlyphRunList&);
 
     
 
@@ -148,9 +134,10 @@ public:
 
 
 
-    void drawTextureAffine(const GrClip& clip, sk_sp<GrTextureProxy>, GrSamplerState::Filter,
-                           GrColor, const SkRect& srcRect, const SkRect& dstRect, GrAA aa,
-                           const SkMatrix& viewMatrix, sk_sp<GrColorSpaceXform>);
+    void drawTexture(const GrClip& clip, sk_sp<GrTextureProxy>, GrSamplerState::Filter, GrColor,
+                     const SkRect& srcRect, const SkRect& dstRect, GrQuadAAFlags,
+                     SkCanvas::SrcRectConstraint, const SkMatrix& viewMatrix,
+                     sk_sp<GrColorSpaceXform> texXform, sk_sp<GrColorSpaceXform> colorXform);
 
     
 
@@ -212,9 +199,26 @@ public:
                   GrAA,
                   const SkMatrix& viewMatrix,
                   const SkPath&,
-                  const GrStyle& style);
+                  const GrStyle&);
 
     
+
+
+
+
+
+
+
+    void drawShape(const GrClip&,
+                   GrPaint&&,
+                   GrAA,
+                   const SkMatrix& viewMatrix,
+                   const GrShape&);
+
+
+    
+
+
 
 
 
@@ -226,6 +230,8 @@ public:
                       GrPaint&& paint,
                       const SkMatrix& viewMatrix,
                       sk_sp<SkVertices> vertices,
+                      const SkVertices::Bone bones[],
+                      int boneCount,
                       GrPrimitiveType* overridePrimType = nullptr);
 
     
@@ -309,11 +315,12 @@ public:
 
 
     void drawImageLattice(const GrClip&,
-                          GrPaint&& paint,
+                          GrPaint&&,
                           const SkMatrix& viewMatrix,
-                          int imageWidth,
-                          int imageHeight,
-                          std::unique_ptr<SkLatticeIter> iter,
+                          sk_sp<GrTextureProxy>,
+                          sk_sp<GrColorSpaceXform>,
+                          GrSamplerState::Filter,
+                          std::unique_ptr<SkLatticeIter>,
                           const SkRect& dst);
 
     
@@ -332,7 +339,7 @@ public:
     void insertEventMarker(const SkString&);
 
     GrFSAAType fsaaType() const { return fRenderTargetProxy->fsaaType(); }
-    const GrCaps* caps() const { return fContext->caps(); }
+    const GrCaps* caps() const { return fContext->contextPriv().caps(); }
     int width() const { return fRenderTargetProxy->width(); }
     int height() const { return fRenderTargetProxy->height(); }
     int numColorSamples() const { return fRenderTargetProxy->numColorSamples(); }
@@ -351,7 +358,7 @@ public:
         if (!fRenderTargetProxy->instantiate(fContext->contextPriv().resourceProvider())) {
             return nullptr;
         }
-        return fRenderTargetProxy->priv().peekRenderTarget();
+        return fRenderTargetProxy->peekRenderTarget();
     }
 
     GrSurfaceProxy* asSurfaceProxy() override { return fRenderTargetProxy.get(); }
@@ -371,7 +378,7 @@ public:
     GrRenderTargetContextPriv priv();
     const GrRenderTargetContextPriv priv() const;
 
-    GrTextUtils::Target* textTarget() { return fTextTarget.get(); }
+    GrTextTarget* textTarget() { return fTextTarget.get(); }
 
     bool isWrapped_ForTesting() const;
 
@@ -403,13 +410,14 @@ private:
     friend class GrAALinearizingConvexPathRenderer;  
     friend class GrSmallPathRenderer;                
     friend class GrDefaultPathRenderer;              
-    friend class GrMSAAPathRenderer;                 
     friend class GrStencilAndCoverPathRenderer;      
     friend class GrTessellatingPathRenderer;         
-    friend class GrCCAtlas;                          
+    friend class GrCCPerFlushResources;              
     friend class GrCoverageCountingPathRenderer;     
     
-    friend void test_draw_op(GrRenderTargetContext*, std::unique_ptr<GrFragmentProcessor>,
+    friend void test_draw_op(GrContext*,
+                             GrRenderTargetContext*,
+                             std::unique_ptr<GrFragmentProcessor>,
                              sk_sp<GrTextureProxy>);
 
     void internalClear(const GrFixedClip&, const GrColor, CanClearFullscreen);
@@ -449,7 +457,7 @@ private:
     GrRenderTargetOpList* getRTOpList();
     GrOpList* getOpList() override;
 
-    std::unique_ptr<GrTextUtils::Target> fTextTarget;
+    std::unique_ptr<GrTextTarget> fTextTarget;
     sk_sp<GrRenderTargetProxy> fRenderTargetProxy;
 
     

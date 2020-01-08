@@ -14,10 +14,11 @@
 
 
 #include "SkBitmapProcState.h"
+#include "SkBitmapProcState_utils.h"
 #include "SkShader.h"
+#include "SkTo.h"
 #include "SkUtils.h"
 #include "SkUtilsArm.h"
-#include "SkBitmapProcState_utils.h"
 
 
 

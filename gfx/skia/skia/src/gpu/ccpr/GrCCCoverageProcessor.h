@@ -10,6 +10,7 @@
 
 #include "GrCaps.h"
 #include "GrGeometryProcessor.h"
+#include "GrPipeline.h"
 #include "GrShaderCaps.h"
 #include "SkNx.h"
 #include "glsl/GrGLSLGeometryProcessor.h"
@@ -18,6 +19,7 @@
 class GrGLSLFPFragmentBuilder;
 class GrGLSLVertexGeoBuilder;
 class GrMesh;
+class GrOpFlushState;
 
 
 
@@ -33,6 +35,15 @@ class GrMesh;
 
 class GrCCCoverageProcessor : public GrGeometryProcessor {
 public:
+    enum class PrimitiveType {
+        kTriangles,
+        kWeightedTriangles, 
+        kQuadratics,
+        kCubics,
+        kConics
+    };
+    static const char* PrimitiveTypeName(PrimitiveType);
+
     
     
     struct TriPointInstance {
@@ -41,6 +52,7 @@ public:
 
         void set(const SkPoint[3], const Sk2f& trans);
         void set(const SkPoint&, const SkPoint&, const SkPoint&, const Sk2f& trans);
+        void set(const Sk2f& P0, const Sk2f& P1, const Sk2f& P2, const Sk2f& trans);
     };
 
     
@@ -51,65 +63,16 @@ public:
         float fY[4];
 
         void set(const SkPoint[4], float dx, float dy);
-        void set(const SkPoint&, const SkPoint&, const SkPoint&, const Sk2f& trans, float w);
+        void setW(const SkPoint[3], const Sk2f& trans, float w);
+        void setW(const SkPoint&, const SkPoint&, const SkPoint&, const Sk2f& trans, float w);
+        void setW(const Sk2f& P0, const Sk2f& P1, const Sk2f& P2, const Sk2f& trans, float w);
     };
 
-    
-    
-    
-    
-    
-    
-    enum class RenderPass {
-        
-        
-        
-        
-        
-        
-        kTriangleHulls,
-        kQuadraticHulls,
-        kCubicHulls,
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        kTriangleEdges,
-
-        
-        
-        
-        kTriangleCorners,
-        kQuadraticCorners,
-        kCubicCorners
-    };
-    static bool RenderPassIsCubic(RenderPass);
-    static const char* RenderPassName(RenderPass);
-
-    constexpr static bool DoesRenderPass(RenderPass renderPass, const GrCaps& caps) {
-        return RenderPass::kTriangleEdges != renderPass ||
-               caps.shaderCaps()->geometryShaderSupport();
-    }
-
-    enum class WindMethod : bool {
-        kCrossProduct, 
-        kInstanceData 
-                      
-    };
-
-    GrCCCoverageProcessor(GrResourceProvider* rp, RenderPass pass, WindMethod windMethod)
+    GrCCCoverageProcessor(GrResourceProvider* rp, PrimitiveType type)
             : INHERITED(kGrCCCoverageProcessor_ClassID)
-            , fRenderPass(pass)
-            , fWindMethod(windMethod)
+            , fPrimitiveType(type)
             , fImpl(rp->caps()->shaderCaps()->geometryShaderSupport() ? Impl::kGeometryShader
                                                                       : Impl::kVertexShader) {
-        SkASSERT(DoesRenderPass(pass, *rp->caps()));
         if (Impl::kGeometryShader == fImpl) {
             this->initGS();
         } else {
@@ -118,19 +81,7 @@ public:
     }
 
     
-    
-    
-    void appendMesh(GrBuffer* instanceBuffer, int instanceCount, int baseInstance,
-                    SkTArray<GrMesh>* out) {
-        if (Impl::kGeometryShader == fImpl) {
-            this->appendGSMesh(instanceBuffer, instanceCount, baseInstance, out);
-        } else {
-            this->appendVSMesh(instanceBuffer, instanceCount, baseInstance, out);
-        }
-    }
-
-    
-    const char* name() const override { return RenderPassName(fRenderPass); }
+    const char* name() const override { return PrimitiveTypeName(fPrimitiveType); }
     SkString dumpInfo() const override {
         return SkStringPrintf("%s\n%s", this->name(), this->INHERITED::dumpInfo().c_str());
     }
@@ -139,47 +90,55 @@ public:
 
 #ifdef SK_DEBUG
     
-    
-    void enableDebugVisualizations(float debugBloat) { fDebugBloat = debugBloat; }
-    bool debugVisualizationsEnabled() const { return fDebugBloat > 0; }
-    float debugBloat() const { SkASSERT(this->debugVisualizationsEnabled()); return fDebugBloat; }
+    void enableDebugBloat(float debugBloat) { fDebugBloat = debugBloat; }
+    bool debugBloatEnabled() const { return fDebugBloat > 0; }
+    float debugBloat() const { SkASSERT(this->debugBloatEnabled()); return fDebugBloat; }
 #endif
+
+    
+    
+    
+    void appendMesh(GrBuffer* instanceBuffer, int instanceCount, int baseInstance,
+                    SkTArray<GrMesh>* out) const {
+        if (Impl::kGeometryShader == fImpl) {
+            this->appendGSMesh(instanceBuffer, instanceCount, baseInstance, out);
+        } else {
+            this->appendVSMesh(instanceBuffer, instanceCount, baseInstance, out);
+        }
+    }
+
+    void draw(GrOpFlushState*, const GrPipeline&, const SkIRect scissorRects[], const GrMesh[],
+              int meshCount, const SkRect& drawBounds) const;
 
     
     
     class Shader {
     public:
-        union GeometryVars {
-            struct {
-                const char* fAlternatePoints; 
-            } fHullVars;
-
-            struct {
-                const char* fPoint; 
-            } fCornerVars;
-
-            GeometryVars() { memset(this, 0, sizeof(*this)); }
-        };
-
         
         
         
         
         
         
-        virtual void emitSetupCode(GrGLSLVertexGeoBuilder*, const char* pts,
-                                   const char* repetitionID, const char* wind,
-                                   GeometryVars*) const {}
-
-        void emitVaryings(GrGLSLVaryingHandler* varyingHandler, GrGLSLVarying::Scope scope,
-                          SkString* code, const char* position, const char* inputCoverage,
-                          const char* wind) {
-            SkASSERT(GrGLSLVarying::Scope::kVertToGeo != scope);
-            this->onEmitVaryings(varyingHandler, scope, code, position, inputCoverage, wind);
+        virtual void emitSetupCode(GrGLSLVertexGeoBuilder*, const char* pts, const char* wind,
+                                   const char** outHull4 = nullptr) const {
+            SkASSERT(!outHull4);
         }
 
-        void emitFragmentCode(const GrCCCoverageProcessor& proc, GrGLSLFPFragmentBuilder*,
+        void emitVaryings(GrGLSLVaryingHandler* varyingHandler, GrGLSLVarying::Scope scope,
+                          SkString* code, const char* position, const char* coverage,
+                          const char* cornerCoverage) {
+            SkASSERT(GrGLSLVarying::Scope::kVertToGeo != scope);
+            this->onEmitVaryings(varyingHandler, scope, code, position, coverage, cornerCoverage);
+        }
+
+        void emitFragmentCode(const GrCCCoverageProcessor&, GrGLSLFPFragmentBuilder*,
                               const char* skOutputColor, const char* skOutputCoverage) const;
+
+        
+        
+        static void CalcWind(const GrCCCoverageProcessor&, GrGLSLVertexGeoBuilder*, const char* pts,
+                             const char* outputWind);
 
         
         
@@ -187,6 +146,30 @@ public:
         static void EmitEdgeDistanceEquation(GrGLSLVertexGeoBuilder*, const char* leftPt,
                                              const char* rightPt,
                                              const char* outputDistanceEquation);
+
+        
+        
+        
+        
+        
+        
+        static void CalcEdgeCoverageAtBloatVertex(GrGLSLVertexGeoBuilder*, const char* leftPt,
+                                                  const char* rightPt, const char* rasterVertexDir,
+                                                  const char* outputCoverage);
+
+        
+        
+        static void CalcEdgeCoveragesAtBloatVertices(GrGLSLVertexGeoBuilder*, const char* leftPt,
+                                                     const char* rightPt, const char* bloatDir1,
+                                                     const char* bloatDir2,
+                                                     const char* outputCoverages);
+
+        
+        
+        
+        
+        static void CalcCornerAttenuation(GrGLSLVertexGeoBuilder*, const char* leftDir,
+                                          const char* rightDir, const char* outputAttenuation);
 
         virtual ~Shader() {}
 
@@ -197,8 +180,8 @@ public:
         
         
         virtual void onEmitVaryings(GrGLSLVaryingHandler*, GrGLSLVarying::Scope, SkString* code,
-                                    const char* position, const char* inputCoverage,
-                                    const char* wind) = 0;
+                                    const char* position, const char* coverage,
+                                    const char* cornerCoverage) = 0;
 
         
         virtual void onEmitFragmentCode(GrGLSLFPFragmentBuilder*,
@@ -213,30 +196,64 @@ public:
         }
 
         
-        
-        
-        
-        static int DefineSoftSampleLocations(GrGLSLFPFragmentBuilder* f, const char* samplesName);
+        inline static SkString& AccessCodeString(GrGLSLShaderBuilder* s) { return s->code(); }
     };
 
-    class GSImpl;
-    class VSImpl;
-
 private:
+    class GSImpl;
+    class GSTriangleHullImpl;
+    class GSCurveHullImpl;
+    class GSCornerImpl;
+    class VSImpl;
+    class TriangleShader;
+
     
     
     static constexpr float kAABloatRadius = 0.491111f;
 
     
-    int numInputPoints() const { return RenderPassIsCubic(fRenderPass) ? 4 : 3; }
+    int numInputPoints() const { return PrimitiveType::kCubics == fPrimitiveType ? 4 : 3; }
+
+    bool isTriangles() const {
+        return PrimitiveType::kTriangles == fPrimitiveType ||
+               PrimitiveType::kWeightedTriangles == fPrimitiveType;
+    }
+
+    int hasInputWeight() const {
+        return PrimitiveType::kWeightedTriangles == fPrimitiveType ||
+               PrimitiveType::kConics == fPrimitiveType;
+    }
 
     enum class Impl : bool {
         kGeometryShader,
         kVertexShader
     };
 
+    
+    enum class GSSubpass : bool {
+        kHulls,
+        kCorners
+    };
+
+    GrCCCoverageProcessor(const GrCCCoverageProcessor& proc, GSSubpass subpass)
+            : INHERITED(kGrCCCoverageProcessor_ClassID)
+            , fPrimitiveType(proc.fPrimitiveType)
+            , fImpl(Impl::kGeometryShader)
+            SkDEBUGCODE(, fDebugBloat(proc.fDebugBloat))
+            , fGSSubpass(subpass) {
+        SkASSERT(Impl::kGeometryShader == proc.fImpl);
+        this->initGS();
+    }
+
     void initGS();
     void initVS(GrResourceProvider*);
+
+    const Attribute& onVertexAttribute(int i) const override { return fVertexAttribute; }
+
+    const Attribute& onInstanceAttribute(int i) const override {
+        SkASSERT(fImpl == Impl::kVertexShader);
+        return fInstanceAttributes[i];
+    }
 
     void appendGSMesh(GrBuffer* instanceBuffer, int instanceCount, int baseInstance,
                       SkTArray<GrMesh>* out) const;
@@ -245,20 +262,37 @@ private:
 
     GrGLSLPrimitiveProcessor* createGSImpl(std::unique_ptr<Shader>) const;
     GrGLSLPrimitiveProcessor* createVSImpl(std::unique_ptr<Shader>) const;
+    
+    Attribute fVertexAttribute;
 
-    const RenderPass fRenderPass;
-    const WindMethod fWindMethod;
+    const PrimitiveType fPrimitiveType;
     const Impl fImpl;
     SkDEBUGCODE(float fDebugBloat = 0);
 
     
-    sk_sp<const GrBuffer> fVertexBuffer;
-    sk_sp<const GrBuffer> fIndexBuffer;
-    int fNumIndicesPerInstance;
-    GrPrimitiveType fPrimitiveType;
+    const GSSubpass fGSSubpass = GSSubpass::kHulls;
+
+    
+    Attribute fInstanceAttributes[2];
+    sk_sp<const GrBuffer> fVSVertexBuffer;
+    sk_sp<const GrBuffer> fVSIndexBuffer;
+    int fVSNumIndicesPerInstance;
+    GrPrimitiveType fVSTriangleType;
 
     typedef GrGeometryProcessor INHERITED;
 };
+
+inline const char* GrCCCoverageProcessor::PrimitiveTypeName(PrimitiveType type) {
+    switch (type) {
+        case PrimitiveType::kTriangles: return "kTriangles";
+        case PrimitiveType::kWeightedTriangles: return "kWeightedTriangles";
+        case PrimitiveType::kQuadratics: return "kQuadratics";
+        case PrimitiveType::kCubics: return "kCubics";
+        case PrimitiveType::kConics: return "kConics";
+    }
+    SK_ABORT("Invalid PrimitiveType");
+    return "";
+}
 
 inline void GrCCCoverageProcessor::TriPointInstance::set(const SkPoint p[3], const Sk2f& trans) {
     this->set(p[0], p[1], p[2], trans);
@@ -266,10 +300,15 @@ inline void GrCCCoverageProcessor::TriPointInstance::set(const SkPoint p[3], con
 
 inline void GrCCCoverageProcessor::TriPointInstance::set(const SkPoint& p0, const SkPoint& p1,
                                                          const SkPoint& p2, const Sk2f& trans) {
-    Sk2f P0 = Sk2f::Load(&p0) + trans;
-    Sk2f P1 = Sk2f::Load(&p1) + trans;
-    Sk2f P2 = Sk2f::Load(&p2) + trans;
-    Sk2f::Store3(this, P0, P1, P2);
+    Sk2f P0 = Sk2f::Load(&p0);
+    Sk2f P1 = Sk2f::Load(&p1);
+    Sk2f P2 = Sk2f::Load(&p2);
+    this->set(P0, P1, P2, trans);
+}
+
+inline void GrCCCoverageProcessor::TriPointInstance::set(const Sk2f& P0, const Sk2f& P1,
+                                                         const Sk2f& P2, const Sk2f& trans) {
+    Sk2f::Store3(this, P0 + trans, P1 + trans, P2 + trans);
 }
 
 inline void GrCCCoverageProcessor::QuadPointInstance::set(const SkPoint p[4], float dx, float dy) {
@@ -279,44 +318,25 @@ inline void GrCCCoverageProcessor::QuadPointInstance::set(const SkPoint p[4], fl
     (Y + dy).store(&fY);
 }
 
-inline void GrCCCoverageProcessor::QuadPointInstance::set(const SkPoint& p0, const SkPoint& p1,
-                                                          const SkPoint& p2, const Sk2f& trans,
-                                                          float w) {
-    Sk2f P0 = Sk2f::Load(&p0) + trans;
-    Sk2f P1 = Sk2f::Load(&p1) + trans;
-    Sk2f P2 = Sk2f::Load(&p2) + trans;
+inline void GrCCCoverageProcessor::QuadPointInstance::setW(const SkPoint p[3], const Sk2f& trans,
+                                                           float w) {
+    this->setW(p[0], p[1], p[2], trans, w);
+}
+
+inline void GrCCCoverageProcessor::QuadPointInstance::setW(const SkPoint& p0, const SkPoint& p1,
+                                                           const SkPoint& p2, const Sk2f& trans,
+                                                           float w) {
+    Sk2f P0 = Sk2f::Load(&p0);
+    Sk2f P1 = Sk2f::Load(&p1);
+    Sk2f P2 = Sk2f::Load(&p2);
+    this->setW(P0, P1, P2, trans, w);
+}
+
+inline void GrCCCoverageProcessor::QuadPointInstance::setW(const Sk2f& P0, const Sk2f& P1,
+                                                           const Sk2f& P2, const Sk2f& trans,
+                                                           float w) {
     Sk2f W = Sk2f(w);
-    Sk2f::Store4(this, P0, P1, P2, W);
-}
-
-inline bool GrCCCoverageProcessor::RenderPassIsCubic(RenderPass pass) {
-    switch (pass) {
-        case RenderPass::kTriangleHulls:
-        case RenderPass::kTriangleEdges:
-        case RenderPass::kTriangleCorners:
-        case RenderPass::kQuadraticHulls:
-        case RenderPass::kQuadraticCorners:
-            return false;
-        case RenderPass::kCubicHulls:
-        case RenderPass::kCubicCorners:
-            return true;
-    }
-    SK_ABORT("Invalid RenderPass");
-    return false;
-}
-
-inline const char* GrCCCoverageProcessor::RenderPassName(RenderPass pass) {
-    switch (pass) {
-        case RenderPass::kTriangleHulls: return "kTriangleHulls";
-        case RenderPass::kTriangleEdges: return "kTriangleEdges";
-        case RenderPass::kTriangleCorners: return "kTriangleCorners";
-        case RenderPass::kQuadraticHulls: return "kQuadraticHulls";
-        case RenderPass::kQuadraticCorners: return "kQuadraticCorners";
-        case RenderPass::kCubicHulls: return "kCubicHulls";
-        case RenderPass::kCubicCorners: return "kCubicCorners";
-    }
-    SK_ABORT("Invalid RenderPass");
-    return "";
+    Sk2f::Store4(this, P0 + trans, P1 + trans, P2 + trans, W);
 }
 
 #endif

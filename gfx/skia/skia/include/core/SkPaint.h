@@ -5,24 +5,37 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #ifndef SkPaint_DEFINED
 #define SkPaint_DEFINED
 
+#include "../private/SkTo.h"
 #include "SkBlendMode.h"
 #include "SkColor.h"
 #include "SkFilterQuality.h"
 #include "SkMatrix.h"
 #include "SkRefCnt.h"
 
+class GrTextBlob;
 class SkAutoDescriptor;
-class SkAutoGlyphCache;
 class SkColorFilter;
+class SkColorSpace;
 class SkData;
 class SkDescriptor;
 class SkDrawLooper;
-class SkReadBuffer;
-class SkWriteBuffer;
 class SkGlyph;
+class SkGlyphRunBuilder;
+class SkGlyphRun;
+class SkGlyphRunListPainter;
 struct SkRect;
 class SkGlyphCache;
 class SkImageFilter;
@@ -30,9 +43,11 @@ class SkMaskFilter;
 class SkPath;
 class SkPathEffect;
 struct SkPoint;
+class SkRunFont;
 class SkShader;
 class SkSurfaceProps;
 class SkTextBlob;
+class SkTextBlobRunIterator;
 class SkTypeface;
 
 
@@ -164,24 +179,6 @@ public:
     
 
 
-
-
-    void flatten(SkWriteBuffer& buffer) const;
-
-    
-
-
-
-
-
-
-
-
-    bool unflatten(SkReadBuffer& buffer);
-
-    
-
-
     void reset();
 
     
@@ -193,36 +190,10 @@ public:
 
 
     enum Hinting {
-        
-
-
-
-
-
-        kNo_Hinting     = 0,
-
-        
-
-
-
-
-
-        kSlight_Hinting = 1,
-
-        
-
-
-
-
-        kNormal_Hinting = 2,
-
-        
-
-
-
-
-
-        kFull_Hinting   = 3,
+        kNo_Hinting     = 0, 
+        kSlight_Hinting = 1, 
+        kNormal_Hinting = 2, 
+        kFull_Hinting   = 3, 
     };
 
     
@@ -253,17 +224,11 @@ public:
         kFakeBoldText_Flag       = 0x20,   
         kLinearText_Flag         = 0x40,   
         kSubpixelText_Flag       = 0x80,   
-        kDevKernText_Flag        = 0x100,  
         kLCDRenderText_Flag      = 0x200,  
         kEmbeddedBitmapText_Flag = 0x400,  
         kAutoHinting_Flag        = 0x800,  
         kVerticalText_Flag       = 0x1000, 
-
-        
-        kGenA8FromLCD_Flag       = 0x2000,
-
-        
-        kAllFlags                = 0xFFFF,
+        kAllFlags                = 0xFFFF, 
     };
 
     #ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
@@ -427,6 +392,7 @@ public:
 
 
 
+
     void setAutohinted(bool useAutohinter);
 
     
@@ -471,22 +437,11 @@ public:
 
     
 
-
-
-
-
-    bool isDevKernText() const {
-        return SkToBool(this->getFlags() & kDevKernText_Flag);
-    }
+    bool isDevKernText() const { return false; }
 
     
 
-
-
-
-
-
-    void setDevKernText(bool devKernText);
+    void setDevKernText(bool) { }
 
     
 
@@ -516,38 +471,14 @@ public:
 
 
     enum Style {
-        
-
-
-
-
-
-
-
-        kFill_Style,
-
-        
-
-
-
-
-
-        kStroke_Style,
-
-        
-
-
-
-
-        kStrokeAndFill_Style,
+        kFill_Style,          
+        kStroke_Style,        
+        kStrokeAndFill_Style, 
     };
 
-    enum {
-        
+    
 
-
-        kStyleCount = kStrokeAndFill_Style + 1,
-    };
+    static constexpr int kStyleCount = kStrokeAndFill_Style + 1;
 
     
 
@@ -568,7 +499,14 @@ public:
 
 
 
-    SkColor getColor() const { return fColor; }
+    SkColor getColor() const { return fColor4f.toSkColor(); }
+
+    
+
+
+
+
+    SkColor4f getColor4f() const { return fColor4f; }
 
     
 
@@ -581,7 +519,17 @@ public:
 
 
 
-    uint8_t getAlpha() const { return SkToU8(SkColorGetA(fColor)); }
+
+
+
+
+    void setColor4f(const SkColor4f& color, SkColorSpace* colorSpace);
+
+    
+
+
+
+    uint8_t getAlpha() const { return sk_float_round2int(fColor4f.fA * 255); }
 
     
 
@@ -637,23 +585,10 @@ public:
 
     enum Cap {
         kButt_Cap,                  
-
-        
-
-
-        kRound_Cap,
-
-        
-
-
-
-        kSquare_Cap,
+        kRound_Cap,                 
+        kSquare_Cap,                
         kLast_Cap    = kSquare_Cap, 
-
-        
-
-
-        kDefault_Cap = kButt_Cap,
+        kDefault_Cap = kButt_Cap,   
     };
 
     
@@ -674,20 +609,11 @@ public:
 
 
     enum Join {
-        
-
-
-        kMiter_Join,
-
-        
-        kRound_Join,
+        kMiter_Join,                 
+        kRound_Join,                 
         kBevel_Join,                 
         kLast_Join    = kBevel_Join, 
-
-        
-
-
-        kDefault_Join = kMiter_Join,
+        kDefault_Join = kMiter_Join, 
     };
 
     
@@ -957,25 +883,15 @@ public:
 
 
 
-
     enum Align {
-        
-        kLeft_Align,
-
-        
-
-
-        kCenter_Align,
-
-        
-
-
-        kRight_Align,
+        kLeft_Align,   
+        kCenter_Align, 
+        kRight_Align,  
     };
 
-    enum {
-        kAlignCount = 3, 
-    };
+    
+
+    static constexpr int kAlignCount = 3;
 
     
 
@@ -1107,88 +1023,21 @@ public:
         };
 
         uint32_t fFlags;              
-
-        
-
-
-        SkScalar fTop;
-
-        
-
-
-        SkScalar fAscent;
-
-        
-
-
-        SkScalar fDescent;
-
-        
-
-
-        SkScalar fBottom;
-
-        
-
-
-        SkScalar fLeading;
-
-        
-
-
-        SkScalar fAvgCharWidth;
-
+        SkScalar fTop;                
+        SkScalar fAscent;             
+        SkScalar fDescent;            
+        SkScalar fBottom;             
+        SkScalar fLeading;            
+        SkScalar fAvgCharWidth;       
         SkScalar fMaxCharWidth;       
-
-        
-
-
-        SkScalar fXMin;
-
-        
-
-
-        SkScalar fXMax;
-
-        
-
-
-        SkScalar fXHeight;
-
-        
-
-
-        SkScalar fCapHeight;
-
-        
-
-
-
-
-        SkScalar fUnderlineThickness;
-
-        
-
-
-
-
-
-        SkScalar fUnderlinePosition;
-
-        
-
-
-
-
-        SkScalar fStrikeoutThickness;
-
-        
-
-
-
-
-
-        SkScalar fStrikeoutPosition;
+        SkScalar fXMin;               
+        SkScalar fXMax;               
+        SkScalar fXHeight;            
+        SkScalar fCapHeight;          
+        SkScalar fUnderlineThickness; 
+        SkScalar fUnderlinePosition;  
+        SkScalar fStrikeoutThickness; 
+        SkScalar fStrikeoutPosition;  
 
         
 
@@ -1336,9 +1185,7 @@ public:
 
 
 
-    int countText(const void* text, size_t byteLength) const {
-        return this->textToGlyphs(text, byteLength, nullptr);
-    }
+    int countText(const void* text, size_t byteLength) const;
 
     
 
@@ -1588,7 +1435,6 @@ public:
 
 
 
-
     const SkRect& computeFastBounds(const SkRect& orig, SkRect* storage) const {
         
         SkASSERT(orig.isSorted());
@@ -1631,17 +1477,11 @@ public:
     const SkRect& doComputeFastBounds(const SkRect& orig, SkRect* storage,
                                       Style style) const;
 
-    
-
-
-
-
-
-
-    SK_TO_STRING_NONVIRT()
-
 private:
-    typedef const SkGlyph& (*GlyphCacheProc)(SkGlyphCache*, const char**);
+    friend class SkGlyphRun;
+    friend class SkGlyphRunBuilder;
+    SkPaint(const SkPaint&, const SkRunFont&);
+    typedef const SkGlyph& (*GlyphCacheProc)(SkGlyphCache*, const char**, const char*);
 
     sk_sp<SkTypeface>     fTypeface;
     sk_sp<SkPathEffect>   fPathEffect;
@@ -1654,7 +1494,7 @@ private:
     SkScalar        fTextSize;
     SkScalar        fTextScaleX;
     SkScalar        fTextSkewX;
-    SkColor         fColor;
+    SkColor4f       fColor4f;
     SkScalar        fWidth;
     SkScalar        fMiterLimit;
     uint32_t        fBlendMode; 
@@ -1675,7 +1515,6 @@ private:
     };
 
     static GlyphCacheProc GetGlyphCacheProc(TextEncoding encoding,
-                                            bool isDevKern,
                                             bool needFullMetrics);
 
     SkScalar measure_text(SkGlyphCache*, const char* text, size_t length,
@@ -1688,8 +1527,7 @@ private:
 
     SkColor computeLuminanceColor() const;
 
-    enum {
-        
+    
 
 
 
@@ -1703,8 +1541,7 @@ private:
 
 
 
-        kCanonicalTextSizeForPaths  = 64,
-    };
+    static constexpr int kCanonicalTextSizeForPaths  = 64;
 
     static bool TooBigToUseCache(const SkMatrix& ctm, const SkMatrix& textM, SkScalar maxLimit);
 
@@ -1715,19 +1552,20 @@ private:
 
     static SkScalar MaxCacheSize2(SkScalar maxLimit);
 
-    friend class GrAtlasTextBlob;
-    friend class GrAtlasTextContext;
+    friend class GrTextBlob;
+    friend class GrTextContext;
     friend class GrGLPathRendering;
     friend class GrPathRendering;
-    friend class GrTextUtils;
-    friend class SkAutoGlyphCache;
     friend class SkAutoGlyphCacheNoGamma;
     friend class SkCanonicalizePaint;
     friend class SkCanvas;
     friend class SkDraw;
+    friend class SkGlyphRunListPainter;
+    friend class SkPaintPriv;
     friend class SkPDFDevice;
     friend class SkScalerContext;  
     friend class SkTextBaseIter;
+    friend class SkTextBlobCacheDiffCanvas;
 };
 
 #endif

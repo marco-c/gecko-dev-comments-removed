@@ -27,9 +27,6 @@ public:
     
     
     void resetDeferredUploader();
-    
-    
-    GrMipMapped proxyMipMapped() const { return fTextureProxy->fMipMapped; }
 
 private:
     explicit GrTextureProxyPriv(GrTextureProxy* textureProxy) : fTextureProxy(textureProxy) {}

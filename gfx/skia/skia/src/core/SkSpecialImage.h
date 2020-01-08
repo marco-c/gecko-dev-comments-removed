@@ -91,7 +91,8 @@ public:
 
     sk_sp<SkSpecialSurface> makeSurface(const SkImageFilter::OutputProperties& outProps,
                                         const SkISize& size,
-                                        SkAlphaType at = kPremul_SkAlphaType) const;
+                                        SkAlphaType at = kPremul_SkAlphaType,
+                                        const SkSurfaceProps* props = nullptr) const;
 
     
 

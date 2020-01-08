@@ -6,13 +6,16 @@
 
 
 #include "SkWriteBuffer.h"
+
 #include "SkBitmap.h"
 #include "SkData.h"
 #include "SkDeduper.h"
-#include "SkPaint.h"
+#include "SkImagePriv.h"
+#include "SkPaintPriv.h"
 #include "SkPixelRef.h"
 #include "SkPtrRecorder.h"
 #include "SkStream.h"
+#include "SkTo.h"
 #include "SkTypeface.h"
 
 
@@ -24,13 +27,14 @@ SkBinaryWriteBuffer::SkBinaryWriteBuffer()
 
 SkBinaryWriteBuffer::SkBinaryWriteBuffer(void* storage, size_t storageSize)
     : fFactorySet(nullptr)
+    , fTFSet(nullptr)
     , fWriter(storage, storageSize)
-    , fTFSet(nullptr) {
-}
+{}
 
-SkBinaryWriteBuffer::~SkBinaryWriteBuffer() {
-    SkSafeUnref(fFactorySet);
-    SkSafeUnref(fTFSet);
+SkBinaryWriteBuffer::~SkBinaryWriteBuffer() {}
+
+bool SkBinaryWriteBuffer::usingInitialStorage() const {
+    return fWriter.usingInitialStorage();
 }
 
 void SkBinaryWriteBuffer::writeByteArray(const void* data, size_t size) {
@@ -125,9 +129,14 @@ size_t SkBinaryWriteBuffer::writeStream(SkStream* stream, size_t length) {
     return bytesWritten;
 }
 
-bool SkBinaryWriteBuffer::writeToStream(SkWStream* stream) {
+bool SkBinaryWriteBuffer::writeToStream(SkWStream* stream) const {
     return fWriter.writeToStream(stream);
 }
+
+
+
+
+
 
 void SkBinaryWriteBuffer::writeImage(const SkImage* image) {
     if (fDeduper) {
@@ -135,43 +144,25 @@ void SkBinaryWriteBuffer::writeImage(const SkImage* image) {
         return;
     }
 
-    this->writeInt(image->width());
-    this->writeInt(image->height());
-
-    auto write_data = [this](sk_sp<SkData> data, int sign) {
-        size_t size = data ? data->size() : 0;
-        if (!sk_64_isS32(size)) {
-            size = 0;   
-        }
-        if (size) {
-            this->write32(SkToS32(size) * sign);
-            this->writePad32(data->data(), size);    
-            this->write32(0);   
-            this->write32(0);   
-        } else {
-            this->write32(0);   
-        }
-    };
-
-    
-
-
-
-
+    const SkIRect bounds = SkImage_getSubset(image);
+    this->writeIRect(bounds);
 
     sk_sp<SkData> data;
-    int sign = 1;   
     if (fProcs.fImageProc) {
         data = fProcs.fImageProc(const_cast<SkImage*>(image), fProcs.fImageCtx);
-        sign = -1;  
     }
-    
-    
     if (!data) {
         data = image->encodeToData();
-        sign = 1;
     }
-    write_data(std::move(data), sign);
+
+    size_t size = data ? data->size() : 0;
+    if (!SkTFitsIn<int32_t>(size)) {
+        size = 0;   
+    }
+    this->write32(SkToS32(size));   
+    if (size) {
+        this->writePad32(data->data(), size);
+    }
 }
 
 void SkBinaryWriteBuffer::writeTypeface(SkTypeface* obj) {
@@ -191,7 +182,7 @@ void SkBinaryWriteBuffer::writeTypeface(SkTypeface* obj) {
         auto data = fProcs.fTypefaceProc(obj, fProcs.fTypefaceCtx);
         if (data) {
             size_t size = data->size();
-            if (!sk_64_isS32(size)) {
+            if (!SkTFitsIn<int32_t>(size)) {
                 size = 0;               
             }
             int32_t ssize = SkToS32(size);
@@ -207,17 +198,15 @@ void SkBinaryWriteBuffer::writeTypeface(SkTypeface* obj) {
 }
 
 void SkBinaryWriteBuffer::writePaint(const SkPaint& paint) {
-    paint.flatten(*this);
+    SkPaintPriv::Flatten(paint, *this);
 }
 
-SkFactorySet* SkBinaryWriteBuffer::setFactoryRecorder(SkFactorySet* rec) {
-    SkRefCnt_SafeAssign(fFactorySet, rec);
-    return rec;
+void SkBinaryWriteBuffer::setFactoryRecorder(sk_sp<SkFactorySet> rec) {
+    fFactorySet = std::move(rec);
 }
 
-SkRefCntSet* SkBinaryWriteBuffer::setTypefaceRecorder(SkRefCntSet* rec) {
-    SkRefCnt_SafeAssign(fTFSet, rec);
-    return rec;
+void SkBinaryWriteBuffer::setTypefaceRecorder(sk_sp<SkRefCntSet> rec) {
+    fTFSet = std::move(rec);
 }
 
 void SkBinaryWriteBuffer::writeFlattenable(const SkFlattenable* flattenable) {

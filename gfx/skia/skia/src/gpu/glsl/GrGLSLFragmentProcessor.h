@@ -30,7 +30,6 @@ public:
 
     using UniformHandle      = GrGLSLUniformHandler::UniformHandle;
     using SamplerHandle      = GrGLSLUniformHandler::SamplerHandle;
-    using TexelBufferHandle  = GrGLSLUniformHandler::TexelBufferHandle;
 
 private:
     
@@ -39,7 +38,7 @@ private:
 
 
 
-    template <typename T, typename FPBASE, int (FPBASE::*COUNT)() const>
+    template <typename T, int (GrFragmentProcessor::*COUNT)() const>
     class BuilderInputProvider {
     public:
         BuilderInputProvider(const GrFragmentProcessor* fp, const T* ts) : fFP(fp) , fTs(ts) {}
@@ -48,6 +47,8 @@ private:
             SkASSERT(i >= 0 && i < (fFP->*COUNT)());
             return fTs[i];
         }
+
+        int count() const { return (fFP->*COUNT)(); }
 
         BuilderInputProvider childInputs(int childIdx) const {
             const GrFragmentProcessor* child = &fFP->childProcessor(childIdx);
@@ -68,16 +69,12 @@ private:
     };
 
 public:
-    using TransformedCoordVars = BuilderInputProvider<GrShaderVar, GrFragmentProcessor,
-                                                      &GrFragmentProcessor::numCoordTransforms>;
-    using TextureSamplers = BuilderInputProvider<SamplerHandle, GrResourceIOProcessor,
-                                                 &GrResourceIOProcessor::numTextureSamplers>;
-    using TexelBuffers = BuilderInputProvider<TexelBufferHandle, GrResourceIOProcessor,
-                                                &GrResourceIOProcessor::numBuffers>;
+    using TransformedCoordVars =
+            BuilderInputProvider<GrShaderVar, &GrFragmentProcessor::numCoordTransforms>;
+    using TextureSamplers =
+            BuilderInputProvider<SamplerHandle, &GrFragmentProcessor::numTextureSamplers>;
 
     
-
-
 
 
 
@@ -108,17 +105,15 @@ public:
                  const char* outputColor,
                  const char* inputColor,
                  const TransformedCoordVars& transformedCoordVars,
-                 const TextureSamplers& textureSamplers,
-                 const TexelBuffers& texelBuffers)
+                 const TextureSamplers& textureSamplers)
                 : fFragBuilder(fragBuilder)
                 , fUniformHandler(uniformHandler)
                 , fShaderCaps(caps)
                 , fFp(fp)
                 , fOutputColor(outputColor)
-                , fInputColor(inputColor)
+                , fInputColor(inputColor ? inputColor : "half4(1.0)")
                 , fTransformedCoords(transformedCoordVars)
-                , fTexSamplers(textureSamplers)
-                , fTexelBuffers(texelBuffers) {}
+                , fTexSamplers(textureSamplers) {}
         GrGLSLFPFragmentBuilder* fFragBuilder;
         GrGLSLUniformHandler* fUniformHandler;
         const GrShaderCaps* fShaderCaps;
@@ -127,11 +122,12 @@ public:
         const char* fInputColor;
         const TransformedCoordVars& fTransformedCoords;
         const TextureSamplers& fTexSamplers;
-        const TexelBuffers& fTexelBuffers;
     };
 
     virtual void emitCode(EmitArgs&) = 0;
 
+    
+    
     void setData(const GrGLSLProgramDataManager& pdman, const GrFragmentProcessor& processor);
 
     int numChildProcessors() const { return fChildProcessors.count(); }
@@ -140,8 +136,9 @@ public:
         return fChildProcessors[index];
     }
 
+    
     inline void emitChild(int childIndex, SkString* outputColor, EmitArgs& parentArgs) {
-        this->emitChild(childIndex, "half4(1.0)", outputColor, parentArgs);
+        this->emitChild(childIndex, nullptr, outputColor, parentArgs);
     }
 
     
@@ -155,8 +152,11 @@ public:
     void emitChild(int childIndex, const char* inputColor, SkString* outputColor,
                    EmitArgs& parentArgs);
 
+    
+    
     inline void emitChild(int childIndex, EmitArgs& args) {
-        this->emitChild(childIndex, "half4(1.0)", args);
+        
+        this->emitChild(childIndex, (const char*) nullptr, args);
     }
 
     
@@ -169,9 +169,9 @@ public:
     class Iter : public SkNoncopyable {
     public:
         explicit Iter(GrGLSLFragmentProcessor* fp) { fFPStack.push_back(fp); }
-        explicit Iter(GrGLSLFragmentProcessor* fps[], int cnt) {
+        explicit Iter(std::unique_ptr<GrGLSLFragmentProcessor> fps[], int cnt) {
             for (int i = cnt - 1; i >= 0; --i) {
-                fFPStack.push_back(fps[i]);
+                fFPStack.push_back(fps[i].get());
             }
         }
         GrGLSLFragmentProcessor* next();

@@ -107,7 +107,20 @@ private:
         int      fIndex;
         SkCodecAnimation::DisposalMethod fDisposalMethod;
 
+        
+        
+        
+        
+        enum class OnInit {
+            
+            
+            kRestoreIfNecessary,
+            
+            kNoRestore,
+        };
+
         Frame();
+        bool init(const SkImageInfo& info, OnInit);
         bool copyTo(Frame*) const;
     };
 
@@ -122,7 +135,8 @@ private:
 
     bool                            fFinished;
     int                             fCurrentFrameDuration;
-    Frame                           fActiveFrame;
+    Frame                           fDisplayFrame;
+    Frame                           fDecodingFrame;
     Frame                           fRestoreFrame;
     int                             fRepetitionCount;
     int                             fRepetitionsCompleted;

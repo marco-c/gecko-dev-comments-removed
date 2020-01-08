@@ -5,6 +5,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #ifndef SkImage_DEFINED
 #define SkImage_DEFINED
 
@@ -33,6 +43,8 @@ class GrContext;
 class GrContextThreadSafeProxy;
 class GrTexture;
 
+struct SkYUVAIndex;
+
 
 
 
@@ -51,7 +63,9 @@ class GrTexture;
 
 class SK_API SkImage : public SkRefCnt {
 public:
-    typedef SkImageInfo Info;
+
+    
+
     typedef void* ReleaseContext;
 
     
@@ -83,7 +97,11 @@ public:
 
 
 
-    static sk_sp<SkImage> MakeRasterData(const Info& info, sk_sp<SkData> pixels, size_t rowBytes);
+    static sk_sp<SkImage> MakeRasterData(const SkImageInfo& info, sk_sp<SkData> pixels,
+                                         size_t rowBytes);
+
+    
+
 
     typedef void (*RasterReleaseProc)(const void* pixels, ReleaseContext);
 
@@ -158,30 +176,13 @@ public:
 
     static sk_sp<SkImage> MakeFromEncoded(sk_sp<SkData> encoded, const SkIRect* subset = nullptr);
 
+    
+
     typedef void (*TextureReleaseProc)(ReleaseContext releaseContext);
 
     
 
-    static sk_sp<SkImage> MakeFromTexture(GrContext* context,
-                                          const GrBackendTexture& backendTexture,
-                                          GrSurfaceOrigin origin,
-                                          SkAlphaType alphaType,
-                                          sk_sp<SkColorSpace> colorSpace) {
-        return MakeFromTexture(context, backendTexture, origin, alphaType, colorSpace, nullptr,
-                               nullptr);
-    }
 
-    
-
-    static sk_sp<SkImage> MakeFromTexture(GrContext* context,
-                                          const GrBackendTexture& backendTexture,
-                                          GrSurfaceOrigin origin,
-                                          SkAlphaType alphaType,
-                                          sk_sp<SkColorSpace> colorSpace,
-                                          TextureReleaseProc textureReleaseProc,
-                                          ReleaseContext releaseContext);
-
-    
 
 
 
@@ -230,6 +231,8 @@ public:
 
 
 
+
+
     static sk_sp<SkImage> MakeFromTexture(GrContext* context,
                                           const GrBackendTexture& backendTexture,
                                           GrSurfaceOrigin origin,
@@ -263,10 +266,13 @@ public:
 
 
 
+
     static sk_sp<SkImage> MakeCrossContextFromEncoded(GrContext* context, sk_sp<SkData> data,
-                                                      bool buildMips, SkColorSpace* dstColorSpace);
+                                                      bool buildMips, SkColorSpace* dstColorSpace,
+                                                      bool limitToMaxTextureSize = false);
 
     
+
 
 
 
@@ -291,17 +297,12 @@ public:
 
 
     static sk_sp<SkImage> MakeCrossContextFromPixmap(GrContext* context, const SkPixmap& pixmap,
-                                                     bool buildMips, SkColorSpace* dstColorSpace);
+                                                     bool buildMips, SkColorSpace* dstColorSpace,
+                                                     bool limitToMaxTextureSize = false);
 
     
 
-    static sk_sp<SkImage> MakeFromAdoptedTexture(GrContext* context,
-                                                 const GrBackendTexture& backendTexture,
-                                                 GrSurfaceOrigin surfaceOrigin,
-                                                 SkAlphaType alphaType = kPremul_SkAlphaType,
-                                                 sk_sp<SkColorSpace> colorSpace = nullptr);
 
-    
 
 
 
@@ -341,15 +342,81 @@ public:
 
 
 
-    static sk_sp<SkImage> MakeFromYUVTexturesCopy(GrContext* context, SkYUVColorSpace yuvColorSpace,
-                                                  const GrBackendObject yuvTextureHandles[3],
-                                                  const SkISize yuvSizes[3],
-                                                  GrSurfaceOrigin surfaceOrigin,
-                                                  sk_sp<SkColorSpace> colorSpace = nullptr);
+
+
+    static sk_sp<SkImage> MakeFromYUVATexturesCopy(GrContext* context,
+                                                   SkYUVColorSpace yuvColorSpace,
+                                                   const GrBackendTexture yuvaTextures[],
+                                                   const SkYUVAIndex yuvaIndices[4],
+                                                   SkISize imageSize,
+                                                   GrSurfaceOrigin imageOrigin,
+                                                   sk_sp<SkColorSpace> imageColorSpace = nullptr);
 
     
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkImage> MakeFromYUVATexturesCopyWithExternalBackend(
+            GrContext* context,
+            SkYUVColorSpace yuvColorSpace,
+            const GrBackendTexture yuvaTextures[],
+            const SkYUVAIndex yuvaIndices[4],
+            SkISize imageSize,
+            GrSurfaceOrigin imageOrigin,
+            const GrBackendTexture& backendTexture,
+            sk_sp<SkColorSpace> imageColorSpace = nullptr);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkImage> MakeFromYUVTexturesCopy(GrContext* context, SkYUVColorSpace yuvColorSpace,
+                                                  const GrBackendTexture yuvTextures[3],
+                                                  GrSurfaceOrigin imageOrigin,
+                                                  sk_sp<SkColorSpace> imageColorSpace = nullptr);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkImage> MakeFromYUVTexturesCopyWithExternalBackend(
+            GrContext* context, SkYUVColorSpace yuvColorSpace,
+            const GrBackendTexture yuvTextures[3], GrSurfaceOrigin imageOrigin,
+            const GrBackendTexture& backendTexture, sk_sp<SkColorSpace> imageColorSpace = nullptr);
+
+    
 
 
 
@@ -366,31 +433,9 @@ public:
 
     static sk_sp<SkImage> MakeFromNV12TexturesCopy(GrContext* context,
                                                    SkYUVColorSpace yuvColorSpace,
-                                                   const GrBackendObject nv12TextureHandles[2],
-                                                   const SkISize nv12Sizes[2],
-                                                   GrSurfaceOrigin surfaceOrigin,
-                                                   sk_sp<SkColorSpace> colorSpace = nullptr);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static sk_sp<SkImage> MakeFromYUVTexturesCopy(GrContext* context, SkYUVColorSpace yuvColorSpace,
-                                                  const GrBackendTexture yuvTextureHandles[3],
-                                                  const SkISize yuvSizes[3],
-                                                  GrSurfaceOrigin surfaceOrigin,
-                                                  sk_sp<SkColorSpace> colorSpace = nullptr);
+                                                   const GrBackendTexture nv12Textures[2],
+                                                   GrSurfaceOrigin imageOrigin,
+                                                   sk_sp<SkColorSpace> imageColorSpace = nullptr);
 
     
 
@@ -408,13 +453,13 @@ public:
 
 
 
-
-    static sk_sp<SkImage> MakeFromNV12TexturesCopy(GrContext* context,
-                                                   SkYUVColorSpace yuvColorSpace,
-                                                   const GrBackendTexture nv12TextureHandles[2],
-                                                   const SkISize nv12Sizes[2],
-                                                   GrSurfaceOrigin surfaceOrigin,
-                                                   sk_sp<SkColorSpace> colorSpace = nullptr);
+    static sk_sp<SkImage> MakeFromNV12TexturesCopyWithExternalBackend(
+            GrContext* context,
+            SkYUVColorSpace yuvColorSpace,
+            const GrBackendTexture nv12Textures[2],
+            GrSurfaceOrigin imageOrigin,
+            const GrBackendTexture& backendTexture,
+            sk_sp<SkColorSpace> imageColorSpace = nullptr);
 
     enum class BitDepth {
         kU8,  
@@ -453,9 +498,13 @@ public:
 
 
 
-    static sk_sp<SkImage> MakeFromAHardwareBuffer(AHardwareBuffer* hardwareBuffer,
-                                                 SkAlphaType alphaType = kPremul_SkAlphaType,
-                                                 sk_sp<SkColorSpace> colorSpace = nullptr);
+
+
+    static sk_sp<SkImage> MakeFromAHardwareBuffer(
+            AHardwareBuffer* hardwareBuffer,
+            SkAlphaType alphaType = kPremul_SkAlphaType,
+            sk_sp<SkColorSpace> colorSpace = nullptr,
+            GrSurfaceOrigin surfaceOrigin = kTopLeft_GrSurfaceOrigin);
 #endif
 
     
@@ -498,7 +547,14 @@ public:
 
 
 
+
     SkAlphaType alphaType() const;
+
+    
+
+
+
+    SkColorType colorType() const;
 
     
 
@@ -607,8 +663,11 @@ public:
 
 
 
-    GrBackendObject getTextureHandle(bool flushPendingGrContextIO,
-                                     GrSurfaceOrigin* origin = nullptr) const;
+
+
+
+    GrBackendTexture getBackendTexture(bool flushPendingGrContextIO,
+                                       GrSurfaceOrigin* origin = nullptr) const;
 
     
 
@@ -624,9 +683,7 @@ public:
 
     enum CachingHint {
         kAllow_CachingHint,    
-
-        
-        kDisallow_CachingHint,
+        kDisallow_CachingHint, 
     };
 
     
@@ -778,14 +835,6 @@ public:
 
 
 
-    const char* toString(SkString* string) const;
-
-    
-
-
-
-
-
 
 
 
@@ -802,7 +851,11 @@ public:
 
 
 
-    sk_sp<SkImage> makeTextureImage(GrContext* context, SkColorSpace* dstColorSpace) const;
+
+
+
+    sk_sp<SkImage> makeTextureImage(GrContext* context, SkColorSpace* dstColorSpace,
+                                    GrMipMapped mipMapped = GrMipMapped::kNo) const;
 
     
 
@@ -849,6 +902,9 @@ public:
     sk_sp<SkImage> makeWithFilter(const SkImageFilter* filter, const SkIRect& subset,
                                   const SkIRect& clipBounds, SkIRect* outSubset,
                                   SkIPoint* offset) const;
+
+    
+
 
     typedef std::function<void(GrBackendTexture)> BackendTextureReleaseProc;
 
@@ -910,20 +966,7 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-    sk_sp<SkImage> makeColorSpace(sk_sp<SkColorSpace> target,
-                                  SkTransferFunctionBehavior premulBehavior) const;
+    sk_sp<SkImage> makeColorSpace(sk_sp<SkColorSpace> target) const;
 
 private:
     SkImage(int width, int height, uint32_t uniqueID);

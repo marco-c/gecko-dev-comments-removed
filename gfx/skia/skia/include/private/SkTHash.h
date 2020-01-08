@@ -11,6 +11,7 @@
 #include "SkChecksum.h"
 #include "SkTypes.h"
 #include "SkTemplates.h"
+#include <new>
 
 
 
@@ -22,15 +23,24 @@
 
 
 template <typename T, typename K, typename Traits = T>
-class SkTHashTable : SkNoncopyable {
+class SkTHashTable {
 public:
     SkTHashTable() : fCount(0), fCapacity(0) {}
+    SkTHashTable(SkTHashTable&& other)
+        : fCount(other.fCount)
+        , fCapacity(other.fCapacity)
+        , fSlots(std::move(other.fSlots)) { other.fCount = other.fCapacity = 0; }
+
+    SkTHashTable& operator=(SkTHashTable&& other) {
+        if (this != &other) {
+            this->~SkTHashTable();
+            new (this) SkTHashTable(std::move(other));
+        }
+        return *this;
+    }
 
     
-    void reset() {
-        this->~SkTHashTable();
-        new (this) SkTHashTable;
-    }
+    void reset() { *this = SkTHashTable(); }
 
     
     int count() const { return fCount; }
@@ -173,8 +183,8 @@ private:
 
         fCount = 0;
         fCapacity = capacity;
-        SkAutoTArray<Slot> oldSlots(capacity);
-        oldSlots.swap(fSlots);
+        SkAutoTArray<Slot> oldSlots = std::move(fSlots);
+        fSlots = SkAutoTArray<Slot>(capacity);
 
         for (int i = 0; i < oldCapacity; i++) {
             Slot& s = oldSlots[i];
@@ -214,14 +224,19 @@ private:
 
     int fCount, fCapacity;
     SkAutoTArray<Slot> fSlots;
+
+    SkTHashTable(const SkTHashTable&) = delete;
+    SkTHashTable& operator=(const SkTHashTable&) = delete;
 };
 
 
 
 template <typename K, typename V, typename HashK = SkGoodHash>
-class SkTHashMap : SkNoncopyable {
+class SkTHashMap {
 public:
     SkTHashMap() {}
+    SkTHashMap(SkTHashMap&&) = default;
+    SkTHashMap& operator=(SkTHashMap&&) = default;
 
     
     void reset() { fTable.reset(); }
@@ -277,13 +292,18 @@ private:
     };
 
     SkTHashTable<Pair, K> fTable;
+
+    SkTHashMap(const SkTHashMap&) = delete;
+    SkTHashMap& operator=(const SkTHashMap&) = delete;
 };
 
 
 template <typename T, typename HashT = SkGoodHash>
-class SkTHashSet : SkNoncopyable {
+class SkTHashSet {
 public:
     SkTHashSet() {}
+    SkTHashSet(SkTHashSet&&) = default;
+    SkTHashSet& operator=(SkTHashSet&&) = default;
 
     
     void reset() { fTable.reset(); }
@@ -322,6 +342,9 @@ private:
         static uint32_t Hash(const T& item) { return HashT()(item); }
     };
     SkTHashTable<T, T, Traits> fTable;
+
+    SkTHashSet(const SkTHashSet&) = delete;
+    SkTHashSet& operator=(const SkTHashSet&) = delete;
 };
 
 #endif

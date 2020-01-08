@@ -19,7 +19,6 @@
 #include "SkFilterQuality.h"
 #include "SkImageInfo.h"
 #include "SkMatrix.h"
-#include "SkPM4f.h"
 #include "SkVertices.h"
 
 class GrCaps;
@@ -59,30 +58,11 @@ static inline GrColor SkColorToUnpremulGrColor(SkColor c) {
 }
 
 
-GrColor4f SkColorToPremulGrColor4f(SkColor, const GrColorSpaceInfo&);
-GrColor4f SkColorToPremulGrColor4fLegacy(SkColor);
-GrColor4f SkColorToUnpremulGrColor4f(SkColor, const GrColorSpaceInfo&);
+
+GrColor4f SkColor4fToUnpremulGrColor4f(SkColor4f, const GrColorSpaceInfo&);
 
 
-static inline GrColor SkColorAlphaToGrColor(SkColor c) {
-    U8CPU a = SkColorGetA(c);
-    return GrColorPackRGBA(a, a, a, a);
-}
-
-
-
-static inline SkPM4f GrColor4fToSkPM4f(const GrColor4f& c) {
-    SkPM4f pm4f;
-    pm4f.fVec[SkPM4f::R] = c.fRGBA[0];
-    pm4f.fVec[SkPM4f::G] = c.fRGBA[1];
-    pm4f.fVec[SkPM4f::B] = c.fRGBA[2];
-    pm4f.fVec[SkPM4f::A] = c.fRGBA[3];
-    return pm4f;
-}
-
-static inline GrColor4f SkPM4fToGrColor4f(const SkPM4f& c) {
-    return GrColor4f{c.r(), c.g(), c.b(), c.a()};
-}
+SkPMColor4f SkColorToPMColor4f(SkColor, const GrColorSpaceInfo&);
 
 
 
@@ -143,9 +123,9 @@ bool SkPaintToGrPaintWithTexture(GrContext* context,
 
 
 
-GrSurfaceDesc GrImageInfoToSurfaceDesc(const SkImageInfo&, const GrCaps&);
-GrPixelConfig SkImageInfo2GrPixelConfig(const SkColorType, SkColorSpace*, const GrCaps& caps);
-GrPixelConfig SkImageInfo2GrPixelConfig(const SkImageInfo& info, const GrCaps& caps);
+GrSurfaceDesc GrImageInfoToSurfaceDesc(const SkImageInfo&);
+GrPixelConfig SkColorType2GrPixelConfig(const SkColorType);
+GrPixelConfig SkImageInfo2GrPixelConfig(const SkImageInfo& info);
 
 bool GrPixelConfigToColorType(GrPixelConfig, SkColorType*);
 
@@ -164,7 +144,7 @@ static inline GrPrimitiveType SkVertexModeToGrPrimitiveType(SkVertices::VertexMo
         case SkVertices::kTriangleStrip_VertexMode:
             return GrPrimitiveType::kTriangleStrip;
         case SkVertices::kTriangleFan_VertexMode:
-            return GrPrimitiveType::kTriangleFan;
+            break;
     }
     SK_ABORT("Invalid mode");
     return GrPrimitiveType::kPoints;
@@ -183,8 +163,6 @@ GR_STATIC_ASSERT((int)kISA_GrBlendCoeff == (int)SkBlendModeCoeff::kISA);
 GR_STATIC_ASSERT((int)kDA_GrBlendCoeff == (int)SkBlendModeCoeff::kDA);
 GR_STATIC_ASSERT((int)kIDA_GrBlendCoeff == (int)SkBlendModeCoeff::kIDA);
 
-
-#define SkXfermodeCoeffToGrBlendCoeff(X) ((GrBlendCoeff)(X))
 
 
 
@@ -206,8 +184,7 @@ sk_sp<GrTextureProxy> GrRefCachedBitmapTextureProxy(GrContext*,
 
 
 
-sk_sp<GrTextureProxy> GrUploadBitmapToTextureProxy(GrProxyProvider*, const SkBitmap&,
-                                                   SkColorSpace* dstColorSpace);
+sk_sp<GrTextureProxy> GrUploadBitmapToTextureProxy(GrProxyProvider*, const SkBitmap&);
 
 
 
@@ -244,14 +221,7 @@ void GrMakeKeyFromImageID(GrUniqueKey* key, uint32_t imageID, const SkIRect& ima
 
 
 
-void GrInstallBitmapUniqueKeyInvalidator(const GrUniqueKey& key, SkPixelRef* pixelRef);
-
-
-
-
-
-
-
-GrPixelConfig GrRenderableConfigForColorSpace(const SkColorSpace*);
+void GrInstallBitmapUniqueKeyInvalidator(const GrUniqueKey& key, uint32_t contextUniqueID,
+                                         SkPixelRef* pixelRef);
 
 #endif

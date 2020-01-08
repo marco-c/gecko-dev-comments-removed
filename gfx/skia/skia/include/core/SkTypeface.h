@@ -8,14 +8,16 @@
 #ifndef SkTypeface_DEFINED
 #define SkTypeface_DEFINED
 
-#include "../private/SkBitmaskEnum.h"
+#include "../private/SkNoncopyable.h"
 #include "../private/SkOnce.h"
 #include "../private/SkWeakRefCnt.h"
 #include "SkFontArguments.h"
+#include "SkFontParameters.h"
 #include "SkFontStyle.h"
 #include "SkRect.h"
 #include "SkString.h"
 
+class SkData;
 class SkDescriptor;
 class SkFontData;
 class SkFontDescriptor;
@@ -75,6 +77,20 @@ public:
     
 
 
+
+
+
+
+
+
+
+
+    int getVariationDesignParameters(SkFontParameters::Variation::Axis parameters[],
+                                     int parameterCount) const;
+
+    
+
+
     SkFontID uniqueID() const { return fUniqueID; }
 
     
@@ -111,7 +127,12 @@ public:
 
 
 
-    static sk_sp<SkTypeface> MakeFromStream(SkStreamAsset* stream, int index = 0);
+    static sk_sp<SkTypeface> MakeFromStream(std::unique_ptr<SkStreamAsset> stream, int index = 0);
+
+    
+
+
+    static sk_sp<SkTypeface> MakeFromData(sk_sp<SkData>, int index = 0);
 
     
 
@@ -121,7 +142,32 @@ public:
     
 
 
-    void serialize(SkWStream*) const;
+
+
+
+    sk_sp<SkTypeface> makeClone(const SkFontArguments&) const;
+
+    
+
+
+
+
+    enum class SerializeBehavior {
+        kDoIncludeData,
+        kDontIncludeData,
+        kIncludeDataIfLocal,
+    };
+
+    
+
+
+    void serialize(SkWStream*, SerializeBehavior = SerializeBehavior::kIncludeDataIfLocal) const;
+
+    
+
+
+
+    sk_sp<SkData> serialize(SerializeBehavior = SerializeBehavior::kIncludeDataIfLocal) const;
 
     
 
@@ -308,6 +354,8 @@ protected:
     SkTypeface(const SkFontStyle& style, bool isFixedPitch = false);
     virtual ~SkTypeface();
 
+    virtual sk_sp<SkTypeface> onMakeClone(const SkFontArguments&) const;
+
     
     void setIsFixedPitch(bool isFixedPitch) { fIsFixedPitch = isFixedPitch; }
     
@@ -316,9 +364,19 @@ protected:
     virtual SkScalerContext* onCreateScalerContext(const SkScalerContextEffects&,
                                                    const SkDescriptor*) const = 0;
     virtual void onFilterRec(SkScalerContextRec*) const = 0;
+    friend class SkScalerContext;  
 
     
     virtual std::unique_ptr<SkAdvancedTypefaceMetrics> onGetAdvancedMetrics() const;
+    
+    
+    
+    virtual void getPostScriptGlyphNames(SkString*) const {}
+
+    
+    
+    
+    virtual void getGlyphToUnicodeMap(SkUnichar* dstArray) const;
 
     virtual SkStreamAsset* onOpenStream(int* ttcIndex) const = 0;
     
@@ -327,6 +385,9 @@ protected:
     virtual int onGetVariationDesignPosition(
         SkFontArguments::VariationPosition::Coordinate coordinates[],
         int coordinateCount) const = 0;
+
+    virtual int onGetVariationDesignParameters(
+        SkFontParameters::Variation::Axis parameters[], int parameterCount) const;
 
     virtual void onGetFontDescriptor(SkFontDescriptor*, bool* isLocal) const = 0;
 
@@ -371,10 +432,7 @@ private:
     };
     static SkFontStyle FromOldStyle(Style oldStyle);
     static SkTypeface* GetDefaultTypeface(Style style = SkTypeface::kNormal);
-    friend class GrPathRendering;  
-    friend class SkGlyphCache;     
-    friend class SkPaint;          
-    friend class SkScalerContext;  
+    friend class SkPaintPriv;      
 
 private:
     SkFontID            fUniqueID;

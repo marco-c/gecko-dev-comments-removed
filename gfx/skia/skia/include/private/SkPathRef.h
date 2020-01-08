@@ -5,18 +5,21 @@
 
 
 
-
 #ifndef SkPathRef_DEFINED
 #define SkPathRef_DEFINED
 
-#include "../private/SkAtomics.h"
-#include "../private/SkTDArray.h"
+#include "SkAtomics.h"
 #include "SkMatrix.h"
+#include "SkMutex.h"
 #include "SkPoint.h"
 #include "SkRRect.h"
 #include "SkRect.h"
 #include "SkRefCnt.h"
+#include "SkTDArray.h"
 #include "SkTemplates.h"
+#include "SkTo.h"
+
+#include <limits>
 
 class SkRBuffer;
 class SkWBuffer;
@@ -306,12 +309,12 @@ public:
 
     uint32_t genID() const;
 
-    struct GenIDChangeListener {
+    struct GenIDChangeListener : SkRefCnt {
         virtual ~GenIDChangeListener() {}
         virtual void onChange() = 0;
     };
 
-    void addGenIDChangeListener(GenIDChangeListener* listener);
+    void addGenIDChangeListener(sk_sp<GenIDChangeListener>);  
 
     bool isValid() const;
     SkDEBUGCODE(void validate() const { SkASSERT(this->isValid()); } )
@@ -405,7 +408,7 @@ private:
             fFreeSpace = 0;
             fVerbCnt = 0;
             fPointCnt = 0;
-            this->makeSpace(minSize);
+            this->makeSpace(minSize, true);
             fVerbCnt = verbCount;
             fPointCnt = pointCount;
             fFreeSpace -= newSize;
@@ -437,22 +440,26 @@ private:
 
 
 
-    void makeSpace(size_t size) {
+    void makeSpace(size_t size, bool exact = false) {
         SkDEBUGCODE(this->validate();)
         if (size <= fFreeSpace) {
             return;
         }
         size_t growSize = size - fFreeSpace;
         size_t oldSize = this->currSize();
-        
-        growSize = (growSize + 7) & ~static_cast<size_t>(7);
-        
-        if (growSize < oldSize) {
-            growSize = oldSize;
+
+        if (!exact) {
+            
+            growSize = (growSize + 7) & ~static_cast<size_t>(7);
+            
+            if (growSize < oldSize) {
+                growSize = oldSize;
+            }
+            if (growSize < kMinSize) {
+                growSize = kMinSize;
+            }
         }
-        if (growSize < kMinSize) {
-            growSize = kMinSize;
-        }
+
         constexpr size_t maxSize = std::numeric_limits<size_t>::max();
         size_t newSize;
         if (growSize <= maxSize - oldSize) {
@@ -495,13 +502,13 @@ private:
     void setIsOval(bool isOval, bool isCCW, unsigned start) {
         fIsOval = isOval;
         fRRectOrOvalIsCCW = isCCW;
-        fRRectOrOvalStartIdx = start;
+        fRRectOrOvalStartIdx = SkToU8(start);
     }
 
     void setIsRRect(bool isRRect, bool isCCW, unsigned start) {
         fIsRRect = isRRect;
         fRRectOrOvalIsCCW = isCCW;
-        fRRectOrOvalStartIdx = start;
+        fRRectOrOvalStartIdx = SkToU8(start);
     }
 
     
@@ -538,21 +545,23 @@ private:
     mutable uint32_t    fGenerationID;
     SkDEBUGCODE(int32_t fEditorsAttached;) 
 
+    SkMutex                         fGenIDChangeListenersMutex;
     SkTDArray<GenIDChangeListener*> fGenIDChangeListeners;  
 
     mutable uint8_t  fBoundsIsDirty;
-    mutable SkBool8  fIsFinite;    
+    mutable bool     fIsFinite;    
 
-    SkBool8  fIsOval;
-    SkBool8  fIsRRect;
+    bool     fIsOval;
+    bool     fIsRRect;
     
     
-    SkBool8  fRRectOrOvalIsCCW;
+    bool     fRRectOrOvalIsCCW;
     uint8_t  fRRectOrOvalStartIdx;
     uint8_t  fSegmentMask;
 
     friend class PathRefTest_Private;
     friend class ForceIsRRect_Private; 
+    friend class SkPath;
 };
 
 #endif

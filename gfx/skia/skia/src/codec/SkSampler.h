@@ -65,19 +65,14 @@ public:
 
 
 
-
-
-
-
-
     static void Fill(const SkImageInfo& info, void* dst, size_t rowBytes,
-            uint64_t colorOrIndex, SkCodec::ZeroInitialized zeroInit);
+                     SkCodec::ZeroInitialized zeroInit);
 
     
 
 
     virtual void fill(const SkImageInfo& info, void* dst, size_t rowBytes,
-            uint64_t colorOrIndex, SkCodec::ZeroInitialized zeroInit) {}
+                      SkCodec::ZeroInitialized zeroInit) {} 
 
     SkSampler()
         : fSampleY(1)

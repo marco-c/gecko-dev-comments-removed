@@ -8,16 +8,18 @@
 #ifndef GrCCAtlas_DEFINED
 #define GrCCAtlas_DEFINED
 
+#include "GrAllocator.h"
+#include "GrNonAtomicRef.h"
+#include "GrResourceKey.h"
+#include "GrTexture.h"
 #include "SkRefCnt.h"
 #include "SkSize.h"
 
-class GrCaps;
-class GrCCPathParser;
-class GrDrawOp;
 class GrOnFlushResourceProvider;
 class GrRenderTargetContext;
 class GrTextureProxy;
 struct SkIPoint16;
+struct SkIRect;
 
 
 
@@ -26,39 +28,133 @@ struct SkIPoint16;
 
 class GrCCAtlas {
 public:
-    using CoverageCountBatchID = int;
+    
+    static constexpr GrSurfaceOrigin kTextureOrigin = kTopLeft_GrSurfaceOrigin;
+    static constexpr int kPadding = 1;  
 
-    GrCCAtlas(const GrCaps&, int minSize);
+    
+    
+    struct Specs {
+        int fMaxPreferredTextureSize = 0;
+        int fMinTextureSize = 0;
+        int fMinWidth = 0;  
+        int fMinHeight = 0;  
+        int fApproxNumPixels = 0;
+
+        
+        void accountForSpace(int width, int height);
+    };
+
+    GrCCAtlas(GrPixelConfig, const Specs&, const GrCaps&);
     ~GrCCAtlas();
 
-    bool addRect(int devWidth, int devHeight, SkIPoint16* loc);
+    GrTextureProxy* textureProxy() const { return fTextureProxy.get(); }
+    int currentWidth() const { return fWidth; }
+    int currentHeight() const { return fHeight; }
+
+    
+    
+    bool addRect(const SkIRect& devIBounds, SkIVector* atlasOffset);
     const SkISize& drawBounds() { return fDrawBounds; }
 
-    void setCoverageCountBatchID(CoverageCountBatchID batchID) {
-        SkASSERT(!fCoverageCountBatchID);
-        SkASSERT(!fTextureProxy);
-        fCoverageCountBatchID = batchID;
-    }
+    
+    
+    void setFillBatchID(int id);
+    int getFillBatchID() const { return fFillBatchID; }
+    void setStrokeBatchID(int id);
+    int getStrokeBatchID() const { return fStrokeBatchID; }
 
-    sk_sp<GrRenderTargetContext> SK_WARN_UNUSED_RESULT finalize(GrOnFlushResourceProvider*,
-                                                                sk_sp<const GrCCPathParser>);
+    
+    
+    const GrUniqueKey& getOrAssignUniqueKey(GrOnFlushResourceProvider*);
+    const GrUniqueKey& uniqueKey() const { return fUniqueKey; }
 
-    GrTextureProxy* textureProxy() const { return fTextureProxy.get(); }
+    
+    
+    
+    
+    struct CachedAtlasInfo : public GrNonAtomicRef<CachedAtlasInfo> {
+        int fNumPathPixels = 0;
+        int fNumInvalidatedPathPixels = 0;
+        bool fIsPurgedFromResourceCache = false;
+    };
+    sk_sp<CachedAtlasInfo> refOrMakeCachedAtlasInfo();
+
+    
+    
+    
+    
+    
+    
+    
+    sk_sp<GrRenderTargetContext> makeRenderTargetContext(GrOnFlushResourceProvider*,
+                                                         sk_sp<GrTexture> backingTexture = nullptr);
 
 private:
     class Node;
-    class DrawCoverageCountOp;
 
     bool internalPlaceRect(int w, int h, SkIPoint16* loc);
 
-    const int fMaxAtlasSize;
-
+    const int fMaxTextureSize;
     int fWidth, fHeight;
     std::unique_ptr<Node> fTopNode;
     SkISize fDrawBounds = {0, 0};
 
-    CoverageCountBatchID fCoverageCountBatchID SkDEBUGCODE(= 0);
+    int fFillBatchID;
+    int fStrokeBatchID;
+
+    
+    
+    GrUniqueKey fUniqueKey;
+
+    sk_sp<CachedAtlasInfo> fCachedAtlasInfo;
     sk_sp<GrTextureProxy> fTextureProxy;
+    sk_sp<GrTexture> fBackingTexture;
 };
+
+
+
+
+
+class GrCCAtlasStack {
+public:
+    GrCCAtlasStack(GrPixelConfig pixelConfig, const GrCCAtlas::Specs& specs, const GrCaps* caps)
+            : fPixelConfig(pixelConfig), fSpecs(specs), fCaps(caps) {}
+
+    bool empty() const { return fAtlases.empty(); }
+    const GrCCAtlas& front() const { SkASSERT(!this->empty()); return fAtlases.front(); }
+    GrCCAtlas& front() { SkASSERT(!this->empty()); return fAtlases.front(); }
+    GrCCAtlas& current() { SkASSERT(!this->empty()); return fAtlases.back(); }
+
+    class Iter {
+    public:
+        Iter(GrCCAtlasStack& stack) : fImpl(&stack.fAtlases) {}
+        bool next() { return fImpl.next(); }
+        GrCCAtlas* operator->() const { return fImpl.get(); }
+    private:
+        typename GrTAllocator<GrCCAtlas>::Iter fImpl;
+    };
+
+    
+    
+    
+    
+    
+    
+    
+    GrCCAtlas* addRect(const SkIRect& devIBounds, SkIVector* devToAtlasOffset);
+
+private:
+    const GrPixelConfig fPixelConfig;
+    const GrCCAtlas::Specs fSpecs;
+    const GrCaps* const fCaps;
+    GrSTAllocator<4, GrCCAtlas> fAtlases;
+};
+
+inline void GrCCAtlas::Specs::accountForSpace(int width, int height) {
+    fMinWidth = SkTMax(width, fMinWidth);
+    fMinHeight = SkTMax(height, fMinHeight);
+    fApproxNumPixels += (width + kPadding) * (height + kPadding);
+}
 
 #endif

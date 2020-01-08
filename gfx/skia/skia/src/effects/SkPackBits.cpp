@@ -4,7 +4,11 @@
 
 
 
+
 #include "SkPackBits.h"
+#include "SkTo.h"
+
+#include <cstring>
 
 size_t SkPackBits::ComputeMaxSize8(size_t srcSize) {
     

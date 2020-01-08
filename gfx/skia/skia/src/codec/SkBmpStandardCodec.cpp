@@ -8,18 +8,19 @@
 #include "SkBmpStandardCodec.h"
 #include "SkCodecPriv.h"
 #include "SkColorData.h"
+#include "SkMathPriv.h"
 #include "SkStream.h"
 
 
 
 
 
-SkBmpStandardCodec::SkBmpStandardCodec(int width, int height, const SkEncodedInfo& info,
-                                       std::unique_ptr<SkStream> stream, uint16_t bitsPerPixel,
-                                       uint32_t numColors, uint32_t bytesPerColor, uint32_t offset,
+SkBmpStandardCodec::SkBmpStandardCodec(SkEncodedInfo&& info, std::unique_ptr<SkStream> stream,
+                                       uint16_t bitsPerPixel, uint32_t numColors,
+                                       uint32_t bytesPerColor, uint32_t offset,
                                        SkCodec::SkScanlineOrder rowOrder,
                                        bool isOpaque, bool inIco)
-    : INHERITED(width, height, info, std::move(stream), bitsPerPixel, rowOrder)
+    : INHERITED(std::move(info), std::move(stream), bitsPerPixel, rowOrder)
     , fColorTable(nullptr)
     , fNumColors(numColors)
     , fBytesPerColor(bytesPerColor)
@@ -27,7 +28,7 @@ SkBmpStandardCodec::SkBmpStandardCodec(int width, int height, const SkEncodedInf
     , fSwizzler(nullptr)
     , fIsOpaque(isOpaque)
     , fInIco(inIco)
-    , fAndMaskRowBytes(fInIco ? SkAlign4(compute_row_bytes(this->getInfo().width(), 1)) : 0)
+    , fAndMaskRowBytes(fInIco ? SkAlign4(compute_row_bytes(this->dimensions().width(), 1)) : 0)
 {}
 
 
@@ -41,7 +42,7 @@ SkCodec::Result SkBmpStandardCodec::onGetPixels(const SkImageInfo& dstInfo,
         
         return kUnimplemented;
     }
-    if (dstInfo.dimensions() != this->getInfo().dimensions()) {
+    if (dstInfo.dimensions() != this->dimensions()) {
         SkCodecPrintf("Error: scaling not supported.\n");
         return kInvalidScale;
     }
@@ -146,20 +147,33 @@ SkCodec::Result SkBmpStandardCodec::onGetPixels(const SkImageInfo& dstInfo,
     return true;
 }
 
+static SkEncodedInfo make_info(SkEncodedInfo::Color color,
+                               SkEncodedInfo::Alpha alpha, int bitsPerPixel) {
+    
+    return SkEncodedInfo::Make(0, 0, color, alpha, bitsPerPixel);
+}
+
+SkEncodedInfo SkBmpStandardCodec::swizzlerInfo() const {
+    const auto& info = this->getEncodedInfo();
+    if (fInIco) {
+        if (this->bitsPerPixel() <= 8) {
+            return make_info(SkEncodedInfo::kPalette_Color,
+                             info.alpha(), this->bitsPerPixel());
+        }
+        if (this->bitsPerPixel() == 24) {
+            return make_info(SkEncodedInfo::kBGR_Color,
+                             SkEncodedInfo::kOpaque_Alpha, 8);
+        }
+    }
+
+    return make_info(info.color(), info.alpha(), info.bitsPerComponent());
+}
+
 void SkBmpStandardCodec::initializeSwizzler(const SkImageInfo& dstInfo, const Options& opts) {
     
     
     
-    SkEncodedInfo encodedInfo = this->getEncodedInfo();
-    if (fInIco) {
-        if (this->bitsPerPixel() <= 8) {
-            encodedInfo = SkEncodedInfo::Make(SkEncodedInfo::kPalette_Color,
-                    encodedInfo.alpha(), this->bitsPerPixel());
-        } else if (this->bitsPerPixel() == 24) {
-            encodedInfo = SkEncodedInfo::Make(SkEncodedInfo::kBGR_Color,
-                    SkEncodedInfo::kOpaque_Alpha, 8);
-        }
-    }
+    SkEncodedInfo encodedInfo = this->swizzlerInfo();
 
     
     const SkPMColor* colorPtr = get_color_ptr(fColorTable.get());
@@ -251,7 +265,7 @@ int SkBmpStandardCodec::decodeRows(const SkImageInfo& dstInfo, void* dst, size_t
         const size_t currPosition = this->stream()->getPosition();
 
         
-        const int remainingScanlines = this->getInfo().height() - startScanline - height;
+        const int remainingScanlines = this->dimensions().height() - startScanline - height;
         const size_t bytesToSkip = remainingScanlines * this->srcRowBytes() +
                 startScanline * fAndMaskRowBytes;
         const size_t subStreamStartPosition = currPosition + bytesToSkip;
@@ -289,7 +303,7 @@ void SkBmpStandardCodec::decodeIcoMask(SkStream* stream, const SkImageInfo& dstI
     
     
     const int sampleX = fSwizzler->sampleX();
-    const int sampledWidth = get_scaled_dimension(this->getInfo().width(), sampleX);
+    const int sampledWidth = get_scaled_dimension(this->dimensions().width(), sampleX);
     const int srcStartX = get_start_coord(sampleX);
 
 
@@ -326,13 +340,4 @@ void SkBmpStandardCodec::decodeIcoMask(SkStream* stream, const SkImageInfo& dstI
             srcX += sampleX;
         }
     }
-}
-
-uint64_t SkBmpStandardCodec::onGetFillValue(const SkImageInfo& dstInfo) const {
-    const SkPMColor* colorPtr = get_color_ptr(fColorTable.get());
-    if (colorPtr) {
-        return get_color_table_fill_value(dstInfo.colorType(), dstInfo.alphaType(), colorPtr, 0,
-                                          this->colorXform(), false);
-    }
-    return INHERITED::onGetFillValue(dstInfo);
 }

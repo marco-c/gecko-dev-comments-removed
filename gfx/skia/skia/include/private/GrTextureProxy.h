@@ -37,6 +37,13 @@ public:
     GrMipMapped mipMapped() const;
 
     
+    
+    GrMipMapped proxyMipMapped() const { return fMipMapped; }
+
+    GrTextureType textureType() const { return fTextureType; }
+    
+    bool hasRestrictedSampling() const { return GrTextureTypeHasRestrictedSampling(fTextureType); }
+    
 
 
     const GrUniqueKey& getUniqueKey() const {
@@ -72,8 +79,12 @@ protected:
     friend class GrTextureProxyPriv;
 
     
-    GrTextureProxy(const GrSurfaceDesc& srcDesc, GrMipMapped, SkBackingFit, SkBudgeted,
-                   const void* srcData, size_t srcRowBytes, uint32_t flags);
+    GrTextureProxy(const GrSurfaceDesc& srcDesc, GrMipMapped, GrTextureType, SkBackingFit,
+                   SkBudgeted, const void* srcData, size_t srcRowBytes, GrInternalSurfaceFlags);
+
+    
+    GrTextureProxy(const GrSurfaceDesc& srcDesc, GrSurfaceOrigin, GrMipMapped, GrTextureType,
+                   SkBackingFit, SkBudgeted, GrInternalSurfaceFlags);
 
     
     
@@ -86,7 +97,8 @@ protected:
     
     
     GrTextureProxy(LazyInstantiateCallback&&, LazyInstantiationType, const GrSurfaceDesc& desc,
-                   GrMipMapped, SkBackingFit fit, SkBudgeted budgeted, uint32_t flags);
+                   GrSurfaceOrigin, GrMipMapped, GrTextureType, SkBackingFit, SkBudgeted,
+                   GrInternalSurfaceFlags);
 
     
     GrTextureProxy(sk_sp<GrSurface>, GrSurfaceOrigin);
@@ -96,7 +108,16 @@ protected:
     sk_sp<GrSurface> createSurface(GrResourceProvider*) const override;
 
 private:
-    GrMipMapped fMipMapped;
+    
+    
+    
+    
+    
+    
+    
+
+    GrMipMapped      fMipMapped;
+    GrTextureType    fTextureType;
 
     GrUniqueKey      fUniqueKey;
     GrProxyProvider* fProxyProvider; 
@@ -112,7 +133,7 @@ private:
     void setUniqueKey(GrProxyProvider*, const GrUniqueKey&);
     void clearUniqueKey();
 
-    SkDEBUGCODE(void validateLazySurface(const GrSurface*) override;)
+    SkDEBUGCODE(void onValidateSurface(const GrSurface*) override;)
 
     
     

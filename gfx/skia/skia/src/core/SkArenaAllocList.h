@@ -9,6 +9,7 @@
 #define SkArenaAllocList_DEFINED
 
 #include "SkArenaAlloc.h"
+#include "SkTypes.h"
 
 
 

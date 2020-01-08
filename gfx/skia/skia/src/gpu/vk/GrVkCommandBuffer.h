@@ -53,7 +53,7 @@ public:
 
     void bindDescriptorSets(const GrVkGpu* gpu,
                             GrVkPipelineState*,
-                            VkPipelineLayout layout,
+                            GrVkPipelineLayout* layout,
                             uint32_t firstSet,
                             uint32_t setCount,
                             const VkDescriptorSet* descriptorSets,
@@ -63,7 +63,7 @@ public:
     void bindDescriptorSets(const GrVkGpu* gpu,
                             const SkTArray<const GrVkRecycledResource*>&,
                             const SkTArray<const GrVkResource*>&,
-                            VkPipelineLayout layout,
+                            GrVkPipelineLayout* layout,
                             uint32_t firstSet,
                             uint32_t setCount,
                             const VkDescriptorSet* descriptorSets,
@@ -116,6 +116,13 @@ public:
         fTrackedRecycledResources.append(1, &resource);
     }
 
+    
+    
+    void addRecordingResource(const GrVkResource* resource) {
+        resource->ref();
+        fTrackedRecordingResources.append(1, &resource);
+    }
+
     void reset(GrVkGpu* gpu);
 
 protected:
@@ -126,11 +133,13 @@ protected:
             , fNumResets(0) {
             fTrackedResources.setReserve(kInitialTrackedResourcesCount);
             fTrackedRecycledResources.setReserve(kInitialTrackedResourcesCount);
+            fTrackedRecordingResources.setReserve(kInitialTrackedResourcesCount);
             this->invalidateState();
         }
 
         SkTDArray<const GrVkResource*>          fTrackedResources;
         SkTDArray<const GrVkRecycledResource*>  fTrackedRecycledResources;
+        SkTDArray<const GrVkResource*>          fTrackedRecordingResources;
 
         
         

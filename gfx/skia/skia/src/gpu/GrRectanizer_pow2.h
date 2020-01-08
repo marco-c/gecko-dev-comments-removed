@@ -11,7 +11,7 @@
 #include "GrRectanizer.h"
 #include "SkMathPriv.h"
 #include "SkMalloc.h"
-#include "SkPoint.h"
+#include "SkIPoint16.h"
 
 
 

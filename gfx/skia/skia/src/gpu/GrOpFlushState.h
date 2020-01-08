@@ -12,6 +12,7 @@
 #include "GrAppliedClip.h"
 #include "GrBufferAllocPool.h"
 #include "GrDeferredUpload.h"
+#include "GrUninstantiateProxyTracker.h"
 #include "SkArenaAlloc.h"
 #include "SkArenaAllocList.h"
 #include "ops/GrMeshDrawOp.h"
@@ -48,7 +49,7 @@ public:
 
     
     struct OpArgs {
-        GrRenderTarget* renderTarget() const { return fProxy->priv().peekRenderTarget(); }
+        GrRenderTarget* renderTarget() const { return fProxy->peekRenderTarget(); }
 
         GrOp* fOp;
         
@@ -72,8 +73,12 @@ public:
     GrDeferredUploadToken addASAPUpload(GrDeferredTextureUploadFn&&) final;
 
     
-
-    void draw(const GrGeometryProcessor*, const GrPipeline*, const GrMesh&) final;
+    void draw(sk_sp<const GrGeometryProcessor>,
+              const GrPipeline*,
+              const GrPipeline::FixedDynamicState*,
+              const GrPipeline::DynamicStateArrays*,
+              const GrMesh[],
+              int meshCnt) final;
     void* makeVertexSpace(size_t vertexSize, int vertexCount, const GrBuffer**,
                           int* startVertex) final;
     uint16_t* makeIndexSpace(int indexCount, const GrBuffer**, int* startIndex) final;
@@ -89,6 +94,16 @@ public:
     GrDeferredUploadTarget* deferredUploadTarget() final { return this; }
     const GrCaps& caps() const final;
     GrResourceProvider* resourceProvider() const final { return fResourceProvider; }
+
+    GrGlyphCache* glyphCache() const final;
+
+    
+    
+    GrAtlasManager* atlasManager() const final;
+
+    GrUninstantiateProxyTracker* uninstantiateProxyTracker() {
+        return &fUninstantiateProxyTracker;
+    }
 
 private:
     
@@ -106,10 +121,14 @@ private:
     
     
     struct Draw {
+        ~Draw();
+        sk_sp<const GrGeometryProcessor> fGeometryProcessor;
+        const GrPipeline* fPipeline = nullptr;
+        const GrPipeline::FixedDynamicState* fFixedDynamicState;
+        const GrPipeline::DynamicStateArrays* fDynamicStateArrays;
+        const GrMesh* fMeshes = nullptr;
         int fMeshCnt = 0;
-        GrPendingProgramElement<const GrGeometryProcessor> fGeometryProcessor;
-        const GrPipeline* fPipeline;
-        uint32_t fOpID;
+        uint32_t fOpID = SK_InvalidUniqueID;
     };
 
     
@@ -123,9 +142,6 @@ private:
     SkArenaAllocList<GrDeferredTextureUploadFn> fASAPUploads;
     SkArenaAllocList<InlineUpload> fInlineUploads;
     SkArenaAllocList<Draw> fDraws;
-    
-    
-    SkSTArray<16, GrMesh> fMeshes;
 
     
     
@@ -142,8 +158,10 @@ private:
 
     
     SkArenaAllocList<Draw>::Iter fCurrDraw;
-    int fCurrMesh;
     SkArenaAllocList<InlineUpload>::Iter fCurrUpload;
+
+    
+    GrUninstantiateProxyTracker fUninstantiateProxyTracker;
 };
 
 #endif

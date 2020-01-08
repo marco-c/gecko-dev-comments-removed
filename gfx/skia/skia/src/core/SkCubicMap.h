@@ -10,33 +10,37 @@
 
 #include "SkPoint.h"
 
+
+
+
+
+
+
+
+
 class SkCubicMap {
 public:
-    void setPts(SkPoint p1, SkPoint p2);
-    void setPts(float x1, float y1, float x2, float y2) {
-        this->setPts({x1, y1}, {x2, y2});
+    SkCubicMap() {} 
+
+    SkCubicMap(SkPoint p1, SkPoint p2) {
+        this->setPts(p1, p2);
     }
 
-    SkPoint computeFromT(float t) const;
+    void setPts(SkPoint p1, SkPoint p2);
+
     float computeYFromX(float x) const;
 
-    
-    float hackYFromX(float x) const;
+    SkPoint computeFromT(float t) const;
 
 private:
-    SkPoint fCoeff[4];
-    
-    enum { kTableCount = 16 };
-    struct Rec {
-        float   fT0;
-        float   fDT;
-
-        float fY0;
-        float fDY;
+    enum Type {
+        kLine_Type,     
+        kCubeRoot_Type, 
+        kSolver_Type,   
     };
-    Rec fXTable[kTableCount];
-
-    void buildXTable();
+    SkPoint fCoeff[3];
+    Type    fType;
 };
+
 #endif
 

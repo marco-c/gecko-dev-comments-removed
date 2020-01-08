@@ -109,7 +109,7 @@ public:
     
 
     void addFilterValue( ConvolutionFixed val ) {
-        fFilterValues.push( val );
+        fFilterValues.push_back( val );
     }
 private:
     struct FilterInstance {

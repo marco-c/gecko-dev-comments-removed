@@ -23,7 +23,7 @@ public:
 
     enum LCDOrientation {
         kHorizontal_LCDOrientation = 0,    
-        kVertical_LCDOrientation   = 1
+        kVertical_LCDOrientation   = 1,
     };
 
     
@@ -46,7 +46,7 @@ public:
     enum LCDOrder {
         kRGB_LCDOrder = 0,    
         kBGR_LCDOrder = 1,
-        kNONE_LCDOrder = 2
+        kNONE_LCDOrder = 2,
     };
 
     

@@ -5,6 +5,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #ifndef SkPixmap_DEFINED
 #define SkPixmap_DEFINED
 
@@ -156,9 +166,11 @@ public:
 
 
 
+
     SkColorType colorType() const { return fInfo.colorType(); }
 
     
+
 
 
 
@@ -246,6 +258,16 @@ public:
 
 
     SkColor getColor(int x, int y) const;
+
+    
+
+
+
+
+
+
+
+    float getAlphaf(int x, int y) const;
 
     
 
@@ -535,42 +557,6 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-    bool readPixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
-                    int srcX, int srcY, SkTransferFunctionBehavior behavior) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     bool readPixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes) const {
         return this->readPixels(dstInfo, dstPixels, dstRowBytes, 0, 0);
     }
@@ -602,10 +588,7 @@ public:
 
 
     bool readPixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes, int srcX,
-                    int srcY) const {
-        return this->readPixels(dstInfo, dstPixels, dstRowBytes, srcX, srcY,
-                                SkTransferFunctionBehavior::kRespect);
-    }
+                    int srcY) const;
 
     
 

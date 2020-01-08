@@ -11,7 +11,7 @@
 
 namespace SkSL {
 
-static int16_t mappings[127] = {
+static int8_t mappings[127] = {
         0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  2,  3,  3,  1,  3,  3,  3,  3,  3,  3,  3,  3,
         3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  1,  4,  3,  5,  6,  7,  8,  3,  9,  10, 11, 12,
         13, 14, 15, 16, 17, 18, 18, 18, 18, 18, 18, 18, 18, 18, 19, 20, 21, 22, 23, 24, 25, 26,
@@ -940,30 +940,30 @@ static int8_t accepts[288] = {
 };
 
 Token Lexer::next() {
-    int startOffset = fOffset;
+    
+    
+    
+    
+    
+    int32_t startOffset = fOffset;
     if (startOffset == fLength) {
         return Token(Token::END_OF_FILE, startOffset, 0);
     }
-    int offset = startOffset;
-    int state = 1;
-    Token::Kind lastAccept = Token::Kind::INVALID;
-    int lastAcceptEnd = startOffset + 1;
-    while (offset < fLength) {
-        if ((uint8_t)fText[offset] >= 127) {
+    int16_t state = 1;
+    while (fOffset < fLength) {
+        if ((uint8_t)fText[fOffset] >= 127) {
+            ++fOffset;
             break;
         }
-        state = transitions[mappings[(int)fText[offset]]][state];
-        ++offset;
-        if (!state) {
+        int16_t newState = transitions[mappings[(int)fText[fOffset]]][state];
+        if (!newState) {
             break;
         }
-        if (accepts[state]) {
-            lastAccept = (Token::Kind)accepts[state];
-            lastAcceptEnd = offset;
-        }
+        state = newState;
+        ++fOffset;
     }
-    fOffset = lastAcceptEnd;
-    return Token(lastAccept, startOffset, lastAcceptEnd - startOffset);
+    Token::Kind kind = (Token::Kind)accepts[state];
+    return Token(kind, startOffset, fOffset - startOffset);
 }
 
 }  

@@ -5,23 +5,29 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #ifndef SkTextBlob_DEFINED
 #define SkTextBlob_DEFINED
 
 #include "../private/SkTemplates.h"
-#include "../private/SkAtomics.h"
 #include "SkPaint.h"
 #include "SkString.h"
 #include "SkRefCnt.h"
 
-class SkReadBuffer;
-class SkWriteBuffer;
+#include <atomic>
 
 struct SkSerialProcs;
 struct SkDeserialProcs;
 
-typedef void (*SkTypefaceCatalogerProc)(SkTypeface*, void* ctx);
-typedef sk_sp<SkTypeface> (*SkTypefaceResolverProc)(uint32_t id, void* ctx);
 
 
 
@@ -29,7 +35,11 @@ typedef sk_sp<SkTypeface> (*SkTypefaceResolverProc)(uint32_t id, void* ctx);
 
 class SK_API SkTextBlob final : public SkNVRefCnt<SkTextBlob> {
 public:
+
     
+
+
+
 
 
     const SkRect& bounds() const { return fBounds; }
@@ -37,12 +47,25 @@ public:
     
 
 
+
     uint32_t uniqueID() const { return fUniqueID; }
 
     
 
 
-    void flatten(SkWriteBuffer&) const;
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkTextBlob> MakeFromText(
+            const void* text, size_t byteLength, const SkPaint& paint);
 
     
 
@@ -51,37 +74,71 @@ public:
 
 
 
-    static sk_sp<SkTextBlob> MakeFromBuffer(SkReadBuffer&);
 
-    enum GlyphPositioning : uint8_t {
-        kDefault_Positioning      = 0, 
-        kHorizontal_Positioning   = 1, 
-        kFull_Positioning         = 2  
-    };
+
+
+
+
+
+    static sk_sp<SkTextBlob> MakeFromString(const char* string, const SkPaint& paint) {
+        if (!string) {
+            return nullptr;
+        }
+        return MakeFromText(string, strlen(string), paint);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    size_t serialize(const SkSerialProcs& procs, void* memory, size_t memory_size) const;
 
     
 
 
 
 
-    sk_sp<SkData> serialize(SkTypefaceCatalogerProc, void* ctx) const;
+
+
+
+
+
+
+    sk_sp<SkData> serialize(const SkSerialProcs& procs) const;
 
     
+
+
+
+
+
+
+
+
+
 
 
 
 
     static sk_sp<SkTextBlob> Deserialize(const void* data, size_t size,
-                                         SkTypefaceResolverProc, void* ctx);
-
-    sk_sp<SkData> serialize(const SkSerialProcs&) const;
-    sk_sp<SkData> serialize() const;
-    static sk_sp<SkTextBlob> Deserialize(const void* data, size_t size, const SkDeserialProcs&);
-    static sk_sp<SkTextBlob> Deserialize(const void* data, size_t size);
+                                         const SkDeserialProcs& procs);
 
 private:
     friend class SkNVRefCnt<SkTextBlob>;
     class RunRecord;
+
+    enum GlyphPositioning : uint8_t;
 
     explicit SkTextBlob(const SkRect& bounds);
 
@@ -89,12 +146,9 @@ private:
 
     
     
-    void operator delete(void* p) { sk_free(p); }
-    void* operator new(size_t) {
-        SK_ABORT("All blobs are created by placement new.");
-        return sk_malloc_throw(0);
-    }
-    void* operator new(size_t, void* p) { return p; }
+    void operator delete(void* p);
+    void* operator new(size_t);
+    void* operator new(size_t, void* p);
 
     static unsigned ScalarsPerGlyph(GlyphPositioning pos);
 
@@ -104,13 +158,15 @@ private:
         fCacheID.store(cacheID);
     }
 
+    friend class SkGlyphRunList;
     friend class GrTextBlobCache;
     friend class SkTextBlobBuilder;
+    friend class SkTextBlobPriv;
     friend class SkTextBlobRunIterator;
 
-    const SkRect               fBounds;
-    const uint32_t             fUniqueID;
-    mutable SkAtomic<uint32_t> fCacheID;
+    const SkRect                  fBounds;
+    const uint32_t                fUniqueID;
+    mutable std::atomic<uint32_t> fCacheID;
 
     SkDEBUGCODE(size_t fStorageSize;)
 
@@ -123,14 +179,23 @@ private:
 
 
 
-
 class SK_API SkTextBlobBuilder {
 public:
+
+    
+
+
+
     SkTextBlobBuilder();
+
+    
 
     ~SkTextBlobBuilder();
 
     
+
+
+
 
 
 
@@ -148,22 +213,11 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
     struct RunBuffer {
-        SkGlyphID* glyphs;
-        SkScalar* pos;
-        char* utf8text;
-        uint32_t* clusters;
+        SkGlyphID* glyphs;   
+        SkScalar*  pos;      
+        char*      utf8text; 
+        uint32_t*  clusters; 
     };
 
     
@@ -183,13 +237,14 @@ public:
 
 
 
-    const RunBuffer& allocRunText(const SkPaint& font,
-                                  int count,
-                                  SkScalar x,
-                                  SkScalar y,
-                                  int textByteCount,
-                                  SkString lang,
-                                  const SkRect* bounds = nullptr);
+
+
+
+
+
+
+
+
     const RunBuffer& allocRun(const SkPaint& font, int count, SkScalar x, SkScalar y,
                               const SkRect* bounds = nullptr) {
         return this->allocRunText(font, count, x, y, 0, SkString(), bounds);
@@ -212,9 +267,14 @@ public:
 
 
 
-    const RunBuffer& allocRunTextPosH(const SkPaint& font, int count, SkScalar y,
-                                      int textByteCount, SkString lang,
-                                      const SkRect* bounds = nullptr);
+
+
+
+
+
+
+
+
     const RunBuffer& allocRunPosH(const SkPaint& font, int count, SkScalar y,
                                   const SkRect* bounds = nullptr) {
         return this->allocRunTextPosH(font, count, y, 0, SkString(), bounds);
@@ -237,15 +297,32 @@ public:
 
 
 
-    const RunBuffer& allocRunTextPos(const SkPaint& font, int count,
-                                     int textByteCount, SkString lang,
-                                     const SkRect* bounds = nullptr);
+
+
+
+
+
+
+
     const RunBuffer& allocRunPos(const SkPaint& font, int count,
                                  const SkRect* bounds = nullptr) {
         return this->allocRunTextPos(font, count, 0, SkString(), bounds);
     }
 
 private:
+    const RunBuffer& allocRunText(const SkPaint& font,
+                                  int count,
+                                  SkScalar x,
+                                  SkScalar y,
+                                  int textByteCount,
+                                  SkString lang,
+                                  const SkRect* bounds = nullptr);
+    const RunBuffer& allocRunTextPosH(const SkPaint& font, int count, SkScalar y,
+                                      int textByteCount, SkString lang,
+                                      const SkRect* bounds = nullptr);
+    const RunBuffer& allocRunTextPos(const SkPaint& font, int count,
+                                     int textByteCount, SkString lang,
+                                     const SkRect* bounds = nullptr);
     void reserve(size_t size);
     void allocInternal(const SkPaint& font, SkTextBlob::GlyphPositioning positioning,
                        int count, int textBytes, SkPoint offset, const SkRect* bounds);
@@ -255,6 +332,9 @@ private:
 
     static SkRect ConservativeRunBounds(const SkTextBlob::RunRecord&);
     static SkRect TightRunBounds(const SkTextBlob::RunRecord&);
+
+    friend class SkTextBlobPriv;
+    friend class SkTextBlobBuilderPriv;
 
     SkAutoTMalloc<uint8_t> fStorage;
     size_t                 fStorageSize;

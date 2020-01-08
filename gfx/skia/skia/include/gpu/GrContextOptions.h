@@ -12,11 +12,13 @@
 #include "SkTypes.h"
 #include "GrTypes.h"
 #include "../private/GrTypesPriv.h"
+#include "GrDriverBugWorkarounds.h"
 
 #include <vector>
 
 class SkExecutor;
 
+#if SK_SUPPORT_GPU
 struct GrContextOptions {
     enum class Enable {
         
@@ -79,6 +81,13 @@ struct GrContextOptions {
 
 
 
+
+    bool fDisableCoverageCountingPaths = false;
+
+    
+
+
+
     bool fDisableDistanceFieldPaths = false;
 
     
@@ -91,20 +100,12 @@ struct GrContextOptions {
 
 
 
-
-
-    bool fRequireDecodeDisableForSRGB = true;
-
-    
-
-
-
     bool fDisableGpuYUVConversion = false;
 
     
 
 
-    float fGlyphCacheTextureMaximumBytes = 2048 * 1024 * 4;
+    size_t fGlyphCacheTextureMaximumBytes = 2048 * 1024 * 4;
 
     
 
@@ -136,6 +137,19 @@ struct GrContextOptions {
 
 
 
+
+
+
+
+
+
+    Enable fUseGLBufferDataNullHint = Enable::kDefault;
+
+    
+
+
+
+
     bool fSharpenMipmappedTextures = false;
 
     
@@ -156,6 +170,20 @@ struct GrContextOptions {
 
 
     Enable fSortRenderTargets = Enable::kDefault;
+
+    
+
+
+
+
+    Enable fReduceOpListSplitting = Enable::kDefault;
+
+    
+
+
+
+
+    bool fPreferExternalImagesOverES3 = false;
 
     
 
@@ -203,7 +231,7 @@ struct GrContextOptions {
     
 
 
-    GpuPathRenderers fGpuPathRenderers = GpuPathRenderers::kDefault;
+    GpuPathRenderers fGpuPathRenderers = GpuPathRenderers::kAll;
 
     
 
@@ -219,6 +247,13 @@ struct GrContextOptions {
 
     Enable fDistanceFieldGlyphVerticesAlwaysHaveW = Enable::kDefault;
 #endif
+
+    GrDriverBugWorkarounds fDriverBugWorkarounds;
 };
+#else
+struct GrContextOptions {
+    struct PersistentCache {};
+};
+#endif
 
 #endif

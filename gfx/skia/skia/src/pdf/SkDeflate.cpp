@@ -5,11 +5,12 @@
 
 
 
+#include "SkDeflate.h"
 
 #include "SkData.h"
-#include "SkDeflate.h"
 #include "SkMakeUnique.h"
 #include "SkMalloc.h"
+#include "SkTo.h"
 #include "SkTraceEvent.h"
 
 #include "zlib.h"

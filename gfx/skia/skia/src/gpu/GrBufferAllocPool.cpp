@@ -5,8 +5,8 @@
 
 
 
-
 #include "GrBufferAllocPool.h"
+
 #include "GrBuffer.h"
 #include "GrCaps.h"
 #include "GrContext.h"
@@ -14,6 +14,7 @@
 #include "GrGpu.h"
 #include "GrResourceProvider.h"
 #include "GrTypes.h"
+#include "SkMacros.h"
 #include "SkSafeMath.h"
 #include "SkTraceEvent.h"
 
@@ -372,7 +373,7 @@ GrBuffer* GrBufferAllocPool::getBuffer(size_t size) {
     auto resourceProvider = fGpu->getContext()->contextPriv().resourceProvider();
 
     
-    static const uint32_t kFlags = GrResourceProvider::kNoPendingIO_Flag;
+    static const auto kFlags = GrResourceProvider::Flags::kNoPendingIO;
     return resourceProvider->createBuffer(size, fBufferType, kDynamic_GrAccessPattern, kFlags);
 }
 

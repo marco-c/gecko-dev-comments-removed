@@ -13,7 +13,20 @@
 
 struct GrMockTextureInfo {
     GrPixelConfig fConfig;
-    int           fID;
+    int fID;
+
+    bool operator==(const GrMockTextureInfo& that) const {
+        return fConfig == that.fConfig && fID == that.fID;
+    }
+};
+
+struct GrMockRenderTargetInfo {
+    GrPixelConfig fConfig;
+    int fID;
+
+    bool operator==(const GrMockRenderTargetInfo& that) const {
+        return fConfig == that.fConfig && fID == that.fID;
+    }
 };
 
 
@@ -49,12 +62,14 @@ struct GrMockOptions {
 
     
     bool fGeometryShaderSupport = false;
-    bool fTexelBufferSupport = false;
     bool fIntegerSupport = false;
     bool fFlatInterpolationSupport = false;
     int fMaxVertexSamplers = 0;
     int fMaxFragmentSamplers = 8;
     bool fShaderDerivativeSupport = true;
+
+    
+    bool fFailTextureAllocations = false;
 };
 
 #endif

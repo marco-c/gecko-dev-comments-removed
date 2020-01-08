@@ -8,9 +8,13 @@
 #ifndef GrMtlUtil_DEFINED
 #define GrMtlUtil_DEFINED
 
-#include "GrTypes.h"
-
 #import <Metal/Metal.h>
+
+#include "GrTypesPriv.h"
+#include "ir/SkSLProgram.h"
+
+class GrMtlGpu;
+class GrSurface;
 
 
 
@@ -26,6 +30,36 @@ GrPixelConfig GrMTLFormatToPixelConfig(MTLPixelFormat format);
 
 
 
-bool GrMTLFormatIsSRGB(MTLPixelFormat format, MTLPixelFormat* linearFormat);
+id<MTLTexture> GrGetMTLTexture(const void* mtlTexture, GrWrapOwnership);
+
+
+
+
+const void* GrGetPtrFromId(id idObject);
+
+
+
+
+const void* GrReleaseId(id idObject);
+
+
+
+
+
+MTLTextureDescriptor* GrGetMTLTextureDescriptor(id<MTLTexture> mtlTexture);
+
+
+
+
+id<MTLLibrary> GrCompileMtlShaderLibrary(const GrMtlGpu* gpu,
+                                         const char* shaderString,
+                                         SkSL::Program::Kind kind,
+                                         const SkSL::Program::Settings& settings,
+                                         SkSL::Program::Inputs* outInputs);
+
+
+
+
+id<MTLTexture> GrGetMTLTextureFromSurface(GrSurface* surface, bool doResolve);
 
 #endif

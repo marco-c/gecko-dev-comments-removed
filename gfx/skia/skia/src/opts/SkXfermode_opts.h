@@ -112,77 +112,79 @@ XFERMODE(Lighten) {
 }
 #undef XFERMODE
 
-
-#define XFERMODE(Xfermode) \
-    struct Xfermode { Sk4f operator()(const Sk4f&, const Sk4f&) const; }; \
-    inline Sk4f Xfermode::operator()(const Sk4f& d, const Sk4f& s) const
-
-static inline Sk4f a_rgb(const Sk4f& a, const Sk4f& rgb) {
-    static_assert(SK_A32_SHIFT == 24, "");
-    return a * Sk4f(0,0,0,1) + rgb * Sk4f(1,1,1,0);
-}
-static inline Sk4f alphas(const Sk4f& f) {
-    return f[SK_A32_SHIFT/8];
-}
-
-XFERMODE(ColorDodge) {
-    auto sa = alphas(s),
-         da = alphas(d),
-         isa = Sk4f(1)-sa,
-         ida = Sk4f(1)-da;
-
-    auto srcover = s + d*isa,
-         dstover = d + s*ida,
-         otherwise = sa * Sk4f::Min(da, (d*sa)*(sa-s).invert()) + s*ida + d*isa;
-
+#if defined(SK_LEGACY_4F_XFERMODES)
     
-    auto colors = (d == Sk4f(0)).thenElse(dstover,
-                  (s ==      sa).thenElse(srcover,
-                                          otherwise));
-    return a_rgb(srcover, colors);
-}
-XFERMODE(ColorBurn) {
-    auto sa = alphas(s),
-         da = alphas(d),
-         isa = Sk4f(1)-sa,
-         ida = Sk4f(1)-da;
+    #define XFERMODE(Xfermode) \
+        struct Xfermode { Sk4f operator()(const Sk4f&, const Sk4f&) const; }; \
+        inline Sk4f Xfermode::operator()(const Sk4f& d, const Sk4f& s) const
 
-    auto srcover = s + d*isa,
-         dstover = d + s*ida,
-         otherwise = sa*(da-Sk4f::Min(da, (da-d)*sa*s.invert())) + s*ida + d*isa;
+    static inline Sk4f a_rgb(const Sk4f& a, const Sk4f& rgb) {
+        static_assert(SK_A32_SHIFT == 24, "");
+        return a * Sk4f(0,0,0,1) + rgb * Sk4f(1,1,1,0);
+    }
+    static inline Sk4f alphas(const Sk4f& f) {
+        return f[SK_A32_SHIFT/8];
+    }
 
-    
-    auto colors = (d ==      da).thenElse(dstover,
-                  (s == Sk4f(0)).thenElse(srcover,
-                                          otherwise));
-    return a_rgb(srcover, colors);
-}
-XFERMODE(SoftLight) {
-    auto sa = alphas(s),
-         da = alphas(d),
-         isa = Sk4f(1)-sa,
-         ida = Sk4f(1)-da;
+    XFERMODE(ColorDodge) {
+        auto sa = alphas(s),
+             da = alphas(d),
+             isa = Sk4f(1)-sa,
+             ida = Sk4f(1)-da;
 
-    
-    auto m  = (da > Sk4f(0)).thenElse(d / da, Sk4f(0)),
-         s2 = Sk4f(2)*s,
-         m4 = Sk4f(4)*m;
+        auto srcover = s + d*isa,
+             dstover = d + s*ida,
+             otherwise = sa * Sk4f::Min(da, (d*sa)*(sa-s).invert()) + s*ida + d*isa;
 
-    
-    
-    
-    
-    auto darkSrc = d*(sa + (s2 - sa)*(Sk4f(1) - m)),        
-         darkDst = (m4*m4 + m4)*(m - Sk4f(1)) + Sk4f(7)*m,  
-         liteDst = m.sqrt() - m,                            
-         liteSrc = d*sa + da*(s2-sa)*(Sk4f(4)*d <= da).thenElse(darkDst, liteDst); 
+        
+        auto colors = (d == Sk4f(0)).thenElse(dstover,
+                      (s ==      sa).thenElse(srcover,
+                                              otherwise));
+        return a_rgb(srcover, colors);
+    }
+    XFERMODE(ColorBurn) {
+        auto sa = alphas(s),
+             da = alphas(d),
+             isa = Sk4f(1)-sa,
+             ida = Sk4f(1)-da;
 
-    auto alpha  = s + d*isa;
-    auto colors = s*ida + d*isa + (s2 <= sa).thenElse(darkSrc, liteSrc);           
+        auto srcover = s + d*isa,
+             dstover = d + s*ida,
+             otherwise = sa*(da-Sk4f::Min(da, (da-d)*sa*s.invert())) + s*ida + d*isa;
 
-    return a_rgb(alpha, colors);
-}
-#undef XFERMODE
+        
+        auto colors = (d ==      da).thenElse(dstover,
+                      (s == Sk4f(0)).thenElse(srcover,
+                                              otherwise));
+        return a_rgb(srcover, colors);
+    }
+    XFERMODE(SoftLight) {
+        auto sa = alphas(s),
+             da = alphas(d),
+             isa = Sk4f(1)-sa,
+             ida = Sk4f(1)-da;
+
+        
+        auto m  = (da > Sk4f(0)).thenElse(d / da, Sk4f(0)),
+             s2 = Sk4f(2)*s,
+             m4 = Sk4f(4)*m;
+
+        
+        
+        
+        
+        auto darkSrc = d*(sa + (s2 - sa)*(Sk4f(1) - m)),        
+             darkDst = (m4*m4 + m4)*(m - Sk4f(1)) + Sk4f(7)*m,  
+             liteDst = m.sqrt() - m,                            
+             liteSrc = d*sa + da*(s2-sa)*(Sk4f(4)*d <= da).thenElse(darkDst, liteDst); 
+
+        auto alpha  = s + d*isa;
+        auto colors = s*ida + d*isa + (s2 <= sa).thenElse(darkSrc, liteSrc);           
+
+        return a_rgb(alpha, colors);
+    }
+    #undef XFERMODE
+#endif
 
 
 
@@ -229,39 +231,41 @@ public:
     }
 };
 
-template <typename Xfermode>
-class Sk4fXfermode : public SkXfermode {
-public:
-    Sk4fXfermode() {}
+#if defined(SK_LEGACY_4F_XFERMODES)
+    template <typename Xfermode>
+    class Sk4fXfermode : public SkXfermode {
+    public:
+        Sk4fXfermode() {}
 
-    void xfer32(SkPMColor dst[], const SkPMColor src[], int n, const SkAlpha aa[]) const override {
-        for (int i = 0; i < n; i++) {
-            dst[i] = Xfer32_1(dst[i], src[i], aa ? aa+i : nullptr);
+        void xfer32(SkPMColor dst[], const SkPMColor src[], int n, const SkAlpha aa[]) const override {
+            for (int i = 0; i < n; i++) {
+                dst[i] = Xfer32_1(dst[i], src[i], aa ? aa+i : nullptr);
+            }
         }
-    }
 
-private:
-    static SkPMColor Xfer32_1(SkPMColor dst, const SkPMColor src, const SkAlpha* aa) {
-        Sk4f d = Load(dst),
-             s = Load(src),
-             b = Xfermode()(d, s);
-        if (aa) {
-            Sk4f a = Sk4f(*aa) * Sk4f(1.0f/255);
-            b = b*a + d*(Sk4f(1)-a);
+    private:
+        static SkPMColor Xfer32_1(SkPMColor dst, const SkPMColor src, const SkAlpha* aa) {
+            Sk4f d = Load(dst),
+                 s = Load(src),
+                 b = Xfermode()(d, s);
+            if (aa) {
+                Sk4f a = Sk4f(*aa) * Sk4f(1.0f/255);
+                b = b*a + d*(Sk4f(1)-a);
+            }
+            return Round(b);
         }
-        return Round(b);
-    }
 
-    static Sk4f Load(SkPMColor c) {
-        return SkNx_cast<float>(Sk4b::Load(&c)) * Sk4f(1.0f/255);
-    }
+        static Sk4f Load(SkPMColor c) {
+            return SkNx_cast<float>(Sk4b::Load(&c)) * Sk4f(1.0f/255);
+        }
 
-    static SkPMColor Round(const Sk4f& f) {
-        SkPMColor c;
-        SkNx_cast<uint8_t>(f * Sk4f(255) + Sk4f(0.5f)).store(&c);
-        return c;
-    }
-};
+        static SkPMColor Round(const Sk4f& f) {
+            SkPMColor c;
+            SkNx_cast<uint8_t>(f * Sk4f(255) + Sk4f(0.5f)).store(&c);
+            return c;
+        }
+    };
+#endif
 
 } 
 
@@ -295,12 +299,14 @@ namespace SK_OPTS_NS {
         CASE(Lighten);
     #undef CASE
 
-#define CASE(Xfermode) \
-    case SkBlendMode::k##Xfermode: return new Sk4fXfermode<Xfermode>()
-        CASE(ColorDodge);
-        CASE(ColorBurn);
-        CASE(SoftLight);
-    #undef CASE
+#if defined(SK_LEGACY_4F_XFERMODES)
+    #define CASE(Xfermode) \
+        case SkBlendMode::k##Xfermode: return new Sk4fXfermode<Xfermode>()
+            CASE(ColorDodge);
+            CASE(ColorBurn);
+            CASE(SoftLight);
+        #undef CASE
+#endif
 
         default: break;
     }

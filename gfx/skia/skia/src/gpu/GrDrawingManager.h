@@ -10,10 +10,9 @@
 
 #include "GrPathRenderer.h"
 #include "GrPathRendererChain.h"
-#include "GrRenderTargetOpList.h"
 #include "GrResourceCache.h"
 #include "SkTArray.h"
-#include "text/GrAtlasTextContext.h"
+#include "text/GrTextContext.h"
 
 class GrContext;
 class GrCoverageCountingPathRenderer;
@@ -21,9 +20,11 @@ class GrOnFlushCallbackObject;
 class GrRenderTargetContext;
 class GrRenderTargetProxy;
 class GrSingleOWner;
+class GrRenderTargetOpList;
 class GrSoftwarePathRenderer;
 class GrTextureContext;
 class GrTextureOpList;
+class SkDeferredDisplayList;
 
 
 
@@ -52,23 +53,20 @@ public:
 
     GrContext* getContext() { return fContext; }
 
-    GrAtlasTextContext* getAtlasTextContext();
+    GrTextContext* getTextContext();
 
     GrPathRenderer* getPathRenderer(const GrPathRenderer::CanDrawPathArgs& args,
                                     bool allowSW,
                                     GrPathRendererChain::DrawType drawType,
                                     GrPathRenderer::StencilSupport* stencilSupport = nullptr);
 
+    GrPathRenderer* getSoftwarePathRenderer();
+
     
     
     GrCoverageCountingPathRenderer* getCoverageCountingPathRenderer();
 
-    void flushIfNecessary() {
-        GrResourceCache* resourceCache = fContext->contextPriv().getResourceCache();
-        if (resourceCache && resourceCache->requestsFlush()) {
-            this->internalFlush(nullptr, GrResourceCache::kCacheRequested, 0, nullptr);
-        }
-    }
+    void flushIfNecessary();
 
     static bool ProgramUnitTest(GrContext* context, int maxStages, int maxLevels);
 
@@ -83,9 +81,58 @@ public:
     void copyOpListsFromDDL(const SkDeferredDisplayList*, GrRenderTargetProxy* newDest);
 
 private:
+    
+    class OpListDAG {
+    public:
+        OpListDAG(bool explicitlyAllocating, GrContextOptions::Enable sortOpLists);
+        ~OpListDAG();
+
+        
+        
+        
+        void prepForFlush();
+
+        void closeAll(const GrCaps* caps);
+
+        
+        void cleanup(const GrCaps* caps);
+
+        void gatherIDs(SkSTArray<8, uint32_t, true>* idArray) const;
+
+        void reset();
+
+        
+        
+        
+        
+        void removeOpList(int index);
+        void removeOpLists(int startIndex, int stopIndex);
+
+        bool empty() const { return fOpLists.empty(); }
+        int numOpLists() const { return fOpLists.count(); }
+
+        GrOpList* opList(int index) { return fOpLists[index].get(); }
+        const GrOpList* opList(int index) const { return fOpLists[index].get(); }
+
+        GrOpList* back() { return fOpLists.back().get(); }
+        const GrOpList* back() const { return fOpLists.back().get(); }
+
+        void add(sk_sp<GrOpList>);
+        void add(const SkTArray<sk_sp<GrOpList>>&);
+
+        void swap(SkTArray<sk_sp<GrOpList>>* opLists);
+
+        bool sortingOpLists() const { return fSortOpLists; }
+
+    private:
+        SkTArray<sk_sp<GrOpList>> fOpLists;
+        bool                      fSortOpLists;
+    };
+
     GrDrawingManager(GrContext*, const GrPathRendererChain::Options&,
-                     const GrAtlasTextContext::Options&, GrSingleOwner*,
-                     GrContextOptions::Enable sortRenderTargets);
+                     const GrTextContext::Options&, GrSingleOwner*,
+                     bool explicitlyAllocating, GrContextOptions::Enable sortRenderTargets,
+                     GrContextOptions::Enable reduceOpListSplitting);
 
     void abandon();
     void cleanup();
@@ -95,14 +142,9 @@ private:
 
     GrSemaphoresSubmitted flush(GrSurfaceProxy* proxy,
                                 int numSemaphores = 0,
-                                GrBackendSemaphore backendSemaphores[] = nullptr) {
-        return this->internalFlush(proxy, GrResourceCache::FlushType::kExternal,
-                                   numSemaphores, backendSemaphores);
-    }
-    GrSemaphoresSubmitted internalFlush(GrSurfaceProxy*,
-                                        GrResourceCache::FlushType,
-                                        int numSemaphores,
-                                        GrBackendSemaphore backendSemaphores[]);
+                                GrBackendSemaphore backendSemaphores[] = nullptr);
+
+    SkDEBUGCODE(void validate() const);
 
     friend class GrContext;  
     friend class GrContextPriv; 
@@ -113,26 +155,27 @@ private:
 
     GrContext*                        fContext;
     GrPathRendererChain::Options      fOptionsForPathRendererChain;
-    GrAtlasTextContext::Options       fOptionsForAtlasTextContext;
+    GrTextContext::Options            fOptionsForTextContext;
 
     
     GrSingleOwner*                    fSingleOwner;
 
     bool                              fAbandoned;
-    SkTArray<sk_sp<GrOpList>>         fOpLists;
+    OpListDAG                         fDAG;
+    GrOpList*                         fActiveOpList = nullptr;
     
     SkSTArray<8, uint32_t, true>      fFlushingOpListIDs;
     
     SkSTArray<8, sk_sp<GrOpList>>     fOnFlushCBOpLists;
 
-    std::unique_ptr<GrAtlasTextContext> fAtlasTextContext;
+    std::unique_ptr<GrTextContext>    fTextContext;
 
-    GrPathRendererChain*              fPathRendererChain;
-    GrSoftwarePathRenderer*           fSoftwarePathRenderer;
+    std::unique_ptr<GrPathRendererChain> fPathRendererChain;
+    sk_sp<GrSoftwarePathRenderer>     fSoftwarePathRenderer;
 
     GrTokenTracker                    fTokenTracker;
     bool                              fFlushing;
-    bool                              fSortRenderTargets;
+    bool                              fReduceOpListSplitting;
 
     SkTArray<GrOnFlushCallbackObject*> fOnFlushCBObjects;
 };

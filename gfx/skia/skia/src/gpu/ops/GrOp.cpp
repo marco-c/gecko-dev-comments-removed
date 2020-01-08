@@ -7,58 +7,57 @@
 
 #include "GrOp.h"
 
-#include "GrMemoryPool.h"
-#include "SkSpinlock.h"
-
-
-
-
-
-
-
-
-
-
-namespace {
-#if !defined(SK_BUILD_FOR_ANDROID_FRAMEWORK)
-static SkSpinlock gOpPoolSpinLock;
-#endif
-class MemoryPoolAccessor {
-public:
-
-
-#if defined(SK_BUILD_FOR_ANDROID_FRAMEWORK)
-    MemoryPoolAccessor() {}
-    ~MemoryPoolAccessor() {}
-#else
-    MemoryPoolAccessor() { gOpPoolSpinLock.acquire(); }
-    ~MemoryPoolAccessor() { gOpPoolSpinLock.release(); }
-#endif
-
-    GrMemoryPool* pool() const {
-        static GrMemoryPool gPool(16384, 16384);
-        return &gPool;
-    }
-};
-}
-
 int32_t GrOp::gCurrOpClassID = GrOp::kIllegalOpID;
 
 int32_t GrOp::gCurrOpUniqueID = GrOp::kIllegalOpID;
 
+#ifdef SK_DEBUG
 void* GrOp::operator new(size_t size) {
-    return MemoryPoolAccessor().pool()->allocate(size);
+    
+    SkASSERT(0);
+    return ::operator new(size);
 }
 
 void GrOp::operator delete(void* target) {
-    return MemoryPoolAccessor().pool()->release(target);
+    
+    SkASSERT(0);
+    ::operator delete(target);
 }
+#endif
 
-GrOp::GrOp(uint32_t classID)
-    : fClassID(classID)
-    , fUniqueID(kIllegalOpID) {
+GrOp::GrOp(uint32_t classID) : fClassID(classID) {
     SkASSERT(classID == SkToU32(fClassID));
+    SkASSERT(classID);
     SkDEBUGCODE(fBoundsFlags = kUninitialized_BoundsFlag);
 }
 
 GrOp::~GrOp() {}
+
+GrOp::CombineResult GrOp::combineIfPossible(GrOp* that, const GrCaps& caps) {
+    if (this->classID() != that->classID()) {
+        return CombineResult::kCannotCombine;
+    }
+    SkDEBUGCODE(bool thatWasChained = that->isChained());
+    auto result = this->onCombineIfPossible(that, caps);
+    
+    SkASSERT(!(thatWasChained && result == CombineResult::kMerged));
+    if (fChainHead) {
+        fChainHead->joinBounds(*that);
+    }
+    return result;
+}
+
+void GrOp::setNextInChain(GrOp* next) {
+    SkASSERT(next);
+    SkASSERT(this->classID() == next->classID());
+    
+    SkASSERT(this->isChainTail());
+    SkASSERT(!next->isChained());
+    if (!fChainHead) {
+        
+        fChainHead = this;
+    }
+    fNextInChain = next;
+    fChainHead->joinBounds(*next);
+    next->fChainHead = this->fChainHead;
+}

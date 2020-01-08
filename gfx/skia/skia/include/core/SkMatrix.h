@@ -6,9 +6,20 @@
 
 
 
+
+
+
+
+
+
+
+
+
 #ifndef SkMatrix_DEFINED
 #define SkMatrix_DEFINED
 
+#include "../private/SkMacros.h"
+#include "../private/SkTo.h"
 #include "SkRect.h"
 
 struct SkRSXform;
@@ -266,31 +277,25 @@ public:
     
 
 
-
-    enum {
-        kMScaleX, 
-        kMSkewX,  
-        kMTransX, 
-        kMSkewY,  
-        kMScaleY, 
-        kMTransY, 
-        kMPersp0, 
-        kMPersp1, 
-        kMPersp2, 
-    };
+    static constexpr int kMScaleX = 0; 
+    static constexpr int kMSkewX  = 1; 
+    static constexpr int kMTransX = 2; 
+    static constexpr int kMSkewY  = 3; 
+    static constexpr int kMScaleY = 4; 
+    static constexpr int kMTransY = 5; 
+    static constexpr int kMPersp0 = 6; 
+    static constexpr int kMPersp1 = 7; 
+    static constexpr int kMPersp2 = 8; 
 
     
 
 
-
-    enum {
-        kAScaleX, 
-        kASkewY,  
-        kASkewX,  
-        kAScaleY, 
-        kATransX, 
-        kATransY, 
-    };
+    static constexpr int kAScaleX = 0; 
+    static constexpr int kASkewY  = 1; 
+    static constexpr int kASkewX  = 2; 
+    static constexpr int kAScaleY = 3; 
+    static constexpr int kATransX = 4; 
+    static constexpr int kATransY = 5; 
 
     
 
@@ -940,6 +945,7 @@ public:
 
 
 
+
     bool postIDiv(int divx, int divy);
 
     
@@ -1075,29 +1081,10 @@ public:
 
 
     enum ScaleToFit {
-        
-
-
-
-        kFill_ScaleToFit,
-
-        
-
-
-
-        kStart_ScaleToFit,
-
-        
-
-
-
-        kCenter_ScaleToFit,
-
-        
-
-
-
-        kEnd_ScaleToFit,
+        kFill_ScaleToFit,   
+        kStart_ScaleToFit,  
+        kCenter_ScaleToFit, 
+        kEnd_ScaleToFit,    
     };
 
     
@@ -1463,6 +1450,17 @@ public:
 
 
 
+    SkRect mapRect(const SkRect& src) const {
+        SkRect dst;
+        (void)this->mapRect(&dst, src);
+        return dst;
+    }
+
+    
+
+
+
+
 
 
 
@@ -1578,14 +1576,6 @@ public:
 
 
 
-    void toString(SkString* str) const;
-
-    
-
-
-
-
-
     SkScalar getMinScale() const;
 
     
@@ -1609,7 +1599,6 @@ public:
     bool SK_WARN_UNUSED_RESULT getMinMaxScales(SkScalar scaleFactors[2]) const;
 
     
-
 
 
 
@@ -1722,33 +1711,31 @@ public:
     bool isFinite() const { return SkScalarsAreFinite(fMat, 9); }
 
 private:
-    enum {
-        
+    
 
 
 
 
 
-        kRectStaysRect_Mask = 0x10,
+    static constexpr int kRectStaysRect_Mask = 0x10;
 
-        
+    
 
 
-        kOnlyPerspectiveValid_Mask = 0x40,
+    static constexpr int kOnlyPerspectiveValid_Mask = 0x40;
 
-        kUnknown_Mask = 0x80,
+    static constexpr int kUnknown_Mask = 0x80;
 
-        kORableMasks =  kTranslate_Mask |
-                        kScale_Mask |
-                        kAffine_Mask |
-                        kPerspective_Mask,
+    static constexpr int kORableMasks = kTranslate_Mask |
+                                        kScale_Mask |
+                                        kAffine_Mask |
+                                        kPerspective_Mask;
 
-        kAllMasks = kTranslate_Mask |
-                    kScale_Mask |
-                    kAffine_Mask |
-                    kPerspective_Mask |
-                    kRectStaysRect_Mask,
-    };
+    static constexpr int kAllMasks = kTranslate_Mask |
+                                     kScale_Mask |
+                                     kAffine_Mask |
+                                     kPerspective_Mask |
+                                     kRectStaysRect_Mask;
 
     SkScalar         fMat[9];
     mutable uint32_t fTypeMask;
@@ -1829,9 +1816,9 @@ private:
 
     bool SK_WARN_UNUSED_RESULT invertNonIdentity(SkMatrix* inverse) const;
 
-    static bool Poly2Proc(const SkPoint[], SkMatrix*, const SkPoint& scale);
-    static bool Poly3Proc(const SkPoint[], SkMatrix*, const SkPoint& scale);
-    static bool Poly4Proc(const SkPoint[], SkMatrix*, const SkPoint& scale);
+    static bool Poly2Proc(const SkPoint[], SkMatrix*);
+    static bool Poly3Proc(const SkPoint[], SkMatrix*);
+    static bool Poly4Proc(const SkPoint[], SkMatrix*);
 
     static void Identity_xy(const SkMatrix&, SkScalar, SkScalar, SkPoint*);
     static void Trans_xy(const SkMatrix&, SkScalar, SkScalar, SkPoint*);

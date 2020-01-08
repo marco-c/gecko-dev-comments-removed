@@ -8,15 +8,21 @@
 #ifndef SkDeferredDisplayListMaker_DEFINED
 #define SkDeferredDisplayListMaker_DEFINED
 
+#include "SkImageInfo.h"
 #include "SkRefCnt.h"
+#include "SkSurfaceCharacterization.h"
+#include "SkTypes.h"
 
 #include "../private/SkDeferredDisplayList.h"
-#include "../private/SkSurfaceCharacterization.h"
 
+class GrBackendFormat;
+class GrBackendTexture;
 class GrContext;
 
 class SkCanvas;
+class SkImage;
 class SkSurface;
+struct SkYUVAIndex;
 
 
 
@@ -46,18 +52,98 @@ public:
 
     std::unique_ptr<SkDeferredDisplayList> detach();
 
+    
+    typedef void* TextureContext;
+    typedef void (*TextureReleaseProc)(TextureContext textureContext);
+    typedef void (*TextureFulfillProc)(TextureContext textureContext, GrBackendTexture* outTexture);
+    typedef void (*PromiseDoneProc)(TextureContext textureContext);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    sk_sp<SkImage> makePromiseTexture(const GrBackendFormat& backendFormat,
+                                      int width,
+                                      int height,
+                                      GrMipMapped mipMapped,
+                                      GrSurfaceOrigin origin,
+                                      SkColorType colorType,
+                                      SkAlphaType alphaType,
+                                      sk_sp<SkColorSpace> colorSpace,
+                                      TextureFulfillProc textureFulfillProc,
+                                      TextureReleaseProc textureReleaseProc,
+                                      PromiseDoneProc promiseDoneProc,
+                                      TextureContext textureContext);
+
+    
+
+
+
+
+
+
+    sk_sp<SkImage> makeYUVAPromiseTexture(SkYUVColorSpace yuvColorSpace,
+                                          const GrBackendFormat yuvaFormats[],
+                                          const SkYUVAIndex yuvaIndices[4],
+                                          int imageWidth,
+                                          int imageHeight,
+                                          GrSurfaceOrigin imageOrigin,
+                                          sk_sp<SkColorSpace> imageColorSpace,
+                                          TextureFulfillProc textureFulfillProc,
+                                          TextureReleaseProc textureReleaseProc,
+                                          PromiseDoneProc promiseDoneProc,
+                                          TextureContext textureContexts[]);
 private:
     bool init();
 
     const SkSurfaceCharacterization             fCharacterization;
 
-#ifndef SK_RASTER_RECORDER_IMPLEMENTATION
 #if SK_SUPPORT_GPU
     sk_sp<GrContext>                            fContext;
-#endif
     sk_sp<SkDeferredDisplayList::LazyProxyData> fLazyProxyData;
-#endif
     sk_sp<SkSurface>                            fSurface;
+#endif
 };
 
 #endif

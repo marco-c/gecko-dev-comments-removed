@@ -22,7 +22,8 @@ public:
 
         
         
-        void set(SkScalar r0, SkScalar r1, SkMatrix& matrix);
+        
+        bool set(SkScalar r0, SkScalar r1, SkMatrix* matrix);
 
         
         
@@ -61,10 +62,8 @@ public:
     SkScalar getEndRadius() const { return fRadius2; }
 
     Type getType() const { return fType; }
-    const SkMatrix& getGradientMatrix() const { return fPtsToUnit; }
     const FocalData& getFocalData() const { return fFocalData; }
 
-    SK_TO_STRING_OVERRIDE()
     SK_DECLARE_PUBLIC_FLATTENABLE_DESERIALIZATION_PROCS(SkTwoPointConicalGradient)
 
 protected:
@@ -73,8 +72,6 @@ protected:
 
     void appendGradientStages(SkArenaAlloc* alloc, SkRasterPipeline* tPipeline,
                               SkRasterPipeline* postPipeline) const override;
-
-    bool onIsRasterPipelineOnly(const SkMatrix&) const override { return true; }
 
 private:
     SkTwoPointConicalGradient(const SkPoint& c0, SkScalar r0,

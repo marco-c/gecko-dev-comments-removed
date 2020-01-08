@@ -61,7 +61,6 @@ public:
 
 
         AlphaOption fAlphaOption = AlphaOption::kIgnore;
-        SkTransferFunctionBehavior fBlendBehavior = SkTransferFunctionBehavior::kRespect;
     };
 
     

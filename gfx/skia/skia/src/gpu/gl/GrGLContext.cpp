@@ -37,7 +37,7 @@ std::unique_ptr<GrGLContext> GrGLContext::Make(sk_sp<const GrGLInterface> interf
 
     args.fVendor = GrGLGetVendor(interface.get());
 
-    args.fRenderer = GrGLGetRendererFromString(renderer);
+    args.fRenderer = GrGLGetRendererFromStrings(renderer, interface->fExtensions);
 
     GrGLGetANGLEInfoFromString(renderer, &args.fANGLEBackend, &args.fANGLEVendor,
                                &args.fANGLERenderer);
@@ -50,6 +50,21 @@ std::unique_ptr<GrGLContext> GrGLContext::Make(sk_sp<const GrGLInterface> interf
 
 
     if (kAdreno3xx_GrGLRenderer == args.fRenderer) {
+        args.fGLSLGeneration = k110_GrGLSLGeneration;
+    }
+
+    
+    
+    
+    
+    
+    if (kGLES_GrGLStandard == interface->fStandard &&
+        options.fPreferExternalImagesOverES3 &&
+        !options.fDisableDriverCorrectnessWorkarounds &&
+        interface->hasExtension("GL_OES_EGL_image_external") &&
+        args.fGLSLGeneration >= k330_GrGLSLGeneration &&
+        !interface->hasExtension("GL_OES_EGL_image_external_essl3") &&
+        !interface->hasExtension("OES_EGL_image_external_essl3")) {
         args.fGLSLGeneration = k110_GrGLSLGeneration;
     }
 

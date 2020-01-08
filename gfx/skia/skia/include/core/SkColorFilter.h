@@ -21,6 +21,7 @@ class SkBitmap;
 class SkColorSpace;
 class SkColorSpaceXformer;
 class SkRasterPipeline;
+class SkString;
 
 
 
@@ -77,7 +78,7 @@ public:
     virtual uint32_t getFlags() const { return 0; }
 
     SkColor filterColor(SkColor) const;
-    SkColor4f filterColor4f(const SkColor4f&) const;
+    SkColor4f filterColor4f(const SkColor4f&, SkColorSpace*) const;
 
     
 
@@ -134,13 +135,25 @@ public:
 #endif
 
     bool affectsTransparentBlack() const {
-        return this->filterColor(0) != 0;
+        return this->filterColor(SK_ColorTRANSPARENT) != SK_ColorTRANSPARENT;
     }
 
-    SK_TO_STRING_PUREVIRT()
+    static void InitializeFlattenables();
 
-    SK_DECLARE_FLATTENABLE_REGISTRAR_GROUP()
-    SK_DEFINE_FLATTENABLE_TYPE(SkColorFilter)
+    static SkFlattenable::Type GetFlattenableType() {
+        return kSkColorFilter_Type;
+    }
+
+    SkFlattenable::Type getFlattenableType() const override {
+        return kSkColorFilter_Type;
+    }
+
+    static sk_sp<SkColorFilter> Deserialize(const void* data, size_t size,
+                                          const SkDeserialProcs* procs = nullptr) {
+        return sk_sp<SkColorFilter>(static_cast<SkColorFilter*>(
+                                  SkFlattenable::Deserialize(
+                                  kSkColorFilter_Type, data, size, procs).release()));
+    }
 
 protected:
     SkColorFilter() {}

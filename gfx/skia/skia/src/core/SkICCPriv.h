@@ -51,11 +51,4 @@ enum ParaCurveType {
     kGABCDEF_ParaCurveType     = 4,
 };
 
-
-
-
-
-
-SkString SkICCGetColorProfileTag(const SkColorSpaceTransferFn& fn,
-                                 const SkMatrix44& toXYZD50);
 #endif  

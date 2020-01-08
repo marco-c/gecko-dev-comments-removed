@@ -11,7 +11,7 @@
 #include "GrColor.h"
 #include "GrFragmentProcessor.h"
 #include "GrNonAtomicRef.h"
-#include "GrPendingProgramElement.h"
+#include "GrPendingIOResource.h"
 #include "GrProcessorSet.h"
 #include "GrProgramDesc.h"
 #include "GrRect.h"
@@ -27,7 +27,6 @@
 #include "effects/GrSimpleTextureEffect.h"
 
 class GrAppliedClip;
-class GrDeviceCoordTexture;
 class GrOp;
 class GrRenderTargetContext;
 
@@ -52,26 +51,6 @@ public:
 
 
         kSnapVerticesToPixelCenters_Flag = 0x2,
-        
-        kDisableOutputConversionToSRGB_Flag = 0x4,
-        
-        kAllowSRGBInputs_Flag = 0x8,
-    };
-
-    static uint32_t SRGBFlagsFromPaint(const GrPaint& paint) {
-        uint32_t flags = 0;
-        if (paint.getAllowSRGBInputs()) {
-            flags |= kAllowSRGBInputs_Flag;
-        }
-        if (paint.getDisableOutputConversionToSRGB()) {
-            flags |= kDisableOutputConversionToSRGB_Flag;
-        }
-        return flags;
-    }
-
-    enum ScissorState : bool {
-        kEnabled = true,
-        kDisabled = false
     };
 
     struct InitArgs {
@@ -86,11 +65,29 @@ public:
     
 
 
-    struct DynamicState {
+
+
+
+
+    struct FixedDynamicState {
+        explicit FixedDynamicState(const SkIRect& scissorRect) : fScissorRect(scissorRect) {}
+        FixedDynamicState() = default;
+        SkIRect fScissorRect = SkIRect::EmptyIRect();
+        
+        
+        GrTextureProxy** fPrimitiveProcessorTextures = nullptr;
+    };
+
+    
+
+
+
+    struct DynamicStateArrays {
+        const SkIRect* fScissorRects = nullptr;
         
         
         
-        SkIRect fScissorRect;
+        GrTextureProxy** fPrimitiveProcessorTextures = nullptr;
     };
 
     
@@ -98,7 +95,7 @@ public:
 
 
 
-    GrPipeline(GrRenderTargetProxy*, ScissorState, SkBlendMode);
+    GrPipeline(GrRenderTargetProxy*, GrScissorTest, SkBlendMode);
 
     GrPipeline(const InitArgs&, GrProcessorSet&&, GrAppliedClip&&);
 
@@ -142,7 +139,7 @@ public:
 
     GrTexture* peekDstTexture(SkIPoint* offset = nullptr) const {
         if (GrTextureProxy* dstProxy = this->dstTextureProxy(offset)) {
-            return dstProxy->priv().peekTexture();
+            return dstProxy->peekTexture();
         }
 
         return nullptr;
@@ -170,23 +167,19 @@ public:
 
 
     GrRenderTargetProxy* proxy() const { return fProxy.get(); }
-    GrRenderTarget* renderTarget() const { return fProxy.get()->priv().peekRenderTarget(); }
+    GrRenderTarget* renderTarget() const { return fProxy.get()->peekRenderTarget(); }
 
     const GrUserStencilSettings* getUserStencil() const { return fUserStencilSettings; }
 
-    const GrScissorState& getScissorState() const { return fScissorState; }
+    bool isScissorEnabled() const {
+        return SkToBool(fFlags & kScissorEnabled_Flag);
+    }
 
     const GrWindowRectsState& getWindowRectsState() const { return fWindowRectsState; }
 
     bool isHWAntialiasState() const { return SkToBool(fFlags & kHWAntialias_Flag); }
     bool snapVerticesToPixelCenters() const {
         return SkToBool(fFlags & kSnapVerticesToPixelCenters_Flag);
-    }
-    bool getDisableOutputConversionToSRGB() const {
-        return SkToBool(fFlags & kDisableOutputConversionToSRGB_Flag);
-    }
-    bool getAllowSRGBInputs() const {
-        return SkToBool(fFlags & kAllowSRGBInputs_Flag);
     }
     bool hasStencilClip() const {
         return SkToBool(fFlags & kHasStencilClip_Flag);
@@ -207,12 +200,6 @@ public:
             if (flags & GrPipeline::kHWAntialias_Flag) {
                 result.append("HW Antialiasing enabled.\n");
             }
-            if (flags & GrPipeline::kDisableOutputConversionToSRGB_Flag) {
-                result.append("Disable output conversion to sRGB.\n");
-            }
-            if (flags & GrPipeline::kAllowSRGBInputs_Flag) {
-                result.append("Allow sRGB Inputs.\n");
-            }
             return result;
         }
         return SkString("No pipeline flags\n");
@@ -225,7 +212,8 @@ private:
     enum PrivateFlags {
         kHasStencilClip_Flag = 0x10,
         kStencilEnabled_Flag = 0x20,
-        kIsBad_Flag = 0x40,
+        kScissorEnabled_Flag = 0x40,
+        kIsBad_Flag = 0x80,
     };
 
     using RenderTargetProxy = GrPendingIOResource<GrRenderTargetProxy, kWrite_GrIOType>;
@@ -236,7 +224,6 @@ private:
     SkIPoint fDstTextureOffset;
     
     RenderTargetProxy fProxy;
-    GrScissorState fScissorState;
     GrWindowRectsState fWindowRectsState;
     const GrUserStencilSettings* fUserStencilSettings;
     uint16_t fFlags;
@@ -245,8 +232,6 @@ private:
 
     
     int fNumColorProcessors;
-
-    typedef SkRefCnt INHERITED;
 };
 
 #endif

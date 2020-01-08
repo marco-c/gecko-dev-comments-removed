@@ -63,14 +63,28 @@ public:
         ValueList* list = fHash.find(key);
         
         
+#if 0
+        
+        
         SkASSERT(list);
         ValueList* prev = nullptr;
         while (list->fValue != value) {
             prev = list;
             list = list->fNext;
         }
-
         this->internalRemove(prev, list, key);
+#else
+        ValueList* prev = nullptr;
+        while (list && list->fValue != value) {
+            prev = list;
+            list = list->fNext;
+        }
+        
+        SkASSERT(list);
+        if (list) {
+            this->internalRemove(prev, list, key);
+        }
+#endif
     }
 
     T* find(const Key& key) const {

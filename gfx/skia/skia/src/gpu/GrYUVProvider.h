@@ -13,8 +13,10 @@
 #include "SkYUVSizeInfo.h"
 
 class GrContext;
+struct GrSurfaceDesc;
 class GrTexture;
 class GrTextureProxy;
+class SkCachedData;
 
 
 
@@ -38,10 +40,13 @@ public:
 
 
     sk_sp<GrTextureProxy> refAsTextureProxy(GrContext*, const GrSurfaceDesc&,
-                                            const SkColorSpace* srcColorSpace,
-                                            const SkColorSpace* dstColorSpace);
+                                            SkColorSpace* srcColorSpace,
+                                            SkColorSpace* dstColorSpace);
 
-    virtual uint32_t onGetID() = 0;
+    sk_sp<SkCachedData> getPlanes(SkYUVSizeInfo*, SkYUVColorSpace*, const void* planes[3]);
+
+private:
+    virtual uint32_t onGetID() const = 0;
 
     
 
@@ -67,7 +72,6 @@ public:
 
     virtual bool onGetYUV8Planes(const SkYUVSizeInfo& sizeInfo, void* planes[3]) = 0;
 
-private:
     
     
     

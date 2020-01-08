@@ -5,7 +5,9 @@
 
 
 
+#include "SkAutoMalloc.h"
 #include "SkBitmap.h"
+#include "SkData.h"
 #include "SkDeduper.h"
 #include "SkImage.h"
 #include "SkImageGenerator.h"
@@ -260,11 +262,31 @@ bool SkReadBuffer::readScalarArray(SkScalar* values, size_t size) {
     return this->readArray(values, size, sizeof(SkScalar));
 }
 
+sk_sp<SkData> SkReadBuffer::readByteArrayAsData() {
+    size_t numBytes = this->getArrayCount();
+    if (!this->validate(fReader.isAvailable(numBytes))) {
+        return nullptr;
+    }
+
+    SkAutoMalloc buffer(numBytes);
+    if (!this->readByteArray(buffer.get(), numBytes)) {
+        return nullptr;
+    }
+
+    return SkData::MakeFromMalloc(buffer.release(), numBytes);
+}
+
 uint32_t SkReadBuffer::getArrayCount() {
     const size_t inc = sizeof(uint32_t);
     fError = fError || !IsPtrAlign4(fReader.peek()) || !fReader.isAvailable(inc);
     return fError ? 0 : *(uint32_t*)fReader.peek();
 }
+
+
+
+
+
+
 
 sk_sp<SkImage> SkReadBuffer::readImage() {
     if (fInflator) {
@@ -272,55 +294,68 @@ sk_sp<SkImage> SkReadBuffer::readImage() {
         return img ? sk_ref_sp(img) : nullptr;
     }
 
-    int width = this->read32();
-    int height = this->read32();
+    SkIRect bounds;
+    if (this->isVersionLT(kStoreImageBounds_Version)) {
+        bounds.fLeft = bounds.fTop = 0;
+        bounds.fRight = this->read32();
+        bounds.fBottom = this->read32();
+    } else {
+        this->readIRect(&bounds);
+    }
+    const int width = bounds.width();
+    const int height = bounds.height();
     if (width <= 0 || height <= 0) {    
         this->validate(false);
         return nullptr;
     }
 
-    
-
-
-
-
-
-
-    int32_t encoded_size = this->read32();
-    if (encoded_size == 0) {
+    int32_t size = this->read32();
+    if (size == SK_NaN32) {
+        
+        this->validate(false);
+        return nullptr;
+    }
+    if (size == 0) {
         
         return MakeEmptyImage(width, height);
     }
-    if (encoded_size == 1) {
+
+    
+    size = SkAbs32(size);
+    if (size == 1) {
         
         this->validate(false);
         return nullptr;
     }
 
-    size_t size = SkAbs32(encoded_size);
+    
+    
+    
+    if (!this->validateCanReadN<uint8_t>(size)) {
+        return nullptr;
+    }
+
     sk_sp<SkData> data = SkData::MakeUninitialized(size);
     if (!this->readPad32(data->writable_data(), size)) {
         this->validate(false);
         return nullptr;
     }
-    int32_t originX = this->read32();
-    int32_t originY = this->read32();
-    if (originX < 0 || originY < 0) {
-        this->validate(false);
-        return nullptr;
+    if (this->isVersionLT(kDontNegateImageSize_Version)) {
+        (void)this->read32();   
+        (void)this->read32();   
     }
 
     sk_sp<SkImage> image;
-    if (encoded_size < 0) {     
-        if (fProcs.fImageProc) {
-            image = fProcs.fImageProc(data->data(), data->size(), fProcs.fImageCtx);
-        } else {
-            
-            
+    if (fProcs.fImageProc) {
+        image = fProcs.fImageProc(data->data(), data->size(), fProcs.fImageCtx);
+    }
+    if (!image) {
+        image = SkImage::MakeFromEncoded(std::move(data));
+    }
+    if (image) {
+        if (bounds.x() || bounds.y() || width < image->width() || height < image->height()) {
+            image = image->makeSubset(bounds);
         }
-    } else {
-        SkIRect subset = SkIRect::MakeXYWH(originX, originY, width, height);
-        image = SkImage::MakeFromEncoded(std::move(data), &subset);
     }
     
     
@@ -344,7 +379,7 @@ sk_sp<SkTypeface> SkReadBuffer::readTypeface() {
         if (!this->validate(index <= fTFCount)) {
             return nullptr;
         }
-        return sk_ref_sp(fTFArray[index - 1]);
+        return fTFArray[index - 1];
     } else {    
         size_t size = sk_negate_to_size_t(index);
         const void* data = this->skip(size);
@@ -425,6 +460,9 @@ SkFlattenable* SkReadBuffer::readFlattenable(SkFlattenable::Type ft) {
     } else {
         
         fReader.skip(sizeRecorded);
+    }
+    if (!this->isValid()) {
+        return nullptr;
     }
     return obj.release();
 }

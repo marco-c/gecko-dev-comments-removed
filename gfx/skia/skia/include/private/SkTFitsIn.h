@@ -8,7 +8,6 @@
 #ifndef SkTFitsIn_DEFINED
 #define SkTFitsIn_DEFINED
 
-#include "../private/SkTLogic.h"
 #include <limits>
 #include <type_traits>
 
@@ -47,164 +46,29 @@
 
 
 
-namespace sktfitsin {
-namespace Private {
-
-
-template <bool a, bool b, typename Both, typename A, typename B, typename Neither>
-struct SkTMux {
-    using type = skstd::conditional_t<a, skstd::conditional_t<b, Both, A>,
-                                         skstd::conditional_t<b, B, Neither>>;
-};
-
-
-template <typename A, typename B> struct SkTHasMoreDigits
-    : skstd::bool_constant<std::numeric_limits<A>::digits >= std::numeric_limits<B>::digits>
-{ };
-
-
-
-
-template <typename S> struct SkTInRange_True {
-    static constexpr bool fits(S) {
-        return true;
-    }
-};
-
-
-
-
-template <typename D, typename S> struct SkTInRange_Cast {
-    static constexpr bool fits(S s) {
-        using S_is_bigger = SkTHasMoreDigits<S, D>;
-        using D_is_bigger = SkTHasMoreDigits<D, S>;
-
-        using S_is_signed = skstd::bool_constant<std::numeric_limits<S>::is_signed>;
-        using D_is_signed = skstd::bool_constant<std::numeric_limits<D>::is_signed>;
-
-        using precondition = skstd::bool_constant<
-            !((!S_is_signed::value &&  D_is_signed::value && S_is_bigger::value) ||
-              ( S_is_signed::value && !D_is_signed::value && D_is_bigger::value)   )>;
-        static_assert(precondition::value, "not valid for uX -> sx and sx -> uX conversions");
-
-        return static_cast<S>(static_cast<D>(s)) == s;
-    }
-};
-
-
-
-
-template <typename D, typename S> struct SkTInRange_LE_MaxD {
-    static constexpr bool fits(S s) {
-        using precondition = SkTHasMoreDigits<S, D>;
-        static_assert(precondition::value, "maxS < maxD");
-
-        return s <= static_cast<S>((std::numeric_limits<D>::max)());
-
-    }
-};
-
-
-template <typename D, typename S> struct SkTInRange_GE_Zero {
-    static constexpr bool fits(S s) {
-        return static_cast<S>(0) <= s;
-    }
-};
 
 
 
 
 
-template <typename D, typename S> struct SkTFitsIn_Unsigned2Unsiged {
-    using CastCheck = SkTInRange_Cast<D, S>;
-    using NoCheck = SkTInRange_True<S>;
+template <typename D, typename S>
+static constexpr inline
+typename std::enable_if<(std::is_integral<S>::value || std::is_enum<S>::value) &&
+                        (std::is_integral<D>::value || std::is_enum<D>::value), bool>::type
+ SkTFitsIn(S src) {
+    
+    return
 
     
-    using sourceFitsInDesitination = SkTHasMoreDigits<D, S>;
-    using type = skstd::conditional_t<sourceFitsInDesitination::value, NoCheck, CastCheck>;
-};
-
-
-
-
-
-template <typename D, typename S> struct SkTFitsIn_Signed2Signed {
-    using CastCheck = SkTInRange_Cast<D, S>;
-    using NoCheck = SkTInRange_True<S>;
+    (std::is_signed<S>::value && std::is_unsigned<D>::value && sizeof(S) <= sizeof(D)) ?
+        (S)0 <= src :
 
     
-    using sourceFitsInDesitination = SkTHasMoreDigits<D, S>;
-    using type = skstd::conditional_t<sourceFitsInDesitination::value, NoCheck, CastCheck>;
-};
-
-
-
-
-
-template <typename D, typename S> struct SkTFitsIn_Signed2Unsigned {
-    using CastCheck = SkTInRange_Cast<D, S>;
-    using LowSideOnlyCheck = SkTInRange_GE_Zero<D, S>;
+    (std::is_signed<D>::value && std::is_unsigned<S>::value && sizeof(D) <= sizeof(S)) ?
+        src <= (S)std::numeric_limits<D>::max() :
 
     
-    
-    
-    using sourceCannotExceedDest = SkTHasMoreDigits<D, S>;
-    using type = skstd::conditional_t<sourceCannotExceedDest::value, LowSideOnlyCheck, CastCheck>;
-};
-
-
-
-
-
-template <typename D, typename S> struct SkTFitsIn_Unsigned2Signed {
-    using HighSideCheck = SkTInRange_LE_MaxD<D, S>;
-    using NoCheck = SkTInRange_True<S>;
-
-    
-    
-    using sourceCannotExceedDest = SkTHasMoreDigits<D, S>;
-    using type = skstd::conditional_t<sourceCannotExceedDest::value, NoCheck, HighSideCheck>;
-};
-
-
-
-
-
-template <typename D, typename S> struct SkTFitsIn {
-    
-    using S2S = SkTFitsIn_Signed2Signed<D, S>;
-    using S2U = SkTFitsIn_Signed2Unsigned<D, S>;
-    using U2S = SkTFitsIn_Unsigned2Signed<D, S>;
-    using U2U = SkTFitsIn_Unsigned2Unsiged<D, S>;
-
-    using S_is_signed = skstd::bool_constant<std::numeric_limits<S>::is_signed>;
-    using D_is_signed = skstd::bool_constant<std::numeric_limits<D>::is_signed>;
-
-    using selector = typename SkTMux<S_is_signed::value, D_is_signed::value,
-                                     S2S, S2U, U2S, U2U>::type;
-    
-    using type = typename selector::type;
-};
-
-template <typename T, bool = std::is_enum<T>::value> struct underlying_type {
-    using type = skstd::underlying_type_t<T>;
-};
-template <typename T> struct underlying_type<T, false> {
-    using type = T;
-};
-
-} 
-} 
-
-
-template <typename D, typename S> constexpr inline bool SkTFitsIn(S s) {
-    static_assert(std::is_integral<S>::value || std::is_enum<S>::value, "S must be integral.");
-    static_assert(std::is_integral<D>::value || std::is_enum<D>::value, "D must be integral.");
-
-    using RealS = typename sktfitsin::Private::underlying_type<S>::type;
-    using RealD = typename sktfitsin::Private::underlying_type<D>::type;
-
-    return sktfitsin::Private::SkTFitsIn<RealD, RealS>::type::fits(s);
+        (S)(D)src == src;
 }
 
 #endif

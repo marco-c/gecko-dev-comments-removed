@@ -11,8 +11,8 @@
 #include "SkGradientShader.h"
 
 #include "SkArenaAlloc.h"
-#include "SkAutoMalloc.h"
 #include "SkMatrix.h"
+#include "SkPM4f.h"
 #include "SkShaderBase.h"
 #include "SkTArray.h"
 #include "SkTemplates.h"
@@ -54,13 +54,9 @@ public:
         SkScalar* mutablePos() { return const_cast<SkScalar*>(fPos); }
 
     private:
-        enum {
-            kStorageCount = 16
-        };
-        SkColor4f fColorStorage[kStorageCount];
-        SkScalar fPosStorage[kStorageCount];
-        SkMatrix fLocalMatrixStorage;
-        SkAutoMalloc fDynamicStorage;
+        SkSTArray<16, SkColor4f, true> fColorStorage;
+        SkSTArray<16, SkScalar , true> fPosStorage;
+        SkMatrix                       fLocalMatrixStorage;
     };
 
     SkGradientShaderBase(const Descriptor& desc, const SkMatrix& ptsToUnit);
@@ -68,33 +64,21 @@ public:
 
     bool isOpaque() const override;
 
-    enum class GradientBitmapType : uint8_t {
-        kLegacy,
-        kSRGB,
-        kHalfFloat,
-    };
-
-    void getGradientTableBitmap(SkBitmap*, GradientBitmapType bitmapType) const;
-
     uint32_t getGradFlags() const { return fGradFlags; }
 
-    SkColor4f getXformedColor(size_t index, SkColorSpace*) const;
+    const SkMatrix& getGradientMatrix() const { return fPtsToUnit; }
 
 protected:
     class GradientShaderBase4fContext;
 
     SkGradientShaderBase(SkReadBuffer& );
     void flatten(SkWriteBuffer&) const override;
-    SK_TO_STRING_OVERRIDE()
 
     void commonAsAGradient(GradientInfo*) const;
 
     bool onAsLuminanceColor(SkColor*) const override;
 
-    void initLinearBitmap(SkBitmap* bitmap, GradientBitmapType) const;
-
     bool onAppendStages(const StageRec&) const override;
-    bool onIsRasterPipelineOnly(const SkMatrix& ctm) const override;
 
     virtual void appendGradientStages(SkArenaAlloc* alloc, SkRasterPipeline* tPipeline,
                                       SkRasterPipeline* postPipeline) const = 0;
@@ -126,7 +110,7 @@ public:
 
     SkColor getLegacyColor(int i) const {
         SkASSERT(i < fColorCount);
-        return fOrigColors4f[i].toSkColor();
+        return Sk4f_toL32(swizzle_rb(Sk4f::Load(fOrigColors4f[i].vec())));
     }
 
     SkColor4f*          fOrigColors4f; 
@@ -152,250 +136,11 @@ private:
 
 
 
-#if SK_SUPPORT_GPU
+struct SkColor4fXformer {
+    SkColor4fXformer(const SkColor4f* colors, int colorCount, SkColorSpace* src, SkColorSpace* dst);
 
-#include "GrColorSpaceInfo.h"
-#include "GrCoordTransform.h"
-#include "GrFragmentProcessor.h"
-#include "glsl/GrGLSLFragmentProcessor.h"
-#include "glsl/GrGLSLProgramDataManager.h"
-
-class GrInvariantOutput;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- class GrTextureStripAtlas;
-
-
-class GrGradientEffect : public GrFragmentProcessor {
-public:
-    struct CreateArgs {
-        CreateArgs(GrContext* context,
-                   const SkGradientShaderBase* shader,
-                   const SkMatrix* matrix,
-                   SkShader::TileMode tileMode,
-                   SkColorSpace* dstColorSpace)
-                : fContext(context)
-                , fShader(shader)
-                , fMatrix(matrix)
-                , fDstColorSpace(dstColorSpace) {
-            switch (tileMode) {
-                case SkShader::kClamp_TileMode:
-                    fWrapMode = GrSamplerState::WrapMode::kClamp;
-                    break;
-                case SkShader::kRepeat_TileMode:
-                    fWrapMode = GrSamplerState::WrapMode::kRepeat;
-                    break;
-                case SkShader::kMirror_TileMode:
-                    fWrapMode = GrSamplerState::WrapMode::kMirrorRepeat;
-                    break;
-                case SkShader::kDecal_TileMode:
-                    
-                    fWrapMode = GrSamplerState::WrapMode::kClamp;
-                    break;
-            }
-        }
-
-        CreateArgs(GrContext* context,
-                   const SkGradientShaderBase* shader,
-                   const SkMatrix* matrix,
-                   GrSamplerState::WrapMode wrapMode,
-                   SkColorSpace* dstColorSpace)
-                : fContext(context)
-                , fShader(shader)
-                , fMatrix(matrix)
-                , fWrapMode(wrapMode)
-                , fDstColorSpace(dstColorSpace) {}
-
-        GrContext*                  fContext;
-        const SkGradientShaderBase* fShader;
-        const SkMatrix*             fMatrix;
-        GrSamplerState::WrapMode    fWrapMode;
-        SkColorSpace*               fDstColorSpace;
-    };
-
-    class GLSLProcessor;
-
-    ~GrGradientEffect() override;
-
-    bool useAtlas() const { return SkToBool(-1 != fRow); }
-
-    
-    
-    enum class InterpolationStrategy : uint8_t {
-        kSingle,          
-        kThreshold,       
-        kThresholdClamp0, 
-        kThresholdClamp1, 
-        kTexture,         
-    };
-
-    enum PremulType {
-        kBeforeInterp_PremulType,
-        kAfterInterp_PremulType,
-    };
-
-protected:
-    GrGradientEffect(ClassID classID, const CreateArgs&, bool isOpaque);
-    explicit GrGradientEffect(const GrGradientEffect&);  
-
-    void onGetGLSLProcessorKey(const GrShaderCaps&, GrProcessorKeyBuilder*) const override;
-
-    
-    
-    static std::unique_ptr<GrFragmentProcessor> AdjustFP(
-            std::unique_ptr<GrGradientEffect> gradientFP, const CreateArgs& args) {
-        if (!gradientFP->isValid()) {
-            return nullptr;
-        }
-        std::unique_ptr<GrFragmentProcessor> fp;
-        
-        
-        
-        if (gradientFP->fStrategy == InterpolationStrategy::kTexture) {
-            
-            
-            
-            
-            fp = GrColorSpaceXformEffect::Make(std::move(gradientFP),
-                                               args.fShader->fColorSpace.get(),
-                                               kRGBA_float_GrPixelConfig,
-                                               args.fDstColorSpace);
-        } else {
-            fp = std::move(gradientFP);
-        }
-        return GrFragmentProcessor::MulChildByInputAlpha(std::move(fp));
-    }
-
-#if GR_TEST_UTILS
-    
-
-
-
-
-
-    struct RandomGradientParams {
-        static constexpr int kMaxRandomGradientColors = 5;
-
-        RandomGradientParams(SkRandom* r);
-
-        bool fUseColors4f;
-        SkColor fColors[kMaxRandomGradientColors];
-        SkColor4f fColors4f[kMaxRandomGradientColors];
-        sk_sp<SkColorSpace> fColorSpace;
-        SkScalar fStopStorage[kMaxRandomGradientColors];
-        SkShader::TileMode fTileMode;
-        int fColorCount;
-        SkScalar* fStops;
-    };
-    #endif
-
-    bool onIsEqual(const GrFragmentProcessor&) const override;
-
-    const GrCoordTransform& getCoordTransform() const { return fCoordTransform; }
-
-    
-    bool isValid() const {
-        return fStrategy != InterpolationStrategy::kTexture || fTextureSampler.isInitialized();
-    }
-
-private:
-    void addInterval(const SkGradientShaderBase&, size_t idx0, size_t idx1, SkColorSpace*);
-
-    static OptimizationFlags OptFlags(bool isOpaque);
-
-    
-    
-    SkSTArray<4, GrColor4f, true> fIntervals;
-
-    GrSamplerState::WrapMode fWrapMode;
-
-    GrCoordTransform fCoordTransform;
-    TextureSampler fTextureSampler;
-    SkScalar fYCoord;
-    GrTextureStripAtlas* fAtlas;
-    int fRow;
-    bool fIsOpaque;
-
-    InterpolationStrategy fStrategy;
-    SkScalar              fThreshold;  
-    PremulType            fPremulType; 
-                                       
-                                       
-
-    typedef GrFragmentProcessor INHERITED;
-
+    const SkColor4f*              fColors;
+    SkSTArray<4, SkColor4f, true> fStorage;
 };
-
-
-
-
-class GrGradientEffect::GLSLProcessor : public GrGLSLFragmentProcessor {
-public:
-    GLSLProcessor() {
-        fCachedYCoord = SK_ScalarMax;
-    }
-
-    static uint32_t GenBaseGradientKey(const GrProcessor&);
-
-protected:
-    void onSetData(const GrGLSLProgramDataManager&, const GrFragmentProcessor&) override;
-
-    
-    
-    void emitUniforms(GrGLSLUniformHandler*, const GrGradientEffect&);
-
-    
-    
-    
-    
-    void emitColor(GrGLSLFPFragmentBuilder* fragBuilder,
-                   GrGLSLUniformHandler* uniformHandler,
-                   const GrShaderCaps* shaderCaps,
-                   const GrGradientEffect&,
-                   const char* gradientTValue,
-                   const char* outputColor,
-                   const char* inputColor,
-                   const TextureSamplers&);
-
-private:
-    void emitAnalyticalColor(GrGLSLFPFragmentBuilder* fragBuilder,
-                             GrGLSLUniformHandler* uniformHandler,
-                             const GrShaderCaps* shaderCaps,
-                             const GrGradientEffect&,
-                             const char* gradientTValue,
-                             const char* outputColor,
-                             const char* inputColor);
-
-    SkScalar fCachedYCoord;
-    GrGLSLProgramDataManager::UniformHandle fIntervalsUni;
-    GrGLSLProgramDataManager::UniformHandle fThresholdUni;
-    GrGLSLProgramDataManager::UniformHandle fFSYUni;
-
-    typedef GrGLSLFragmentProcessor INHERITED;
-};
-
-#endif
 
 #endif

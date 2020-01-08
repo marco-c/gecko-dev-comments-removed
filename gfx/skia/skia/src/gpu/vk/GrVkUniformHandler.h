@@ -17,9 +17,14 @@ public:
     static const int kUniformsPerBlock = 8;
 
     enum {
+        
+
+
+
+
+
         kUniformBufferDescSet = 0,
         kSamplerDescSet = 1,
-        kTexelBufferDescSet = 2,
     };
     enum {
         kGeometryBinding = 0,
@@ -47,7 +52,6 @@ private:
         : INHERITED(program)
         , fUniforms(kUniformsPerBlock)
         , fSamplers(kUniformsPerBlock)
-        , fTexelBuffers(kUniformsPerBlock)
         , fCurrentGeometryUBOOffset(0)
         , fCurrentFragmentUBOOffset(0) {
     }
@@ -60,9 +64,8 @@ private:
                                           int arrayCount,
                                           const char** outName) override;
 
-    SamplerHandle addSampler(uint32_t visibility,
-                             GrSwizzle swizzle,
-                             GrSLType type,
+    SamplerHandle addSampler(GrSwizzle swizzle,
+                             GrTextureType type,
                              GrSLPrecision precision,
                              const char* name) override;
 
@@ -75,17 +78,6 @@ private:
     }
     uint32_t samplerVisibility(SamplerHandle handle) const {
         return fSamplers[handle.toIndex()].fVisibility;
-    }
-
-    TexelBufferHandle addTexelBuffer(uint32_t visibility, GrSLPrecision,
-                                     const char* name) override;
-
-    int numTexelBuffers() const { return fTexelBuffers.count(); }
-    const GrShaderVar& texelBufferVariable(TexelBufferHandle handle) const override {
-        return fTexelBuffers[handle.toIndex()].fVariable;
-    }
-    uint32_t texelBufferVisibility(TexelBufferHandle handle) const {
-        return fTexelBuffers[handle.toIndex()].fVisibility;
     }
 
     void appendUniformDecls(GrShaderFlags, SkString*) const override;
@@ -102,7 +94,6 @@ private:
     UniformInfoArray    fUniforms;
     UniformInfoArray    fSamplers;
     SkTArray<GrSwizzle> fSamplerSwizzles;
-    UniformInfoArray    fTexelBuffers;
 
     uint32_t            fCurrentGeometryUBOOffset;
     uint32_t            fCurrentFragmentUBOOffset;

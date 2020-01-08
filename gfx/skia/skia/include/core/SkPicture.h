@@ -5,6 +5,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #ifndef SkPicture_DEFINED
 #define SkPicture_DEFINED
 
@@ -12,20 +22,20 @@
 #include "SkRect.h"
 #include "SkTypes.h"
 
-class SkBigPicture;
 class SkCanvas;
 class SkData;
 struct SkDeserialProcs;
 class SkImage;
-class SkPictureData;
-class SkReadBuffer;
-class SkRefCntSet;
 struct SkSerialProcs;
 class SkStream;
-class SkTypefacePlayback;
 class SkWStream;
-class SkWriteBuffer;
-struct SkPictInfo;
+
+
+
+
+
+
+
 
 
 
@@ -34,29 +44,50 @@ struct SkPictInfo;
 
 class SK_API SkPicture : public SkRefCnt {
 public:
+
     
 
 
 
-    static sk_sp<SkPicture> MakeFromStream(SkStream*, const SkDeserialProcs* = nullptr);
-    static sk_sp<SkPicture> MakeFromData(const SkData* data, const SkDeserialProcs* = nullptr);
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkPicture> MakeFromStream(SkStream* stream,
+                                           const SkDeserialProcs* procs = nullptr);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkPicture> MakeFromData(const SkData* data,
+                                         const SkDeserialProcs* procs = nullptr);
+
+    
+
+
+
+
+
+
     static sk_sp<SkPicture> MakeFromData(const void* data, size_t size,
-                                         const SkDeserialProcs* = nullptr);
+                                         const SkDeserialProcs* procs = nullptr);
 
     
-
-
-
-
-
-
-
-    static sk_sp<SkPicture> MakeFromBuffer(SkReadBuffer&);
-
-    
-
-
-
 
 
 
@@ -65,8 +96,29 @@ public:
 
     class SK_API AbortCallback {
     public:
+
+        
+
+
+
         AbortCallback() {}
+
+        
+
         virtual ~AbortCallback() {}
+
+        
+
+
+
+
+
+
+
+
+
+
+
         virtual bool abort() = 0;
     };
 
@@ -77,20 +129,57 @@ public:
 
 
 
-    virtual void playback(SkCanvas*, AbortCallback* = nullptr) const = 0;
+
+
+    virtual void playback(SkCanvas* canvas, AbortCallback* callback = nullptr) const = 0;
 
     
+
+
+
+
+
+
 
 
     virtual SkRect cullRect() const = 0;
 
     
+
+
+
     uint32_t uniqueID() const;
 
-    sk_sp<SkData> serialize(const SkSerialProcs* = nullptr) const;
-    void serialize(SkWStream*, const SkSerialProcs* = nullptr) const;
+    
+
+
+
+
+
+
+
+
+
+
+    sk_sp<SkData> serialize(const SkSerialProcs* procs = nullptr) const;
 
     
+
+
+
+
+
+
+
+
+
+    void serialize(SkWStream* stream, const SkSerialProcs* procs = nullptr) const;
+
+    
+
+
+
+
 
 
 
@@ -101,9 +190,6 @@ public:
     
 
 
-    void flatten(SkWriteBuffer&) const;
-
-    
 
 
 
@@ -111,20 +197,23 @@ public:
     virtual int approximateOpCount() const = 0;
 
     
-    virtual size_t approximateBytesUsed() const = 0;
 
-    
-    virtual const SkBigPicture* asSkBigPicture() const { return nullptr; }
+
+
+
+    virtual size_t approximateBytesUsed() const = 0;
 
 private:
     
     SkPicture();
     friend class SkBigPicture;
     friend class SkEmptyPicture;
+    friend class SkPicturePriv;
     template <typename> friend class SkMiniPicture;
 
-    void serialize(SkWStream*, const SkSerialProcs*, SkRefCntSet* typefaces) const;
-    static sk_sp<SkPicture> MakeFromStream(SkStream*, const SkDeserialProcs*, SkTypefacePlayback*);
+    void serialize(SkWStream*, const SkSerialProcs*, class SkRefCntSet* typefaces) const;
+    static sk_sp<SkPicture> MakeFromStream(SkStream*, const SkDeserialProcs*,
+                                           class SkTypefacePlayback*);
     friend class SkPictureData;
 
     
@@ -135,9 +224,12 @@ private:
 
 
 
-    static bool StreamIsSKP(SkStream*, SkPictInfo*);
-    static bool BufferIsSKP(SkReadBuffer*, SkPictInfo*);
-    friend bool SkPicture_StreamIsSKP(SkStream*, SkPictInfo*);
+    static bool StreamIsSKP(SkStream*, struct SkPictInfo*);
+    static bool BufferIsSKP(class SkReadBuffer*, struct SkPictInfo*);
+    friend bool SkPicture_StreamIsSKP(SkStream*, struct SkPictInfo*);
+
+    
+    virtual const class SkBigPicture* asSkBigPicture() const { return nullptr; }
 
     friend struct SkPathCounter;
 
@@ -168,18 +260,23 @@ private:
     
     
     
+    
+    
+    
 
     
     static const uint32_t     MIN_PICTURE_VERSION = 56;     
-    static const uint32_t CURRENT_PICTURE_VERSION = 61;
+    static const uint32_t CURRENT_PICTURE_VERSION = 65;
 
-    static bool IsValidPictInfo(const SkPictInfo& info);
-    static sk_sp<SkPicture> Forwardport(const SkPictInfo&,
-                                        const SkPictureData*,
-                                        SkReadBuffer* buffer);
+    static_assert(MIN_PICTURE_VERSION <= 62, "Remove kFontAxes_bad from SkFontDescriptor.cpp");
 
-    SkPictInfo createHeader() const;
-    SkPictureData* backport() const;
+    static bool IsValidPictInfo(const struct SkPictInfo& info);
+    static sk_sp<SkPicture> Forwardport(const struct SkPictInfo&,
+                                        const class SkPictureData*,
+                                        class SkReadBuffer* buffer);
+
+    struct SkPictInfo createHeader() const;
+    class SkPictureData* backport() const;
 
     mutable uint32_t fUniqueID;
 };

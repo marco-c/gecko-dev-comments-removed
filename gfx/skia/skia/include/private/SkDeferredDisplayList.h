@@ -11,13 +11,13 @@
 #include "SkSurfaceCharacterization.h"
 
 #if SK_SUPPORT_GPU
+#include "GrCCPerOpListPaths.h"
 #include "GrOpList.h"
+
+#include <map>
 #endif
 
-#ifdef SK_RASTER_RECORDER_IMPLEMENTATION
-class SkImage; 
-#endif
-
+class SkDeferredDisplayListPriv;
 class SkSurface;
 
 
@@ -25,19 +25,8 @@ class SkSurface;
 
 
 
-
-class SkDeferredDisplayList {
+class SK_API SkDeferredDisplayList {
 public:
-
-#ifdef SK_RASTER_RECORDER_IMPLEMENTATION
-    SkDeferredDisplayList(const SkSurfaceCharacterization& characterization, sk_sp<SkImage> image)
-            : fCharacterization(characterization)
-            , fImage(std::move(image)) {
-    }
-
-    
-    bool draw(SkSurface*) const;
-#endif
 
 #if SK_SUPPORT_GPU
     
@@ -56,27 +45,31 @@ public:
 
     SkDeferredDisplayList(const SkSurfaceCharacterization& characterization,
                           sk_sp<LazyProxyData>);
+    ~SkDeferredDisplayList();
 
     const SkSurfaceCharacterization& characterization() const {
         return fCharacterization;
     }
 
+    
+    SkDeferredDisplayListPriv priv();
+    const SkDeferredDisplayListPriv priv() const;
+
 private:
     friend class GrDrawingManager; 
     friend class SkDeferredDisplayListRecorder; 
+    friend class SkDeferredDisplayListPriv;
 
     const SkSurfaceCharacterization fCharacterization;
 
-#ifdef SK_RASTER_RECORDER_IMPLEMENTATION
-    sk_sp<SkImage>               fImage;
-#else
-
 #if SK_SUPPORT_GPU
+    
+    using PendingPathsMap = std::map<uint32_t, sk_sp<GrCCPerOpListPaths>>;
+
     SkTArray<sk_sp<GrOpList>>    fOpLists;
+    PendingPathsMap              fPendingPaths;  
 #endif
     sk_sp<LazyProxyData>         fLazyProxyData;
-
-#endif
 };
 
 #endif

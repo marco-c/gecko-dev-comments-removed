@@ -8,6 +8,7 @@
 #ifndef SkStream_DEFINED
 #define SkStream_DEFINED
 
+#include "../private/SkTo.h"
 #include "SkData.h"
 #include "SkRefCnt.h"
 #include "SkScalar.h"
@@ -37,9 +38,10 @@ class SkStreamMemory;
 
 
 
-class SK_API SkStream : public SkNoncopyable {
+class SK_API SkStream {
 public:
     virtual ~SkStream() {}
+    SkStream() {}
 
     
 
@@ -83,17 +85,22 @@ public:
 
     virtual bool isAtEnd() const = 0;
 
-    int8_t   readS8();
-    int16_t  readS16();
-    int32_t  readS32();
+    bool SK_WARN_UNUSED_RESULT readS8(int8_t*);
+    bool SK_WARN_UNUSED_RESULT readS16(int16_t*);
+    bool SK_WARN_UNUSED_RESULT readS32(int32_t*);
 
-    uint8_t  readU8() { return (uint8_t)this->readS8(); }
-    uint16_t readU16() { return (uint16_t)this->readS16(); }
-    uint32_t readU32() { return (uint32_t)this->readS32(); }
+    bool SK_WARN_UNUSED_RESULT readU8(uint8_t* i) { return this->readS8((int8_t*)i); }
+    bool SK_WARN_UNUSED_RESULT readU16(uint16_t* i) { return this->readS16((int16_t*)i); }
+    bool SK_WARN_UNUSED_RESULT readU32(uint32_t* i) { return this->readS32((int32_t*)i); }
 
-    bool     readBool() { return this->readU8() != 0; }
-    SkScalar readScalar();
-    size_t   readPackedUInt();
+    bool SK_WARN_UNUSED_RESULT readBool(bool* b) {
+        uint8_t i;
+        if (!this->readU8(&i)) { return false; }
+        *b = (i != 0);
+        return true;
+    }
+    bool SK_WARN_UNUSED_RESULT readScalar(SkScalar*);
+    bool SK_WARN_UNUSED_RESULT readPackedUInt(size_t*);
 
 
     
@@ -146,6 +153,11 @@ public:
 private:
     virtual SkStream* onDuplicate() const { return nullptr; }
     virtual SkStream* onFork() const { return nullptr; }
+
+    SkStream(SkStream&&) = delete;
+    SkStream(const SkStream&) = delete;
+    SkStream& operator=(SkStream&&) = delete;
+    SkStream& operator=(const SkStream&) = delete;
 };
 
 
@@ -212,9 +224,10 @@ private:
     SkStreamMemory* onFork() const override = 0;
 };
 
-class SK_API SkWStream : SkNoncopyable {
+class SK_API SkWStream {
 public:
     virtual ~SkWStream();
+    SkWStream() {}
 
     
 
@@ -247,29 +260,33 @@ public:
 
     bool newline() { return this->write("\n", strlen("\n")); }
 
-    bool    writeDecAsText(int32_t);
-    bool    writeBigDecAsText(int64_t, int minDigits = 0);
-    bool    writeHexAsText(uint32_t, int minDigits = 0);
-    bool    writeScalarAsText(SkScalar);
+    bool writeDecAsText(int32_t);
+    bool writeBigDecAsText(int64_t, int minDigits = 0);
+    bool writeHexAsText(uint32_t, int minDigits = 0);
+    bool writeScalarAsText(SkScalar);
 
-    bool    writeBool(bool v) { return this->write8(v); }
-    bool    writeScalar(SkScalar);
-    bool    writePackedUInt(size_t);
+    bool writeBool(bool v) { return this->write8(v); }
+    bool writeScalar(SkScalar);
+    bool writePackedUInt(size_t);
 
-    bool    writeStream(SkStream* input, size_t length);
+    bool writeStream(SkStream* input, size_t length);
 
     
 
 
 
     static int SizeOfPackedUInt(size_t value);
+
+private:
+    SkWStream(const SkWStream&) = delete;
+    SkWStream& operator=(const SkWStream&) = delete;
 };
 
 class SK_API SkNullWStream : public SkWStream {
 public:
     SkNullWStream() : fBytesWritten(0) {}
 
-    bool write(const void*, size_t n) override { fBytesWritten += n; return true; }
+    bool write(const void* , size_t n) override { fBytesWritten += n; return true; }
     void flush() override {}
     size_t bytesWritten() const override { return fBytesWritten; }
 
@@ -290,6 +307,8 @@ public:
     explicit SkFILEStream(const char path[] = nullptr);
 
     
+
+
 
 
     explicit SkFILEStream(FILE* file);
@@ -352,7 +371,7 @@ public:
     SkMemoryStream(const void* data, size_t length, bool copyData = false);
 
     
-    SkMemoryStream(sk_sp<SkData>);
+    SkMemoryStream(sk_sp<SkData> data);
 
     
     static std::unique_ptr<SkMemoryStream> MakeCopy(const void* data, size_t length);
@@ -376,7 +395,7 @@ public:
     void setMemoryOwned(const void* data, size_t length);
 
     sk_sp<SkData> asData() const { return fData; }
-    void setData(sk_sp<SkData>);
+    void setData(sk_sp<SkData> data);
 
     void skipToAlign4();
     const void* getAtPos();
@@ -438,7 +457,9 @@ private:
 
 class SK_API SkDynamicMemoryWStream : public SkWStream {
 public:
-    SkDynamicMemoryWStream();
+    SkDynamicMemoryWStream() = default;
+    SkDynamicMemoryWStream(SkDynamicMemoryWStream&&);
+    SkDynamicMemoryWStream& operator=(SkDynamicMemoryWStream&&);
     ~SkDynamicMemoryWStream() override;
 
     bool write(const void* buffer, size_t size) override;
@@ -457,6 +478,13 @@ public:
     bool writeToAndReset(SkWStream* dst);
 
     
+
+    bool writeToAndReset(SkDynamicMemoryWStream* dst);
+
+    
+    void prependToAndReset(SkDynamicMemoryWStream* dst);
+
+    
     sk_sp<SkData> detachAsData();
 
     
@@ -467,9 +495,9 @@ public:
     void padToAlign4();
 private:
     struct Block;
-    Block*  fHead;
-    Block*  fTail;
-    size_t  fBytesWrittenBeforeTail;
+    Block*  fHead = nullptr;
+    Block*  fTail = nullptr;
+    size_t  fBytesWrittenBeforeTail = 0;
 
 #ifdef SK_DEBUG
     void validate() const;

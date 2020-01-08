@@ -11,6 +11,8 @@
 #include "SkPoint3.h"
 #include "SkPointPriv.h"
 
+#include <utility>
+
 static SkVector to_vector(const Sk2s& x) {
     SkVector vector;
     x.store(&vector);
@@ -29,10 +31,6 @@ static int is_not_monotonic(SkScalar a, SkScalar b, SkScalar c) {
 }
 
 
-
-static bool is_unit_interval(SkScalar x) {
-    return x > 0 && x < SK_Scalar1;
-}
 
 static int valid_unit_divide(SkScalar numer, SkScalar denom, SkScalar* ratio) {
     SkASSERT(ratio);
@@ -97,10 +95,12 @@ int SkFindUnitQuadRoots(SkScalar A, SkScalar B, SkScalar C, SkScalar roots[2]) {
     r += valid_unit_divide(Q, A, r);
     r += valid_unit_divide(C, Q, r);
     if (r - roots == 2) {
-        if (roots[0] > roots[1])
-            SkTSwap<SkScalar>(roots[0], roots[1]);
-        else if (roots[0] == roots[1])  
+        if (roots[0] > roots[1]) {
+            using std::swap;
+            swap(roots[0], roots[1]);
+        } else if (roots[0] == roots[1]) { 
             r -= 1; 
+        }
     }
     return return_check_zero((int)(r - roots));
 }
@@ -260,15 +260,27 @@ SkScalar SkFindQuadMaxCurvature(const SkPoint src[3]) {
     SkScalar    Ay = src[1].fY - src[0].fY;
     SkScalar    Bx = src[0].fX - src[1].fX - src[1].fX + src[2].fX;
     SkScalar    By = src[0].fY - src[1].fY - src[1].fY + src[2].fY;
-    SkScalar    t = 0;  
 
-    (void)valid_unit_divide(-(Ax * Bx + Ay * By), Bx * Bx + By * By, &t);
+    SkScalar numer = -(Ax * Bx + Ay * By);
+    SkScalar denom = Bx * Bx + By * By;
+    if (denom < 0) {
+        numer = -numer;
+        denom = -denom;
+    }
+    if (numer <= 0) {
+        return 0;
+    }
+    if (numer >= denom) {  
+        return 1;
+    }
+    SkScalar t = numer / denom;
+    SkASSERT((0 <= t && t < 1) || SkScalarIsNaN(t));
     return t;
 }
 
 int SkChopQuadAtMaxCurvature(const SkPoint src[3], SkPoint dst[5]) {
     SkScalar t = SkFindQuadMaxCurvature(src);
-    if (t == 0) {
+    if (t == 0 || t == 1) {
         memcpy(dst, src, 3 * sizeof(SkPoint));
         return 1;
     } else {
@@ -283,10 +295,10 @@ void SkConvertQuadToCubic(const SkPoint src[3], SkPoint dst[4]) {
     Sk2s s1 = from_point(src[1]);
     Sk2s s2 = from_point(src[2]);
 
-    dst[0] = src[0];
+    dst[0] = to_point(s0);
     dst[1] = to_point(s0 + (s1 - s0) * scale);
     dst[2] = to_point(s2 + (s1 - s2) * scale);
-    dst[3] = src[2];
+    dst[3] = to_point(s2);
 }
 
 
@@ -379,13 +391,13 @@ void SkChopCubicAt(const SkPoint src[4], SkPoint dst[7], SkScalar t) {
     Sk2s    bcd = interp(bc, cd, tt);
     Sk2s    abcd = interp(abc, bcd, tt);
 
-    dst[0] = src[0];
+    dst[0] = to_point(p0);
     dst[1] = to_point(ab);
     dst[2] = to_point(abc);
     dst[3] = to_point(abcd);
     dst[4] = to_point(bcd);
     dst[5] = to_point(cd);
-    dst[6] = src[3];
+    dst[6] = to_point(p3);
 }
 
 
@@ -417,8 +429,8 @@ void SkChopCubicAt(const SkPoint src[4], SkPoint dst[],
     {
         for (int i = 0; i < roots - 1; i++)
         {
-            SkASSERT(is_unit_interval(tValues[i]));
-            SkASSERT(is_unit_interval(tValues[i+1]));
+            SkASSERT(0 < tValues[i] && tValues[i] < 1);
+            SkASSERT(0 < tValues[i+1] && tValues[i+1] < 1);
             SkASSERT(tValues[i] < tValues[i+1]);
         }
     }
@@ -554,137 +566,103 @@ static double calc_dot_cross_cubic(const SkPoint& p0, const SkPoint& p1, const S
 
 
 
-
-
-
-
-
-static void calc_cubic_inflection_func(const SkPoint p[4], double d[4]) {
-    const double a1 = calc_dot_cross_cubic(p[0], p[3], p[2]);
-    const double a2 = calc_dot_cross_cubic(p[1], p[0], p[3]);
-    const double a3 = calc_dot_cross_cubic(p[2], p[1], p[0]);
-
-    d[3] = 3 * a3;
-    d[2] = d[3] - a2;
-    d[1] = d[2] - a2 + a1;
-    d[0] = 0;
+inline static double previous_inverse_pow2(double n) {
+    uint64_t bits;
+    memcpy(&bits, &n, sizeof(double));
+    bits = ((1023llu*2 << 52) + ((1llu << 52) - 1)) - bits; 
+    bits &= (0x7ffllu) << 52; 
+    memcpy(&n, &bits, sizeof(double));
+    return n;
 }
 
-static void normalize_t_s(double t[], double s[], int count) {
-    
-    for (int i = 0; i < count; ++i) {
-        SkASSERT(0 != s[i]); 
+inline static void write_cubic_inflection_roots(double t0, double s0, double t1, double s1,
+                                                double* t, double* s) {
+    t[0] = t0;
+    s[0] = s0;
 
-        uint64_t bitsT, bitsS;
-        memcpy(&bitsT, &t[i], sizeof(double));
-        memcpy(&bitsS, &s[i], sizeof(double));
-
-        uint64_t maxExponent = SkTMax(bitsT & 0x7ff0000000000000, bitsS & 0x7ff0000000000000);
-
-#ifdef SK_DEBUG
-        uint64_t maxExponentValue = maxExponent >> 52;
-        
-        
-        SkASSERT(0 != maxExponentValue);
-        
-        
-        SkASSERT(2046 != maxExponentValue);
-#endif
-
-        
-        
-        double normalizer;
-        uint64_t normalizerExponent = (uint64_t(1023 * 2) << 52) - maxExponent;
-        memcpy(&normalizer, &normalizerExponent, sizeof(double));
-
-        t[i] *= normalizer;
-        s[i] *= normalizer;
-    }
-}
-
-static void sort_and_orient_t_s(double t[2], double s[2]) {
     
     
-    t[1] = -copysign(t[1], t[1] * s[1]);
-    s[1] = -fabs(s[1]);
+    t[1] = -copysign(t1, t1 * s1);
+    s[1] = -fabs(s1);
 
     
     if (copysign(s[1], s[0]) * t[0] > -fabs(s[0]) * t[1]) {
-        std::swap(t[0], t[1]);
-        std::swap(s[0], s[1]);
+        using std::swap;
+        swap(t[0], t[1]);
+        swap(s[0], s[1]);
     }
 }
 
+SkCubicType SkClassifyCubic(const SkPoint P[4], double t[2], double s[2], double d[4]) {
+    
+    
+    
+    
+    
+    
+    
+    double A1 = calc_dot_cross_cubic(P[0], P[3], P[2]);
+    double A2 = calc_dot_cross_cubic(P[1], P[0], P[3]);
+    double A3 = calc_dot_cross_cubic(P[2], P[1], P[0]);
 
+    double D3 = 3 * A3;
+    double D2 = D3 - A2;
+    double D1 = D2 - A2 + A1;
 
+    
+    
+    double Dmax = std::max(std::max(fabs(D1), fabs(D2)), fabs(D3));
+    double norm = previous_inverse_pow2(Dmax);
+    D1 *= norm;
+    D2 *= norm;
+    D3 *= norm;
 
+    if (d) {
+        d[3] = D3;
+        d[2] = D2;
+        d[1] = D1;
+        d[0] = 0;
+    }
 
-
-
-
-
-
-
-static SkCubicType classify_cubic(const double d[4], double t[2], double s[2]) {
-    if (0 == d[1]) {
-        if (0 == d[2]) {
+    
+    
+    
+    
+    
+    
+    if (0 != D1) {
+        double discr = 3*D2*D2 - 4*D1*D3;
+        if (discr > 0) { 
             if (t && s) {
-                t[0] = t[1] = 1;
-                s[0] = s[1] = 0; 
+                double q = 3*D2 + copysign(sqrt(3*discr), D2);
+                write_cubic_inflection_roots(q, 6*D1, 2*D3, q, t, s);
             }
-            return 0 == d[3] ? SkCubicType::kLineOrPoint : SkCubicType::kQuadratic;
+            return SkCubicType::kSerpentine;
+        } else if (discr < 0) { 
+            if (t && s) {
+                double q = D2 + copysign(sqrt(-discr), D2);
+                write_cubic_inflection_roots(q, 2*D1, 2*(D2*D2 - D3*D1), D1*q, t, s);
+            }
+            return SkCubicType::kLoop;
+        } else { 
+            if (t && s) {
+                write_cubic_inflection_roots(D2, 2*D1, D2, 2*D1, t, s);
+            }
+            return SkCubicType::kLocalCusp;
         }
-        if (t && s) {
-            t[0] = d[3];
-            s[0] = 3 * d[2];
-            normalize_t_s(t, s, 1);
-            t[1] = 1;
-            s[1] = 0; 
-        }
-        return SkCubicType::kCuspAtInfinity;
-    }
-
-    const double discr = 3 * d[2] * d[2] - 4 * d[1] * d[3];
-    if (discr > 0) {
-        if (t && s) {
-            const double q = 3 * d[2] + copysign(sqrt(3 * discr), d[2]);
-            t[0] = q;
-            s[0] = 6 * d[1];
-            t[1] = 2 * d[3];
-            s[1] = q;
-            normalize_t_s(t, s, 2);
-            sort_and_orient_t_s(t, s);
-        }
-        return SkCubicType::kSerpentine;
-    } else if (discr < 0) {
-        if (t && s) {
-            const double q = d[2] + copysign(sqrt(-discr), d[2]);
-            t[0] = q;
-            s[0] = 2 * d[1];
-            t[1] = 2 * (d[2] * d[2] - d[3] * d[1]);
-            s[1] = d[1] * q;
-            normalize_t_s(t, s, 2);
-            sort_and_orient_t_s(t, s);
-        }
-        return SkCubicType::kLoop;
     } else {
-        if (t && s) {
-            t[0] = d[2];
-            s[0] = 2 * d[1];
-            normalize_t_s(t, s, 1);
-            t[1] = t[0];
-            s[1] = s[0];
-            sort_and_orient_t_s(t, s);
+        if (0 != D2) { 
+            if (t && s) {
+                write_cubic_inflection_roots(D3, 3*D2, 1, 0, t, s); 
+            }
+            return SkCubicType::kCuspAtInfinity;
+        } else { 
+            if (t && s) {
+                write_cubic_inflection_roots(1, 0, 1, 0, t, s); 
+            }
+            return 0 != D3 ? SkCubicType::kQuadratic : SkCubicType::kLineOrPoint;
         }
-        return SkCubicType::kLocalCusp;
     }
-}
-
-SkCubicType SkClassifyCubic(const SkPoint src[4], double t[2], double s[2], double d[4]) {
-    double localD[4];
-    double* dd = d ? d : localD;
-    calc_cubic_inflection_func(src, dd);
-    return classify_cubic(dd, t, s);
 }
 
 template <typename T> void bubble_sort(T array[], int count) {
@@ -789,34 +767,19 @@ static int solve_cubic_poly(const SkScalar coeff[4], SkScalar tValues[3]) {
     SkScalar R2MinusQ3 = R * R - Q3;
     SkScalar adiv3 = a / 3;
 
-    SkScalar*   roots = tValues;
-    SkScalar    r;
-
     if (R2MinusQ3 < 0) { 
         
         SkScalar theta = SkScalarACos(SkScalarPin(R / SkScalarSqrt(Q3), -1, 1));
         SkScalar neg2RootQ = -2 * SkScalarSqrt(Q);
 
-        r = neg2RootQ * SkScalarCos(theta/3) - adiv3;
-        if (is_unit_interval(r)) {
-            *roots++ = r;
-        }
-        r = neg2RootQ * SkScalarCos((theta + 2*SK_ScalarPI)/3) - adiv3;
-        if (is_unit_interval(r)) {
-            *roots++ = r;
-        }
-        r = neg2RootQ * SkScalarCos((theta - 2*SK_ScalarPI)/3) - adiv3;
-        if (is_unit_interval(r)) {
-            *roots++ = r;
-        }
+        tValues[0] = SkScalarPin(neg2RootQ * SkScalarCos(theta/3) - adiv3, 0, 1);
+        tValues[1] = SkScalarPin(neg2RootQ * SkScalarCos((theta + 2*SK_ScalarPI)/3) - adiv3, 0, 1);
+        tValues[2] = SkScalarPin(neg2RootQ * SkScalarCos((theta - 2*SK_ScalarPI)/3) - adiv3, 0, 1);
         SkDEBUGCODE(test_collaps_duplicates();)
 
         
-        int count = (int)(roots - tValues);
-        SkASSERT((unsigned)count <= 3);
-        bubble_sort(tValues, count);
-        count = collaps_duplicates(tValues, count);
-        roots = tValues + count;    
+        bubble_sort(tValues, 3);
+        return collaps_duplicates(tValues, 3);
     } else {              
         SkScalar A = SkScalarAbs(R) + SkScalarSqrt(R2MinusQ3);
         A = SkScalarCubeRoot(A);
@@ -826,13 +789,9 @@ static int solve_cubic_poly(const SkScalar coeff[4], SkScalar tValues[3]) {
         if (A != 0) {
             A += Q / A;
         }
-        r = A - adiv3;
-        if (is_unit_interval(r)) {
-            *roots++ = r;
-        }
+        tValues[0] = SkScalarPin(A - adiv3, 0, 1);
+        return 1;
     }
-
-    return (int)(roots - tValues);
 }
 
 
@@ -879,19 +838,10 @@ int SkFindCubicMaxCurvature(const SkPoint src[4], SkScalar tValues[3]) {
         coeffX[i] += coeffY[i];
     }
 
-    SkScalar    t[3];
-    int         count = solve_cubic_poly(coeffX, t);
-    int         maxCount = 0;
-
+    int numRoots = solve_cubic_poly(coeffX, tValues);
     
     
-    for (i = 0; i < count; i++) {
-        
-        if (t[i] > 0 && t[i] < SK_Scalar1) {
-            tValues[maxCount++] = t[i];
-        }
-    }
-    return maxCount;
+    return numRoots;
 }
 
 int SkChopCubicAtMaxCurvature(const SkPoint src[4], SkPoint dst[13],
@@ -902,7 +852,16 @@ int SkChopCubicAtMaxCurvature(const SkPoint src[4], SkPoint dst[13],
         tValues = t_storage;
     }
 
-    int count = SkFindCubicMaxCurvature(src, tValues);
+    SkScalar roots[3];
+    int rootCount = SkFindCubicMaxCurvature(src, roots);
+
+    
+    int count = 0;
+    for (int i = 0; i < rootCount; ++i) {
+        if (0 < roots[i] && roots[i] < 1) {
+            tValues[count++] = roots[i];
+        }
+    }
 
     if (dst) {
         if (count == 0) {
@@ -912,6 +871,69 @@ int SkChopCubicAtMaxCurvature(const SkPoint src[4], SkPoint dst[13],
         }
     }
     return count + 1;
+}
+
+
+
+static SkScalar calc_cubic_precision(const SkPoint src[4]) {
+    return (SkPointPriv::DistanceToSqd(src[1], src[0]) + SkPointPriv::DistanceToSqd(src[2], src[1])
+            + SkPointPriv::DistanceToSqd(src[3], src[2])) * 1e-8f;
+}
+
+
+
+static bool on_same_side(const SkPoint src[4], int testIndex, int lineIndex) {
+    SkPoint origin = src[lineIndex];
+    SkVector line = src[lineIndex + 1] - origin;
+    SkScalar crosses[2];
+    for (int index = 0; index < 2; ++index) {
+        SkVector testLine = src[testIndex + index] - origin;
+        crosses[index] = line.cross(testLine);
+    }
+    return crosses[0] * crosses[1] >= 0;
+}
+
+
+
+
+SkScalar SkFindCubicCusp(const SkPoint src[4]) {
+    
+    
+    
+    
+    if (src[0] == src[1]) {
+        return -1;
+    }
+    if (src[2] == src[3]) {
+        return -1;
+    }
+    
+    
+    if (on_same_side(src, 0, 2) || on_same_side(src, 2, 0)) {
+        return -1;
+    }
+    
+    
+    SkScalar maxCurvature[3];
+    int roots = SkFindCubicMaxCurvature(src, maxCurvature);
+    for (int index = 0; index < roots; ++index) {
+        SkScalar testT = maxCurvature[index];
+        if (0 >= testT || testT >= 1) {  
+            continue;
+        }
+        
+        
+        
+        SkVector dPt = eval_cubic_derivative(src, testT);
+        SkScalar dPtMagnitude = SkPointPriv::LengthSqd(dPt);
+        SkScalar precision = calc_cubic_precision(src);
+        if (dPtMagnitude < precision) {
+            
+            
+            return testT;
+        }
+    }
+    return -1;
 }
 
 #include "../pathops/SkPathOpsCubic.h"
@@ -1374,7 +1396,7 @@ SkScalar SkConic::TransformW(const SkPoint pts[], SkScalar w, const SkMatrix& ma
     double w0 = dst[0].fZ;
     double w1 = dst[1].fZ;
     double w2 = dst[2].fZ;
-    return sk_double_to_float(sqrt((w1 * w1) / (w0 * w2)));
+    return sk_double_to_float(sqrt(sk_ieee_double_divide(w1 * w1, w0 * w2)));
 }
 
 int SkConic::BuildUnitArc(const SkVector& uStart, const SkVector& uStop, SkRotationDirection dir,

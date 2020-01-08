@@ -8,10 +8,13 @@
 #ifndef SkColorSpace_DEFINED
 #define SkColorSpace_DEFINED
 
+#include "../private/SkOnce.h"
 #include "SkMatrix44.h"
 #include "SkRefCnt.h"
+#include <memory>
 
 class SkData;
+struct skcms_ICCProfile;
 
 enum SkGammaNamed {
     kLinear_SkGammaNamed,
@@ -24,10 +27,14 @@ enum SkGammaNamed {
 
 
 struct SK_API SkColorSpacePrimaries {
-    float fRX, fRY;
-    float fGX, fGY;
-    float fBX, fBY;
-    float fWX, fWY;
+    float fRX;
+    float fRY;
+    float fGX;
+    float fGY;
+    float fBX;
+    float fBY;
+    float fWX;
+    float fWY;
 
     
 
@@ -35,8 +42,6 @@ struct SK_API SkColorSpacePrimaries {
 
     bool toXYZD50(SkMatrix44* toXYZD50) const;
 };
-
-
 
 
 
@@ -55,29 +60,9 @@ struct SK_API SkColorSpaceTransferFn {
     float fD;
     float fE;
     float fF;
-
-    
-
-
-
-    SkColorSpaceTransferFn invert() const;
-
-    
-
-
-
-    float operator()(float x) {
-        SkScalar s = SkScalarSignAsScalar(x);
-        x = sk_float_abs(x);
-        if (x >= fD) {
-            return s * (powf(fA * x + fB, fG) + fE);
-        } else {
-            return s * (fC * x + fF);
-        }
-    }
 };
 
-class SK_API SkColorSpace : public SkRefCnt {
+class SK_API SkColorSpace : public SkNVRefCnt<SkColorSpace> {
 public:
     
 
@@ -124,31 +109,24 @@ public:
     
 
 
-    static sk_sp<SkColorSpace> MakeICC(const void*, size_t);
+    static sk_sp<SkColorSpace> Make(const skcms_ICCProfile&);
 
     
 
 
-    enum Type {
-        kRGB_Type,
-        kCMYK_Type,
-        kGray_Type,
-    };
-    Type type() const;
+    void toProfile(skcms_ICCProfile*) const;
 
-    SkGammaNamed gammaNamed() const;
+    SkGammaNamed gammaNamed() const { return fGammaNamed; }
 
     
 
 
-
-
-    bool gammaCloseToSRGB() const;
+    bool gammaCloseToSRGB() const { return kSRGB_SkGammaNamed == fGammaNamed; }
 
     
 
 
-    bool gammaIsLinear() const;
+    bool gammaIsLinear() const { return kLinear_SkGammaNamed == fGammaNamed; }
 
     
 
@@ -168,34 +146,21 @@ public:
 
 
 
-    const SkMatrix44* toXYZD50() const;
-
-    
-
-
-
-    const SkMatrix44* fromXYZD50() const;
+    uint32_t toXYZD50Hash() const { return fToXYZD50Hash; }
 
     
 
 
 
 
-    uint32_t toXYZD50Hash() const;
+    sk_sp<SkColorSpace> makeLinearGamma() const;
 
     
 
 
 
 
-    virtual sk_sp<SkColorSpace> makeLinearGamma() const = 0;
-
-    
-
-
-
-
-    virtual sk_sp<SkColorSpace> makeSRGBGamma() const = 0;
+    sk_sp<SkColorSpace> makeSRGBGamma() const;
 
     
 
@@ -205,7 +170,7 @@ public:
 
 
 
-    virtual sk_sp<SkColorSpace> makeColorSpin() const { return nullptr; }
+    sk_sp<SkColorSpace> makeColorSpin() const;
 
     
 
@@ -239,35 +204,34 @@ public:
 
 
 
-    static bool Equals(const SkColorSpace* src, const SkColorSpace* dst);
+    static bool Equals(const SkColorSpace*, const SkColorSpace*);
+
+    void       transferFn(float gabcdef[7]) const;
+    void    invTransferFn(float gabcdef[7]) const;
+    void gamutTransformTo(const SkColorSpace* dst, float src_to_dst_row_major[9]) const;
+
+    uint32_t transferFnHash() const { return fTransferFnHash; }
+    uint64_t           hash() const { return (uint64_t)fTransferFnHash << 32 | fToXYZD50Hash; }
 
 private:
-    virtual const SkMatrix44* onToXYZD50() const = 0;
-    virtual uint32_t onToXYZD50Hash() const = 0;
-    virtual const SkMatrix44* onFromXYZD50() const = 0;
+    friend class SkColorSpaceSingletonFactory;
 
-    virtual SkGammaNamed onGammaNamed() const = 0;
-    virtual bool onGammaCloseToSRGB() const = 0;
-    virtual bool onGammaIsLinear() const = 0;
-    virtual bool onIsNumericalTransferFn(SkColorSpaceTransferFn* coeffs) const = 0;
-    virtual bool onIsCMYK() const { return false; }
+    SkColorSpace(SkGammaNamed gammaNamed,
+                 const float transferFn[7],
+                 const SkMatrix44& toXYZ);
 
-    virtual const SkData* onProfileData() const { return nullptr; }
+    void computeLazyDstFields() const;
 
-    using INHERITED = SkRefCnt;
-};
+    SkGammaNamed                        fGammaNamed;         
+    uint32_t                            fTransferFnHash;
+    uint32_t                            fToXYZD50Hash;
 
-enum class SkTransferFunctionBehavior {
-    
+    float                               fTransferFn[7];
+    float                               fToXYZD50_3x3[9];    
 
-
-    kRespect,
-
-    
-
-
-
-    kIgnore,
+    mutable float                       fInvTransferFn[7];
+    mutable float                       fFromXYZD50_3x3[9];  
+    mutable SkOnce                      fLazyDstFieldsOnce;
 };
 
 #endif

@@ -73,6 +73,7 @@ $genIType clamp($genIType x, $genIType minVal, $genIType maxVal);
 $genIType clamp($genIType x, int minVal, int maxVal);
 
 
+$genType saturate($genType x);
 $genType mix($genType x, $genType y, $genType a);
 $genType mix($genType x, $genType y, float a);
 
@@ -102,7 +103,7 @@ $genType fma($genType a, $genType b, $genType c);
 $genHType fma($genHType a, $genHType b, $genHType c);
 $genDType fma($genDType a, $genDType b, $genDType c);
 
-$genType frexp($genType x, out $genIType exp);
+sk_has_side_effects $genType frexp($genType x, out $genIType exp);
 
 $genType ldexp($genType x, in $genIType exp);
 
@@ -379,11 +380,8 @@ half4 texture($gsampler2D sampler, float3 P, float bias);
 
 
 
-float4 texelFetch(samplerBuffer sampler, int P);
 
-$gfloat4 texelFetch($gsampler1D sampler, int P, int lod);
-$gfloat4 texelFetch($gsampler2D sampler, int2 P, int lod);
-$gfloat4 texelFetch($gsampler2DRect sampler, int2 P);
+
 
 
 

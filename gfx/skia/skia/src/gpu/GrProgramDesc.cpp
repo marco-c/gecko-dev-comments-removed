@@ -4,7 +4,9 @@
 
 
 
+
 #include "GrProgramDesc.h"
+
 #include "GrPipeline.h"
 #include "GrPrimitiveProcessor.h"
 #include "GrProcessor.h"
@@ -12,6 +14,7 @@
 #include "GrShaderCaps.h"
 #include "GrTexturePriv.h"
 #include "SkChecksum.h"
+#include "SkTo.h"
 #include "glsl/GrGLSLFragmentProcessor.h"
 #include "glsl/GrGLSLFragmentShaderBuilder.h"
 
@@ -19,32 +22,26 @@ enum {
     kSamplerOrImageTypeKeyBits = 4
 };
 
-static inline uint16_t image_storage_or_sampler_uniform_type_key(GrSLType type ) {
+static inline uint16_t texture_type_key(GrTextureType type) {
     int value = UINT16_MAX;
     switch (type) {
-        case kTexture2DSampler_GrSLType:
+        case GrTextureType::k2D:
             value = 0;
             break;
-        case kTextureExternalSampler_GrSLType:
+        case GrTextureType::kExternal:
             value = 1;
             break;
-        case kTexture2DRectSampler_GrSLType:
+        case GrTextureType::kRectangle:
             value = 2;
-            break;
-        case kBufferSampler_GrSLType:
-            value = 3;
-            break;
-
-        default:
             break;
     }
     SkASSERT((value & ((1 << kSamplerOrImageTypeKeyBits) - 1)) == value);
-    return value;
+    return SkToU16(value);
 }
 
-static uint16_t sampler_key(GrSLType samplerType, GrPixelConfig config, GrShaderFlags visibility,
+static uint16_t sampler_key(GrTextureType textureType, GrPixelConfig config,
                             const GrShaderCaps& caps) {
-    int samplerTypeKey = image_storage_or_sampler_uniform_type_key(samplerType);
+    int samplerTypeKey = texture_type_key(textureType);
 
     GR_STATIC_ASSERT(1 == sizeof(caps.configTextureSwizzle(config).asKey()));
     return SkToU16(samplerTypeKey |
@@ -52,33 +49,42 @@ static uint16_t sampler_key(GrSLType samplerType, GrPixelConfig config, GrShader
                    (GrSLSamplerPrecision(config) << (8 + kSamplerOrImageTypeKeyBits)));
 }
 
-static void add_sampler_and_image_keys(GrProcessorKeyBuilder* b, const GrResourceIOProcessor& proc,
-                                       const GrShaderCaps& caps) {
-    int numTextureSamplers = proc.numTextureSamplers();
-    int numBuffers = proc.numBuffers();
-    int numUniforms = numTextureSamplers + numBuffers;
+static void add_sampler_keys(GrProcessorKeyBuilder* b, const GrFragmentProcessor& fp,
+                             const GrShaderCaps& caps) {
+    int numTextureSamplers = fp.numTextureSamplers();
     
-    int word32Count = (numUniforms + 1) / 2;
+    int word32Count = (numTextureSamplers + 1) / 2;
     if (0 == word32Count) {
         return;
     }
-    uint16_t* k16 = SkTCast<uint16_t*>(b->add32n(word32Count));
-    int j = 0;
-    for (int i = 0; i < numTextureSamplers; ++i, ++j) {
-        const GrResourceIOProcessor::TextureSampler& sampler = proc.textureSampler(i);
+    uint16_t* k16 = reinterpret_cast<uint16_t*>(b->add32n(word32Count));
+    for (int i = 0; i < numTextureSamplers; ++i) {
+        const GrFragmentProcessor::TextureSampler& sampler = fp.textureSampler(i);
         const GrTexture* tex = sampler.peekTexture();
-
-        k16[j] = sampler_key(tex->texturePriv().samplerType(), tex->config(), sampler.visibility(),
-                             caps);
-    }
-    for (int i = 0; i < numBuffers; ++i, ++j) {
-        const GrResourceIOProcessor::BufferAccess& access = proc.bufferAccess(i);
-        k16[j] = sampler_key(kBufferSampler_GrSLType, access.texelConfig(), access.visibility(),
-                             caps);
+        k16[i] = sampler_key(tex->texturePriv().textureType(), tex->config(), caps);
     }
     
-    if (numUniforms & 0x1) {
-        k16[numUniforms] = 0;
+    if (numTextureSamplers & 0x1) {
+        k16[numTextureSamplers] = 0;
+    }
+}
+
+static void add_sampler_keys(GrProcessorKeyBuilder* b, const GrPrimitiveProcessor& pp,
+                              const GrShaderCaps& caps) {
+    int numTextureSamplers = pp.numTextureSamplers();
+    
+    int word32Count = (numTextureSamplers + 1) / 2;
+    if (0 == word32Count) {
+        return;
+    }
+    uint16_t* k16 = reinterpret_cast<uint16_t*>(b->add32n(word32Count));
+    for (int i = 0; i < numTextureSamplers; ++i) {
+        const GrPrimitiveProcessor::TextureSampler& sampler = pp.textureSampler(i);
+        k16[i] = sampler_key(sampler.textureType(), sampler.config(), caps);
+    }
+    
+    if (numTextureSamplers & 0x1) {
+        k16[numTextureSamplers] = 0;
     }
 }
 
@@ -91,20 +97,41 @@ static void add_sampler_and_image_keys(GrProcessorKeyBuilder* b, const GrResourc
 
 
 
-static bool gen_meta_key(const GrResourceIOProcessor& proc,
+static bool gen_meta_key(const GrFragmentProcessor& fp,
                          const GrShaderCaps& shaderCaps,
                          uint32_t transformKey,
                          GrProcessorKeyBuilder* b) {
     size_t processorKeySize = b->size();
-    uint32_t classID = proc.classID();
+    uint32_t classID = fp.classID();
 
     
-    static const uint32_t kMetaKeyInvalidMask = ~((uint32_t)SK_MaxU16);
+    static const uint32_t kMetaKeyInvalidMask = ~((uint32_t)UINT16_MAX);
     if ((processorKeySize | classID) & kMetaKeyInvalidMask) {
         return false;
     }
 
-    add_sampler_and_image_keys(b, proc, shaderCaps);
+    add_sampler_keys(b, fp, shaderCaps);
+
+    uint32_t* key = b->add32n(2);
+    key[0] = (classID << 16) | SkToU32(processorKeySize);
+    key[1] = transformKey;
+    return true;
+}
+
+static bool gen_meta_key(const GrPrimitiveProcessor& pp,
+                         const GrShaderCaps& shaderCaps,
+                         uint32_t transformKey,
+                         GrProcessorKeyBuilder* b) {
+    size_t processorKeySize = b->size();
+    uint32_t classID = pp.classID();
+
+    
+    static const uint32_t kMetaKeyInvalidMask = ~((uint32_t)UINT16_MAX);
+    if ((processorKeySize | classID) & kMetaKeyInvalidMask) {
+        return false;
+    }
+
+    add_sampler_keys(b, pp, shaderCaps);
 
     uint32_t* key = b->add32n(2);
     key[0] = (classID << 16) | SkToU32(processorKeySize);
@@ -119,7 +146,7 @@ static bool gen_meta_key(const GrXferProcessor& xp,
     uint32_t classID = xp.classID();
 
     
-    static const uint32_t kMetaKeyInvalidMask = ~((uint32_t)SK_MaxU16);
+    static const uint32_t kMetaKeyInvalidMask = ~((uint32_t)UINT16_MAX);
     if ((processorKeySize | classID) & kMetaKeyInvalidMask) {
         return false;
     }

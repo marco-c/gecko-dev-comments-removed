@@ -5,6 +5,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #ifndef SkRRect_DEFINED
 #define SkRRect_DEFINED
 
@@ -13,25 +23,6 @@
 
 class SkPath;
 class SkMatrix;
-class SkRBuffer;
-class SkWBuffer;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -48,56 +39,61 @@ class SkWBuffer;
 
 class SK_API SkRRect {
 public:
+
     
+
+
+
+
     SkRRect() = default;
 
-    SkRRect(const SkRRect&) = default;
-    SkRRect& operator=(const SkRRect&) = default;
+    
+
+
+
+
+    SkRRect(const SkRRect& rrect) = default;
 
     
+
+
+
+
+    SkRRect& operator=(const SkRRect& rrect) = default;
+
+    
+
+
+
 
 
 
     enum Type {
-        
-        kEmpty_Type,
-
-        
-        
-        kRect_Type,
-
-        
-        
-        kOval_Type,
-
-        
-        
-        
-        kSimple_Type,
-
-        
-        
-        
-        
-        
-        
-        kNinePatch_Type,
-
-        
-        
-        
-        kComplex_Type,
-
-        kLastType = kComplex_Type,
+        kEmpty_Type,                     
+        kRect_Type,                      
+        kOval_Type,                      
+        kSimple_Type,                    
+        kNinePatch_Type,                 
+        kComplex_Type,                   
+        kLastType       = kComplex_Type, 
     };
 
     
+
+
+
 
 
     Type getType() const {
         SkASSERT(this->isValid());
         return static_cast<Type>(fType);
     }
+
+    
+
+
+
+
 
     Type type() const { return this->getType(); }
 
@@ -108,10 +104,23 @@ public:
     inline bool isNinePatch() const { return kNinePatch_Type == this->getType(); }
     inline bool isComplex() const { return kComplex_Type == this->getType(); }
 
+    
+
+
+
+
     SkScalar width() const { return fRect.width(); }
+
+    
+
+
+
+
     SkScalar height() const { return fRect.height(); }
 
     
+
+
 
 
 
@@ -128,6 +137,9 @@ public:
     
 
 
+
+
+
     void setRect(const SkRect& rect) {
         if (!this->initializeRect(rect)) {
             return;
@@ -140,7 +152,16 @@ public:
     }
 
     
+
+
+
+
     static SkRRect MakeEmpty() { return SkRRect(); }
+
+    
+
+
+
 
     static SkRRect MakeRect(const SkRect& r) {
         SkRRect rr;
@@ -148,11 +169,30 @@ public:
         return rr;
     }
 
+    
+
+
+
+
+
+
     static SkRRect MakeOval(const SkRect& oval) {
         SkRRect rr;
         rr.setOval(oval);
         return rr;
     }
+
+    
+
+
+
+
+
+
+
+
+
+
 
     static SkRRect MakeRectXY(const SkRect& rect, SkScalar xRad, SkScalar yRad) {
         SkRRect rr;
@@ -161,6 +201,8 @@ public:
     }
 
     
+
+
 
 
 
@@ -183,9 +225,34 @@ public:
     
 
 
+
+
+
+
+
+
+
+
     void setRectXY(const SkRect& rect, SkScalar xRad, SkScalar yRad);
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     void setNinePatch(const SkRect& rect, SkScalar leftRad, SkScalar topRad,
@@ -194,23 +261,73 @@ public:
     
 
 
+
+
+
+
+
+
+
+
+
     void setRectRadii(const SkRect& rect, const SkVector radii[4]);
 
     
+
+
     enum Corner {
-        kUpperLeft_Corner,
-        kUpperRight_Corner,
-        kLowerRight_Corner,
-        kLowerLeft_Corner
+        kUpperLeft_Corner,  
+        kUpperRight_Corner, 
+        kLowerRight_Corner, 
+        kLowerLeft_Corner,  
     };
 
+    
+
+
+
+
+
     const SkRect& rect() const { return fRect; }
+
+    
+
+
+
+
+
+
     SkVector radii(Corner corner) const { return fRadii[corner]; }
+
+    
+
+
+
+
+
     const SkRect& getBounds() const { return fRect; }
+
+    
+
+
+
+
+
+
+
 
     friend bool operator==(const SkRRect& a, const SkRRect& b) {
         return a.fRect == b.fRect && SkScalarsEqual(&a.fRadii[0].fX, &b.fRadii[0].fX, 8);
     }
+
+    
+
+
+
+
+
+
+
 
     friend bool operator!=(const SkRRect& a, const SkRRect& b) {
         return a.fRect != b.fRect || !SkScalarsEqual(&a.fRadii[0].fX, &b.fRadii[0].fX, 8);
@@ -230,7 +347,23 @@ public:
 
 
 
+
+
     void inset(SkScalar dx, SkScalar dy, SkRRect* dst) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
 
     void inset(SkScalar dx, SkScalar dy) {
         this->inset(dx, dy, this);
@@ -244,9 +377,31 @@ public:
 
 
 
+
+
+
+
+
+
+
     void outset(SkScalar dx, SkScalar dy, SkRRect* dst) const {
         this->inset(-dx, -dy, dst);
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
     void outset(SkScalar dx, SkScalar dy) {
         this->inset(-dx, -dy, this);
     }
@@ -254,9 +409,17 @@ public:
     
 
 
+
+
     void offset(SkScalar dx, SkScalar dy) {
         fRect.offset(dx, dy);
     }
+
+    
+
+
+
+
 
     SkRRect SK_WARN_UNUSED_RESULT makeOffset(SkScalar dx, SkScalar dy) const {
         return SkRRect(fRect.makeOffset(dx, dy), fRadii, fType);
@@ -266,26 +429,30 @@ public:
 
 
 
+
+
     bool contains(const SkRect& rect) const;
+
+    
+
+
+
+
+
 
     bool isValid() const;
 
-    enum {
-        kSizeInMemory = 12 * sizeof(SkScalar)
-    };
+    static constexpr size_t kSizeInMemory = 12 * sizeof(SkScalar);
 
     
+
 
 
 
 
     size_t writeToMemory(void* buffer) const;
-    void writeToBuffer(SkWBuffer*) const;
 
     
-
-
-
 
 
 
@@ -294,9 +461,9 @@ public:
 
 
     size_t readFromMemory(const void* buffer, size_t length);
-    bool readFromBuffer(SkRBuffer*);
 
     
+
 
 
 
@@ -307,8 +474,26 @@ public:
 
     bool transform(const SkMatrix& matrix, SkRRect* dst) const;
 
+    
+
+
+
+
+
     void dump(bool asHex) const;
+
+    
+
+
+
+
     void dump() const { this->dump(false); }
+
+    
+
+
+
+
     void dumpHex() const { this->dump(true); }
 
 private:
@@ -327,7 +512,7 @@ private:
 
     void computeType();
     bool checkCornerContainment(SkScalar x, SkScalar y) const;
-    void scaleRadii();
+    void scaleRadii(const SkRect& rect);
 
     SkRect fRect = SkRect::MakeEmpty();
     

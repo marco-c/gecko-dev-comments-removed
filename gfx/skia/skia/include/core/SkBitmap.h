@@ -5,6 +5,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #ifndef SkBitmap_DEFINED
 #define SkBitmap_DEFINED
 
@@ -137,9 +147,12 @@ public:
 
 
 
+
+
     SkColorType colorType() const { return fPixmap.colorType(); }
 
     
+
 
 
 
@@ -249,6 +262,7 @@ public:
 
 
 
+
     bool setAlphaType(SkAlphaType alphaType);
 
     
@@ -284,6 +298,9 @@ public:
     void setImmutable();
 
     
+
+
+
 
 
 
@@ -412,8 +429,7 @@ public:
 
 
     enum AllocFlags {
-        
-        kZeroPixels_AllocFlag = 1 << 0,
+        kZeroPixels_AllocFlag = 1 << 0, 
     };
 
     
@@ -791,17 +807,6 @@ public:
 
 
 
-    SK_ATTR_DEPRECATED("use eraseARGB or eraseColor")
-    void eraseRGB(U8CPU r, U8CPU g, U8CPU b) const {
-        this->eraseARGB(0xFF, r, g, b);
-    }
-
-    
-
-
-
-
-
 
 
 
@@ -832,6 +837,18 @@ public:
 
     SkColor getColor(int x, int y) const {
         return this->pixmap().getColor(x, y);
+    }
+
+    
+
+
+
+
+
+
+
+    float getAlphaf(int x, int y) const {
+        return this->pixmap().getAlphaf(x, y);
     }
 
     
@@ -939,49 +956,8 @@ public:
 
 
 
-
-
-
-
-
-
-
     bool readPixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
-                    int srcX, int srcY, SkTransferFunctionBehavior behavior) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    bool readPixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
-                    int srcX, int srcY) const {
-        return this->readPixels(dstInfo, dstPixels, dstRowBytes, srcX, srcY,
-                SkTransferFunctionBehavior::kRespect);
-    }
+                    int srcX, int srcY) const;
 
     
 
@@ -1061,9 +1037,7 @@ public:
 
 
 
-    bool writePixels(const SkPixmap& src, int dstX, int dstY) {
-        return this->writePixels(src, dstX, dstY, SkTransferFunctionBehavior::kRespect);
-    }
+    bool writePixels(const SkPixmap& src, int dstX, int dstY);
 
     
 
@@ -1088,38 +1062,6 @@ public:
     bool writePixels(const SkPixmap& src) {
         return this->writePixels(src, 0, 0);
     }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    bool writePixels(const SkPixmap& src, int x, int y, SkTransferFunctionBehavior behavior);
 
 #ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
     
@@ -1242,15 +1184,6 @@ public:
 
         bool allocPixelRef(SkBitmap* bitmap) override;
     };
-
-    
-
-
-
-
-
-
-    SK_TO_STRING_NONVIRT()
 
 private:
     enum Flags {

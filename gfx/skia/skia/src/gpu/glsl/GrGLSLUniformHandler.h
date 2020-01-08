@@ -17,13 +17,23 @@
 
 class GrGLSLProgramBuilder;
 
+
+struct GrGLSLBuiltinUniformHandles {
+    GrGLSLProgramDataManager::UniformHandle fRTAdjustmentUni;
+    
+    GrGLSLProgramDataManager::UniformHandle fRTWidthUni;
+    
+    
+    GrGLSLProgramDataManager::UniformHandle fRTHeightUni;
+};
+
 class GrGLSLUniformHandler {
 public:
     virtual ~GrGLSLUniformHandler() {}
 
     using UniformHandle = GrGLSLProgramDataManager::UniformHandle;
+
     GR_DEFINE_RESOURCE_HANDLE_CLASS(SamplerHandle);
-    GR_DEFINE_RESOURCE_HANDLE_CLASS(TexelBufferHandle);
 
     
 
@@ -87,12 +97,7 @@ private:
     virtual const GrShaderVar& samplerVariable(SamplerHandle) const = 0;
     virtual GrSwizzle samplerSwizzle(SamplerHandle) const = 0;
 
-    virtual SamplerHandle addSampler(uint32_t visibility, GrSwizzle, GrSLType, GrSLPrecision,
-                                     const char* name) = 0;
-
-    virtual const GrShaderVar& texelBufferVariable(TexelBufferHandle) const = 0;
-    virtual TexelBufferHandle addTexelBuffer(uint32_t visibility, GrSLPrecision,
-                                             const char* name) = 0;
+    virtual SamplerHandle addSampler(GrSwizzle, GrTextureType, GrSLPrecision, const char* name) = 0;
 
     virtual UniformHandle internalAddUniformArray(uint32_t visibility,
                                                   GrSLType type,

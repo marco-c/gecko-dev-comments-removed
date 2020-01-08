@@ -5,12 +5,9 @@
 
 
 
-
-
 #ifndef SkWriter32_DEFINED
 #define SkWriter32_DEFINED
 
-#include "../private/SkTemplates.h"
 #include "SkData.h"
 #include "SkMatrix.h"
 #include "SkPath.h"
@@ -21,6 +18,8 @@
 #include "SkRegion.h"
 #include "SkScalar.h"
 #include "SkStream.h"
+#include "SkTemplates.h"
+#include "SkTo.h"
 #include "SkTypes.h"
 
 class SK_API SkWriter32 : SkNoncopyable {
@@ -39,12 +38,15 @@ public:
     
     size_t bytesWritten() const { return fUsed; }
 
-    SK_ATTR_DEPRECATED("use bytesWritten")
-    size_t size() const { return this->bytesWritten(); }
+    
+    
+    bool usingInitialStorage() const { return fData == fExternal; }
 
     void reset(void* external = nullptr, size_t externalBytes = 0) {
+        
         SkASSERT(SkIsAlign4((uintptr_t)external));
-        SkASSERT(SkIsAlign4(externalBytes));
+        
+        externalBytes &= ~3;
 
         fData = (uint8_t*)external;
         fCapacity = externalBytes;
@@ -108,7 +110,9 @@ public:
     }
 
     void writePtr(void* value) {
-        *(void**)this->reserve(sizeof(value)) = value;
+        
+        
+        memcpy(this->reserve(sizeof(value)), &value, sizeof(value));
     }
 
     void writeScalar(SkScalar value) {

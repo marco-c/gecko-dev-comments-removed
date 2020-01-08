@@ -10,10 +10,13 @@
 
 #include "GrContext.h"
 #include "GrSurfaceContext.h"
+#include "text/GrAtlasManager.h"
 
 class GrBackendRenderTarget;
+class GrOpMemoryPool;
 class GrOnFlushCallbackObject;
 class GrSemaphore;
+class GrSkSLFPFactory;
 class GrSurfaceProxy;
 class GrTextureContext;
 
@@ -27,7 +30,12 @@ public:
     
 
 
-    static sk_sp<GrContext> MakeDDL(GrContextThreadSafeProxy*);
+    static sk_sp<GrContext> MakeDDL(const sk_sp<GrContextThreadSafeProxy>&);
+
+    const GrCaps* caps() const { return fContext->fCaps.get(); }
+
+    sk_sp<GrOpMemoryPool> refOpMemoryPool();
+    GrOpMemoryPool* opMemoryPool();
 
     GrDrawingManager* drawingManager() { return fContext->fDrawingManager.get(); }
 
@@ -36,6 +44,7 @@ public:
                                                       const SkSurfaceProps* = nullptr);
 
     sk_sp<GrSurfaceContext> makeDeferredSurfaceContext(const GrSurfaceDesc&,
+                                                       GrSurfaceOrigin,
                                                        GrMipMapped,
                                                        SkBackingFit,
                                                        SkBudgeted,
@@ -142,6 +151,7 @@ public:
 
 
 
+
     bool readSurfacePixels(GrSurfaceContext* src, int left, int top, int width, int height,
                            GrColorType dstColorType, SkColorSpace* dstColorSpace, void* buffer,
                            size_t rowBytes = 0, uint32_t pixelOpsFlags = 0);
@@ -163,14 +173,9 @@ public:
 
 
 
-
-
     bool writeSurfacePixels(GrSurfaceContext* dst, int left, int top, int width, int height,
                             GrColorType srcColorType, SkColorSpace* srcColorSpace,
                             const void* buffer, size_t rowBytes, uint32_t pixelOpsFlags = 0);
-    bool writeSurfacePixels2(GrSurfaceContext* dst, int left, int top, int width, int height,
-                             GrColorType srcColorType, SkColorSpace* srcColorSpace,
-                             const void* buffer, size_t rowBytes, uint32_t pixelOpsFlags = 0);
 
     GrBackend getBackend() const { return fContext->fBackend; }
 
@@ -187,11 +192,92 @@ public:
     GrGpu* getGpu() { return fContext->fGpu.get(); }
     const GrGpu* getGpu() const { return fContext->fGpu.get(); }
 
-    GrAtlasGlyphCache* getAtlasGlyphCache() { return fContext->fAtlasGlyphCache; }
+    GrGlyphCache* getGlyphCache() { return fContext->fGlyphCache; }
     GrTextBlobCache* getTextBlobCache() { return fContext->fTextBlobCache.get(); }
+
+    
+    GrAtlasManager* getAtlasManager() {
+        return fContext->onGetAtlasManager();
+    }
 
     void moveOpListsToDDL(SkDeferredDisplayList*);
     void copyOpListsFromDDL(const SkDeferredDisplayList*, GrRenderTargetProxy* newDest);
+
+    
+
+
+
+
+    void purgeAllUnlockedResources_ForTesting();
+
+
+    
+
+
+
+
+    sk_sp<GrRenderTargetContext> makeDeferredRenderTargetContext(
+                                                 SkBackingFit fit,
+                                                 int width, int height,
+                                                 GrPixelConfig config,
+                                                 sk_sp<SkColorSpace> colorSpace,
+                                                 int sampleCnt = 1,
+                                                 GrMipMapped = GrMipMapped::kNo,
+                                                 GrSurfaceOrigin origin = kBottomLeft_GrSurfaceOrigin,
+                                                 const SkSurfaceProps* surfaceProps = nullptr,
+                                                 SkBudgeted = SkBudgeted::kYes);
+    
+
+
+
+
+
+    sk_sp<GrRenderTargetContext> makeDeferredRenderTargetContextWithFallback(
+                                                 SkBackingFit fit,
+                                                 int width, int height,
+                                                 GrPixelConfig config,
+                                                 sk_sp<SkColorSpace> colorSpace,
+                                                 int sampleCnt = 1,
+                                                 GrMipMapped = GrMipMapped::kNo,
+                                                 GrSurfaceOrigin origin = kBottomLeft_GrSurfaceOrigin,
+                                                 const SkSurfaceProps* surfaceProps = nullptr,
+                                                 SkBudgeted budgeted = SkBudgeted::kYes);
+
+    
+    void resetGpuStats() const ;
+
+    
+    void dumpCacheStats(SkString*) const;
+    void dumpCacheStatsKeyValuePairs(SkTArray<SkString>* keys, SkTArray<double>* values) const;
+    void printCacheStats() const;
+
+    
+    void dumpGpuStats(SkString*) const;
+    void dumpGpuStatsKeyValuePairs(SkTArray<SkString>* keys, SkTArray<double>* values) const;
+    void printGpuStats() const;
+
+    
+    SkString dump() const;
+
+    
+
+    void setTextBlobCacheLimit_ForTesting(size_t bytes);
+
+    
+
+
+    sk_sp<SkImage> getFontAtlasImage_ForTesting(GrMaskFormat format, unsigned int index = 0);
+
+    GrAuditTrail* getAuditTrail() { return &fContext->fAuditTrail; }
+
+    GrContextOptions::PersistentCache* getPersistentCache() { return fContext->fPersistentCache; }
+
+    sk_sp<GrSkSLFPFactoryCache> getFPFactoryCache() {
+        return fContext->fFPFactoryCache;
+    }
+
+    
+    SkDEBUGCODE(GrSingleOwner* debugSingleOwner() const { return &fContext->fSingleOwner; } )
 
 private:
     explicit GrContextPriv(GrContext* context) : fContext(context) {}

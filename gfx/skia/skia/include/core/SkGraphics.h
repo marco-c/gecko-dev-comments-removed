@@ -161,26 +161,6 @@ public:
 
     static void SetFlags(const char* flags);
 
-    
-
-
-
-
-
-
-
-
-
-
-    static size_t GetTLSFontCacheLimit();
-
-    
-
-
-
-
-    static void SetTLSFontCacheLimit(size_t bytes);
-
     typedef std::unique_ptr<SkImageGenerator>
                                             (*ImageGeneratorFromEncodedDataFactory)(sk_sp<SkData>);
 

@@ -5,10 +5,13 @@
 
 
 
-
 #include "SkAnalyticEdge.h"
+
 #include "SkFDot6.h"
 #include "SkMathPriv.h"
+#include "SkTo.h"
+
+#include <utility>
 
 
 
@@ -23,8 +26,9 @@ bool SkAnalyticEdge::updateLine(SkFixed x0, SkFixed y0, SkFixed x1, SkFixed y1, 
     
     
     if (y0 > y1) {
-        SkTSwap(x0, x1);
-        SkTSwap(y0, y1);
+        using std::swap;
+        swap(x0, x1);
+        swap(y0, y1);
         fWinding = -fWinding;
     }
 

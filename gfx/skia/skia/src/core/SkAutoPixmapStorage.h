@@ -49,7 +49,7 @@ public:
 
 
 
-    const SkData* SK_WARN_UNUSED_RESULT detachPixelsAsData();
+    sk_sp<SkData> SK_WARN_UNUSED_RESULT detachPixelsAsData();
 
     
 

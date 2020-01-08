@@ -8,9 +8,9 @@
 #ifndef SkUtils_DEFINED
 #define SkUtils_DEFINED
 
-#include "SkTypes.h"
-#include "SkMath.h"
 #include "SkOpts.h"
+#include "SkTypeface.h"
+#include "../utils/SkUTF.h"
 
 
 
@@ -28,81 +28,43 @@ static inline void sk_memset64(uint64_t buffer[], uint64_t value, int count) {
 }
 
 
-#define kMaxBytesInUTF8Sequence     4
-
-#ifdef SK_DEBUG
-    int SkUTF8_LeadByteToCount(unsigned c);
-#else
-    #define SkUTF8_LeadByteToCount(c)   ((((0xE5 << 24) >> ((unsigned)c >> 4 << 1)) & 3) + 1)
-#endif
-
-inline int SkUTF8_CountUTF8Bytes(const char utf8[]) {
-    SkASSERT(utf8);
-    return SkUTF8_LeadByteToCount(*(const uint8_t*)utf8);
-}
-
-int         SkUTF8_CountUnichars(const char utf8[]);
-
-
-int SkUTF8_CountUnichars(const void* utf8, size_t byteLength);
-int SkUTF16_CountUnichars(const void* utf16, size_t byteLength);
-int SkUTF32_CountUnichars(const void* utf32, size_t byteLength);
 
 
 
-
-
-SkUnichar SkUTF8_NextUnicharWithError(const char** ptr, const char* end);
-
-
-inline SkUnichar SkUTF8_NextUnichar(const char** ptr, const char* end) {
-    SkUnichar val = SkUTF8_NextUnicharWithError(ptr, end);
-    if (val < 0) {
-        *ptr = end;
-        return 0xFFFD;  
-    }
-    return val;
-}
-
-SkUnichar   SkUTF8_ToUnichar(const char utf8[]);
-SkUnichar   SkUTF8_NextUnichar(const char**);
-SkUnichar   SkUTF8_PrevUnichar(const char**);
-
-
-
-
-
-size_t      SkUTF8_FromUnichar(SkUnichar uni, char utf8[] = nullptr);
-
-
-
-#define SkUTF16_IsHighSurrogate(c)  (((c) & 0xFC00) == 0xD800)
-#define SkUTF16_IsLowSurrogate(c)   (((c) & 0xFC00) == 0xDC00)
-
-int SkUTF16_CountUnichars(const uint16_t utf16[]);
-
+SkUnichar SkUTF8_NextUnichar(const char**);
 SkUnichar SkUTF16_NextUnichar(const uint16_t**);
 
-SkUnichar SkUTF16_PrevUnichar(const uint16_t**);
-size_t SkUTF16_FromUnichar(SkUnichar uni, uint16_t utf16[] = nullptr);
 
-size_t SkUTF16_ToUTF8(const uint16_t utf16[], int numberOf16BitValues,
-                      char utf8[] = nullptr);
 
-inline bool SkUnichar_IsVariationSelector(SkUnichar uni) {
+static inline bool SkUTF16_IsLeadingSurrogate(uint16_t c) { return ((c) & 0xFC00) == 0xD800; }
+
+static inline bool SkUTF16_IsTrailingSurrogate (uint16_t c) { return ((c) & 0xFC00) == 0xDC00; }
 
 
 
-
-
-    if (uni < 0x180B || uni > 0xE01EF) {
-        return false;
+static inline int SkUTFN_CountUnichars(SkTypeface::Encoding enc, const void* utfN, size_t bytes) {
+    switch (enc) {
+        case SkTypeface::kUTF8_Encoding:  return SkUTF::CountUTF8((const char*)utfN, bytes);
+        case SkTypeface::kUTF16_Encoding: return SkUTF::CountUTF16((const uint16_t*)utfN, bytes);
+        case SkTypeface::kUTF32_Encoding: return SkUTF::CountUTF32((const int32_t*)utfN, bytes);
+        default: SkDEBUGFAIL("unknown text encoding"); return -1;
     }
-    if ((uni > 0x180D && uni < 0xFE00) || (uni > 0xFE0F && uni < 0xE0100)) {
-        return false;
-    }
-    return true;
 }
+
+static inline SkUnichar SkUTFN_Next(SkTypeface::Encoding enc,
+                                    const void** ptr, const void* stop) {
+    switch (enc) {
+        case SkTypeface::kUTF8_Encoding:
+            return SkUTF::NextUTF8((const char**)ptr, (const char*)stop);
+        case SkTypeface::kUTF16_Encoding:
+            return SkUTF::NextUTF16((const uint16_t**)ptr, (const uint16_t*)stop);
+        case SkTypeface::kUTF32_Encoding:
+            return SkUTF::NextUTF32((const int32_t**)ptr, (const int32_t*)stop);
+        default: SkDEBUGFAIL("unknown text encoding"); return -1;
+    }
+}
+
+
 
 namespace SkHexadecimalDigits {
     extern const char gUpper[16];  

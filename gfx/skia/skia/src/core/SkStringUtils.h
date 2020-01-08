@@ -12,16 +12,6 @@
 
 class SkString;
 
-
-
-
-
-
-
-void SkAddFlagToString(SkString* string, bool flag,
-                       const char* flagStr, bool* needSeparator);
-
-
 enum SkScalarAsStringType {
     kDec_SkScalarAsStringType,
     kHex_SkScalarAsStringType,
@@ -39,5 +29,7 @@ static inline void SkAppendScalarHex(SkString* str, SkScalar value) {
 
 
 SkString SkTabString(const SkString& string, int tabCnt);
+
+SkString SkStringFromUTF16(const uint16_t* src, size_t count);
 
 #endif

@@ -10,8 +10,10 @@
 
 #include "GrConfig.h"
 #include "GrTypes.h"
+#include "SkNoncopyable.h"
 #include "SkTArray.h"
 #include "SkTypes.h"
+#include <new>
 
 class GrAllocator : SkNoncopyable {
 public:
@@ -108,6 +110,24 @@ public:
 
 
     bool empty() const { return 0 == fCount; }
+
+    
+
+
+    void* front() {
+        SkASSERT(fCount);
+        SkASSERT(fInsertionIndexInBlock > 0);
+        return (char*)(fBlocks.front());
+    }
+
+    
+
+
+    const void* front() const {
+        SkASSERT(fCount);
+        SkASSERT(fInsertionIndexInBlock > 0);
+        return (const char*)(fBlocks.front());
+    }
 
     
 
@@ -295,6 +315,20 @@ public:
 
 
     bool empty() const { return fAllocator.empty(); }
+
+    
+
+
+    T& front() {
+        return *(T*)fAllocator.front();
+    }
+
+    
+
+
+    const T& front() const {
+        return *(T*)fAllocator.front();
+    }
 
     
 

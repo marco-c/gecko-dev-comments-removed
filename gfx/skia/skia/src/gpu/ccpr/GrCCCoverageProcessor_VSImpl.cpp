@@ -10,106 +10,66 @@
 #include "GrMesh.h"
 #include "glsl/GrGLSLVertexGeoBuilder.h"
 
-using Shader = GrCCCoverageProcessor::Shader;
-
-static constexpr int kAttribIdx_X = 0;
-static constexpr int kAttribIdx_Y = 1;
-static constexpr int kAttribIdx_VertexData = 2;
-
-
-
 
 class GrCCCoverageProcessor::VSImpl : public GrGLSLGeometryProcessor {
-protected:
-    VSImpl(std::unique_ptr<Shader> shader) : fShader(std::move(shader)) {}
+public:
+    VSImpl(std::unique_ptr<Shader> shader, int numSides)
+            : fShader(std::move(shader)), fNumSides(numSides) {}
 
+private:
     void setData(const GrGLSLProgramDataManager& pdman, const GrPrimitiveProcessor&,
                  FPCoordTransformIter&& transformIter) final {
         this->setTransformDataHelper(SkMatrix::I(), pdman, &transformIter);
     }
 
-    void onEmitCode(EmitArgs& args, GrGPArgs* gpArgs) final {
-        const GrCCCoverageProcessor& proc = args.fGP.cast<GrCCCoverageProcessor>();
-
-        
-        GrGLSLVertexBuilder* v = args.fVertBuilder;
-        int numInputPoints = proc.numInputPoints();
-
-        const char* swizzle = (4 == numInputPoints) ? "xyzw" : "xyz";
-        v->codeAppendf("float%ix2 pts = transpose(float2x%i(%s.%s, %s.%s));",
-                       numInputPoints, numInputPoints, proc.getAttrib(kAttribIdx_X).fName, swizzle,
-                       proc.getAttrib(kAttribIdx_Y).fName, swizzle);
-
-        if (WindMethod::kCrossProduct == proc.fWindMethod) {
-            v->codeAppend ("float area_x2 = determinant(float2x2(pts[0] - pts[1], "
-                                                                "pts[0] - pts[2]));");
-            if (4 == numInputPoints) {
-                v->codeAppend ("area_x2 += determinant(float2x2(pts[0] - pts[2], "
-                                                               "pts[0] - pts[3]));");
-            }
-            v->codeAppend ("half wind = sign(area_x2);");
-        } else {
-            SkASSERT(WindMethod::kInstanceData == proc.fWindMethod);
-            SkASSERT(3 == numInputPoints);
-            SkASSERT(kFloat4_GrVertexAttribType == proc.getAttrib(kAttribIdx_X).fType);
-            v->codeAppendf("half wind = %s.w;", proc.getAttrib(kAttribIdx_X).fName);
-        }
-
-        float bloat = kAABloatRadius;
-#ifdef SK_DEBUG
-        if (proc.debugVisualizationsEnabled()) {
-            bloat *= proc.debugBloat();
-        }
-#endif
-        v->defineConstant("bloat", bloat);
-
-        const char* coverage = this->emitVertexPosition(proc, v, gpArgs);
-        SkASSERT(kFloat2_GrSLType == gpArgs->fPositionVar.getType());
-
-        GrGLSLVaryingHandler* varyingHandler = args.fVaryingHandler;
-        SkString varyingCode;
-        fShader->emitVaryings(varyingHandler, GrGLSLVarying::Scope::kVertToFrag, &varyingCode,
-                              gpArgs->fPositionVar.c_str(), coverage, "wind");
-        v->codeAppend(varyingCode.c_str());
-
-        varyingHandler->emitAttributes(proc);
-        SkASSERT(!args.fFPCoordTransformHandler->nextCoordTransform());
-
-        
-        fShader->emitFragmentCode(proc, args.fFragBuilder, args.fOutputColor, args.fOutputCoverage);
-    }
-
-    virtual const char* emitVertexPosition(const GrCCCoverageProcessor&, GrGLSLVertexBuilder*,
-                                           GrGPArgs*) const = 0;
-
-    virtual ~VSImpl() {}
+    void onEmitCode(EmitArgs&, GrGPArgs*) override;
 
     const std::unique_ptr<Shader> fShader;
-
-    typedef GrGLSLGeometryProcessor INHERITED;
+    const int fNumSides;
 };
 
+static constexpr int kInstanceAttribIdx_X = 0;  
+static constexpr int kInstanceAttribIdx_Y = 1;  
 
 
 
+static constexpr int kVertexData_LeftNeighborIdShift = 10;
+static constexpr int kVertexData_RightNeighborIdShift = 8;
+static constexpr int kVertexData_BloatIdxShift = 6;
+static constexpr int kVertexData_InvertNegativeCoverageBit = 1 << 5;
+static constexpr int kVertexData_IsCornerBit = 1 << 4;
+static constexpr int kVertexData_IsEdgeBit = 1 << 3;
+static constexpr int kVertexData_IsHullBit = 1 << 2;
 
-static constexpr int32_t pack_vertex_data(int32_t bloatIdx, int32_t edgeData,
-                                          int32_t cornerVertexID, int32_t cornerIdx) {
-    return (bloatIdx << 6) | (edgeData << 4) | (cornerVertexID << 2) | cornerIdx;
+static constexpr int32_t pack_vertex_data(int32_t leftNeighborID, int32_t rightNeighborID,
+                                          int32_t bloatIdx, int32_t cornerID,
+                                          int32_t extraData = 0) {
+    return (leftNeighborID << kVertexData_LeftNeighborIdShift) |
+           (rightNeighborID << kVertexData_RightNeighborIdShift) |
+           (bloatIdx << kVertexData_BloatIdxShift) |
+           cornerID | extraData;
 }
 
-static constexpr int32_t hull_vertex_data(int32_t cornerIdx, int32_t cornerVertexID, int n) {
-    return pack_vertex_data((cornerIdx + (2 == cornerVertexID ? 1 : n - 1)) % n, 0, cornerVertexID,
-                            cornerIdx);
+static constexpr int32_t hull_vertex_data(int32_t cornerID, int32_t bloatIdx, int n) {
+    return pack_vertex_data((cornerID + n - 1) % n, (cornerID + 1) % n, bloatIdx, cornerID,
+                            kVertexData_IsHullBit);
 }
 
-static constexpr int32_t edge_vertex_data(int32_t edgeID, int32_t endptIdx, int32_t endptVertexID,
+static constexpr int32_t edge_vertex_data(int32_t edgeID, int32_t endptIdx, int32_t bloatIdx,
                                           int n) {
-    return pack_vertex_data(0 == endptIdx ? (edgeID + 1) % n : edgeID, (endptIdx << 1) | 1,
-                            endptVertexID, 0 == endptIdx ? edgeID : (edgeID + 1) % n);
+    return pack_vertex_data(0 == endptIdx ? (edgeID + 1) % n : edgeID,
+                            0 == endptIdx ? (edgeID + 1) % n : edgeID,
+                            bloatIdx, 0 == endptIdx ? edgeID : (edgeID + 1) % n,
+                            kVertexData_IsEdgeBit |
+                            (!endptIdx ? kVertexData_InvertNegativeCoverageBit : 0));
 }
 
-static constexpr int32_t kHull3AndEdgeVertices[] = {
+static constexpr int32_t corner_vertex_data(int32_t leftID, int32_t cornerID, int32_t rightID,
+                                            int32_t bloatIdx) {
+    return pack_vertex_data(leftID, rightID, bloatIdx, cornerID, kVertexData_IsCornerBit);
+}
+
+static constexpr int32_t kTriangleVertices[] = {
     hull_vertex_data(0, 0, 3),
     hull_vertex_data(0, 1, 3),
     hull_vertex_data(0, 2, 3),
@@ -140,21 +100,39 @@ static constexpr int32_t kHull3AndEdgeVertices[] = {
     edge_vertex_data(2, 1, 0, 3),
     edge_vertex_data(2, 1, 1, 3),
     edge_vertex_data(2, 1, 2, 3),
+
+    corner_vertex_data(2, 0, 1, 0),
+    corner_vertex_data(2, 0, 1, 1),
+    corner_vertex_data(2, 0, 1, 2),
+    corner_vertex_data(2, 0, 1, 3),
+
+    corner_vertex_data(0, 1, 2, 0),
+    corner_vertex_data(0, 1, 2, 1),
+    corner_vertex_data(0, 1, 2, 2),
+    corner_vertex_data(0, 1, 2, 3),
+
+    corner_vertex_data(1, 2, 0, 0),
+    corner_vertex_data(1, 2, 0, 1),
+    corner_vertex_data(1, 2, 0, 2),
+    corner_vertex_data(1, 2, 0, 3),
 };
 
-GR_DECLARE_STATIC_UNIQUE_KEY(gHull3AndEdgeVertexBufferKey);
+GR_DECLARE_STATIC_UNIQUE_KEY(gTriangleVertexBufferKey);
 
 static constexpr uint16_t kRestartStrip = 0xffff;
 
-static constexpr uint16_t kHull3AndEdgeIndicesAsStrips[] =  {
+static constexpr uint16_t kTriangleIndicesAsStrips[] =  {
     1, 2, 0, 3, 8, kRestartStrip, 
     4, 5, 3, 6, 8, 7, kRestartStrip, 
     10, 9, 11, 14, 12, 13, kRestartStrip, 
     16, 15, 17, 20, 18, 19, kRestartStrip, 
-    22, 21, 23, 26, 24, 25 
+    22, 21, 23, 26, 24, 25, kRestartStrip, 
+    28, 27, 29, 30, kRestartStrip, 
+    32, 31, 33, 34, kRestartStrip, 
+    36, 35, 37, 38 
 };
 
-static constexpr uint16_t kHull3AndEdgeIndicesAsTris[] =  {
+static constexpr uint16_t kTriangleIndicesAsTris[] =  {
     
     1, 2, 0,
     2, 3, 0,
@@ -183,11 +161,24 @@ static constexpr uint16_t kHull3AndEdgeIndicesAsTris[] =  {
     21, 26, 23,
     23, 26, 24,
     26, 25, 24,
+
+    
+    28, 27, 29,
+    27, 30, 29,
+
+    
+    32, 31, 33,
+    31, 34, 33,
+
+    
+    36, 35, 37,
+    35, 38, 37,
 };
 
-GR_DECLARE_STATIC_UNIQUE_KEY(gHull3AndEdgeIndexBufferKey);
+GR_DECLARE_STATIC_UNIQUE_KEY(gTriangleIndexBufferKey);
 
-static constexpr int32_t kHull4Vertices[] = {
+
+static constexpr int32_t kCurveVertices[] = {
     hull_vertex_data(0, 0, 4),
     hull_vertex_data(0, 1, 4),
     hull_vertex_data(0, 2, 4),
@@ -201,17 +192,27 @@ static constexpr int32_t kHull4Vertices[] = {
     hull_vertex_data(3, 1, 4),
     hull_vertex_data(3, 2, 4),
 
-    
+    corner_vertex_data(3, 0, 1, 0),
+    corner_vertex_data(3, 0, 1, 1),
+    corner_vertex_data(3, 0, 1, 2),
+    corner_vertex_data(3, 0, 1, 3),
+
+    corner_vertex_data(2, 3, 0, 0),
+    corner_vertex_data(2, 3, 0, 1),
+    corner_vertex_data(2, 3, 0, 2),
+    corner_vertex_data(2, 3, 0, 3),
 };
 
-GR_DECLARE_STATIC_UNIQUE_KEY(gHull4VertexBufferKey);
+GR_DECLARE_STATIC_UNIQUE_KEY(gCurveVertexBufferKey);
 
-static constexpr uint16_t kHull4IndicesAsStrips[] =  {
+static constexpr uint16_t kCurveIndicesAsStrips[] =  {
     1, 0, 2, 11, 3, 5, 4, kRestartStrip, 
-    7, 6, 8, 5, 9, 11, 10 
+    7, 6, 8, 5, 9, 11, 10, kRestartStrip, 
+    13, 12, 14, 15, kRestartStrip, 
+    17, 16, 18, 19 
 };
 
-static constexpr uint16_t kHull4IndicesAsTris[] =  {
+static constexpr uint16_t kCurveIndicesAsTris[] =  {
     
      1,  0,  2,
      0, 11,  2,
@@ -225,270 +226,326 @@ static constexpr uint16_t kHull4IndicesAsTris[] =  {
     8,  5,  9,
     5, 11,  9,
     9, 11, 10,
+
+    
+    13, 12, 14,
+    12, 15, 14,
+
+    
+    17, 16, 18,
+    16, 19, 18,
 };
 
-GR_DECLARE_STATIC_UNIQUE_KEY(gHull4IndexBufferKey);
+GR_DECLARE_STATIC_UNIQUE_KEY(gCurveIndexBufferKey);
 
 
 
 
 
-class VSHullAndEdgeImpl : public GrCCCoverageProcessor::VSImpl {
-public:
-    VSHullAndEdgeImpl(std::unique_ptr<Shader> shader, int numSides)
-            : VSImpl(std::move(shader)), fNumSides(numSides) {}
 
-    const char* emitVertexPosition(const GrCCCoverageProcessor& proc, GrGLSLVertexBuilder* v,
-                                   GrGPArgs* gpArgs) const override {
-        Shader::GeometryVars vars;
-        fShader->emitSetupCode(v, "pts", nullptr, "wind", &vars);
 
-        const char* hullPts = vars.fHullVars.fAlternatePoints;
-        if (!hullPts) {
-            hullPts = "pts";
-        }
 
-        
-        v->codeAppendf("int clockwise_indices = wind > 0 ? %s : 0x%x - %s;",
-                       proc.getAttrib(kAttribIdx_VertexData).fName,
-                       ((fNumSides - 1) << 6) | (0xf << 2) | (fNumSides - 1),
-                       proc.getAttrib(kAttribIdx_VertexData).fName);
 
-        
-        
-        
-        
-        
-        
-        v->codeAppendf("float2 corner = %s[clockwise_indices & 3];", hullPts);
-        v->codeAppendf("float2 bloatpoint = %s[clockwise_indices >> 6];", hullPts);
-        v->codeAppend ("float2 vertexbloat = float2(bloatpoint.y > corner.y ? -bloat : +bloat, "
-                                                   "bloatpoint.x > corner.x ? +bloat : -bloat);");
 
-        v->codeAppendf("if ((1 << 2) == (%s & (3 << 2))) {",
-                       proc.getAttrib(kAttribIdx_VertexData).fName);
+
+
+
+
+void GrCCCoverageProcessor::VSImpl::onEmitCode(EmitArgs& args, GrGPArgs* gpArgs) {
+    const GrCCCoverageProcessor& proc = args.fGP.cast<GrCCCoverageProcessor>();
+    GrGLSLVertexBuilder* v = args.fVertBuilder;
+    int numInputPoints = proc.numInputPoints();
+
+    int inputWidth = (4 == numInputPoints || proc.hasInputWeight()) ? 4 : 3;
+    const char* swizzle = (4 == inputWidth) ? "xyzw" : "xyz";
+    v->codeAppendf("float%ix2 pts = transpose(float2x%i(%s.%s, %s.%s));", inputWidth, inputWidth,
+                   proc.fInstanceAttributes[kInstanceAttribIdx_X].name(), swizzle,
+                   proc.fInstanceAttributes[kInstanceAttribIdx_Y].name(), swizzle);
+
+    v->codeAppend ("half wind;");
+    Shader::CalcWind(proc, v, "pts", "wind");
+    if (PrimitiveType::kWeightedTriangles == proc.fPrimitiveType) {
+        SkASSERT(3 == numInputPoints);
+        SkASSERT(kFloat4_GrVertexAttribType ==
+                 proc.fInstanceAttributes[kInstanceAttribIdx_X].cpuType());
+        v->codeAppendf("wind *= %s.w;", proc.fInstanceAttributes[kInstanceAttribIdx_X].name());
+    }
+
+    float bloat = kAABloatRadius;
+#ifdef SK_DEBUG
+    if (proc.debugBloatEnabled()) {
+        bloat *= proc.debugBloat();
+    }
+#endif
+    v->defineConstant("bloat", bloat);
+
+    const char* hullPts = "pts";
+    fShader->emitSetupCode(v, "pts", "wind", (4 == fNumSides) ? &hullPts : nullptr);
+
+    
+    v->codeAppendf("int clockwise_indices = wind > 0 ? %s : 0x%x - %s;",
+                   proc.fVertexAttribute.name(),
+                   ((fNumSides - 1) << kVertexData_LeftNeighborIdShift) |
+                   ((fNumSides - 1) << kVertexData_RightNeighborIdShift) |
+                   (((1 << kVertexData_RightNeighborIdShift) - 1) ^ 3) |
+                   (fNumSides - 1),
+                   proc.fVertexAttribute.name());
+
+    
+    
+    
+    
+    
+    
+    v->codeAppendf("float2 corner = %s[clockwise_indices & 3];", hullPts);
+    v->codeAppendf("float2 left = %s[clockwise_indices >> %i];",
+                   hullPts, kVertexData_LeftNeighborIdShift);
+    v->codeAppendf("float2 right = %s[(clockwise_indices >> %i) & 3];",
+                   hullPts, kVertexData_RightNeighborIdShift);
+
+    v->codeAppend ("float2 leftbloat = sign(corner - left);");
+    v->codeAppend ("leftbloat = float2(0 != leftbloat.y ? leftbloat.y : leftbloat.x, "
+                                      "0 != leftbloat.x ? -leftbloat.x : -leftbloat.y);");
+
+    v->codeAppend ("float2 rightbloat = sign(right - corner);");
+    v->codeAppend ("rightbloat = float2(0 != rightbloat.y ? rightbloat.y : rightbloat.x, "
+                                       "0 != rightbloat.x ? -rightbloat.x : -rightbloat.y);");
+
+    v->codeAppend ("bool2 left_right_notequal = notEqual(leftbloat, rightbloat);");
+
+    v->codeAppend ("float2 bloatdir = leftbloat;");
+
+    v->codeAppend ("float2 leftdir = corner - left;");
+    v->codeAppend ("leftdir = (float2(0) != leftdir) ? normalize(leftdir) : float2(1, 0);");
+
+    v->codeAppend ("float2 rightdir = right - corner;");
+    v->codeAppend ("rightdir = (float2(0) != rightdir) ? normalize(rightdir) : float2(1, 0);");
+
+    v->codeAppendf("if (0 != (%s & %i)) {",  
+                   proc.fVertexAttribute.name(), kVertexData_IsCornerBit);
+
+                       
+                       
+                       
+    v->codeAppend (    "bloatdir = float2(leftdir.x > rightdir.x ? +1 : -1, "
+                                         "leftdir.y > rightdir.y ? +1 : -1);");
+
+                       
+                       
+                       
+    v->codeAppendf(    "left_right_notequal = bool2(true);");
+    v->codeAppend ("}");
+
+    
+    
+    
+    
+    
+    v->codeAppendf("int bloatidx = (%s >> %i) & 3;", proc.fVertexAttribute.name(),
+                   kVertexData_BloatIdxShift);
+    v->codeAppend ("switch (bloatidx) {");
+    v->codeAppend (    "case 3:");
+                            
+    v->codeAppend (        "bloatdir = float2(-bloatdir.y, +bloatdir.x);"); 
                            
-        v->codeAppend (    "vertexbloat = float2(-vertexbloat.y, vertexbloat.x);");
+    v->codeAppend (    "case 2:");
+    v->codeAppendf(        "if (all(left_right_notequal)) {");
+    v->codeAppend (            "bloatdir = float2(-bloatdir.y, +bloatdir.x);"); 
+    v->codeAppend (        "}");
+                           
+    v->codeAppend (    "case 1:");
+    v->codeAppendf(        "if (any(left_right_notequal)) {");
+    v->codeAppend (            "bloatdir = float2(-bloatdir.y, +bloatdir.x);"); 
+    v->codeAppend (        "}");
+                           
+    v->codeAppend ("}");
+
+    v->codeAppend ("float2 vertex = corner + bloatdir * bloat;");
+    gpArgs->fPositionVar.set(kFloat2_GrSLType, "vertex");
+
+    
+    v->codeAppend ("half coverage = +1;");
+
+    if (3 == fNumSides) {
+        v->codeAppend ("half left_coverage; {");
+        Shader::CalcEdgeCoverageAtBloatVertex(v, "left", "corner", "bloatdir", "left_coverage");
         v->codeAppend ("}");
 
-        v->codeAppendf("if ((2 << 2) == (%s & (3 << 2))) {",
-                       proc.getAttrib(kAttribIdx_VertexData).fName);
-                           
-        v->codeAppend (    "vertexbloat = -vertexbloat;");
+        v->codeAppend ("half right_coverage; {");
+        Shader::CalcEdgeCoverageAtBloatVertex(v, "corner", "right", "bloatdir", "right_coverage");
         v->codeAppend ("}");
 
-        v->codeAppend ("float2 vertex = corner + vertexbloat;");
-        gpArgs->fPositionVar.set(kFloat2_GrSLType, "vertex");
+        v->codeAppendf("if (0 != (%s & %i)) {",  
+                       proc.fVertexAttribute.name(), kVertexData_IsEdgeBit);
+        v->codeAppend (    "coverage = left_coverage;");
+        v->codeAppend ("}");
 
-        if (4 == fNumSides) {
-            
-            return nullptr; 
-        }
-
-        
-        Shader::EmitEdgeDistanceEquation(v, "bloatpoint", "corner",
-                                         "float3 edge_distance_equation");
-        v->codeAppend ("half coverage = dot(edge_distance_equation.xy, vertex) + "
-                                       "edge_distance_equation.z;");
-        v->codeAppendf("if (0 == (%s & (1 << 5))) {", proc.getAttrib(kAttribIdx_VertexData).fName);
-                           
+        v->codeAppendf("if (0 != (%s & %i)) {",  
+                       proc.fVertexAttribute.name(),
+                       kVertexData_InvertNegativeCoverageBit);
         v->codeAppend (    "coverage = -1 - coverage;");
         v->codeAppend ("}");
-        v->codeAppendf("if (0 == (%s & (1 << 4))) {", proc.getAttrib(kAttribIdx_VertexData).fName);
-                           
-        v->codeAppend (    "coverage = +1;");
+    }
+
+    
+    v->codeAppend ("half2 corner_coverage = half2(0);");
+
+    v->codeAppendf("if (0 != (%s & %i)) {",  
+                   proc.fVertexAttribute.name(), kVertexData_IsCornerBit);
+                       
+                       
+                       
+                       
+                       
+                       
+    v->codeAppend (    "coverage = -1;");
+    if (3 == fNumSides) {
+                       
+        v->codeAppend ("coverage -= left_coverage + right_coverage;");
+    }
+
+                       
+    v->codeAppend (    "half attenuation; {");
+    Shader::CalcCornerAttenuation(v, "leftdir", "rightdir", "attenuation");
+    v->codeAppend (    "}");
+
+                       
+                       
+                       
+                       
+                       
+    v->codeAppend (    "corner_coverage = (0 == bloatidx) ? half2(0, attenuation) : half2(1);");
+
+    if (3 == fNumSides) {
+                       
+                       
+        v->codeAppend ("if (1 == bloatidx || 2 == bloatidx) {");
+        v->codeAppend (    "corner_coverage.x += right_coverage;");
         v->codeAppend ("}");
-
-        return "coverage";
+        v->codeAppend ("if (bloatidx >= 2) {");
+        v->codeAppend (    "corner_coverage.x += left_coverage;");
+        v->codeAppend ("}");
     }
+    v->codeAppend ("}");
 
-private:
-    const int fNumSides;
-};
+    GrGLSLVaryingHandler* varyingHandler = args.fVaryingHandler;
+    v->codeAppend ("coverage *= wind;");
+    v->codeAppend ("corner_coverage.x *= wind;");
+    fShader->emitVaryings(varyingHandler, GrGLSLVarying::Scope::kVertToFrag, &v->code(),
+                          gpArgs->fPositionVar.c_str(), "coverage", "corner_coverage");
 
-static constexpr uint16_t kCornerIndicesAsStrips[] =  {
-    0, 1, 2, 3, kRestartStrip, 
-    4, 5, 6, 7, kRestartStrip, 
-    8, 9, 10, 11 
-};
-
-static constexpr uint16_t kCornerIndicesAsTris[] =  {
-    
-    0,  1,  2,
-    1,  3,  2,
+    varyingHandler->emitAttributes(proc);
+    SkASSERT(!args.fFPCoordTransformHandler->nextCoordTransform());
 
     
-    4,  5,  6,
-    5,  7,  6,
-
-    
-    8,  9, 10,
-    9, 11, 10,
-};
-
-GR_DECLARE_STATIC_UNIQUE_KEY(gCornerIndexBufferKey);
-
-
-
-
-class VSCornerImpl : public GrCCCoverageProcessor::VSImpl {
-public:
-    VSCornerImpl(std::unique_ptr<Shader> shader) : VSImpl(std::move(shader)) {}
-
-    const char* emitVertexPosition(const GrCCCoverageProcessor&, GrGLSLVertexBuilder* v,
-                                   GrGPArgs* gpArgs) const override {
-        Shader::GeometryVars vars;
-        v->codeAppend ("int corner_id = sk_VertexID / 4;");
-        fShader->emitSetupCode(v, "pts", "corner_id", "wind", &vars);
-
-        v->codeAppendf("float2 vertex = %s;", vars.fCornerVars.fPoint);
-        v->codeAppend ("vertex.x += (0 == (sk_VertexID & 2)) ? -bloat : +bloat;");
-        v->codeAppend ("vertex.y += (0 == (sk_VertexID & 1)) ? -bloat : +bloat;");
-
-        gpArgs->fPositionVar.set(kFloat2_GrSLType, "vertex");
-        return nullptr; 
-    }
-};
+    fShader->emitFragmentCode(proc, args.fFragBuilder, args.fOutputColor, args.fOutputCoverage);
+}
 
 void GrCCCoverageProcessor::initVS(GrResourceProvider* rp) {
     SkASSERT(Impl::kVertexShader == fImpl);
     const GrCaps& caps = *rp->caps();
 
-    switch (fRenderPass) {
-        case RenderPass::kTriangleHulls: {
-            GR_DEFINE_STATIC_UNIQUE_KEY(gHull3AndEdgeVertexBufferKey);
-            fVertexBuffer = rp->findOrMakeStaticBuffer(kVertex_GrBufferType,
-                                                       sizeof(kHull3AndEdgeVertices),
-                                                       kHull3AndEdgeVertices,
-                                                       gHull3AndEdgeVertexBufferKey);
-            GR_DEFINE_STATIC_UNIQUE_KEY(gHull3AndEdgeIndexBufferKey);
+    switch (fPrimitiveType) {
+        case PrimitiveType::kTriangles:
+        case PrimitiveType::kWeightedTriangles: {
+            GR_DEFINE_STATIC_UNIQUE_KEY(gTriangleVertexBufferKey);
+            fVSVertexBuffer = rp->findOrMakeStaticBuffer(kVertex_GrBufferType,
+                                                         sizeof(kTriangleVertices),
+                                                         kTriangleVertices,
+                                                         gTriangleVertexBufferKey);
+            GR_DEFINE_STATIC_UNIQUE_KEY(gTriangleIndexBufferKey);
             if (caps.usePrimitiveRestart()) {
-                fIndexBuffer = rp->findOrMakeStaticBuffer(kIndex_GrBufferType,
-                                                          sizeof(kHull3AndEdgeIndicesAsStrips),
-                                                          kHull3AndEdgeIndicesAsStrips,
-                                                          gHull3AndEdgeIndexBufferKey);
-                fNumIndicesPerInstance = SK_ARRAY_COUNT(kHull3AndEdgeIndicesAsStrips);
+                fVSIndexBuffer = rp->findOrMakeStaticBuffer(kIndex_GrBufferType,
+                                                            sizeof(kTriangleIndicesAsStrips),
+                                                            kTriangleIndicesAsStrips,
+                                                            gTriangleIndexBufferKey);
+                fVSNumIndicesPerInstance = SK_ARRAY_COUNT(kTriangleIndicesAsStrips);
             } else {
-                fIndexBuffer = rp->findOrMakeStaticBuffer(kIndex_GrBufferType,
-                                                          sizeof(kHull3AndEdgeIndicesAsTris),
-                                                          kHull3AndEdgeIndicesAsTris,
-                                                          gHull3AndEdgeIndexBufferKey);
-                fNumIndicesPerInstance = SK_ARRAY_COUNT(kHull3AndEdgeIndicesAsTris);
+                fVSIndexBuffer = rp->findOrMakeStaticBuffer(kIndex_GrBufferType,
+                                                            sizeof(kTriangleIndicesAsTris),
+                                                            kTriangleIndicesAsTris,
+                                                            gTriangleIndexBufferKey);
+                fVSNumIndicesPerInstance = SK_ARRAY_COUNT(kTriangleIndicesAsTris);
             }
             break;
         }
-        case RenderPass::kQuadraticHulls:
-        case RenderPass::kCubicHulls: {
-            GR_DEFINE_STATIC_UNIQUE_KEY(gHull4VertexBufferKey);
-            fVertexBuffer = rp->findOrMakeStaticBuffer(kVertex_GrBufferType, sizeof(kHull4Vertices),
-                                                       kHull4Vertices, gHull4VertexBufferKey);
-            GR_DEFINE_STATIC_UNIQUE_KEY(gHull4IndexBufferKey);
+
+        case PrimitiveType::kQuadratics:
+        case PrimitiveType::kCubics:
+        case PrimitiveType::kConics: {
+            GR_DEFINE_STATIC_UNIQUE_KEY(gCurveVertexBufferKey);
+            fVSVertexBuffer = rp->findOrMakeStaticBuffer(kVertex_GrBufferType,
+                                                         sizeof(kCurveVertices), kCurveVertices,
+                                                         gCurveVertexBufferKey);
+            GR_DEFINE_STATIC_UNIQUE_KEY(gCurveIndexBufferKey);
             if (caps.usePrimitiveRestart()) {
-                fIndexBuffer = rp->findOrMakeStaticBuffer(kIndex_GrBufferType,
-                                                          sizeof(kHull4IndicesAsStrips),
-                                                          kHull4IndicesAsStrips,
-                                                          gHull4IndexBufferKey);
-                fNumIndicesPerInstance = SK_ARRAY_COUNT(kHull4IndicesAsStrips);
+                fVSIndexBuffer = rp->findOrMakeStaticBuffer(kIndex_GrBufferType,
+                                                            sizeof(kCurveIndicesAsStrips),
+                                                            kCurveIndicesAsStrips,
+                                                            gCurveIndexBufferKey);
+                fVSNumIndicesPerInstance = SK_ARRAY_COUNT(kCurveIndicesAsStrips);
             } else {
-                fIndexBuffer = rp->findOrMakeStaticBuffer(kIndex_GrBufferType,
-                                                          sizeof(kHull4IndicesAsTris),
-                                                          kHull4IndicesAsTris,
-                                                          gHull4IndexBufferKey);
-                fNumIndicesPerInstance = SK_ARRAY_COUNT(kHull4IndicesAsTris);
-            }
-            break;
-        }
-        case RenderPass::kTriangleEdges:
-            SK_ABORT("kTriangleEdges RenderPass is not used by VSImpl.");
-            break;
-        case RenderPass::kTriangleCorners:
-        case RenderPass::kQuadraticCorners:
-        case RenderPass::kCubicCorners: {
-            GR_DEFINE_STATIC_UNIQUE_KEY(gCornerIndexBufferKey);
-            if (caps.usePrimitiveRestart()) {
-                fIndexBuffer = rp->findOrMakeStaticBuffer(kIndex_GrBufferType,
-                                                          sizeof(kCornerIndicesAsStrips),
-                                                          kCornerIndicesAsStrips,
-                                                          gCornerIndexBufferKey);
-                fNumIndicesPerInstance = SK_ARRAY_COUNT(kCornerIndicesAsStrips);
-            } else {
-                fIndexBuffer = rp->findOrMakeStaticBuffer(kIndex_GrBufferType,
-                                                          sizeof(kCornerIndicesAsTris),
-                                                          kCornerIndicesAsTris,
-                                                          gCornerIndexBufferKey);
-                fNumIndicesPerInstance = SK_ARRAY_COUNT(kCornerIndicesAsTris);
-            }
-            if (RenderPass::kTriangleCorners != fRenderPass) {
-                fNumIndicesPerInstance = fNumIndicesPerInstance * 2/3;
+                fVSIndexBuffer = rp->findOrMakeStaticBuffer(kIndex_GrBufferType,
+                                                            sizeof(kCurveIndicesAsTris),
+                                                            kCurveIndicesAsTris,
+                                                            gCurveIndexBufferKey);
+                fVSNumIndicesPerInstance = SK_ARRAY_COUNT(kCurveIndicesAsTris);
             }
             break;
         }
     }
 
-    if (RenderPassIsCubic(fRenderPass) || WindMethod::kInstanceData == fWindMethod) {
-        SkASSERT(WindMethod::kCrossProduct == fWindMethod || 3 == this->numInputPoints());
-
-        SkASSERT(kAttribIdx_X == this->numAttribs());
-        this->addInstanceAttrib("X", kFloat4_GrVertexAttribType);
-
-        SkASSERT(kAttribIdx_Y == this->numAttribs());
-        this->addInstanceAttrib("Y", kFloat4_GrVertexAttribType);
-
-        SkASSERT(offsetof(QuadPointInstance, fX) == this->getAttrib(kAttribIdx_X).fOffsetInRecord);
-        SkASSERT(offsetof(QuadPointInstance, fY) == this->getAttrib(kAttribIdx_Y).fOffsetInRecord);
-        SkASSERT(sizeof(QuadPointInstance) == this->getInstanceStride());
+    GrVertexAttribType xyAttribType;
+    GrSLType xySLType;
+    if (4 == this->numInputPoints() || this->hasInputWeight()) {
+        GR_STATIC_ASSERT(offsetof(QuadPointInstance, fX) == 0);
+        GR_STATIC_ASSERT(sizeof(QuadPointInstance::fX) ==
+                         GrVertexAttribTypeSize(kFloat4_GrVertexAttribType));
+        GR_STATIC_ASSERT(sizeof(QuadPointInstance::fY) ==
+                         GrVertexAttribTypeSize(kFloat4_GrVertexAttribType));
+        xyAttribType = kFloat4_GrVertexAttribType;
+        xySLType = kFloat4_GrSLType;
     } else {
-        SkASSERT(kAttribIdx_X == this->numAttribs());
-        this->addInstanceAttrib("X", kFloat3_GrVertexAttribType);
-
-        SkASSERT(kAttribIdx_Y == this->numAttribs());
-        this->addInstanceAttrib("Y", kFloat3_GrVertexAttribType);
-
-        SkASSERT(offsetof(TriPointInstance, fX) == this->getAttrib(kAttribIdx_X).fOffsetInRecord);
-        SkASSERT(offsetof(TriPointInstance, fY) == this->getAttrib(kAttribIdx_Y).fOffsetInRecord);
-        SkASSERT(sizeof(TriPointInstance) == this->getInstanceStride());
+        GR_STATIC_ASSERT(offsetof(TriPointInstance, fX) == 0);
+        GR_STATIC_ASSERT(sizeof(TriPointInstance::fX) ==
+                         GrVertexAttribTypeSize(kFloat3_GrVertexAttribType));
+        GR_STATIC_ASSERT(sizeof(TriPointInstance::fY) ==
+                         GrVertexAttribTypeSize(kFloat3_GrVertexAttribType));
+        xyAttribType = kFloat3_GrVertexAttribType;
+        xySLType = kFloat3_GrSLType;
     }
-
-    if (fVertexBuffer) {
-        SkASSERT(kAttribIdx_VertexData == this->numAttribs());
-        this->addVertexAttrib("vertexdata", kInt_GrVertexAttribType);
-
-        SkASSERT(sizeof(int32_t) == this->getVertexStride());
-    }
+    fInstanceAttributes[kInstanceAttribIdx_X] = {"X", xyAttribType, xySLType};
+    fInstanceAttributes[kInstanceAttribIdx_Y] = {"Y", xyAttribType, xySLType};
+    this->setInstanceAttributeCnt(2);
+    fVertexAttribute = {"vertexdata", kInt_GrVertexAttribType, kInt_GrSLType};
+    this->setVertexAttributeCnt(1);
 
     if (caps.usePrimitiveRestart()) {
-        this->setWillUsePrimitiveRestart();
-        fPrimitiveType = GrPrimitiveType::kTriangleStrip;
+        fVSTriangleType = GrPrimitiveType::kTriangleStrip;
     } else {
-        fPrimitiveType = GrPrimitiveType::kTriangles;
+        fVSTriangleType = GrPrimitiveType::kTriangles;
     }
 }
 
 void GrCCCoverageProcessor::appendVSMesh(GrBuffer* instanceBuffer, int instanceCount,
                                          int baseInstance, SkTArray<GrMesh>* out) const {
     SkASSERT(Impl::kVertexShader == fImpl);
-    GrMesh& mesh = out->emplace_back(fPrimitiveType);
-    mesh.setIndexedInstanced(fIndexBuffer.get(), fNumIndicesPerInstance, instanceBuffer,
-                             instanceCount, baseInstance);
-    if (fVertexBuffer) {
-        mesh.setVertexData(fVertexBuffer.get(), 0);
-    }
+    GrMesh& mesh = out->emplace_back(fVSTriangleType);
+    auto primitiveRestart = GrPrimitiveRestart(GrPrimitiveType::kTriangleStrip == fVSTriangleType);
+    mesh.setIndexedInstanced(fVSIndexBuffer.get(), fVSNumIndicesPerInstance, instanceBuffer,
+                             instanceCount, baseInstance, primitiveRestart);
+    mesh.setVertexData(fVSVertexBuffer.get(), 0);
 }
 
 GrGLSLPrimitiveProcessor* GrCCCoverageProcessor::createVSImpl(std::unique_ptr<Shader> shadr) const {
-    switch (fRenderPass) {
-        case RenderPass::kTriangleHulls:
-            return new VSHullAndEdgeImpl(std::move(shadr), 3);
-        case RenderPass::kQuadraticHulls:
-        case RenderPass::kCubicHulls:
-            return new VSHullAndEdgeImpl(std::move(shadr), 4);
-        case RenderPass::kTriangleEdges:
-            SK_ABORT("kTriangleEdges RenderPass is not used by VSImpl.");
-            return nullptr;
-        case RenderPass::kTriangleCorners:
-        case RenderPass::kQuadraticCorners:
-        case RenderPass::kCubicCorners:
-            return new VSCornerImpl(std::move(shadr));
+    switch (fPrimitiveType) {
+        case PrimitiveType::kTriangles:
+        case PrimitiveType::kWeightedTriangles:
+            return new VSImpl(std::move(shadr), 3);
+        case PrimitiveType::kQuadratics:
+        case PrimitiveType::kCubics:
+        case PrimitiveType::kConics:
+            return new VSImpl(std::move(shadr), 4);
     }
     SK_ABORT("Invalid RenderPass");
     return nullptr;

@@ -10,6 +10,8 @@
 #include "SkPointPriv.h"
 #include "SkTemplates.h"
 
+#include <utility>
+
 struct DFData {
     float   fAlpha;      
     float   fDistSq;     
@@ -120,7 +122,8 @@ static float edge_distance(const SkPoint& direction, float alpha) {
         dx = SkScalarAbs(dx);
         dy = SkScalarAbs(dy);
         if (dx < dy) {
-            SkTSwap(dx, dy);
+            using std::swap;
+            swap(dx, dy);
         }
 
         

@@ -9,9 +9,13 @@
 #define SkShaderBase_DEFINED
 
 #include "SkFilterQuality.h"
+#include "SkFlattenablePriv.h"
 #include "SkMask.h"
 #include "SkMatrix.h"
+#include "SkNoncopyable.h"
+#include "SkPM4f.h"
 #include "SkShader.h"
+#include "SkTLazy.h"
 
 #if SK_SUPPORT_GPU
 #include "GrFPArgs.h"
@@ -60,23 +64,16 @@ public:
 
 
     struct ContextRec {
-        enum DstType {
-            kPMColor_DstType, 
-            kPM4f_DstType,    
-        };
-
         ContextRec(const SkPaint& paint, const SkMatrix& matrix, const SkMatrix* localM,
-                   DstType dstType, SkColorSpace* dstColorSpace)
+                   SkColorSpace* dstColorSpace)
             : fPaint(&paint)
             , fMatrix(&matrix)
             , fLocalMatrix(localM)
-            , fPreferredDstType(dstType)
             , fDstColorSpace(dstColorSpace) {}
 
         const SkPaint*  fPaint;            
         const SkMatrix* fMatrix;           
         const SkMatrix* fLocalMatrix;      
-        const DstType   fPreferredDstType; 
         SkColorSpace*   fDstColorSpace;    
     };
 
@@ -102,7 +99,7 @@ public:
 
         virtual void shadeSpan(int x, int y, SkPMColor[], int count) = 0;
 
-        virtual void shadeSpan4f(int x, int y, SkPM4f[], int count);
+        virtual void shadeSpan4f(int x, int y, SkPMColor4f[], int count);
 
         
         virtual void set3DMask(const SkMask*) {}
@@ -173,12 +170,6 @@ public:
         return this->onMakeColorSpace(xformer);
     }
 
-    bool isRasterPipelineOnly(const SkMatrix& ctm) const {
-        
-        return ctm.hasPerspective() || fLocalMatrix.hasPerspective()
-                                    || this->onIsRasterPipelineOnly(ctm);
-    }
-
     struct StageRec {
         SkRasterPipeline*   fPipeline;
         SkArenaAlloc*       fAlloc;
@@ -191,9 +182,16 @@ public:
     
     bool appendStages(const StageRec&) const;
 
-    bool computeTotalInverse(const SkMatrix& ctm,
-                             const SkMatrix* outerLocalMatrix,
-                             SkMatrix* totalInverse) const;
+    bool SK_WARN_UNUSED_RESULT computeTotalInverse(const SkMatrix& ctm,
+                                                   const SkMatrix* outerLocalMatrix,
+                                                   SkMatrix* totalInverse) const;
+
+    
+    
+    
+    
+    SkTCopyOnFirstWrite<SkMatrix> totalLocalMatrix(const SkMatrix* preLocalMatrix,
+                                                   const SkMatrix* postLocalMatrix = nullptr) const;
 
 #ifdef SK_SUPPORT_LEGACY_SHADER_ISABITMAP
     virtual bool onIsABitmap(SkBitmap*, SkMatrix*, TileMode[2]) const {
@@ -204,8 +202,6 @@ public:
     virtual SkImage* onIsAImage(SkMatrix*, TileMode[2]) const {
         return nullptr;
     }
-
-    SK_TO_STRING_VIRT()
 
     SK_DEFINE_FLATTENABLE_TYPE(SkShaderBase)
     SK_DECLARE_FLATTENABLE_REGISTRAR_GROUP()
@@ -240,8 +236,6 @@ protected:
 
     
     virtual bool onAppendStages(const StageRec&) const;
-
-    virtual bool onIsRasterPipelineOnly(const SkMatrix& ctm) const { return false; }
 
 private:
     

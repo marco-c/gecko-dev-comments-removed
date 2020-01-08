@@ -10,7 +10,6 @@
 
 #include "GrBuffer.h"
 #include "GrContextOptions.h"
-#include "GrPathRange.h"
 #include "GrResourceCache.h"
 #include "SkImageInfoPriv.h"
 #include "SkScalerContext.h"
@@ -40,6 +39,24 @@ class SkTypeface;
 
 class GrResourceProvider {
 public:
+    
+    enum class Flags {
+        kNone            = 0x0,
+
+        
+
+
+
+
+
+        kNoPendingIO     = 0x1,
+
+        
+
+
+        kRequireGpuMemory = 0x2,
+    };
+
     GrResourceProvider(GrGpu*, GrResourceCache*, GrSingleOwner*,
                        GrContextOptions::Enable explicitlyAllocateGPUResources);
 
@@ -62,19 +79,18 @@ public:
 
 
 
-    sk_sp<GrTexture> createApproxTexture(const GrSurfaceDesc&, uint32_t flags);
+    sk_sp<GrTexture> createApproxTexture(const GrSurfaceDesc&, Flags);
 
     
 
-    sk_sp<GrTexture> createTexture(const GrSurfaceDesc&, SkBudgeted, uint32_t flags = 0);
+    sk_sp<GrTexture> createTexture(const GrSurfaceDesc&, SkBudgeted, Flags = Flags::kNone);
 
-    sk_sp<GrTexture> createTexture(const GrSurfaceDesc&, SkBudgeted,
-                                   const GrMipLevel texels[], int mipLevelCount,
-                                   SkDestinationSurfaceColorMode mipColorMode);
+    sk_sp<GrTexture> createTexture(const GrSurfaceDesc&, SkBudgeted, const GrMipLevel texels[],
+                                   int mipLevelCount);
 
     
     sk_sp<GrTexture> createTexture(const GrSurfaceDesc&, SkBudgeted, SkBackingFit,
-                                   const GrMipLevel&);
+                                   const GrMipLevel&, Flags);
 
     
     
@@ -144,7 +160,7 @@ public:
                                                            int vertCount,
                                                            const GrUniqueKey& key) {
         if (auto buffer = this->findByUniqueKey<GrBuffer>(key)) {
-            return buffer;
+            return std::move(buffer);
         }
         return this->createPatternedIndexBuffer(pattern, patternSize, reps, vertCount, key);
     }
@@ -170,25 +186,6 @@ public:
 
 
     sk_sp<GrPath> createPath(const SkPath&, const GrStyle&);
-    sk_sp<GrPathRange> createPathRange(GrPathRange::PathGenerator*, const GrStyle&);
-    sk_sp<GrPathRange> createGlyphs(const SkTypeface*, const SkScalerContextEffects&,
-                                    const SkDescriptor*, const GrStyle&);
-
-    
-    enum Flags {
-        
-
-
-
-
-
-        kNoPendingIO_Flag     = 0x1,
-
-        
-
-
-        kRequireGpuMemory_Flag = 0x2,
-    };
 
     
 
@@ -201,7 +198,7 @@ public:
 
 
 
-    GrBuffer* createBuffer(size_t size, GrBufferType intendedType, GrAccessPattern, uint32_t flags,
+    GrBuffer* createBuffer(size_t size, GrBufferType intendedType, GrAccessPattern, Flags,
                            const void* data = nullptr);
 
 
@@ -240,20 +237,12 @@ public:
                                             SemaphoreWrapType wrapType,
                                             GrWrapOwnership = kBorrow_GrWrapOwnership);
 
-    
-    
-    void takeOwnershipOfSemaphore(sk_sp<GrSemaphore>);
-    
-    
-    
-    
-    void releaseOwnershipOfSemaphore(sk_sp<GrSemaphore>);
-
     void abandon() {
         fCache = nullptr;
         fGpu = nullptr;
     }
 
+    uint32_t contextUniqueID() const { return fCache->contextUniqueID(); }
     const GrCaps* caps() const { return fCaps.get(); }
     bool overBudget() const { return fCache->overBudget(); }
 
@@ -269,13 +258,13 @@ private:
 
     
     
-    sk_sp<GrTexture> refScratchTexture(const GrSurfaceDesc&, uint32_t scratchTextureFlags);
+    sk_sp<GrTexture> refScratchTexture(const GrSurfaceDesc&, Flags);
 
     
 
 
 
-    sk_sp<GrTexture> getExactScratch(const GrSurfaceDesc&, SkBudgeted, uint32_t flags);
+    sk_sp<GrTexture> getExactScratch(const GrSurfaceDesc&, SkBudgeted, Flags);
 
     GrResourceCache* cache() { return fCache; }
     const GrResourceCache* cache() const { return fCache; }
@@ -308,5 +297,7 @@ private:
     
     SkDEBUGCODE(mutable GrSingleOwner* fSingleOwner;)
 };
+
+GR_MAKE_BITFIELD_CLASS_OPS(GrResourceProvider::Flags);
 
 #endif

@@ -27,10 +27,6 @@ public:
     static bool FindBool(const char str[], bool* value);
     
     static int  FindList(const char str[], const char list[]);
-#ifdef SK_SUPPORT_UNITTEST
-    static void TestColor();
-    static void UnitTest();
-#endif
 };
 
 #endif
