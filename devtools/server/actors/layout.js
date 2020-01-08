@@ -16,8 +16,10 @@ const { SHOW_ELEMENT } = require("devtools/shared/dom-node-filter-constants");
 const { getStringifiableFragments } =
   require("devtools/server/actors/utils/css-grid-utils");
 
-loader.lazyRequireGetter(this, "getCSSStyleRules", "devtools/shared/inspector/css-logic", true);
 loader.lazyRequireGetter(this, "CssLogic", "devtools/server/actors/inspector/css-logic", true);
+loader.lazyRequireGetter(this, "getCSSStyleRules", "devtools/shared/inspector/css-logic", true);
+loader.lazyRequireGetter(this, "isCssPropertyKnown", "devtools/server/actors/css-properties", true);
+loader.lazyRequireGetter(this, "parseDeclarations", "devtools/shared/css/parsing-utils", true);
 loader.lazyRequireGetter(this, "nodeConstants", "devtools/shared/dom-node-constants");
 
 
@@ -175,25 +177,49 @@ const FlexItemActor = ActorClassWithSpec(flexItemSpec, {
 
     if (isElementNode) {
       for (const name in properties) {
-        let value = "";
+        const values = [];
+        const cssRules = getCSSStyleRules(this.element);
+
+        for (const rule of cssRules) {
         
-        if (this.element.style &&
-            this.element.style[name] && this.element.style[name] !== "auto") {
-          value = this.element.style[name];
-        } else {
-          
-          
-          
-          const cssRules = getCSSStyleRules(this.element);
-          for (const rule of cssRules) {
-            const rulePropertyValue = rule.style.getPropertyValue(name);
-            if (rulePropertyValue && rulePropertyValue !== "auto") {
-              value = rulePropertyValue;
+        
+        
+          const declarations = parseDeclarations(isCssPropertyKnown, rule.style.cssText);
+
+          for (const declaration of declarations) {
+            if (declaration.name === name && declaration.value !== "auto") {
+              values.push({ value: declaration.value, priority: declaration.priority });
             }
           }
         }
 
-        properties[name] = value;
+        
+        
+        if (this.element.style && this.element.style[name] &&
+          this.element.style[name] !== "auto") {
+          values.push({
+            value: this.element.style.getPropertyValue(name),
+            priority: this.element.style.getPropertyPriority(name),
+          });
+        }
+
+        
+        
+        
+        let rulePropertyValue = "";
+
+        if (values.length) {
+          const lastValueIndex = values.length - 1;
+          rulePropertyValue = values[lastValueIndex].value;
+
+          for (const { priority, value } of values) {
+            if (priority === "important") {
+              rulePropertyValue = `${value} !important`;
+            }
+          }
+        }
+
+        properties[name] = rulePropertyValue;
       }
     }
 
