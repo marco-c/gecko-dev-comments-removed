@@ -290,26 +290,6 @@ function setSearchLabel(type) {
   }
 }
 
-function setThemeScreenshot(addon, node) {
-  let findElement = () => node.querySelector(".theme-screenshot")
-    || document.getAnonymousElementByAttribute(node, "anonid", "theme-screenshot");
-  let screenshot = findElement();
-  if (!screenshot) {
-    
-    node.clientTop;
-    screenshot = findElement();
-  }
-  
-  if (!screenshot)
-    return;
-  if (addon.type == "theme" && addon.screenshots && addon.screenshots.length > 0) {
-    screenshot.setAttribute("src", addon.screenshots[0].url);
-    screenshot.hidden = false;
-  } else {
-    screenshot.hidden = true;
-  }
-}
-
 
 
 
@@ -2447,7 +2427,6 @@ var gListView = {
         sortElements(elements, ["uiState", "name"], true);
         for (let element of elements) {
           this._listBox.appendChild(element);
-          setThemeScreenshot(element.mAddon, element);
         }
       }
 
@@ -2615,7 +2594,14 @@ var gDetailView = {
 
   _updateView(aAddon, aIsRemote, aScrollToPreferences) {
     setSearchLabel(aAddon.type);
-    setThemeScreenshot(aAddon, this.node);
+
+    
+    if (aAddon.type == "theme") {
+      let previewURL = aAddon.screenshots && aAddon.screenshots[0] && aAddon.screenshots[0].url;
+      if (previewURL) {
+        this.node.querySelector(".card-heading-image").src = previewURL;
+      }
+    }
 
     AddonManager.addManagerListener(this);
     this.clearLoading();
