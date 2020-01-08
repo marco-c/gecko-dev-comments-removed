@@ -488,7 +488,7 @@ class TabTracker extends TabTrackerBase {
             
             return;
           }
-          this.emitActivated(nativeTab);
+          this.emitActivated(nativeTab, event.detail.previousTab);
         });
         break;
 
@@ -573,9 +573,12 @@ class TabTracker extends TabTrackerBase {
 
 
 
-  emitActivated(nativeTab) {
+
+
+  emitActivated(nativeTab, previousTab = undefined) {
     this.emit("tab-activated", {
       tabId: this.getId(nativeTab),
+      previousTabId: previousTab && !previousTab.closing ? this.getId(previousTab) : undefined,
       windowId: windowTracker.getId(nativeTab.ownerGlobal)});
   }
 
