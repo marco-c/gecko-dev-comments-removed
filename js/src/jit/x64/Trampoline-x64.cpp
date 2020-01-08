@@ -457,7 +457,7 @@ JitRuntime::generateArgumentsRectifier(MacroAssembler& masm)
 
     
     
-    BaseIndex b = BaseIndex(r9, r8, TimesEight, sizeof(RectifierFrameLayout) - sizeof(Value));
+    BaseIndex b(r9, r8, TimesEight, sizeof(RectifierFrameLayout) - sizeof(Value));
     masm.lea(Operand(b), rcx);
 
     

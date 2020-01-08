@@ -450,8 +450,7 @@ JitRuntime::generateArgumentsRectifier(MacroAssembler& masm)
 
     
     
-    BaseIndex b = BaseIndex(FramePointer, esi, TimesEight,
-                            sizeof(RectifierFrameLayout) + sizeof(void*));
+    BaseIndex b(FramePointer, esi, TimesEight, sizeof(RectifierFrameLayout) + sizeof(void*));
     masm.lea(Operand(b), ecx);
 
     
@@ -514,7 +513,7 @@ JitRuntime::generateArgumentsRectifier(MacroAssembler& masm)
     masm.pop(edi);            
 
     
-    BaseIndex unwind = BaseIndex(esp, ebx, TimesOne, -int32_t(sizeof(void*)));
+    BaseIndex unwind(esp, ebx, TimesOne, -int32_t(sizeof(void*)));
     masm.lea(Operand(unwind), esp);
 
     masm.pop(FramePointer);
