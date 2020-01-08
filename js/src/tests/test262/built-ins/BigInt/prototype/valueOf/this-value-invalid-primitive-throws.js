@@ -22,6 +22,8 @@
 
 var valueOf = BigInt.prototype.valueOf;
 
+assert.sameValue(typeof valueOf, 'function');
+
 assert.throws(TypeError, function() {
   valueOf.call(undefined);
 }, "undefined");

@@ -8,6 +8,7 @@
 
 
 
+assert.sameValue(typeof Promise.prototype.finally, 'function');
 
 var symbol = Symbol();
 

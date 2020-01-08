@@ -21,6 +21,8 @@
 
 
 
+assert.sameValue(typeof Array.prototype.flatMap, 'function');
+
 const getCalls = [], hasCalls = [];
 const handler = {
   get : function (t, p, r) { getCalls.push(p); return Reflect.get(t, p, r); },

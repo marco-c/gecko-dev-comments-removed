@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Intl.Segmenter.supportedLocalesOf, "function",
+                 "Should support Intl.Segmenter.supportedLocalesOf.");
+
+assert.compareArray(Intl.Segmenter.supportedLocalesOf(), []);
+assert.compareArray(Intl.Segmenter.supportedLocalesOf([]), []);
+
+reportCompare(0, 0);

@@ -22,6 +22,8 @@
 
 var toString = BigInt.prototype.toString;
 
+assert.sameValue(typeof toString, 'function');
+
 assert.throws(TypeError, function() {
   toString.call({
     x: 1n

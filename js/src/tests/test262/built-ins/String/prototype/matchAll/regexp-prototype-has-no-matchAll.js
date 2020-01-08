@@ -19,20 +19,11 @@
 
 
 
-
-
-
-
-
-
-
-
 delete RegExp.prototype[Symbol.matchAll];
 var str = '/a/g*/b/g';
 
-assert.compareIterator(str.matchAll(/\w/g), [
-  matchValidator(['/a/g'], 0, str),
-  matchValidator(['/b/g'], 5, str)
-]);
+assert.throws(TypeError, function() {
+  str.matchAll(/\w/g);
+});
 
 reportCompare(0, 0);

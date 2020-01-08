@@ -17,6 +17,7 @@ const invalidOptions = [
   null,
   1,
   "",
+  "standard",
   "Grapheme",
   "GRAPHEME",
   "grapheme\0",

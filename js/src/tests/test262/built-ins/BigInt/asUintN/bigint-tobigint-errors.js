@@ -10,6 +10,8 @@
 
 
 
+assert.sameValue(typeof BigInt, 'function');
+assert.sameValue(typeof BigInt.asUintN, 'function');
 
 assert.throws(TypeError, function() {
   BigInt.asUintN(0, undefined);

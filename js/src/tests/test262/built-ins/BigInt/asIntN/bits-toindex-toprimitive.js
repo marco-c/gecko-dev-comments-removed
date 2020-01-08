@@ -10,6 +10,8 @@
 
 
 
+assert.sameValue(typeof BigInt, 'function');
+assert.sameValue(typeof BigInt.asIntN, 'function');
 
 function err() {
   throw new Test262Error();

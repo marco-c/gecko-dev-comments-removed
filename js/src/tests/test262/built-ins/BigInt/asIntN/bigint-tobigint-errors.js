@@ -10,7 +10,8 @@
 
 
 
-
+assert.sameValue(typeof BigInt, 'function');
+assert.sameValue(typeof BigInt.asIntN, 'function');
 assert.throws(TypeError, function() {
   BigInt.asIntN(0, undefined);
 }, "ToBigInt: undefined => TypeError");

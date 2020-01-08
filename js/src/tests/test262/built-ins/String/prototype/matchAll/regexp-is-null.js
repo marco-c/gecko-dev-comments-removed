@@ -16,11 +16,6 @@
 
 
 
-
-
-
-
-
 var str = '-null-';
 
 assert.compareIterator(str.matchAll(null), [

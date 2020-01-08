@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Set.prototype.clear.call(new WeakSet());
+});
+
+assert.throws(TypeError, function() {
+  var s = new Set();
+  s.clear.call(new WeakSet());
+});
+
+reportCompare(0, 0);

@@ -8,6 +8,8 @@
 
 
 
+assert.sameValue(typeof Promise.prototype.finally, 'function');
+
 assert.throws(TypeError, function() {
   Promise.prototype.finally.call(undefined);
 }, 'undefined');

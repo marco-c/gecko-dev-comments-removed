@@ -39,7 +39,49 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$262.agent.safeBroadcast = function(typedArray) {
+  let Constructor = Object.getPrototypeOf(typedArray).constructor;
+  let temp = new Constructor(
+    new SharedArrayBuffer(Constructor.BYTES_PER_ELEMENT)
+  );
+  try {
+    
+    
+    Atomics.wait(temp, 0, Constructor === Int32Array ? 1 : BigInt(1));
+  } catch (error) {
+    $ERROR(`${Constructor.name} cannot be used as a shared typed array. (${error})`);
+  }
+
+  $262.agent.broadcast(typedArray.buffer);
+};
+
+
+
+
+
+
+
+
+
+
+
 $262.agent.waitUntil = function(typedArray, index, expected) {
+
   var agents = 0;
   while ((agents = Atomics.load(typedArray, index)) !== expected) {
     

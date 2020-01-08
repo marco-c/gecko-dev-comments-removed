@@ -13,7 +13,7 @@
 
 
 
-
+assert.sameValue(typeof BigInt64Array, 'function');
 assert.throws(TypeError, function () {
   BigInt64Array.prototype.buffer;
 });

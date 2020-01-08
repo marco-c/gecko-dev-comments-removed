@@ -10,6 +10,8 @@
 
 
 
+assert.sameValue(typeof BigInt, 'function');
+assert.sameValue(typeof BigInt.asUintN, 'function');
 
 assert.throws(RangeError, function() {
   BigInt.asUintN(-1, 0n);

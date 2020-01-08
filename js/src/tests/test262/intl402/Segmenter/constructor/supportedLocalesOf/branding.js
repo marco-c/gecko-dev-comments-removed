@@ -11,7 +11,10 @@
 
 
 
-const fn = Intl.Segmenter.supportedLocalesOf;
+const supportedLocalesOf = Intl.Segmenter.supportedLocalesOf;
+
+assert.sameValue(typeof supportedLocalesOf, "function");
+
 const thisValues = [
   undefined,
   null,
@@ -25,7 +28,7 @@ const thisValues = [
 ];
 
 for (const thisValue of thisValues) {
-  const result = fn.call(thisValue);
+  const result = supportedLocalesOf.call(thisValue);
   assert.sameValue(Array.isArray(result), true);
 }
 

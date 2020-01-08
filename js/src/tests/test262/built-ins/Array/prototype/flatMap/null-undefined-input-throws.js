@@ -7,6 +7,8 @@
 
 
 
+assert.sameValue(typeof Array.prototype.flatMap, 'function');
+
 assert.throws(TypeError, function() {
   [].flatMap.call(null);
 }, 'null value');
