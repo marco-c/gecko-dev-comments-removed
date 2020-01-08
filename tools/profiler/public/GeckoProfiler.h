@@ -473,7 +473,7 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 #define AUTO_PROFILER_LABEL(label, category) \
-  mozilla::AutoProfilerLabel PROFILER_RAII(label, nullptr, __LINE__, \
+  mozilla::AutoProfilerLabel PROFILER_RAII(label, nullptr, \
                                            js::ProfilingStackFrame::Category::category)
 
 
@@ -497,7 +497,7 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 #define AUTO_PROFILER_LABEL_DYNAMIC_CSTR(label, category, cStr) \
   mozilla::AutoProfilerLabel \
-    PROFILER_RAII(label, cStr, __LINE__, js::ProfilingStackFrame::Category::category)
+    PROFILER_RAII(label, cStr, js::ProfilingStackFrame::Category::category)
 
 
 
@@ -511,7 +511,7 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
   mozilla::Maybe<AutoProfilerLabel> raiiObjectNsCString; \
   if (profiler_is_active()) { \
     autoCStr.emplace(nsCStr); \
-    raiiObjectNsCString.emplace(label, autoCStr->get(), __LINE__, \
+    raiiObjectNsCString.emplace(label, autoCStr->get(), \
                                 js::ProfilingStackFrame::Category::category); \
   }
 
@@ -528,7 +528,7 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
   mozilla::Maybe<AutoProfilerLabel> raiiObjectLossyNsString; \
   if (profiler_is_active()) { \
     asciiStr.emplace(nsStr); \
-    raiiObjectLossyNsString.emplace(label, asciiStr->get(), __LINE__, \
+    raiiObjectLossyNsString.emplace(label, asciiStr->get(), \
                                     js::ProfilingStackFrame::Category::category); \
   }
 
@@ -539,7 +539,7 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 #define AUTO_PROFILER_LABEL_FAST(label, category, ctx) \
-  mozilla::AutoProfilerLabel PROFILER_RAII(ctx, label, nullptr, __LINE__, \
+  mozilla::AutoProfilerLabel PROFILER_RAII(ctx, label, nullptr, \
                                            js::ProfilingStackFrame::Category::category)
 
 
@@ -719,37 +719,36 @@ class MOZ_RAII AutoProfilerLabel
 public:
   
   AutoProfilerLabel(const char* aLabel, const char* aDynamicString,
-                    uint32_t aLine, js::ProfilingStackFrame::Category aCategory
+                    js::ProfilingStackFrame::Category aCategory
                     MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
 
     
-    Push(sProfilingStack.get(), aLabel, aDynamicString, aLine, aCategory);
+    Push(sProfilingStack.get(), aLabel, aDynamicString, aCategory);
   }
 
   
   
   AutoProfilerLabel(JSContext* aJSContext,
                     const char* aLabel, const char* aDynamicString,
-                    uint32_t aLine, js::ProfilingStackFrame::Category aCategory
+                    js::ProfilingStackFrame::Category aCategory
                     MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     Push(js::GetContextProfilingStackIfEnabled(aJSContext),
-         aLabel, aDynamicString, aLine, aCategory);
+         aLabel, aDynamicString, aCategory);
   }
 
   void Push(ProfilingStack* aProfilingStack,
             const char* aLabel, const char* aDynamicString,
-            uint32_t aLine, js::ProfilingStackFrame::Category aCategory)
+            js::ProfilingStackFrame::Category aCategory)
   {
     
 
     mProfilingStack = aProfilingStack;
     if (mProfilingStack) {
-      mProfilingStack->pushLabelFrame(aLabel, aDynamicString, this, aLine,
-                                   aCategory);
+      mProfilingStack->pushLabelFrame(aLabel, aDynamicString, this, aCategory);
     }
   }
 
