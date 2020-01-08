@@ -137,10 +137,12 @@ void Simulator::init(Decoder* decoder, FILE* stream) {
   set_sp(tos);
 
   
-  instrumentation_ = js_new<Instrument>("vixl_stats.csv", 10);
-  if (!instrumentation_) {
-    oom_ = true;
-    return;
+  if (getenv("VIXL_STATS")) {
+    instrumentation_ = js_new<Instrument>("vixl_stats.csv", 10);
+    if (!instrumentation_) {
+      oom_ = true;
+      return;
+    }
   }
 
   
