@@ -864,7 +864,7 @@ var interfaceNamesInGlobalScope =
 
     {name: "ServiceWorker", insecureContext: true},
 
-    {name: "ServiceWorkerContainer", insecureContext: true},
+    {name: "ServiceWorkerContainer", insecureContext: false},
 
     {name: "ServiceWorkerRegistration", insecureContext: true},
 
