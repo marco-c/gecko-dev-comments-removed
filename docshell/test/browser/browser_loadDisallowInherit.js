@@ -6,8 +6,12 @@ function test() {
 
   
   Services.prefs.setBoolPref("security.data_uri.unique_opaque_origin", false);
+  
+  
+  Services.prefs.setBoolPref("security.data_uri.block_toplevel_data_uri_navigations", false);
   registerCleanupFunction(function () {
     Services.prefs.clearUserPref("security.data_uri.unique_opaque_origin");
+    Services.prefs.clearUserPref("security.data_uri.block_toplevel_data_uri_navigations");
   });
 
   executeSoon(startTest);
@@ -18,26 +22,31 @@ function startTest() {
 
   let browser = gBrowser.getBrowserForTab(tab);
 
-  function loadURL(url, flags, func) {
+  function loadURL(url, flags, triggeringPrincipal, func) {
     BrowserTestUtils.browserLoaded(browser, false, url).then(() => {
       func();
     });
-    browser.loadURI(url, { flags });
+    browser.loadURI(url, { flags, triggeringPrincipal });
   }
 
   
   function testURL(url, func) {
-    loadURL("http://example.com/", 0, function () {
+    let secMan = Cc["@mozilla.org/scriptsecuritymanager;1"].
+                   getService(Ci.nsIScriptSecurityManager);
+    let ios = Cc["@mozilla.org/network/io-service;1"].
+                getService(Ci.nsIIOService);
+    let artificialPrincipal = secMan.createCodebasePrincipal(ios.newURI("http://example.com/"), {});
+    loadURL("http://example.com/", 0, artificialPrincipal, function () {
       let pagePrincipal = browser.contentPrincipal;
       ok(pagePrincipal, "got principal for http:// page");
 
       
-      loadURL(url, 0, function () {
+      loadURL(url, 0, artificialPrincipal, function () {
         ok(browser.contentPrincipal.equals(pagePrincipal), url + " should inherit principal");
 
         
         let webNav = Ci.nsIWebNavigation;
-        loadURL(url, webNav.LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL, function () {
+        loadURL(url, webNav.LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL, artificialPrincipal, function () {
           let newPrincipal = browser.contentPrincipal;
           ok(newPrincipal, "got inner principal");
           ok(!newPrincipal.equals(pagePrincipal),
