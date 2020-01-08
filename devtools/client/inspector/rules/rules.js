@@ -98,9 +98,7 @@ const INSET_POINT_TYPES = ["top", "right", "bottom", "left"];
 
 
 
-
-
-function CssRuleView(inspector, document, store, pageStyle) {
+function CssRuleView(inspector, document, store) {
   EventEmitter.decorate(this);
 
   this.inspector = inspector;
@@ -111,7 +109,7 @@ function CssRuleView(inspector, document, store, pageStyle) {
   
   
   this.selectedRules = new Map();
-  this.pageStyle = pageStyle;
+  this.pageStyle = inspector.pageStyle;
 
   
   this.debounce = debounce;
