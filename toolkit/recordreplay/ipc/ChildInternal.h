@@ -76,6 +76,9 @@ void BeforeCheckpoint();
 
 void AfterCheckpoint(const CheckpointId& aCheckpoint);
 
+
+size_t LastNormalCheckpoint();
+
 } 
 
 namespace child {
