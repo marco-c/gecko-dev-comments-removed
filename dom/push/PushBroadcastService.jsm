@@ -12,9 +12,7 @@ ChromeUtils.defineModuleGetter(this, "JSONFile", "resource://gre/modules/JSONFil
 var EXPORTED_SYMBOLS = ["pushBroadcastService"];
 
 
-
-
-const DUMMY_VERSION_STRING = "dummy";
+const DUMMY_VERSION_STRING = "____NOP____";
 
 XPCOMUtils.defineLazyGetter(this, "console", () => {
   let {ConsoleAPI} = ChromeUtils.import("resource://gre/modules/Console.jsm", {});
