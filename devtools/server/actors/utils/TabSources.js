@@ -238,7 +238,14 @@ TabSources.prototype = {
     
     const element = source.element ? source.element.unsafeDereference() : null;
     if (element && (element.tagName !== "SCRIPT" || !element.hasAttribute("src"))) {
-      spec.isInlineSource = true;
+      if (source.introductionScript) {
+        
+        
+        
+        spec.contentType = "text/javascript";
+      } else {
+        spec.isInlineSource = true;
+      }
     } else if (source.introductionType === "wasm") {
       
       spec.contentType = "text/wasm";

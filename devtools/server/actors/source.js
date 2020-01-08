@@ -23,6 +23,14 @@ loader.lazyRequireGetter(this, "arrayBufferGrip", "devtools/server/actors/array-
 
 function isEvalSource(source) {
   const introType = source.introductionType;
+
+  
+  
+  
+  if (introType == "scriptElement" && source.introductionScript) {
+    return true;
+  }
+
   
   
   return (introType === "eval" ||

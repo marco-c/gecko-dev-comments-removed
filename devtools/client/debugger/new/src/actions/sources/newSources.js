@@ -88,7 +88,16 @@ function loadSourceMap(sourceId: SourceId) {
 
     let urls = null;
     try {
-      urls = await sourceMaps.getOriginalURLs(source);
+      const urlInfo = { ...source };
+      if (!urlInfo.url) {
+        
+        
+        
+        
+        
+        urlInfo.url = urlInfo.introductionUrl;
+      }
+      urls = await sourceMaps.getOriginalURLs(urlInfo);
     } catch (e) {
       console.error(e);
     }
