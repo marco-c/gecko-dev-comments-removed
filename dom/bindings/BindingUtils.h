@@ -1421,7 +1421,17 @@ inline void
 ClearWrapper(T* p, nsWrapperCache* cache, JSObject* obj)
 {
   JS::AutoAssertGCCallback inCallback;
-  cache->ClearWrapper(obj);
+
+  
+  
+  
+  
+  
+  
+  
+  if (!recordreplay::IsReplaying()) {
+    cache->ClearWrapper(obj);
+  }
 }
 
 template<class T>
@@ -1429,9 +1439,14 @@ inline void
 ClearWrapper(T* p, void*, JSObject* obj)
 {
   JS::AutoAssertGCCallback inCallback;
-  nsWrapperCache* cache;
-  CallQueryInterface(p, &cache);
-  ClearWrapper(p, cache, obj);
+
+  
+  
+  if (!recordreplay::IsReplaying()) {
+    nsWrapperCache* cache;
+    CallQueryInterface(p, &cache);
+    ClearWrapper(p, cache, obj);
+  }
 }
 
 template<class T>
