@@ -746,7 +746,7 @@ var gMainPane = {
   },
 
   initBrowserLocale() {
-    gMainPane.setBrowserLocales(Services.locale.requestedLocale);
+    gMainPane.setBrowserLocales(Services.locale.appLocaleAsBCP47);
   },
 
   
@@ -754,7 +754,7 @@ var gMainPane = {
 
 
 
-  async setBrowserLocales(requesting) {
+  async setBrowserLocales(selected) {
     let available = Services.locale.availableLocales;
     let localeNames = Services.intl.getLocaleDisplayNames(undefined, available);
     let locales = available.map((code, i) => ({code, name: localeNames[i]}));
@@ -782,7 +782,7 @@ var gMainPane = {
     let menupopup = menulist.querySelector("menupopup");
     menupopup.textContent = "";
     menupopup.appendChild(fragment);
-    menulist.value = requesting;
+    menulist.value = selected;
 
     
     new SelectionChangedMenulist(menulist, event => {
@@ -837,7 +837,7 @@ var gMainPane = {
     }
 
     messageBar.hidden = false;
-    gMainPane.requestingLocales = locales;
+    gMainPane.selectedLocales = locales;
   },
 
   hideConfirmLanguageChangeMessageBar() {
@@ -872,7 +872,7 @@ var gMainPane = {
     if (locale == "search") {
       gMainPane.showBrowserLanguages({search: true});
       return;
-    } else if (locale == Services.locale.requestedLocale) {
+    } else if (locale == Services.locale.appLocaleAsBCP47) {
       this.hideConfirmLanguageChangeMessageBar();
       return;
     }
@@ -1009,7 +1009,7 @@ var gMainPane = {
   },
 
   showBrowserLanguages({search}) {
-    let opts = {requesting: gMainPane.requestingLocales, search};
+    let opts = {selected: gMainPane.selectedLocales, search};
     gSubDialog.open(
       "chrome://browser/content/preferences/browserLanguages.xul",
       null, opts, this.browserLanguagesClosed);
@@ -1017,14 +1017,18 @@ var gMainPane = {
 
   
   browserLanguagesClosed() {
-    let requesting = this.gBrowserLanguagesDialog.requestedLocales;
-    let requested = Services.locale.requestedLocales;
-    if (requesting && requesting.join(",") != requested.join(",")) {
-      gMainPane.showConfirmLanguageChangeMessageBar(requesting);
-      gMainPane.setBrowserLocales(requesting[0]);
+    let selected = this.gBrowserLanguagesDialog.selected;
+    let active = Services.locale.appLocalesAsBCP47;
+
+    
+    if (selected && selected.join(",") != active.join(",")) {
+      gMainPane.showConfirmLanguageChangeMessageBar(selected);
+      gMainPane.setBrowserLocales(selected[0]);
       return;
     }
-    gMainPane.setBrowserLocales(Services.locale.requestedLocale);
+
+    
+    gMainPane.setBrowserLocales(Services.locale.appLocaleAsBCP47);
     gMainPane.hideConfirmLanguageChangeMessageBar();
   },
 

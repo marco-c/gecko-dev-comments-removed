@@ -17,7 +17,9 @@ function getManifestData(locale) {
     description: `${locale} Language pack`,
     languages: {
       [locale]: {
-        chrome_resources: {},
+        chrome_resources: {
+          "branding": `browser/chrome/${locale}/locale/branding/`,
+        },
         version: "1",
       },
     },
@@ -48,6 +50,7 @@ function createTestLangpacks() {
       locale,
       await AddonTestUtils.createTempXPIFile({
         "manifest.json": getManifestData(locale),
+        [`browser/${locale}/branding/brand.ftl`]: "-brand-short-name = Firefox",
       }),
     ]));
   }
@@ -122,9 +125,9 @@ async function createDictionaryBrowseResults() {
 
 function assertLocaleOrder(list, locales) {
   is(list.itemCount, locales.split(",").length,
-     "The right number of locales are requested");
+     "The right number of locales are selected");
   is(Array.from(list.children).map(child => child.value).join(","),
-     locales, "The requested locales are in order");
+     locales, "The selected locales are in order");
 }
 
 function assertAvailableLocales(list, locales) {
@@ -137,7 +140,7 @@ function assertAvailableLocales(list, locales) {
   is(items[0].getAttribute("class"), "label-item", "The first row is a label");
 }
 
-function requestLocale(localeCode, available, dialogDoc) {
+function selectLocale(localeCode, available, dialogDoc) {
   let [locale] = Array.from(available.firstElementChild.children)
     .filter(item => item.value == localeCode);
   available.selectedItem = locale;
@@ -158,7 +161,7 @@ async function openDialog(doc, search = false) {
     dialog: dialogDoc.getElementById("BrowserLanguagesDialog"),
     dialogDoc,
     available: dialogDoc.getElementById("availableLocales"),
-    requested: dialogDoc.getElementById("requestedLocales"),
+    selected: dialogDoc.getElementById("selectedLocales"),
   };
 }
 
@@ -167,9 +170,17 @@ add_task(async function testReorderingBrowserLanguages() {
     set: [
       ["intl.multilingual.enabled", true],
       ["intl.multilingual.downloadEnabled", true],
-      ["intl.locale.requested", "pl,en-US"],
+      ["intl.locale.requested", "en-US,pl,he,de"],
+      ["extensions.langpacks.signatures.required", false],
     ],
   });
+
+  
+  let langpacks = await createTestLangpacks();
+  let addons = await Promise.all(langpacks.map(async ([locale, file]) => {
+    let install = await AddonTestUtils.promiseInstallFile(file);
+    return install.addon;
+  }));
 
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
 
@@ -178,37 +189,38 @@ add_task(async function testReorderingBrowserLanguages() {
   is(messageBar.hidden, true, "The message bar is hidden at first");
 
   
-  let {dialog, dialogDoc, requested} = await openDialog(doc);
+  let {dialog, dialogDoc, selected} = await openDialog(doc);
 
   
-  assertLocaleOrder(requested, "pl,en-US");
+  assertLocaleOrder(selected, "en-US,pl,he");
 
   
+  selected.selectedItem = selected.querySelector("[value='pl']");
   dialogDoc.getElementById("down").doCommand();
-  assertLocaleOrder(requested, "en-US,pl");
+  assertLocaleOrder(selected, "en-US,he,pl");
 
   
   let dialogClosed = BrowserTestUtils.waitForEvent(dialogDoc.documentElement, "dialogclosing");
   dialog.acceptDialog();
   await dialogClosed;
   is(messageBar.hidden, false, "The message bar is now visible");
-  is(messageBar.querySelector("button").getAttribute("locales"), "en-US,pl",
+  is(messageBar.querySelector("button").getAttribute("locales"), "en-US,he,pl",
      "The locales are set on the message bar button");
 
   
   let newDialog = await openDialog(doc);
   dialog = newDialog.dialog;
   dialogDoc = newDialog.dialogDoc;
-  requested = newDialog.requested;
+  selected = newDialog.selected;
 
   
-  assertLocaleOrder(requested, "en-US,pl");
+  assertLocaleOrder(selected, "en-US,he,pl");
 
   
-  requested.selectedItem = requested.querySelector("[value='pl']");
+  selected.selectedItem = selected.querySelector("[value='pl']");
   
   dialogDoc.getElementById("up").doCommand();
-  assertLocaleOrder(requested, "pl,en-US");
+  assertLocaleOrder(selected, "en-US,pl,he");
 
   
   dialogClosed = BrowserTestUtils.waitForEvent(dialogDoc.documentElement, "dialogclosing");
@@ -216,10 +228,12 @@ add_task(async function testReorderingBrowserLanguages() {
   await dialogClosed;
   is(messageBar.hidden, true, "The message bar is hidden again");
 
+  await Promise.all(addons.map(addon => addon.uninstall()));
+
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
-add_task(async function testAddAndRemoveRequestedLanguages() {
+add_task(async function testAddAndRemoveSelectedLanguages() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["intl.multilingual.enabled", true],
@@ -242,28 +256,28 @@ add_task(async function testAddAndRemoveRequestedLanguages() {
   is(messageBar.hidden, true, "The message bar is hidden at first");
 
   
-  let {dialog, dialogDoc, available, requested} = await openDialog(doc);
+  let {dialog, dialogDoc, available, selected} = await openDialog(doc);
 
   
-  assertLocaleOrder(requested, "en-US");
+  assertLocaleOrder(selected, "en-US");
   assertAvailableLocales(available, ["fr", "pl", "he"]);
 
   
-  requestLocale("pl", available, dialogDoc);
-  requestLocale("fr", available, dialogDoc);
+  selectLocale("pl", available, dialogDoc);
+  selectLocale("fr", available, dialogDoc);
 
-  assertLocaleOrder(requested, "fr,pl,en-US");
+  assertLocaleOrder(selected, "fr,pl,en-US");
   assertAvailableLocales(available, ["he"]);
 
   
   dialogDoc.getElementById("remove").doCommand();
   dialogDoc.getElementById("remove").doCommand();
-  assertLocaleOrder(requested, "en-US");
+  assertLocaleOrder(selected, "en-US");
   assertAvailableLocales(available, ["fr", "pl", "he"]);
 
   
-  requestLocale("he", available, dialogDoc);
-  assertLocaleOrder(requested, "he,en-US");
+  selectLocale("he", available, dialogDoc);
+  assertLocaleOrder(selected, "he,en-US");
   assertAvailableLocales(available, ["pl", "fr"]);
 
   
@@ -312,21 +326,20 @@ add_task(async function testInstallFromAMO() {
   is(messageBar.hidden, true, "The message bar is hidden at first");
 
   
-  let {dialogDoc, available, requested} = await openDialog(doc, true);
+  let {dialog, dialogDoc, available, selected} = await openDialog(doc, true);
 
   
   is(messageBar.hidden, true, "The message bar is still hidden after searching");
 
-  let dropdown = dialogDoc.getElementById("availableLocales");
-  if (dropdown.itemCount == 1) {
+  if (available.itemCount == 1) {
     await waitForMutation(
-      dropdown.firstElementChild,
+      available.firstElementChild,
       {childList: true},
-      target => dropdown.itemCount > 1);
+      target => available.itemCount > 1);
   }
 
   
-  assertLocaleOrder(requested, "en-US");
+  assertLocaleOrder(selected, "en-US");
   assertAvailableLocales(available, ["fr", "he", "pl"]);
   is(Services.locale.availableLocales.join(","),
      "en-US", "There is only one installed locale");
@@ -336,17 +349,17 @@ add_task(async function testInstallFromAMO() {
   is(dicts.length, 0, "There are no installed dictionaries");
 
   
-  requestLocale("pl", available, dialogDoc);
+  selectLocale("pl", available, dialogDoc);
 
   
-  let requestedLocales = dialogDoc.getElementById("requestedLocales");
+  let selectedLocales = dialogDoc.getElementById("selectedLocales");
   await waitForMutation(
-    requestedLocales,
+    selectedLocales,
     {childList: true},
-    target => requestedLocales.itemCount == 2);
+    target => selectedLocales.itemCount == 2);
 
   
-  assertLocaleOrder(requested, "pl,en-US");
+  assertLocaleOrder(selected, "pl,en-US");
   assertAvailableLocales(available, ["fr", "he"]);
   is(Services.locale.availableLocales.sort().join(","),
      "en-US,pl", "Polish is now installed");
@@ -361,6 +374,31 @@ add_task(async function testInstallFromAMO() {
 
     return done;
   });
+
+  
+  dialogDoc.getElementById("down").doCommand();
+  assertLocaleOrder(selected, "en-US,pl");
+
+  
+  let dialogClosed = BrowserTestUtils.waitForEvent(dialogDoc.documentElement, "dialogclosing");
+  dialog.acceptDialog();
+  await dialogClosed;
+
+  
+  let langpack = await AddonManager.getAddonByID("langpack-pl@firefox.mozilla.org");
+  await langpack.disable();
+
+  ({dialogDoc, available, selected} = await openDialog(doc, true));
+
+  
+  if (available.itemCount == 1) {
+    await waitForMutation(
+      available.firstElementChild,
+      {childList: true},
+      target => available.itemCount > 1);
+  }
+  assertLocaleOrder(selected, "en-US");
+  assertAvailableLocales(available, ["fr", "he", "pl"]);
 
   
   let installs = await AddonManager.getAddonsByTypes(["locale", "dictionary"]);
