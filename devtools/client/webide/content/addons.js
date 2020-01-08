@@ -56,6 +56,11 @@ function BuildUI() {
     }
   }
 
+  
+  
+  if (adbAddon.status === ADB_ADDON_STATES.INSTALLED) {
+    RuntimeScanners.add(adbScanner);
+  }
   adbAddon.on("update", onAddonUpdate);
   adbAddon.on("failure", onAddonFailure);
   adbAddon.on("progress", onAddonProgress);
