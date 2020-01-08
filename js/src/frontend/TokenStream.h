@@ -1331,7 +1331,7 @@ class SourceUnits
 
 
 
-    size_t findWindowStart(size_t offset);
+    size_t findWindowStart(size_t offset) const;
 
     
 
@@ -1339,7 +1339,7 @@ class SourceUnits
 
 
 
-    size_t findWindowEnd(size_t offset);
+    size_t findWindowEnd(size_t offset) const;
 
   private:
     

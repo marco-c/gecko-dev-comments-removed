@@ -626,7 +626,7 @@ TokenStreamChars<char16_t, AnyCharsAccess>::getNonAsciiCodePoint(int32_t lead, i
 
 template<>
 size_t
-SourceUnits<char16_t>::findWindowStart(size_t offset)
+SourceUnits<char16_t>::findWindowStart(size_t offset) const
 {
     
     
@@ -684,7 +684,7 @@ SourceUnits<char16_t>::findWindowStart(size_t offset)
 
 template<>
 size_t
-SourceUnits<char16_t>::findWindowEnd(size_t offset)
+SourceUnits<char16_t>::findWindowEnd(size_t offset) const
 {
     const char16_t* const initial = codeUnitPtrAt(offset);
     const char16_t* p = initial;
