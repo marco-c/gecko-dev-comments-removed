@@ -69,13 +69,6 @@ const RECOMMENDED_PREFS = new Map([
   
   
   
-  ["app.update.disabledForTesting", true],
-
-  
-  
-  
-  
-  
   
   
   ["apz.content_response_timeout", 60000],
