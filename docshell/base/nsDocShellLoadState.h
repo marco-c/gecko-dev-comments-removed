@@ -165,6 +165,9 @@ public:
   
   nsresult SetupTriggeringPrincipal(const mozilla::OriginAttributes& aOriginAttributes);
 
+  void SetIsFromProcessingFrameAttributes() { mIsFromProcessingFrameAttributes = true; }
+  bool GetIsFromProcessingFrameAttributes() { return mIsFromProcessingFrameAttributes; }
+
   
   
   
@@ -288,6 +291,10 @@ protected:
   
   
   uint32_t mDocShellInternalLoadFlags;
+
+  
+  
+  bool mIsFromProcessingFrameAttributes;
 };
 
 #endif 

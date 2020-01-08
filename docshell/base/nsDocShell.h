@@ -532,6 +532,7 @@ private:
                      mozilla::Maybe<nsCOMPtr<nsIURI>> const& aResultPrincipalURI,
                      bool aKeepResultPrincipalURIIfSet,
                      bool aLoadReplace,
+                     bool aIsFromProcessingFrameAttributes,
                      bool aLoadFromExternal,
                      bool aForceAllowDataURI,
                      bool aOriginalFrameSrc,

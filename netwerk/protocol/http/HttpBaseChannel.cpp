@@ -4413,11 +4413,14 @@ HttpBaseChannel::GetPerformanceStorage()
     return nullptr;
   }
 
-  
-  
-  
-  
   if (!mLoadInfo->TriggeringPrincipal()->Equals(loadingDocument->NodePrincipal())) {
+    return nullptr;
+  }
+
+  if (mLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_SUBDOCUMENT &&
+      !mLoadInfo->GetIsFromProcessingFrameAttributes()) {
+    
+    
     return nullptr;
   }
 
