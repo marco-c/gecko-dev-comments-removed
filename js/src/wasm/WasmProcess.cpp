@@ -52,8 +52,7 @@ Atomic<bool> wasm::CodeExists(false);
 
 
 
-static Atomic<size_t> sNumObservers(0);
-static Atomic<bool> sShuttingDown(false);
+static Atomic<size_t> sNumActiveLookups(0);
 
 class ProcessCodeSegmentMap
 {
@@ -113,7 +112,7 @@ class ProcessCodeSegmentMap
         
         
 
-        while (sNumObservers > 0) {}
+        while (sNumActiveLookups > 0) {}
     }
 
   public:
@@ -126,11 +125,7 @@ class ProcessCodeSegmentMap
 
     ~ProcessCodeSegmentMap()
     {
-        MOZ_ASSERT(segments1_.empty());
-        MOZ_ASSERT(segments2_.empty());
-    }
-
-    void freeAll() {
+        MOZ_RELEASE_ASSERT(sNumActiveLookups == 0);
         MOZ_ASSERT(segments1_.empty());
         MOZ_ASSERT(segments2_.empty());
         segments1_.clearAndFree();
@@ -212,19 +207,30 @@ class ProcessCodeSegmentMap
     }
 };
 
-static ProcessCodeSegmentMap sProcessCodeSegmentMap;
+
+
+
+
+static Atomic<ProcessCodeSegmentMap*> sProcessCodeSegmentMap(nullptr);
 
 bool
 wasm::RegisterCodeSegment(const CodeSegment* cs)
 {
     MOZ_ASSERT(cs->codeTier().code().initialized());
-    return sProcessCodeSegmentMap.insert(cs);
+
+    
+    ProcessCodeSegmentMap* map = sProcessCodeSegmentMap;
+    MOZ_RELEASE_ASSERT(map);
+    return map->insert(cs);
 }
 
 void
 wasm::UnregisterCodeSegment(const CodeSegment* cs)
 {
-    sProcessCodeSegmentMap.remove(cs);
+    
+    ProcessCodeSegmentMap* map = sProcessCodeSegmentMap;
+    MOZ_RELEASE_ASSERT(map);
+    map->remove(cs);
 }
 
 const CodeSegment*
@@ -233,25 +239,20 @@ wasm::LookupCodeSegment(const void* pc, const CodeRange** codeRange )
     
     
     
-    if (!CodeExists) {
-        return nullptr;
-    }
+    
 
-    
-    
     auto decObserver = mozilla::MakeScopeExit([&] {
-        MOZ_ASSERT(sNumObservers > 0);
-        sNumObservers--;
+        MOZ_ASSERT(sNumActiveLookups > 0);
+        sNumActiveLookups--;
     });
-    sNumObservers++;
+    sNumActiveLookups++;
 
-    
-    
-    if (sShuttingDown) {
+    ProcessCodeSegmentMap* map = sProcessCodeSegmentMap;
+    if (!map) {
         return nullptr;
     }
 
-    if (const CodeSegment* found = sProcessCodeSegmentMap.lookup(pc)) {
+    if (const CodeSegment* found = map->lookup(pc)) {
         if (codeRange) {
             *codeRange = found->isModule()
                        ? found->asModule()->lookupRange(pc)
@@ -275,6 +276,20 @@ wasm::LookupCode(const void* pc, const CodeRange** codeRange )
     return found ? &found->code() : nullptr;
 }
 
+bool
+wasm::Init()
+{
+    MOZ_RELEASE_ASSERT(!sProcessCodeSegmentMap);
+
+    ProcessCodeSegmentMap* map = js_new<ProcessCodeSegmentMap>();
+    if (!map) {
+        return false;
+    }
+
+    sProcessCodeSegmentMap = map;
+    return true;
+}
+
 void
 wasm::ShutDown()
 {
@@ -286,9 +301,12 @@ wasm::ShutDown()
     }
 
     
-    sShuttingDown = true;
-    while (sNumObservers > 0) {}
+    
+    ProcessCodeSegmentMap* map = sProcessCodeSegmentMap;
+    MOZ_RELEASE_ASSERT(map);
+    sProcessCodeSegmentMap = nullptr;
+    while (sNumActiveLookups > 0) {}
 
     ReleaseBuiltinThunks();
-    sProcessCodeSegmentMap.freeAll();
+    js_delete(map);
 }

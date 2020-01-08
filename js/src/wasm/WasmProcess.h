@@ -55,6 +55,9 @@ UnregisterCodeSegment(const CodeSegment* cs);
 
 
 
+bool
+Init();
+
 void
 ShutDown();
 
