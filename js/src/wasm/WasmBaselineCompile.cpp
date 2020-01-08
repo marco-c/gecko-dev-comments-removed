@@ -11091,10 +11091,6 @@ BaseCompiler::finish()
 bool
 js::wasm::BaselineCanCompile()
 {
-    
-    
-    MOZ_RELEASE_ASSERT(wasm::HaveSignalHandlers());
-
 #if defined(JS_CODEGEN_ARM)
     
     

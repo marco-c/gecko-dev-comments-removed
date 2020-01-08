@@ -21,12 +21,7 @@
 
 #include "mozilla/Attributes.h"
 
-#if defined(XP_DARWIN)
-# include <mach/mach.h>
-#endif
-
 #include "js/ProfilingFrameIterator.h"
-#include "threading/Thread.h"
 #include "wasm/WasmProcess.h"
 
 namespace js {
@@ -37,13 +32,24 @@ typedef JS::ProfilingFrameIterator::RegisterState RegisterState;
 
 
 
-MOZ_MUST_USE bool
-EnsureSignalHandlers(JSContext* cx);
+
+
+
+
+
+
+
+void
+EnsureEagerProcessSignalHandlers();
+
+
+
+
 
 
 
 bool
-HaveSignalHandlers();
+EnsureFullSignalHandlers(JSContext* cx);
 
 
 
@@ -55,30 +61,6 @@ MemoryAccessTraps(const RegisterState& regs, uint8_t* addr, uint32_t numBytes, u
 
 bool
 HandleIllegalInstruction(const RegisterState& regs, uint8_t** newPC);
-
-#if defined(XP_DARWIN)
-
-
-
-
-
-
-class MachExceptionHandler
-{
-    bool installed_;
-    js::Thread thread_;
-    mach_port_t port_;
-
-    void uninstall();
-
-  public:
-    MachExceptionHandler();
-    ~MachExceptionHandler() { uninstall(); }
-    mach_port_t port() const { return port_; }
-    bool installed() const { return installed_; }
-    bool install(JSContext* cx);
-};
-#endif
 
 } 
 } 
