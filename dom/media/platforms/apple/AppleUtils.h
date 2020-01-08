@@ -8,18 +8,20 @@
 #define mozilla_AppleUtils_h
 
 #include "mozilla/Attributes.h"
+#include <CoreFoundation/CFBase.h>  
+#include <CoreVideo/CVBuffer.h>     
 
 namespace mozilla {
 
 
 
-template <class T>
-class AutoCFRelease {
+template <class T, class F, F relFunc>
+class AutoObjRefRelease {
  public:
-  MOZ_IMPLICIT AutoCFRelease(T aRef) : mRef(aRef) {}
-  ~AutoCFRelease() {
+  MOZ_IMPLICIT AutoObjRefRelease(T aRef) : mRef(aRef) {}
+  ~AutoObjRefRelease() {
     if (mRef) {
-      CFRelease(mRef);
+      relFunc(mRef);
     }
   }
   
@@ -29,9 +31,16 @@ class AutoCFRelease {
 
  private:
   
-  AutoCFRelease<T>& operator=(const AutoCFRelease<T>&);
+  AutoObjRefRelease<T, F, relFunc>& operator=(
+      const AutoObjRefRelease<T, F, relFunc>&);
   T mRef;
 };
+
+template <typename T>
+using AutoCFRelease = AutoObjRefRelease<T, decltype(&CFRelease), &CFRelease>;
+template <typename T>
+using AutoCVBufferRelease =
+    AutoObjRefRelease<T, decltype(&CVBufferRelease), &CVBufferRelease>;
 
 
 template <class T>
