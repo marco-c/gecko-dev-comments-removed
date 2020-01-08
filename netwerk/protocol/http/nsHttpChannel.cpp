@@ -366,7 +366,6 @@ nsHttpChannel::nsHttpChannel()
     , mUsedNetwork(0)
     , mAuthConnectionRestartable(0)
     , mTrackingProtectionCancellationPending(0)
-    , mAsyncResumePending(0)
     , mPushedStream(nullptr)
     , mLocalBlocklist(false)
     , mOnTailUnblock(nullptr)
@@ -971,12 +970,8 @@ nsHttpChannel::ContinueConnect()
     if (NS_FAILED(rv)) return rv;
 
     uint32_t suspendCount = mSuspendCount;
-    if (mAsyncResumePending) {
-        ++suspendCount;
-    }
-    while (suspendCount--) {
+    while (suspendCount--)
         mTransactionPump->Suspend();
-    }
 
     return NS_OK;
 }
@@ -5238,12 +5233,8 @@ nsHttpChannel::ReadFromCache(bool alreadyMarkedValid)
         mCacheReadStart = TimeStamp::Now();
 
     uint32_t suspendCount = mSuspendCount;
-    if (mAsyncResumePending) {
-        ++suspendCount;
-    }
-    while (suspendCount--) {
+    while (suspendCount--)
         mCachePump->Suspend();
-    }
 
     return NS_OK;
 }
@@ -8602,12 +8593,8 @@ nsHttpChannel::DoAuthRetry(nsAHttpConnection *conn)
     if (NS_FAILED(rv)) return rv;
 
     uint32_t suspendCount = mSuspendCount;
-    if (mAsyncResumePending) {
-        ++suspendCount;
-    }
-    while (suspendCount--) {
+    while (suspendCount--)
         mTransactionPump->Suspend();
-    }
 
     return NS_OK;
 }
@@ -9223,49 +9210,28 @@ nsHttpChannel::ResumeInternal()
         if (mCallOnResume) {
             
             
+            RefPtr<nsRunnableMethod<nsHttpChannel>> callOnResume=
+                NewRunnableMethod("CallOnResume", this, mCallOnResume);
             
-            
-            
-            MOZ_ASSERT(!mAsyncResumePending);
-            mAsyncResumePending = 1;
-
-            auto const callOnResume = mCallOnResume;
-            mCallOnResume = nullptr;
-
-            RefPtr<nsHttpChannel> self(this);
             RefPtr<nsInputStreamPump> transactionPump = mTransactionPump;
             RefPtr<nsInputStreamPump> cachePump = mCachePump;
 
             nsresult rv =
                 NS_DispatchToCurrentThread(NS_NewRunnableFunction(
                     "nsHttpChannel::CallOnResume",
-                    [callOnResume,
-                     self{std::move(self)},
-                     transactionPump{std::move(transactionPump)},
-                     cachePump{std::move(cachePump)}]() {
-                        MOZ_ASSERT(self->mAsyncResumePending);
-                        (self->*callOnResume)();
-                        MOZ_ASSERT(self->mAsyncResumePending);
+                    [callOnResume, transactionPump, cachePump]() {
+                        callOnResume->Run();
 
-                        self->mAsyncResumePending = 0;
-
-                        
                         if (transactionPump) {
-                          transactionPump->Resume();
-                        }
-                        if (cachePump) {
-                          cachePump->Resume();
+                            transactionPump->Resume();
                         }
 
-                        
-                        if (transactionPump != self->mTransactionPump && self->mTransactionPump) {
-                            self->mTransactionPump->Resume();
-                        }
-                        if (cachePump != self->mCachePump && self->mCachePump) {
-                            self->mCachePump->Resume();
+                        if (cachePump) {
+                            cachePump->Resume();
                         }
                     })
                 );
+            mCallOnResume = nullptr;
             NS_ENSURE_SUCCESS(rv, rv);
             return rv;
         }
