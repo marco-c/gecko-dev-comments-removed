@@ -943,6 +943,10 @@ import android.view.inputmethod.EditorInfo;
 
         try {
             if (mFocusedChild == null) {
+                if (mDefaultChild == null) {
+                    Log.w(LOGTAG, "Discarding key event");
+                    return;
+                }
                 
                 onKeyEvent(mDefaultChild, event, action, metaState,
                             false);
