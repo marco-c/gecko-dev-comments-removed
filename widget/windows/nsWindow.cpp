@@ -120,6 +120,7 @@
 #include "nsIServiceManager.h"
 #include "nsWindowGfx.h"
 #include "gfxWindowsPlatform.h"
+#include "gfxDWriteFonts.h"
 #include "Layers.h"
 #include "nsPrintfCString.h"
 #include "mozilla/Preferences.h"
@@ -5118,22 +5119,6 @@ static void ForceFontUpdate()
   Preferences::SetBool(kPrefName, !fontInternalChange);
 }
 
-static bool CleartypeSettingChanged()
-{
-  static int currentQuality = -1;
-  BYTE quality = cairo_win32_get_system_text_quality();
-
-  if (currentQuality == quality)
-    return false;
-
-  if (currentQuality < 0) {
-    currentQuality = quality;
-    return false;
-  }
-  currentQuality = quality;
-  return true;
-}
-
 bool
 nsWindow::ExternalHandlerProcessMessage(UINT aMessage,
                                         WPARAM& aWParam,
@@ -5337,6 +5322,10 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
         NotifyThemeChanged();
         break;
       }
+      if (wParam == SPI_SETFONTSMOOTHING || wParam == SPI_SETFONTSMOOTHINGTYPE) {
+        gfxDWriteFont::UpdateSystemTextQuality();
+        break;
+      }
       if (lParam) {
         auto lParamString = reinterpret_cast<const wchar_t*>(lParam);
         if (!wcscmp(lParamString, L"ImmersiveColorSet")) {
@@ -5531,6 +5520,12 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
 
 
+      gfxDWriteFont::UpdateSystemTextQuality();
+
+      
+
+
+
 
 
       if (!mCustomNonClient)
@@ -5578,13 +5573,6 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
       break;
 
     case WM_PAINT:
-      if (CleartypeSettingChanged()) {
-        ForceFontUpdate();
-        gfxFontCache *fc = gfxFontCache::GetCache();
-        if (fc) {
-          fc->Flush();
-        }
-      }
       *aRetValue = (int) OnPaint(nullptr, 0);
       result = true;
       break;

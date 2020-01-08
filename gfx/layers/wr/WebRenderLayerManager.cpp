@@ -267,10 +267,6 @@ WebRenderLayerManager::EndTransactionWithoutLayer(nsDisplayList* aDisplayList,
 {
   AUTO_PROFILER_TRACING("Paint", "RenderLayers");
 
-#ifdef XP_WIN
-  gfxDWriteFont::UpdateClearTypeUsage();
-#endif
-
   
   mAnimationReadyTime = TimeStamp::Now();
 
