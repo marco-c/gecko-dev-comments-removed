@@ -13,6 +13,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/WindowsVersion.h"
 #if defined(ACCESSIBILITY)
 #include "nsExceptionHandler.h"
 #endif 
@@ -196,6 +197,16 @@ MainThreadRuntime::InitializeSecurity()
     return HRESULT_FROM_WIN32(::GetLastError());
   }
 
+  BYTE appContainersSid[SECURITY_MAX_SID_SIZE];
+  DWORD appContainersSidSize = sizeof(appContainersSid);
+  if (XRE_IsParentProcess() && IsWin8OrLater()) {
+    if (!::CreateWellKnownSid(WinBuiltinAnyPackageSid, nullptr,
+                              appContainersSid, &appContainersSidSize)) {
+      return HRESULT_FROM_WIN32(::GetLastError());
+    }
+  }
+
+  
   
   EXPLICIT_ACCESS entries[] = {
     {COM_RIGHTS_EXECUTE, GRANT_ACCESS, NO_INHERITANCE,
@@ -206,12 +217,21 @@ MainThreadRuntime::InitializeSecurity()
        reinterpret_cast<LPWSTR>(adminSid)}},
     {COM_RIGHTS_EXECUTE, GRANT_ACCESS, NO_INHERITANCE,
       {nullptr, NO_MULTIPLE_TRUSTEE, TRUSTEE_IS_SID, TRUSTEE_IS_USER,
-       reinterpret_cast<LPWSTR>(tokenUser.User.Sid)}}
+       reinterpret_cast<LPWSTR>(tokenUser.User.Sid)}},
+    
+    {COM_RIGHTS_EXECUTE, GRANT_ACCESS, NO_INHERITANCE,
+      {nullptr, NO_MULTIPLE_TRUSTEE, TRUSTEE_IS_SID, TRUSTEE_IS_WELL_KNOWN_GROUP,
+       reinterpret_cast<LPWSTR>(appContainersSid)}}
   };
 
+  ULONG numEntries = ArrayLength(entries);
+  if (!XRE_IsParentProcess() || !IsWin8OrLater()) {
+    
+    --numEntries;
+  }
+
   PACL rawDacl = nullptr;
-  win32Error = ::SetEntriesInAcl(ArrayLength(entries), entries, nullptr,
-                                 &rawDacl);
+  win32Error = ::SetEntriesInAcl(numEntries, entries, nullptr, &rawDacl);
   if (win32Error != ERROR_SUCCESS) {
     return HRESULT_FROM_WIN32(win32Error);
   }
