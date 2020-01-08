@@ -3498,40 +3498,24 @@ var PrintPreviewListener = {
     this._sidebarCommand = SidebarUI.currentID;
     SidebarUI.hide();
 
-    var notificationBox = gBrowser.getNotificationBox();
-    this._chromeState.notificationsOpen = !notificationBox.notificationsHidden;
-    notificationBox.notificationsHidden = true;
-
     this._chromeState.findOpen = gFindBarInitialized && !gFindBar.hidden;
     if (gFindBarInitialized)
       gFindBar.close();
 
-    var globalNotificationBox = document.getElementById("global-notificationbox");
-    this._chromeState.globalNotificationsOpen = !globalNotificationBox.notificationsHidden;
-    globalNotificationBox.notificationsHidden = true;
-
-    this._chromeState.syncNotificationsOpen = false;
-    var syncNotifications = document.getElementById("sync-notifications");
-    if (syncNotifications) {
-      this._chromeState.syncNotificationsOpen = !syncNotifications.notificationsHidden;
-      syncNotifications.notificationsHidden = true;
-    }
+    gBrowser.getNotificationBox().hidden = true;
+    document.getElementById("global-notificationbox").hidden = true;
   },
   _showChrome() {
-    if (this._chromeState.notificationsOpen)
-      gBrowser.getNotificationBox().notificationsHidden = false;
+    document.getElementById("global-notificationbox").hidden = false;
+    gBrowser.getNotificationBox().hidden = false;
 
-    if (this._chromeState.findOpen)
+    if (this._chromeState.findOpen) {
       gLazyFindCommand("open");
+    }
 
-    if (this._chromeState.globalNotificationsOpen)
-      document.getElementById("global-notificationbox").notificationsHidden = false;
-
-    if (this._chromeState.syncNotificationsOpen)
-      document.getElementById("sync-notifications").notificationsHidden = false;
-
-    if (this._chromeState.sidebarOpen)
+    if (this._chromeState.sidebarOpen) {
       SidebarUI.show(this._sidebarCommand);
+    }
   },
 
   activateBrowser(browser) {
@@ -6299,7 +6283,7 @@ function UpdateCurrentCharset(target) {
 
 var ToolbarContextMenu = {
   updateDownloadsAutoHide(popup) {
-    let checkbox = document.getElementById("toolbar-context-autohide-downloads-button");
+    let checkbox = popup.querySelector(".customize-context-autoHide");
     let isDownloads = popup.triggerNode && ["downloads-button", "wrapper-downloads-button"].includes(popup.triggerNode.id);
     checkbox.hidden = !isDownloads;
     if (DownloadsButton.autoHideDownloadsButton) {
@@ -7385,10 +7369,10 @@ const gAccessibilityServiceIndicator = {
     Services.prefs.addObserver("accessibility.indicator.enabled", this);
     
     Services.obs.addObserver(this, "a11y-init-or-shutdown");
-    this._update(Services.appinfo.accessibilityEnabled);
+    this.update(Services.appinfo.accessibilityEnabled);
   },
 
-  _update(accessibilityEnabled = false) {
+  update(accessibilityEnabled = false) {
     if (this.enabled && accessibilityEnabled) {
       this._active = true;
       document.documentElement.setAttribute("accessibilitymode", "true");
@@ -7406,11 +7390,11 @@ const gAccessibilityServiceIndicator = {
 
   observe(subject, topic, data) {
     if (topic == "nsPref:changed" && data === "accessibility.indicator.enabled") {
-      this._update(Services.appinfo.accessibilityEnabled);
+      this.update(Services.appinfo.accessibilityEnabled);
     } else if (topic === "a11y-init-or-shutdown") {
       
       
-      this._update(data === "1");
+      this.update(data === "1");
     }
   },
 
@@ -7432,6 +7416,7 @@ const gAccessibilityServiceIndicator = {
   uninit() {
     Services.prefs.removeObserver("accessibility.indicator.enabled", this);
     Services.obs.removeObserver(this, "a11y-init-or-shutdown");
+    this.update();
   },
 };
 
