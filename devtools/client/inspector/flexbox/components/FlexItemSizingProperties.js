@@ -86,8 +86,8 @@ class FlexItemSizingProperties extends PureComponent {
     const flexBasisValue = properties["flex-basis"];
     const dimensionValue = properties[dimension];
 
+    let title = getStr("flexbox.itemSizing.baseSizeSectionHeader");
     let property = null;
-    let reason = null;
 
     if (flexBasisValue) {
       
@@ -97,19 +97,18 @@ class FlexItemSizingProperties extends PureComponent {
       property = this.renderCssProperty(dimension, dimensionValue);
     } else {
       
-      reason = this.renderReasons(
-        [getStr("flexbox.itemSizing.itemBaseSizeFromContent")]);
+      
+      title = getStr("flexbox.itemSizing.itemContentSize");
     }
 
     const className = "section base";
     return (
       dom.li({ className: className + (property ? "" : " no-property") },
         dom.span({ className: "name" },
-          getStr("flexbox.itemSizing.baseSizeSectionHeader"),
+          title,
           property
         ),
-        this.renderSize(mainBaseSize),
-        reason
+        this.renderSize(mainBaseSize)
       )
     );
   }
