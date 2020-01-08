@@ -68,7 +68,6 @@ public:
   }
 
   void SetHref(const nsAString& aHref,
-               nsIPrincipal& aSubjectPrincipal,
                ErrorResult& aError);
 
   void GetOrigin(nsAString& aOrigin,
@@ -167,25 +166,17 @@ protected:
   
   
   nsresult GetURI(nsIURI** aURL, bool aGetInnermostURI = false);
-  nsresult SetURI(nsIURI* aURL, nsIPrincipal& aSubjectPrincipal, bool aReplace = false);
+  nsresult SetURI(nsIURI* aURL, bool aReplace = false);
   nsresult SetHrefWithBase(const nsAString& aHref, nsIURI* aBase,
-                           nsIPrincipal& aSubjectPrincipal, bool aReplace);
+                           bool aReplace);
 
   
-  void DoSetHref(const nsAString& aHref, nsIPrincipal& aSubjectPrincipal,
-                 bool aReplace, ErrorResult& aRv);
+  void DoSetHref(const nsAString& aHref, bool aReplace, ErrorResult& aRv);
 
   
   
   already_AddRefed<nsIURI> GetSourceBaseURL();
-
-  
-  
-  
-  nsresult CheckURL(nsIURI *url,
-                    nsIPrincipal& aSubjectPrincipal,
-                    nsDocShellLoadInfo** aLoadInfo);
-
+  nsresult CheckURL(nsIURI *url, nsDocShellLoadInfo** aLoadInfo);
   bool CallerSubsumes(nsIPrincipal* aSubjectPrincipal);
 
   nsString mCachedHash;
