@@ -882,6 +882,13 @@ class Element : public FragmentOrElement {
   
 
 
+  const nsAttrName* GetUnsafeAttrNameAt(uint32_t aIndex) const {
+    return mAttrs.AttrNameAt(aIndex);
+  }
+
+  
+
+
   BorrowedAttrInfo GetAttrInfoAt(uint32_t aIndex) const {
     if (aIndex >= mAttrs.AttrCount()) {
       return BorrowedAttrInfo(nullptr, nullptr);
@@ -1851,6 +1858,12 @@ class Element : public FragmentOrElement {
       nsAtom* aAtom,
       const DOMTokenListSupportedTokenArray aSupportedTokens = nullptr);
 
+  
+
+
+
+  nsresult CopyInnerTo(Element* aDest);
+
  private:
   
 
@@ -1883,6 +1896,10 @@ class Element : public FragmentOrElement {
   
   
   mozilla::RustCell<ServoNodeData*> mServoData;
+
+protected:
+  
+  AttrArray mAttrs;
 };
 
 class RemoveFromBindingManagerRunnable : public mozilla::Runnable {

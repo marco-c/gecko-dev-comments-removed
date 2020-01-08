@@ -16,7 +16,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/UniquePtr.h"
-#include "AttrArray.h"                     
 #include "nsCycleCollectionParticipant.h"  
 #include "nsIContent.h"                    
 #include "nsNodeUtils.h"  
@@ -147,7 +146,7 @@ class FragmentOrElement : public nsIContent {
 
 
 
-  nsresult CopyInnerTo(FragmentOrElement* aDest);
+  nsresult CopyInnerTo(FragmentOrElement* aDest) { return NS_OK; }
 
  public:
   
@@ -305,10 +304,6 @@ class FragmentOrElement : public nsIContent {
   }
 
   friend class ::ContentUnbinder;
-  
-
-
-  AttrArray mAttrs;
 };
 
 }  
