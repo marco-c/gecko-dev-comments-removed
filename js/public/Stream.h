@@ -47,8 +47,6 @@
 
 
 
-
-
 #ifndef js_Stream_h
 #define js_Stream_h
 
@@ -79,7 +77,7 @@ namespace JS {
 
 typedef void
 (* RequestReadableStreamDataCallback)(JSContext* cx, HandleObject stream,
-                                      void* underlyingSource, uint8_t flags, size_t desiredSize);
+                                      void* underlyingSource, size_t desiredSize);
 
 
 
@@ -98,8 +96,8 @@ typedef void
 
 typedef void
 (* WriteIntoReadRequestBufferCallback)(JSContext* cx, HandleObject stream,
-                                       void* underlyingSource, uint8_t flags, void* buffer,
-                                       size_t length, size_t* bytesWritten);
+                                       void* underlyingSource, void* buffer, size_t length,
+                                       size_t* bytesWritten);
 
 
 
@@ -116,15 +114,14 @@ typedef void
 
 typedef Value
 (* CancelReadableStreamCallback)(JSContext* cx, HandleObject stream,
-                                 void* underlyingSource, uint8_t flags, HandleValue reason);
+                                 void* underlyingSource, HandleValue reason);
 
 
 
 
 
 typedef void
-(* ReadableStreamClosedCallback)(JSContext* cx, HandleObject stream, void* underlyingSource,
-                                 uint8_t flags);
+(* ReadableStreamClosedCallback)(JSContext* cx, HandleObject stream, void* underlyingSource);
 
 
 
@@ -133,7 +130,7 @@ typedef void
 
 typedef void
 (* ReadableStreamErroredCallback)(JSContext* cx, HandleObject stream, void* underlyingSource,
-                                  uint8_t flags, HandleValue reason);
+                                  HandleValue reason);
 
 
 
@@ -147,7 +144,7 @@ typedef void
 
 
 typedef void
-(* ReadableStreamFinalizeCallback)(void* underlyingSource, uint8_t flags);
+(* ReadableStreamFinalizeCallback)(void* underlyingSource);
 
 
 
@@ -196,25 +193,9 @@ NewReadableDefaultStreamObject(JSContext* cx, HandleObject underlyingSource = nu
 
 
 
-
-
-
-
 extern JS_PUBLIC_API JSObject*
 NewReadableExternalSourceStreamObject(JSContext* cx, void* underlyingSource,
-                                      uint8_t flags = 0, HandleObject proto = nullptr);
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool
-ReadableStreamGetEmbeddingFlags(JSContext* cx, HandleObject stream, uint8_t* flags);
+                                      HandleObject proto = nullptr);
 
 
 
