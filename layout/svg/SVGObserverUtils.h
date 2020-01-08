@@ -31,7 +31,11 @@ class nsSVGClipPathFrame;
 class nsSVGPaintServerFrame;
 class nsSVGFilterFrame;
 class nsSVGMaskFrame;
+namespace mozilla {
 class nsSVGFilterChainObserver;
+}
+
+namespace mozilla {
 
 
 
@@ -714,5 +718,7 @@ public:
   static already_AddRefed<nsIURI>
   GetBaseURLForLocalRef(nsIContent* aContent, nsIURI* aDocURI);
 };
+
+} 
 
 #endif 
