@@ -9,7 +9,7 @@
 
 const URL = "data:text/html;charset=utf-8," +
             '<body><button onblur="this.remove()">' +
-            "<script>document.body.firstChild.focus()</script></body>";
+            "<script>document.body.firstElementChild.focus()</script></body>";
 
 function getFocusedLocalName(browser) {
   return ContentTask.spawn(browser, null, async function() {

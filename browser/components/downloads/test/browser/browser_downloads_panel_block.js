@@ -17,7 +17,7 @@ add_task(async function mainTest() {
 
     
     
-    let item = DownloadsView.richListBox.firstChild;
+    let item = DownloadsView.richListBox.firstElementChild;
 
     
     let viewPromise = promiseViewShown(DownloadsBlockedSubview.subview);

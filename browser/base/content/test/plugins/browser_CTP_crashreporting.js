@@ -75,7 +75,7 @@ add_task(async function() {
     
     let notification = PopupNotifications.getNotification("click-to-play-plugins", browser);
     await promiseForNotificationShown(notification, browser);
-    PopupNotifications.panel.firstChild.button.click();
+    PopupNotifications.panel.firstElementChild.button.click();
 
     
     

@@ -105,7 +105,7 @@ add_task(async function() {
 
   
   await withPerfObserver(async function() {
-    let firstTab = gBrowser.tabContainer.firstChild;
+    let firstTab = gBrowser.tabContainer.firstElementChild;
     await BrowserTestUtils.switchTab(gBrowser, firstTab);
     await BrowserTestUtils.waitForCondition(() => {
       return gBrowser.tabContainer.arrowScrollbox.hasAttribute("scrolledtostart");

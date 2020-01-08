@@ -91,7 +91,7 @@ add_task(async function test_sidebarpanels_click() {
 
     
     while (gBrowser.tabs.length > 1) {
-      gBrowser.removeTab(gBrowser.tabContainer.lastChild);
+      gBrowser.removeTab(gBrowser.tabContainer.lastElementChild);
     }
   }
 });

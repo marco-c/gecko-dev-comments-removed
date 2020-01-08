@@ -228,7 +228,7 @@ async function doTestForAllTabsFavicon(aTestPage, aFaviconHost, aFaviconURL) {
   gTabsPanel.showAllTabsPanel();
   await allTabsPopupShownPromise;
 
-  assertIconIsData(gTabsPanel.allTabsViewTabs.lastChild.firstChild);
+  assertIconIsData(gTabsPanel.allTabsViewTabs.lastElementChild.firstElementChild);
 
   
   let allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsView.panelMultiView, "PanelMultiViewHidden");
@@ -254,7 +254,7 @@ async function doTestForAllTabsFavicon(aTestPage, aFaviconHost, aFaviconURL) {
   gTabsPanel.showAllTabsPanel();
   await allTabsPopupShownPromise;
 
-  assertIconIsData(gTabsPanel.allTabsViewTabs.lastChild.firstChild);
+  assertIconIsData(gTabsPanel.allTabsViewTabs.lastElementChild.firstElementChild);
 
   
   allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsView.panelMultiView, "PanelMultiViewHidden");

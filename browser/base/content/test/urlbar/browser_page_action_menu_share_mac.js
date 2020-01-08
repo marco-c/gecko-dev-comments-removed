@@ -57,8 +57,8 @@ add_task(async function shareURL() {
     let body = document.getElementById(view.id + "-body");
 
     
-    Assert.equal(body.childNodes.length, 2, "Has correct share receivers");
-    let shareButton = body.childNodes[0];
+    Assert.equal(body.children.length, 2, "Has correct share receivers");
+    let shareButton = body.children[0];
     Assert.equal(shareButton.label, mockShareData[0].menuItemTitle);
     let hiddenPromise = promisePageActionPanelHidden();
     
@@ -111,7 +111,7 @@ add_task(async function shareURLAddressBar() {
     
     let panel = document.getElementById("pageAction-urlbar-shareURL-subview-body");
     
-    Assert.equal(panel.childNodes.length, 2, "Has correct share receivers");
+    Assert.equal(panel.children.length, 2, "Has correct share receivers");
 
     
     
@@ -144,8 +144,8 @@ add_task(async function openSharingPreferences() {
     let body = document.getElementById(view.id + "-body");
 
     
-    Assert.equal(body.childNodes.length, 2, "Has correct share receivers");
-    let moreButton = body.childNodes[1];
+    Assert.equal(body.children.length, 2, "Has correct share receivers");
+    let moreButton = body.children[1];
     let hiddenPromise = promisePageActionPanelHidden();
     
     

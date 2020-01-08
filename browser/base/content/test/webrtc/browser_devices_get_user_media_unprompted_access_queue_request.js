@@ -1,5 +1,5 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 var gTests = [
 
@@ -14,7 +14,7 @@ var gTests = [
     await expectObserverCalled("getUserMedia:request");
 
     let promiseOK = promiseSpecificMessageReceived("ok", 2);
-    PopupNotifications.panel.firstChild.button.click();
+    PopupNotifications.panel.firstElementChild.button.click();
     await promiseOK;
 
     await promiseNoPopupNotification("webRTC-shareDevices");
@@ -24,7 +24,7 @@ var gTests = [
                      "expected camera to be shared");
     await expectObserverCalled("recording-device-events", 2);
 
-    // close all streams
+    
     await closeStream();
   }
 }

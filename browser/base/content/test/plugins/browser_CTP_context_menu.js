@@ -57,10 +57,10 @@ add_task(async function() {
   
   EventUtils.synthesizeMouseAtCenter(actMenuItem, {});
 
-  await promiseForCondition(() => !PopupNotifications.panel.dismissed && PopupNotifications.panel.firstChild);
+  await promiseForCondition(() => !PopupNotifications.panel.dismissed && PopupNotifications.panel.firstElementChild);
 
   
-  PopupNotifications.panel.firstChild.button.click();
+  PopupNotifications.panel.firstElementChild.button.click();
 
   
   pluginInfo = await promiseForPluginInfo("test", gBrowser.selectedBrowser);

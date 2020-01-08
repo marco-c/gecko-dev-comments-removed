@@ -155,7 +155,7 @@ async function testPopupSize(standardsMode, browserWin = window, arrowSide = "to
   let panel = browserWin.PanelUI.overflowPanel;
   panel.setAttribute("animate", "false");
 
-  let panelMultiView = panel.firstChild;
+  let panelMultiView = panel.firstElementChild;
   let widgetId = makeWidgetId(extension.id);
   
   
