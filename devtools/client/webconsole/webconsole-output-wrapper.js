@@ -238,11 +238,6 @@ WebConsoleOutputWrapper.prototype = {
           },
           jumpToExecutionPoint: executionPoint =>
             this.toolbox.threadClient.timeWarp(executionPoint),
-
-          onMessageHover: (type, messageId) => {
-            const message = getMessage(store.getState(), messageId);
-            this.hud.emit("message-hover", type, message);
-          },
         });
       }
 
@@ -510,10 +505,6 @@ WebConsoleOutputWrapper.prototype = {
   
   getStore: function() {
     return store;
-  },
-
-  subscribeToStore: function(callback) {
-    store.subscribe(() => callback(store.getState()));
   },
 
   
