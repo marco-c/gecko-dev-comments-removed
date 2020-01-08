@@ -57,6 +57,7 @@
 
 .panel-footer > button {
   -moz-appearance: none;
+  border-top: 1px solid var(--panel-separator-color);
   
   color: inherit !important;
 }
