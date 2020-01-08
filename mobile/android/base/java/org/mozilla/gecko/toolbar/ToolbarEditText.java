@@ -473,7 +473,6 @@ public class ToolbarEditText extends CustomEditText
                     
                     
                     finishComposingText();
-                    setComposingRegion(composingStart, composingEnd);
                     return true;
                 }
                 return false;
