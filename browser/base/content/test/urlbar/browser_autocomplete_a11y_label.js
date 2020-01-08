@@ -36,7 +36,7 @@ add_task(async function searchSuggestions() {
   await waitForAutocompleteResultAt(2);
   
   
-  Assert.ok(gURLBar.popup.richlistbox.children.length >= 3,
+  Assert.ok(gURLBar.popup.richlistbox.itemChildren.length >= 3,
             "Should get at least heuristic result + two search suggestions");
   
   
@@ -45,7 +45,7 @@ add_task(async function searchSuggestions() {
     "foofoo",
     "foobar",
   ];
-  for (let child of gURLBar.popup.richlistbox.children) {
+  for (let child of gURLBar.popup.richlistbox.itemChildren) {
     if (child.getAttribute("type").split(/\s+/).includes("searchengine")) {
       Assert.ok(expectedSearches.length > 0);
       let suggestion = expectedSearches.shift();

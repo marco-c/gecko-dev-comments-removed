@@ -33,7 +33,7 @@ function checkMenuEntries(expectedValues) {
 function getMenuEntries() {
   
   
-  return Array.map(searchBar.textbox.popup.richlistbox.children,
+  return Array.map(searchBar.textbox.popup.richlistbox.itemChildren,
                    item => item.getAttribute("ac-value"));
 }
 

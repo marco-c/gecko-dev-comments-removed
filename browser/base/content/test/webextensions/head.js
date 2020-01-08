@@ -423,7 +423,7 @@ async function interactiveUpdateTest(autoUpdate, checkFn) {
       
       list.clientHeight;
 
-      let item = list.children.find(_item => _item.value == ID);
+      let item = list.itemChildren.find(_item => _item.value == ID);
       EventUtils.synthesizeMouseAtCenter(item._updateBtn, {}, win);
     }
 

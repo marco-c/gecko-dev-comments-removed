@@ -349,7 +349,7 @@ var gSitePermissionsManager = {
 
     
     
-    this._list.children.forEach((item) => {
+    this._list.itemChildren.forEach((item) => {
       let menulist = item.getElementsByTagName("menulist")[0];
       if (!item.selected) {
         menulist.setAttribute("tabindex", -1);

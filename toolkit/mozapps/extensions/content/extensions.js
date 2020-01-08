@@ -1773,7 +1773,7 @@ var gCategories = {
     category.setAttribute("hidden", aStartHidden);
 
     var node;
-    for (node of this.node.children) {
+    for (node of this.node.itemChildren) {
       var nodePriority = parseInt(node.getAttribute("priority"));
       
       
