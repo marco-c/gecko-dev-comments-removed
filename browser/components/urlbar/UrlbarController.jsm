@@ -7,32 +7,7 @@
 var EXPORTED_SYMBOLS = ["QueryContext", "UrlbarController"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
-
-
-
-
-const ProvidersManager = {
-  queryStart(queryContext, controller) {
-    queryContext.results = [];
-    for (let i = 0; i < queryContext.maxResults; i++) {
-      const SWITCH_TO_TAB = Math.random() < .3;
-      let url = "http://www." + queryContext.searchString;
-      while (Math.random() < .9) {
-        url += queryContext.searchString;
-      }
-      let title = queryContext.searchString;
-      while (Math.random() < .5) {
-        title += queryContext.isPrivate ? " private" : " foo bar";
-      }
-      queryContext.results.push({
-        title,
-        type: SWITCH_TO_TAB ? "switchtotab" : "normal",
-        url,
-      });
-    }
-    controller.receiveResults(queryContext);
-  },
-};
+ChromeUtils.import("resource:///modules/UrlbarProvidersManager.jsm");
 
 
 
@@ -110,7 +85,7 @@ class UrlbarController {
 
 
   constructor(options = {}) {
-    this.manager = options.manager || ProvidersManager;
+    this.manager = options.manager || UrlbarProvidersManager;
 
     this._listeners = new Set();
   }
@@ -120,12 +95,12 @@ class UrlbarController {
 
 
 
-  handleQuery(queryContext) {
+  async startQuery(queryContext) {
     queryContext.autoFill = Services.prefs.getBoolPref("browser.urlbar.autoFill", true);
 
     this._notify("onQueryStarted", queryContext);
 
-    this.manager.queryStart(queryContext, this);
+    await this.manager.startQuery(queryContext, this);
   }
 
   
@@ -133,8 +108,9 @@ class UrlbarController {
 
 
 
+
   cancelQuery(queryContext) {
-    this.manager.queryCancel(queryContext);
+    this.manager.cancelQuery(queryContext);
 
     this._notify("onQueryCancelled", queryContext);
   }

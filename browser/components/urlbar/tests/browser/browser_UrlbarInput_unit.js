@@ -48,13 +48,13 @@ function assertContextMatches(context, expectedValues) {
 
 
 
-function checkHandleQueryCall(stub, expectedQueryContextProps) {
+function checkStartQueryCall(stub, expectedQueryContextProps) {
   Assert.equal(stub.callCount, 1,
-    "Should have called handleQuery on the controller");
+    "Should have called startQuery on the controller");
 
   let args = stub.args[0];
   Assert.equal(args.length, 1,
-    "Should have called handleQuery with one argument");
+    "Should have called startQuery with one argument");
 
   let queryContext = args[0];
   Assert.ok(queryContext instanceof QueryContext,
@@ -71,7 +71,7 @@ add_task(async function setup() {
 
   fakeController = new UrlbarController();
 
-  sandbox.stub(fakeController, "handleQuery");
+  sandbox.stub(fakeController, "startQuery");
   sandbox.stub(PrivateBrowsingUtils, "isWindowPrivate").returns(false);
 
   
@@ -112,7 +112,7 @@ add_task(function test_input_starts_query() {
     type: "input",
   });
 
-  checkHandleQueryCall(fakeController.handleQuery, {
+  checkStartQueryCall(fakeController.startQuery, {
     searchString: "search",
     isPrivate: false,
     maxResults: UrlbarPrefs.get("maxRichResults"),
@@ -135,7 +135,7 @@ add_task(function test_input_with_private_browsing() {
     type: "input",
   });
 
-  checkHandleQueryCall(fakeController.handleQuery, {
+  checkStartQueryCall(fakeController.startQuery, {
     searchString: "search",
     isPrivate: true,
   });
