@@ -10,6 +10,7 @@
 
 
 
+
 add_task(async function() {
   const { tab, monitor } = await initNetMonitor(SIMPLE_URL);
   info("Starting test... ");
@@ -37,6 +38,9 @@ add_task(async function() {
   contextResend.click();
   await waitUntil(() => document.querySelector("#custom-headers-value"));
   const headersTextarea = document.querySelector("#custom-headers-value");
+  await waitUntil(() => document.querySelector("#custom-method-value"));
+  const methodField = document.querySelector("#custom-method-value");
+  const originalMethodValue = methodField.value;
   const {
     getSelectedRequest
   } = windowRequire("devtools/client/netmonitor/src/selectors/index");
@@ -54,12 +58,26 @@ add_task(async function() {
   headersTextarea.setSelectionRange(start, end);
   EventUtils.synthesizeKey("VK_DELETE", {});
 
+  methodField.focus();
+  methodField.select();
+  EventUtils.synthesizeKey("VK_DELETE", {});
+
   ok(getSelectedRequest(store.getState()).requestHeaders.headers[0] !== hostHeader,
     "Value of Host header was edited and should change"
   );
 
   ok(headersTextarea.selectionStart === start && headersTextarea.selectionEnd === start,
     "Position of caret should not change"
+  );
+
+  ok(getSelectedRequest(store.getState()).method === "",
+    "Value of method header was deleted and should be empty"
+  );
+
+  headersTextarea.focus();
+
+  ok(getSelectedRequest(store.getState()).method === originalMethodValue,
+    "Value of method header should reset to its original value"
   );
 
   return teardown(monitor);
