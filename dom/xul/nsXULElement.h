@@ -672,8 +672,7 @@ protected:
     
 
 
-    void AddListenerFor(const nsAttrName& aName,
-                        bool aCompileEventHandlers);
+    void AddListenerFor(const nsAttrName& aName);
     void MaybeAddPopupListener(nsAtom* aLocalName);
 
     nsIWidget* GetWindowWidget();
