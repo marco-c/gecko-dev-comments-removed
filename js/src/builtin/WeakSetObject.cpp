@@ -21,18 +21,18 @@
 
 using namespace js;
 
-MOZ_ALWAYS_INLINE bool
-IsWeakSet(HandleValue v)
+ MOZ_ALWAYS_INLINE bool
+WeakSetObject::is(HandleValue v)
 {
     return v.isObject() && v.toObject().is<WeakSetObject>();
 }
 
 
 
-MOZ_ALWAYS_INLINE bool
-WeakSet_add_impl(JSContext* cx, const CallArgs& args)
+ MOZ_ALWAYS_INLINE bool
+WeakSetObject::add_impl(JSContext* cx, const CallArgs& args)
 {
-    MOZ_ASSERT(IsWeakSet(args.thisv()));
+    MOZ_ASSERT(is(args.thisv()));
 
     
     if (!args.get(0).isObject()) {
@@ -52,20 +52,20 @@ WeakSet_add_impl(JSContext* cx, const CallArgs& args)
     return true;
 }
 
-static bool
-WeakSet_add(JSContext* cx, unsigned argc, Value* vp)
+ bool
+WeakSetObject::add(JSContext* cx, unsigned argc, Value* vp)
 {
     
     CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsWeakSet, WeakSet_add_impl>(cx, args);
+    return CallNonGenericMethod<WeakSetObject::is, WeakSetObject::add_impl>(cx, args);
 }
 
 
 
-MOZ_ALWAYS_INLINE bool
-WeakSet_delete_impl(JSContext* cx, const CallArgs& args)
+ MOZ_ALWAYS_INLINE bool
+WeakSetObject::delete_impl(JSContext* cx, const CallArgs& args)
 {
-    MOZ_ASSERT(IsWeakSet(args.thisv()));
+    MOZ_ASSERT(is(args.thisv()));
 
     
     if (!args.get(0).isObject()) {
@@ -88,20 +88,20 @@ WeakSet_delete_impl(JSContext* cx, const CallArgs& args)
     return true;
 }
 
-static bool
-WeakSet_delete(JSContext* cx, unsigned argc, Value* vp)
+ bool
+WeakSetObject::delete_(JSContext* cx, unsigned argc, Value* vp)
 {
     
     CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsWeakSet, WeakSet_delete_impl>(cx, args);
+    return CallNonGenericMethod<WeakSetObject::is, WeakSetObject::delete_impl>(cx, args);
 }
 
 
 
-MOZ_ALWAYS_INLINE bool
-WeakSet_has_impl(JSContext* cx, const CallArgs& args)
+ MOZ_ALWAYS_INLINE bool
+WeakSetObject::has_impl(JSContext* cx, const CallArgs& args)
 {
-    MOZ_ASSERT(IsWeakSet(args.thisv()));
+    MOZ_ASSERT(is(args.thisv()));
 
     
     if (!args.get(0).isObject()) {
@@ -123,53 +123,52 @@ WeakSet_has_impl(JSContext* cx, const CallArgs& args)
     return true;
 }
 
-static bool
-WeakSet_has(JSContext* cx, unsigned argc, Value* vp)
+ bool
+WeakSetObject::has(JSContext* cx, unsigned argc, Value* vp)
 {
     
     CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsWeakSet, WeakSet_has_impl>(cx, args);
+    return CallNonGenericMethod<WeakSetObject::is, WeakSetObject::has_impl>(cx, args);
 }
+
+const ClassSpec WeakSetObject::classSpec_ = {
+    GenericCreateConstructor<WeakSetObject::construct, 0, gc::AllocKind::FUNCTION>,
+    GenericCreatePrototype<WeakSetObject>,
+    nullptr,
+    nullptr,
+    WeakSetObject::methods,
+    WeakSetObject::properties,
+};
 
 const Class WeakSetObject::class_ = {
     "WeakSet",
     JSCLASS_HAS_PRIVATE |
     JSCLASS_HAS_CACHED_PROTO(JSProto_WeakSet) |
     JSCLASS_BACKGROUND_FINALIZE,
-    &WeakCollectionObject::classOps_
+    &WeakCollectionObject::classOps_,
+    &WeakSetObject::classSpec_
+};
+
+const Class WeakSetObject::protoClass_ = {
+    js_Object_str,
+    JSCLASS_HAS_CACHED_PROTO(JSProto_WeakSet),
+    JS_NULL_CLASS_OPS,
+    &WeakSetObject::classSpec_
 };
 
 const JSPropertySpec WeakSetObject::properties[] = {
+    JS_STRING_SYM_PS(toStringTag, "WeakSet", JSPROP_READONLY),
     JS_PS_END
 };
 
 const JSFunctionSpec WeakSetObject::methods[] = {
-    JS_FN("add",    WeakSet_add,    1, 0),
-    JS_FN("delete", WeakSet_delete, 1, 0),
-    JS_FN("has",    WeakSet_has,    1, 0),
+    
+    JS_FN("add", add, 1, 0),
+    JS_FN("delete", delete_, 1, 0),
+    JS_FN("has", has, 1, 0),
     JS_FS_END
+    
 };
-
-JSObject*
-WeakSetObject::initClass(JSContext* cx, Handle<GlobalObject*> global)
-{
-    RootedPlainObject proto(cx, NewBuiltinClassInstance<PlainObject>(cx));
-    if (!proto) {
-        return nullptr;
-    }
-
-    Rooted<JSFunction*> ctor(cx, GlobalObject::createConstructor(cx, construct,
-                                                                 ClassName(JSProto_WeakSet, cx), 0));
-    if (!ctor ||
-        !LinkConstructorAndPrototype(cx, ctor, proto) ||
-        !DefinePropertiesAndFunctions(cx, proto, properties, methods) ||
-        !DefineToStringTag(cx, proto, cx->names().WeakSet) ||
-        !GlobalObject::initBuiltinConstructor(cx, global, JSProto_WeakSet, ctor, proto))
-    {
-        return nullptr;
-    }
-    return proto;
-}
 
 WeakSetObject*
 WeakSetObject::create(JSContext* cx, HandleObject proto )
@@ -180,7 +179,7 @@ WeakSetObject::create(JSContext* cx, HandleObject proto )
 bool
 WeakSetObject::isBuiltinAdd(HandleValue add)
 {
-    return IsNativeFunction(add, WeakSet_add);
+    return IsNativeFunction(add, WeakSetObject::add);
 }
 
 bool
@@ -241,13 +240,6 @@ WeakSetObject::construct(JSContext* cx, unsigned argc, Value* vp)
 
     args.rval().setObject(*obj);
     return true;
-}
-
-
-JSObject*
-js::InitWeakSetClass(JSContext* cx, Handle<GlobalObject*> global)
-{
-    return WeakSetObject::initClass(cx, global);
 }
 
 JS_FRIEND_API bool
