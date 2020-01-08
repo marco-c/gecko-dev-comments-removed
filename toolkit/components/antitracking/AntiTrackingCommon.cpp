@@ -84,7 +84,8 @@ GetParentPrincipalAndTrackingOrigin(nsGlobalWindowInner* a3rdPartyTrackingWindow
   
   nsCOMPtr<nsIPrincipal> topLevelStoragePrincipal =
     a3rdPartyTrackingWindow->GetTopLevelStorageAreaPrincipal();
-  if (NS_WARN_IF(!topLevelStoragePrincipal)) {
+  if (!topLevelStoragePrincipal) {
+    LOG(("No top-level storage area principal at hand"));
     return false;
   }
 
