@@ -1578,7 +1578,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText
   uint8_t mTextTransform;               
   mozilla::StyleWhiteSpace mWhiteSpace;
   uint8_t mWordBreak;                   
-  uint8_t mOverflowWrap;                
+  mozilla::StyleOverflowWrap mOverflowWrap;
   mozilla::StyleHyphens mHyphens;
   uint8_t mRubyAlign;                   
   uint8_t mRubyPosition;                
@@ -1634,8 +1634,11 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText
   }
 
   bool WordCanWrapStyle() const {
-    return WhiteSpaceCanWrapStyle() &&
-           mOverflowWrap == NS_STYLE_OVERFLOWWRAP_BREAK_WORD;
+    if (!WhiteSpaceCanWrapStyle()) {
+      return false;
+    }
+    return mOverflowWrap == mozilla::StyleOverflowWrap::BreakWord ||
+           mOverflowWrap == mozilla::StyleOverflowWrap::Anywhere;
   }
 
   bool HasTextEmphasis() const {

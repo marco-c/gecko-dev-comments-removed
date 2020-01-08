@@ -789,10 +789,6 @@ enum class StyleWhiteSpace : uint8_t {
 #define NS_STYLE_WORDBREAK_KEEP_ALL             2
 
 
-#define NS_STYLE_OVERFLOWWRAP_NORMAL            0
-#define NS_STYLE_OVERFLOWWRAP_BREAK_WORD        1
-
-
 #define NS_STYLE_RUBY_ALIGN_START               0
 #define NS_STYLE_RUBY_ALIGN_CENTER              1
 #define NS_STYLE_RUBY_ALIGN_SPACE_BETWEEN       2

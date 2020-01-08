@@ -806,13 +806,6 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
-  "layout.css.overflow-break.intrinsic-size",
-   layout_css_overflow_break_intrinsic_size,
-  bool, false
-)
-
-
-VARCACHE_PREF(
   "layout.css.unknown-webkit-pseudo-element",
    layout_css_unknown_webkit_pseudo_element,
   bool, true
