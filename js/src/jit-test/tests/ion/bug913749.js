@@ -13,8 +13,8 @@ y = undefined;
 
 
 var variations = [
-    `y is undefined; can't access its "length" property`,
-    `can't access property "length" of undefined` ,
+    `y is undefined`,
+    `can't access property "length" of undefined`,
     `undefined has no properties`,
 ];
 
