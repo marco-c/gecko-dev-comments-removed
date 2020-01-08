@@ -280,6 +280,18 @@ struct RtpExtension {
   
   static const char kEncryptHeaderExtensionsUri[];
 
+  static const char* kRtpStreamIdUri;
+  static const int kRtpStreamIdDefaultId;
+
+  static const char* kRepairedRtpStreamIdUri;
+  static const int kRepairedRtpStreamIdDefaultId;
+
+  static const char* kMIdUri;
+  static const int kMIdDefaultId;
+
+  static const char* kCsrcAudioLevelUri;
+  static const int kCsrcAudioLevelDefaultId;
+
   
   static const int kMinId;
   static const int kMaxId;

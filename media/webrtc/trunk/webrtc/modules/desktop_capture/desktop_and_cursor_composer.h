@@ -47,10 +47,12 @@ class DesktopAndCursorComposer : public DesktopCapturer,
 
   
   void Start(DesktopCapturer::Callback* callback) override;
+  void Stop() override;
   void SetSharedMemoryFactory(
       std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override;
   void CaptureFrame() override;
   void SetExcludedWindow(WindowId window) override;
+  bool FocusOnSelectedSource() override;
 
  private:
   

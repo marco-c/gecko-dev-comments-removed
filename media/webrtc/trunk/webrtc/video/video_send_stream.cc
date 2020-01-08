@@ -595,6 +595,11 @@ VideoSendStream::~VideoSendStream() {
   RTC_DCHECK(!send_stream_);
 }
 
+CPULoadStateObserver* VideoSendStream::LoadStateObserver() {
+  
+  return nullptr;
+}
+
 void VideoSendStream::Start() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_LOG(LS_INFO) << "VideoSendStream::Start";
@@ -800,6 +805,11 @@ VideoSendStreamImpl::VideoSendStreamImpl(
 
   ConfigureProtection();
   ConfigureSsrcs();
+
+  
+  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
+    rtp_rtcp->SetMID(config_->rtp.mid.c_str());
+  }
 
   
   rtp_rtcp_modules_.front()->SetCNAME(config_->rtp.c_name.c_str());
