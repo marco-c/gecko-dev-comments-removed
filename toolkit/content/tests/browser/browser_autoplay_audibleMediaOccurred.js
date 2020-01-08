@@ -14,7 +14,9 @@ add_task(async function testAudibleAutoplayMedia() {
 
   
   let audibleAutoplayOccurred = TestUtils.topicObserved("AudibleAutoplayMediaOccurred");
-  browser.loadURI(PAGE);
+  browser.loadURI(PAGE, {
+    triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+  });
 
   await BrowserTestUtils.browserLoaded(browser);
   await audibleAutoplayOccurred;
