@@ -10,12 +10,19 @@ const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
 
 add_task(async function() {
   
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  
   await pushPref("devtools.browserconsole.filter.net", true);
   
   await pushPref("devtools.chrome.enabled", true);
 
+  
+  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
+  await performTests();
+  
+  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
+  await performTests();
+});
+
+async function performTests() {
   await addTab(TEST_URI);
   const hud = await HUDService.toggleBrowserConsole();
 
@@ -60,7 +67,7 @@ add_task(async function() {
   is(getSimplifiedContextMenu(menuPopup).join("\n"), expectedContextMenu.join("\n"),
     "The context menu has the expected entries for a simple log message");
 
-  menuPopup = await openContextMenu(hud, hud.jsterm.inputNode);
+  menuPopup = await openContextMenu(hud, hud.jsterm.node || hud.jsterm.inputNode);
 
   expectedContextMenu = [
     "#editmenu-undo (editmenu-undo) [disabled]",
@@ -74,7 +81,9 @@ add_task(async function() {
     "The context menu has the correct edit menu items");
 
   await hideContextMenu(hud);
-});
+  
+  await HUDService.toggleBrowserConsole();
+}
 
 function addPrefBasedEntries(expectedEntries) {
   if (Services.prefs.getBoolPref("devtools.webconsole.sidebarToggle", false)) {

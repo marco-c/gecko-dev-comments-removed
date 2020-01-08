@@ -15,6 +15,10 @@ add_task(async function() {
   
   await pushPref("devtools.webconsole.jsterm.codeMirror", false);
   await testHistory();
+
+  
+  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
+  await testHistory();
 });
 
 async function testHistory() {
@@ -25,25 +29,17 @@ async function testHistory() {
   const onShown = function() {
     ok(false, "popup shown");
   };
+  popup.on("popup-opened", onShown);
 
   await jsterm.execute(`window.foobarBug660806 = {
     'location': 'value0',
     'locationbar': 'value1'
   }`);
-
-  popup.on("popup-opened", onShown);
-
   ok(!popup.isOpen, "popup is not open");
 
-  ok(!jsterm.lastInputValue, "no lastInputValue");
-  jsterm.setInputValue("window.foobarBug660806.location");
-  is(jsterm.lastInputValue, "window.foobarBug660806.location",
-     "lastInputValue is correct");
-
-  EventUtils.synthesizeKey("KEY_Enter");
-
   
-  await waitFor(() => !jsterm.lastInputValue);
+  
+  await jsterm.execute("window.foobarBug660806.location");
 
   const onSetInputValue = jsterm.once("set-input-value");
   EventUtils.synthesizeKey("KEY_ArrowUp");
@@ -53,8 +49,8 @@ async function testHistory() {
   
   await new Promise(executeSoon);
 
-  is(jsterm.lastInputValue, "window.foobarBug660806.location",
-     "lastInputValue is correct, again");
+  is(jsterm.getInputValue(), "window.foobarBug660806.location",
+    "input has expected value");
 
   ok(!popup.isOpen, "popup is not open");
   popup.off("popup-opened", onShown);
