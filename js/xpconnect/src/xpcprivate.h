@@ -831,17 +831,6 @@ class XPCWrappedNativeScope final {
   
   bool GetComponentsJSObject(JS::MutableHandleObject obj);
 
-  JSObject* GetGlobalJSObject() const { return mGlobalJSObject; }
-
-  JSObject* GetGlobalJSObjectPreserveColor() const {
-    return mGlobalJSObject.unbarrieredGet();
-  }
-
-  nsIPrincipal* GetPrincipal() const {
-    JS::Realm* r = js::GetNonCCWObjectRealm(mGlobalJSObject);
-    return nsJSPrincipals::get(JS::GetRealmPrincipals(r));
-  }
-
   JSObject* GetExpandoChain(JS::HandleObject target);
 
   JSObject* DetachExpandoChain(JS::HandleObject target);
@@ -852,11 +841,6 @@ class XPCWrappedNativeScope final {
   static void SystemIsBeingShutDown();
 
   static void TraceWrappedNativesInAllScopes(JSTracer* trc);
-
-  void TraceSelf(JSTracer* trc) {
-    MOZ_ASSERT(mGlobalJSObject);
-    mGlobalJSObject.trace(trc, "XPCWrappedNativeScope::mGlobalJSObject");
-  }
 
   void TraceInside(JSTracer* trc) {
     if (mContentXBLScope) {
@@ -901,30 +885,37 @@ class XPCWrappedNativeScope final {
     size_t mProtoAndIfaceCacheSize;
   };
 
-  static void AddSizeOfAllScopesIncludingThis(ScopeSizeInfo* scopeSizeInfo);
+  static void AddSizeOfAllScopesIncludingThis(JSContext* cx,
+                                              ScopeSizeInfo* scopeSizeInfo);
 
-  void AddSizeOfIncludingThis(ScopeSizeInfo* scopeSizeInfo);
+  void AddSizeOfIncludingThis(JSContext* cx, ScopeSizeInfo* scopeSizeInfo);
 
   static bool IsDyingScope(XPCWrappedNativeScope* scope);
 
   
   
   
+  
   JSObject* EnsureContentXBLScope(JSContext* cx);
 
-  XPCWrappedNativeScope(JSContext* cx, JS::HandleObject aGlobal,
-                        const mozilla::SiteIdentifier& aSite);
+  XPCWrappedNativeScope(JS::Compartment* aCompartment,
+                        JS::HandleObject aFirstGlobal);
 
   nsAutoPtr<JSObject2JSObjectMap> mWaiverWrapperMap;
 
-  JS::Compartment* Compartment() const {
-    return js::GetObjectCompartment(mGlobalJSObject);
+  JS::Compartment* Compartment() const { return mCompartment; }
+
+  
+  
+  
+  JSObject* GetGlobalForWrappedNatives() {
+    return js::GetFirstGlobalInCompartment(Compartment());
   }
 
   bool IsContentXBLScope() {
     return xpc::IsContentXBLCompartment(Compartment());
   }
-  bool AllowContentXBLScope();
+  bool AllowContentXBLScope(JS::Realm* aRealm);
   bool UseContentXBLScope() { return mUseContentXBLScope; }
   void ClearContentXBLScope() { mContentXBLScope = nullptr; }
 
@@ -946,11 +937,7 @@ class XPCWrappedNativeScope final {
   ClassInfo2WrappedNativeProtoMap* mWrappedNativeProtoMap;
   RefPtr<nsXPCComponentsBase> mComponents;
   XPCWrappedNativeScope* mNext;
-  
-  
-  
-  
-  JS::ObjectPtr mGlobalJSObject;
+  JS::Compartment* mCompartment;
 
   
   
@@ -1290,11 +1277,8 @@ class XPCWrappedNativeProto final {
     }
   }
 
-  void TraceInside(JSTracer* trc) { GetScope()->TraceSelf(trc); }
-
   void TraceJS(JSTracer* trc) {
     TraceSelf(trc);
-    TraceInside(trc);
   }
 
   void WriteBarrierPre(JSContext* cx) {
@@ -1531,8 +1515,6 @@ class XPCWrappedNative final : public nsIXPConnectWrappedNative {
   inline void TraceInside(JSTracer* trc) {
     if (HasProto()) {
       GetProto()->TraceSelf(trc);
-    } else {
-      GetScope()->TraceSelf(trc);
     }
 
     JSObject* obj = mFlatJSObject.unbarrieredGetPtr();
@@ -2743,7 +2725,8 @@ class CompartmentPrivate {
   CompartmentPrivate(const CompartmentPrivate&) = delete;
 
  public:
-  CompartmentPrivate(JS::Compartment* c, mozilla::BasePrincipal* origin,
+  CompartmentPrivate(JS::Compartment* c, XPCWrappedNativeScope* scope,
+                     mozilla::BasePrincipal* origin,
                      const mozilla::SiteIdentifier& site);
 
   ~CompartmentPrivate();
@@ -2760,6 +2743,9 @@ class CompartmentPrivate {
   }
 
   CompartmentOriginInfo originInfo;
+
+  
+  XPCWrappedNativeScope* scope;
 
   
   
@@ -2841,6 +2827,11 @@ class RealmPrivate {
 
   explicit RealmPrivate(JS::Realm* realm);
 
+  
+  
+  static void Init(JS::HandleObject aGlobal,
+                   const mozilla::SiteIdentifier& aSite);
+
   static RealmPrivate* Get(JS::Realm* realm) {
     MOZ_ASSERT(realm);
     void* priv = JS::GetRealmPrivate(realm);
@@ -2857,10 +2848,6 @@ class RealmPrivate {
 
   
   Scriptability scriptability;
-
-  
-  
-  XPCWrappedNativeScope* scope;
 
   
   
@@ -2931,7 +2918,7 @@ class RealmPrivate {
 };
 
 inline XPCWrappedNativeScope* ObjectScope(JSObject* obj) {
-  return RealmPrivate::Get(obj)->scope;
+  return CompartmentPrivate::Get(obj)->scope;
 }
 
 JSObject* NewOutObject(JSContext* cx);

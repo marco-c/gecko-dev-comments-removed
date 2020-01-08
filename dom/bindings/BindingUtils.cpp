@@ -3136,15 +3136,11 @@ bool CreateGlobalOptionsWithXPConnect::PostCreateGlobal(
       JS::GetRealmPrincipals(js::GetNonCCWObjectRealm(aGlobal));
   nsIPrincipal* principal = nsJSPrincipals::get(principals);
 
-  
-  
   SiteIdentifier site;
   nsresult rv = BasePrincipal::Cast(principal)->GetSiteIdentifier(site);
   NS_ENSURE_SUCCESS(rv, false);
 
-  
-  
-  (void)new XPCWrappedNativeScope(aCx, aGlobal, site);
+  xpc::RealmPrivate::Init(aGlobal, site);
   return true;
 }
 

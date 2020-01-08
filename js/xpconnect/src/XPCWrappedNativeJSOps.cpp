@@ -1042,14 +1042,6 @@ static size_t XPC_WN_Proto_ObjectMoved(JSObject* obj, JSObject* old) {
   return 0;
 }
 
-static void XPC_WN_Proto_Trace(JSTracer* trc, JSObject* obj) {
-  
-  XPCWrappedNativeProto* p = (XPCWrappedNativeProto*)xpc_GetJSPrivate(obj);
-  if (p) {
-    p->TraceInside(trc);
-  }
-}
-
 
 
 static bool XPC_WN_OnlyIWrite_Proto_AddPropertyStub(JSContext* cx,
@@ -1109,7 +1101,7 @@ static const js::ClassOps XPC_WN_Proto_JSClassOps = {
     nullptr,                                  
     nullptr,                                  
     nullptr,                                  
-    XPC_WN_Proto_Trace,                       
+    nullptr,                                  
 };
 
 static const js::ClassExtension XPC_WN_Proto_ClassExtension = {

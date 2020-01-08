@@ -937,6 +937,8 @@ bool XPCConvert::NativeInterface2JSObject(MutableHandleValue d,
     return false;
   }
 
+  JSAutoRealm ar(cx, xpcscope->GetGlobalForWrappedNatives());
+
   
   
   
@@ -944,8 +946,7 @@ bool XPCConvert::NativeInterface2JSObject(MutableHandleValue d,
 
   RootedObject flat(cx, cache ? cache->GetWrapper() : nullptr);
   if (!flat && cache) {
-    RootedObject global(cx, xpcscope->GetGlobalJSObject());
-    js::AssertSameCompartment(cx, global);
+    RootedObject global(cx, CurrentGlobalOrNull(cx));
     flat = cache->WrapObject(cx, nullptr);
     if (!flat) {
       return false;
