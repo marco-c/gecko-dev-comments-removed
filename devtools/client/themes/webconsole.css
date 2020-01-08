@@ -655,6 +655,14 @@ a.learn-more-link.webconsole-learn-more-link {
 }
 
 
+.theme-dark .message.error .objectBox-string,
+.theme-light .message.error .objectBox-string,
+.theme-dark .message.warn .objectBox-string,
+.theme-light .message.warn .objectBox-string {
+  color: var(--error-color);
+}
+
+
 .theme-dark .webconsole-output-wrapper .message.error .tree.object-inspector .object-label,
 .theme-dark .webconsole-output-wrapper .message.error .tree.object-inspector .object-label *,
 .theme-dark .webconsole-output-wrapper .message.warn .tree.object-inspector .object-label,
