@@ -378,9 +378,17 @@ var FormAssistant = {
       scrollY += rect.top + parseInt(top);
     }
 
+    
+    
+    
+    
+    let offsetX = {}, offsetY = {};
+    aElement.ownerGlobal.windowUtils
+        .getVisualViewportOffsetRelativeToLayoutViewport(offsetX, offsetY);
+
     return {
-      x: r.left + scrollX,
-      y: r.top + scrollY,
+      x: r.left + scrollX - offsetX.value,
+      y: r.top + scrollY - offsetY.value,
       w: r.width,
       h: r.height,
     };
