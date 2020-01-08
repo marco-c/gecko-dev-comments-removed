@@ -106,6 +106,22 @@ extern JS_FRIEND_API bool JS_IsDeadWrapper(JSObject* obj);
 extern JS_FRIEND_API JSObject* JS_NewDeadWrapper(
     JSContext* cx, JSObject* origObject = nullptr);
 
+namespace js {
+
+
+
+
+
+
+
+
+
+
+
+JS_FRIEND_API JS::Value MaybeGetScriptPrivate(JSObject* object);
+
+}  
+
 
 
 

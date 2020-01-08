@@ -562,8 +562,12 @@ struct JSRuntime : public js::MallocProvider<JSRuntime> {
   JSFunction* getUnclonedSelfHostedFunction(JSContext* cx,
                                             js::HandlePropertyName name);
 
+  js::jit::JitRuntime* createJitRuntime(JSContext* cx);
+
  public:
-  MOZ_MUST_USE bool createJitRuntime(JSContext* cx);
+  js::jit::JitRuntime* getJitRuntime(JSContext* cx) {
+    return jitRuntime_ ? jitRuntime_.ref() : createJitRuntime(cx);
+  }
   js::jit::JitRuntime* jitRuntime() const { return jitRuntime_.ref(); }
   bool hasJitRuntime() const { return !!jitRuntime_; }
 
@@ -974,6 +978,9 @@ struct JSRuntime : public js::MallocProvider<JSRuntime> {
   
   
   mozilla::Atomic<JS::ModuleDynamicImportHook> moduleDynamicImportHook;
+
+  
+  js::MainThreadData<JS::ScriptPrivateFinalizeHook> scriptPrivateFinalizeHook;
 
  public:
 #if defined(JS_BUILD_BINAST)

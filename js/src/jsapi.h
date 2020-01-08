@@ -3112,6 +3112,10 @@ GetModuleDynamicImportHook(JSRuntime* rt);
 
 
 
+
+
+
+
 extern JS_PUBLIC_API void SetModuleDynamicImportHook(
     JSRuntime* rt, ModuleDynamicImportHook func);
 
@@ -3151,6 +3155,26 @@ extern JS_PUBLIC_API void SetScriptPrivate(JSScript* script,
 
 
 extern JS_PUBLIC_API JS::Value GetScriptPrivate(JSScript* script);
+
+
+
+
+
+
+
+using ScriptPrivateFinalizeHook = void (*)(JSFreeOp*, const JS::Value&);
+
+
+
+
+extern JS_PUBLIC_API ScriptPrivateFinalizeHook
+GetScriptPrivateFinalizeHook(JSRuntime* rt);
+
+
+
+
+extern JS_PUBLIC_API void SetScriptPrivateFinalizeHook(
+    JSRuntime* rt, ScriptPrivateFinalizeHook func);
 
 
 
