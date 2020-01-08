@@ -246,7 +246,7 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   
   
   
-  already_AddRefed<GenericPromise> WaitForBgParent();
+  MOZ_MUST_USE RefPtr<GenericNonExclusivePromise> WaitForBgParent();
 
   
   
@@ -284,8 +284,8 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
 
   RefPtr<HttpBackgroundChannelParent> mBgParent;
 
-  MozPromiseHolder<GenericPromise> mPromise;
-  MozPromiseRequestHolder<GenericPromise> mRequest;
+  MozPromiseHolder<GenericNonExclusivePromise> mPromise;
+  MozPromiseRequestHolder<GenericNonExclusivePromise> mRequest;
 
   dom::TabId mNestedFrameId;
 
