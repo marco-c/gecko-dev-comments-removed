@@ -525,17 +525,31 @@ Element::ClearStyleStateLocks()
   NotifyStyleStateChange(locks.mLocks);
 }
 
-bool
-Element::GetBindingURL(nsIDocument *aDocument, css::URLValue **aResult)
+static bool
+MayNeedToLoadXBLBinding(const nsIDocument& aDocument, const Element& aElement)
 {
   
   
   
   
-  bool isXULorPluginElement = (IsXULElement() ||
-                               IsHTMLElement(nsGkAtoms::object) ||
-                               IsHTMLElement(nsGkAtoms::embed));
-  if (!aDocument->GetShell() || GetPrimaryFrame() || !isXULorPluginElement) {
+  if (!aDocument.GetShell() || aElement.GetPrimaryFrame()) {
+    return false;
+  }
+
+  if (aElement.IsXULElement()) {
+    
+    
+    
+    return !aElement.IsXULElement(nsGkAtoms::dropMarker);
+  }
+
+  return aElement.IsAnyOfHTMLElements(nsGkAtoms::object, nsGkAtoms::embed);
+}
+
+bool
+Element::GetBindingURL(nsIDocument *aDocument, css::URLValue **aResult)
+{
+  if (!MayNeedToLoadXBLBinding(*aDocument, *this)) {
     *aResult = nullptr;
     return true;
   }
