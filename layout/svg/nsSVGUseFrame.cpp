@@ -5,7 +5,6 @@
 
 
 #include "nsSVGUseFrame.h"
-#include "nsContentUtils.h"
 
 #include "mozilla/dom/SVGUseElement.h"
 #include "SVGObserverUtils.h"
