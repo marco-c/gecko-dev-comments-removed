@@ -374,6 +374,7 @@ public:
 
     void Clip(const Rect& rect);
     void Clip(const gfxRect& rect); 
+    void SnappedClip(const gfxRect& rect); 
     void Clip(Path* aPath);
 
     void PopClip();

@@ -791,10 +791,8 @@ InstallLayerClipPreserves3D(gfxContext* aTarget, Layer* aLayer)
   transform *= oldTransform;
   aTarget->SetMatrix(transform);
 
-  aTarget->NewPath();
-  aTarget->SnappedRectangle(gfxRect(clipRect->X(), clipRect->Y(),
-                                    clipRect->Width(), clipRect->Height()));
-  aTarget->Clip();
+  aTarget->SnappedClip(gfxRect(clipRect->X(), clipRect->Y(),
+                               clipRect->Width(), clipRect->Height()));
 
   aTarget->SetMatrix(oldTransform);
 }
@@ -947,9 +945,7 @@ BasicLayerManager::PaintLayer(gfxContext* aTarget,
       
       
       
-      aTarget->NewPath();
-      aTarget->SnappedRectangle(ThebesRect(xformBounds));
-      aTarget->Clip();
+      aTarget->SnappedClip(ThebesRect(xformBounds));
       FlushGroup(paintLayerContext, needsClipToVisibleRegion);
     }
   }

@@ -301,6 +301,25 @@ gfxContext::Rectangle(const gfxRect& rect, bool snapToPixels)
   mPathBuilder->Close();
 }
 
+void
+gfxContext::SnappedClip(const gfxRect& rect)
+{
+  Rect rec = ToRect(rect);
+
+  gfxRect newRect(rect);
+  if (UserToDevicePixelSnapped(newRect, true)) {
+    gfxMatrix mat = ThebesMatrix(mTransform);
+    if (mat.Invert()) {
+      
+      rec = ToRect(mat.TransformBounds(newRect));
+    } else {
+      rec = Rect();
+    }
+  }
+
+  Clip(rec);
+}
+
 
 void
 gfxContext::Multiply(const gfxMatrix& matrix)
