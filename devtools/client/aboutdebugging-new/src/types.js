@@ -29,7 +29,7 @@ const runtimeTransportDetails = {
   port: PropTypes.number.isRequired,
 };
 
-const runtimeConnection = {
+const runtimeDetails = {
   
   client: PropTypes.object.isRequired,
 
@@ -73,7 +73,7 @@ const runtime = {
   id: PropTypes.string.isRequired,
 
   
-  connection: PropTypes.shape(runtimeConnection),
+  runtimeDetails: PropTypes.shape(runtimeDetails),
 
   
   
