@@ -620,16 +620,6 @@ BrowserElementParent.prototype = {
     return this._sendDOMRequest('execute-script', {script, options});
   },
 
-  
-
-
-  zoom: defineNoReturnMethod(function(zoom) {
-    zoom *= 100;
-    zoom = Math.min(getIntPref("zoom.maxPercent", 300), zoom);
-    zoom = Math.max(getIntPref("zoom.minPercent", 50), zoom);
-    this._sendAsyncMsg('zoom', {zoom: zoom / 100.0});
-  }),
-
   getWebManifest: defineDOMRequestMethod('get-web-manifest'),
   
 
