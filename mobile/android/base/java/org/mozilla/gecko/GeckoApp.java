@@ -1206,10 +1206,9 @@ public abstract class GeckoApp extends GeckoActivity
                 
                 if (!mIsRestoringActivity) {
                     getAppEventDispatcher().dispatch("Session:Restore", restoreMessage);
+                    
+                    getProfile().updateSessionFile(mShouldRestore);
                 }
-
-                
-                getProfile().updateSessionFile(mShouldRestore);
             }
         });
 
