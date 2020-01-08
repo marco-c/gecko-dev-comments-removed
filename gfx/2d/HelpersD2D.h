@@ -593,6 +593,8 @@ CreatePartialBitmapForSurface(DataSourceSurface *aSurface, const Matrix &aDestin
   
   
   
+  
+  
 
   int Bpp = BytesPerPixel(aSurface->GetFormat());
 

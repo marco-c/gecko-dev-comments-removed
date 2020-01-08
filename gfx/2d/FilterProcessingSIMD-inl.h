@@ -253,6 +253,8 @@ BlendAlphaOfFourPixels(i16x8_t s_rrrraaaa1234, i16x8_t d_rrrraaaa1234)
   
   
   
+  
+  
   i16x8_t zeroInterleavedWithSourceAlpha = simd::InterleaveHi16(simd::FromI16<i16x8_t>(0), s_rrrraaaa1234);
   i16x8_t fiveTenInterleavedWithDestAlpha = simd::InterleaveHi16(simd::FromI16<i16x8_t>(510), d_rrrraaaa1234);
   i16x8_t f1 = simd::Sub16(simd::FromI16<i16x8_t>(255), zeroInterleavedWithSourceAlpha);
@@ -518,11 +520,13 @@ ColorMatrixMultiply(i16x8_t p, i16x8_t rows_bg, i16x8_t rows_ra, const i32x4_t& 
   
   i16x8_t bg = simd::ShuffleHi16<1,0,1,0>(simd::ShuffleLo16<1,0,1,0>(p));
   
+  
   i32x4_t prodsum_bg = simd::MulAdd16x8x2To32x4(bg, rows_bg);
   sum = simd::Add32(sum, prodsum_bg);
 
   
   i16x8_t ra = simd::ShuffleHi16<3,2,3,2>(simd::ShuffleLo16<3,2,3,2>(p));
+  
   
   i32x4_t prodsum_ra = simd::MulAdd16x8x2To32x4(ra, rows_ra);
   sum = simd::Add32(sum, prodsum_ra);
