@@ -320,8 +320,7 @@ class MOZ_STACK_CLASS TryNoteIter {
 
   void settle() {
     for (; tn_ != tnEnd_; ++tn_) {
-      
-      if (pcOffset_ - tn_->start >= tn_->length) {
+      if (!pcInRange()) {
         continue;
       }
 
@@ -344,8 +343,44 @@ class MOZ_STACK_CLASS TryNoteIter {
 
 
 
-      if (tn_->stackDepth <= getStackDepth_()) {
-        break;
+
+
+
+
+
+
+      if (tn_->kind == JSTRY_FOR_OF_ITERCLOSE) {
+        do {
+          ++tn_;
+          MOZ_ASSERT(tn_ != tnEnd_);
+          MOZ_ASSERT_IF(pcInRange(), tn_->kind != JSTRY_FOR_OF_ITERCLOSE);
+        } while (!(pcInRange() && tn_->kind == JSTRY_FOR_OF));
+
+        
+        ++tn_;
+      }
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      if (tn_ == tnEnd_ || tn_->stackDepth <= getStackDepth_()) {
+        return;
       }
     }
   }
@@ -373,6 +408,15 @@ class MOZ_STACK_CLASS TryNoteIter {
     settle();
   }
 
+  bool pcInRange() const {
+    
+    
+    uint32_t offset = pcOffset_;
+    uint32_t start = tn_->start;
+    uint32_t length = tn_->length;
+    return offset - start < length;
+
+  }
   bool done() const { return tn_ == tnEnd_; }
   const JSTryNote* operator*() const { return tn_; }
 };

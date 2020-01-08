@@ -1120,29 +1120,14 @@ static void UnwindIteratorsForUncatchableException(
     JSContext* cx, const InterpreterRegs& regs) {
   
   
-  bool inForOfIterClose = false;
   for (TryNoteIterInterpreter tni(cx, regs); !tni.done(); ++tni) {
     const JSTryNote* tn = *tni;
     switch (tn->kind) {
       case JSTRY_FOR_IN: {
-        
-        if (inForOfIterClose) {
-          break;
-        }
-
         Value* sp = regs.spForStackDepth(tn->stackDepth);
         UnwindIteratorForUncatchableException(&sp[-1].toObject());
         break;
       }
-
-      case JSTRY_FOR_OF_ITERCLOSE:
-        inForOfIterClose = true;
-        break;
-
-      case JSTRY_FOR_OF:
-        inForOfIterClose = false;
-        break;
-
       default:
         break;
     }
@@ -1159,7 +1144,6 @@ enum HandleErrorContinuation {
 static HandleErrorContinuation ProcessTryNotes(JSContext* cx,
                                                EnvironmentIter& ei,
                                                InterpreterRegs& regs) {
-  bool inForOfIterClose = false;
   for (TryNoteIterInterpreter tni(cx, regs); !tni.done(); ++tni) {
     const JSTryNote* tn = *tni;
 
@@ -1170,50 +1154,14 @@ static HandleErrorContinuation ProcessTryNotes(JSContext* cx,
           break;
         }
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (inForOfIterClose) {
-          break;
-        }
         SettleOnTryNote(cx, tn, ei, regs);
         return CatchContinuation;
 
       case JSTRY_FINALLY:
-        
-        if (inForOfIterClose) {
-          break;
-        }
         SettleOnTryNote(cx, tn, ei, regs);
         return FinallyContinuation;
 
       case JSTRY_FOR_IN: {
-        
-        
-        
-        if (inForOfIterClose) {
-          break;
-        }
-
         
         DebugOnly<jsbytecode*> pc =
             regs.fp()->script()->offsetToPC(tn->start + tn->length);
@@ -1225,11 +1173,6 @@ static HandleErrorContinuation ProcessTryNotes(JSContext* cx,
       }
 
       case JSTRY_DESTRUCTURING: {
-        
-        if (inForOfIterClose) {
-          break;
-        }
-
         
         
         MOZ_ASSERT(tn->stackDepth > 1);
@@ -1246,17 +1189,11 @@ static HandleErrorContinuation ProcessTryNotes(JSContext* cx,
         break;
       }
 
-      case JSTRY_FOR_OF_ITERCLOSE:
-        inForOfIterClose = true;
-        break;
-
       case JSTRY_FOR_OF:
-        inForOfIterClose = false;
-        break;
-
       case JSTRY_LOOP:
         break;
 
+      
       default:
         MOZ_CRASH("Invalid try note");
     }
