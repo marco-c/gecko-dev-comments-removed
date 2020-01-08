@@ -306,6 +306,10 @@ FindInflectionApproximationRange(BezierControlPoints aControlPoints,
     PointD cp41 = aControlPoints.mCP4 - aControlPoints.mCP1;
 
     if (cp21.x == 0. && cp21.y == 0.) {
+      cp21 = aControlPoints.mCP3 - aControlPoints.mCP1;
+    }
+
+    if (cp21.x == 0. && cp21.y == 0.) {
       
 
       
