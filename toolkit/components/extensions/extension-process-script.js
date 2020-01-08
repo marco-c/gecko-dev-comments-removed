@@ -89,6 +89,14 @@ class ExtensionGlobal {
         return;
     }
 
+    
+    
+    
+    let policy = WebExtensionPolicy.getByID(recipient.extensionId);
+    if (!policy.canAccessWindow(this.global.content)) {
+      throw new Error("Extension cannot access window");
+    }
+
     return ExtensionContent.receiveMessage(this.global, messageName, target, data, recipient);
   }
 }

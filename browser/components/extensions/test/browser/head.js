@@ -29,6 +29,7 @@
 
 
 
+
 const {PromiseTestUtils} = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", {});
 PromiseTestUtils.whitelistRejectionsGlobally(/Message manager disconnected/);
 PromiseTestUtils.whitelistRejectionsGlobally(/No matching message handler/);
@@ -535,4 +536,37 @@ function navigateTab(tab, url) {
 
 function historyPushState(tab, url) {
   return locationChange(tab, url, (url) => { content.history.pushState(null, null, url); });
+}
+
+async function getIncognitoWindow(url) {
+  
+  
+
+  
+  
+  function background(expectUrl) {
+    browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+      if (changeInfo.status === "complete" && tab.url === expectUrl) {
+        browser.test.sendMessage("data", {tabId, windowId: tab.windowId});
+      }
+    });
+  }
+
+  let windowWatcher = ExtensionTestUtils.loadExtension({
+    manifest: {
+      "permissions": ["tabs"],
+    },
+    background: `(${background})("${url}")`,
+  });
+
+  await windowWatcher.startup();
+  let data = windowWatcher.awaitMessage("data");
+
+  let win = await BrowserTestUtils.openNewBrowserWindow({private: true, url});
+  let browser = win.getBrowser().selectedBrowser;
+  BrowserTestUtils.loadURI(browser, url);
+
+  let details = await data;
+  await windowWatcher.unload();
+  return {win, details};
 }
