@@ -1358,6 +1358,15 @@ ScrollFrameHelper::WantAsyncScroll() const
   ScrollStyles styles = GetScrollStylesFromFrame();
   nscoord oneDevPixel = GetScrolledFrame()->PresContext()->AppUnitsPerDevPixel();
   nsRect scrollRange = GetScrollRange();
+
+  
+  
+  
+  
+  if (!GetScrollRangeForClamping().IsEqualInterior(scrollRange)) {
+    return true;
+  }
+
   bool isVScrollable = (scrollRange.height >= oneDevPixel) &&
                        (styles.mVertical != NS_STYLE_OVERFLOW_HIDDEN);
   bool isHScrollable = (scrollRange.width >= oneDevPixel) &&
