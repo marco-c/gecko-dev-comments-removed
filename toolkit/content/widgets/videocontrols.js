@@ -1113,6 +1113,9 @@ this.VideoControlsImplPageWidget = class {
           options: {
             easing: "ease",
             duration: 400,
+             
+             
+             fill: "both",
           },
         },
         controlBar: {
@@ -1123,6 +1126,7 @@ this.VideoControlsImplPageWidget = class {
           options: {
             easing: "ease",
             duration: 200,
+            fill: "both",
           },
         },
         statusOverlay: {
@@ -1133,6 +1137,7 @@ this.VideoControlsImplPageWidget = class {
           ],
           options: {
             duration: 1050,
+            fill: "both",
           },
         },
       },
@@ -1203,7 +1208,7 @@ this.VideoControlsImplPageWidget = class {
               case "finished":
                 
                 
-                animation.updatePlaybackRate(fadeIn ? 1 : -1);
+                animation.playbackRate = fadeIn ? 1 : -1;
                 animation.play();
                 break;
               case "running":
@@ -1222,13 +1227,20 @@ this.VideoControlsImplPageWidget = class {
           animation.cancel();
           finishedPromise = Promise.resolve();
         }
-        finishedPromise.then(() => {
+        finishedPromise.then(animation => {
           if (element == this.controlBar) {
             this.onControlBarAnimationFinished();
           }
           element.classList.remove(fadeIn ? "fadein" : "fadeout");
           if (!fadeIn) {
             element.hidden = true;
+          }
+          if (animation) {
+            
+            
+            
+            
+            animation.cancel();
           }
         }, () => {  });
       },
