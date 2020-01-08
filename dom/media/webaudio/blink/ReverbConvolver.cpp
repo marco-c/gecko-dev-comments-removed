@@ -64,7 +64,7 @@ ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
       m_accumulationBuffer(impulseResponseLength + WEBAUDIO_BLOCK_SIZE),
       m_inputBuffer(InputBufferSize),
       m_backgroundThread("ConvolverWorker"),
-      m_backgroundThreadCondition(&m_backgroundThreadLock),
+      m_backgroundThreadMonitor("ConvolverMonitor"),
       m_useBackgroundThreads(useBackgroundThreads),
       m_wantsToExit(false),
       m_moreInputBuffered(false) {
@@ -166,9 +166,9 @@ ReverbConvolver::~ReverbConvolver() {
 
     
     {
-      AutoLock locker(m_backgroundThreadLock);
+      MonitorAutoLock locker(m_backgroundThreadMonitor);
       m_moreInputBuffered = true;
-      m_backgroundThreadCondition.Signal();
+      m_backgroundThreadMonitor.Notify();
     }
 
     m_backgroundThread.Stop();
@@ -200,7 +200,6 @@ size_t ReverbConvolver::sizeOfIncludingThis(
   
   
   
-  
   return amount;
 }
 
@@ -209,9 +208,9 @@ void ReverbConvolver::backgroundThreadEntry() {
     
     m_moreInputBuffered = false;
     {
-      AutoLock locker(m_backgroundThreadLock);
+      MonitorAutoLock locker(m_backgroundThreadMonitor);
       while (!m_moreInputBuffered && !m_wantsToExit)
-        m_backgroundThreadCondition.Wait();
+        m_backgroundThreadMonitor.Wait();
     }
 
     
@@ -258,10 +257,10 @@ void ReverbConvolver::process(const float* sourceChannelData,
   
   
   
-  if (m_backgroundThreadLock.Try()) {
+  if (m_backgroundThreadMonitor.TryLock()) {
     m_moreInputBuffered = true;
-    m_backgroundThreadCondition.Signal();
-    m_backgroundThreadLock.Release();
+    m_backgroundThreadMonitor.Notify();
+    m_backgroundThreadMonitor.Unlock();
   }
 }
 
