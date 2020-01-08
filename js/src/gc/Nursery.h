@@ -509,7 +509,14 @@ class Nursery
         return *chunks_[index];
     }
 
-    void setCurrentChunk(unsigned chunkno);
+    
+
+
+
+
+
+
+    void setCurrentChunk(unsigned chunkno, bool fullPoison = false);
     void setStartPosition();
 
     
