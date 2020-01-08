@@ -1341,12 +1341,17 @@ function getFunctionParameterNames(path) {
 
 function extractSymbol(path, symbols) {
   if ((0, _helpers.isFunction)(path)) {
+    const name = (0, _getFunctionName2.default)(path.node, path.parent);
     symbols.functions.push({
-      name: (0, _getFunctionName2.default)(path.node, path.parent),
+      name,
       klass: (0, _inferClassName.inferClassName)(path),
       location: path.node.loc,
       parameterNames: getFunctionParameterNames(path),
-      identifier: path.node.id
+      identifier: path.node.id,
+      
+      
+      
+      index: symbols.functions.filter(f => f.name === name).length
     });
   }
 

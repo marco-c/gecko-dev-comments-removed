@@ -31,11 +31,11 @@ type BreakpointSyncData = {
 };
 
 async function makeScopedLocation(
-  { name, offset }: ASTLocation,
+  { name, offset, index }: ASTLocation,
   location: SourceLocation,
   source
 ) {
-  const scope = await findScopeByName(source, name);
+  const scope = await findScopeByName(source, name, index);
   
   
   
