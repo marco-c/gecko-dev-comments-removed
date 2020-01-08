@@ -2,7 +2,6 @@ ChromeUtils.import("resource://gre/modules/Preferences.jsm", this);
 ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm", this);
 ChromeUtils.import("resource://testing-common/TestUtils.jsm", this);
 ChromeUtils.import("resource://normandy-content/AboutPages.jsm", this);
-ChromeUtils.import("resource://normandy/lib/Addons.jsm", this);
 ChromeUtils.import("resource://normandy/lib/SandboxManager.jsm", this);
 ChromeUtils.import("resource://normandy/lib/NormandyDriver.jsm", this);
 ChromeUtils.import("resource://normandy/lib/NormandyApi.jsm", this);
@@ -71,21 +70,30 @@ this.withWebExtension = function(manifestOverrides = {}) {
   };
 };
 
-this.withInstalledWebExtension = function(manifestOverrides = {}) {
+this.withCorruptedWebExtension = function() {
+  
+  return this.withWebExtension({ manifest_version: -1 });
+};
+
+this.withInstalledWebExtension = function(manifestOverrides = {}, expectUninstall=false) {
   return function wrapper(testFunction) {
     return decorate(
       withWebExtension(manifestOverrides),
       async function wrappedTestFunction(...args) {
         const [id, file] = args[args.length - 1];
         const startupPromise = AddonTestUtils.promiseWebExtensionStartup(id);
-        const url = Services.io.newFileURI(file).spec;
-        await Addons.install(url);
+        const addonInstall = await AddonManager.getInstallForFile(file, "application/x-xpinstall");
+        await addonInstall.install();
         await startupPromise;
+
         try {
           await testFunction(...args);
         } finally {
-          if (await Addons.get(id)) {
-            await Addons.uninstall(id);
+          const addonToUninstall = await AddonManager.getAddonByID(id);
+          if (addonToUninstall) {
+            await addonToUninstall.uninstall();
+          } else {
+            ok(expectUninstall, "Add-on should not be unexpectedly uninstalled during test");
           }
         }
       }
@@ -353,4 +361,12 @@ this.withSendEventStub = function(testFunction) {
       stub.restore();
     }
   };
+};
+
+let _recipeId = 1;
+this.recipeFactory = function(overrides = {}) {
+  return Object.assign({
+    id: _recipeId++,
+    arguments: overrides.arguments || {},
+  }, overrides);
 };
