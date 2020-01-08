@@ -4,12 +4,10 @@ ChromeUtils.defineModuleGetter(this, "ExtensionStorage",
                                "resource://gre/modules/ExtensionStorage.jsm");
 ChromeUtils.defineModuleGetter(this, "ExtensionStorageIDB",
                                "resource://gre/modules/ExtensionStorageIDB.jsm");
+ChromeUtils.defineModuleGetter(this, "ExtensionTelemetry",
+                               "resource://gre/modules/ExtensionTelemetry.jsm");
 ChromeUtils.defineModuleGetter(this, "Services",
                                "resource://gre/modules/Services.jsm");
-
-var {
-  ExtensionTelemetry,
-} = ExtensionUtils;
 
 
 async function measureOp(telemetryMetric, extension, fn) {
