@@ -34,6 +34,7 @@ function makeBillingAddress() {
     "USA", 
     addressLine, 
     "CA", 
+    "CA", 
     "San Bruno", 
     "", 
     "94066", 
