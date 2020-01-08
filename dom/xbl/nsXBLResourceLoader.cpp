@@ -4,7 +4,6 @@
 
 
 
-#include "nsCSSFrameConstructor.h"
 #include "nsTArray.h"
 #include "nsString.h"
 #include "nsIDocument.h"
