@@ -42,30 +42,32 @@ const CACHE_LINE: usize = 64;
 
 const CACHE_LINE_MASK: usize = CACHE_LINE - 1;
 
+
+
 #[inline(always)]
-fn starts_with_ascii(buffer: &[u8]) -> bool {
+fn long_string_starts_with_ascii(buffer: &[u8]) -> bool {
     
     
-    let bound = if buffer.len() <= CACHE_LINE {
-        buffer.len()
-    } else {
-        CACHE_LINE - ((buffer.as_ptr() as usize) & CACHE_LINE_MASK)
-    };
+    if buffer.len() <= CACHE_LINE {
+        return false;
+    }
+    let bound = CACHE_LINE - ((buffer.as_ptr() as usize) & CACHE_LINE_MASK);
     is_ascii(&buffer[..bound])
 }
 
+
+
 #[inline(always)]
-fn starts_with_basic_latin(buffer: &[u16]) -> bool {
+fn long_string_stars_with_basic_latin(buffer: &[u16]) -> bool {
     
     
     
     
     
-    let bound = if buffer.len() <= CACHE_LINE {
-        buffer.len()
-    } else {
-        (CACHE_LINE * 2 - ((buffer.as_ptr() as usize) & CACHE_LINE_MASK)) / 2
-    };
+    if buffer.len() <= CACHE_LINE {
+        return false;
+    }
+    let bound = (CACHE_LINE * 2 - ((buffer.as_ptr() as usize) & CACHE_LINE_MASK)) / 2;
     is_basic_latin(&buffer[..bound])
 }
 
@@ -118,7 +120,8 @@ macro_rules! shrinking_conversion {
                 self.bulk_write(old_len.checked_add(needed).ok_or(())?, old_len, false)?
             };
             let written = $convert(other, &mut handle.as_mut_slice()[old_len..]);
-            Ok(handle.finish(old_len + written, true))
+            let new_len = old_len + written;
+            Ok(handle.finish(new_len, new_len > CACHE_LINE))
         }
      )
 }
@@ -315,7 +318,20 @@ impl nsACString {
     ) -> Result<BulkWriteOk, ()> {
         
         
-        let (filled, num_ascii, mut handle) = if starts_with_basic_latin(other) {
+        
+        
+        let worst_case_needed = if let Some(inline_capacity) = self.inline_capacity() {
+            let worst_case = times_three_plus_one(other.len()).ok_or(())?;
+            if worst_case <= inline_capacity {
+                Some(worst_case)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        let (filled, num_ascii, mut handle) = if worst_case_needed.is_none() &&
+                                                 long_string_stars_with_basic_latin(other) {
             let new_len_with_ascii = old_len.checked_add(other.len()).ok_or(())?;
             let mut handle = unsafe { self.bulk_write(new_len_with_ascii, old_len, false)? };
             let num_ascii = copy_basic_latin_to_ascii(other, &mut handle.as_mut_slice()[old_len..]);
@@ -332,7 +348,11 @@ impl nsACString {
             (filled, num_ascii, handle)
         } else {
             
-            let needed = times_three_plus_one(other.len()).ok_or(())?;
+            let needed = if let Some(n) = worst_case_needed {
+                n
+            } else {
+                times_three_plus_one(other.len()).ok_or(())?
+            };
             let new_len = old_len.checked_add(needed).ok_or(())?;
             let mut handle = unsafe { self.bulk_write(new_len, old_len, false)? };
             (old_len, 0, handle)
@@ -568,31 +588,47 @@ impl nsACString {
                 (&mut handle.as_mut_slice()[old_len..filled]).copy_from_slice(&other[..num_ascii]);
             }
             (filled, num_ascii, handle)
-        } else if starts_with_ascii(other) {
-            
-            
-            
-            let new_len_with_ascii = old_len.checked_add(other.len()).ok_or(())?;
-            let mut handle = unsafe { self.bulk_write(new_len_with_ascii, old_len, false)? };
-            let num_ascii = copy_ascii_to_ascii(other, &mut handle.as_mut_slice()[old_len..]);
-            let left = other.len() - num_ascii;
-            let filled = old_len + num_ascii;
-            if left == 0 {
-                
-                return Ok(handle.finish(filled, true));
-            }
-            let needed = left.checked_mul(2).ok_or(())?;
-            let new_len = filled.checked_add(needed).ok_or(())?;
-            unsafe {
-                handle.restart_bulk_write(new_len, filled, false)?;
-            }
-            (filled, num_ascii, handle)
         } else {
-            
-            let needed = other.len().checked_mul(2).ok_or(())?;
-            let new_len = old_len.checked_add(needed).ok_or(())?;
-            let mut handle = unsafe { self.bulk_write(new_len, old_len, false)? };
-            (old_len, 0, handle)
+            let worst_case_needed = if let Some(inline_capacity) = self.inline_capacity() {
+                let worst_case = other.len().checked_mul(2).ok_or(())?;
+                if worst_case <= inline_capacity {
+                    Some(worst_case)
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            if worst_case_needed.is_none() && long_string_starts_with_ascii(other) {
+                
+                
+                
+                let new_len_with_ascii = old_len.checked_add(other.len()).ok_or(())?;
+                let mut handle = unsafe { self.bulk_write(new_len_with_ascii, old_len, false)? };
+                let num_ascii = copy_ascii_to_ascii(other, &mut handle.as_mut_slice()[old_len..]);
+                let left = other.len() - num_ascii;
+                let filled = old_len + num_ascii;
+                if left == 0 {
+                    
+                    return Ok(handle.finish(filled, true));
+                }
+                let needed = left.checked_mul(2).ok_or(())?;
+                let new_len = filled.checked_add(needed).ok_or(())?;
+                unsafe {
+                    handle.restart_bulk_write(new_len, filled, false)?;
+                }
+                (filled, num_ascii, handle)
+            } else {
+                
+                let needed = if let Some(n) = worst_case_needed {
+                    n
+                } else {
+                    other.len().checked_mul(2).ok_or(())?
+                };
+                let new_len = old_len.checked_add(needed).ok_or(())?;
+                let mut handle = unsafe { self.bulk_write(new_len, old_len, false)? };
+                (old_len, 0, handle)
+            }
         };
         let written =
             convert_latin1_to_utf8(&other[num_ascii..], &mut handle.as_mut_slice()[filled..]);
