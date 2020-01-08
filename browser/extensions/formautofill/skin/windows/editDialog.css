@@ -3,10 +3,10 @@
 
 
 
-#controlsContainer > #save {
+#save {
   order: 0;
 }
 
-#controlsContainer > #cancel {
+#cancel {
   order: 1;
 }
