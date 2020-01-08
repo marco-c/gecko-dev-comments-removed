@@ -86,11 +86,6 @@ public:
   
 
 
-  void SyncTo(WebrtcAudioConduit *aConduit);
-
-  
-
-
 
 
 
@@ -249,6 +244,8 @@ public:
   bool UnsetRemoteSSRC(uint32_t ssrc) override;
   bool SetLocalCNAME(const char* cname) override;
   bool SetLocalMID(const std::string& mid) override;
+
+  void SetSyncGroup(const std::string& group) override;
 
   bool GetRemoteSSRCLocked(unsigned int* ssrc);
   bool SetRemoteSSRCLocked(unsigned int ssrc);

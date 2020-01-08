@@ -330,18 +330,20 @@ PeerConnectionMedia::UpdateMediaPipelines()
   WebrtcGmpPCHandleSetter setter(mParentHandle);
 
   for (RefPtr<TransceiverImpl>& transceiver : mTransceivers) {
-    nsresult rv = transceiver->UpdateConduit();
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
+    transceiver->ResetSync();
+  }
 
+  for (RefPtr<TransceiverImpl>& transceiver : mTransceivers) {
     if (!transceiver->IsVideo()) {
-      rv = transceiver->SyncWithMatchingVideoConduits(mTransceivers);
+      nsresult rv = transceiver->SyncWithMatchingVideoConduits(mTransceivers);
       if (NS_FAILED(rv)) {
         return rv;
       }
-      
-      
+    }
+
+    nsresult rv = transceiver->UpdateConduit();
+    if (NS_FAILED(rv)) {
+      return rv;
     }
   }
 
