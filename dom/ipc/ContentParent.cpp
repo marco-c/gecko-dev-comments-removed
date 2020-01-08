@@ -2026,6 +2026,9 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
   
   
 
+  size_t prefMapSize;
+  auto prefMapHandle = Preferences::EnsureSnapshot(&prefMapSize).ClonePlatformHandle();
+
   
   nsAutoCStringN<1024> prefs;
   Preferences::SerializePreferences(prefs);
@@ -2046,14 +2049,22 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
   
   memcpy(static_cast<char*>(shm.memory()), prefs.get(), prefs.Length());
 
+  
+  
+  auto formatPtrArg = [] (auto arg) {
+    return nsPrintfCString("%zu", uintptr_t(arg));
+  };
+
 #if defined(XP_WIN)
   
   
   HANDLE prefsHandle = shm.handle();
   mSubprocess->AddHandleToShare(prefsHandle);
+  mSubprocess->AddHandleToShare(prefMapHandle.get());
   extraArgs.push_back("-prefsHandle");
-  extraArgs.push_back(
-    nsPrintfCString("%zu", reinterpret_cast<uintptr_t>(prefsHandle)).get());
+  extraArgs.push_back(formatPtrArg(prefsHandle).get());
+  extraArgs.push_back("-prefMapHandle");
+  extraArgs.push_back(formatPtrArg(prefMapHandle.get()).get());
 #else
   
   
@@ -2063,11 +2074,15 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
   
   
   mSubprocess->AddFdToRemap(shm.handle().fd, kPrefsFileDescriptor);
+  mSubprocess->AddFdToRemap(prefMapHandle.get(), kPrefMapFileDescriptor);
 #endif
 
   
   extraArgs.push_back("-prefsLen");
-  extraArgs.push_back(nsPrintfCString("%zu", uintptr_t(prefs.Length())).get());
+  extraArgs.push_back(formatPtrArg(prefs.Length()).get());
+
+  extraArgs.push_back("-prefMapSize");
+  extraArgs.push_back(formatPtrArg(prefMapSize).get());
 
   
   
