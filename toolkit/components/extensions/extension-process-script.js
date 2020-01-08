@@ -172,7 +172,9 @@ DocumentManager = {
   
   
   earlyInit() {
-    Services.obs.addObserver(this, "tab-content-frameloader-created"); 
+    
+    Services.obs.addObserver((subject) => this.initGlobal(subject),
+                             "tab-content-frameloader-created");
   },
 
   
@@ -185,40 +187,7 @@ DocumentManager = {
     });
   },
 
-  initExtension(policy) {
-    this.injectExtensionScripts(policy);
-  },
-
   
-
-  observe(subject, topic, data) {
-    if (topic == "tab-content-frameloader-created") {
-      this.initGlobal(subject);
-    }
-  },
-
-  
-
-  injectExtensionScripts(policy) {
-    for (let window of this.enumerateWindows()) {
-      let runAt = {document_start: [], document_end: [], document_idle: []};
-
-      for (let script of policy.contentScripts) {
-        if (script.matchesWindow(window)) {
-          runAt[script.runAt].push(script);
-        }
-      }
-
-      let inject = matcher => contentScripts.get(matcher).injectInto(window);
-      let injectAll = matchers => Promise.all(matchers.map(inject));
-
-      
-      
-      injectAll(runAt.document_start)
-        .then(() => injectAll(runAt.document_end))
-        .then(() => injectAll(runAt.document_idle));
-    }
-  },
 
   
 
@@ -263,23 +232,6 @@ DocumentManager = {
       
       
       ExtensionContent.initExtensionContext(extension, window);
-    }
-  },
-
-  
-
-  * enumerateWindows(docShell) {
-    if (docShell) {
-      let enum_ = docShell.getDocShellEnumerator(docShell.typeContent,
-                                                 docShell.ENUMERATE_FORWARDS);
-
-      for (let docShell of XPCOMUtils.IterSimpleEnumerator(enum_, Ci.nsIDocShell)) {
-        yield docShell.domWindow;
-      }
-    } else {
-      for (let global of this.globals.keys()) {
-        yield* this.enumerateWindows(global.docShell);
-      }
     }
   },
 };
@@ -370,7 +322,7 @@ ExtensionManager = {
     }
     let policy = this.initExtensionPolicy(data);
 
-    DocumentManager.initExtension(policy);
+    policy.injectContentScripts();
   },
 
   receiveMessage({name, data}) {
@@ -497,9 +449,7 @@ ExtensionProcessScript.prototype = {
   },
 
   loadContentScript(contentScript, window) {
-    if (DocumentManager.globals.has(window.docShell.messageManager)) {
-      contentScripts.get(contentScript).injectInto(window);
-    }
+    return contentScripts.get(contentScript).injectInto(window);
   },
 };
 
