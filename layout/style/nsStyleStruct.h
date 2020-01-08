@@ -606,30 +606,27 @@ struct nsStyleImageLayers {
     Size mSize;
     StyleGeometryBox mClip;
     MOZ_INIT_OUTSIDE_CTOR StyleGeometryBox mOrigin;
+
+    
+    
+    
     StyleImageLayerAttachment mAttachment;
-    
-    
+
     
     
     
     uint8_t mBlendMode;  
-                         
-                         
-                         
-                         
-                         
+
+    
+    
+    
     uint8_t mComposite;  
-                         
-                         
-                         
-                         
-                         
-    uint8_t mMaskMode;   
-                         
-                         
-                         
-                         
-                         
+
+    
+    
+    
+    uint8_t mMaskMode;  
+
     Repeat mRepeat;
 
     
@@ -662,9 +659,17 @@ struct nsStyleImageLayers {
 
   
   
-  uint32_t mAttachmentCount, mClipCount, mOriginCount, mRepeatCount,
-      mPositionXCount, mPositionYCount, mImageCount, mSizeCount, mMaskModeCount,
-      mBlendModeCount, mCompositeCount;
+  uint32_t mAttachmentCount;
+  uint32_t mClipCount;
+  uint32_t mOriginCount;
+  uint32_t mRepeatCount;
+  uint32_t mPositionXCount;
+  uint32_t mPositionYCount;
+  uint32_t mImageCount;
+  uint32_t mSizeCount;
+  uint32_t mMaskModeCount;
+  uint32_t mBlendModeCount;
+  uint32_t mCompositeCount;
 
   
   
@@ -1945,15 +1950,17 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   nsStyleCoord mChildPerspective;      
   nsStyleCoord mPerspectiveOrigin[2];  
 
-  nsStyleCoord
-      mVerticalAlign;  
+  nsStyleCoord mVerticalAlign;  
+                                
 
   nsStyleAutoArray<mozilla::StyleTransition> mTransitions;
 
   
   
-  uint32_t mTransitionTimingFunctionCount, mTransitionDurationCount,
-      mTransitionDelayCount, mTransitionPropertyCount;
+  uint32_t mTransitionTimingFunctionCount;
+  uint32_t mTransitionDurationCount;
+  uint32_t mTransitionDelayCount;
+  uint32_t mTransitionPropertyCount;
 
   nsCSSPropertyID GetTransitionProperty(uint32_t aIndex) const {
     return mTransitions[aIndex % mTransitionPropertyCount].GetProperty();
@@ -1980,10 +1987,14 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
 
   
   
-  uint32_t mAnimationTimingFunctionCount, mAnimationDurationCount,
-      mAnimationDelayCount, mAnimationNameCount, mAnimationDirectionCount,
-      mAnimationFillModeCount, mAnimationPlayStateCount,
-      mAnimationIterationCountCount;
+  uint32_t mAnimationTimingFunctionCount;
+  uint32_t mAnimationDurationCount;
+  uint32_t mAnimationDelayCount;
+  uint32_t mAnimationNameCount;
+  uint32_t mAnimationDirectionCount;
+  uint32_t mAnimationFillModeCount;
+  uint32_t mAnimationPlayStateCount;
+  uint32_t mAnimationIterationCountCount;
 
   nsAtom* GetAnimationName(uint32_t aIndex) const {
     return mAnimations[aIndex % mAnimationNameCount].GetName();

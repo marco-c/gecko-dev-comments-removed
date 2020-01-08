@@ -381,42 +381,44 @@ class WritingMode {
     
     
     
+    
     static const LogicalSide kPhysicalToLogicalSides[][4] = {
-        
-        
-        {eLogicalSideBStart, eLogicalSideIEnd, eLogicalSideBEnd,
-         eLogicalSideIStart},  
-        {eLogicalSideIStart, eLogicalSideBStart, eLogicalSideIEnd,
-         eLogicalSideBEnd},  
-        {eLogicalSideBStart, eLogicalSideIStart, eLogicalSideBEnd,
-         eLogicalSideIEnd},  
-        {eLogicalSideIEnd, eLogicalSideBStart, eLogicalSideIStart,
-         eLogicalSideBEnd},  
-        {eLogicalSideBEnd, eLogicalSideIStart, eLogicalSideBStart,
-         eLogicalSideIEnd},  
-        {eLogicalSideIStart, eLogicalSideBEnd, eLogicalSideIEnd,
-         eLogicalSideBStart},  
-        {eLogicalSideBEnd, eLogicalSideIEnd, eLogicalSideBStart,
-         eLogicalSideIStart},  
-        {eLogicalSideIEnd, eLogicalSideBEnd, eLogicalSideIStart,
-         eLogicalSideBStart},  
-        {eLogicalSideBStart, eLogicalSideIEnd, eLogicalSideBEnd,
-         eLogicalSideIStart},  
-        {eLogicalSideIStart, eLogicalSideBStart, eLogicalSideIEnd,
-         eLogicalSideBEnd},  
-        {eLogicalSideBStart, eLogicalSideIStart, eLogicalSideBEnd,
-         eLogicalSideIEnd},  
-        {eLogicalSideIEnd, eLogicalSideBStart, eLogicalSideIStart,
-         eLogicalSideBEnd},  
-        {eLogicalSideBEnd, eLogicalSideIEnd, eLogicalSideBStart,
-         eLogicalSideIStart},  
-        {eLogicalSideIStart, eLogicalSideBEnd, eLogicalSideIEnd,
-         eLogicalSideBStart},  
-        {eLogicalSideBEnd, eLogicalSideIStart, eLogicalSideBStart,
-         eLogicalSideIEnd},  
-        {eLogicalSideIEnd, eLogicalSideBEnd, eLogicalSideIStart,
-         eLogicalSideBStart},  
+      
+      
+      { eLogicalSideBStart, eLogicalSideIEnd,
+        eLogicalSideBEnd,   eLogicalSideIStart },  
+      { eLogicalSideIStart, eLogicalSideBStart,
+        eLogicalSideIEnd,   eLogicalSideBEnd   },  
+      { eLogicalSideBStart, eLogicalSideIStart,
+        eLogicalSideBEnd,   eLogicalSideIEnd   },  
+      { eLogicalSideIEnd,   eLogicalSideBStart,
+        eLogicalSideIStart, eLogicalSideBEnd   },  
+      { eLogicalSideBEnd,   eLogicalSideIStart,
+        eLogicalSideBStart, eLogicalSideIEnd   },  
+      { eLogicalSideIStart, eLogicalSideBEnd,
+        eLogicalSideIEnd,   eLogicalSideBStart },  
+      { eLogicalSideBEnd,   eLogicalSideIEnd,
+        eLogicalSideBStart, eLogicalSideIStart },  
+      { eLogicalSideIEnd,   eLogicalSideBEnd,
+        eLogicalSideIStart, eLogicalSideBStart },  
+      { eLogicalSideBStart, eLogicalSideIEnd,
+        eLogicalSideBEnd,   eLogicalSideIStart },  
+      { eLogicalSideIStart, eLogicalSideBStart,
+        eLogicalSideIEnd,   eLogicalSideBEnd   },  
+      { eLogicalSideBStart, eLogicalSideIStart,
+        eLogicalSideBEnd,   eLogicalSideIEnd   },  
+      { eLogicalSideIEnd,   eLogicalSideBStart,
+        eLogicalSideIStart, eLogicalSideBEnd   },  
+      { eLogicalSideBEnd,   eLogicalSideIEnd,
+        eLogicalSideBStart, eLogicalSideIStart },  
+      { eLogicalSideIStart, eLogicalSideBEnd,
+        eLogicalSideIEnd,   eLogicalSideBStart },  
+      { eLogicalSideBEnd,   eLogicalSideIStart,
+        eLogicalSideBStart, eLogicalSideIEnd   },  
+      { eLogicalSideIEnd,   eLogicalSideBEnd,
+        eLogicalSideIStart, eLogicalSideBStart },  
     };
+    
 
     static_assert(eOrientationMask == 0x01 && eInlineFlowMask == 0x02 &&
                       eBlockFlowMask == 0x04 && eLineOrientMask == 0x08,
@@ -614,12 +616,13 @@ class WritingMode {
   enum Masks {
     
     eOrientationMask = 0x01,  
-    eInlineFlowMask =
-        0x02,  
-    eBlockFlowMask =
-        0x04,  
-    eLineOrientMask = 0x08,  
-    eBidiMask = 0x10,        
+    eInlineFlowMask = 0x02,   
+                              
+    eBlockFlowMask = 0x04,    
+                              
+    eLineOrientMask = 0x08,   
+    eBidiMask = 0x10,         
+
     
     
     

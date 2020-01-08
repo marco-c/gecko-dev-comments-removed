@@ -26,6 +26,8 @@ class nsTableColGroupFrame final : public nsContainerFrame {
 
 
 
+
+
   friend nsTableColGroupFrame* NS_NewTableColGroupFrame(
       nsIPresShell* aPresShell, ComputedStyle* aStyle);
 

@@ -20,14 +20,16 @@ class nsTableColFrame final : public nsSplittableFrame {
   enum {
     eWIDTH_SOURCE_NONE = 0,  
     eWIDTH_SOURCE_CELL = 1,  
-    eWIDTH_SOURCE_CELL_WITH_SPAN =
-        2  
+    eWIDTH_SOURCE_CELL_WITH_SPAN = 2  
+                                      
   };
 
   nsTableColType GetColType() const;
   void SetColType(nsTableColType aType);
 
   
+
+
 
 
 

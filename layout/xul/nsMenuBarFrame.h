@@ -51,8 +51,9 @@ class nsMenuBarFrame final : public nsBoxFrame, public nsMenuParent {
   virtual bool IsActive() override { return mIsActive; }
   virtual bool IsMenu() override { return false; }
   virtual bool IsOpen() override {
+    
     return true;
-  }  
+  }
 
   bool IsMenuOpen() { return mCurrentMenu && mCurrentMenu->IsOpen(); }
 

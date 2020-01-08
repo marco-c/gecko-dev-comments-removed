@@ -338,16 +338,15 @@ std::ostream& operator<<(std::ostream& aStream, const nsReflowStatus& aStatus);
 
 
 
-#define NS_FRAME_OVERFLOW_DELTA_MAX 0xfe  // max delta we can store
 
-#define NS_FRAME_OVERFLOW_NONE \
-  0x00000000  // there are no overflow rects;
-              
-              
 
-#define NS_FRAME_OVERFLOW_LARGE \
-  0x000000ff  // overflow is stored as a
-              
+#define NS_FRAME_OVERFLOW_DELTA_MAX 0xfe
+
+
+#define NS_FRAME_OVERFLOW_NONE 0x00000000
+
+
+#define NS_FRAME_OVERFLOW_LARGE 0x000000ff
 
 
 
@@ -385,14 +384,15 @@ typedef uint8_t nsBidiLevel;
 
 
 
+
 #define NSBIDI_DEFAULT_LTR 0xfe
 
 
 
 
 
-#define NSBIDI_DEFAULT_RTL 0xff
 
+#define NSBIDI_DEFAULT_RTL 0xff
 
 
 
@@ -618,6 +618,7 @@ class nsIFrame : public nsQueryFrame {
   }
 
   
+
 
 
   enum FrameSearchResult {
@@ -1147,13 +1148,13 @@ class nsIFrame : public nsQueryFrame {
 #define NS_DECLARE_FRAME_PROPERTY_RELEASABLE(prop, type) \
   NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(prop, type, ReleaseValue)
 
-#define NS_DECLARE_FRAME_PROPERTY_WITH_DTOR_NEVER_CALLED(prop, type)     \
-  static void AssertOnDestroyingProperty##prop(type*) {                  \
-    MOZ_ASSERT_UNREACHABLE("Frame property " #prop                       \
-                           " should never "                              \
-                           "be destroyed by the FrameProperties class"); \
-  }                                                                      \
-  NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(prop, type,                        \
+#define NS_DECLARE_FRAME_PROPERTY_WITH_DTOR_NEVER_CALLED(prop, type) \
+  static void AssertOnDestroyingProperty##prop(type*) {              \
+    MOZ_ASSERT_UNREACHABLE(                                          \
+        "Frame property " #prop                                      \
+        " should never be destroyed by the FrameProperties class");  \
+  }                                                                  \
+  NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(prop, type,                    \
                                       AssertOnDestroyingProperty##prop)
 
 #define NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(prop, type) \
@@ -2324,8 +2325,8 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-    eIApplyAutoMinSize =
-        1 << 4,  
+    eIApplyAutoMinSize = 1 << 4,  
+                                  
   };
 
   
@@ -3200,6 +3201,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
   virtual nsresult GetSelectionController(nsPresContext* aPresContext,
                                           nsISelectionController** aSelCon) = 0;
 
@@ -3215,6 +3217,7 @@ class nsIFrame : public nsQueryFrame {
   const nsFrameSelection* GetConstFrameSelection() const;
 
   
+
 
 
 
@@ -3239,6 +3242,13 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
+
+
+
+
+
+
   nsresult GetFrameFromDirection(nsDirection aDirection, bool aVisual,
                                  bool aJumpLines, bool aScrollViewStop,
                                  bool aForceEditableRegion,
@@ -3247,6 +3257,11 @@ class nsIFrame : public nsQueryFrame {
                                  bool* aOutMovedOverNonSelectableText);
 
   
+
+
+
+
+
 
 
 
@@ -4292,10 +4307,18 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
+
+
   virtual FrameSearchResult PeekOffsetNoAmount(bool aForward,
                                                int32_t* aOffset) = 0;
 
   
+
+
+
+
+
 
 
 

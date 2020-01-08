@@ -94,6 +94,8 @@ struct MOZ_STACK_CLASS nsPeekOffsetStruct {
   
   
   
+  
+  
   nsDirection mDirection;
 
   
@@ -104,10 +106,9 @@ struct MOZ_STACK_CLASS nsPeekOffsetStruct {
   
   
   
+  
   nsPoint mDesiredPos;
 
-  
-  
   
   
   
@@ -115,8 +116,10 @@ struct MOZ_STACK_CLASS nsPeekOffsetStruct {
 
   
   
+  
   bool mJumpLines;
 
+  
   
   
   bool mScrollViewStop;
@@ -143,6 +146,7 @@ struct MOZ_STACK_CLASS nsPeekOffsetStruct {
   
   nsCOMPtr<nsIContent> mResultContent;
 
+  
   
   
   nsIFrame* mResultFrame;
@@ -217,10 +221,21 @@ class nsFrameSelection final {
 
 
 
+
+
+
+
   void Init(nsIPresShell* aShell, nsIContent* aLimiter,
             bool aAccessibleCaretEnabled);
 
   
+
+
+
+
+
+
+
 
 
 
@@ -248,10 +263,23 @@ class nsFrameSelection final {
 
 
 
+
+
+
+
   
   void HandleDrag(nsIFrame* aFrame, const nsPoint& aPoint);
 
   
+
+
+
+
+
+
+
+
+
 
 
 
@@ -329,15 +357,21 @@ class nsFrameSelection final {
 
 
 
+
+
+
+
   
   nsresult StartAutoScrollTimer(nsIFrame* aFrame, const nsPoint& aPoint,
                                 uint32_t aDelay);
 
   
 
+
   void StopAutoScrollTimer();
 
   
+
 
 
 
@@ -354,10 +388,12 @@ class nsFrameSelection final {
 
 
 
+
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void SetDragState(bool aState);
 
   
+
 
 
 
@@ -377,10 +413,12 @@ class nsFrameSelection final {
 
 
 
+
   mozilla::dom::Selection* GetSelection(
       mozilla::SelectionType aSelectionType) const;
 
   
+
 
 
 
@@ -403,9 +441,13 @@ class nsFrameSelection final {
 
 
 
+
+
   nsresult RepaintSelection(mozilla::SelectionType aSelectionType);
 
   
+
+
 
 
 
@@ -466,10 +508,12 @@ class nsFrameSelection final {
 
 
 
+
   
   nsresult PhysicalMove(int16_t aDirection, int16_t aAmount, bool aExtend);
 
   
+
 
 
 
@@ -481,16 +525,19 @@ class nsFrameSelection final {
   
 
 
+
   
   nsresult CharacterExtendForDelete();
 
   
 
 
+
   
   nsresult CharacterExtendForBackspace();
 
   
+
 
 
 
@@ -503,10 +550,12 @@ class nsFrameSelection final {
 
 
 
+
   
   nsresult WordExtendForDelete(bool aForward);
 
   
+
 
 
 
@@ -521,10 +570,12 @@ class nsFrameSelection final {
 
 
 
+
   
   nsresult IntraLineMove(bool aForward, bool aExtend);
 
   
+
 
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult SelectAll();
@@ -540,9 +591,13 @@ class nsFrameSelection final {
 
 
 
+
+
   void SetDelayedCaretData(mozilla::WidgetMouseEvent* aMouseEvent);
 
   
+
+
 
 
 
@@ -568,12 +623,15 @@ class nsFrameSelection final {
 
 
 
+
+
   nsIContent* GetLimiter() const { return mLimiter; }
 
   nsIContent* GetAncestorLimiter() const { return mAncestorLimiter; }
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void SetAncestorLimiter(nsIContent* aLimiter);
 
   
+
 
 
 
@@ -584,9 +642,12 @@ class nsFrameSelection final {
   
 
 
+
   bool GetMouseDoubleDown() const { return mMouseDoubleDownState; }
 
   
+
+
 
 
 
@@ -616,11 +677,14 @@ class nsFrameSelection final {
 
 
 
+
+
   nsresult GetFrameFromLevel(nsIFrame* aFrameIn, nsDirection aDirection,
                              nsBidiLevel aBidiLevel,
                              nsIFrame** aFrameOut) const;
 
   
+
 
 
 

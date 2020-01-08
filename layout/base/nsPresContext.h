@@ -102,10 +102,11 @@ enum nsPresContext_CachedIntPrefType {
 
 
 
-const uint8_t kPresContext_DefaultVariableFont_ID =
-    0x00;  
-const uint8_t kPresContext_DefaultFixedFont_ID =
-    0x01;  
+
+
+const uint8_t kPresContext_DefaultVariableFont_ID = 0x00;
+
+const uint8_t kPresContext_DefaultFixedFont_ID = 0x01;
 
 #ifdef DEBUG
 struct nsAutoLayoutPhase;

@@ -534,6 +534,8 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
+
+
   static void RecoverFloatsFor(nsIFrame* aFrame, nsFloatManager& aFloatManager,
                                mozilla::WritingMode aWM,
                                const nsSize& aContainerSize);
@@ -672,6 +674,9 @@ class nsBlockFrame : public nsContainerFrame {
   
   
   
+
+
+
 
 
 

@@ -82,8 +82,7 @@ class BoxObject : public nsPIBoxObject, public nsWrapperCache {
  protected:
   virtual ~BoxObject();
 
-  nsAutoPtr<nsInterfaceHashtable<nsStringHashKey, nsISupports> >
-      mPropertyTable;  
+  nsAutoPtr<nsInterfaceHashtable<nsStringHashKey, nsISupports>> mPropertyTable;
 
   Element* mContent;  
 };

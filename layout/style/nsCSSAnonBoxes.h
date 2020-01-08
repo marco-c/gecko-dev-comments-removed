@@ -71,16 +71,19 @@ class nsCSSAnonBoxes {
   static bool IsWrapperAnonBox(nsAtom* aPseudo) {
     
     
-    return aPseudo && (
-#define CSS_ANON_BOX(_name, _value) 
+    if (!aPseudo) {
+      return false;
+    }
+    return
+#define CSS_ANON_BOX(_name, _value)
 #define CSS_WRAPPER_ANON_BOX(_name, _value) \
   nsGkAtoms::AnonBox_##_name == aPseudo ||
-#define CSS_NON_INHERITING_ANON_BOX(_name, _value) 
+#define CSS_NON_INHERITING_ANON_BOX(_name, _value)
 #include "nsCSSAnonBoxList.h"
 #undef CSS_NON_INHERITING_ANON_BOX
 #undef CSS_WRAPPER_ANON_BOX
 #undef CSS_ANON_BOX
-                          false);
+        false;
   }
 
   

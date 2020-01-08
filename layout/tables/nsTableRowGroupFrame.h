@@ -84,6 +84,9 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
 
 
 
+
+
+
   virtual void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
                       const ReflowInput& aReflowInput,
                       nsReflowStatus& aStatus) override;
@@ -222,7 +225,6 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
                                      int32_t aStartLine = 0) override;
 
   
-
 
 
 

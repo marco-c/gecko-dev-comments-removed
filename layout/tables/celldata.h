@@ -113,10 +113,10 @@ class CellData {
   
 
 
-  explicit CellData(
-      nsTableCellFrame* aOrigCell);  
 
-  
+
+  explicit CellData(nsTableCellFrame* aOrigCell);
+
   ~CellData();  
 
  protected:

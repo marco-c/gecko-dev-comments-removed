@@ -176,7 +176,7 @@ class nsSVGOuterSVGFrame final : public nsSVGDisplayContainerFrame,
   
   
   
-  nsAutoPtr<nsTHashtable<nsPtrHashKey<nsSVGForeignObjectFrame> > >
+  nsAutoPtr<nsTHashtable<nsPtrHashKey<nsSVGForeignObjectFrame>>>
       mForeignObjectHash;
 
   nsRegion mInvalidRegion;

@@ -61,8 +61,8 @@ class nsPrintData {
   nsCOMArray<nsIWebProgressListener> mPrintProgressListeners;
   nsCOMPtr<nsIPrintProgressParams> mPrintProgressParams;
 
-  nsCOMPtr<nsPIDOMWindowOuter>
-      mCurrentFocusWin;  
+  nsCOMPtr<nsPIDOMWindowOuter> mCurrentFocusWin;  
+                                                  
 
   
   

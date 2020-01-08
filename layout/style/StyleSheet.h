@@ -458,9 +458,9 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   StyleSheet* mParent;  
 
   nsString mTitle;
-  dom::DocumentOrShadowRoot*
-      mDocumentOrShadowRoot;       
-                                   
+
+  
+  dom::DocumentOrShadowRoot* mDocumentOrShadowRoot;
   nsINode* mOwningNode;            
   dom::CSSImportRule* mOwnerRule;  
 

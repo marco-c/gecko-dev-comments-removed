@@ -250,8 +250,8 @@ enum nsCSSUnit {
   eCSSUnit_Unset = 4,    
                          
   eCSSUnit_None = 5,     
-  eCSSUnit_Normal =
-      6,  
+  eCSSUnit_Normal = 6,   
+                         
   eCSSUnit_System_Font = 7,    
   eCSSUnit_All = 8,            
   eCSSUnit_Dummy = 9,          
@@ -264,15 +264,13 @@ enum nsCSSUnit {
   eCSSUnit_Attr = 14,     
   eCSSUnit_Element = 15,  
 
-  eCSSUnit_Array = 20,  
-  eCSSUnit_Counter =
-      21,  
-  eCSSUnit_Counters =
-      22,  
+  
+  eCSSUnit_Array = 20,     
+  eCSSUnit_Counter = 21,   
+  eCSSUnit_Counters = 22,  
   eCSSUnit_Cubic_Bezier = 23,  
-  eCSSUnit_Steps = 24,  
-  eCSSUnit_Symbols =
-      25,  
+  eCSSUnit_Steps = 24,         
+  eCSSUnit_Symbols = 25,       
   eCSSUnit_Function = 26,  
                            
                            
@@ -285,11 +283,9 @@ enum nsCSSUnit {
   
   
   
-  
-  eCSSUnit_Calc = 30,  
-  
-  
+  eCSSUnit_Calc = 30,       
   eCSSUnit_Calc_Plus = 31,  
+                            
 
   eCSSUnit_Pair = 50,        
   eCSSUnit_List = 53,        
@@ -303,29 +299,28 @@ enum nsCSSUnit {
   eCSSUnit_Integer = 70,     
   eCSSUnit_Enumerated = 71,  
 
-  eCSSUnit_Percent =
-      100,  
-  eCSSUnit_Number = 101,  
-                          
+  eCSSUnit_Percent = 100,  
+                           
+  eCSSUnit_Number = 101,   
+                           
 
   
   
-  eCSSUnit_ViewportWidth =
-      700,  
-  eCSSUnit_ViewportHeight =
-      701,  
-  eCSSUnit_ViewportMin =
-      702,  
-  eCSSUnit_ViewportMax =
-      703,  
+  eCSSUnit_ViewportWidth = 700,   
+                                  
+  eCSSUnit_ViewportHeight = 701,  
+  eCSSUnit_ViewportMin = 702,     
+                                  
+  eCSSUnit_ViewportMax = 703,     
+                                  
 
   
-  eCSSUnit_EM = 800,  
-  eCSSUnit_XHeight =
-      801,  
-  eCSSUnit_Char =
-      802,  
-  eCSSUnit_RootEM = 803,  
+  eCSSUnit_EM = 800,       
+  eCSSUnit_XHeight = 801,  
+                           
+  eCSSUnit_Char = 802,     
+                           
+  eCSSUnit_RootEM = 803,   
 
   
   eCSSUnit_Point = 900,       

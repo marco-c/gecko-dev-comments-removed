@@ -92,6 +92,10 @@ class nsTableRowFrame : public nsContainerFrame {
 
 
 
+
+
+
+
   virtual void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
                       const ReflowInput& aReflowInput,
                       nsReflowStatus& aStatus) override;

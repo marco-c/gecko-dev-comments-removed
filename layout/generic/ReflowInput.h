@@ -185,55 +185,74 @@ struct SizeComputationInput {
 
   struct ReflowInputFlags {
     ReflowInputFlags() { memset(this, 0, sizeof(*this)); }
-    bool mSpecialBSizeReflow : 1;   
-                                    
-                                    
-                                    
-    bool mNextInFlowUntouched : 1;  
-                                    
-    bool mIsTopOfPage : 1;          
-                                    
-                                    
-                                    
-    bool mAssumingHScrollbar : 1;   
-                                    
-    bool mAssumingVScrollbar : 1;   
-                                    
 
-    bool mIsIResize : 1;  
-                          
+    
+    
+    bool mSpecialBSizeReflow : 1;
 
-    bool mIsBResize : 1;          
-                                  
-                                  
-                                  
-                                  
-    bool mTableIsSplittable : 1;  
-                                  
-                                  
-    bool mHeightDependsOnAncestorCell : 1;  
-                                            
-    bool mIsColumnBalancing : 1;  
-    bool mIsFlexContainerMeasuringBSize : 1;  
-                                              
-                                              
-    bool mDummyParentReflowInput : 1;         
-                                              
-                                              
-    bool mMustReflowPlaceholders : 1;  
-                                       
-                                       
-                                       
-                                       
-                                       
-    bool mShrinkWrap : 1;    
-    bool mUseAutoBSize : 1;  
-    bool mStaticPosIsCBOrigin : 1;     
-    bool mIClampMarginBoxMinSize : 1;  
-                                       
-    bool mBClampMarginBoxMinSize : 1;  
-                                       
-    bool mApplyAutoMinSize : 1;        
+    
+    bool mNextInFlowUntouched : 1;
+
+    
+    
+    
+    bool mIsTopOfPage : 1;
+
+    
+    
+    bool mAssumingHScrollbar : 1;
+
+    
+    
+    bool mAssumingVScrollbar : 1;
+
+    
+    bool mIsIResize : 1;
+
+    
+    
+    
+    bool mIsBResize : 1;
+
+    
+    
+    bool mTableIsSplittable : 1;
+
+    
+    bool mHeightDependsOnAncestorCell : 1;
+
+    
+    bool mIsColumnBalancing : 1;
+
+    
+    
+    bool mIsFlexContainerMeasuringBSize : 1;
+
+    
+    bool mDummyParentReflowInput : 1;
+
+    
+    
+    
+    bool mMustReflowPlaceholders : 1;
+
+    
+    bool mShrinkWrap : 1;
+
+    
+    bool mUseAutoBSize : 1;
+
+    
+    bool mStaticPosIsCBOrigin : 1;
+
+    
+    bool mIClampMarginBoxMinSize : 1;
+
+    
+    bool mBClampMarginBoxMinSize : 1;
+
+    
+    bool mApplyAutoMinSize : 1;
 
     
     

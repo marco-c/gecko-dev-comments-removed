@@ -45,8 +45,8 @@ enum nsFrameborder {
 };
 
 struct nsFramesetDrag {
-  nsHTMLFramesetFrame*
-      mSource;      
+  nsHTMLFramesetFrame* mSource;  
+                                 
   int32_t mIndex;   
   int32_t mChange;  
   bool mVertical;   

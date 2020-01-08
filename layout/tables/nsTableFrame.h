@@ -100,7 +100,6 @@ class nsAutoPushCurrentTableItem {
 
 
 
-
 enum nsTableColType {
   eColContent = 0,            
   eColAnonymousCol = 1,       
@@ -132,6 +131,8 @@ class nsTableFrame : public nsContainerFrame {
   friend class nsTableWrapperFrame;
 
   
+
+
 
 
 
@@ -323,6 +324,7 @@ class nsTableFrame : public nsContainerFrame {
 
   
   
+  
 
 
 
@@ -332,6 +334,12 @@ class nsTableFrame : public nsContainerFrame {
 
 
 
+
+
+
+
+
+  
   virtual void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
                       const ReflowInput& aReflowInput,
                       nsReflowStatus& aStatus) override;
@@ -839,8 +847,8 @@ class nsTableFrame : public nsContainerFrame {
     uint32_t mHasPctCol : 1;        
     uint32_t mCellSpansPctCol : 1;  
                                     
-    uint32_t
-        mIsBorderCollapse : 1;  
+    uint32_t mIsBorderCollapse : 1;  
+                                     
     uint32_t mRowInserted : 1;
     uint32_t mNeedToCalcBCBorders : 1;
     uint32_t mGeometryDirty : 1;
@@ -854,11 +862,11 @@ class nsTableFrame : public nsContainerFrame {
 
   std::map<int32_t, int32_t> mDeletedRowIndexRanges;  
                                                       
-  nsTableCellMap*
-      mCellMap;  
-  nsITableLayoutStrategy*
-      mTableLayoutStrategy;  
-  nsFrameList mColGroups;    
+  nsTableCellMap* mCellMap;  
+                             
+  nsITableLayoutStrategy* mTableLayoutStrategy;  
+                                                 
+  nsFrameList mColGroups;                        
 };
 
 inline bool nsTableFrame::IsRowGroup(mozilla::StyleDisplay aDisplayType) const {

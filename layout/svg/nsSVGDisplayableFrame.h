@@ -113,6 +113,7 @@ class nsSVGDisplayableFrame : public nsQueryFrame {
   
   
   
+  
   enum SVGChangedFlags {
     TRANSFORM_CHANGED = 0x01,
     COORD_CONTEXT_CHANGED = 0x02,
