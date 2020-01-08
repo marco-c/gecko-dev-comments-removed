@@ -454,16 +454,6 @@ VARCACHE_PREF(
 
 
 
-#define PREF_VALUE false
-#endif
-VARCACHE_PREF(
-  "dom.targetBlankNoOpener.enabled",
-   dom_targetBlankNoOpener_enabled,
-  bool, false
-)
-
-
-
 
 
 VARCACHE_PREF(
