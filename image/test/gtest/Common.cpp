@@ -336,7 +336,20 @@ CheckGeneratedImage(Decoder* aDecoder,
 {
   RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
   RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
-  const IntSize surfaceSize = surface->GetSize();
+  CheckGeneratedSurface(surface, aRect,
+                        BGRAColor::Green(),
+                        BGRAColor::Transparent(),
+                        aFuzz);
+}
+
+void
+CheckGeneratedSurface(SourceSurface* aSurface,
+                      const IntRect& aRect,
+                      const BGRAColor& aInnerColor,
+                      const BGRAColor& aOuterColor,
+                      uint8_t aFuzz )
+{
+  const IntSize surfaceSize = aSurface->GetSize();
 
   
   
@@ -351,29 +364,29 @@ CheckGeneratedImage(Decoder* aDecoder,
   
 
   
-  EXPECT_TRUE(RectIsSolidColor(surface, aRect, BGRAColor::Green(), aFuzz));
+  EXPECT_TRUE(RectIsSolidColor(aSurface, aRect, aInnerColor, aFuzz));
 
   
-  EXPECT_TRUE(RectIsSolidColor(surface,
+  EXPECT_TRUE(RectIsSolidColor(aSurface,
                                IntRect(0, 0, surfaceSize.width, aRect.Y()),
-                               BGRAColor::Transparent(), aFuzz));
+                               aOuterColor, aFuzz));
 
   
-  EXPECT_TRUE(RectIsSolidColor(surface,
+  EXPECT_TRUE(RectIsSolidColor(aSurface,
                                IntRect(0, aRect.Y(), aRect.X(), aRect.YMost()),
-                               BGRAColor::Transparent(), aFuzz));
+                               aOuterColor, aFuzz));
 
   
   const int32_t widthOnRight = surfaceSize.width - aRect.XMost();
-  EXPECT_TRUE(RectIsSolidColor(surface,
+  EXPECT_TRUE(RectIsSolidColor(aSurface,
                                IntRect(aRect.XMost(), aRect.Y(), widthOnRight, aRect.YMost()),
-                               BGRAColor::Transparent(), aFuzz));
+                               aOuterColor, aFuzz));
 
   
   const int32_t heightBelow = surfaceSize.height - aRect.YMost();
-  EXPECT_TRUE(RectIsSolidColor(surface,
+  EXPECT_TRUE(RectIsSolidColor(aSurface,
                                IntRect(0, aRect.YMost(), surfaceSize.width, heightBelow),
-                               BGRAColor::Transparent(), aFuzz));
+                               aOuterColor, aFuzz));
 }
 
 void
@@ -588,6 +601,24 @@ ImageTestCase GreenFirstFrameAnimatedWebPTestCase()
 {
   return ImageTestCase("first-frame-green.webp", "image/webp", IntSize(100, 100),
                        TEST_CASE_IS_ANIMATED);
+}
+
+ImageTestCase BlendAnimatedGIFTestCase()
+{
+  return ImageTestCase("blend.gif", "image/gif", IntSize(100, 100),
+                       TEST_CASE_IS_ANIMATED);
+}
+
+ImageTestCase BlendAnimatedPNGTestCase()
+{
+  return ImageTestCase("blend.png", "image/png", IntSize(100, 100),
+                       TEST_CASE_IS_TRANSPARENT | TEST_CASE_IS_ANIMATED);
+}
+
+ImageTestCase BlendAnimatedWebPTestCase()
+{
+  return ImageTestCase("blend.webp", "image/webp", IntSize(100, 100),
+                       TEST_CASE_IS_TRANSPARENT | TEST_CASE_IS_ANIMATED);
 }
 
 ImageTestCase CorruptTestCase()

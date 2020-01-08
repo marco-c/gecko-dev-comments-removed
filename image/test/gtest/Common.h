@@ -349,6 +349,23 @@ void CheckGeneratedImage(Decoder* aDecoder,
 
 
 
+void CheckGeneratedSurface(gfx::SourceSurface* aSurface,
+                           const gfx::IntRect& aRect,
+                           const BGRAColor& aInnerColor,
+                           const BGRAColor& aOuterColor,
+                           uint8_t aFuzz = 0);
+
+
+
+
+
+
+
+
+
+
+
+
 void CheckGeneratedPalettedImage(Decoder* aDecoder, const gfx::IntRect& aRect);
 
 
@@ -443,6 +460,10 @@ ImageTestCase GreenWebPIccSrgbTestCase();
 ImageTestCase GreenFirstFrameAnimatedGIFTestCase();
 ImageTestCase GreenFirstFrameAnimatedPNGTestCase();
 ImageTestCase GreenFirstFrameAnimatedWebPTestCase();
+
+ImageTestCase BlendAnimatedGIFTestCase();
+ImageTestCase BlendAnimatedPNGTestCase();
+ImageTestCase BlendAnimatedWebPTestCase();
 
 ImageTestCase CorruptTestCase();
 ImageTestCase CorruptBMPWithTruncatedHeader();
