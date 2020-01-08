@@ -1,9 +1,21 @@
 #include "CubebDeviceEnumerator.h"
-#include "nsTArray.h"
+#include "mozilla/StaticPtr.h"
 
 namespace mozilla {
 
 using namespace CubebUtils;
+
+ StaticRefPtr<CubebDeviceEnumerator> CubebDeviceEnumerator::sInstance;
+
+ already_AddRefed<CubebDeviceEnumerator>
+CubebDeviceEnumerator::GetInstance()
+{
+  if (!sInstance) {
+    sInstance = new CubebDeviceEnumerator();
+  }
+  RefPtr<CubebDeviceEnumerator> instance = sInstance.get();
+  return instance.forget();
+}
 
 CubebDeviceEnumerator::CubebDeviceEnumerator()
   : mMutex("CubebDeviceListMutex")
@@ -18,6 +30,14 @@ CubebDeviceEnumerator::CubebDeviceEnumerator()
     NS_WARNING("Could not register the audio input"
                " device collection changed callback.");
     mManualInvalidation = true;
+  }
+}
+
+ void
+CubebDeviceEnumerator::Shutdown()
+{
+  if (sInstance) {
+    sInstance = nullptr;
   }
 }
 
