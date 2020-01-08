@@ -1206,13 +1206,18 @@ var Control = {
     tbody.addEventListener("mousemove", () => {
       this._updateLastMouseEvent();
     });
+
+    window.addEventListener("visibilitychange", event => {
+      if (!document.hidden) {
+        this._updateDisplay(true);
+      }
+    });
   },
   _lastMouseEvent: 0,
   _updateLastMouseEvent() {
     this._lastMouseEvent = Date.now();
   },
   async update() {
-    let mode = this._displayMode;
     if (this._autoRefreshInterval || !State._buffer[0]) {
       
       await State.update();
@@ -1220,7 +1225,17 @@ var Control = {
         return;
     }
     await wait(0);
+
+    await this._updateDisplay();
+
+    
+    Services.obs.notifyObservers(null, UPDATE_COMPLETE_TOPIC, this._displayMode);
+  },
+  
+  
+  async _updateDisplay(force = false) {
     if (!performanceCountersEnabled()) {
+      let mode = this._displayMode;
       let state = await (mode == MODE_GLOBAL ?
         State.promiseDeltaSinceStartOfTime() :
         State.promiseDeltaSinceStartOfBuffer());
@@ -1241,7 +1256,7 @@ var Control = {
       
       
       
-      if (Date.now() - this._lastMouseEvent < TIME_BEFORE_SORTING_AGAIN) {
+      if (!force && Date.now() - this._lastMouseEvent < TIME_BEFORE_SORTING_AGAIN) {
         let energyImpactPerId = new Map();
         for (let {id, dispatchesSincePrevious,
                   durationSincePrevious} of State.getCounters()) {
@@ -1326,9 +1341,6 @@ var Control = {
 
       await View.commit();
     }
-
-    
-    Services.obs.notifyObservers(null, UPDATE_COMPLETE_TOPIC, mode);
   },
   _showChildren(row) {
     let children = row._children;
