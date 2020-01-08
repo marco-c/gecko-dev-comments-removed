@@ -460,6 +460,14 @@ add_task(async function dont_consume_clicks() {
 
 
 add_task(async function drop_opens_popup() {
+  
+  
+  
+  
+  let focusEventPromise = BrowserTestUtils.waitForEvent(gBrowser.selectedBrowser, "focus");
+  gBrowser.selectedBrowser.focus();
+  await focusEventPromise;
+
   let promise = promiseEvent(searchPopup, "popupshown");
   
   
