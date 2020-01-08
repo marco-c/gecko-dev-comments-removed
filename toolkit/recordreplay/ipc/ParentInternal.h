@@ -25,17 +25,23 @@ class ChildProcessInfo;
 MessageLoop* MainThreadMessageLoop();
 
 
-void PreferencesLoaded();
+void ChromeRegistered();
 
 
 
 bool CanRewind();
 
 
-bool ActiveChildIsRecording();
+ChildProcessInfo* GetActiveChild();
 
 
-ChildProcessInfo* ActiveRecordingChild();
+ChildProcessInfo* GetChildProcess(size_t aId);
+
+
+size_t SpawnReplayingChild();
+
+
+void SetActiveChild(ChildProcessInfo* aChild);
 
 
 
@@ -55,32 +61,6 @@ void Shutdown();
 
 
 static Monitor* gMonitor;
-
-
-void Resume(bool aForward);
-
-
-void TimeWarp(const js::ExecutionPoint& target);
-
-
-
-void SendRequest(const js::CharBuffer& aBuffer, js::CharBuffer* aResponse);
-
-
-void AddBreakpoint(const js::BreakpointPosition& aPosition);
-void ClearBreakpoints();
-
-
-
-
-void MaybeSwitchToReplayingChild();
-
-
-void WaitUntilActiveChildIsPaused();
-
-
-
-void MarkActiveChildExplicitPause();
 
 
 
@@ -125,57 +105,6 @@ bool InRepaintStressMode();
 
 
 
-class ChildRole {
- public:
-  
-#define ForEachRoleType(Macro) Macro(Active) Macro(Standby) Macro(Inert)
-
-  enum Type {
-#define DefineType(Name) Name,
-    ForEachRoleType(DefineType)
-#undef DefineType
-  };
-
-  static const char* TypeString(Type aType) {
-    switch (aType) {
-#define GetTypeString(Name) \
-  case Name:                \
-    return #Name;
-      ForEachRoleType(GetTypeString)
-#undef GetTypeString
-          default : MOZ_CRASH("Bad ChildRole type");
-    }
-  }
-
- protected:
-  ChildProcessInfo* mProcess;
-  Type mType;
-
-  explicit ChildRole(Type aType) : mProcess(nullptr), mType(aType) {}
-
- public:
-  void SetProcess(ChildProcessInfo* aProcess) {
-    MOZ_RELEASE_ASSERT(!mProcess);
-    mProcess = aProcess;
-  }
-  Type GetType() const { return mType; }
-
-  virtual ~ChildRole() {}
-
-  
-
-  virtual void Initialize() {}
-
-  
-  
-  
-  virtual void Poke() {}
-
-  virtual void OnIncomingMessage(const Message& aMsg) = 0;
-};
-
-
-
 
 
 
@@ -205,170 +134,30 @@ class ChildProcessInfo {
   bool mRecording;
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  enum class RecoveryStage {
-    
-    None,
-
-    
-    ReachingCheckpoint,
-
-    
-    
-    
-    PlayingMessages
-  };
-  RecoveryStage mRecoveryStage;
-
-  
   bool mPaused;
-
-  
-  
-  
-  Message* mPausedMessage;
-
-  
-  
-  
-  size_t mLastCheckpoint;
-
-  
-  
-  
-  
-  InfallibleVector<Message*> mMessages;
-
-  
-  
-  size_t mNumRecoveredMessages;
-
-  
-  UniquePtr<ChildRole> mRole;
-
-  
-  
-  InfallibleVector<size_t> mShouldSaveCheckpoints;
-
-  
-  InfallibleVector<size_t> mMajorCheckpoints;
-
-  
-  bool mPauseNeeded;
 
   
   
   bool mHasBegunFatalError;
   bool mHasFatalError;
 
-  void OnIncomingMessage(size_t aChannelId, const Message& aMsg);
-  void OnIncomingRecoveryMessage(const Message& aMsg);
-  void SendNextRecoveryMessage();
-  void SendMessageRaw(const Message& aMsg);
+  void OnIncomingMessage(const Message& aMsg, bool aForwardToControl);
 
   static void MaybeProcessPendingMessageRunnable();
-  void ReceiveChildMessageOnMainThread(size_t aChannelId, Message* aMsg);
-
-  
-  enum Disposition {
-    AtLastCheckpoint,
-    BeforeLastCheckpoint,
-    AfterLastCheckpoint
-  };
-  Disposition GetDisposition();
-
-  void Recover(bool aPaused, Message* aPausedMessage, size_t aLastCheckpoint,
-               Message** aMessages, size_t aNumMessages);
+  void ReceiveChildMessageOnMainThread(Message::UniquePtr aMsg);
 
   void OnCrash(const char* aWhy);
   void LaunchSubprocess(
       const Maybe<RecordingProcessData>& aRecordingProcessData);
 
  public:
-  ChildProcessInfo(UniquePtr<ChildRole> aRole,
-                   const Maybe<RecordingProcessData>& aRecordingProcessData);
+  explicit ChildProcessInfo(const Maybe<RecordingProcessData>& aRecordingProcessData);
   ~ChildProcessInfo();
 
-  ChildRole* Role() { return mRole.get(); }
   size_t GetId() { return mChannel->GetId(); }
   bool IsRecording() { return mRecording; }
-  size_t LastCheckpoint() { return mLastCheckpoint; }
-  bool IsRecovering() { return mRecoveryStage != RecoveryStage::None; }
-  bool PauseNeeded() { return mPauseNeeded; }
-  const InfallibleVector<size_t>& MajorCheckpoints() {
-    return mMajorCheckpoints;
-  }
-
   bool IsPaused() { return mPaused; }
-  bool IsPausedAtCheckpoint();
-  bool IsPausedAtRecordingEndpoint();
 
-  
-  void GetInstalledBreakpoints(
-      InfallibleVector<AddBreakpointMessage*>& aBreakpoints);
-
-  typedef std::function<bool(js::BreakpointPosition::Kind)> BreakpointFilter;
-
-  
-  
-  size_t MostRecentCheckpoint() {
-    return (GetDisposition() == BeforeLastCheckpoint) ? mLastCheckpoint - 1
-                                                      : mLastCheckpoint;
-  }
-
-  
-  
-  size_t RewindTargetCheckpoint() {
-    switch (GetDisposition()) {
-      case BeforeLastCheckpoint:
-      case AtLastCheckpoint:
-        
-        
-        return LastCheckpoint() - 1;
-      case AfterLastCheckpoint:
-        return LastCheckpoint();
-    }
-  }
-
-  bool ShouldSaveCheckpoint(size_t aId) {
-    return VectorContains(mShouldSaveCheckpoints, aId);
-  }
-
-  bool IsMajorCheckpoint(size_t aId) {
-    return VectorContains(mMajorCheckpoints, aId);
-  }
-
-  bool HasSavedCheckpoint(size_t aId) {
-    return (aId <= MostRecentCheckpoint()) && ShouldSaveCheckpoint(aId);
-  }
-
-  size_t MostRecentSavedCheckpoint() {
-    size_t id = MostRecentCheckpoint();
-    while (!ShouldSaveCheckpoint(id)) {
-      id--;
-    }
-    return id;
-  }
-
-  void SetPauseNeeded() { mPauseNeeded = true; }
-
-  void ClearPauseNeeded() {
-    MOZ_RELEASE_ASSERT(IsPaused());
-    mPauseNeeded = false;
-    mRole->Poke();
-  }
-
-  void AddMajorCheckpoint(size_t aId);
-  void SetRole(UniquePtr<ChildRole> aRole);
   void SendMessage(const Message& aMessage);
 
   
@@ -379,13 +168,9 @@ class ChildProcessInfo {
 
   
   
-  void WaitUntil(const std::function<bool()>& aCallback);
-
-  void WaitUntilPaused() {
-    WaitUntil([=]() { return IsPaused(); });
-  }
-
-  static bool MaybeProcessPendingMessage(ChildProcessInfo* aProcess);
+  
+  
+  Message::UniquePtr WaitUntilPaused();
 
   static void SetIntroductionMessage(IntroductionMessage* aMessage);
 };

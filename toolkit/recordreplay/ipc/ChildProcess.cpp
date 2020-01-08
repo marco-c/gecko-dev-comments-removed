@@ -29,17 +29,10 @@ static bool gChildrenAreDebugging;
 }
 
 ChildProcessInfo::ChildProcessInfo(
-    UniquePtr<ChildRole> aRole,
     const Maybe<RecordingProcessData>& aRecordingProcessData)
     : mChannel(nullptr),
       mRecording(aRecordingProcessData.isSome()),
-      mRecoveryStage(RecoveryStage::None),
       mPaused(false),
-      mPausedMessage(nullptr),
-      mLastCheckpoint(CheckpointId::Invalid),
-      mNumRecoveredMessages(0),
-      mRole(std::move(aRole)),
-      mPauseNeeded(false),
       mHasBegunFatalError(false),
       mHasFatalError(false) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
@@ -50,19 +43,7 @@ ChildProcessInfo::ChildProcessInfo(
     gChildrenAreDebugging = !!getenv("WAIT_AT_START");
   }
 
-  mRole->SetProcess(this);
-
   LaunchSubprocess(aRecordingProcessData);
-
-  
-  
-  
-  
-  if (!IsRecording() && CanRewind()) {
-    SendMessage(SetSaveCheckpointMessage(CheckpointId::First, true));
-  }
-
-  mRole->Initialize();
 }
 
 ChildProcessInfo::~ChildProcessInfo() {
@@ -72,147 +53,60 @@ ChildProcessInfo::~ChildProcessInfo() {
   }
 }
 
-ChildProcessInfo::Disposition ChildProcessInfo::GetDisposition() {
-  
-  
-  for (Message* msg : mMessages) {
-    if (msg->mType == MessageType::Resume) {
-      const ResumeMessage& nmsg = static_cast<const ResumeMessage&>(*msg);
-      return nmsg.mForward ? AfterLastCheckpoint : BeforeLastCheckpoint;
-    }
-    if (msg->mType == MessageType::RunToPoint) {
-      return AfterLastCheckpoint;
-    }
-  }
-  return AtLastCheckpoint;
-}
-
-bool ChildProcessInfo::IsPausedAtCheckpoint() {
-  return IsPaused() && mPausedMessage->mType == MessageType::HitCheckpoint;
-}
-
-bool ChildProcessInfo::IsPausedAtRecordingEndpoint() {
-  if (!IsPaused()) {
-    return false;
-  }
-  if (mPausedMessage->mType == MessageType::HitCheckpoint) {
-    return static_cast<HitCheckpointMessage*>(mPausedMessage)
-        ->mRecordingEndpoint;
-  }
-  if (mPausedMessage->mType == MessageType::HitBreakpoint) {
-    return static_cast<HitBreakpointMessage*>(mPausedMessage)
-        ->mRecordingEndpoint;
-  }
-  return false;
-}
-
-void ChildProcessInfo::GetInstalledBreakpoints(
-    InfallibleVector<AddBreakpointMessage*>& aBreakpoints) {
-  MOZ_RELEASE_ASSERT(aBreakpoints.empty());
-  for (Message* msg : mMessages) {
-    if (msg->mType == MessageType::AddBreakpoint) {
-      aBreakpoints.append(static_cast<AddBreakpointMessage*>(msg));
-    } else if (msg->mType == MessageType::ClearBreakpoints) {
-      aBreakpoints.clear();
-    }
-  }
-}
-
-void ChildProcessInfo::AddMajorCheckpoint(size_t aId) {
-  
-  MOZ_RELEASE_ASSERT(mMajorCheckpoints.empty() ||
-                     aId > mMajorCheckpoints.back());
-  mMajorCheckpoints.append(aId);
-}
-
-void ChildProcessInfo::SetRole(UniquePtr<ChildRole> aRole) {
-  MOZ_RELEASE_ASSERT(!IsRecovering());
-
-  PrintSpew("SetRole:%d %s\n", (int)GetId(),
-            ChildRole::TypeString(aRole->GetType()));
-
-  mRole = std::move(aRole);
-  mRole->SetProcess(this);
-  mRole->Initialize();
-}
-
-void ChildProcessInfo::OnIncomingMessage(size_t aChannelId,
-                                         const Message& aMsg) {
+void ChildProcessInfo::OnIncomingMessage(const Message& aMsg,
+                                         bool aForwardToControl) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  
-  if (aChannelId != mChannel->GetId()) {
-    return;
-  }
-
-  
-  if (aMsg.mType == MessageType::BeginFatalError) {
-    mHasBegunFatalError = true;
-    return;
-  } else if (aMsg.mType == MessageType::FatalError) {
-    mHasFatalError = true;
-    const FatalErrorMessage& nmsg = static_cast<const FatalErrorMessage&>(aMsg);
-    OnCrash(nmsg.Error());
-    return;
-  }
-
   mLastMessageTime = TimeStamp::Now();
 
-  if (IsRecovering()) {
-    OnIncomingRecoveryMessage(aMsg);
-    return;
-  }
-
-  
-  MOZ_RELEASE_ASSERT(!IsPaused());
   switch (aMsg.mType) {
-    case MessageType::HitCheckpoint:
-    case MessageType::HitBreakpoint:
-      MOZ_RELEASE_ASSERT(!mPausedMessage);
-      mPausedMessage = aMsg.Clone();
-      MOZ_FALLTHROUGH;
-    case MessageType::DebuggerResponse:
-    case MessageType::RecordingFlushed:
-      MOZ_RELEASE_ASSERT(mPausedMessage);
+    case MessageType::BeginFatalError:
+      mHasBegunFatalError = true;
+      return;
+    case MessageType::FatalError: {
+      mHasFatalError = true;
+      const FatalErrorMessage& nmsg =
+        static_cast<const FatalErrorMessage&>(aMsg);
+      OnCrash(nmsg.Error());
+      return;
+    }
+    case MessageType::HitExecutionPoint: {
+      const HitExecutionPointMessage& nmsg =
+        static_cast<const HitExecutionPointMessage&>(aMsg);
       mPaused = true;
+      if (this == GetActiveChild() && !nmsg.mPoint.HasPosition()) {
+        MaybeUpdateGraphicsAtCheckpoint(nmsg.mPoint.mCheckpoint);
+      }
+      if (aForwardToControl) {
+        js::ForwardHitExecutionPointMessage(GetId(), nmsg);
+      }
+      break;
+    }
+    case MessageType::Paint:
+      MaybeUpdateGraphicsAtPaint(static_cast<const PaintMessage&>(aMsg));
+      break;
+    case MessageType::DebuggerResponse:
+      mPaused = true;
+      js::OnDebuggerResponse(aMsg);
+      break;
+    case MessageType::RecordingFlushed:
+      mPaused = true;
+      break;
+    case MessageType::MiddlemanCallRequest: {
+      const MiddlemanCallRequestMessage& nmsg =
+        static_cast<const MiddlemanCallRequestMessage&>(aMsg);
+      Message::UniquePtr response(ProcessMiddlemanCallMessage(nmsg));
+      SendMessage(*response);
+      break;
+    }
+    case MessageType::ResetMiddlemanCalls:
+      ResetMiddlemanCalls();
       break;
     default:
       break;
   }
-
-  if (aMsg.mType == MessageType::HitCheckpoint) {
-    const HitCheckpointMessage& nmsg =
-        static_cast<const HitCheckpointMessage&>(aMsg);
-    mLastCheckpoint = nmsg.mCheckpointId;
-
-    
-    
-    InfallibleVector<Message*> newMessages;
-    for (Message* msg : mMessages) {
-      if (msg->mType == MessageType::AddBreakpoint) {
-        newMessages.append(msg);
-      } else {
-        if (msg->mType == MessageType::ClearBreakpoints) {
-          for (Message* existing : newMessages) {
-            free(existing);
-          }
-          newMessages.clear();
-        }
-        free(msg);
-      }
-    }
-    mMessages = std::move(newMessages);
-  }
-
-  
-  
-  if (aMsg.mType != MessageType::HitCheckpoint || mLastCheckpoint) {
-    mRole->OnIncomingMessage(aMsg);
-  }
 }
 
 void ChildProcessInfo::SendMessage(const Message& aMsg) {
-  MOZ_RELEASE_ASSERT(!IsRecovering());
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   
@@ -221,9 +115,6 @@ void ChildProcessInfo::SendMessage(const Message& aMsg) {
     case MessageType::Resume:
     case MessageType::RestoreCheckpoint:
     case MessageType::RunToPoint:
-      free(mPausedMessage);
-      mPausedMessage = nullptr;
-      MOZ_FALLTHROUGH;
     case MessageType::DebuggerRequest:
     case MessageType::FlushRecording:
       mPaused = false;
@@ -232,162 +123,8 @@ void ChildProcessInfo::SendMessage(const Message& aMsg) {
       break;
   }
 
-  
-  switch (aMsg.mType) {
-    case MessageType::Resume:
-    case MessageType::RestoreCheckpoint:
-    case MessageType::RunToPoint:
-    case MessageType::DebuggerRequest:
-    case MessageType::AddBreakpoint:
-    case MessageType::ClearBreakpoints:
-      mMessages.emplaceBack(aMsg.Clone());
-      break;
-    default:
-      break;
-  }
-
-  
-  if (aMsg.mType == MessageType::SetSaveCheckpoint) {
-    const SetSaveCheckpointMessage& nmsg =
-        static_cast<const SetSaveCheckpointMessage&>(aMsg);
-    MOZ_RELEASE_ASSERT(nmsg.mCheckpoint > MostRecentCheckpoint());
-    VectorAddOrRemoveEntry(mShouldSaveCheckpoints, nmsg.mCheckpoint,
-                           nmsg.mSave);
-  }
-
-  SendMessageRaw(aMsg);
-}
-
-void ChildProcessInfo::SendMessageRaw(const Message& aMsg) {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   mLastMessageTime = TimeStamp::Now();
   mChannel->SendMessage(aMsg);
-}
-
-void ChildProcessInfo::Recover(bool aPaused, Message* aPausedMessage,
-                               size_t aLastCheckpoint, Message** aMessages,
-                               size_t aNumMessages) {
-  MOZ_RELEASE_ASSERT(IsPaused());
-
-  SendMessageRaw(SetIsActiveMessage(false));
-
-  size_t mostRecentCheckpoint = MostRecentCheckpoint();
-  bool pausedAtCheckpoint = IsPausedAtCheckpoint();
-
-  
-  for (Message* msg : mMessages) {
-    free(msg);
-  }
-  mMessages.clear();
-  SendMessageRaw(ClearBreakpointsMessage());
-
-  mPaused = aPaused;
-  mPausedMessage = aPausedMessage;
-  mLastCheckpoint = aLastCheckpoint;
-  for (size_t i = 0; i < aNumMessages; i++) {
-    mMessages.append(aMessages[i]->Clone());
-  }
-
-  mNumRecoveredMessages = 0;
-
-  if (mostRecentCheckpoint < mLastCheckpoint) {
-    mRecoveryStage = RecoveryStage::ReachingCheckpoint;
-    SendMessageRaw(ResumeMessage( true));
-  } else if (mostRecentCheckpoint > mLastCheckpoint || !pausedAtCheckpoint) {
-    mRecoveryStage = RecoveryStage::ReachingCheckpoint;
-    
-    size_t targetCheckpoint = CheckpointId::Invalid;
-    for (size_t saved : mShouldSaveCheckpoints) {
-      if (saved <= mLastCheckpoint && saved > targetCheckpoint) {
-        targetCheckpoint = saved;
-      }
-    }
-    MOZ_RELEASE_ASSERT(targetCheckpoint != CheckpointId::Invalid);
-    SendMessageRaw(RestoreCheckpointMessage(targetCheckpoint));
-  } else {
-    mRecoveryStage = RecoveryStage::PlayingMessages;
-    SendNextRecoveryMessage();
-  }
-
-  WaitUntil([=]() { return !IsRecovering(); });
-}
-
-void ChildProcessInfo::Recover(ChildProcessInfo* aTargetProcess) {
-  MOZ_RELEASE_ASSERT(aTargetProcess->IsPaused());
-  Recover(true, aTargetProcess->mPausedMessage->Clone(),
-          aTargetProcess->mLastCheckpoint, aTargetProcess->mMessages.begin(),
-          aTargetProcess->mMessages.length());
-}
-
-void ChildProcessInfo::RecoverToCheckpoint(size_t aCheckpoint) {
-  HitCheckpointMessage pausedMessage(aCheckpoint,
-                                      false,
-                                      0);
-  Recover(true, pausedMessage.Clone(), aCheckpoint, nullptr, 0);
-}
-
-void ChildProcessInfo::OnIncomingRecoveryMessage(const Message& aMsg) {
-  switch (aMsg.mType) {
-    case MessageType::HitCheckpoint: {
-      MOZ_RELEASE_ASSERT(mRecoveryStage == RecoveryStage::ReachingCheckpoint);
-      const HitCheckpointMessage& nmsg =
-          static_cast<const HitCheckpointMessage&>(aMsg);
-      if (nmsg.mCheckpointId < mLastCheckpoint) {
-        SendMessageRaw(ResumeMessage( true));
-      } else {
-        MOZ_RELEASE_ASSERT(nmsg.mCheckpointId == mLastCheckpoint);
-        mRecoveryStage = RecoveryStage::PlayingMessages;
-        SendNextRecoveryMessage();
-      }
-      break;
-    }
-    case MessageType::HitBreakpoint:
-    case MessageType::DebuggerResponse:
-      SendNextRecoveryMessage();
-      break;
-    case MessageType::MiddlemanCallRequest: {
-      
-      
-      
-      MiddlemanCallResponseMessage* response =
-          ProcessMiddlemanCallMessage((MiddlemanCallRequestMessage&)aMsg);
-      SendMessageRaw(*response);
-      free(response);
-      break;
-    }
-    case MessageType::ResetMiddlemanCalls:
-      ResetMiddlemanCalls();
-      break;
-    default:
-      MOZ_CRASH("Unexpected message during recovery");
-  }
-}
-
-void ChildProcessInfo::SendNextRecoveryMessage() {
-  MOZ_RELEASE_ASSERT(mRecoveryStage == RecoveryStage::PlayingMessages);
-
-  
-  Message* msg;
-  do {
-    
-    if (mNumRecoveredMessages == mMessages.length()) {
-      MOZ_RELEASE_ASSERT(IsPaused());
-      mRecoveryStage = RecoveryStage::None;
-      return;
-    }
-    msg = mMessages[mNumRecoveredMessages++];
-    SendMessageRaw(*msg);
-
-    
-    
-  } while (msg->mType == MessageType::AddBreakpoint ||
-           msg->mType == MessageType::ClearBreakpoints);
-
-  
-  
-  if (mNumRecoveredMessages == mMessages.length() && !IsPaused()) {
-    mRecoveryStage = RecoveryStage::None;
-  }
 }
 
 
@@ -463,10 +200,19 @@ void ChildProcessInfo::LaunchSubprocess(
   SendGraphicsMemoryToChild();
 
   
+  
   WaitUntilPaused();
 
   MOZ_RELEASE_ASSERT(gIntroductionMessage);
   SendMessage(*gIntroductionMessage);
+
+  
+  if (!IsRecording()) {
+    SendMessage(SetSaveCheckpointMessage(CheckpointId::First, true));
+  }
+
+  
+  SendMessage(ResumeMessage( true));
 }
 
 void ChildProcessInfo::OnCrash(const char* aWhy) {
@@ -503,10 +249,37 @@ void ChildProcessInfo::OnCrash(const char* aWhy) {
 
 struct PendingMessage {
   ChildProcessInfo* mProcess;
-  size_t mChannelId;
-  Message* mMsg;
+  Message::UniquePtr mMsg;
+
+  PendingMessage() : mProcess(nullptr) {}
+
+  PendingMessage& operator=(PendingMessage&& aOther) {
+    mProcess = aOther.mProcess;
+    mMsg = std::move(aOther.mMsg);
+    return *this;
+  }
+
+  PendingMessage(PendingMessage&& aOther) {
+    *this = std::move(aOther);
+  }
 };
 static StaticInfallibleVector<PendingMessage> gPendingMessages;
+
+static Message::UniquePtr ExtractChildMessage(ChildProcessInfo** aProcess) {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  for (size_t i = 0; i < gPendingMessages.length(); i++) {
+    PendingMessage& pending = gPendingMessages[i];
+    if (!*aProcess || pending.mProcess == *aProcess) {
+      *aProcess = pending.mProcess;
+      Message::UniquePtr msg = std::move(pending.mMsg);
+      gPendingMessages.erase(&pending);
+      return msg;
+    }
+  }
+
+  return nullptr;
+}
 
 
 
@@ -514,37 +287,29 @@ static bool gHasPendingMessageRunnable;
 
 
 
-
- bool ChildProcessInfo::MaybeProcessPendingMessage(
-    ChildProcessInfo* aProcess) {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  for (size_t i = 0; i < gPendingMessages.length(); i++) {
-    if (!aProcess || gPendingMessages[i].mProcess == aProcess) {
-      PendingMessage copy = gPendingMessages[i];
-      gPendingMessages.erase(&gPendingMessages[i]);
-
-      MonitorAutoUnlock unlock(*gMonitor);
-      copy.mProcess->OnIncomingMessage(copy.mChannelId, *copy.mMsg);
-      free(copy.mMsg);
-      return true;
-    }
-  }
-
-  return false;
-}
-
-
-
 static const size_t HangSeconds = 30;
 
-void ChildProcessInfo::WaitUntil(const std::function<bool()>& aCallback) {
+Message::UniquePtr ChildProcessInfo::WaitUntilPaused() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
+  if (IsPaused()) {
+    return nullptr;
+  }
+
   bool sentTerminateMessage = false;
-  while (!aCallback()) {
+  while (true) {
     MonitorAutoLock lock(*gMonitor);
-    if (!MaybeProcessPendingMessage(this)) {
+
+    
+    ChildProcessInfo* process = this;
+    Message::UniquePtr msg = ExtractChildMessage(&process);
+
+    if (msg) {
+      OnIncomingMessage(*msg,  false);
+      if (IsPaused()) {
+        return msg;
+      }
+    } else {
       if (gChildrenAreDebugging || IsRecording()) {
         
         
@@ -562,7 +327,7 @@ void ChildProcessInfo::WaitUntil(const std::function<bool()>& aCallback) {
             
             CrashReporter::AnnotateCrashReport(
                 CrashReporter::Annotation::RecordReplayHang, true);
-            SendMessageRaw(TerminateMessage());
+            SendMessage(TerminateMessage());
             sentTerminateMessage = true;
           } else {
             
@@ -583,24 +348,31 @@ void ChildProcessInfo::WaitUntil(const std::function<bool()>& aCallback) {
   MonitorAutoLock lock(*gMonitor);
   MOZ_RELEASE_ASSERT(gHasPendingMessageRunnable);
   gHasPendingMessageRunnable = false;
-  while (MaybeProcessPendingMessage(nullptr)) {
+  while (true) {
+    ChildProcessInfo* process = nullptr;
+    Message::UniquePtr msg = ExtractChildMessage(&process);
+
+    if (msg) {
+      MonitorAutoUnlock unlock(*gMonitor);
+      process->OnIncomingMessage(*msg,  true);
+    } else {
+      break;
+    }
   }
 }
 
 
 
 
-void ChildProcessInfo::ReceiveChildMessageOnMainThread(size_t aChannelId,
-                                                       Message* aMsg) {
+void ChildProcessInfo::ReceiveChildMessageOnMainThread(Message::UniquePtr aMsg) {
   MOZ_RELEASE_ASSERT(!NS_IsMainThread());
 
   MonitorAutoLock lock(*gMonitor);
 
   PendingMessage pending;
   pending.mProcess = this;
-  pending.mChannelId = aChannelId;
-  pending.mMsg = aMsg;
-  gPendingMessages.append(pending);
+  pending.mMsg = std::move(aMsg);
+  gPendingMessages.append(std::move(pending));
 
   
   gMonitor->NotifyAll();
