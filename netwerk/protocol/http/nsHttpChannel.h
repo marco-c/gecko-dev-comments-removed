@@ -161,6 +161,8 @@ public:
     
     NS_IMETHOD SetupFallbackChannel(const char *aFallbackKey) override;
     NS_IMETHOD SetChannelIsForDownload(bool aChannelIsForDownload) override;
+    NS_IMETHOD GetNavigationStartTimeStamp(TimeStamp* aTimeStamp) override;
+    NS_IMETHOD SetNavigationStartTimeStamp(TimeStamp aTimeStamp) override;
     
     NS_IMETHOD SetPriority(int32_t value) override;
     
@@ -655,6 +657,9 @@ private:
     
     nsresult ConnectOnTailUnblock();
 
+    
+    bool CheckFastBlocked();
+
     nsCString mUsername;
 
     
@@ -703,6 +708,8 @@ private:
     
     
     mozilla::Mutex mRCWNLock;
+
+    TimeStamp mNavigationStartTimeStamp;
 
 protected:
     virtual void DoNotifyListenerCleanup() override;

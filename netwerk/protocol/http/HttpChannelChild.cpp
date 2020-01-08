@@ -2690,11 +2690,14 @@ HttpChannelChild::ContinueAsyncOpen()
   
   
   uint64_t contentWindowId = 0;
+  TimeStamp navigationStartTimeStamp;
   if (tabChild) {
     MOZ_ASSERT(tabChild->WebNavigation());
     nsCOMPtr<nsIDocument> document = tabChild->GetDocument();
     if (document) {
       contentWindowId = document->InnerWindowID();
+      navigationStartTimeStamp =
+        document->GetNavigationTiming()->GetNavigationStartTimeStamp();
       mTopLevelOuterContentWindowId = document->OuterWindowID();
     }
   }
@@ -2806,6 +2809,8 @@ HttpChannelChild::ContinueAsyncOpen()
   openArgs.handleFetchEventEnd()      = mHandleFetchEventEnd;
 
   openArgs.forceMainDocumentChannel() = mForceMainDocumentChannel;
+
+  openArgs.navigationStartTimeStamp() = navigationStartTimeStamp;
 
   
   
