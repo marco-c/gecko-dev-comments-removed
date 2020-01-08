@@ -647,6 +647,15 @@ notification[value="translation"] menulist > .menulist-dropmarker {
   }
 
   
+
+  :root[tabsintitlebar] #toolbar-menubar[autohide="true"] {
+    height: var(--tab-min-height);
+  }
+  :root[tabsintitlebar][sizemode="normal"] #toolbar-menubar[autohide="true"] {
+    height: calc(var(--tab-min-height) + var(--space-above-tabbar));
+  }
+
+  
   :root[sizemode="normal"][chromehidden~="menubar"] #TabsToolbar,
   :root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] + #TabsToolbar {
     padding-top: var(--space-above-tabbar);
