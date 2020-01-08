@@ -20,8 +20,68 @@ static constexpr nsUConvProp encodingsGroups[] = {
 #include "encodingsgroups.properties.h"
 };
 
-static constexpr nsUConvProp kLangGroups[] = {
-#include "langGroups.properties.h"
+
+static constexpr const char* kLangGroups[] = {
+  
+  "x-armn",
+  "x-cyrillic",
+  "x-devanagari",
+  "x-geor",
+  "x-math",
+  "x-tamil",
+  "x-unicode",
+  "x-western"
+  
+  
+  
+  
+  
+  
+  
+  
+  
+};
+
+
+static constexpr struct {
+  const char* mTag;
+  nsAtom*     mAtom;
+} kScriptLangGroup[] =
+{
+  
+  { "Arab", nsGkAtoms::ar },
+  { "Armn", nsGkAtoms::x_armn },
+  { "Beng", nsGkAtoms::x_beng },
+  { "Cans", nsGkAtoms::x_cans },
+  { "Cyrl", nsGkAtoms::x_cyrillic },
+  { "Deva", nsGkAtoms::x_devanagari },
+  { "Ethi", nsGkAtoms::x_ethi },
+  { "Geok", nsGkAtoms::x_geor },
+  { "Geor", nsGkAtoms::x_geor },
+  { "Grek", nsGkAtoms::el },
+  { "Gujr", nsGkAtoms::x_gujr },
+  { "Guru", nsGkAtoms::x_guru },
+  { "Hang", nsGkAtoms::ko },
+  { "Hani", nsGkAtoms::Japanese },
+  { "Hans", nsGkAtoms::Chinese },
+  
+  
+  
+  { "Hebr", nsGkAtoms::he },
+  { "Hira", nsGkAtoms::Japanese },
+  { "Jpan", nsGkAtoms::Japanese },
+  { "Kana", nsGkAtoms::Japanese },
+  { "Khmr", nsGkAtoms::x_khmr },
+  { "Knda", nsGkAtoms::x_knda },
+  { "Kore", nsGkAtoms::ko },
+  { "Latn", nsGkAtoms::x_western },
+  { "Mlym", nsGkAtoms::x_mlym },
+  { "Orya", nsGkAtoms::x_orya },
+  { "Sinh", nsGkAtoms::x_sinh },
+  { "Taml", nsGkAtoms::x_tamil },
+  { "Telu", nsGkAtoms::x_telu },
+  { "Thai", nsGkAtoms::th },
+  { "Tibt", nsGkAtoms::x_tibt }
 };
 
 
@@ -111,24 +171,48 @@ nsLanguageAtomService::GetUncachedLanguageGroup(nsAtom* aLanguage) const
   aLanguage->ToUTF8String(langStr);
   ToLowerCase(langStr);
 
-  nsAutoCString langGroupStr;
-  nsresult res =
-    nsUConvPropertySearch::SearchPropertyValue(kLangGroups,
-                                               ArrayLength(kLangGroups),
-                                               langStr, langGroupStr);
-  while (NS_FAILED(res)) {
-    int32_t hyphen = langStr.RFindChar('-');
-    if (hyphen <= 0) {
-      langGroupStr.AssignLiteral("x-unicode");
-      break;
+  RefPtr<nsAtom> langGroup;
+  if (langStr[0] == 'x' && langStr[1] == '-') {
+    
+    size_t unused;
+    if (BinarySearchIf(kLangGroups, 0, ArrayLength(kLangGroups),
+                       [&langStr](const char* tag) -> int {
+                         return langStr.Compare(tag);
+                       },
+                       &unused)) {
+      langGroup = NS_Atomize(langStr);
+      return langGroup.forget();
     }
-    langStr.Truncate(hyphen);
-    res = nsUConvPropertySearch::SearchPropertyValue(kLangGroups,
-                                                     ArrayLength(kLangGroups),
-                                                     langStr, langGroupStr);
+  } else {
+    
+    Locale loc(langStr);
+    if (loc.IsWellFormed()) {
+      if (loc.GetScript().IsEmpty()) {
+        loc.AddLikelySubtags();
+      }
+      if (loc.GetScript().EqualsLiteral("Hant")) {
+        if (loc.GetRegion().EqualsLiteral("HK")) {
+          langGroup = nsGkAtoms::HongKongChinese;
+        } else {
+          langGroup = nsGkAtoms::Taiwanese;
+        }
+        return langGroup.forget();
+      } else {
+        size_t foundIndex;
+        const nsCString& script = loc.GetScript();
+        if (BinarySearchIf(kScriptLangGroup, 0, ArrayLength(kScriptLangGroup),
+                           [script](const auto& entry) -> int {
+                             return script.Compare(entry.mTag);
+                           },
+                           &foundIndex)) {
+          langGroup = kScriptLangGroup[foundIndex].mAtom;
+          return langGroup.forget();
+        }
+      }
+    }
   }
 
-  RefPtr<nsAtom> langGroup = NS_Atomize(langGroupStr);
-
+  
+  langGroup = nsGkAtoms::Unicode;
   return langGroup.forget();
 }
