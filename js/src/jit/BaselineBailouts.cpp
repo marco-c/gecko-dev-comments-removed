@@ -381,6 +381,8 @@ struct BaselineStackBuilder
         
         
         
+        
+        
         if (type == FrameType::BaselineStub) {
             size_t offset = JitFrameLayout::Size() + topFrame->prevFrameLocalSize() +
                             BaselineStubFrameLayout::reverseOffsetOfSavedFramePtr();

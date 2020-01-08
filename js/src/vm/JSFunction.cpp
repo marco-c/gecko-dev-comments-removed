@@ -1101,6 +1101,7 @@ js::FunctionToString(JSContext* cx, HandleFunction fun, bool isToSource)
         
         
         
+        
 
         auto hasGetterOrSetterPrefix = [](JSAtom* name) {
             auto hasGetterOrSetterPrefix = [](const auto* chars) {

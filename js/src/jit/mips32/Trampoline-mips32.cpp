@@ -1255,6 +1255,7 @@ JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm, Label* profi
         masm.storePtr(scratch3, lastProfilingCallSite);
 
         
+        
         masm.as_addu(scratch3, scratch2, scratch1);
         masm.add32(Imm32(RectifierFrameLayout::Size()), scratch3);
         masm.storePtr(scratch3, lastProfilingFrame);

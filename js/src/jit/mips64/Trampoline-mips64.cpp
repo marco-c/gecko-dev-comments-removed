@@ -462,6 +462,7 @@ JitRuntime::generateArgumentsRectifier(MacroAssembler& masm)
     
     
     
+    
 
     
     masm.loadPtr(Address(StackPointer, RectifierFrameLayout::offsetOfNumActualArgs()),
@@ -528,6 +529,7 @@ JitRuntime::generateArgumentsRectifier(MacroAssembler& masm)
         masm.bind(&notConstructing);
     }
 
+    
     
     
     
@@ -1205,6 +1207,7 @@ JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm, Label* profi
         masm.loadPtr(Address(scratch2, RectifierFrameLayout::offsetOfReturnAddress()), scratch3);
         masm.storePtr(scratch3, lastProfilingCallSite);
 
+        
         
         masm.as_daddu(scratch3, scratch2, scratch1);
         masm.addPtr(Imm32(RectifierFrameLayout::Size()), scratch3);

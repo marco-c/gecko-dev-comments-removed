@@ -179,6 +179,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm)
     static_assert(sizeof(JitFrameLayout) % JitStackAlignment == 0,
       "No need to consider the JitFrameLayout for aligning the stack");
     
+    
     aasm->as_sub(sp, r4, Imm8(sizeof(JitFrameLayout)));
 
     
@@ -1264,6 +1265,7 @@ JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm, Label* profi
         masm.loadPtr(Address(scratch2, RectifierFrameLayout::offsetOfReturnAddress()), scratch3);
         masm.storePtr(scratch3, lastProfilingCallSite);
 
+        
         
         masm.ma_add(scratch2, scratch1, scratch3);
         masm.add32(Imm32(RectifierFrameLayout::Size()), scratch3);

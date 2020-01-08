@@ -94,6 +94,9 @@ class TraceLoggerEvent {
 
 
 
+
+
+
         uintptr_t payload_;
 
       public:

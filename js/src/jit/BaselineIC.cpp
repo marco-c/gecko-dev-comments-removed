@@ -4229,6 +4229,8 @@ ICCallScriptedCompiler::generateStubCode(MacroAssembler& masm)
 
     
     
+    
+    
     if (isSpread_) {
         unsigned skipToCallee = (2 + isConstructing_) * sizeof(Value);
         masm.loadValue(Address(masm.getStackPointer(), skipToCallee + ICStackValueOffset), R1);
@@ -4296,6 +4298,7 @@ ICCallScriptedCompiler::generateStubCode(MacroAssembler& masm)
 
         
         
+        
         masm.loadValue(Address(masm.getStackPointer(), STUB_FRAME_SIZE + sizeof(size_t)), R1);
         masm.push(masm.extractObject(R1, ExtractTemp0));
 
@@ -4334,6 +4337,7 @@ ICCallScriptedCompiler::generateStubCode(MacroAssembler& masm)
         
         masm.pop(argcReg);
 
+        
         
         
         
@@ -4432,7 +4436,11 @@ ICCallScriptedCompiler::generateStubCode(MacroAssembler& masm)
         
         
         
+        
 
+        
+        
+        
         
         
         
@@ -4455,6 +4463,7 @@ ICCallScriptedCompiler::generateStubCode(MacroAssembler& masm)
             masm.loadPtr(argcAddr, argcReg);
         }
 
+        
         
         
         
@@ -4491,6 +4500,7 @@ static const VMFunction CopyStringSplitArrayInfo =
 bool
 ICCall_ConstStringSplit::Compiler::generateStubCode(MacroAssembler& masm)
 {
+    
     
     static const size_t SEP_DEPTH = 0;
     static const size_t STR_DEPTH = sizeof(Value);
@@ -5031,6 +5041,8 @@ ICCall_ScriptedFunCall::Compiler::generateStubCode(MacroAssembler& masm)
     regs.take(argcReg);
     regs.takeUnchecked(ICTailCallReg);
 
+    
+    
     
     
     BaseValueIndex calleeSlot(masm.getStackPointer(), argcReg, ICStackValueOffset + sizeof(Value));

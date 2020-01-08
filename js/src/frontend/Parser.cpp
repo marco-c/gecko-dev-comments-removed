@@ -6981,6 +6981,7 @@ GeneralParser<ParseHandler, Unit>::tryStatement(YieldHandling yieldHandling)
 
 
 
+
     Node innerBlock;
     {
         if (!mustMatchToken(TokenKind::LeftCurly, JSMSG_CURLY_BEFORE_TRY)) {
@@ -7658,6 +7659,10 @@ GeneralParser<ParseHandler, Unit>::statement(YieldHandling yieldHandling)
                 return null();
             }
         } else if (tt == TokenKind::Async) {
+            
+            
+            
+            
             
             
             
@@ -9502,6 +9507,8 @@ GeneralParser<ParseHandler, Unit>::checkDestructuringAssignmentElement(Node expr
                                                                        PossibleError* exprPossibleError,
                                                                        PossibleError* possibleError)
 {
+    
+    
     
     
     
