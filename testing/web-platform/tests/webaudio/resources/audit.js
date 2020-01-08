@@ -81,13 +81,6 @@ window.Audit = (function() {
           targetString = '' + String(target).split(/[\s\]]/)[1];
         }
         break;
-      case 'function':
-        if (Error.isPrototypeOf(target)) {
-          targetString = "EcmaScript error " + target.name;
-        } else {
-          targetString = String(target);
-        }
-        break;
       default:
         targetString = String(target);
         break;
@@ -290,9 +283,6 @@ window.Audit = (function() {
 
 
 
-
-
-
     throw() {
       this._processArguments(arguments);
       this._printActualForFailure = false;
@@ -313,14 +303,7 @@ window.Audit = (function() {
           
           didThrowCorrectly = true;
           passDetail = '${actual} threw ' + error.name + errorMessage + '.';
-        } else if (typeof(this._expected) == "string" &&
-                   error instanceof DOMException &&
-                   error.name === this._expected) {
-          
-          didThrowCorrectly = true;
-          passDetail = '${actual} threw ${expected}' + errorMessage + '.';
-        } else if (this._expected == error.constructor &&
-                   this._expected.name == error.name) {
+        } else if (error.name === this._expected) {
           
           didThrowCorrectly = true;
           passDetail = '${actual} threw ${expected}' + errorMessage + '.';
