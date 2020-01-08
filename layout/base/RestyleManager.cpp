@@ -681,9 +681,6 @@ static void StyleChangeReflow(nsIFrame* aFrame, nsChangeHint aHint);
 
 
 
-
-
-
 static nsIFrame*
 GetFrameForChildrenOnlyTransformHint(nsIFrame* aFrame)
 {
@@ -1689,29 +1686,46 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
         }
         if (hint & nsChangeHint_ChildrenOnlyTransform) {
           
+          
           nsIFrame* hintFrame = GetFrameForChildrenOnlyTransformHint(frame);
-          nsIFrame* childFrame = hintFrame->PrincipalChildList().FirstChild();
           NS_ASSERTION(!nsLayoutUtils::GetNextContinuationOrIBSplitSibling(frame),
                        "SVG frames should not have continuations "
                        "or ib-split siblings");
           NS_ASSERTION(!nsLayoutUtils::GetNextContinuationOrIBSplitSibling(hintFrame),
                        "SVG frames should not have continuations "
                        "or ib-split siblings");
-          for ( ; childFrame; childFrame = childFrame->GetNextSibling()) {
-            MOZ_ASSERT(childFrame->IsFrameOfType(nsIFrame::eSVG),
-                       "Not expecting non-SVG children");
+          if (hintFrame->IsSVGOuterSVGAnonChildFrame()) {
             
             
-            if (!(childFrame->GetStateBits() &
+            
+
+            
+            
+            if (!(hintFrame->GetStateBits() &
                   (NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN))) {
-              mOverflowChangedTracker.AddFrame(childFrame,
-                                        OverflowChangedTracker::CHILDREN_CHANGED);
+              mOverflowChangedTracker.AddFrame(hintFrame,
+                                       OverflowChangedTracker::CHILDREN_CHANGED);
             }
-            NS_ASSERTION(!nsLayoutUtils::GetNextContinuationOrIBSplitSibling(childFrame),
-                         "SVG frames should not have continuations "
-                         "or ib-split siblings");
-            NS_ASSERTION(childFrame->GetParent() == hintFrame,
-                         "SVG child frame not expected to have different parent");
+          } else {
+            
+            
+            nsIFrame* childFrame = hintFrame->PrincipalChildList().FirstChild();
+            for ( ; childFrame; childFrame = childFrame->GetNextSibling()) {
+              MOZ_ASSERT(childFrame->IsFrameOfType(nsIFrame::eSVG),
+                         "Not expecting non-SVG children");
+              
+              
+              if (!(childFrame->GetStateBits() &
+                    (NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN))) {
+                mOverflowChangedTracker.AddFrame(childFrame,
+                                       OverflowChangedTracker::CHILDREN_CHANGED);
+              }
+              NS_ASSERTION(!nsLayoutUtils::GetNextContinuationOrIBSplitSibling(childFrame),
+                           "SVG frames should not have continuations "
+                           "or ib-split siblings");
+              NS_ASSERTION(childFrame->GetParent() == hintFrame,
+                        "SVG child frame not expected to have different parent");
+            }
           }
         }
         
