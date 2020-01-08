@@ -742,9 +742,7 @@ pref("apz.pinch_lock.scoll_lock_threshold", "0.03125");
 pref("apz.pinch_lock.span_breakout_threshold", "0.03125");  
 pref("apz.pinch_lock.span_lock_threshold", "0.03125");  
 pref("apz.popups.enabled", false);
-#ifdef NIGHTLY_BUILD
 pref("apz.relative-update.enabled", true);
-#endif
 
 
 pref("apz.printtree", false);
