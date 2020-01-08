@@ -39,7 +39,7 @@ DebuggerPanel.prototype = {
 
     
     if (!this.target.isRemote) {
-      targetPromise = this.target.makeRemote();
+      targetPromise = this.target.attach();
       
       
       this.target.tab.addEventListener("TabSelect", this);
@@ -134,7 +134,7 @@ DebuggerPanel.prototype = {
   getMappedExpression(expression) {
     
     
-    return null;
+    return expression;
   },
 
   isPaused() {

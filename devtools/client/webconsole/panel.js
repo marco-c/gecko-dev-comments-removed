@@ -54,7 +54,7 @@ WebConsolePanel.prototype = {
 
       
       if (!this.target.isRemote) {
-        await this.target.makeRemote();
+        await this.target.attach();
       }
 
       const webConsoleUIWindow = iframe.contentWindow.wrappedJSObject;

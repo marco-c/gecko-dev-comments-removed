@@ -447,7 +447,7 @@ Toolbox.prototype = {
       
 
       
-      await this._target.makeRemote();
+      await this._target.attach();
 
       
       
@@ -678,21 +678,6 @@ Toolbox.prototype = {
       return null;
     }
     return this._createSourceMapService();
-  },
-
-  
-
-
-  get parserService() {
-    if (this._parserService) {
-      return this._parserService;
-    }
-
-    this._parserService =
-      this.browserRequire("devtools/client/debugger/new/src/workers/parser/index");
-    this._parserService
-      .start("resource://devtools/client/debugger/new/dist/parser-worker.js", this.win);
-    return this._parserService;
   },
 
   
@@ -2825,11 +2810,6 @@ Toolbox.prototype = {
     if (this._sourceMapService) {
       this._sourceMapService.stopSourceMapWorker();
       this._sourceMapService = null;
-    }
-
-    if (this._parserService) {
-      this._parserService.stop();
-      this._parserService = null;
     }
 
     if (this.webconsolePanel) {
