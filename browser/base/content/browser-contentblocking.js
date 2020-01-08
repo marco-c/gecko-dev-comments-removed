@@ -129,7 +129,6 @@ var ThirdPartyCookies = {
 var ContentBlocking = {
   
   MAX_INTROS: 20,
-  PREF_ENABLED: "browser.contentblocking.enabled",
   PREF_ANIMATIONS_ENABLED: "toolkit.cosmeticAnimations.enabled",
   PREF_REPORT_BREAKAGE_ENABLED: "browser.contentblocking.reportBreakage.enabled",
   PREF_REPORT_BREAKAGE_URL: "browser.contentblocking.reportBreakage.url",
@@ -216,12 +215,8 @@ var ContentBlocking = {
 
     Services.prefs.addObserver(this.PREF_ANIMATIONS_ENABLED, this.updateAnimationsEnabled);
 
-    XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingEnabled", this.PREF_ENABLED, false,
-      this.updateEnabled.bind(this));
     XPCOMUtils.defineLazyPreferenceGetter(this, "reportBreakageEnabled",
       this.PREF_REPORT_BREAKAGE_ENABLED, false);
-
-    this.updateEnabled();
 
     this.appMenuLabel.setAttribute("label", this.strings.appMenuTitle);
     this.appMenuLabel.setAttribute("tooltiptext", this.strings.appMenuTooltip);
@@ -240,19 +235,6 @@ var ContentBlocking = {
     }
 
     Services.prefs.removeObserver(this.PREF_ANIMATIONS_ENABLED, this.updateAnimationsEnabled);
-  },
-
-  get enabled() {
-    return this.contentBlockingEnabled;
-  },
-
-  updateEnabled() {
-    this.content.toggleAttribute("enabled", this.enabled);
-
-    
-    for (let blocker of this.blockers) {
-      blocker.categoryItem.classList.toggle("blocked", this.enabled && blocker.enabled);
-    }
   },
 
   hideIdentityPopupAndReload() {
@@ -366,7 +348,7 @@ var ContentBlocking = {
       
       
       blocker.activated = blocker.isBlockerActivated(state);
-      blocker.categoryItem.classList.toggle("blocked", this.enabled && blocker.enabled);
+      blocker.categoryItem.classList.toggle("blocked", blocker.enabled);
       blocker.categoryItem.hidden = !blocker.visible;
       anyBlockerActivated = anyBlockerActivated || blocker.activated;
     }
@@ -375,7 +357,7 @@ var ContentBlocking = {
     
     
     
-    let active = this.enabled && anyBlockerActivated;
+    let active = anyBlockerActivated;
     let isAllowing = state & Ci.nsIWebProgressListener.STATE_LOADED_TRACKING_CONTENT;
     let detected = anyBlockerActivated || isAllowing;
 
@@ -391,7 +373,7 @@ var ContentBlocking = {
     this.content.toggleAttribute("active", active);
 
     this.iconBox.toggleAttribute("active", active);
-    this.iconBox.toggleAttribute("hasException", this.enabled && hasException);
+    this.iconBox.toggleAttribute("hasException", hasException);
 
     
     
