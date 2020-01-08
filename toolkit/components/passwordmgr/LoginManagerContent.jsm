@@ -971,15 +971,19 @@ var LoginManagerContent = {
                             null;
 
     
-    let openerTopWindow = win.opener ? win.opener.top : null;
+    let openerTopWindowID = null;
+    if (win.opener) {
+      openerTopWindowID = win.opener.top.windowUtils.outerWindowID;
+    }
 
     messageManager.sendAsyncMessage("RemoteLogins:onFormSubmit",
                                     { hostname,
                                       formSubmitURL,
                                       usernameField: mockUsername,
                                       newPasswordField: mockPassword,
-                                      oldPasswordField: mockOldPassword },
-                                    { openerTopWindow });
+                                      oldPasswordField: mockOldPassword,
+                                      openerTopWindowID,
+                                    });
   },
 
   
