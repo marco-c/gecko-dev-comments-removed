@@ -86,8 +86,8 @@ add_task(async function should_get_geo_defaults_only_once() {
   
   
   
-  Assert.ok(Services.prefs.prefHasUserValue("browser.search.countryCode"));
-  Assert.equal(Services.prefs.getCharPref("browser.search.countryCode"), "FR");
+  Assert.ok(Services.prefs.prefHasUserValue("browser.search.region"));
+  Assert.equal(Services.prefs.getCharPref("browser.search.region"), "FR");
   await asyncReInit();
   checkRequest();
   Assert.equal(Services.search.currentEngine.name, kTestEngineName);
@@ -108,8 +108,8 @@ add_task(async function should_get_geo_defaults_only_once() {
   Assert.equal(Services.search.currentEngine.name, kTestEngineName);
 });
 
-add_task(async function should_request_when_countryCode_not_set() {
-  Services.prefs.clearUserPref("browser.search.countryCode");
+add_task(async function should_request_when_region_not_set() {
+  Services.prefs.clearUserPref("browser.search.region");
   await asyncReInit();
   checkRequest();
   await promiseAfterCache();

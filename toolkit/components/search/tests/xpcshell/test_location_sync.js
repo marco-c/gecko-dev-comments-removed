@@ -1,9 +1,9 @@
 
 
 
-function getCountryCodePref() {
+function getRegionPref() {
   try {
-    return Services.prefs.getCharPref("browser.search.countryCode");
+    return Services.prefs.getCharPref("browser.search.region");
   } catch (_) {
     return undefined;
   }
@@ -12,7 +12,7 @@ function getCountryCodePref() {
 
 
 add_task(async function test_simple() {
-  deepEqual(getCountryCodePref(), undefined, "no countryCode pref");
+  deepEqual(getRegionPref(), undefined, "no region pref");
 
   
   Services.prefs.setCharPref("browser.search.geoip.url", 'data:application/json,{"country_code": "AU"}');
@@ -28,7 +28,7 @@ add_task(async function test_simple() {
     do_timeout(500, resolve);
   });
 
-  deepEqual(getCountryCodePref(), undefined, "didn't do the geoip xhr");
+  deepEqual(getRegionPref(), undefined, "didn't do the geoip xhr");
   
   for (let hid of [
     "SEARCH_SERVICE_COUNTRY_FETCH_RESULT",

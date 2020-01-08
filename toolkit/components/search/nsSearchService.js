@@ -396,15 +396,15 @@ function isUSTimezone() {
 }
 
 
-var ensureKnownCountryCode = async function(ss) {
+var ensureKnownRegion = async function(ss) {
   
-  let countryCode = Services.prefs.getCharPref("browser.search.countryCode", "");
+  let region = Services.prefs.getCharPref("browser.search.region", "");
 
-  if (!countryCode) {
+  if (!region) {
     
     
     
-    await fetchCountryCode(ss);
+    await fetchRegion(ss);
   } else {
     
     if (!geoSpecificDefaultsEnabled())
@@ -450,25 +450,14 @@ var ensureKnownCountryCode = async function(ss) {
 
 
 
-
-
-
-
-
-
-function storeCountryCode(cc) {
-  
-  Services.prefs.setCharPref("browser.search.countryCode", cc);
-  
-  if (!Services.prefs.prefHasUserValue("browser.search.region")) {
-    Services.prefs.setCharPref("browser.search.region", cc);
-  }
+function storeRegion(region) {
+  Services.prefs.setCharPref("browser.search.region", region);
   
   let isTimezoneUS = isUSTimezone();
-  if (cc == "US" && !isTimezoneUS) {
+  if (region == "US" && !isTimezoneUS) {
     Services.telemetry.getHistogramById("SEARCH_SERVICE_US_COUNTRY_MISMATCHED_TIMEZONE").add(1);
   }
-  if (cc != "US" && isTimezoneUS) {
+  if (region != "US" && isTimezoneUS) {
     Services.telemetry.getHistogramById("SEARCH_SERVICE_US_TIMEZONE_MISMATCHED_COUNTRY").add(1);
   }
   
@@ -490,19 +479,19 @@ function storeCountryCode(cc) {
         break;
     }
     if (probeUSMismatched && probeNonUSMismatched) {
-      if (cc == "US" || platformCC == "US") {
+      if (region == "US" || platformCC == "US") {
         
-        Services.telemetry.getHistogramById(probeUSMismatched).add(cc != platformCC);
+        Services.telemetry.getHistogramById(probeUSMismatched).add(region != platformCC);
       } else {
         
-        Services.telemetry.getHistogramById(probeNonUSMismatched).add(cc != platformCC);
+        Services.telemetry.getHistogramById(probeNonUSMismatched).add(region != platformCC);
       }
     }
   }
 }
 
 
-function fetchCountryCode(ss) {
+function fetchRegion(ss) {
   
   const TELEMETRY_RESULT_ENUM = {
     SUCCESS: 0,
@@ -514,7 +503,7 @@ function fetchCountryCode(ss) {
     
   };
   let endpoint = Services.urlFormatter.formatURLPref("browser.search.geoip.url");
-  LOG("_fetchCountryCode starting with endpoint " + endpoint);
+  LOG("_fetchRegion starting with endpoint " + endpoint);
   
   if (!endpoint) {
     return Promise.resolve();
@@ -533,7 +522,7 @@ function fetchCountryCode(ss) {
     let timeoutMS = Services.prefs.getIntPref("browser.search.geoip.timeout");
     let geoipTimeoutPossible = true;
     let timerId = setTimeout(() => {
-      LOG("_fetchCountryCode: timeout fetching country information");
+      LOG("_fetchRegion: timeout fetching region information");
       if (geoipTimeoutPossible)
         Services.telemetry.getHistogramById("SEARCH_SERVICE_COUNTRY_TIMEOUT").add(1);
       timerId = null;
@@ -544,7 +533,7 @@ function fetchCountryCode(ss) {
       
       
       if (result) {
-        storeCountryCode(result);
+        storeRegion(result);
       }
       Services.telemetry.getHistogramById("SEARCH_SERVICE_COUNTRY_FETCH_RESULT").add(reason);
 
@@ -582,18 +571,18 @@ function fetchCountryCode(ss) {
     request.timeout = 100000; 
     request.onload = function(event) {
       let took = Date.now() - startTime;
-      let cc = event.target.response && event.target.response.country_code;
-      LOG("_fetchCountryCode got success response in " + took + "ms: " + cc);
+      let region = event.target.response && event.target.response.country_code;
+      LOG("_fetchRegion got success response in " + took + "ms: " + region);
       Services.telemetry.getHistogramById("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS").add(took);
-      let reason = cc ? TELEMETRY_RESULT_ENUM.SUCCESS : TELEMETRY_RESULT_ENUM.SUCCESS_WITHOUT_DATA;
-      resolveAndReportSuccess(cc, reason);
+      let reason = region ? TELEMETRY_RESULT_ENUM.SUCCESS : TELEMETRY_RESULT_ENUM.SUCCESS_WITHOUT_DATA;
+      resolveAndReportSuccess(region, reason);
     };
     request.ontimeout = function(event) {
-      LOG("_fetchCountryCode: XHR finally timed-out fetching country information");
+      LOG("_fetchRegion: XHR finally timed-out fetching region information");
       resolveAndReportSuccess(null, TELEMETRY_RESULT_ENUM.XHRTIMEOUT);
     };
     request.onerror = function(event) {
-      LOG("_fetchCountryCode: failed to retrieve country information");
+      LOG("_fetchRegion: failed to retrieve region information");
       resolveAndReportSuccess(null, TELEMETRY_RESULT_ENUM.ERROR);
     };
     request.open("POST", endpoint, true);
@@ -2645,12 +2634,12 @@ SearchService.prototype = {
     let cache = await this._asyncReadCacheFile();
 
     try {
-      await checkForSyncCompletion(ensureKnownCountryCode(this));
+      await checkForSyncCompletion(ensureKnownRegion(this));
     } catch (ex) {
       if (ex.result == Cr.NS_ERROR_ALREADY_INITIALIZED) {
         throw ex;
       }
-      LOG("_asyncInit: failure determining country code: " + ex);
+      LOG("_asyncInit: failure determining region: " + ex);
     }
     try {
       await checkForSyncCompletion(this._asyncLoadEngines(cache));
@@ -2962,7 +2951,7 @@ SearchService.prototype = {
 
         let cache = await this._asyncReadCacheFile();
 
-        await ensureKnownCountryCode(this);
+        await ensureKnownRegion(this);
         
         
         if (!gInitialized)

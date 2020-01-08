@@ -4,8 +4,7 @@
 function run_test() {
   Services.prefs.setCharPref("browser.search.geoip.url", 'data:application/json,{"country_code": "AU"}');
   Services.search.init(() => {
-    equal(Services.prefs.getCharPref("browser.search.countryCode"), "AU", "got the correct country code.");
-    equal(Services.prefs.getCharPref("browser.search.region"), "AU", "region pref also set to the countryCode.");
+    equal(Services.prefs.getCharPref("browser.search.region"), "AU", "got the correct region.");
     
     checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.SUCCESS);
     

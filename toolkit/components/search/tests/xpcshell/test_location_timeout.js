@@ -38,7 +38,6 @@ function run_test() {
   Services.prefs.setCharPref("browser.search.geoip.url", url);
   Services.prefs.setIntPref("browser.search.geoip.timeout", 50);
   Services.search.init(() => {
-    ok(!Services.prefs.prefHasUserValue("browser.search.countryCode"), "should be no countryCode pref");
     ok(!Services.prefs.prefHasUserValue("browser.search.region"), "should be no region pref");
     
     checkCountryResultTelemetry(null);
@@ -61,7 +60,6 @@ function run_test() {
 
       
       
-      equal(Services.prefs.getCharPref("browser.search.countryCode"), "AU");
       equal(Services.prefs.getCharPref("browser.search.region"), "AU");
 
       do_test_finished();

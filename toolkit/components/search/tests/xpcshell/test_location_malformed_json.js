@@ -21,11 +21,9 @@ function run_test() {
   
   Services.prefs.setCharPref("browser.search.geoip.url", 'data:application/json,{"country_code"');
   Services.search.init(() => {
-    ok(!Services.prefs.prefHasUserValue("browser.search.countryCode"), "should be no countryCode pref");
     ok(!Services.prefs.prefHasUserValue("browser.search.region"), "should be no region pref");
     
     Services.search.getEngines();
-    ok(!Services.prefs.prefHasUserValue("browser.search.countryCode"), "should be no countryCode pref");
     ok(!Services.prefs.prefHasUserValue("browser.search.region"), "should be no region pref");
     
     checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.SUCCESS_WITHOUT_DATA);
