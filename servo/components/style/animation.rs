@@ -214,9 +214,7 @@ pub enum Animation {
     
     
     
-    
-    
-    Transition(OpaqueNode, f64, AnimationFrame, bool),
+    Transition(OpaqueNode, f64, AnimationFrame),
     
     
     
@@ -232,19 +230,9 @@ pub enum Animation {
 impl Animation {
     
     #[inline]
-    pub fn mark_as_expired(&mut self) {
-        debug_assert!(!self.is_expired());
-        match *self {
-            Animation::Transition(_, _, _, ref mut expired) => *expired = true,
-            Animation::Keyframes(_, _, _, ref mut state) => state.expired = true,
-        }
-    }
-
-    
-    #[inline]
     pub fn is_expired(&self) -> bool {
         match *self {
-            Animation::Transition(_, _, _, expired) => expired,
+            Animation::Transition(..) => false,
             Animation::Keyframes(_, _, _, ref state) => state.expired,
         }
     }
@@ -253,7 +241,7 @@ impl Animation {
     #[inline]
     pub fn node(&self) -> &OpaqueNode {
         match *self {
-            Animation::Transition(ref node, _, _, _) => node,
+            Animation::Transition(ref node, _, _) => node,
             Animation::Keyframes(ref node, _, _, _) => node,
         }
     }
@@ -465,7 +453,6 @@ pub fn start_transitions_if_applicable(
                         duration: box_style.transition_duration_mod(i).seconds() as f64,
                         property_animation: property_animation,
                     },
-                     false,
                 )).unwrap();
 
             had_animations = true;
@@ -656,7 +643,7 @@ pub fn update_style_for_animation<E>(
     debug_assert!(!animation.is_expired());
 
     match *animation {
-        Animation::Transition(_, start_time, ref frame, _) => {
+        Animation::Transition(_, start_time, ref frame) => {
             debug!("update_style_for_animation: transition found");
             let now = context.timer.seconds();
             let mut new_style = (*style).clone();
@@ -868,7 +855,7 @@ pub fn complete_expired_transitions(
         if let Some(ref animations) = animations_to_expire {
             for animation in *animations {
                 
-                if let Animation::Transition(_, _, ref frame, _) = *animation {
+                if let Animation::Transition(_, _, ref frame) = *animation {
                     frame.property_animation.update(Arc::make_mut(style), 1.0);
                 }
             }
