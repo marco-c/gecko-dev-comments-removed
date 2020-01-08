@@ -558,6 +558,7 @@ StorageDBThread::ThreadFunc()
         SetDefaultPriority(); 
       }
     } else if (MOZ_UNLIKELY(!mStopIOThread)) {
+      AUTO_PROFILER_LABEL("StorageDBThread::ThreadFunc::Wait", IDLE);
       lockMonitor.Wait(timeUntilFlush);
     }
   } 
