@@ -9,7 +9,6 @@ const { throttle } = require("devtools/shared/throttle");
 
 const {
   clearFlexbox,
-  toggleFlexItemShown,
   updateFlexbox,
   updateFlexboxColor,
   updateFlexboxHighlighted,
@@ -35,7 +34,6 @@ class FlexboxInspector {
     this.onSetFlexboxOverlayColor = this.onSetFlexboxOverlayColor.bind(this);
     this.onSidebarSelect = this.onSidebarSelect.bind(this);
     this.onToggleFlexboxHighlighter = this.onToggleFlexboxHighlighter.bind(this);
-    this.onToggleFlexItemShown = this.onToggleFlexItemShown.bind(this);
     this.onUpdatePanel = this.onUpdatePanel.bind(this);
 
     this.init();
@@ -105,11 +103,55 @@ class FlexboxInspector {
     this.walker = null;
   }
 
+  
+
+
+
+
+
+
+
+
+  async getAsFlexItem(containerNodeFront) {
+    
+    
+    if (containerNodeFront !== this.selection.nodeFront) {
+      return null;
+    }
+
+    const flexboxFront = await this.layoutInspector.getCurrentFlexbox(
+      this.selection.nodeFront, true);
+
+    if (!flexboxFront) {
+      return null;
+    }
+
+    containerNodeFront = flexboxFront.containerNodeFront;
+    if (!containerNodeFront) {
+      containerNodeFront = await this.walker.getNodeFromActor(flexboxFront.actorID,
+        ["containerEl"]);
+    }
+
+    let flexItemContainer = null;
+    if (flexboxFront) {
+      const flexItems = await this.getFlexItems(flexboxFront);
+      flexItemContainer = {
+        actorID: flexboxFront.actorID,
+        flexItems,
+        flexItemShown: this.selection.nodeFront.actorID,
+        isFlexItemContainer: true,
+        nodeFront: containerNodeFront,
+        properties: flexboxFront.properties,
+      };
+    }
+
+    return flexItemContainer;
+  }
+
   getComponentProps() {
     return {
       onSetFlexboxOverlayColor: this.onSetFlexboxOverlayColor,
       onToggleFlexboxHighlighter: this.onToggleFlexboxHighlighter,
-      onToggleFlexItemShown: this.onToggleFlexItemShown,
     };
   }
 
@@ -345,24 +387,6 @@ class FlexboxInspector {
 
 
 
-
-
-
-
-
-  onToggleFlexItemShown(node) {
-    this.highlighters.toggleFlexItemHighlighter(node);
-    this.store.dispatch(toggleFlexItemShown(node));
-
-    if (node) {
-      this.selection.setNodeFront(node);
-    }
-  }
-
-  
-
-
-
   onUpdatePanel() {
     if (!this.isPanelVisible()) {
       return;
@@ -412,6 +436,7 @@ class FlexboxInspector {
           ["containerEl"]);
       }
 
+      const flexItemContainer = await this.getAsFlexItem(containerNodeFront);
       const flexItems = await this.getFlexItems(flexboxFront);
       
       
@@ -422,13 +447,17 @@ class FlexboxInspector {
       const color = await this.getOverlayColor();
 
       this.store.dispatch(updateFlexbox({
-        actorID: flexboxFront.actorID,
         color,
-        flexItems,
-        flexItemShown: flexItemShown ? flexItemShown.nodeFront.actorID : null,
+        flexContainer: {
+          actorID: flexboxFront.actorID,
+          flexItems,
+          flexItemShown: flexItemShown ? flexItemShown.nodeFront.actorID : null,
+          isFlexItemContainer: false,
+          nodeFront: containerNodeFront,
+          properties: flexboxFront.properties,
+        },
+        flexItemContainer,
         highlighted,
-        nodeFront: containerNodeFront,
-        properties: flexboxFront.properties,
       }));
     } catch (e) {
       

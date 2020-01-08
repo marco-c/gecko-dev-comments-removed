@@ -108,27 +108,47 @@ const flexContainerProperties = exports.flexContainerProperties = {
 
 
 
-exports.flexbox = {
+const flexContainer = exports.flexContainer = {
 
   
   actorID: PropTypes.string,
 
   
-  color: PropTypes.string,
-
-  
   flexItems: PropTypes.arrayOf(PropTypes.shape(flexItem)),
 
   
-  flexItemShown: PropTypes.string,
+  
+  
+  isFlexItemContainer: PropTypes.bool,
 
   
-  highlighted: PropTypes.bool,
+  
+  flexItemShown: PropTypes.string,
 
   
   nodeFront: PropTypes.object,
 
   
   properties: PropTypes.shape(flexContainerProperties),
+
+};
+
+
+
+
+exports.flexbox = {
+
+  
+  color: PropTypes.string,
+
+  
+  flexContainer: PropTypes.shape(flexContainer),
+
+  
+  
+  flexItemContainer: PropTypes.shape(flexContainer),
+
+  
+  highlighted: PropTypes.bool,
 
 };
