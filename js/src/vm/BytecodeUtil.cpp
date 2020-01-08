@@ -339,7 +339,7 @@ class BytecodeParser
 
         
         
-        bool parsed : 1;
+        bool parsed;
 
         
         uint32_t stackDepth;
@@ -374,10 +374,10 @@ class BytecodeParser
 
         bool captureOffsetStack(LifoAlloc& alloc, const OffsetAndDefIndex* stack, uint32_t depth) {
             stackDepth = depth;
-            offsetStack = alloc.newArray<OffsetAndDefIndex>(stackDepth);
-            if (!offsetStack)
-                return false;
             if (stackDepth) {
+                offsetStack = alloc.newArray<OffsetAndDefIndex>(stackDepth);
+                if (!offsetStack)
+                    return false;
                 for (uint32_t n = 0; n < stackDepth; n++)
                     offsetStack[n] = stack[n];
             }
@@ -388,10 +388,10 @@ class BytecodeParser
         bool captureOffsetStackAfter(LifoAlloc& alloc, const OffsetAndDefIndex* stack,
                                      uint32_t depth) {
             stackDepthAfter = depth;
-            offsetStackAfter = alloc.newArray<OffsetAndDefIndex>(stackDepthAfter);
-            if (!offsetStackAfter)
-                return false;
             if (stackDepthAfter) {
+                offsetStackAfter = alloc.newArray<OffsetAndDefIndex>(stackDepthAfter);
+                if (!offsetStackAfter)
+                    return false;
                 for (uint32_t n = 0; n < stackDepthAfter; n++)
                     offsetStackAfter[n] = stack[n];
             }
@@ -2197,16 +2197,6 @@ FindStartPC(JSContext* cx, const FrameIter& iter, const BytecodeParser& parser, 
     *valuepc = nullptr;
     *defIndex = 0;
 
-    if (spindex == JSDVG_IGNORE_STACK)
-        return true;
-
-    
-
-
-
-    if (iter.isIon())
-        return true;
-
     if (spindex < 0 && spindex + int(parser.stackDepthAtPC(current)) < 0)
         spindex = JSDVG_SEARCH_STACK;
 
@@ -2266,9 +2256,19 @@ DecompileExpressionFromStack(JSContext* cx, int spindex, int skipStackHits, Hand
     return true;
 #endif
 
+    if (spindex == JSDVG_IGNORE_STACK)
+        return true;
+
     FrameIter frameIter(cx);
 
     if (frameIter.done() || !frameIter.hasScript() || frameIter.compartment() != cx->compartment())
+        return true;
+
+    
+
+
+
+    if (frameIter.isIon())
         return true;
 
     RootedScript script(cx, frameIter.script());
