@@ -1109,7 +1109,7 @@ int do_relocation_section(Elf *elf, unsigned int rel_type, unsigned int rel_type
     if (eh_frame_hdr && (!eh_frame || strcmp(eh_frame->getName(), ".eh_frame"))) {
         throw std::runtime_error("Expected to find an .eh_frame section adjacent to .eh_frame_hdr");
     }
-    if (eh_frame && first->getAddr() > relhack->getAddr() && second->getAddr() < relhackcode->getAddr()) {
+    if (eh_frame && first->getAddr() > relhack->getAddr() && second->getAddr() < first_executable->getAddr()) {
         
         
         
