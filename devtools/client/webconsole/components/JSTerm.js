@@ -200,6 +200,7 @@ class JSTerm extends Component {
           styleActiveLine: false,
           tabIndex: "0",
           viewportMargin: Infinity,
+          disableSearchAddon: true,
           extraKeys: {
             "Enter": () => {
               
