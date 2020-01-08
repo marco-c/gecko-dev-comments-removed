@@ -7,7 +7,8 @@ rich-select {
 
   box-sizing: border-box;
   display: block;
-  margin: 14px 0;
+  
+  margin: 10px 0;
   
   padding-inline-end: 24px;
   position: relative;
