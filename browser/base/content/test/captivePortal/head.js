@@ -21,12 +21,21 @@ async function setupPrefsAndRecentWindowBehavior() {
   
   
   
+  
   window.CaptivePortalWatcher.uninit();
-  window.document.documentElement.setAttribute("ignorecaptiveportal", "true");
+  let getTopWindowCopy = BrowserWindowTracker.getTopWindow;
+  let defaultWindow = window;
+  BrowserWindowTracker.getTopWindow = () => {
+    let win = getTopWindowCopy();
+    if (win == defaultWindow) {
+      return null;
+    }
+    return win;
+  };
 
   registerCleanupFunction(function cleanUp() {
+    BrowserWindowTracker.getTopWindow = getTopWindowCopy;
     window.CaptivePortalWatcher.init();
-    window.document.documentElement.removeAttribute("ignorecaptiveportal");
   });
 }
 
