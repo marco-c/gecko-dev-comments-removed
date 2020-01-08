@@ -247,10 +247,6 @@ export class SnippetsProvider {
     }
   }
 
-  _noSnippetFallback() {
-    
-  }
-
   _showRemoteSnippets() {
     const snippetsEl = document.getElementById(this.elementId);
     const payload = this.snippetsMap.get("snippets");
@@ -272,6 +268,8 @@ export class SnippetsProvider {
     
     snippetsEl.innerHTML = payload;
 
+    this._logIfDevtools("Successfully added snippets.");
+
     
     
     for (const scriptEl of snippetsEl.getElementsByTagName("script")) {
@@ -291,6 +289,13 @@ export class SnippetsProvider {
   }
 
   
+  _logIfDevtools(text) {
+    if (this.devtoolsEnabled) {
+      console.log("Legacy snippets:", text); 
+    }
+  }
+
+  
 
 
 
@@ -304,7 +309,10 @@ export class SnippetsProvider {
       appData: {},
       elementId: "snippets",
       connect: true,
+      devtoolsEnabled: false,
     }, options);
+
+    this._logIfDevtools("Initializing...");
 
     
     if (global.RPMAddMessageListener) {
@@ -337,12 +345,14 @@ export class SnippetsProvider {
     try {
       this._showRemoteSnippets();
     } catch (e) {
-      this._noSnippetFallback(e);
+      this._logIfDevtools("Problem inserting remote snippets!");
+      console.error(e); 
     }
 
     window.dispatchEvent(new Event(SNIPPETS_ENABLED_EVENT));
 
     this.initialized = true;
+    this._logIfDevtools("Finished initializing.");
   }
 
   uninit() {
@@ -397,11 +407,7 @@ export function addSnippetsSubscriber(store) {
       location.hash !== "#asrouter"
     ) {
       initializing = true;
-      await snippets.init({appData: state.Snippets});
-      
-      if (state.Prefs.values["asrouter.devtoolsEnabled"]) {
-        console.log("Legacy snippets initialized"); 
-      }
+      await snippets.init({appData: state.Snippets, devtoolsEnabled: state.Prefs.values["asrouter.devtoolsEnabled"]});
       initializing = false;
 
     
