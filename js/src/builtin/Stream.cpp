@@ -480,8 +480,7 @@ ReturnPromiseRejectedWithPendingError(JSContext* cx, const CallArgs& args)
 
 
 
-
-inline static MOZ_MUST_USE NativeObject*
+inline static MOZ_MUST_USE bool
 SetNewList(JSContext* cx, HandleNativeObject unwrappedContainer, uint32_t slot)
 {
     mozilla::Maybe<AutoRealm> ar;
@@ -490,10 +489,10 @@ SetNewList(JSContext* cx, HandleNativeObject unwrappedContainer, uint32_t slot)
     }
     NativeObject* list = NewList(cx);
     if (!list) {
-        return nullptr;
+        return false;
     }
     unwrappedContainer->setFixedSlot(slot, ObjectValue(*list));
-    return list;
+    return true;
 }
 
 class ByteStreamChunk : public NativeObject
