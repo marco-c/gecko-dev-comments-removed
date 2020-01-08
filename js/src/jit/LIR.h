@@ -1881,7 +1881,12 @@ class LIRGraph
     };
 
     FixedList<LBlock> blocks_;
-    Vector<Value, 0, JitAllocPolicy> constantPool_;
+
+    
+    
+    
+    
+    mozilla::Vector<Value, 0, JitAllocPolicy> constantPool_;
     typedef HashMap<Value, uint32_t, ValueHasher, JitAllocPolicy> ConstantPoolMap;
     ConstantPoolMap constantPoolMap_;
     Vector<LInstruction*, 0, JitAllocPolicy> safepoints_;
