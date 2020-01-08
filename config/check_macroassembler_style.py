@@ -49,6 +49,8 @@ def get_normalized_signatures(signature, fileAnnot=None):
     
     signature = re.sub(r'\s+', ' ', signature).strip()
     
+    signature = re.sub(r'\(\s+', '(', signature).strip()
+    
     signature = reMatchArg.sub('\g<type>', signature)
     
     signature = signature.replace('MacroAssembler::', '')
@@ -150,39 +152,57 @@ def get_macroassembler_definitions(filename):
     with open(filename) as f:
         for line in f:
             if '//{{{ check_macroassembler_style' in line:
+                if style_section:
+                    raise 'check_macroassembler_style section already opened.'
                 style_section = True
+                braces_depth = 0
             elif '//}}} check_macroassembler_style' in line:
                 style_section = False
             if not style_section:
                 continue
 
+            
             line = re.sub(r'//.*', '', line)
-            if line.startswith('{') or line.strip() == "{}":
+
+            
+            open_curly_brace = line.find('{')
+            was_braces_depth = braces_depth
+            braces_depth = braces_depth + line.count('{') - line.count('}')
+
+            
+            
+            if braces_depth < 0:
+                raise 'check_macroassembler_style annotations are not well scoped.'
+
+            
+            
+            
+            if open_curly_brace != -1 and was_braces_depth == 0:
+                lines = lines + line[:open_curly_brace]
                 if 'MacroAssembler::' in lines:
                     signatures.extend(
                         get_normalized_signatures(lines, fileAnnot))
-                if line.strip() != "{}":  
-                    
-                    code_section = True
-                continue
-            if line.startswith('}'):
-                code_section = False
                 lines = ''
-                continue
-            if code_section:
                 continue
 
-            if len(line.strip()) == 0:
-                lines = ''
+            
+            
+            if braces_depth > 0:
                 continue
+            if was_braces_depth != 0:
+                line = line[line.rfind('}') + 1:]
+
+            
+            
+            
+            last_semi_colon = line.rfind(';')
+            if last_semi_colon != -1:
+                lines = ''
+                line = line[last_semi_colon + 1:]
+
+            
+            
             lines = lines + line
-            
-            if '{' not in lines:
-                continue
-            
-            if ')' not in lines:
-                lines = ''
-                continue
 
     return signatures
 
@@ -201,13 +221,16 @@ def get_macroassembler_declaration(filename):
                 continue
 
             line = re.sub(r'//.*', '', line)
-            if len(line.strip()) == 0:
+            if len(line.strip()) == 0 or 'public:' in line or 'private:' in line:
                 lines = ''
                 continue
             lines = lines + line
+
             
             if ';' not in lines:
                 continue
+
+            
             
             if ')' not in lines:
                 lines = ''

@@ -14,7 +14,6 @@ namespace jit {
 
 
 
-
 void
 MacroAssembler::move64(Register64 src, Register64 dest)
 {
@@ -1980,7 +1979,6 @@ MacroAssembler::clampIntToUint8(Register reg)
     Mov(scratch32, Operand(0xff));
     Csel(reg32, reg32, scratch32, Assembler::LessThanOrEqual);
 }
-
 
 
 
