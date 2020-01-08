@@ -10,10 +10,12 @@
 #include "mozilla/Attributes.h"
 #include "nsISMILType.h"
 
-class nsSMILNullType : public nsISMILType {
+namespace mozilla {
+
+class SMILNullType : public nsISMILType {
  public:
   
-  static nsSMILNullType* Singleton();
+  static SMILNullType* Singleton();
 
  protected:
   
@@ -38,7 +40,9 @@ class nsSMILNullType : public nsISMILType {
 
  private:
   
-  constexpr nsSMILNullType() {}
+  constexpr SMILNullType() {}
 };
+
+}  
 
 #endif  
