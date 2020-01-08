@@ -5941,5 +5941,6 @@ pref("prio.enabled", false);
 #ifdef NIGHTLY_BUILD
 
 
-pref("app.normandy.test.with_default", false);
+pref("app.normandy.test.with_true_default", true);
+pref("app.normandy.test.with_false_default", false);
 #endif
