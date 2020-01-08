@@ -137,6 +137,7 @@
 
 
 
+
 typedef void* UNumberFormat;
 
 
@@ -382,6 +383,10 @@ typedef enum UNumberFormatFields {
     UNUM_FIELD_COUNT
 #endif  
 } UNumberFormatFields;
+
+
+
+
 
 
 
@@ -1014,6 +1019,8 @@ typedef enum UNumberFormatAttribute {
 
 
 
+
+
   UNUM_SCALE = 21,
 #ifndef U_HIDE_INTERNAL_API
   
@@ -1052,7 +1059,7 @@ typedef enum UNumberFormatAttribute {
 
 
 
-  UNUM_PARSE_NO_EXPONENT,
+  UNUM_PARSE_NO_EXPONENT = 0x1001,
 
   
 
@@ -1067,7 +1074,21 @@ typedef enum UNumberFormatAttribute {
   
   
 
-  UNUM_LIMIT_BOOLEAN_ATTRIBUTE = 0x1003
+  UNUM_LIMIT_BOOLEAN_ATTRIBUTE = 0x1003,
+
+  
+
+
+
+
+  UNUM_PARSE_CASE_SENSITIVE = 0x1004,
+
+  
+
+
+
+
+  UNUM_SIGN_ALWAYS_SHOWN = 0x1005,
 } UNumberFormatAttribute;
 
 

@@ -19,8 +19,9 @@
 #include "utypeinfo.h"  
 
 #include "nfsubs.h"
-#include "digitlst.h"
 #include "fmtableimp.h"
+#include "putilimp.h"
+#include "number_decimalquantity.h"
 
 #if U_HAVE_RBNF
 
@@ -46,6 +47,8 @@ static const UChar gGreaterGreaterThan[] =
 }; 
 
 U_NAMESPACE_BEGIN
+
+using number::impl::DecimalQuantity;
 
 class SameValueSubstitution : public NFSubstitution {
 public:
@@ -1069,13 +1072,12 @@ FractionalPartSubstitution::doSubstitution(double number, UnicodeString& toInser
     
     
 
-    DigitList dl;
-    dl.set(number);
-    dl.roundFixedPoint(20);     
-    dl.reduce();                
+    DecimalQuantity dl;
+    dl.setToDouble(number);
+    dl.roundToMagnitude(-20, UNUM_ROUND_HALFEVEN, status);     
     
     UBool pad = FALSE;
-    for (int32_t didx = dl.getCount()-1; didx>=dl.getDecimalAt(); didx--) {
+    for (int32_t didx = dl.getLowerDisplayMagnitude(); didx<0; didx++) {
       
       
       
@@ -1084,7 +1086,7 @@ FractionalPartSubstitution::doSubstitution(double number, UnicodeString& toInser
       } else {
         pad = TRUE;
       }
-      int64_t digit = didx>=0 ? dl.getDigit(didx) - '0' : 0;
+      int64_t digit = dl.getDigit(didx);
       getRuleSet()->format(digit, toInsertInto, _pos + getPos(), recursionCount, status);
     }
 
@@ -1142,7 +1144,8 @@ FractionalPartSubstitution::doParse(const UnicodeString& text,
         int32_t digit;
 
 
-        DigitList dl;
+        DecimalQuantity dl;
+        int32_t totalDigits = 0;
         NumberFormat* fmt = NULL;
         while (workText.length() > 0 && workPos.getIndex() != 0) {
             workPos.setIndex(0);
@@ -1170,7 +1173,8 @@ FractionalPartSubstitution::doParse(const UnicodeString& text,
             }
 
             if (workPos.getIndex() != 0) {
-                dl.append((char)('0' + digit));
+                dl.appendDigit(static_cast<int8_t>(digit), 0, true);
+                totalDigits++;
 
 
                 parsePosition.setIndex(parsePosition.getIndex() + workPos.getIndex());
@@ -1183,7 +1187,8 @@ FractionalPartSubstitution::doParse(const UnicodeString& text,
         }
         delete fmt;
 
-        result = dl.getCount() == 0 ? 0 : dl.getDouble();
+        dl.adjustMagnitude(-totalDigits);
+        result = dl.toDouble();
         result = composeRuleValue(result, baseValue);
         resVal.setDouble(result);
         return TRUE;

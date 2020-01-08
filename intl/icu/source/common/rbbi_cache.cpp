@@ -206,7 +206,7 @@ void RuleBasedBreakIterator::DictionaryCache::populateDictionary(int32_t startPo
 
 
 
-RuleBasedBreakIterator::BreakCache::BreakCache(RuleBasedBreakIterator *bi, UErrorCode &status) : 
+RuleBasedBreakIterator::BreakCache::BreakCache(RuleBasedBreakIterator *bi, UErrorCode &status) :
         fBI(bi), fSideBuffer(status) {
     reset();
 }
@@ -299,7 +299,7 @@ void RuleBasedBreakIterator::BreakCache::previous(UErrorCode &status) {
     fBI->fPosition = fTextIdx;
     fBI->fRuleStatusIndex = fStatuses[fBufIdx];
     return;
-}    
+}
 
 
 UBool RuleBasedBreakIterator::BreakCache::seek(int32_t pos) {
@@ -317,7 +317,7 @@ UBool RuleBasedBreakIterator::BreakCache::seek(int32_t pos) {
         fTextIdx = fBoundaries[fBufIdx];
         return TRUE;
     }
-    
+
     int32_t min = fStartBufIdx;
     int32_t max = fEndBufIdx;
     while (min != max) {
@@ -354,16 +354,33 @@ UBool RuleBasedBreakIterator::BreakCache::populateNear(int32_t position, UErrorC
     if ((position < fBoundaries[fStartBufIdx] - 15) || position > (fBoundaries[fEndBufIdx] + 15)) {
         int32_t aBoundary = 0;
         int32_t ruleStatusIndex = 0;
-        
         if (position > 20) {
-            int32_t backupPos = fBI->handlePrevious(position);
-            fBI->fPosition = backupPos;
-            aBoundary = fBI->handleNext();                
-            ruleStatusIndex = fBI->fRuleStatusIndex;
+            int32_t backupPos = fBI->handleSafePrevious(position);
+
+            if (backupPos > 0) {
+                
+                
+                
+                
+                
+                
+                fBI->fPosition = backupPos;
+                aBoundary = fBI->handleNext();
+                if (aBoundary <= backupPos + 4) {
+                    
+                    
+                    utext_setNativeIndex(&fBI->fText, aBoundary);
+                    if (backupPos == utext_getPreviousNativeIndex(&fBI->fText)) {
+                        
+                        aBoundary = fBI->handleNext();   
+                    }
+                }
+                ruleStatusIndex = fBI->fRuleStatusIndex;
+            }
         }
-        reset(aBoundary, ruleStatusIndex);               
+        reset(aBoundary, ruleStatusIndex);        
     }
-    
+
     
 
     if (fBoundaries[fEndBufIdx] < position) {
@@ -485,16 +502,30 @@ UBool RuleBasedBreakIterator::BreakCache::populatePreceding(UErrorCode &status) 
         if (backupPosition <= 0) {
             backupPosition = 0;
         } else {
-            backupPosition = fBI->handlePrevious(backupPosition);
+            backupPosition = fBI->handleSafePrevious(backupPosition);
         }
         if (backupPosition == UBRK_DONE || backupPosition == 0) {
             position = 0;
             positionStatusIdx = 0;
         } else {
-            fBI->fPosition = backupPosition;  
+            
+            
+            
+            
+            
+            
+            fBI->fPosition = backupPosition;
             position = fBI->handleNext();
+            if (position <= backupPosition + 4) {
+                
+                
+                utext_setNativeIndex(&fBI->fText, position);
+                if (backupPosition == utext_getPreviousNativeIndex(&fBI->fText)) {
+                    
+                    position = fBI->handleNext();   
+                }
+            };
             positionStatusIdx = fBI->fRuleStatusIndex;
-
         }
     } while (position >= fromPosition);
 
@@ -533,7 +564,7 @@ UBool RuleBasedBreakIterator::BreakCache::populatePreceding(UErrorCode &status) 
             }
             U_ASSERT(position==dictSegEndPosition || position>=fromPosition);
         }
-            
+
         if (!segmentHandledByDictionary && position < fromPosition) {
             fSideBuffer.addElement(position, status);
             fSideBuffer.addElement(positionStatusIdx, status);
@@ -559,7 +590,7 @@ UBool RuleBasedBreakIterator::BreakCache::populatePreceding(UErrorCode &status) 
             break;
         }
     }
-      
+
     return success;
 }
 

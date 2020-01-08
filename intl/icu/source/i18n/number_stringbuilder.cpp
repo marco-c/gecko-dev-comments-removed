@@ -3,11 +3,10 @@
 
 #include "unicode/utypes.h"
 
-#if !UCONFIG_NO_FORMATTING && !UPRV_INCOMPLETE_CPP11_SUPPORT
+#if !UCONFIG_NO_FORMATTING
 
 #include "number_stringbuilder.h"
 #include "unicode/utf16.h"
-#include "uvectr32.h"
 
 using namespace icu;
 using namespace icu::number;
@@ -337,6 +336,11 @@ UnicodeString NumberStringBuilder::toUnicodeString() const {
     return UnicodeString(getCharPtr() + fZero, fLength);
 }
 
+const UnicodeString NumberStringBuilder::toTempUnicodeString() const {
+    
+    return UnicodeString(FALSE, getCharPtr() + fZero, fLength);
+}
+
 UnicodeString NumberStringBuilder::toDebugString() const {
     UnicodeString sb;
     sb.append(u"<NumberStringBuilder [", -1);
@@ -408,23 +412,24 @@ bool NumberStringBuilder::contentEquals(const NumberStringBuilder &other) const 
     return true;
 }
 
-void NumberStringBuilder::populateFieldPosition(FieldPosition &fp, int32_t offset, UErrorCode &status) const {
+bool NumberStringBuilder::nextFieldPosition(FieldPosition& fp, UErrorCode& status) const {
     int32_t rawField = fp.getField();
 
     if (rawField == FieldPosition::DONT_CARE) {
-        return;
+        return FALSE;
     }
 
     if (rawField < 0 || rawField >= UNUM_FIELD_COUNT) {
         status = U_ILLEGAL_ARGUMENT_ERROR;
-        return;
+        return FALSE;
     }
 
     auto field = static_cast<Field>(rawField);
 
     bool seenStart = false;
     int32_t fractionStart = -1;
-    for (int i = fZero; i <= fZero + fLength; i++) {
+    int32_t startIndex = fp.getEndIndex();
+    for (int i = fZero + startIndex; i <= fZero + fLength; i++) {
         Field _field = UNUM_FIELD_COUNT;
         if (i < fZero + fLength) {
             _field = getFieldPtr()[i];
@@ -434,10 +439,10 @@ void NumberStringBuilder::populateFieldPosition(FieldPosition &fp, int32_t offse
             if (field == UNUM_INTEGER_FIELD && _field == UNUM_GROUPING_SEPARATOR_FIELD) {
                 continue;
             }
-            fp.setEndIndex(i - fZero + offset);
+            fp.setEndIndex(i - fZero);
             break;
         } else if (!seenStart && field == _field) {
-            fp.setBeginIndex(i - fZero + offset);
+            fp.setBeginIndex(i - fZero);
             seenStart = true;
         }
         if (_field == UNUM_INTEGER_FIELD || _field == UNUM_DECIMAL_SEPARATOR_FIELD) {
@@ -446,35 +451,27 @@ void NumberStringBuilder::populateFieldPosition(FieldPosition &fp, int32_t offse
     }
 
     
-    if (field == UNUM_FRACTION_FIELD && !seenStart) {
-        fp.setBeginIndex(fractionStart + offset);
-        fp.setEndIndex(fractionStart + offset);
+    
+    if (field == UNUM_FRACTION_FIELD && !seenStart && fractionStart != -1) {
+        fp.setBeginIndex(fractionStart);
+        fp.setEndIndex(fractionStart);
     }
+
+    return seenStart;
 }
 
-void NumberStringBuilder::populateFieldPositionIterator(FieldPositionIterator &fpi, UErrorCode &status) const {
-    
-    LocalPointer <UVector32> uvec(new UVector32(status));
-    if (U_FAILURE(status)) {
-        return;
-    }
-
+void NumberStringBuilder::getAllFieldPositions(FieldPositionIteratorHandler& fpih,
+                                               UErrorCode& status) const {
     Field current = UNUM_FIELD_COUNT;
     int32_t currentStart = -1;
     for (int32_t i = 0; i < fLength; i++) {
         Field field = fieldAt(i);
         if (current == UNUM_INTEGER_FIELD && field == UNUM_GROUPING_SEPARATOR_FIELD) {
             
-            
-            uvec->addElement(UNUM_GROUPING_SEPARATOR_FIELD, status);
-            uvec->addElement(i, status);
-            uvec->addElement(i + 1, status);
+            fpih.addAttribute(UNUM_GROUPING_SEPARATOR_FIELD, i, i + 1);
         } else if (current != field) {
             if (current != UNUM_FIELD_COUNT) {
-                
-                uvec->addElement(current, status);
-                uvec->addElement(currentStart, status);
-                uvec->addElement(i, status);
+                fpih.addAttribute(current, currentStart, i);
             }
             current = field;
             currentStart = i;
@@ -484,14 +481,8 @@ void NumberStringBuilder::populateFieldPositionIterator(FieldPositionIterator &f
         }
     }
     if (current != UNUM_FIELD_COUNT) {
-        
-        uvec->addElement(current, status);
-        uvec->addElement(currentStart, status);
-        uvec->addElement(fLength, status);
+        fpih.addAttribute(current, currentStart, fLength);
     }
-
-    
-    fpi.setData(uvec.orphan(), status);
 }
 
 #endif 

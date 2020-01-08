@@ -3,19 +3,21 @@
 
 #include "unicode/utypes.h"
 
-#if !UCONFIG_NO_FORMATTING && !UPRV_INCOMPLETE_CPP11_SUPPORT
+#if !UCONFIG_NO_FORMATTING
 #ifndef __NUMBER_DECIMALQUANTITY_H__
 #define __NUMBER_DECIMALQUANTITY_H__
 
 #include <cstdint>
 #include "unicode/umachine.h"
-#include "decNumber.h"
 #include "standardplural.h"
 #include "plurrule_impl.h"
 #include "number_types.h"
 
 U_NAMESPACE_BEGIN namespace number {
 namespace impl {
+
+
+class DecNum;
 
 
 
@@ -33,9 +35,12 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
     
     DecimalQuantity(const DecimalQuantity &other);
 
+    
+    DecimalQuantity(DecimalQuantity &&src) U_NOEXCEPT;
+
     DecimalQuantity();
 
-    ~DecimalQuantity();
+    ~DecimalQuantity() override;
 
     
 
@@ -43,6 +48,9 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
 
 
     DecimalQuantity &operator=(const DecimalQuantity &other);
+
+    
+    DecimalQuantity &operator=(DecimalQuantity&& src) U_NOEXCEPT;
 
     
 
@@ -71,7 +79,10 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
 
 
     void roundToIncrement(double roundingIncrement, RoundingMode roundingMode,
-                          int32_t minMaxFrac, UErrorCode& status);
+                          int32_t maxFrac, UErrorCode& status);
+
+    
+    void truncate();
 
     
 
@@ -93,7 +104,17 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
 
 
 
-    void multiplyBy(int32_t multiplicand);
+    void multiplyBy(const DecNum& multiplicand, UErrorCode& status);
+
+    
+
+
+
+
+    void divideBy(const DecNum& divisor, UErrorCode& status);
+
+    
+    void negate();
 
     
 
@@ -101,7 +122,8 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
 
 
 
-    void adjustMagnitude(int32_t delta);
+
+    bool adjustMagnitude(int32_t delta);
 
     
 
@@ -124,12 +146,22 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
     
     bool isNaN() const U_OVERRIDE;
 
-    int64_t toLong() const;
+    
+    int64_t toLong(bool truncateIfOverflow = false) const;
 
-    int64_t toFractionLong(bool includeTrailingZeros) const;
+    uint64_t toFractionLong(bool includeTrailingZeros) const;
+
+    
+
+
+
+    bool fitsInLong(bool ignoreFraction = false) const;
 
     
     double toDouble() const;
+
+    
+    void toDecNum(DecNum& output, UErrorCode& status) const;
 
     DecimalQuantity &setToInt(int32_t n);
 
@@ -138,8 +170,10 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
     DecimalQuantity &setToDouble(double n);
 
     
+    DecimalQuantity &setToDecNumber(StringPiece n, UErrorCode& status);
 
-    DecimalQuantity &setToDecNumber(StringPiece n);
+    
+    DecimalQuantity &setToDecNum(const DecNum& n, UErrorCode& status);
 
     
 
@@ -160,16 +194,9 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
 
     void appendDigit(int8_t value, int32_t leadingZeros, bool appendAsInteger);
 
-    
-
-
-
-
-
-
-    StandardPlural::Form getStandardPlural(const PluralRules *rules) const;
-
     double getPluralOperand(PluralOperand operand) const U_OVERRIDE;
+
+    bool hasIntegerValue() const U_OVERRIDE;
 
     
 
@@ -224,7 +251,7 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
     UnicodeString toString() const;
 
     
-    UnicodeString toNumberString() const;
+    UnicodeString toScientificString() const;
 
     
     UnicodeString toPlainString() const;
@@ -234,6 +261,17 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
 
     
     inline bool isExplicitExactDouble() { return explicitExactDouble; };
+
+    bool operator==(const DecimalQuantity& other) const;
+
+    inline bool operator!=(const DecimalQuantity& other) const {
+        return !(*this == other);
+    }
+
+    
+
+
+    bool bogus = false;
 
   private:
     
@@ -396,11 +434,15 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
 
     void readLongToBcd(int64_t n);
 
-    void readDecNumberToBcd(decNumber *dn);
+    void readDecNumberToBcd(const DecNum& dn);
 
     void readDoubleConversionToBcd(const char* buffer, int32_t length, int32_t point);
 
+    void copyFieldsFrom(const DecimalQuantity& other);
+
     void copyBcdFrom(const DecimalQuantity &other);
+
+    void moveBcdFrom(DecimalQuantity& src);
 
     
 
@@ -418,11 +460,9 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
 
     void _setToDoubleFast(double n);
 
-    void _setToDecNumber(decNumber *n);
+    void _setToDecNum(const DecNum& dn, UErrorCode& status);
 
     void convertToAccurateDouble();
-
-    double toDoubleFromOriginal() const;
 
     
     void ensureCapacity();

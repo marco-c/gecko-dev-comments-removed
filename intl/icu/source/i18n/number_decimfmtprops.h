@@ -3,7 +3,7 @@
 
 #include "unicode/utypes.h"
 
-#if !UCONFIG_NO_FORMATTING && !UPRV_INCOMPLETE_CPP11_SUPPORT
+#if !UCONFIG_NO_FORMATTING
 #ifndef __NUMBER_DECIMFMTPROPS_H__
 #define __NUMBER_DECIMFMTPROPS_H__
 
@@ -32,19 +32,63 @@ namespace impl {
 
 
 
-struct U_I18N_API CurrencyPluralInfoWrapper {
+
+class U_I18N_API CurrencyPluralInfoWrapper {
+public:
     LocalPointer<CurrencyPluralInfo> fPtr;
 
-    CurrencyPluralInfoWrapper() {}
+    CurrencyPluralInfoWrapper() = default;
+
     CurrencyPluralInfoWrapper(const CurrencyPluralInfoWrapper& other) {
         if (!other.fPtr.isNull()) {
             fPtr.adoptInstead(new CurrencyPluralInfo(*other.fPtr));
         }
     }
+
+    CurrencyPluralInfoWrapper& operator=(const CurrencyPluralInfoWrapper& other) {
+        if (!other.fPtr.isNull()) {
+            fPtr.adoptInstead(new CurrencyPluralInfo(*other.fPtr));
+        }
+        return *this;
+    }
 };
 
 
-struct U_I18N_API DecimalFormatProperties {
+enum ParseMode {
+    
+
+
+
+            PARSE_MODE_LENIENT,
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            PARSE_MODE_STRICT,
+};
+
+
+struct U_I18N_API DecimalFormatProperties : public UMemory {
 
   public:
     NullableValue<UNumberCompactStyle> compactStyle;
@@ -54,9 +98,11 @@ struct U_I18N_API DecimalFormatProperties {
     bool decimalPatternMatchRequired;
     bool decimalSeparatorAlwaysShown;
     bool exponentSignAlwaysShown;
+    bool formatFailIfMoreThanMaxDigits; 
     int32_t formatWidth;
     int32_t groupingSize;
-    int32_t magnitudeMultiplier;
+    bool groupingUsed;
+    int32_t magnitudeMultiplier; 
     int32_t maximumFractionDigits;
     int32_t maximumIntegerDigits;
     int32_t maximumSignificantDigits;
@@ -66,6 +112,7 @@ struct U_I18N_API DecimalFormatProperties {
     int32_t minimumIntegerDigits;
     int32_t minimumSignificantDigits;
     int32_t multiplier;
+    int32_t multiplierScale; 
     UnicodeString negativePrefix;
     UnicodeString negativePrefixPattern;
     UnicodeString negativeSuffix;
@@ -74,9 +121,10 @@ struct U_I18N_API DecimalFormatProperties {
     UnicodeString padString;
     bool parseCaseSensitive;
     bool parseIntegerOnly;
-    bool parseLenient;
+    NullableValue<ParseMode> parseMode;
     bool parseNoExponent;
-    bool parseToBigDecimal;
+    bool parseToBigDecimal; 
+    UNumberFormatAttributeValue parseAllInput; 
     
     UnicodeString positivePrefix;
     UnicodeString positivePrefixPattern;
@@ -89,13 +137,20 @@ struct U_I18N_API DecimalFormatProperties {
 
     DecimalFormatProperties();
 
-    
-
-    DecimalFormatProperties &operator=(const DecimalFormatProperties &other) = default;
-
-    bool operator==(const DecimalFormatProperties &other) const;
+    inline bool operator==(const DecimalFormatProperties& other) const {
+        return _equals(other, false);
+    }
 
     void clear();
+
+    
+
+
+
+    bool equalsDefaultExceptFastFormat() const;
+
+  private:
+    bool _equals(const DecimalFormatProperties& other, bool ignoreForFastFormat) const;
 };
 
 } 

@@ -391,6 +391,32 @@ U_INTERNAL double  U_EXPORT2 uprv_log(double d);
 
 U_INTERNAL double  U_EXPORT2 uprv_round(double x);
 
+
+
+
+
+
+
+
+
+
+
+
+U_INTERNAL UBool U_EXPORT2 uprv_add32_overflow(int32_t a, int32_t b, int32_t* res);
+
+
+
+
+
+
+
+
+
+
+
+
+U_INTERNAL UBool U_EXPORT2 uprv_mul32_overflow(int32_t a, int32_t b, int32_t* res);
+
 #if 0
 
 

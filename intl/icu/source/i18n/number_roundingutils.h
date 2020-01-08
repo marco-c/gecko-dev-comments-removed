@@ -3,7 +3,7 @@
 
 #include "unicode/utypes.h"
 
-#if !UCONFIG_NO_FORMATTING && !UPRV_INCOMPLETE_CPP11_SUPPORT
+#if !UCONFIG_NO_FORMATTING
 #ifndef __NUMBER_ROUNDINGUTILS_H__
 #define __NUMBER_ROUNDINGUTILS_H__
 
@@ -131,7 +131,62 @@ inline bool roundsAtMidpoint(int roundingMode) {
     }
 }
 
+
+
+
+
+digits_t doubleFractionLength(double input);
+
 } 
+
+
+
+
+
+
+
+class RoundingImpl {
+  public:
+    RoundingImpl() = default;  
+
+    RoundingImpl(const Precision& precision, UNumberFormatRoundingMode roundingMode,
+                 const CurrencyUnit& currency, UErrorCode& status);
+
+    static RoundingImpl passThrough();
+
+    
+    bool isSignificantDigits() const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    int32_t
+    chooseMultiplierAndApply(impl::DecimalQuantity &input, const impl::MultiplierProducer &producer,
+                             UErrorCode &status);
+
+    void apply(impl::DecimalQuantity &value, UErrorCode &status) const;
+
+    
+    void apply(impl::DecimalQuantity &value, int32_t minInt, UErrorCode status);
+
+  private:
+    Precision fPrecision;
+    UNumberFormatRoundingMode fRoundingMode;
+    bool fPassThrough;
+};
+
+
 } 
 } 
 U_NAMESPACE_END

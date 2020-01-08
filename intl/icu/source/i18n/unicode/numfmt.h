@@ -555,7 +555,9 @@ public:
                                   UnicodeString& appendTo,
                                   FieldPositionIterator* posIter,
                                   UErrorCode& status) const;
-public:
+
+
+
     
 
 
@@ -573,7 +575,7 @@ public:
 
 
 
-    virtual UnicodeString& format(const DigitList &number,
+    virtual UnicodeString& format(const number::impl::DecimalQuantity &number,
                                   UnicodeString& appendTo,
                                   FieldPositionIterator* posIter,
                                   UErrorCode& status) const;
@@ -595,12 +597,10 @@ public:
 
 
 
-    virtual UnicodeString& format(const DigitList &number,
+    virtual UnicodeString& format(const number::impl::DecimalQuantity &number,
                                   UnicodeString& appendTo,
                                   FieldPosition& pos,
                                   UErrorCode& status) const;
-
-public:
 
    
 
@@ -1000,7 +1000,7 @@ public:
 
 
     const char16_t* getCurrency() const;
-	
+
     
 
 

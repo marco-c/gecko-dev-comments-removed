@@ -3,7 +3,7 @@
 
 #include "unicode/utypes.h"
 
-#if !UCONFIG_NO_FORMATTING && !UPRV_INCOMPLETE_CPP11_SUPPORT
+#if !UCONFIG_NO_FORMATTING
 #ifndef __NUMBER_FORMATIMPL_H__
 #define __NUMBER_FORMATIMPL_H__
 
@@ -14,6 +14,7 @@
 #include "number_patternmodifier.h"
 #include "number_longnames.h"
 #include "number_compact.h"
+#include "number_microprops.h"
 
 U_NAMESPACE_BEGIN namespace number {
 namespace impl {
@@ -40,7 +41,23 @@ class NumberFormatterImpl : public UMemory {
     
 
 
-    void apply(DecimalQuantity &inValue, NumberStringBuilder &outString, UErrorCode &status) const;
+
+
+
+    static int32_t getPrefixSuffixStatic(const MacroProps& macros, int8_t signum,
+                                         StandardPlural::Form plural, NumberStringBuilder& outString,
+                                         UErrorCode& status);
+
+    
+
+
+    void apply(DecimalQuantity& inValue, NumberStringBuilder& outString, UErrorCode& status) const;
+
+    
+
+
+    int32_t getPrefixSuffix(int8_t signum, StandardPlural::Form plural, NumberStringBuilder& outString,
+                            UErrorCode& status) const;
 
   private:
     
@@ -55,15 +72,23 @@ class NumberFormatterImpl : public UMemory {
     LocalPointer<const PluralRules> fRules;
     LocalPointer<const ParsedPatternInfo> fPatternInfo;
     LocalPointer<const ScientificHandler> fScientificHandler;
-    LocalPointer<const MutablePatternModifier> fPatternModifier;
+    LocalPointer<MutablePatternModifier> fPatternModifier;
     LocalPointer<const ImmutablePatternModifier> fImmutablePatternModifier;
     LocalPointer<const LongNameHandler> fLongNameHandler;
     LocalPointer<const CompactHandler> fCompactHandler;
+
+    
+    struct Warehouse {
+        CurrencySymbols fCurrencySymbols;
+    } fWarehouse;
 
 
     NumberFormatterImpl(const MacroProps &macros, bool safe, UErrorCode &status);
 
     void applyUnsafe(DecimalQuantity &inValue, NumberStringBuilder &outString, UErrorCode &status);
+
+    int32_t getPrefixSuffixUnsafe(int8_t signum, StandardPlural::Form plural,
+                                  NumberStringBuilder& outString, UErrorCode& status);
 
     
 

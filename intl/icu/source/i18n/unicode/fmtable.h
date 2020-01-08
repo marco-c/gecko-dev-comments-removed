@@ -33,17 +33,11 @@
 U_NAMESPACE_BEGIN
 
 class CharString;
-class DigitList;
-
-
-
-
-
-#if U_PLATFORM == U_PF_OS400
-#define UNUM_INTERNAL_STACKARRAY_SIZE 144
-#else
-#define UNUM_INTERNAL_STACKARRAY_SIZE 128
-#endif
+namespace number {
+namespace impl {
+class DecimalQuantity;
+}
+}
 
 
 
@@ -653,20 +647,21 @@ public:
 
 
 
-    DigitList *getDigitList() const { return fDecimalNum;}
-
-    
-
-
-    DigitList *getInternalDigitList();
+    number::impl::DecimalQuantity *getDecimalQuantity() const { return fDecimalQuantity;}
 
     
 
 
 
+    void populateDecimalQuantity(number::impl::DecimalQuantity& output, UErrorCode& status) const;
+
+    
 
 
-    void adoptDigitList(DigitList *dl);
+
+
+
+    void adoptDecimalQuantity(number::impl::DecimalQuantity *dq);
 
     
 
@@ -706,9 +701,7 @@ private:
 
     CharString           *fDecimalStr;
 
-    DigitList            *fDecimalNum;
-
-    char                fStackData[UNUM_INTERNAL_STACKARRAY_SIZE]; 
+    number::impl::DecimalQuantity *fDecimalQuantity;
 
     Type                fType;
     UnicodeString       fBogus; 

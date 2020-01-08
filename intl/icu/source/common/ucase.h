@@ -354,8 +354,8 @@ enum {
 #define UCASE_IS_UPPER_OR_TITLE(props) ((props)&2)
 
 #define UCASE_IGNORABLE         4
-#define UCASE_SENSITIVE         8
-#define UCASE_EXCEPTION         0x10
+#define UCASE_EXCEPTION         8
+#define UCASE_SENSITIVE         0x10
 
 #define UCASE_HAS_EXCEPTION(props) ((props)&UCASE_EXCEPTION)
 
@@ -380,8 +380,8 @@ enum {
 #endif
 
 
-#define UCASE_EXC_SHIFT     5
-#define UCASE_EXC_MASK      0xffe0
+#define UCASE_EXC_SHIFT     4
+#define UCASE_EXC_MASK      0xfff0
 #define UCASE_MAX_EXCEPTIONS ((UCASE_EXC_MASK>>UCASE_EXC_SHIFT)+1)
 
 
@@ -392,7 +392,7 @@ enum {
     UCASE_EXC_FOLD,
     UCASE_EXC_UPPER,
     UCASE_EXC_TITLE,
-    UCASE_EXC_4,            
+    UCASE_EXC_DELTA,
     UCASE_EXC_5,            
     UCASE_EXC_CLOSURE,
     UCASE_EXC_FULL_MAPPINGS,
@@ -402,7 +402,11 @@ enum {
 
 #define UCASE_EXC_DOUBLE_SLOTS      0x100
 
-
+enum {
+    UCASE_EXC_NO_SIMPLE_CASE_FOLDING=0x200,
+    UCASE_EXC_DELTA_IS_NEGATIVE=0x400,
+    UCASE_EXC_SENSITIVE=0x800
+};
 
 
 #define UCASE_EXC_DOT_SHIFT     7

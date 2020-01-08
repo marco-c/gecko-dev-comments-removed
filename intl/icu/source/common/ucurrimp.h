@@ -13,6 +13,7 @@
 #include "unicode/utypes.h"
 #include "unicode/unistr.h"
 #include "unicode/parsepos.h"
+#include "unicode/uniset.h"
 
 
 
@@ -48,13 +49,29 @@ uprv_getStaticCurrencyName(const UChar* iso, const char* loc,
 
 
 
+
+
+
+
 U_CAPI void
 uprv_parseCurrency(const char* locale,
                    const icu::UnicodeString& text,
                    icu::ParsePosition& pos,
                    int8_t type,
+                   int32_t* partialMatchLen,
                    UChar* result,
                    UErrorCode& ec);
+
+
+
+
+
+
+
+
+void uprv_currencyLeads(const char* locale, icu::UnicodeSet& result, UErrorCode& ec);
+
+
 
 #endif 
 

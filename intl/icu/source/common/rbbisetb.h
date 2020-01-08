@@ -97,7 +97,9 @@ public:
     
 
 
-    void     mergeCategories(int32_t left, int32_t right);
+
+
+    void     mergeCategories(IntPair categories);
 
     static constexpr int32_t DICT_BIT = 0x4000;
 

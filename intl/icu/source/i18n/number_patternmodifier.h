@@ -3,7 +3,7 @@
 
 #include "unicode/utypes.h"
 
-#if !UCONFIG_NO_FORMATTING && !UPRV_INCOMPLETE_CPP11_SUPPORT
+#if !UCONFIG_NO_FORMATTING
 #ifndef __NUMBER_PATTERNMODIFIER_H__
 #define __NUMBER_PATTERNMODIFIER_H__
 
@@ -13,6 +13,7 @@
 #include "number_types.h"
 #include "number_modifiers.h"
 #include "number_utils.h"
+#include "number_currencysymbols.h"
 
 U_NAMESPACE_BEGIN
 
@@ -35,20 +36,23 @@ class MutablePatternModifier;
 
 class U_I18N_API ImmutablePatternModifier : public MicroPropsGenerator, public UMemory {
   public:
-	~ImmutablePatternModifier() U_OVERRIDE = default;
+    ~ImmutablePatternModifier() U_OVERRIDE = default;
 
-    void processQuantity(DecimalQuantity &, MicroProps &micros, UErrorCode &status) const U_OVERRIDE;
+    void processQuantity(DecimalQuantity&, MicroProps& micros, UErrorCode& status) const U_OVERRIDE;
 
-    void applyToMicros(MicroProps &micros, DecimalQuantity &quantity) const;
+    void applyToMicros(MicroProps& micros, DecimalQuantity& quantity) const;
+
+    const Modifier* getModifier(int8_t signum, StandardPlural::Form plural) const;
 
   private:
-    ImmutablePatternModifier(ParameterizedModifier *pm, const PluralRules *rules, const MicroPropsGenerator *parent);
+    ImmutablePatternModifier(ParameterizedModifier* pm, const PluralRules* rules,
+                             const MicroPropsGenerator* parent);
 
     const LocalPointer<ParameterizedModifier> pm;
-    const PluralRules *rules;
-    const MicroPropsGenerator *parent;
+    const PluralRules* rules;
+    const MicroPropsGenerator* parent;
 
-	friend class MutablePatternModifier;
+    friend class MutablePatternModifier;
 };
 
 
@@ -74,7 +78,6 @@ class U_I18N_API MutablePatternModifier
         : public MicroPropsGenerator,
           public Modifier,
           public SymbolProvider,
-          public CharSequence,
           public UMemory {
   public:
 
@@ -118,9 +121,8 @@ class U_I18N_API MutablePatternModifier
 
 
 
-    void
-    setSymbols(const DecimalFormatSymbols *symbols, const CurrencyUnit &currency, UNumberUnitWidth unitWidth,
-               const PluralRules *rules);
+    void setSymbols(const DecimalFormatSymbols* symbols, const CurrencySymbols* currencySymbols,
+                    UNumberUnitWidth unitWidth, const PluralRules* rules);
 
     
 
@@ -187,13 +189,7 @@ class U_I18N_API MutablePatternModifier
 
     UnicodeString getSymbol(AffixPatternType type) const U_OVERRIDE;
 
-    int32_t length() const U_OVERRIDE;
-
-    char16_t charAt(int32_t index) const U_OVERRIDE;
-
-    
-
-    UnicodeString toUnicodeString() const U_OVERRIDE;
+    UnicodeString toUnicodeString() const;
 
   private:
     
@@ -207,7 +203,7 @@ class U_I18N_API MutablePatternModifier
     
     const DecimalFormatSymbols *symbols;
     UNumberUnitWidth unitWidth;
-    char16_t currencyCode[4];
+    const CurrencySymbols *currencySymbols;
     const PluralRules *rules;
 
     
@@ -218,11 +214,7 @@ class U_I18N_API MutablePatternModifier
     const MicroPropsGenerator *parent;
 
     
-    bool inCharSequenceMode = false;
-    int32_t fFlags;
-    int32_t fLength;
-    bool prependSign;
-    bool plusReplacesMinusSign;
+    UnicodeString currentAffix;
 
     
 
@@ -244,9 +236,7 @@ class U_I18N_API MutablePatternModifier
 
     int32_t insertSuffix(NumberStringBuilder &sb, int position, UErrorCode &status);
 
-    void enterCharSequenceMode(bool isPrefix);
-
-    void exitCharSequenceMode();
+    void prepareAffix(bool isPrefix);
 };
 
 

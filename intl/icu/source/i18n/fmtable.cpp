@@ -19,6 +19,7 @@
 
 #if !UCONFIG_NO_FORMATTING
 
+#include <cstdlib>
 #include <math.h>
 #include "unicode/fmtable.h"
 #include "unicode/ustring.h"
@@ -28,9 +29,8 @@
 #include "charstr.h"
 #include "cmemory.h"
 #include "cstring.h"
-#include "decNumber.h"
-#include "digitlst.h"
 #include "fmtableimp.h"
+#include "number_decimalquantity.h"
 
 
 
@@ -39,6 +39,8 @@
 U_NAMESPACE_BEGIN
 
 UOBJECT_DEFINE_RTTI_IMPLEMENTATION(Formattable)
+
+using number::impl::DecimalQuantity;
 
 
 
@@ -103,7 +105,7 @@ void  Formattable::init() {
     fValue.fInt64 = 0;
     fType = kLong;
     fDecimalStr = NULL;
-    fDecimalNum = NULL;
+    fDecimalQuantity = NULL;
     fBogus.setToBogus(); 
 }
 
@@ -257,8 +259,8 @@ Formattable::operator=(const Formattable& source)
         }
 
         UErrorCode status = U_ZERO_ERROR;
-        if (source.fDecimalNum != NULL) {
-          fDecimalNum = new DigitList(*source.fDecimalNum); 
+        if (source.fDecimalQuantity != NULL) {
+          fDecimalQuantity = new DecimalQuantity(*source.fDecimalQuantity);
         }
         if (source.fDecimalStr != NULL) {
             fDecimalStr = new CharString(*source.fDecimalStr, status);
@@ -356,14 +358,9 @@ void Formattable::dispose()
 
     delete fDecimalStr;
     fDecimalStr = NULL;
-    
-    FmtStackData *stackData = (FmtStackData*)fStackData;
-    if(fDecimalNum != &(stackData->stackDecimalNum)) {
-      delete fDecimalNum;
-    } else {
-      fDecimalNum->~DigitList(); 
-    }
-    fDecimalNum = NULL;
+
+    delete fDecimalQuantity;
+    fDecimalQuantity = NULL;
 }
 
 Formattable *
@@ -465,13 +462,13 @@ Formattable::getInt64(UErrorCode& status) const
         } else if (fValue.fDouble < (double)U_INT64_MIN) {
             status = U_INVALID_FORMAT_ERROR;
             return U_INT64_MIN;
-        } else if (fabs(fValue.fDouble) > U_DOUBLE_MAX_EXACT_INT && fDecimalNum != NULL) {
-            int64_t val = fDecimalNum->getInt64();
-            if (val != 0) {
-                return val;
+        } else if (fabs(fValue.fDouble) > U_DOUBLE_MAX_EXACT_INT && fDecimalQuantity != NULL) {
+            if (fDecimalQuantity->fitsInLong(true)) {
+                return fDecimalQuantity->toLong();
             } else {
+                
                 status = U_INVALID_FORMAT_ERROR;
-                return fValue.fDouble > 0 ? U_INT64_MAX : U_INT64_MIN;
+                return fDecimalQuantity->isNegative() ? U_INT64_MIN : U_INT64_MAX;
             }
         } else {
             return (int64_t)fValue.fDouble;
@@ -714,84 +711,85 @@ StringPiece Formattable::getDecimalNumber(UErrorCode &status) {
 
 CharString *Formattable::internalGetCharString(UErrorCode &status) {
     if(fDecimalStr == NULL) {
-      if (fDecimalNum == NULL) {
+      if (fDecimalQuantity == NULL) {
         
         
         
         
         
-        fDecimalNum = new DigitList; 
-        if (fDecimalNum == NULL) {
-          status = U_MEMORY_ALLOCATION_ERROR;
-          return NULL;
-        }
-
-        switch (fType) {
-        case kDouble:
-          fDecimalNum->set(this->getDouble());
-          break;
-        case kLong:
-          fDecimalNum->set(this->getLong());
-          break;
-        case kInt64:
-          fDecimalNum->set(this->getInt64());
-          break;
-        default:
-          
-          status = U_INVALID_STATE_ERROR;
-          return NULL;
-        }
+        LocalPointer<DecimalQuantity> dq(new DecimalQuantity(), status);
+        if (U_FAILURE(status)) { return nullptr; }
+        populateDecimalQuantity(*dq, status);
+        if (U_FAILURE(status)) { return nullptr; }
+        fDecimalQuantity = dq.orphan();
       }
 
-      fDecimalStr = new CharString;
+      fDecimalStr = new CharString();
       if (fDecimalStr == NULL) {
         status = U_MEMORY_ALLOCATION_ERROR;
         return NULL;
       }
-      fDecimalNum->getDecimal(*fDecimalStr, status);
+      
+      
+      
+      if (fDecimalQuantity->isZero()) {
+        fDecimalStr->append("0", -1, status);
+      } else if (std::abs(fDecimalQuantity->getMagnitude()) < 5) {
+        fDecimalStr->appendInvariantChars(fDecimalQuantity->toPlainString(), status);
+      } else {
+        fDecimalStr->appendInvariantChars(fDecimalQuantity->toScientificString(), status);
+      }
     }
     return fDecimalStr;
 }
 
+void
+Formattable::populateDecimalQuantity(number::impl::DecimalQuantity& output, UErrorCode& status) const {
+    if (fDecimalQuantity != nullptr) {
+        output = *fDecimalQuantity;
+        return;
+    }
 
-DigitList *
-Formattable::getInternalDigitList() {
-  FmtStackData *stackData = (FmtStackData*)fStackData;
-  if(fDecimalNum != &(stackData->stackDecimalNum)) {
-    delete fDecimalNum;
-    fDecimalNum = new (&(stackData->stackDecimalNum), kOnStack) DigitList();
-  } else {
-    fDecimalNum->clear();
-  }
-  return fDecimalNum;
+    switch (fType) {
+        case kDouble:
+            output.setToDouble(this->getDouble());
+            output.roundToInfinity();
+            break;
+        case kLong:
+            output.setToInt(this->getLong());
+            break;
+        case kInt64:
+            output.setToLong(this->getInt64());
+            break;
+        default:
+            
+            status = U_INVALID_STATE_ERROR;
+    }
 }
 
 
 void
-Formattable::adoptDigitList(DigitList *dl) {
-  if(fDecimalNum==dl) {
-    fDecimalNum = NULL; 
-  }
-  dispose();
-
-  fDecimalNum = dl;
-
-  if(dl==NULL) { 
-    return;
-  }
+Formattable::adoptDecimalQuantity(DecimalQuantity *dq) {
+    if (fDecimalQuantity != NULL) {
+        delete fDecimalQuantity;
+    }
+    fDecimalQuantity = dq;
+    if (dq == NULL) { 
+        return;
+    }
 
     
     
-
-    if (fDecimalNum->fitsIntoLong(FALSE)) {
-        fType = kLong;
-        fValue.fInt64 = fDecimalNum->getLong();
-    } else if (fDecimalNum->fitsIntoInt64(FALSE)) {
-        fType = kInt64;
-        fValue.fInt64 = fDecimalNum->getInt64();
+    if (fDecimalQuantity->fitsInLong()) {
+        fValue.fInt64 = fDecimalQuantity->toLong();
+        if (fValue.fInt64 <= INT32_MAX && fValue.fInt64 >= INT32_MIN) {
+            fType = kLong;
+        } else {
+            fType = kInt64;
+        }
     } else {
         fType = kDouble;
-        fValue.fDouble = fDecimalNum->getDouble();
+        fValue.fDouble = fDecimalQuantity->toDouble();
     }
 }
 
@@ -804,21 +802,9 @@ Formattable::setDecimalNumber(StringPiece numberString, UErrorCode &status) {
     }
     dispose();
 
-    
-    
-    
-    
-    DigitList *dnum = new DigitList(); 
-    if (dnum == NULL) {
-        status = U_MEMORY_ALLOCATION_ERROR;
-        return;
-    }
-    dnum->set(CharString(numberString, status).toStringPiece(), status);
-    if (U_FAILURE(status)) {
-        delete dnum;
-        return;   
-    }
-    adoptDigitList(dnum);
+    auto* dq = new DecimalQuantity();
+    dq->setToDecNumber(numberString, status);
+    adoptDecimalQuantity(dq);
 
     
     

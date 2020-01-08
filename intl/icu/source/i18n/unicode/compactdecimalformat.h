@@ -84,7 +84,7 @@ public:
 
 
 
-    virtual ~CompactDecimalFormat();
+    ~CompactDecimalFormat() U_OVERRIDE;
 
     
 
@@ -101,18 +101,7 @@ public:
 
 
 
-    virtual Format* clone() const;
-
-    
-
-
-
-
-
-
-
-    virtual UBool operator==(const Format& other) const;
-
+    Format* clone() const U_OVERRIDE;
 
     using DecimalFormat::format;
 
@@ -125,11 +114,8 @@ public:
 
 
 
-
-
-    virtual UnicodeString& format(double number,
-                                  UnicodeString& appendTo,
-                                  FieldPosition& pos) const;
+    void parse(const UnicodeString& text, Formattable& result,
+               ParsePosition& parsePosition) const U_OVERRIDE;
 
     
 
@@ -140,220 +126,9 @@ public:
 
 
 
+    void parse(const UnicodeString& text, Formattable& result, UErrorCode& status) const U_OVERRIDE;
 
-
-
-    virtual UnicodeString& format(double number,
-                                  UnicodeString& appendTo,
-                                  FieldPosition& pos,
-                                  UErrorCode &status) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual UnicodeString& format(double number,
-                                  UnicodeString& appendTo,
-                                  FieldPositionIterator* posIter,
-                                  UErrorCode& status) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-    virtual UnicodeString& format(int32_t number,
-                                  UnicodeString& appendTo,
-                                  FieldPosition& pos) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-    virtual UnicodeString& format(int32_t number,
-                                  UnicodeString& appendTo,
-                                  FieldPosition& pos,
-                                  UErrorCode &status) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual UnicodeString& format(int32_t number,
-                                  UnicodeString& appendTo,
-                                  FieldPositionIterator* posIter,
-                                  UErrorCode& status) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-    virtual UnicodeString& format(int64_t number,
-                                  UnicodeString& appendTo,
-                                  FieldPosition& pos) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-    virtual UnicodeString& format(int64_t number,
-                                  UnicodeString& appendTo,
-                                  FieldPosition& pos,
-                                  UErrorCode &status) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual UnicodeString& format(int64_t number,
-                                  UnicodeString& appendTo,
-                                  FieldPositionIterator* posIter,
-                                  UErrorCode& status) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual UnicodeString& format(StringPiece number,
-                                  UnicodeString& appendTo,
-                                  FieldPositionIterator* posIter,
-                                  UErrorCode& status) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual UnicodeString& format(const DigitList &number,
-                                  UnicodeString& appendTo,
-                                  FieldPositionIterator* posIter,
-                                  UErrorCode& status) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual UnicodeString& format(const DigitList &number,
-                                  UnicodeString& appendTo,
-                                  FieldPosition& pos,
-                                  UErrorCode& status) const;
-
-   
-
-
-
-
-
-
-
-
-    virtual void parse(const UnicodeString& text,
-                       Formattable& result,
-                       ParsePosition& parsePosition) const;
-
-    
-
-
-
-
-
-
-
-
-    virtual void parse(const UnicodeString& text,
-                       Formattable& result,
-                       UErrorCode& status) const;
-
+#ifndef U_HIDE_INTERNAL_API
     
 
 
@@ -374,8 +149,8 @@ public:
 
 
 
-    virtual CurrencyAmount* parseCurrency(const UnicodeString& text,
-                                          ParsePosition& pos) const;
+    CurrencyAmount* parseCurrency(const UnicodeString& text, ParsePosition& pos) const U_OVERRIDE;
+#endif  
 
     
 
@@ -401,18 +176,10 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    UClassID getDynamicClassID() const U_OVERRIDE;
 
-private:
-
-    const UHashtable* _unitsByVariant;
-    const double* _divisors;
-    PluralRules* _pluralRules;
-
-    
-    CompactDecimalFormat(const DecimalFormat &, const UHashtable* unitsByVariant, const double* divisors, PluralRules* pluralRules);
-
-    UBool eqHelper(const CompactDecimalFormat& that) const;
+  private:
+    CompactDecimalFormat(const Locale& inLocale, UNumberCompactStyle style, UErrorCode& status);
 };
 
 U_NAMESPACE_END

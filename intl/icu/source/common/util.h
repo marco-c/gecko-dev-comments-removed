@@ -47,6 +47,13 @@ class U_COMMON_API ICU_Utility  {
                                        int32_t minDigits = 1);
 
     
+    static inline UnicodeString makeBogusString() {
+        UnicodeString result;
+        result.setToBogus();
+        return result;
+    }
+
+    
 
 
 

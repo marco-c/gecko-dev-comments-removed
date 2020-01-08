@@ -17,6 +17,7 @@
 #include "unicode/utypes.h"
 #include "unicode/uobject.h"
 #include "unicode/rbbi.h"
+#include "rbbirb.h"
 #include "rbbinode.h"
 
 
@@ -37,12 +38,13 @@ class UVector32;
 
 class RBBITableBuilder : public UMemory {
 public:
-    RBBITableBuilder(RBBIRuleBuilder *rb, RBBINode **rootNode);
+    RBBITableBuilder(RBBIRuleBuilder *rb, RBBINode **rootNode, UErrorCode &status);
     ~RBBITableBuilder();
 
-    void     build();
-    int32_t  getTableSize() const;      
-                                        
+    void     buildForwardTable();
+
+    
+    int32_t  getTableSize() const;
 
     
 
@@ -52,7 +54,12 @@ public:
 
 
 
-    bool     findDuplCharClassFrom(int &baseClass, int &duplClass);
+
+
+
+
+
+    bool     findDuplCharClassFrom(IntPair *categories);
 
     
 
@@ -61,6 +68,16 @@ public:
 
     
     void     removeDuplicateStates();
+
+    
+    void     buildSafeReverseTable(UErrorCode &status);
+
+    
+    int32_t  getSafeTableSize() const;
+
+    
+
+    void     exportSafeTable(void *where);
 
 
 private:
@@ -90,14 +107,30 @@ private:
 
 
 
-    bool findDuplicateState(int32_t &firstState, int32_t &duplicateState);
+
+
+    bool findDuplicateState(IntPair *states);
 
     
 
 
 
 
-    void removeState(int32_t keepState, int32_t duplState);
+    void removeState(IntPair duplStates);
+
+    
+
+
+
+
+    bool findDuplicateSafeState(IntPair *states);
+
+    
+
+
+
+
+    void removeSafeState(IntPair duplStates);
 
     
     
@@ -113,11 +146,13 @@ public:
     void     printPosSets(RBBINode *n );
     void     printStates();
     void     printRuleStatusTable();
+    void     printReverseTable();
 #else
     #define  printSet(s)
     #define  printPosSets(n)
     #define  printStates()
     #define  printRuleStatusTable()
+    #define  printReverseTable()
 #endif
 
 private:
@@ -126,9 +161,13 @@ private:
                                            
     UErrorCode       *fStatus;
 
+    
     UVector          *fDStates;            
                                            
                                            
+
+    
+    UVector          *fSafeTable;
 
 
     RBBITableBuilder(const RBBITableBuilder &other); 

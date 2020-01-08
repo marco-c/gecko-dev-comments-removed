@@ -946,17 +946,14 @@ int32_t RuleBasedBreakIterator::handleNext() {
 
 
 
-int32_t RuleBasedBreakIterator::handlePrevious(int32_t fromPosition) {
+int32_t RuleBasedBreakIterator::handleSafePrevious(int32_t fromPosition) {
     int32_t             state;
     uint16_t            category        = 0;
-    RBBIRunMode         mode;
     RBBIStateTableRow  *row;
     UChar32             c;
-    LookAheadResults    lookAheadMatches;
     int32_t             result          = 0;
-    int32_t             initialPosition = 0;
 
-    const RBBIStateTable *stateTable = fData->fSafeRevTable;
+    const RBBIStateTable *stateTable = fData->fReverseTable;
     UTEXT_SETNATIVEINDEX(&fText, fromPosition);
     #ifdef RBBI_DEBUG
         if (gTrace) {
@@ -970,53 +967,23 @@ int32_t RuleBasedBreakIterator::handlePrevious(int32_t fromPosition) {
     }
 
     
-    initialPosition = (int32_t)UTEXT_GETNATIVEINDEX(&fText);
-    result          = initialPosition;
-    c               = UTEXT_PREVIOUS32(&fText);
-
-    
+    c = UTEXT_PREVIOUS32(&fText);
     state = START_STATE;
     row = (RBBIStateTableRow *)
             (stateTable->fTableData + (stateTable->fRowLen * state));
-    category = 3;
-    mode     = RBBI_RUN;
-    if (stateTable->fFlags & RBBI_BOF_REQUIRED) {
-        category = 2;
-        mode     = RBBI_START;
-    }
-
 
     
     
-    for (;;) {
-        if (c == U_SENTINEL) {
-            
-            if (mode == RBBI_END) {
-                
-                
-                
-                break;
-            }
-            
-            mode = RBBI_END;
-            category = 1;
-        }
+    for (; c != U_SENTINEL; c = UTEXT_PREVIOUS32(&fText)) {
 
         
         
         
         
         
-        if (mode == RBBI_RUN) {
-            
-            
-            
-            
-            
-            
-            category = UTRIE2_GET16(fData->fTrie, c);
-            category &= ~0x4000;
-        }
+        
+        category = UTRIE2_GET16(fData->fTrie, c);
+        category &= ~0x4000;
 
         #ifdef RBBI_DEBUG
             if (gTrace) {
@@ -1032,65 +999,21 @@ int32_t RuleBasedBreakIterator::handlePrevious(int32_t fromPosition) {
 
         
         
-
         
         U_ASSERT(category<fData->fHeader->fCatCount);
         state = row->fNextState[category];  
         row = (RBBIStateTableRow *)
             (stateTable->fTableData + (stateTable->fRowLen * state));
 
-        if (row->fAccepting == -1) {
-            
-            result = (int32_t)UTEXT_GETNATIVEINDEX(&fText);
-        }
-
-        int16_t completedRule = row->fAccepting;
-        if (completedRule > 0) {
-            
-            int32_t lookaheadResult = lookAheadMatches.getPosition(completedRule);
-            if (lookaheadResult >= 0) {
-                UTEXT_SETNATIVEINDEX(&fText, lookaheadResult);
-                return lookaheadResult;
-            }
-        }
-        int16_t rule = row->fLookAhead;
-        if (rule != 0) {
-            
-            int32_t  pos = (int32_t)UTEXT_GETNATIVEINDEX(&fText);
-            lookAheadMatches.setPosition(rule, pos);
-        }
-
         if (state == STOP_STATE) {
-            
             
             
             break;
         }
-
-        
-        
-        
-        
-        if (mode == RBBI_RUN) {
-            c = UTEXT_PREVIOUS32(&fText);
-        } else {
-            if (mode == RBBI_START) {
-                mode = RBBI_RUN;
-            }
-        }
     }
 
     
-
-    
-    
-    
-    if (result == initialPosition) {
-        UTEXT_SETNATIVEINDEX(&fText, initialPosition);
-        UTEXT_PREVIOUS32(&fText);
-        result = (int32_t)UTEXT_GETNATIVEINDEX(&fText);
-    }
-
+    result = (int32_t)UTEXT_GETNATIVEINDEX(&fText);
     #ifdef RBBI_DEBUG
         if (gTrace) {
             RBBIDebugPrintf("result = %d\n\n", result);
@@ -1098,7 +1021,6 @@ int32_t RuleBasedBreakIterator::handlePrevious(int32_t fromPosition) {
     #endif
     return result;
 }
-
 
 
 

@@ -302,6 +302,14 @@ public:
     
 
 
+    MaybeStackArray(MaybeStackArray<T, stackCapacity> &&src) U_NOEXCEPT;
+    
+
+
+    MaybeStackArray<T, stackCapacity> &operator=(MaybeStackArray<T, stackCapacity> &&src) U_NOEXCEPT;
+    
+
+
 
     int32_t getCapacity() const { return capacity; }
     
@@ -376,6 +384,11 @@ private:
             uprv_free(ptr);
         }
     }
+    void resetToStackArray() {
+        ptr=stackArray;
+        capacity=stackCapacity;
+        needToRelease=FALSE;
+    }
     
     bool operator==(const MaybeStackArray & ) {return FALSE;}
     bool operator!=(const MaybeStackArray & ) {return TRUE;}
@@ -397,6 +410,34 @@ private:
     
 #endif
 };
+
+template<typename T, int32_t stackCapacity>
+icu::MaybeStackArray<T, stackCapacity>::MaybeStackArray(
+        MaybeStackArray <T, stackCapacity>&& src) U_NOEXCEPT
+        : ptr(src.ptr), capacity(src.capacity), needToRelease(src.needToRelease) {
+    if (src.ptr == src.stackArray) {
+        ptr = stackArray;
+        uprv_memcpy(stackArray, src.stackArray, sizeof(T) * src.capacity);
+    } else {
+        src.resetToStackArray();  
+    }
+}
+
+template<typename T, int32_t stackCapacity>
+inline MaybeStackArray <T, stackCapacity>&
+MaybeStackArray<T, stackCapacity>::operator=(MaybeStackArray <T, stackCapacity>&& src) U_NOEXCEPT {
+    releaseArray();  
+    capacity = src.capacity;
+    needToRelease = src.needToRelease;
+    if (src.ptr == src.stackArray) {
+        ptr = stackArray;
+        uprv_memcpy(stackArray, src.stackArray, sizeof(T) * src.capacity);
+    } else {
+        ptr = src.ptr;
+        src.resetToStackArray();  
+    }
+    return *this;
+}
 
 template<typename T, int32_t stackCapacity>
 inline T *MaybeStackArray<T, stackCapacity>::resize(int32_t newCapacity, int32_t length) {
@@ -447,9 +488,7 @@ inline T *MaybeStackArray<T, stackCapacity>::orphanOrClone(int32_t length, int32
         uprv_memcpy(p, ptr, (size_t)length*sizeof(T));
     }
     resultCapacity=length;
-    ptr=stackArray;
-    capacity=stackCapacity;
-    needToRelease=FALSE;
+    resetToStackArray();
     return p;
 }
 

@@ -3,7 +3,7 @@
 
 #include "unicode/utypes.h"
 
-#if !UCONFIG_NO_FORMATTING && !UPRV_INCOMPLETE_CPP11_SUPPORT
+#if !UCONFIG_NO_FORMATTING
 #ifndef __NUMBER_AFFIXUTILS_H__
 #define __NUMBER_AFFIXUTILS_H__
 
@@ -12,6 +12,7 @@
 #include "unicode/stringpiece.h"
 #include "unicode/unistr.h"
 #include "number_stringbuilder.h"
+#include "unicode/uniset.h"
 
 U_NAMESPACE_BEGIN namespace number {
 namespace impl {
@@ -37,19 +38,27 @@ struct AffixTag {
     AffixPatternState state;
     AffixPatternType type;
 
-    AffixTag() : offset(0), state(STATE_BASE) {}
+    AffixTag()
+            : offset(0), state(STATE_BASE) {}
 
-    AffixTag(int32_t offset) : offset(offset) {}
+    AffixTag(int32_t offset)
+            : offset(offset) {}
 
     AffixTag(int32_t offset, UChar32 codePoint, AffixPatternState state, AffixPatternType type)
-        : offset(offset), codePoint(codePoint), state(state), type(type)
-        {}
+            : offset(offset), codePoint(codePoint), state(state), type(type) {}
+};
+
+class TokenConsumer {
+  public:
+    virtual ~TokenConsumer();
+
+    virtual void consumeToken(AffixPatternType type, UChar32 cp, UErrorCode& status) = 0;
 };
 
 
 class U_I18N_API SymbolProvider {
   public:
-    virtual ~SymbolProvider() = default;
+    virtual ~SymbolProvider();
 
     
     virtual UnicodeString getSymbol(AffixPatternType type) const = 0;
@@ -107,7 +116,7 @@ class U_I18N_API AffixUtils {
 
 
 
-    static int32_t estimateLength(const CharSequence &patternString, UErrorCode &status);
+    static int32_t estimateLength(const UnicodeString& patternString, UErrorCode& status);
 
     
 
@@ -118,7 +127,7 @@ class U_I18N_API AffixUtils {
 
 
 
-    static UnicodeString escape(const CharSequence &input);
+    static UnicodeString escape(const UnicodeString& input);
 
     static Field getFieldForType(AffixPatternType type);
 
@@ -134,9 +143,8 @@ class U_I18N_API AffixUtils {
 
 
 
-    static int32_t
-    unescape(const CharSequence &affixPattern, NumberStringBuilder &output, int32_t position,
-             const SymbolProvider &provider, UErrorCode &status);
+    static int32_t unescape(const UnicodeString& affixPattern, NumberStringBuilder& output,
+                            int32_t position, const SymbolProvider& provider, UErrorCode& status);
 
     
 
@@ -146,8 +154,8 @@ class U_I18N_API AffixUtils {
 
 
 
-    static int32_t unescapedCodePointCount(const CharSequence &affixPattern,
-                                           const SymbolProvider &provider, UErrorCode &status);
+    static int32_t unescapedCodePointCount(const UnicodeString& affixPattern,
+                                           const SymbolProvider& provider, UErrorCode& status);
 
     
 
@@ -157,8 +165,7 @@ class U_I18N_API AffixUtils {
 
 
 
-    static bool
-    containsType(const CharSequence &affixPattern, AffixPatternType type, UErrorCode &status);
+    static bool containsType(const UnicodeString& affixPattern, AffixPatternType type, UErrorCode& status);
 
     
 
@@ -166,19 +173,7 @@ class U_I18N_API AffixUtils {
 
 
 
-    static bool hasCurrencySymbols(const CharSequence &affixPattern, UErrorCode &status);
-
-    
-
-
-
-
-
-
-
-    static UnicodeString
-    replaceType(const CharSequence &affixPattern, AffixPatternType type, char16_t replacementChar,
-                UErrorCode &status);
+    static bool hasCurrencySymbols(const UnicodeString& affixPattern, UErrorCode& status);
 
     
 
@@ -188,9 +183,21 @@ class U_I18N_API AffixUtils {
 
 
 
+    static UnicodeString replaceType(const UnicodeString& affixPattern, AffixPatternType type,
+                                     char16_t replacementChar, UErrorCode& status);
+
+    
 
 
-    static AffixTag nextToken(AffixTag tag, const CharSequence &patternString, UErrorCode &status);
+
+    static bool containsOnlySymbolsAndIgnorables(const UnicodeString& affixPattern,
+                                                 const UnicodeSet& ignorables, UErrorCode& status);
+
+    
+
+
+    static void iterateWithConsumer(const UnicodeString& affixPattern, TokenConsumer& consumer,
+                                    UErrorCode& status);
 
     
 
@@ -200,7 +207,19 @@ class U_I18N_API AffixUtils {
 
 
 
-    static bool hasNext(const AffixTag &tag, const CharSequence &string);
+
+
+    static AffixTag nextToken(AffixTag tag, const UnicodeString& patternString, UErrorCode& status);
+
+    
+
+
+
+
+
+
+
+    static bool hasNext(const AffixTag& tag, const UnicodeString& string);
 
   private:
     
@@ -208,8 +227,8 @@ class U_I18N_API AffixUtils {
 
 
 
-    static inline AffixTag
-    makeTag(int32_t offset, AffixPatternType type, AffixPatternState state, UChar32 cp) {
+    static inline AffixTag makeTag(int32_t offset, AffixPatternType type, AffixPatternState state,
+                                   UChar32 cp) {
         return {offset, cp, state, type};
     }
 };

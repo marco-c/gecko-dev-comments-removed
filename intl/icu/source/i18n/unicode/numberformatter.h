@@ -17,6 +17,8 @@
 #include "unicode/plurrule.h"
 #include "unicode/ucurr.h"
 #include "unicode/unum.h"
+#include "unicode/unumberformatter.h"
+#include "unicode/uobject.h"
 
 #ifndef U_HIDE_DRAFT_API
 
@@ -74,321 +76,23 @@
 
 
 
+U_NAMESPACE_BEGIN
 
 
+class IFixedDecimal;
+class FieldPositionIteratorHandler;
 
+namespace numparse {
+namespace impl {
 
 
+class NumberParserImpl;
+class MultiplierParseHandler;
 
+}
+}
 
-
-
-
-
-
-
-
-
-
-
-
-typedef enum UNumberUnitWidth {
-    
-
-
-
-
-
-
-
-
-
-
-            UNUM_UNIT_WIDTH_NARROW,
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-            UNUM_UNIT_WIDTH_SHORT,
-
-    
-
-
-
-
-
-
-
-
-            UNUM_UNIT_WIDTH_FULL_NAME,
-
-    
-
-
-
-
-
-
-
-
-            UNUM_UNIT_WIDTH_ISO_CODE,
-
-    
-
-
-
-
-
-
-            UNUM_UNIT_WIDTH_HIDDEN
-
-#ifndef U_HIDE_INTERNAL_API
-    ,
-    
-
-
-
-
-            UNUM_UNIT_WIDTH_COUNT
-#endif  
-} UNumberUnitWidth;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef enum UGroupingStrategy {
-    
-
-
-
-
-    UNUM_GROUPING_OFF,
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    UNUM_GROUPING_MIN2,
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    UNUM_GROUPING_AUTO,
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    UNUM_GROUPING_ON_ALIGNED,
-
-    
-
-
-
-
-
-    UNUM_GROUPING_THOUSANDS
-
-} UGroupingStrategy;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef enum UNumberSignDisplay {
-    
-
-
-
-
-
-    UNUM_SIGN_AUTO,
-
-    
-
-
-
-
-
-    UNUM_SIGN_ALWAYS,
-
-    
-
-
-
-
-    UNUM_SIGN_NEVER,
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    UNUM_SIGN_ACCOUNTING,
-
-    
-
-
-
-
-
-
-
-    UNUM_SIGN_ACCOUNTING_ALWAYS,
-
-    
-
-
-
-
-
-    UNUM_SIGN_EXCEPT_ZERO,
-
-    
-
-
-
-
-
-
-    UNUM_SIGN_ACCOUNTING_EXCEPT_ZERO
-
-#ifndef U_HIDE_INTERNAL_API
-    ,
-    
-
-
-
-
-    UNUM_SIGN_COUNT
-#endif  
-} UNumberSignDisplay;
-
-
-
-
-
-
-
-
-
-
-typedef enum UNumberDecimalSeparatorDisplay {
-    
-
-
-
-
-
-            UNUM_DECIMAL_SEPARATOR_AUTO,
-
-    
-
-
-
-
-            UNUM_DECIMAL_SEPARATOR_ALWAYS
-
-#ifndef U_HIDE_INTERNAL_API
-    ,
-    
-
-
-
-
-            UNUM_DECIMAL_SEPARATOR_COUNT
-#endif  
-} UNumberDecimalMarkDisplay;
-
-U_NAMESPACE_BEGIN namespace number {  
+namespace number {  
 
 
 class UnlocalizedNumberFormatter;
@@ -396,15 +100,14 @@ class LocalizedNumberFormatter;
 class FormattedNumber;
 class Notation;
 class ScientificNotation;
-class Rounder;
-class FractionRounder;
-class CurrencyRounder;
-class IncrementRounder;
+class Precision;
+class FractionPrecision;
+class CurrencyPrecision;
+class IncrementPrecision;
 class IntegerWidth;
 
 namespace impl {
 
-#ifndef U_HIDE_INTERNAL_API
 
 
 
@@ -419,24 +122,28 @@ typedef int16_t digits_t;
 
 
 static constexpr int32_t DEFAULT_THRESHOLD = 3;
-#endif  
 
 
 class Padder;
 struct MacroProps;
 struct MicroProps;
 class DecimalQuantity;
-struct NumberFormatterResults;
+struct UFormattedNumberData;
 class NumberFormatterImpl;
 struct ParsedPatternInfo;
 class ScientificModifier;
 class MultiplierProducer;
-class MutablePatternModifier;
-class LongNameHandler;
+class RoundingImpl;
 class ScientificHandler;
-class CompactHandler;
 class Modifier;
 class NumberStringBuilder;
+class AffixPatternProvider;
+class NumberPropertyMapper;
+struct DecimalFormatProperties;
+class MultiplierFormatHandler;
+class CurrencySymbols;
+class GeneratorHelpers;
+class DecNum;
 
 } 
 
@@ -641,6 +348,9 @@ class U_I18N_API Notation : public UMemory {
     friend class impl::NumberFormatterImpl;
     friend class impl::ScientificModifier;
     friend class impl::ScientificHandler;
+
+    
+    friend class impl::GeneratorHelpers;
 };
 
 
@@ -687,11 +397,26 @@ class U_I18N_API ScientificNotation : public Notation {
     
     using Notation::Notation;
 
+    
+    ScientificNotation(int8_t fEngineeringInterval, bool fRequireMinInt, impl::digits_t fMinExponentDigits,
+                       UNumberSignDisplay fExponentSignDisplay);
+
     friend class Notation;
+
+    
+    friend class impl::NumberPropertyMapper;
 };
 
 
-typedef Rounder DigitRounder;
+typedef Precision SignificantDigitsPrecision;
+
+
+
+
+typedef Precision Rounder;
+typedef FractionPrecision FractionRounder;
+typedef IncrementPrecision IncrementRounder;
+typedef CurrencyPrecision CurrencyRounder;
 
 
 
@@ -701,7 +426,7 @@ typedef Rounder DigitRounder;
 
 
 
-class U_I18N_API Rounder : public UMemory {
+class U_I18N_API Precision : public UMemory {
 
   public:
     
@@ -720,7 +445,7 @@ class U_I18N_API Rounder : public UMemory {
 
 
 
-    static Rounder unlimited();
+    static Precision unlimited();
 
     
 
@@ -728,130 +453,7 @@ class U_I18N_API Rounder : public UMemory {
 
 
 
-    static FractionRounder integer();
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static FractionRounder fixedFraction(int32_t minMaxFractionPlaces);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    static FractionRounder minFraction(int32_t minFractionPlaces);
-
-    
-
-
-
-
-
-
-
-
-
-    static FractionRounder maxFraction(int32_t maxFractionPlaces);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    static FractionRounder minMaxFraction(int32_t minFractionPlaces, int32_t maxFractionPlaces);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    static DigitRounder fixedDigits(int32_t minMaxSignificantDigits);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    static DigitRounder minDigits(int32_t minSignificantDigits);
-
-    
-
-
-
-
-
-
-
-    static DigitRounder maxDigits(int32_t maxSignificantDigits);
-
-    
-
-
-
-
-
-
-
-
-
-
-    static DigitRounder minMaxDigits(int32_t minSignificantDigits, int32_t maxSignificantDigits);
+    static FractionPrecision integer();
 
     
 
@@ -872,7 +474,135 @@ class U_I18N_API Rounder : public UMemory {
 
 
 
-    static IncrementRounder increment(double roundingIncrement);
+
+
+
+
+
+
+
+
+    static FractionPrecision fixedFraction(int32_t minMaxFractionPlaces);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    static FractionPrecision minFraction(int32_t minFractionPlaces);
+
+    
+
+
+
+
+
+
+
+
+
+    static FractionPrecision maxFraction(int32_t maxFractionPlaces);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    static FractionPrecision minMaxFraction(int32_t minFractionPlaces, int32_t maxFractionPlaces);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    static SignificantDigitsPrecision fixedSignificantDigits(int32_t minMaxSignificantDigits);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    static SignificantDigitsPrecision minSignificantDigits(int32_t minSignificantDigits);
+
+    
+
+
+
+
+
+
+
+    static SignificantDigitsPrecision maxSignificantDigits(int32_t maxSignificantDigits);
+
+    
+
+
+
+
+
+
+
+
+
+
+    static SignificantDigitsPrecision minMaxSignificantDigits(int32_t minSignificantDigits,
+                                                              int32_t maxSignificantDigits);
+
+#ifndef U_HIDE_DEPRECATED_API
+    
+    
+
+    
+    static inline SignificantDigitsPrecision fixedDigits(int32_t a) {
+        return fixedSignificantDigits(a);
+    }
+
+    
+    static inline SignificantDigitsPrecision minDigits(int32_t a) {
+        return minSignificantDigits(a);
+    }
+
+    
+    static inline SignificantDigitsPrecision maxDigits(int32_t a) {
+        return maxSignificantDigits(a);
+    }
+
+    
+    static inline SignificantDigitsPrecision minMaxDigits(int32_t a, int32_t b) {
+        return minMaxSignificantDigits(a, b);
+    }
+#endif  
 
     
 
@@ -890,7 +620,10 @@ class U_I18N_API Rounder : public UMemory {
 
 
 
-    static CurrencyRounder currency(UCurrencyUsage currencyUsage);
+
+
+
+    static IncrementPrecision increment(double roundingIncrement);
 
     
 
@@ -901,10 +634,33 @@ class U_I18N_API Rounder : public UMemory {
 
 
 
-    Rounder withMode(UNumberFormatRoundingMode roundingMode) const;
+
+
+
+
+
+
+
+
+    static CurrencyPrecision currency(UCurrencyUsage currencyUsage);
+
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+
+
+
+
+
+
+
+    Precision withMode(UNumberFormatRoundingMode roundingMode) const;
+#endif  
 
   private:
-    enum RounderType {
+    enum PrecisionType {
         RND_BOGUS,
         RND_NONE,
         RND_FRACTION,
@@ -912,11 +668,10 @@ class U_I18N_API Rounder : public UMemory {
         RND_FRACTION_SIGNIFICANT,
         RND_INCREMENT,
         RND_CURRENCY,
-        RND_PASS_THROUGH,
         RND_ERROR
     } fType;
 
-    union RounderUnion {
+    union PrecisionUnion {
         struct FractionSignificantSettings {
             
             impl::digits_t fMinFrac;
@@ -927,24 +682,27 @@ class U_I18N_API Rounder : public UMemory {
         struct IncrementSettings {
             double fIncrement;
             impl::digits_t fMinFrac;
+            impl::digits_t fMaxFrac;
         } increment; 
         UCurrencyUsage currencyUsage; 
         UErrorCode errorCode; 
     } fUnion;
 
-    typedef RounderUnion::FractionSignificantSettings FractionSignificantSettings;
-    typedef RounderUnion::IncrementSettings IncrementSettings;
+    typedef PrecisionUnion::FractionSignificantSettings FractionSignificantSettings;
+    typedef PrecisionUnion::IncrementSettings IncrementSettings;
 
+    
     UNumberFormatRoundingMode fRoundingMode;
 
-    Rounder(const RounderType &type, const RounderUnion &union_, UNumberFormatRoundingMode roundingMode)
+    Precision(const PrecisionType& type, const PrecisionUnion& union_,
+              UNumberFormatRoundingMode roundingMode)
             : fType(type), fUnion(union_), fRoundingMode(roundingMode) {}
 
-    Rounder(UErrorCode errorCode) : fType(RND_ERROR) {
+    Precision(UErrorCode errorCode) : fType(RND_ERROR) {
         fUnion.errorCode = errorCode;
     }
 
-    Rounder() : fType(RND_BOGUS) {}
+    Precision() : fType(RND_BOGUS) {}
 
     bool isBogus() const {
         return fType == RND_BOGUS;
@@ -959,46 +717,20 @@ class U_I18N_API Rounder : public UMemory {
     }
 
     
-    Rounder withCurrency(const CurrencyUnit &currency, UErrorCode &status) const;
+    Precision withCurrency(const CurrencyUnit &currency, UErrorCode &status) const;
 
-    
-    void setLocaleData(const CurrencyUnit &currency, UErrorCode &status);
+    static FractionPrecision constructFraction(int32_t minFrac, int32_t maxFrac);
 
-    void apply(impl::DecimalQuantity &value, UErrorCode &status) const;
+    static Precision constructSignificant(int32_t minSig, int32_t maxSig);
 
-    
-    void apply(impl::DecimalQuantity &value, int32_t minInt, UErrorCode status);
+    static Precision
+    constructFractionSignificant(const FractionPrecision &base, int32_t minSig, int32_t maxSig);
 
-    
+    static IncrementPrecision constructIncrement(double increment, int32_t minFrac);
 
+    static CurrencyPrecision constructCurrency(UCurrencyUsage usage);
 
-
-
-
-
-
-
-
-
-
-
-
-    int32_t
-    chooseMultiplierAndApply(impl::DecimalQuantity &input, const impl::MultiplierProducer &producer,
-                             UErrorCode &status);
-
-    static FractionRounder constructFraction(int32_t minFrac, int32_t maxFrac);
-
-    static Rounder constructSignificant(int32_t minSig, int32_t maxSig);
-
-    static Rounder
-    constructFractionSignificant(const FractionRounder &base, int32_t minSig, int32_t maxSig);
-
-    static IncrementRounder constructIncrement(double increment, int32_t minFrac);
-
-    static CurrencyRounder constructCurrency(UCurrencyUsage usage);
-
-    static Rounder constructPassThrough();
+    static Precision constructPassThrough();
 
     
     friend struct impl::MacroProps;
@@ -1008,15 +740,18 @@ class U_I18N_API Rounder : public UMemory {
     friend class impl::NumberFormatterImpl;
 
     
-    friend class impl::MutablePatternModifier;
-    friend class impl::LongNameHandler;
-    friend class impl::ScientificHandler;
-    friend class impl::CompactHandler;
+    friend class impl::NumberPropertyMapper;
 
     
-    friend class FractionRounder;
-    friend class CurrencyRounder;
-    friend class IncrementRounder;
+    friend class impl::RoundingImpl;
+
+    
+    friend class FractionPrecision;
+    friend class CurrencyPrecision;
+    friend class IncrementPrecision;
+
+    
+    friend class impl::GeneratorHelpers;
 };
 
 
@@ -1028,7 +763,7 @@ class U_I18N_API Rounder : public UMemory {
 
 
 
-class U_I18N_API FractionRounder : public Rounder {
+class U_I18N_API FractionPrecision : public Precision {
   public:
     
 
@@ -1046,7 +781,7 @@ class U_I18N_API FractionRounder : public Rounder {
 
 
 
-    Rounder withMinDigits(int32_t minSignificantDigits) const;
+    Precision withMinDigits(int32_t minSignificantDigits) const;
 
     
 
@@ -1065,14 +800,14 @@ class U_I18N_API FractionRounder : public Rounder {
 
 
 
-    Rounder withMaxDigits(int32_t maxSignificantDigits) const;
+    Precision withMaxDigits(int32_t maxSignificantDigits) const;
 
   private:
     
-    using Rounder::Rounder;
+    using Precision::Precision;
 
     
-    friend class Rounder;
+    friend class Precision;
 };
 
 
@@ -1084,7 +819,7 @@ class U_I18N_API FractionRounder : public Rounder {
 
 
 
-class U_I18N_API CurrencyRounder : public Rounder {
+class U_I18N_API CurrencyPrecision : public Precision {
   public:
     
 
@@ -1103,14 +838,14 @@ class U_I18N_API CurrencyRounder : public Rounder {
 
 
 
-    Rounder withCurrency(const CurrencyUnit &currency) const;
+    Precision withCurrency(const CurrencyUnit &currency) const;
 
   private:
     
-    using Rounder::Rounder;
+    using Precision::Precision;
 
     
-    friend class Rounder;
+    friend class Precision;
 };
 
 
@@ -1122,7 +857,7 @@ class U_I18N_API CurrencyRounder : public Rounder {
 
 
 
-class U_I18N_API IncrementRounder : public Rounder {
+class U_I18N_API IncrementPrecision : public Precision {
   public:
     
 
@@ -1139,14 +874,14 @@ class U_I18N_API IncrementRounder : public Rounder {
 
 
 
-    Rounder withMinFraction(int32_t minFrac) const;
+    Precision withMinFraction(int32_t minFrac) const;
 
   private:
     
-    using Rounder::Rounder;
+    using Precision::Precision;
 
     
-    friend class Rounder;
+    friend class Precision;
 };
 
 
@@ -1171,11 +906,9 @@ class U_I18N_API IntegerWidth : public UMemory {
 
 
 
-
     static IntegerWidth zeroFillTo(int32_t minInt);
 
     
-
 
 
 
@@ -1193,12 +926,13 @@ class U_I18N_API IntegerWidth : public UMemory {
         struct {
             impl::digits_t fMinInt;
             impl::digits_t fMaxInt;
+            bool fFormatFailIfMoreThanMaxDigits;
         } minMaxInt;
         UErrorCode errorCode;
     } fUnion;
     bool fHasError = false;
 
-    IntegerWidth(impl::digits_t minInt, impl::digits_t maxInt);
+    IntegerWidth(impl::digits_t minInt, impl::digits_t maxInt, bool formatFailIfMoreThanMaxDigits);
 
     IntegerWidth(UErrorCode errorCode) { 
         fUnion.errorCode = errorCode;
@@ -1207,6 +941,11 @@ class U_I18N_API IntegerWidth : public UMemory {
 
     IntegerWidth() { 
         fUnion.minMaxInt.fMinInt = -1;
+    }
+
+    
+    static IntegerWidth standard() {
+        return IntegerWidth::zeroFillTo(1);
     }
 
     bool isBogus() const {
@@ -1223,12 +962,148 @@ class U_I18N_API IntegerWidth : public UMemory {
 
     void apply(impl::DecimalQuantity &quantity, UErrorCode &status) const;
 
+    bool operator==(const IntegerWidth& other) const;
+
     
     friend struct impl::MacroProps;
     friend struct impl::MicroProps;
 
     
     friend class impl::NumberFormatterImpl;
+
+    
+    friend class impl::NumberPropertyMapper;
+
+    
+    friend class impl::GeneratorHelpers;
+};
+
+
+
+
+
+
+
+
+
+class U_I18N_API Scale : public UMemory {
+  public:
+    
+
+
+
+
+
+    static Scale none();
+
+    
+
+
+
+
+
+
+
+
+
+    static Scale powerOfTen(int32_t power);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    static Scale byDecimal(StringPiece multiplicand);
+
+    
+
+
+
+
+
+
+
+    static Scale byDouble(double multiplicand);
+
+    
+
+
+
+
+
+    static Scale byDoubleAndPowerOfTen(double multiplicand, int32_t power);
+
+    
+    
+
+    
+    Scale(const Scale& other);
+
+    
+    Scale& operator=(const Scale& other);
+
+    
+    Scale(Scale&& src) U_NOEXCEPT;
+
+    
+    Scale& operator=(Scale&& src) U_NOEXCEPT;
+
+    
+    ~Scale();
+
+#ifndef U_HIDE_INTERNAL_API
+    
+    Scale(int32_t magnitude, impl::DecNum* arbitraryToAdopt);
+#endif  
+
+  private:
+    int32_t fMagnitude;
+    impl::DecNum* fArbitrary;
+    UErrorCode fError;
+
+    Scale(UErrorCode error) : fMagnitude(0), fArbitrary(nullptr), fError(error) {}
+
+    Scale() : fMagnitude(0), fArbitrary(nullptr), fError(U_ZERO_ERROR) {}
+
+    bool isValid() const {
+        return fMagnitude != 0 || fArbitrary != nullptr;
+    }
+
+    UBool copyErrorTo(UErrorCode &status) const {
+        if (fError != U_ZERO_ERROR) {
+            status = fError;
+            return TRUE;
+        }
+        return FALSE;
+    }
+
+    void applyTo(impl::DecimalQuantity& quantity) const;
+
+    void applyReciprocalTo(impl::DecimalQuantity& quantity) const;
+
+    
+    friend struct impl::MacroProps;
+    friend struct impl::MicroProps;
+
+    
+    friend class impl::NumberFormatterImpl;
+
+    
+    friend class impl::MultiplierFormatHandler;
+
+    
+    friend class impl::GeneratorHelpers;
+
+    
+    friend class ::icu::numparse::impl::NumberParserImpl;
+    friend class ::icu::numparse::impl::MultiplierParseHandler;
 };
 
 namespace impl {
@@ -1244,12 +1119,19 @@ class U_I18N_API SymbolsWrapper : public UMemory {
     SymbolsWrapper(const SymbolsWrapper &other);
 
     
-    ~SymbolsWrapper();
-
-    
     SymbolsWrapper &operator=(const SymbolsWrapper &other);
 
+    
+    SymbolsWrapper(SymbolsWrapper&& src) U_NOEXCEPT;
+
+    
+    SymbolsWrapper &operator=(SymbolsWrapper&& src) U_NOEXCEPT;
+
+    
+    ~SymbolsWrapper();
+
 #ifndef U_HIDE_INTERNAL_API
+
     
 
 
@@ -1286,6 +1168,8 @@ class U_I18N_API SymbolsWrapper : public UMemory {
 
     const NumberingSystem *getNumberingSystem() const;
 
+#endif  
+
     
     UBool copyErrorTo(UErrorCode &status) const {
         if (fType == SYMPTR_DFS && fPtr.dfs == nullptr) {
@@ -1297,7 +1181,6 @@ class U_I18N_API SymbolsWrapper : public UMemory {
         }
         return FALSE;
     }
-#endif  
 
   private:
     enum SymbolsPointerType {
@@ -1310,6 +1193,8 @@ class U_I18N_API SymbolsWrapper : public UMemory {
     } fPtr;
 
     void doCopyFrom(const SymbolsWrapper &other);
+
+    void doMoveFrom(SymbolsWrapper&& src);
 
     void doCleanup();
 };
@@ -1324,10 +1209,25 @@ class U_I18N_API Grouper : public UMemory {
 
     
 
+
+
+    static Grouper forProperties(const DecimalFormatProperties& properties);
+
     
-    Grouper(int16_t grouping1, int16_t grouping2, int16_t minGrouping)
-            : fGrouping1(grouping1), fGrouping2(grouping2), fMinGrouping(minGrouping) {}
+
+    
+    Grouper(int16_t grouping1, int16_t grouping2, int16_t minGrouping, UGroupingStrategy strategy)
+            : fGrouping1(grouping1),
+              fGrouping2(grouping2),
+              fMinGrouping(minGrouping),
+              fStrategy(strategy) {}
 #endif  
+
+    
+    int16_t getPrimary() const;
+
+    
+    int16_t getSecondary() const;
 
   private:
     
@@ -1350,6 +1250,12 @@ class U_I18N_API Grouper : public UMemory {
 
     int16_t fMinGrouping;
 
+    
+
+
+
+    UGroupingStrategy fStrategy;
+
     Grouper() : fGrouping1(-3) {};
 
     bool isBogus() const {
@@ -1367,6 +1273,12 @@ class U_I18N_API Grouper : public UMemory {
 
     
     friend class NumberFormatterImpl;
+
+    
+    friend class ::icu::numparse::impl::NumberParserImpl;
+
+    
+    friend class impl::GeneratorHelpers;
 };
 
 
@@ -1380,6 +1292,9 @@ class U_I18N_API Padder : public UMemory {
     
     static Padder codePoints(UChar32 cp, int32_t targetWidth, UNumberFormatPadPosition position);
 #endif  
+
+    
+    static Padder forProperties(const DecimalFormatProperties& properties);
 
   private:
     UChar32 fWidth;  
@@ -1427,6 +1342,9 @@ class U_I18N_API Padder : public UMemory {
 
     
     friend class impl::NumberFormatterImpl;
+
+    
+    friend class impl::GeneratorHelpers;
 };
 
 
@@ -1442,7 +1360,10 @@ struct U_I18N_API MacroProps : public UMemory {
     MeasureUnit perUnit; 
 
     
-    Rounder rounder;  
+    Precision precision;  
+
+    
+    UNumberFormatRoundingMode roundingMode = UNUM_ROUND_HALFEVEN;
 
     
     Grouper grouper;  
@@ -1468,20 +1389,33 @@ struct U_I18N_API MacroProps : public UMemory {
     UNumberDecimalSeparatorDisplay decimal = UNUM_DECIMAL_SEPARATOR_COUNT;
 
     
-    PluralRules *rules = nullptr;  
+    Scale scale;  
+
+    
+    const AffixPatternProvider* affixProvider = nullptr;  
+
+    
+    const PluralRules* rules = nullptr;  
+
+    
+    const CurrencySymbols* currencySymbols = nullptr;  
 
     
     int32_t threshold = DEFAULT_THRESHOLD;
+
+    
     Locale locale;
+
+    
 
     
 
 
 
     bool copyErrorTo(UErrorCode &status) const {
-        return notation.copyErrorTo(status) || rounder.copyErrorTo(status) ||
+        return notation.copyErrorTo(status) || precision.copyErrorTo(status) ||
                padder.copyErrorTo(status) || integerWidth.copyErrorTo(status) ||
-               symbols.copyErrorTo(status);
+               symbols.copyErrorTo(status) || scale.copyErrorTo(status);
     }
 };
 
@@ -1522,7 +1456,18 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-    Derived notation(const Notation &notation) const;
+    Derived notation(const Notation &notation) const &;
+
+    
+
+
+
+
+
+
+
+
+    Derived notation(const Notation &notation) &&;
 
     
 
@@ -1568,7 +1513,18 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-    Derived unit(const icu::MeasureUnit &unit) const;
+    Derived unit(const icu::MeasureUnit &unit) const &;
+
+    
+
+
+
+
+
+
+
+
+    Derived unit(const icu::MeasureUnit &unit) &&;
 
     
 
@@ -1585,7 +1541,7 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-    Derived adoptUnit(icu::MeasureUnit *unit) const;
+    Derived adoptUnit(icu::MeasureUnit *unit) const &;
 
     
 
@@ -1596,34 +1552,7 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-
-
-
-
-
-
-
-
-    Derived perUnit(const icu::MeasureUnit &perUnit) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    Derived adoptPerUnit(icu::MeasureUnit *perUnit) const;
+    Derived adoptUnit(icu::MeasureUnit *unit) &&;
 
     
 
@@ -1642,6 +1571,9 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
+    Derived perUnit(const icu::MeasureUnit &perUnit) const &;
+
+    
 
 
 
@@ -1650,13 +1582,7 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-
-
-
-
-
-
-    Derived rounding(const Rounder &rounder) const;
+    Derived perUnit(const icu::MeasureUnit &perUnit) &&;
 
     
 
@@ -1675,17 +1601,7 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-
-
-
-
-
-
-
-
-
-
-    Derived grouping(const UGroupingStrategy &strategy) const;
+    Derived adoptPerUnit(icu::MeasureUnit *perUnit) const &;
 
     
 
@@ -1696,22 +1612,7 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    Derived integerWidth(const IntegerWidth &style) const;
+    Derived adoptPerUnit(icu::MeasureUnit *perUnit) &&;
 
     
 
@@ -1743,6 +1644,30 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
+    Derived precision(const Precision& precision) const &;
+
+    
+
+
+
+
+
+
+
+
+    Derived precision(const Precision& precision) &&;
+
+#ifndef U_HIDE_DEPRECATED_API
+    
+    
+    
+    
+    Derived rounding(const Rounder& rounder) const & {
+        return precision(rounder);
+    }
+#endif  
+
+    
 
 
 
@@ -1753,7 +1678,102 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-    Derived symbols(const DecimalFormatSymbols &symbols) const;
+
+
+
+
+
+
+
+    Derived roundingMode(UNumberFormatRoundingMode roundingMode) const &;
+
+    
+
+
+
+
+
+
+
+    Derived roundingMode(UNumberFormatRoundingMode roundingMode) &&;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Derived grouping(UGroupingStrategy strategy) const &;
+
+    
+
+
+
+
+
+
+
+
+
+    Derived grouping(UGroupingStrategy strategy) &&;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Derived integerWidth(const IntegerWidth &style) const &;
+
+    
+
+
+
+
+
+
+
+
+    Derived integerWidth(const IntegerWidth &style) &&;
 
     
 
@@ -1788,7 +1808,14 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-    Derived adoptSymbols(NumberingSystem *symbols) const;
+
+
+
+
+
+
+
+    Derived symbols(const DecimalFormatSymbols &symbols) const &;
 
     
 
@@ -1799,51 +1826,7 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    Derived unitWidth(const UNumberUnitWidth &width) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    Derived sign(const UNumberSignDisplay &width) const;
+    Derived symbols(const DecimalFormatSymbols &symbols) &&;
 
     
 
@@ -1871,7 +1854,176 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-    Derived decimal(const UNumberDecimalSeparatorDisplay &width) const;
+
+
+
+
+
+
+
+    Derived adoptSymbols(NumberingSystem *symbols) const &;
+
+    
+
+
+
+
+
+
+
+
+    Derived adoptSymbols(NumberingSystem *symbols) &&;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Derived unitWidth(UNumberUnitWidth width) const &;
+
+    
+
+
+
+
+
+
+
+
+    Derived unitWidth(UNumberUnitWidth width) &&;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Derived sign(UNumberSignDisplay style) const &;
+
+    
+
+
+
+
+
+
+
+
+    Derived sign(UNumberSignDisplay style) &&;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Derived decimal(UNumberDecimalSeparatorDisplay style) const &;
+
+    
+
+
+
+
+
+
+
+
+    Derived decimal(UNumberDecimalSeparatorDisplay style) &&;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Derived scale(const Scale &scale) const &;
+
+    
+
+
+
+
+
+
+
+
+    Derived scale(const Scale &scale) &&;
 
 #ifndef U_HIDE_INTERNAL_API
 
@@ -1880,7 +2032,10 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-    Derived padding(const impl::Padder &padder) const;
+    Derived padding(const impl::Padder &padder) const &;
+
+    
+    Derived padding(const impl::Padder &padder) &&;
 
     
 
@@ -1888,9 +2043,44 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-    Derived threshold(int32_t threshold) const;
+    Derived threshold(int32_t threshold) const &;
+
+    
+    Derived threshold(int32_t threshold) &&;
+
+    
+
+
+
+
+    Derived macros(const impl::MacroProps& macros) const &;
+
+    
+    Derived macros(const impl::MacroProps& macros) &&;
+
+    
+    Derived macros(impl::MacroProps&& macros) const &;
+
+    
+    Derived macros(impl::MacroProps&& macros) &&;
 
 #endif  
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    UnicodeString toSkeleton(UErrorCode& status) const;
 
     
 
@@ -1905,7 +2095,9 @@ class U_I18N_API NumberFormatterSettings {
         }
         fMacros.copyErrorTo(outErrorCode);
         return U_FAILURE(outErrorCode);
-    }
+    };
+
+    
 
   protected:
     impl::MacroProps fMacros;
@@ -1944,21 +2136,58 @@ class U_I18N_API UnlocalizedNumberFormatter
 
 
 
-    LocalizedNumberFormatter locale(const icu::Locale &locale) const;
+    LocalizedNumberFormatter locale(const icu::Locale &locale) const &;
 
     
+
+
+
+
+
+
+
+
+    LocalizedNumberFormatter locale(const icu::Locale &locale) &&;
+
     
 
 
 
-    UnlocalizedNumberFormatter(const UnlocalizedNumberFormatter &other) : UnlocalizedNumberFormatter(
-            static_cast<const NumberFormatterSettings<UnlocalizedNumberFormatter> &>(other)) {}
 
-  private:
     UnlocalizedNumberFormatter() = default;
 
+    
+    
+
+
+
+    UnlocalizedNumberFormatter(const UnlocalizedNumberFormatter &other);
+
+    
+
+
+
+
+    UnlocalizedNumberFormatter(UnlocalizedNumberFormatter&& src) U_NOEXCEPT;
+
+    
+
+
+
+    UnlocalizedNumberFormatter& operator=(const UnlocalizedNumberFormatter& other);
+
+    
+
+
+
+
+    UnlocalizedNumberFormatter& operator=(UnlocalizedNumberFormatter&& src) U_NOEXCEPT;
+
+  private:
+    explicit UnlocalizedNumberFormatter(const NumberFormatterSettings<UnlocalizedNumberFormatter>& other);
+
     explicit UnlocalizedNumberFormatter(
-            const NumberFormatterSettings<UnlocalizedNumberFormatter> &other);
+            NumberFormatterSettings<UnlocalizedNumberFormatter>&& src) U_NOEXCEPT;
 
     
     friend class NumberFormatterSettings<UnlocalizedNumberFormatter>;
@@ -2016,15 +2245,99 @@ class U_I18N_API LocalizedNumberFormatter
 
 
 
-    FormattedNumber formatDecimal(StringPiece value, UErrorCode &status) const;
+    FormattedNumber formatDecimal(StringPiece value, UErrorCode& status) const;
+
+#ifndef U_HIDE_INTERNAL_API
+
+    
+
+
+    FormattedNumber formatDecimalQuantity(const impl::DecimalQuantity& dq, UErrorCode& status) const;
+
+    
+
+
+    void getAffixImpl(bool isPrefix, bool isNegative, UnicodeString& result, UErrorCode& status) const;
+
+    
+
+
+
+    const impl::NumberFormatterImpl* getCompiled() const;
+
+    
+
+
+
+    int32_t getCallCount() const;
+
+#endif
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    Format* toFormat(UErrorCode& status) const;
+
+    
+
+
+
+
+    LocalizedNumberFormatter() = default;
 
     
     
 
 
 
-    LocalizedNumberFormatter(const LocalizedNumberFormatter &other) : LocalizedNumberFormatter(
-            static_cast<const NumberFormatterSettings<LocalizedNumberFormatter> &>(other)) {}
+    LocalizedNumberFormatter(const LocalizedNumberFormatter &other);
+
+    
+
+
+
+
+    LocalizedNumberFormatter(LocalizedNumberFormatter&& src) U_NOEXCEPT;
+
+    
+
+
+
+    LocalizedNumberFormatter& operator=(const LocalizedNumberFormatter& other);
+
+    
+
+
+
+
+    LocalizedNumberFormatter& operator=(LocalizedNumberFormatter&& src) U_NOEXCEPT;
+
+#ifndef U_HIDE_INTERNAL_API
+
+    
+
+
+
+
+
+
+
+
+
+
+    void formatImpl(impl::UFormattedNumberData *results, UErrorCode &status) const;
+
+#endif
 
     
 
@@ -2033,27 +2346,25 @@ class U_I18N_API LocalizedNumberFormatter
     ~LocalizedNumberFormatter();
 
   private:
+    
+    
     const impl::NumberFormatterImpl* fCompiled {nullptr};
     char fUnsafeCallCount[8] {};  
 
-    LocalizedNumberFormatter() = default;
+    explicit LocalizedNumberFormatter(const NumberFormatterSettings<LocalizedNumberFormatter>& other);
 
-    explicit LocalizedNumberFormatter(const NumberFormatterSettings<LocalizedNumberFormatter> &other);
+    explicit LocalizedNumberFormatter(NumberFormatterSettings<LocalizedNumberFormatter>&& src) U_NOEXCEPT;
 
     LocalizedNumberFormatter(const impl::MacroProps &macros, const Locale &locale);
+
+    LocalizedNumberFormatter(impl::MacroProps &&macros, const Locale &locale);
+
+    void lnfMoveHelper(LocalizedNumberFormatter&& src);
 
     
 
 
-
-
-
-
-
-
-
-
-    FormattedNumber formatImpl(impl::NumberFormatterResults *results, UErrorCode &status) const;
+    bool computeCompiled(UErrorCode& status) const;
 
     
     friend class NumberFormatterSettings<UnlocalizedNumberFormatter>;
@@ -2071,15 +2382,32 @@ class U_I18N_API LocalizedNumberFormatter
 
 class U_I18N_API FormattedNumber : public UMemory {
   public:
+#ifndef U_HIDE_DEPRECATED_API
     
+
+
 
 
 
 
 
     UnicodeString toString() const;
+#endif  
 
     
+
+
+
+
+
+
+
+    UnicodeString toString(UErrorCode& status) const;
+
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
 
 
 
@@ -2089,8 +2417,24 @@ class U_I18N_API FormattedNumber : public UMemory {
 
 
     Appendable &appendTo(Appendable &appendable);
+#endif  
 
     
+
+
+
+
+
+
+
+
+
+
+    Appendable &appendTo(Appendable &appendable, UErrorCode& status);
+
+#ifndef U_HIDE_DEPRECATED_API
+    
+
 
 
 
@@ -2110,8 +2454,44 @@ class U_I18N_API FormattedNumber : public UMemory {
 
 
     void populateFieldPosition(FieldPosition &fieldPosition, UErrorCode &status);
+#endif  
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    UBool nextFieldPosition(FieldPosition& fieldPosition, UErrorCode& status) const;
+
+#ifndef U_HIDE_DEPRECATED_API
+    
+
 
 
 
@@ -2126,6 +2506,62 @@ class U_I18N_API FormattedNumber : public UMemory {
 
 
     void populateFieldPositionIterator(FieldPositionIterator &iterator, UErrorCode &status);
+#endif  
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    void getAllFieldPositions(FieldPositionIterator &iterator, UErrorCode &status) const;
+
+#ifndef U_HIDE_INTERNAL_API
+
+    
+
+
+
+    void getDecimalQuantity(impl::DecimalQuantity& output, UErrorCode& status) const;
+
+    
+
+
+
+    void getAllFieldPositionsImpl(FieldPositionIteratorHandler& fpih, UErrorCode& status) const;
+
+#endif
+
+    
+
+
+    FormattedNumber(const FormattedNumber&) = delete;
+
+    
+
+
+    FormattedNumber& operator=(const FormattedNumber&) = delete;
+
+    
+
+
+
+
+    FormattedNumber(FormattedNumber&& src) U_NOEXCEPT;
+
+    
+
+
+
+
+    FormattedNumber& operator=(FormattedNumber&& src) U_NOEXCEPT;
 
     
 
@@ -2135,12 +2571,16 @@ class U_I18N_API FormattedNumber : public UMemory {
 
   private:
     
-    const impl::NumberFormatterResults *fResults;
+    const impl::UFormattedNumberData *fResults;
 
     
     UErrorCode fErrorCode;
 
-    explicit FormattedNumber(impl::NumberFormatterResults *results)
+    
+
+
+
+    explicit FormattedNumber(impl::UFormattedNumberData *results)
         : fResults(results), fErrorCode(U_ZERO_ERROR) {};
 
     explicit FormattedNumber(UErrorCode errorCode)
@@ -2179,6 +2619,18 @@ class U_I18N_API NumberFormatter final {
 
     
 
+
+
+
+
+
+
+
+
+
+    static UnlocalizedNumberFormatter forSkeleton(const UnicodeString& skeleton, UErrorCode& status);
+
+    
 
 
     NumberFormatter() = delete;

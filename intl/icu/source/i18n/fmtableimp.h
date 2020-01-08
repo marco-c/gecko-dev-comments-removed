@@ -10,21 +10,11 @@
 #ifndef FMTABLEIMP_H
 #define FMTABLEIMP_H
 
-#include "digitlst.h"
+#include "number_decimalquantity.h"
 
 #if !UCONFIG_NO_FORMATTING
 
 U_NAMESPACE_BEGIN
-
-
-
-
-struct FmtStackData {
-  DigitList stackDecimalNum;   
-  
-  
-  
-};
 
 
 

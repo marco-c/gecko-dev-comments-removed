@@ -51,10 +51,11 @@
 #include "uassert.h"
 #include "umutex.h"
 #include "mutex.h"
-#include "digitlst.h"
 #include <float.h>
 #include "sharednumberformat.h"
 #include "unifiedcache.h"
+#include "number_decimalquantity.h"
+#include "number_utils.h"
 
 
 
@@ -129,31 +130,28 @@ static const UChar * const gLastResortNumberPatterns[UNUM_FORMAT_STYLE_COUNT] = 
 
 
 
-static const char *gNumberElements = "NumberElements";
-static const char *gLatn = "latn";
-static const char *gPatterns = "patterns";
-static const char *gFormatKeys[UNUM_FORMAT_STYLE_COUNT] = {
-    NULL,  
-    "decimalFormat",  
-    "currencyFormat",  
-    "percentFormat",  
-    "scientificFormat",  
-    NULL,  
-    NULL,  
-    NULL,  
-    NULL,  
-    NULL,  
+static const icu::number::impl::CldrPatternStyle gFormatCldrStyles[UNUM_FORMAT_STYLE_COUNT] = {
+     icu::number::impl::CLDR_PATTERN_STYLE_COUNT,  
+    icu::number::impl::CLDR_PATTERN_STYLE_DECIMAL,  
+    icu::number::impl::CLDR_PATTERN_STYLE_CURRENCY,  
+    icu::number::impl::CLDR_PATTERN_STYLE_PERCENT,  
+    icu::number::impl::CLDR_PATTERN_STYLE_SCIENTIFIC,  
+     icu::number::impl::CLDR_PATTERN_STYLE_COUNT,  
+     icu::number::impl::CLDR_PATTERN_STYLE_COUNT,  
+     icu::number::impl::CLDR_PATTERN_STYLE_COUNT,  
+     icu::number::impl::CLDR_PATTERN_STYLE_COUNT,  
+     icu::number::impl::CLDR_PATTERN_STYLE_COUNT,  
     
     
     
     
-    "currencyFormat",  
-    "currencyFormat",  
-    "accountingFormat",  
-    "currencyFormat",  
-    NULL,  
-    NULL,  
-    "currencyFormat",  
+    icu::number::impl::CLDR_PATTERN_STYLE_CURRENCY,  
+    icu::number::impl::CLDR_PATTERN_STYLE_CURRENCY,  
+    icu::number::impl::CLDR_PATTERN_STYLE_ACCOUNTING,  
+    icu::number::impl::CLDR_PATTERN_STYLE_CURRENCY,  
+     icu::number::impl::CLDR_PATTERN_STYLE_COUNT,  
+     icu::number::impl::CLDR_PATTERN_STYLE_COUNT,  
+    icu::number::impl::CLDR_PATTERN_STYLE_CURRENCY,  
 };
 
 
@@ -524,7 +522,7 @@ ArgExtractor::ArgExtractor(const NumberFormat& , const Formattable& obj, UErrorC
 ArgExtractor::~ArgExtractor() {
 }
 
-UnicodeString& NumberFormat::format(const DigitList &number,
+UnicodeString& NumberFormat::format(const number::impl::DecimalQuantity &number,
                       UnicodeString& appendTo,
                       FieldPositionIterator* posIter,
                       UErrorCode& status) const {
@@ -534,7 +532,7 @@ UnicodeString& NumberFormat::format(const DigitList &number,
     if (U_FAILURE(status)) {
         return appendTo;
     }
-    double dnum = number.getDouble();
+    double dnum = number.toDouble();
     format(dnum, appendTo, posIter, status);
     return appendTo;
 }
@@ -542,17 +540,17 @@ UnicodeString& NumberFormat::format(const DigitList &number,
 
 
 UnicodeString&
-NumberFormat::format(const DigitList &number,
+NumberFormat::format(const number::impl::DecimalQuantity &number,
                      UnicodeString& appendTo,
                      FieldPosition& pos,
-                     UErrorCode &status) const { 
+                     UErrorCode &status) const {
     
     
     
     if (U_FAILURE(status)) {
         return appendTo;
     }
-    double dnum = number.getDouble();
+    double dnum = number.toDouble();
     format(dnum, appendTo, pos, status);
     return appendTo;
 }
@@ -578,7 +576,7 @@ NumberFormat::format(const Formattable& obj,
       return cloneFmt->format(*n, appendTo, pos, status);
     }
 
-    if (n->isNumeric() && n->getDigitList() != NULL) {
+    if (n->isNumeric() && n->getDecimalQuantity() != NULL) {
         
         
         
@@ -587,17 +585,17 @@ NumberFormat::format(const Formattable& obj,
         
         
         
-        format(*n->getDigitList(), appendTo, pos, status);
+        format(*n->getDecimalQuantity(), appendTo, pos, status);
     } else {
         switch (n->getType()) {
         case Formattable::kDouble:
-            format(n->getDouble(), appendTo, pos);
+            format(n->getDouble(), appendTo, pos, status);
             break;
         case Formattable::kLong:
-            format(n->getLong(), appendTo, pos);
+            format(n->getLong(), appendTo, pos, status);
             break;
         case Formattable::kInt64:
-            format(n->getInt64(), appendTo, pos);
+            format(n->getInt64(), appendTo, pos, status);
             break;
         default:
             status = U_INVALID_FORMAT_ERROR;
@@ -633,9 +631,9 @@ NumberFormat::format(const Formattable& obj,
       return cloneFmt->format(*n, appendTo, posIter, status);
     }
 
-    if (n->isNumeric() && n->getDigitList() != NULL) {
+    if (n->isNumeric() && n->getDecimalQuantity() != NULL) {
         
-        format(*n->getDigitList(), appendTo, posIter, status);
+        format(*n->getDecimalQuantity(), appendTo, posIter, status);
     } else {
         switch (n->getType()) {
         case Formattable::kDouble:
@@ -1400,27 +1398,13 @@ NumberFormat::makeInstance(const Locale& desiredLocale,
             return NULL;
         }
 
-        UResourceBundle *resource = ownedResource.orphan();
-        UResourceBundle *numElements = ures_getByKeyWithFallback(resource, gNumberElements, NULL, &status);
-        resource = ures_getByKeyWithFallback(numElements, ns->getName(), resource, &status);
-        resource = ures_getByKeyWithFallback(resource, gPatterns, resource, &status);
-        ownedResource.adoptInstead(resource);
-
-        int32_t patLen = 0;
-        const UChar *patResStr = ures_getStringByKeyWithFallback(resource, gFormatKeys[style], &patLen, &status);
-
         
-        if ( status == U_MISSING_RESOURCE_ERROR && uprv_strcmp(gLatn,ns->getName())) {  
-            status = U_ZERO_ERROR;
-            resource = ures_getByKeyWithFallback(numElements, gLatn, resource, &status);
-            resource = ures_getByKeyWithFallback(resource, gPatterns, resource, &status);
-            patResStr = ures_getStringByKeyWithFallback(resource, gFormatKeys[style], &patLen, &status);
-        }
-
-        ures_close(numElements);
-
-        
-        pattern.setTo(TRUE, patResStr, patLen);
+        const char16_t* patternPtr = number::impl::utils::getPatternForStyle(
+                desiredLocale,
+                ns->getName(),
+                gFormatCldrStyles[style],
+                status);
+        pattern = UnicodeString(TRUE, patternPtr, -1);
     }
     if (U_FAILURE(status)) {
         return NULL;

@@ -71,7 +71,28 @@ uspoof_openFromSource(const char *confusables,  int32_t confusablesLen,
 
     
     SpoofData *newSpoofData = new SpoofData(*status);
+
+    if (newSpoofData == NULL) {
+        *status = U_MEMORY_ALLOCATION_ERROR;
+        return NULL;
+    }
+
+    if (U_FAILURE(*status)) {
+        delete newSpoofData;
+        return NULL;
+    }
     SpoofImpl *This = new SpoofImpl(newSpoofData, *status);
+
+    if (This == NULL) {
+        *status = U_MEMORY_ALLOCATION_ERROR;
+        delete newSpoofData; 
+        return NULL;
+    }
+
+    if (U_FAILURE(*status)) {
+        delete This; 
+        return NULL;
+    }
 
     
     ConfusabledataBuilder::buildConfusableData(This, confusables, confusablesLen, errorType, pe, *status);

@@ -27,21 +27,19 @@
 
 U_NAMESPACE_BEGIN
 
-RBBITableBuilder::RBBITableBuilder(RBBIRuleBuilder *rb, RBBINode **rootNode) :
- fTree(*rootNode) {
-    fRB                 = rb;
-    fStatus             = fRB->fStatus;
-    UErrorCode status   = U_ZERO_ERROR;
-    fDStates            = new UVector(status);
-    if (U_FAILURE(*fStatus)) {
-        return;
-    }
+RBBITableBuilder::RBBITableBuilder(RBBIRuleBuilder *rb, RBBINode **rootNode, UErrorCode &status) :
+        fRB(rb),
+        fTree(*rootNode),
+        fStatus(&status),
+        fDStates(nullptr),
+        fSafeTable(nullptr) {
     if (U_FAILURE(status)) {
-        *fStatus = status;
         return;
     }
-    if (fDStates == NULL) {
-        *fStatus = U_MEMORY_ALLOCATION_ERROR;;
+    
+    fDStates = new UVector(status);
+    if (U_SUCCESS(status) && fDStates == nullptr ) {
+        status = U_MEMORY_ALLOCATION_ERROR;
     }
 }
 
@@ -52,7 +50,8 @@ RBBITableBuilder::~RBBITableBuilder() {
     for (i=0; i<fDStates->size(); i++) {
         delete (RBBIStateDescriptor *)fDStates->elementAt(i);
     }
-    delete   fDStates;
+    delete fDStates;
+    delete fSafeTable;
 }
 
 
@@ -62,7 +61,7 @@ RBBITableBuilder::~RBBITableBuilder() {
 
 
 
-void  RBBITableBuilder::build() {
+void  RBBITableBuilder::buildForwardTable() {
 
     if (U_FAILURE(*fStatus)) {
         return;
@@ -189,8 +188,6 @@ void  RBBITableBuilder::build() {
     
     
     mergeRuleStatusVals();
-
-    if (fRB->fDebugEnv && uprv_strstr(fRB->fDebugEnv, "states")) {printStates();};
 }
 
 
@@ -1081,18 +1078,18 @@ void RBBITableBuilder::printPosSets(RBBINode *n) {
 
 
 
-bool RBBITableBuilder::findDuplCharClassFrom(int32_t &baseCategory, int32_t &duplCategory) {
+bool RBBITableBuilder::findDuplCharClassFrom(IntPair *categories) {
     int32_t numStates = fDStates->size();
     int32_t numCols = fRB->fSetBuilder->getNumCharCategories();
 
     uint16_t table_base;
     uint16_t table_dupl;
-    for (; baseCategory < numCols-1; ++baseCategory) {
-        for (duplCategory=baseCategory+1; duplCategory < numCols; ++duplCategory) {
+    for (; categories->first < numCols-1; categories->first++) {
+        for (categories->second=categories->first+1; categories->second < numCols; categories->second++) {
              for (int32_t state=0; state<numStates; state++) {
                  RBBIStateDescriptor *sd = (RBBIStateDescriptor *)fDStates->elementAt(state);
-                 table_base = (uint16_t)sd->fDtran->elementAti(baseCategory);
-                 table_dupl = (uint16_t)sd->fDtran->elementAti(duplCategory);
+                 table_base = (uint16_t)sd->fDtran->elementAti(categories->first);
+                 table_dupl = (uint16_t)sd->fDtran->elementAti(categories->second);
                  if (table_base != table_dupl) {
                      break;
                  }
@@ -1121,14 +1118,14 @@ void RBBITableBuilder::removeColumn(int32_t column) {
 
 
 
-bool RBBITableBuilder::findDuplicateState(int32_t &firstState, int32_t &duplState) {
+bool RBBITableBuilder::findDuplicateState(IntPair *states) {
     int32_t numStates = fDStates->size();
     int32_t numCols = fRB->fSetBuilder->getNumCharCategories();
 
-    for (; firstState<numStates-1; ++firstState) {
-        RBBIStateDescriptor *firstSD = (RBBIStateDescriptor *)fDStates->elementAt(firstState);
-        for (duplState=firstState+1; duplState<numStates; ++duplState) {
-            RBBIStateDescriptor *duplSD = (RBBIStateDescriptor *)fDStates->elementAt(duplState);
+    for (; states->first<numStates-1; states->first++) {
+        RBBIStateDescriptor *firstSD = (RBBIStateDescriptor *)fDStates->elementAt(states->first);
+        for (states->second=states->first+1; states->second<numStates; states->second++) {
+            RBBIStateDescriptor *duplSD = (RBBIStateDescriptor *)fDStates->elementAt(states->second);
             if (firstSD->fAccepting != duplSD->fAccepting ||
                 firstSD->fLookAhead != duplSD->fLookAhead ||
                 firstSD->fTagsIdx   != duplSD->fTagsIdx) {
@@ -1139,8 +1136,8 @@ bool RBBITableBuilder::findDuplicateState(int32_t &firstState, int32_t &duplStat
                 int32_t firstVal = firstSD->fDtran->elementAti(col);
                 int32_t duplVal = duplSD->fDtran->elementAti(col);
                 if (!((firstVal == duplVal) ||
-                        ((firstVal == firstState || firstVal == duplState) &&
-                        (duplVal  == firstState || duplVal  == duplState)))) {
+                        ((firstVal == states->first || firstVal == states->second) &&
+                        (duplVal  == states->first || duplVal  == states->second)))) {
                     rowsMatch = false;
                     break;
                 }
@@ -1153,7 +1150,38 @@ bool RBBITableBuilder::findDuplicateState(int32_t &firstState, int32_t &duplStat
     return false;
 }
 
-void RBBITableBuilder::removeState(int32_t keepState, int32_t duplState) {
+
+bool RBBITableBuilder::findDuplicateSafeState(IntPair *states) {
+    int32_t numStates = fSafeTable->size();
+
+    for (; states->first<numStates-1; states->first++) {
+        UnicodeString *firstRow = static_cast<UnicodeString *>(fSafeTable->elementAt(states->first));
+        for (states->second=states->first+1; states->second<numStates; states->second++) {
+            UnicodeString *duplRow = static_cast<UnicodeString *>(fSafeTable->elementAt(states->second));
+            bool rowsMatch = true;
+            int32_t numCols = firstRow->length();
+            for (int32_t col=0; col < numCols; ++col) {
+                int32_t firstVal = firstRow->charAt(col);
+                int32_t duplVal = duplRow->charAt(col);
+                if (!((firstVal == duplVal) ||
+                        ((firstVal == states->first || firstVal == states->second) &&
+                        (duplVal  == states->first || duplVal  == states->second)))) {
+                    rowsMatch = false;
+                    break;
+                }
+            }
+            if (rowsMatch) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+void RBBITableBuilder::removeState(IntPair duplStates) {
+    const int32_t keepState = duplStates.first;
+    const int32_t duplState = duplStates.second;
     U_ASSERT(keepState < duplState);
     U_ASSERT(duplState < fDStates->size());
 
@@ -1188,18 +1216,43 @@ void RBBITableBuilder::removeState(int32_t keepState, int32_t duplState) {
     }
 }
 
+void RBBITableBuilder::removeSafeState(IntPair duplStates) {
+    const int32_t keepState = duplStates.first;
+    const int32_t duplState = duplStates.second;
+    U_ASSERT(keepState < duplState);
+    U_ASSERT(duplState < fSafeTable->size());
+
+    fSafeTable->removeElementAt(duplState);   
+                                              
+    int32_t numStates = fSafeTable->size();
+    for (int32_t state=0; state<numStates; ++state) {
+        UnicodeString *sd = (UnicodeString *)fSafeTable->elementAt(state);
+        int32_t numCols = sd->length();
+        for (int32_t col=0; col<numCols; col++) {
+            int32_t existingVal = sd->charAt(col);
+            int32_t newVal = existingVal;
+            if (existingVal == duplState) {
+                newVal = keepState;
+            } else if (existingVal > duplState) {
+                newVal = existingVal - 1;
+            }
+            sd->setCharAt(col, newVal);
+        }
+    }
+}
+
 
 
 
 
 void RBBITableBuilder::removeDuplicateStates() {
-    int32_t firstState = 3;
-    int32_t duplicateState = 0;
-    while (findDuplicateState(firstState, duplicateState)) {
+    IntPair dupls = {3, 0};
+    while (findDuplicateState(&dupls)) {
         
-        removeState(firstState, duplicateState);
+        removeState(dupls);
     }
 }
+
 
 
 
@@ -1280,6 +1333,185 @@ void RBBITableBuilder::exportTable(void *where) {
 
 
 
+void RBBITableBuilder::buildSafeReverseTable(UErrorCode &status) {
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    UnicodeString safePairs;
+
+    int32_t numCharClasses = fRB->fSetBuilder->getNumCharCategories();
+    int32_t numStates = fDStates->size();
+
+    for (int32_t c1=0; c1<numCharClasses; ++c1) {
+        for (int32_t c2=0; c2 < numCharClasses; ++c2) {
+            int32_t wantedEndState = -1;
+            int32_t endState = 0;
+            for (int32_t startState = 1; startState < numStates; ++startState) {
+                RBBIStateDescriptor *startStateD = static_cast<RBBIStateDescriptor *>(fDStates->elementAt(startState));
+                int32_t s2 = startStateD->fDtran->elementAti(c1);
+                RBBIStateDescriptor *s2StateD = static_cast<RBBIStateDescriptor *>(fDStates->elementAt(s2));
+                endState = s2StateD->fDtran->elementAti(c2);
+                if (wantedEndState < 0) {
+                    wantedEndState = endState;
+                } else {
+                    if (wantedEndState != endState) {
+                        break;
+                    }
+                }
+            }
+            if (wantedEndState == endState) {
+                safePairs.append((char16_t)c1);
+                safePairs.append((char16_t)c2);
+                
+            }
+        }
+        
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    U_ASSERT(fSafeTable == nullptr);
+    fSafeTable = new UVector(uprv_deleteUObject, uhash_compareUnicodeString, numCharClasses + 2, status);
+    for (int32_t row=0; row<numCharClasses + 2; ++row) {
+        fSafeTable->addElement(new UnicodeString(numCharClasses, 0, numCharClasses+4), status);
+    }
+
+    
+    UnicodeString &startState = *static_cast<UnicodeString *>(fSafeTable->elementAt(1));
+    for (int32_t charClass=0; charClass < numCharClasses; ++charClass) {
+        
+        startState.setCharAt(charClass, charClass+2);
+    }
+
+    
+    for (int32_t row=2; row<numCharClasses+2; ++row) {
+        UnicodeString &rowState = *static_cast<UnicodeString *>(fSafeTable->elementAt(row));
+        rowState = startState;   
+    }
+
+    
+    
+    for (int32_t pairIdx=0; pairIdx<safePairs.length(); pairIdx+=2) {
+        int32_t c1 = safePairs.charAt(pairIdx);
+        int32_t c2 = safePairs.charAt(pairIdx + 1);
+
+        UnicodeString &rowState = *static_cast<UnicodeString *>(fSafeTable->elementAt(c2 + 2));
+        rowState.setCharAt(c1, 0);
+    }
+
+    
+    IntPair states = {1, 0};
+    while (findDuplicateSafeState(&states)) {
+        
+        removeSafeState(states);
+    }
+}
+
+
+
+
+
+
+
+
+int32_t  RBBITableBuilder::getSafeTableSize() const {
+    int32_t    size = 0;
+    int32_t    numRows;
+    int32_t    numCols;
+    int32_t    rowSize;
+
+    if (fSafeTable == nullptr) {
+        return 0;
+    }
+
+    size    = offsetof(RBBIStateTable, fTableData);    
+
+    numRows = fSafeTable->size();
+    numCols = fRB->fSetBuilder->getNumCharCategories();
+
+    rowSize = offsetof(RBBIStateTableRow, fNextState) + sizeof(uint16_t)*numCols;
+    size   += numRows * rowSize;
+    return size;
+}
+
+
+
+
+
+
+
+
+
+void RBBITableBuilder::exportSafeTable(void *where) {
+    RBBIStateTable    *table = (RBBIStateTable *)where;
+    uint32_t           state;
+    int                col;
+
+    if (U_FAILURE(*fStatus) || fSafeTable == nullptr) {
+        return;
+    }
+
+    int32_t catCount = fRB->fSetBuilder->getNumCharCategories();
+    if (catCount > 0x7fff ||
+            fSafeTable->size() > 0x7fff) {
+        *fStatus = U_BRK_INTERNAL_ERROR;
+        return;
+    }
+
+    table->fRowLen    = offsetof(RBBIStateTableRow, fNextState) + sizeof(uint16_t) * catCount;
+    table->fNumStates = fSafeTable->size();
+    table->fFlags     = 0;
+    table->fReserved  = 0;
+
+    for (state=0; state<table->fNumStates; state++) {
+        UnicodeString *rowString = (UnicodeString *)fSafeTable->elementAt(state);
+        RBBIStateTableRow   *row = (RBBIStateTableRow *)(table->fTableData + state*table->fRowLen);
+        row->fAccepting = 0;
+        row->fLookAhead = 0;
+        row->fTagIdx    = 0;
+        row->fReserved  = 0;
+        for (col=0; col<catCount; col++) {
+            row->fNextState[col] = rowString->charAt(col);
+        }
+    }
+}
+
+
+
+
+
+
 
 
 
@@ -1323,6 +1555,47 @@ void RBBITableBuilder::printStates() {
         RBBIDebugPrintf("%3d %3d %5d ", sd->fAccepting, sd->fLookAhead, sd->fTagsIdx);
         for (c=0; c<fRB->fSetBuilder->getNumCharCategories(); c++) {
             RBBIDebugPrintf(" %2d", sd->fDtran->elementAti(c));
+        }
+        RBBIDebugPrintf("\n");
+    }
+    RBBIDebugPrintf("\n\n");
+}
+#endif
+
+
+
+
+
+
+
+#ifdef RBBI_DEBUG
+void RBBITableBuilder::printReverseTable() {
+    int     c;    
+    int     n;    
+
+    RBBIDebugPrintf("    Safe Reverse Table \n");
+    if (fSafeTable == nullptr) {
+        RBBIDebugPrintf("   --- nullptr ---\n");
+        return;
+    }
+    RBBIDebugPrintf("state |           i n p u t     s y m b o l s \n");
+    RBBIDebugPrintf("      | Acc  LA    Tag");
+    for (c=0; c<fRB->fSetBuilder->getNumCharCategories(); c++) {
+        RBBIDebugPrintf(" %2d", c);
+    }
+    RBBIDebugPrintf("\n");
+    RBBIDebugPrintf("      |---------------");
+    for (c=0; c<fRB->fSetBuilder->getNumCharCategories(); c++) {
+        RBBIDebugPrintf("---");
+    }
+    RBBIDebugPrintf("\n");
+
+    for (n=0; n<fSafeTable->size(); n++) {
+        UnicodeString *rowString = (UnicodeString *)fSafeTable->elementAt(n);
+        RBBIDebugPrintf("  %3d | " , n);
+        RBBIDebugPrintf("%3d %3d %5d ", 0, 0, 0);  
+        for (c=0; c<fRB->fSetBuilder->getNumCharCategories(); c++) {
+            RBBIDebugPrintf(" %2d", rowString->charAt(c));
         }
         RBBIDebugPrintf("\n");
     }

@@ -542,12 +542,15 @@ typedef enum UErrorCode {
 #ifndef U_HIDE_DRAFT_API
     U_NUMBER_ARG_OUTOFBOUNDS_ERROR,   
 #endif  
+#ifndef U_HIDE_DRAFT_API
+    U_NUMBER_SKELETON_SYNTAX_ERROR,   
+#endif  
 #ifndef U_HIDE_DEPRECATED_API
     
 
 
 
-    U_FMT_PARSE_ERROR_LIMIT = 0x10113,
+    U_FMT_PARSE_ERROR_LIMIT = 0x10114,
 #endif  
 
     

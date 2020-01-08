@@ -17,6 +17,53 @@
 
 U_NAMESPACE_BEGIN
 
+class UnicodeString;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -135,6 +182,18 @@ public:
 #endif  
 
     
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -272,13 +331,23 @@ public:
 
 
 
+
+
         UBool hasChange() const { return changed; }
+
         
+
+
 
 
 
         int32_t oldLength() const { return oldLength_; }
+
         
+
+
+
+
 
 
 
@@ -289,18 +358,48 @@ public:
 
 
 
+
+
+
         int32_t sourceIndex() const { return srcIndex; }
+
         
 
 
 
 
-        int32_t replacementIndex() const { return replIndex; }
+
+
+
+
+
+
+
+
+
+
+        int32_t replacementIndex() const {
+            
+            return replIndex;
+        }
+
         
+
+
+
 
 
 
         int32_t destinationIndex() const { return destIndex; }
+
+#ifndef U_HIDE_INTERNAL_API
+        
+
+
+
+
+        UnicodeString& toString(UnicodeString& appendTo) const;
+#endif  
 
     private:
         friend class Edits;
@@ -335,11 +434,16 @@ public:
 
 
 
+
+
     Iterator getCoarseChangesIterator() const {
         return Iterator(array, length, TRUE, TRUE);
     }
 
     
+
+
+
 
 
 
@@ -354,11 +458,15 @@ public:
 
 
 
+
+
     Iterator getFineChangesIterator() const {
         return Iterator(array, length, TRUE, FALSE);
     }
 
     
+
+
 
 
 

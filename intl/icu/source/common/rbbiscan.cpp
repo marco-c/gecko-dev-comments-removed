@@ -372,7 +372,7 @@ UBool RBBIRuleScanner::doParseActions(int32_t action)
         
         
         
-        RBBINode **destRules = (fReverseRule? &fRB->fReverseTree : fRB->fDefaultTree);
+        RBBINode **destRules = (fReverseRule? &fRB->fSafeRevTree : fRB->fDefaultTree);
 
         if (*destRules != NULL) {
             
@@ -1121,22 +1121,6 @@ void RBBIRuleScanner::parse() {
         error(U_BRK_RULE_SYNTAX);
         return;
     }
-
-    
-    
-    
-    if (fRB->fReverseTree == NULL) {
-        fRB->fReverseTree  = pushNewNode(RBBINode::opStar);
-        RBBINode  *operand = pushNewNode(RBBINode::setRef);
-        if (U_FAILURE(*fRB->fStatus)) {
-            return;
-        }
-        findSetFor(UnicodeString(TRUE, kAny, 3), operand);
-        fRB->fReverseTree->fLeftChild = operand;
-        operand->fParent              = fRB->fReverseTree;
-        fNodeStackPtr -= 2;
-    }
-
 
     
     

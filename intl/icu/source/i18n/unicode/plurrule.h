@@ -44,7 +44,6 @@ U_NAMESPACE_BEGIN
 
 class Hashtable;
 class IFixedDecimal;
-class VisibleDigitsWithExponent;
 class RuleChain;
 class PluralRuleParser;
 class PluralKeywordEnumeration;
@@ -351,27 +350,7 @@ public:
     
 
 
-
-
-
-
-
-
-
-
-
-
-
-    UnicodeString select(const Formattable& obj, const NumberFormat& fmt, UErrorCode& status) const;
-
-    
-
-
     UnicodeString select(const IFixedDecimal &number) const;
-    
-
-
-    UnicodeString select(const VisibleDigitsWithExponent &number) const;
 #endif  
 
     

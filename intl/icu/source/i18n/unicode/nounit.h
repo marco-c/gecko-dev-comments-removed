@@ -65,6 +65,12 @@ public:
 
 
 
+    virtual ~NoUnit();
+
+    
+
+
+
 
     virtual UObject* clone() const;
 
@@ -85,12 +91,6 @@ public:
 
 
     static UClassID U_EXPORT2 getStaticClassID();
-
-    
-
-
-
-    virtual ~NoUnit();
 
 private:
     

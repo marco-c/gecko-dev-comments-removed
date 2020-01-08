@@ -406,14 +406,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-
-
-    
-
-
-
-
-
     static MeasureUnit *createBit(UErrorCode &status);
 
     

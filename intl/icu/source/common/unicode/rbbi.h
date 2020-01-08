@@ -74,13 +74,6 @@ private:
 
 
 
-
-
-
-    
-
-
-
     int32_t         fPosition;
 
     
@@ -646,7 +639,8 @@ private:
 
 
 
-    int32_t handlePrevious(int32_t fromPosition);
+
+    int32_t handleSafePrevious(int32_t fromPosition);
 
     
 

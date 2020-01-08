@@ -18,6 +18,8 @@
 
 #if !UCONFIG_NO_BREAK_ITERATION
 
+#include <utility>
+
 #include "unicode/uobject.h"
 #include "unicode/rbbi.h"
 #include "unicode/uniset.h"
@@ -25,8 +27,7 @@
 #include "uhash.h"
 #include "uvector.h"
 #include "unicode/symtable.h"
-                          
-
+                             
 
 
 U_NAMESPACE_BEGIN
@@ -123,9 +124,15 @@ public:
     RBBIRuleBuilder(const UnicodeString  &rules,
                     UParseError          *parseErr,
                     UErrorCode           &status
-        );
+    );
 
     virtual    ~RBBIRuleBuilder();
+
+    
+
+
+    RBBIDataHeader  *build(UErrorCode &status);
+
 
     
 
@@ -162,10 +169,7 @@ public:
     RBBISetBuilder                *fSetBuilder;      
     UVector                       *fUSetNodes;       
 
-    RBBITableBuilder              *fForwardTables;   
-    RBBITableBuilder              *fReverseTables;
-    RBBITableBuilder              *fSafeFwdTables;
-    RBBITableBuilder              *fSafeRevTables;
+    RBBITableBuilder              *fForwardTable;    
 
     UVector                       *fRuleStatusVals;  
                                                      
@@ -199,6 +203,11 @@ struct RBBISetTableEl {
     UnicodeString *key;
     RBBINode      *val;
 };
+
+
+
+
+typedef std::pair<int32_t, int32_t> IntPair;
 
 
 

@@ -45,6 +45,7 @@
 #include "double-conversion-bignum-dtoa.h"
 #include "double-conversion-fast-dtoa.h"
 #include "double-conversion-ieee.h"
+#include "double-conversion-strtod.h"
 #include "double-conversion-utils.h"
 
 
@@ -431,7 +432,6 @@ void DoubleToStringConverter::DoubleToAscii(double v,
 }
 
 
-#if 0 
 
 
 template <class Iterator>
@@ -467,6 +467,7 @@ static const uc16 kWhitespaceTable16[] = {
   8196, 8197, 8198, 8199, 8200, 8201, 8202, 8239, 8287, 12288, 65279
 };
 static const int kWhitespaceTable16Length = ARRAY_SIZE(kWhitespaceTable16);
+
 
 
 static bool isWhitespace(int x) {
@@ -646,7 +647,6 @@ static double RadixStringToIeee(Iterator* current,
   ASSERT(number != 0);
   return Double(DiyFp(number, exponent)).value();
 }
-
 
 template <class Iterator>
 double StringToDoubleConverter::StringToIeee(
@@ -996,7 +996,6 @@ float StringToDoubleConverter::StringToFloat(
   return static_cast<float>(StringToIeee(buffer, length, false,
                                          processed_characters_count));
 }
-#endif 
 
 }  
 

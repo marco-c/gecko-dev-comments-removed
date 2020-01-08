@@ -42,7 +42,7 @@ U_CDECL_BEGIN
 
 
 
-#define U_UNICODE_VERSION "10.0"
+#define U_UNICODE_VERSION "11.0"
 
 
 
@@ -446,6 +446,13 @@ typedef enum UProperty {
 
 
     UCHAR_PREPENDED_CONCATENATION_MARK=63,
+    
+
+
+
+
+
+    UCHAR_EXTENDED_PICTOGRAPHIC=64,
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -1683,6 +1690,31 @@ enum UBlockCode {
     
     UBLOCK_ZANABAZAR_SQUARE = 280, 
 
+    
+
+    
+    UBLOCK_CHESS_SYMBOLS = 281, 
+    
+    UBLOCK_DOGRA = 282, 
+    
+    UBLOCK_GEORGIAN_EXTENDED = 283, 
+    
+    UBLOCK_GUNJALA_GONDI = 284, 
+    
+    UBLOCK_HANIFI_ROHINGYA = 285, 
+    
+    UBLOCK_INDIC_SIYAQ_NUMBERS = 286, 
+    
+    UBLOCK_MAKASAR = 287, 
+    
+    UBLOCK_MAYAN_NUMERALS = 288, 
+    
+    UBLOCK_MEDEFAIDRIN = 289, 
+    
+    UBLOCK_OLD_SOGDIAN = 290, 
+    
+    UBLOCK_SOGDIAN = 291, 
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -1690,7 +1722,7 @@ enum UBlockCode {
 
 
 
-    UBLOCK_COUNT = 281,
+    UBLOCK_COUNT = 292,
 #endif  
 
     
@@ -1979,6 +2011,9 @@ typedef enum UJoiningGroup {
     U_JG_MALAYALAM_SSA,  
     U_JG_MALAYALAM_TTA,  
 
+    U_JG_HANIFI_ROHINGYA_KINNA_YA,  
+    U_JG_HANIFI_ROHINGYA_PA,  
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -2029,6 +2064,7 @@ typedef enum UGraphemeClusterBreak {
     U_GCB_GLUE_AFTER_ZWJ = 16,  
     
     U_GCB_ZWJ = 17,             
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -2090,6 +2126,9 @@ typedef enum UWordBreakValues {
     U_WB_GLUE_AFTER_ZWJ = 20,   
     
     U_WB_ZWJ = 21,              
+    
+    U_WB_WSEGSPACE = 22,        
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -2097,7 +2136,7 @@ typedef enum UWordBreakValues {
 
 
 
-    U_WB_COUNT = 22
+    U_WB_COUNT = 23
 #endif  
 } UWordBreakValues;
 

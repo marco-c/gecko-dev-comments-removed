@@ -66,7 +66,7 @@ static const UChar INTL_CURRENCY_SYMBOL_STR[] = {0xa4, 0xa4, 0};
 static const char *gNumberElementKeys[DecimalFormatSymbols::kFormatSymbolCount] = {
     "decimal",
     "group",
-    "list",
+    NULL, 
     "percentSign",
     NULL, 
     NULL, 
@@ -98,7 +98,7 @@ static const char *gNumberElementKeys[DecimalFormatSymbols::kFormatSymbolCount] 
 
 
 DecimalFormatSymbols::DecimalFormatSymbols(UErrorCode& status)
-        : UObject(), locale() {
+        : UObject(), locale(), currPattern(NULL) {
     initialize(locale, status, TRUE);
 }
 
@@ -106,12 +106,12 @@ DecimalFormatSymbols::DecimalFormatSymbols(UErrorCode& status)
 
 
 DecimalFormatSymbols::DecimalFormatSymbols(const Locale& loc, UErrorCode& status)
-        : UObject(), locale(loc) {
+        : UObject(), locale(loc), currPattern(NULL) {
     initialize(locale, status);
 }
 
 DecimalFormatSymbols::DecimalFormatSymbols(const Locale& loc, const NumberingSystem& ns, UErrorCode& status)
-        : UObject(), locale(loc) {
+        : UObject(), locale(loc), currPattern(NULL) {
     initialize(locale, status, FALSE, &ns);
 }
 
@@ -349,7 +349,6 @@ DecimalFormatSymbols::initialize(const Locale& loc, UErrorCode& status,
 {
     if (U_FAILURE(status)) { return; }
     *validLocale = *actualLocale = 0;
-    currPattern = NULL;
 
     
     initialize();
@@ -477,6 +476,7 @@ DecimalFormatSymbols::initialize(const Locale& loc, UErrorCode& status,
     UErrorCode localStatus = U_ZERO_ERROR;
     uccLen = ucurr_forLocale(locName, ucc, uccLen, &localStatus);
 
+    
     if(U_SUCCESS(localStatus) && uccLen > 0) {
         char cc[4]={0};
         u_UCharsToChars(ucc, cc, uccLen);

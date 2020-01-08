@@ -17,9 +17,44 @@
 #include "unicode/unistr.h"
 #include "unicode/unum.h"
 #include "unicode/numfmt.h"
+#include "number_decimalquantity.h"
 
 U_NAMESPACE_USE
 
+namespace {
+
+
+
+
+
+
+
+
+
+
+
+
+
+UnicodeString select(const PluralRules &rules, const Formattable& obj, const NumberFormat& fmt, UErrorCode& status) {
+    if (U_SUCCESS(status)) {
+        const DecimalFormat *decFmt = dynamic_cast<const DecimalFormat *>(&fmt);
+        if (decFmt != NULL) {
+            number::impl::DecimalQuantity dq;
+            decFmt->formatToDecimalQuantity(obj, dq, status);
+            if (U_SUCCESS(status)) {
+                return rules.select(dq);
+            }
+        } else {
+            double number = obj.getDouble(status);
+            if (U_SUCCESS(status)) {
+                return rules.select(number);
+            }
+        }
+    }
+    return UnicodeString();
+}
+
+}  
 
 U_CAPI UPluralRules* U_EXPORT2
 uplrules_open(const char *locale, UErrorCode *status)
@@ -73,7 +108,7 @@ uplrules_selectWithFormat(const UPluralRules *uplrules,
         return 0;
     }
     Formattable obj(number);
-    UnicodeString result = plrules->select(obj, *nf, *status);
+    UnicodeString result = select(*plrules, obj, *nf, *status);
     return result.extract(keyword, capacity, *status);
 }
 

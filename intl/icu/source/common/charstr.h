@@ -59,6 +59,18 @@ public:
 
 
 
+    CharString(CharString &&src) U_NOEXCEPT;
+    
+
+
+
+
+    CharString &operator=(CharString &&src) U_NOEXCEPT;
+
+    
+
+
+
 
 
     CharString &copyFrom(const CharString &other, UErrorCode &errorCode);

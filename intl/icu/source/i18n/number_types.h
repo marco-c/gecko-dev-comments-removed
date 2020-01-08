@@ -3,7 +3,7 @@
 
 #include "unicode/utypes.h"
 
-#if !UCONFIG_NO_FORMATTING && !UPRV_INCOMPLETE_CPP11_SUPPORT
+#if !UCONFIG_NO_FORMATTING
 #ifndef __NUMBER_TYPES_H__
 #define __NUMBER_TYPES_H__
 
@@ -15,9 +15,9 @@
 #include "unicode/utf16.h"
 #include "uassert.h"
 #include "unicode/platform.h"
+#include "unicode/uniset.h"
 
-U_NAMESPACE_BEGIN
-namespace number {
+U_NAMESPACE_BEGIN namespace number {
 namespace impl {
 
 
@@ -38,9 +38,6 @@ static constexpr RoundingMode kDefaultMode = RoundingMode::UNUM_FOUND_HALFEVEN;
 
 
 static constexpr char16_t kFallbackPaddingString[] = u" ";
-
-
-static constexpr char16_t kDefaultCurrency[] = u"XXX";
 
 
 
@@ -87,34 +84,9 @@ enum AffixPatternType {
 };
 
 enum CompactType {
-    TYPE_DECIMAL,
-    TYPE_CURRENCY
+    TYPE_DECIMAL, TYPE_CURRENCY
 };
 
-
-
-
-class U_I18N_API CharSequence {
-public:
-    virtual ~CharSequence() = default;
-
-    virtual int32_t length() const = 0;
-
-    virtual char16_t charAt(int32_t index) const = 0;
-
-    virtual UChar32 codePointAt(int32_t index) const {
-        
-        char16_t leading = charAt(index);
-        if (U16_IS_LEAD(leading) && length() > index + 1) {
-            char16_t trailing = charAt(index + 1);
-            return U16_GET_SUPPLEMENTARY(leading, trailing);
-        } else {
-            return leading;
-        }
-    }
-
-    virtual UnicodeString toUnicodeString() const = 0;
-};
 
 class U_I18N_API AffixPatternProvider {
   public:
@@ -123,11 +95,19 @@ class U_I18N_API AffixPatternProvider {
     static const int32_t AFFIX_NEGATIVE_SUBPATTERN = 0x200;
     static const int32_t AFFIX_PADDING = 0x400;
 
-    virtual ~AffixPatternProvider() = default;
+    
+    static const int32_t AFFIX_POS_PREFIX = AFFIX_PREFIX;
+    static const int32_t AFFIX_POS_SUFFIX = 0;
+    static const int32_t AFFIX_NEG_PREFIX = AFFIX_PREFIX | AFFIX_NEGATIVE_SUBPATTERN;
+    static const int32_t AFFIX_NEG_SUFFIX = AFFIX_NEGATIVE_SUBPATTERN;
+
+    virtual ~AffixPatternProvider();
 
     virtual char16_t charAt(int flags, int i) const = 0;
 
     virtual int length(int flags) const = 0;
+
+    virtual UnicodeString getString(int flags) const = 0;
 
     virtual bool hasCurrencySign() const = 0;
 
@@ -137,7 +117,7 @@ class U_I18N_API AffixPatternProvider {
 
     virtual bool negativeHasMinusSign() const = 0;
 
-    virtual bool containsSymbolType(AffixPatternType, UErrorCode &) const = 0;
+    virtual bool containsSymbolType(AffixPatternType, UErrorCode&) const = 0;
 
     
 
@@ -159,7 +139,7 @@ class U_I18N_API AffixPatternProvider {
 
 class U_I18N_API Modifier {
   public:
-    virtual ~Modifier() = default;
+    virtual ~Modifier();
 
     
 
@@ -173,8 +153,8 @@ class U_I18N_API Modifier {
 
 
 
-    virtual int32_t
-    apply(NumberStringBuilder &output, int leftIndex, int rightIndex, UErrorCode &status) const = 0;
+    virtual int32_t apply(NumberStringBuilder& output, int leftIndex, int rightIndex,
+                          UErrorCode& status) const = 0;
 
     
 
@@ -187,7 +167,7 @@ class U_I18N_API Modifier {
     
 
 
-    virtual int32_t getCodePointCount(UErrorCode &status) const = 0;
+    virtual int32_t getCodePointCount(UErrorCode& status) const = 0;
 
     
 
@@ -219,7 +199,7 @@ class U_I18N_API Modifier {
 
 class U_I18N_API MicroPropsGenerator {
   public:
-    virtual ~MicroPropsGenerator() = default;
+    virtual ~MicroPropsGenerator();
 
     
 
@@ -230,7 +210,8 @@ class U_I18N_API MicroPropsGenerator {
 
 
 
-    virtual void processQuantity(DecimalQuantity& quantity, MicroProps& micros, UErrorCode& status) const = 0;
+    virtual void processQuantity(DecimalQuantity& quantity, MicroProps& micros,
+                                 UErrorCode& status) const = 0;
 };
 
 
@@ -238,7 +219,7 @@ class U_I18N_API MicroPropsGenerator {
 
 class MultiplierProducer {
   public:
-    virtual ~MultiplierProducer() = default;
+    virtual ~MultiplierProducer();
 
     
 
@@ -255,24 +236,31 @@ class MultiplierProducer {
 template<typename T>
 class U_I18N_API NullableValue {
   public:
-    NullableValue() : fNull(true) {}
+    NullableValue()
+            : fNull(true) {}
 
-    NullableValue(const NullableValue<T> &other) = default;
+    NullableValue(const NullableValue<T>& other) = default;
 
-    explicit NullableValue(const T &other) {
+    explicit NullableValue(const T& other) {
         fValue = other;
         fNull = false;
     }
 
-    NullableValue<T> &operator=(const NullableValue<T> &other) = default;
+    NullableValue<T>& operator=(const NullableValue<T>& other) {
+        fNull = other.fNull;
+        if (!fNull) {
+            fValue = other.fValue;
+        }
+        return *this;
+    }
 
-    NullableValue<T> &operator=(const T &other) {
+    NullableValue<T>& operator=(const T& other) {
         fValue = other;
         fNull = false;
         return *this;
     }
 
-    bool operator==(const NullableValue &other) const {
+    bool operator==(const NullableValue& other) const {
         
         return fNull ? other.fNull : (other.fNull ? false : static_cast<bool>(fValue == other.fValue));
     }
@@ -286,11 +274,19 @@ class U_I18N_API NullableValue {
         return fNull;
     }
 
-    T get(UErrorCode &status) const {
+    T get(UErrorCode& status) const {
         if (fNull) {
             status = U_UNDEFINED_VARIABLE;
         }
         return fValue;
+    }
+
+    T getNoError() const {
+        return fValue;
+    }
+
+    T getOrDefault(T defaultValue) const {
+        return fNull ? defaultValue : fValue;
     }
 
   private:

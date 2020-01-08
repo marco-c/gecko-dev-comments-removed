@@ -43,28 +43,25 @@
 #include "unicode/curramt.h"
 #include "unicode/enumset.h"
 
-#ifndef U_HIDE_INTERNAL_API
-
-
-
-
-#if UCONFIG_FORMAT_FASTPATHS_49
-#define UNUM_DECIMALFORMAT_INTERNAL_SIZE 16
-#endif
-#endif  
-
 U_NAMESPACE_BEGIN
 
-class DigitList;
 class CurrencyPluralInfo;
-class Hashtable;
-class UnicodeSet;
-class FieldPositionHandler;
-class DecimalFormatStaticSets;
-class FixedDecimal;
-class DecimalFormatImpl;
-class PluralRules;
-class VisibleDigitsWithExponent;
+class CompactDecimalFormat;
+
+namespace number {
+class LocalizedNumberFormatter;
+class FormattedNumber;
+namespace impl {
+class DecimalQuantity;
+struct DecimalFormatFields;
+}
+}
+
+namespace numparse {
+namespace impl {
+class NumberParserImpl;
+}
+}
 
 
 
@@ -672,17 +669,14 @@ template class U_I18N_API    EnumSet<UNumberFormatAttribute,
 
 
 
-class U_I18N_API DecimalFormat: public NumberFormat {
-public:
+class U_I18N_API DecimalFormat : public NumberFormat {
+  public:
     
 
 
 
     enum EPadPosition {
-        kPadBeforePrefix,
-        kPadAfterPrefix,
-        kPadBeforeSuffix,
-        kPadAfterSuffix
+        kPadBeforePrefix, kPadAfterPrefix, kPadBeforeSuffix, kPadAfterSuffix
     };
 
     
@@ -720,8 +714,7 @@ public:
 
 
 
-    DecimalFormat(const UnicodeString& pattern,
-                  UErrorCode& status);
+    DecimalFormat(const UnicodeString& pattern, UErrorCode& status);
 
     
 
@@ -744,11 +737,10 @@ public:
 
 
 
-    DecimalFormat(  const UnicodeString& pattern,
-                    DecimalFormatSymbols* symbolsToAdopt,
-                    UErrorCode& status);
+    DecimalFormat(const UnicodeString& pattern, DecimalFormatSymbols* symbolsToAdopt, UErrorCode& status);
 
 #ifndef U_HIDE_INTERNAL_API
+
     
 
 
@@ -761,20 +753,29 @@ public:
 
 
 
-    DecimalFormat(  const UnicodeString& pattern,
-                    DecimalFormatSymbols* symbolsToAdopt,
-                    UNumberFormatStyle style,
-                    UErrorCode& status);
+    DecimalFormat(const UnicodeString& pattern, DecimalFormatSymbols* symbolsToAdopt,
+                  UNumberFormatStyle style, UErrorCode& status);
 
 #if UCONFIG_HAVE_PARSEALLINPUT
+
     
 
 
     void setParseAllInput(UNumberFormatAttributeValue value);
+
 #endif
 
 #endif  
 
+  private:
+
+    
+
+
+
+    DecimalFormat(const DecimalFormatSymbols* symbolsToAdopt, UErrorCode& status);
+
+  public:
 
     
 
@@ -786,9 +787,7 @@ public:
 
 
 
-    virtual DecimalFormat& setAttribute( UNumberFormatAttribute attr,
-                                       int32_t newvalue,
-                                       UErrorCode &status);
+    virtual DecimalFormat& setAttribute(UNumberFormatAttribute attr, int32_t newValue, UErrorCode& status);
 
     
 
@@ -799,8 +798,7 @@ public:
 
 
 
-    virtual int32_t getAttribute( UNumberFormatAttribute attr,
-                                  UErrorCode &status) const;
+    virtual int32_t getAttribute(UNumberFormatAttribute attr, UErrorCode& status) const;
 
 
     
@@ -809,7 +807,7 @@ public:
 
 
 
-    virtual void setGroupingUsed(UBool newValue);
+    void setGroupingUsed(UBool newValue) U_OVERRIDE;
 
     
 
@@ -818,7 +816,7 @@ public:
 
 
 
-    virtual void setParseIntegerOnly(UBool value);
+    void setParseIntegerOnly(UBool value) U_OVERRIDE;
 
     
 
@@ -827,36 +825,8 @@ public:
 
 
 
+    void setLenient(UBool enable) U_OVERRIDE;
 
-
-    virtual void setContext(UDisplayContext value, UErrorCode& status);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    DecimalFormat(  const UnicodeString& pattern,
-                    DecimalFormatSymbols* symbolsToAdopt,
-                    UParseError& parseError,
-                    UErrorCode& status);
     
 
 
@@ -877,9 +847,32 @@ public:
 
 
 
-    DecimalFormat(  const UnicodeString& pattern,
-                    const DecimalFormatSymbols& symbols,
-                    UErrorCode& status);
+
+
+    DecimalFormat(const UnicodeString& pattern, DecimalFormatSymbols* symbolsToAdopt,
+                  UParseError& parseError, UErrorCode& status);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    DecimalFormat(const UnicodeString& pattern, const DecimalFormatSymbols& symbols, UErrorCode& status);
 
     
 
@@ -901,7 +894,7 @@ public:
 
 
 
-    virtual ~DecimalFormat();
+    ~DecimalFormat() U_OVERRIDE;
 
     
 
@@ -910,7 +903,7 @@ public:
 
 
 
-    virtual Format* clone(void) const;
+    Format* clone(void) const U_OVERRIDE;
 
     
 
@@ -920,7 +913,7 @@ public:
 
 
 
-    virtual UBool operator==(const Format& other) const;
+    UBool operator==(const Format& other) const U_OVERRIDE;
 
 
     using NumberFormat::format;
@@ -936,11 +929,9 @@ public:
 
 
 
-    virtual UnicodeString& format(double number,
-                                  UnicodeString& appendTo,
-                                  FieldPosition& pos) const;
+    UnicodeString& format(double number, UnicodeString& appendTo, FieldPosition& pos) const U_OVERRIDE;
 
-
+#ifndef U_HIDE_INTERNAL_API
     
 
 
@@ -953,59 +944,9 @@ public:
 
 
 
-    virtual UnicodeString& format(double number,
-                                  UnicodeString& appendTo,
-                                  FieldPosition& pos,
-                                  UErrorCode &status) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual UnicodeString& format(double number,
-                                  UnicodeString& appendTo,
-                                  FieldPositionIterator* posIter,
-                                  UErrorCode& status) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-    virtual UnicodeString& format(int32_t number,
-                                  UnicodeString& appendTo,
-                                  FieldPosition& pos) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-    virtual UnicodeString& format(int32_t number,
-                                  UnicodeString& appendTo,
-                                  FieldPosition& pos,
-                                  UErrorCode &status) const;
+    UnicodeString& format(double number, UnicodeString& appendTo, FieldPosition& pos,
+                          UErrorCode& status) const U_OVERRIDE;
+#endif  
 
     
 
@@ -1020,10 +961,8 @@ public:
 
 
 
-    virtual UnicodeString& format(int32_t number,
-                                  UnicodeString& appendTo,
-                                  FieldPositionIterator* posIter,
-                                  UErrorCode& status) const;
+    UnicodeString& format(double number, UnicodeString& appendTo, FieldPositionIterator* posIter,
+                          UErrorCode& status) const U_OVERRIDE;
 
     
 
@@ -1036,9 +975,23 @@ public:
 
 
 
-    virtual UnicodeString& format(int64_t number,
-                                  UnicodeString& appendTo,
-                                  FieldPosition& pos) const;
+    UnicodeString& format(int32_t number, UnicodeString& appendTo, FieldPosition& pos) const U_OVERRIDE;
+
+#ifndef U_HIDE_INTERNAL_API
+    
+
+
+
+
+
+
+
+
+
+
+    UnicodeString& format(int32_t number, UnicodeString& appendTo, FieldPosition& pos,
+                          UErrorCode& status) const U_OVERRIDE;
+#endif  
 
     
 
@@ -1051,10 +1004,39 @@ public:
 
 
 
-    virtual UnicodeString& format(int64_t number,
-                                  UnicodeString& appendTo,
-                                  FieldPosition& pos,
-                                  UErrorCode &status) const;
+
+
+    UnicodeString& format(int32_t number, UnicodeString& appendTo, FieldPositionIterator* posIter,
+                          UErrorCode& status) const U_OVERRIDE;
+
+    
+
+
+
+
+
+
+
+
+
+
+    UnicodeString& format(int64_t number, UnicodeString& appendTo, FieldPosition& pos) const U_OVERRIDE;
+
+#ifndef U_HIDE_INTERNAL_API
+    
+
+
+
+
+
+
+
+
+
+
+    UnicodeString& format(int64_t number, UnicodeString& appendTo, FieldPosition& pos,
+                          UErrorCode& status) const U_OVERRIDE;
+#endif  
 
     
 
@@ -1069,10 +1051,8 @@ public:
 
 
 
-    virtual UnicodeString& format(int64_t number,
-                                  UnicodeString& appendTo,
-                                  FieldPositionIterator* posIter,
-                                  UErrorCode& status) const;
+    UnicodeString& format(int64_t number, UnicodeString& appendTo, FieldPositionIterator* posIter,
+                          UErrorCode& status) const U_OVERRIDE;
 
     
 
@@ -1090,65 +1070,10 @@ public:
 
 
 
-    virtual UnicodeString& format(StringPiece number,
-                                  UnicodeString& appendTo,
-                                  FieldPositionIterator* posIter,
-                                  UErrorCode& status) const;
+    UnicodeString& format(StringPiece number, UnicodeString& appendTo, FieldPositionIterator* posIter,
+                          UErrorCode& status) const U_OVERRIDE;
 
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual UnicodeString& format(const DigitList &number,
-                                  UnicodeString& appendTo,
-                                  FieldPositionIterator* posIter,
-                                  UErrorCode& status) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-    virtual UnicodeString& format(
-            const VisibleDigitsWithExponent &number,
-            UnicodeString& appendTo,
-            FieldPosition& pos,
-            UErrorCode& status) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-    virtual UnicodeString& format(
-            const VisibleDigitsWithExponent &number,
-            UnicodeString& appendTo,
-            FieldPositionIterator* posIter,
-            UErrorCode& status) const;
+#ifndef U_HIDE_INTERNAL_API
 
     
 
@@ -1165,14 +1090,10 @@ public:
 
 
 
-    virtual UnicodeString& format(const DigitList &number,
-                                  UnicodeString& appendTo,
-                                  FieldPosition& pos,
-                                  UErrorCode& status) const;
+    UnicodeString& format(const number::impl::DecimalQuantity& number, UnicodeString& appendTo,
+                          FieldPositionIterator* posIter, UErrorCode& status) const U_OVERRIDE;
 
-   using NumberFormat::parse;
-
-   
+    
 
 
 
@@ -1187,13 +1108,12 @@ public:
 
 
 
+    UnicodeString& format(const number::impl::DecimalQuantity& number, UnicodeString& appendTo,
+                          FieldPosition& pos, UErrorCode& status) const U_OVERRIDE;
 
+#endif 
 
-
-
-    virtual void parse(const UnicodeString& text,
-                       Formattable& result,
-                       ParsePosition& parsePosition) const;
+    using NumberFormat::parse;
 
     
 
@@ -1214,8 +1134,29 @@ public:
 
 
 
-    virtual CurrencyAmount* parseCurrency(const UnicodeString& text,
-                                          ParsePosition& pos) const;
+    void parse(const UnicodeString& text, Formattable& result,
+               ParsePosition& parsePosition) const U_OVERRIDE;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    CurrencyAmount* parseCurrency(const UnicodeString& text, ParsePosition& pos) const U_OVERRIDE;
 
     
 
@@ -1344,7 +1285,24 @@ public:
 
     virtual void setNegativeSuffix(const UnicodeString& newValue);
 
+#ifndef U_HIDE_INTERNAL_API
     
+
+
+
+    UBool isSignAlwaysShown() const;
+#endif  
+
+    
+
+
+
+
+    virtual void setSignAlwaysShown(UBool value);
+
+    
+
+
 
 
 
@@ -1366,7 +1324,47 @@ public:
 
 
 
+
+
+
     virtual void setMultiplier(int32_t newValue);
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+    int32_t getMultiplierScale(void) const;
+#endif  
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    virtual void setMultiplierScale(int32_t newValue);
 
     
 
@@ -1400,7 +1398,7 @@ public:
 
 
 
-    virtual ERoundingMode getRoundingMode(void) const;
+    virtual ERoundingMode getRoundingMode(void) const U_OVERRIDE;
 
     
 
@@ -1410,7 +1408,7 @@ public:
 
 
 
-    virtual void setRoundingMode(ERoundingMode roundingMode);
+    virtual void setRoundingMode(ERoundingMode roundingMode) U_OVERRIDE;
 
     
 
@@ -1469,7 +1467,7 @@ public:
 
 
 
-    virtual void setPadCharacter(const UnicodeString &padChar);
+    virtual void setPadCharacter(const UnicodeString& padChar);
 
     
 
@@ -1676,7 +1674,7 @@ public:
 
 #endif  
 
-	
+    
     
 
 
@@ -1726,6 +1724,60 @@ public:
 
 
     virtual void setDecimalPatternMatchRequired(UBool newValue);
+
+    
+
+
+
+
+
+    virtual UBool isParseNoExponent() const;
+
+    
+
+
+
+
+
+
+
+    virtual void setParseNoExponent(UBool value);
+
+    
+
+
+
+
+
+    virtual UBool isParseCaseSensitive() const;
+
+    
+
+
+
+
+
+
+
+
+    virtual void setParseCaseSensitive(UBool value);
+
+    
+
+
+
+
+
+
+    virtual UBool isFormatFailIfMoreThanMaxDigits() const;
+
+    
+
+
+
+
+
+    virtual void setFormatFailIfMoreThanMaxDigits(UBool value);
 
 
     
@@ -1781,19 +1833,7 @@ public:
 
 
 
-    virtual void applyPattern(const UnicodeString& pattern,
-                             UParseError& parseError,
-                             UErrorCode& status);
-    
-
-
-
-
-
-
-
-    virtual void applyPattern(const UnicodeString& pattern,
-                             UErrorCode& status);
+    virtual void applyPattern(const UnicodeString& pattern, UParseError& parseError, UErrorCode& status);
 
     
 
@@ -1803,6 +1843,9 @@ public:
 
 
 
+    virtual void applyPattern(const UnicodeString& pattern, UErrorCode& status);
+
+    
 
 
 
@@ -1825,8 +1868,14 @@ public:
 
 
 
-    virtual void applyLocalizedPattern(const UnicodeString& pattern,
-                                       UParseError& parseError,
+
+
+
+
+
+
+
+    virtual void applyLocalizedPattern(const UnicodeString& pattern, UParseError& parseError,
                                        UErrorCode& status);
 
     
@@ -1838,8 +1887,7 @@ public:
 
 
 
-    virtual void applyLocalizedPattern(const UnicodeString& pattern,
-                                       UErrorCode& status);
+    virtual void applyLocalizedPattern(const UnicodeString& pattern, UErrorCode& status);
 
 
     
@@ -1851,7 +1899,7 @@ public:
 
 
 
-    virtual void setMaximumIntegerDigits(int32_t newValue);
+    void setMaximumIntegerDigits(int32_t newValue) U_OVERRIDE;
 
     
 
@@ -1862,7 +1910,7 @@ public:
 
 
 
-    virtual void setMinimumIntegerDigits(int32_t newValue);
+    void setMinimumIntegerDigits(int32_t newValue) U_OVERRIDE;
 
     
 
@@ -1873,7 +1921,7 @@ public:
 
 
 
-    virtual void setMaximumFractionDigits(int32_t newValue);
+    void setMaximumFractionDigits(int32_t newValue) U_OVERRIDE;
 
     
 
@@ -1884,7 +1932,7 @@ public:
 
 
 
-    virtual void setMinimumFractionDigits(int32_t newValue);
+    void setMinimumFractionDigits(int32_t newValue) U_OVERRIDE;
 
     
 
@@ -1947,7 +1995,6 @@ public:
 
     void setSignificantDigitsUsed(UBool useSignificantDigits);
 
- public:
     
 
 
@@ -1960,7 +2007,7 @@ public:
 
 
 
-    virtual void setCurrency(const char16_t* theCurrency, UErrorCode& ec);
+    void setCurrency(const char16_t* theCurrency, UErrorCode& ec) U_OVERRIDE;
 
     
 
@@ -1984,32 +2031,15 @@ public:
 
     UCurrencyUsage getCurrencyUsage() const;
 
-
-#ifndef U_HIDE_DEPRECATED_API
-    
-
-
-
-
-    static const char fgNumberPatterns[];
-#endif  
-
 #ifndef U_HIDE_INTERNAL_API
-    
-
-
-
-
-
-     FixedDecimal getFixedDecimal(double number, UErrorCode &status) const;
 
     
 
 
 
 
-
-     FixedDecimal getFixedDecimal(const Formattable &number, UErrorCode &status) const;
+    void formatToDecimalQuantity(double number, number::impl::DecimalQuantity& output,
+                                 UErrorCode& status) const;
 
     
 
@@ -2017,30 +2047,12 @@ public:
 
 
 
-     FixedDecimal getFixedDecimal(DigitList &number, UErrorCode &status) const;
+    void formatToDecimalQuantity(const Formattable& number, number::impl::DecimalQuantity& output,
+                                 UErrorCode& status) const;
 
-    
+#endif
 
-
-
-
-
-     VisibleDigitsWithExponent &initVisibleDigitsWithExponent(
-             double number,
-             VisibleDigitsWithExponent &digits,
-             UErrorCode &status) const;
-
-    
-
-
-
-
-
-     VisibleDigitsWithExponent &initVisibleDigitsWithExponent(
-             const Formattable &number,
-             VisibleDigitsWithExponent &digits,
-             UErrorCode &status) const;
-
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2048,14 +2060,24 @@ public:
 
 
 
-     VisibleDigitsWithExponent &initVisibleDigitsWithExponent(
-             DigitList &number,
-             VisibleDigitsWithExponent &digits,
-             UErrorCode &status) const;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    const number::LocalizedNumberFormatter& toNumberFormatter() const;
 #endif  
-
-public:
 
     
 
@@ -2081,205 +2103,15 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    UClassID getDynamicClassID(void) const U_OVERRIDE;
 
-private:
-
-    DecimalFormat(); 
+  private:
 
     
-
-
-
-    void init();
+    void touch(UErrorCode& status);
 
     
-
-
-    void construct(UErrorCode&              status,
-                   UParseError&             parseErr,
-                   const UnicodeString*     pattern = 0,
-                   DecimalFormatSymbols*    symbolsToAdopt = 0
-                   );
-
-    void handleCurrencySignInPattern(UErrorCode& status);
-
-    void parse(const UnicodeString& text,
-               Formattable& result,
-               ParsePosition& pos,
-               char16_t* currency) const;
-
-    enum {
-        fgStatusInfinite,
-        fgStatusLength      
-    } StatusFlags;
-
-    UBool subparse(const UnicodeString& text,
-                   const UnicodeString* negPrefix,
-                   const UnicodeString* negSuffix,
-                   const UnicodeString* posPrefix,
-                   const UnicodeString* posSuffix,
-                   UBool complexCurrencyParsing,
-                   int8_t type,
-                   ParsePosition& parsePosition,
-                   DigitList& digits, UBool* status,
-                   char16_t* currency) const;
-
-    
-    
-    
-    
-    
-    UBool parseForCurrency(const UnicodeString& text,
-                           ParsePosition& parsePosition,
-                           DigitList& digits,
-                           UBool* status,
-                           char16_t* currency) const;
-
-    int32_t skipPadding(const UnicodeString& text, int32_t position) const;
-
-    int32_t compareAffix(const UnicodeString& input,
-                         int32_t pos,
-                         UBool isNegative,
-                         UBool isPrefix,
-                         const UnicodeString* affixPat,
-                         UBool complexCurrencyParsing,
-                         int8_t type,
-                         char16_t* currency) const;
-
-    static UnicodeString& trimMarksFromAffix(const UnicodeString& affix, UnicodeString& trimmedAffix);
-
-    UBool equalWithSignCompatibility(UChar32 lhs, UChar32 rhs) const;
-
-    int32_t compareSimpleAffix(const UnicodeString& affix,
-                                      const UnicodeString& input,
-                                      int32_t pos,
-                                      UBool lenient) const;
-
-    static int32_t skipPatternWhiteSpace(const UnicodeString& text, int32_t pos);
-
-    static int32_t skipUWhiteSpace(const UnicodeString& text, int32_t pos);
-
-    static int32_t skipUWhiteSpaceAndMarks(const UnicodeString& text, int32_t pos);
-
-    static int32_t skipBidiMarks(const UnicodeString& text, int32_t pos);
-
-    int32_t compareComplexAffix(const UnicodeString& affixPat,
-                                const UnicodeString& input,
-                                int32_t pos,
-                                int8_t type,
-                                char16_t* currency) const;
-
-    static int32_t match(const UnicodeString& text, int32_t pos, UChar32 ch);
-
-    static int32_t match(const UnicodeString& text, int32_t pos, const UnicodeString& str);
-
-    static UBool matchSymbol(const UnicodeString &text, int32_t position, int32_t length, const UnicodeString &symbol,
-                             UnicodeSet *sset, UChar32 schar);
-
-    static UBool matchDecimal(UChar32 symbolChar,
-                            UBool sawDecimal,  UChar32 sawDecimalChar,
-                             const UnicodeSet *sset, UChar32 schar);
-
-    static UBool matchGrouping(UChar32 groupingChar,
-                            UBool sawGrouping, UChar32 sawGroupingChar,
-                             const UnicodeSet *sset,
-                             UChar32 decimalChar, const UnicodeSet *decimalSet,
-                             UChar32 schar);
-
-    
-    
-    
-    
-    void setupCurrencyAffixPatterns(UErrorCode& status);
-
-    
-    double getCurrencyRounding(const char16_t* currency,
-                               UErrorCode* ec) const;
-
-    
-    int getCurrencyFractionDigits(const char16_t* currency,
-                                  UErrorCode* ec) const;
-
-    
-    Hashtable* initHashForAffixPattern(UErrorCode& status);
-
-    void deleteHashForAffixPattern();
-
-    void copyHashForAffixPattern(const Hashtable* source,
-                                 Hashtable* target, UErrorCode& status);
-
-    DecimalFormatImpl *fImpl;
-
-    
-
-
-
-
-    EnumSet<UNumberFormatAttribute,
-            UNUM_MAX_NONBOOLEAN_ATTRIBUTE+1,
-            UNUM_LIMIT_BOOLEAN_ATTRIBUTE>
-                            fBoolFlags;
-
-
-    
-    
-    int fStyle;
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    Hashtable* fAffixPatternsForCurrency;
-
-    
-    CurrencyPluralInfo* fCurrencyPluralInfo;
-
-#if UCONFIG_HAVE_PARSEALLINPUT
-    UNumberFormatAttributeValue fParseAllInput;
-#endif
-
-    
-    const DecimalFormatStaticSets *fStaticSets;
-
-protected:
-
-#ifndef U_HIDE_INTERNAL_API
-    
-
-
-
-    DigitList& _round(const DigitList& number, DigitList& adjustedNum, UBool& isNegative, UErrorCode& status) const;
-#endif  
-
-    
-
-
-
-
-
-
-
-    virtual void getEffectiveCurrency(char16_t* result, UErrorCode& ec) const;
-
-  
-
-
-    static const int32_t  kDoubleIntegerDigits;
-  
-
-
-    static const int32_t  kDoubleFractionDigits;
+    void touchNoError();
 
     
 
@@ -2291,7 +2123,37 @@ protected:
 
 
 
-    static const int32_t  kMaxScientificIntegerDigits;
+
+    void setPropertiesFromPattern(const UnicodeString& pattern, int32_t ignoreRounding,
+                                  UErrorCode& status);
+
+    const numparse::impl::NumberParserImpl* getParser(UErrorCode& status) const;
+
+    const numparse::impl::NumberParserImpl* getCurrencyParser(UErrorCode& status) const;
+
+    static void fieldPositionHelper(const number::FormattedNumber& formatted, FieldPosition& fieldPosition,
+                                    int32_t offset, UErrorCode& status);
+
+    static void fieldPositionIteratorHelper(const number::FormattedNumber& formatted,
+                                            FieldPositionIterator* fpi, int32_t offset, UErrorCode& status);
+
+    void setupFastFormat();
+
+    bool fastFormatDouble(double input, UnicodeString& output) const;
+
+    bool fastFormatInt64(int64_t input, UnicodeString& output) const;
+
+    void doFastFormatInt32(int32_t input, bool isNegative, UnicodeString& output) const;
+
+    
+    
+    
+
+    
+    number::impl::DecimalFormatFields* fields;
+
+    
+    friend class CompactDecimalFormat;
 
 };
 

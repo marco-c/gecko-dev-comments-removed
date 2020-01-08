@@ -206,20 +206,6 @@
 
 
 
-#ifndef UPRV_INCOMPLETE_CPP11_SUPPORT
-#   define UPRV_INCOMPLETE_CPP11_SUPPORT (U_PLATFORM == U_PF_AIX || U_PLATFORM == U_PF_OS390 || U_PLATFORM == U_PF_SOLARIS )
-#endif
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -33,6 +33,7 @@ U_CFUNC UBool ucln_lib_cleanup(void);
 
 typedef enum ECleanupCommonType {
     UCLN_COMMON_START = -1,
+    UCLN_COMMON_NUMPARSE_UNISETS,
     UCLN_COMMON_USPREP,
     UCLN_COMMON_BREAKITERATOR,
     UCLN_COMMON_RBBI,

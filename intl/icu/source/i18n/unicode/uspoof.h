@@ -477,13 +477,36 @@ typedef enum USpoofChecks {
 
     USPOOF_CHAR_LIMIT               =  64,
 
-   
+    
 
 
 
 
 
     USPOOF_MIXED_NUMBERS            = 128,
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    USPOOF_HIDDEN_OVERLAY            = 256,
+#endif  
 
    
 
