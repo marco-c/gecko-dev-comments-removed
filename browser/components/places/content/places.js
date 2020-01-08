@@ -24,6 +24,7 @@ XPCOMUtils.defineLazyScriptGetter(this, ["PlacesInsertionPoint", "PlacesControll
 
 
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+ChromeUtils.import("resource://gre/modules/TelemetryStopwatch.jsm");
 ChromeUtils.defineModuleGetter(this, "MigrationUtils",
                                "resource:///modules/MigrationUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "BookmarkJSONUtils",

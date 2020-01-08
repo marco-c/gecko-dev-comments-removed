@@ -22,7 +22,6 @@ const {
   console,
   HeapSnapshot,
   StructuredCloneHolder,
-  TelemetryStopwatch,
 } = Cu.getGlobalForObject(jsmScope);
 
 
@@ -219,7 +218,6 @@ exports.modules = {
   
   Promise,
   Services: Object.create(Services),
-  TelemetryStopwatch,
 };
 
 defineLazyGetter(exports.modules, "Debugger", () => {
