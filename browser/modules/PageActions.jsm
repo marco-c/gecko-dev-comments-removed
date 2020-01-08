@@ -1137,12 +1137,14 @@ var gBuiltInActions = [
   },
 ];
 
+
 if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
   gBuiltInActions.push(
-  
   {
     id: "sendToDevice",
-    title: "sendToDevice-title",
+    
+    
+    title: "sendToDevice",
     onBeforePlacedInWindow(browserWindow) {
       browserPageActions(browserWindow).sendToDevice
         .onBeforePlacedInWindow(browserWindow);
@@ -1162,9 +1164,9 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
   });
 }
 
+
 if (AppConstants.platform == "macosx") {
   gBuiltInActions.push(
-  
   {
     id: "shareURL",
     title: "shareURL-title",
