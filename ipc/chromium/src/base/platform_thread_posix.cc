@@ -35,10 +35,6 @@ void InitThreading();
 #endif
 
 static void* ThreadFunc(void* closure) {
-  
-  
-  (void) NS_GetCurrentThread();
-
   PlatformThread::Delegate* delegate =
       static_cast<PlatformThread::Delegate*>(closure);
   delegate->ThreadMain();

@@ -60,6 +60,10 @@ public:
            MainThreadFlag aMainThread,
            uint32_t aStackSize);
 
+private:
+  nsThread();
+
+public:
   
   nsresult Init(const nsACString& aName = NS_LITERAL_CSTRING(""));
 
@@ -174,6 +178,12 @@ protected:
   static mozilla::LinkedList<nsThread>& ThreadList();
   static void ClearThreadList();
 
+  
+  
+  
+  
+  
+  
   RefPtr<mozilla::SynchronizedEventQueue> mEvents;
   RefPtr<mozilla::ThreadEventTarget> mEventTarget;
 

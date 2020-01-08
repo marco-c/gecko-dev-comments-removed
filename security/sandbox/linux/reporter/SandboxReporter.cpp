@@ -237,6 +237,10 @@ SandboxReporter::AddOne(const SandboxReport& aReport)
 void
 SandboxReporter::ThreadMain(void)
 {
+  
+  
+  (void) NS_GetCurrentThread();
+
   for (;;) {
     SandboxReport rep;
     struct iovec iov;
