@@ -1,0 +1,20 @@
+
+
+
+
+"use strict";
+
+const {
+  UPDATE_SELECTED_RUNTIME,
+} = require("../constants");
+
+function updateSelectedRuntime(runtime) {
+  return {
+    type: UPDATE_SELECTED_RUNTIME,
+    runtime,
+  };
+}
+
+module.exports = {
+  updateSelectedRuntime,
+};

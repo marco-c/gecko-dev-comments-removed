@@ -1,0 +1,12 @@
+
+
+
+
+"use strict";
+
+const { combineReducers } = require("devtools/client/shared/vendor/redux");
+const { runtimesReducer } = require("./runtimes-state");
+
+module.exports = combineReducers({
+  runtimes: runtimesReducer,
+});

@@ -1,0 +1,11 @@
+
+
+
+
+"use strict";
+
+const actionTypes = {
+  UPDATE_SELECTED_RUNTIME: "UPDATE_SELECTED_RUNTIME",
+};
+
+module.exports = Object.assign({}, actionTypes);
