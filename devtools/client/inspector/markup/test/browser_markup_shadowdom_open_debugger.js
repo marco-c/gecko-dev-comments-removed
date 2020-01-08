@@ -63,7 +63,8 @@ async function runTest(inspector, toolbox, selector, contentMethod) {
   await selectNode(selector, inspector);
   const testFront = await getNodeFront(selector, inspector);
   const testContainer = inspector.markup.getContainer(testFront);
-  let customBadge = testContainer.elt.querySelector(".markup-badge[data-custom]");
+  let customBadge = testContainer.elt.querySelector(
+    ".inspector-badge.interactive[data-custom]");
 
   
   ok(!customBadge, "[custom] badge is hidden");
@@ -80,7 +81,8 @@ async function runTest(inspector, toolbox, selector, contentMethod) {
   
 
   
-  customBadge = testContainer.elt.querySelector(".markup-badge[data-custom]");
+  customBadge = testContainer.elt.querySelector(
+    ".inspector-badge.interactive[data-custom]");
   ok(customBadge, "[custom] badge is visible");
 
   info("Click on the `custom` badge and verify that the debugger opens.");
