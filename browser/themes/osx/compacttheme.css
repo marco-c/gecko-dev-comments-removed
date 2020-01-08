@@ -6,7 +6,7 @@
 
 
 #main-window[tabsintitlebar] #titlebar-content {
-  background: var(--chrome-background-color);
+  background: var(--lwt-accent-color);
 }
 
 #TabsToolbar:-moz-lwtheme-darktext {

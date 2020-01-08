@@ -35,7 +35,7 @@
 
     
     .tabbrowser-tab {
-      color: var(--chrome-color) !important;
+      color: var(--lwt-text-color) !important;
     }
 
     
@@ -93,7 +93,7 @@
   
 
   .tabbrowser-tab {
-    background-color: var(--chrome-background-color) !important;
+    background-color: var(--lwt-accent-color) !important;
     border-top: 1px solid var(--tabs-border-color);
     background-clip: padding-box;
   }

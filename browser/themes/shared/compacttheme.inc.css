@@ -7,9 +7,9 @@
 
 
 :root:-moz-lwtheme {
-  --toolbar-color: var(--chrome-color);
+  --toolbar-color: var(--lwt-text-color);
   --toolbar-non-lwt-bgcolor: var(--toolbar-bgcolor);
-  --toolbar-non-lwt-textcolor: var(--chrome-color);
+  --toolbar-non-lwt-textcolor: var(--lwt-text-color);
   --toolbar-non-lwt-bgimage: none;
 
   --toolbarbutton-icon-fill-opacity: .7;
@@ -17,25 +17,8 @@
 
 :root:-moz-lwtheme-brighttext {
   
-  --chrome-background-color: hsl(240, 5%, 5%);
-  --chrome-color: rgb(249, 249, 250);
-
-  
 
   --autocomplete-popup-background: #2A2A2E !important;
   --autocomplete-popup-highlight-background: #0060DF;
-}
-
-:root:-moz-lwtheme-darktext {
-  --chrome-background-color: #E3E4E6;
-  --chrome-color: #18191a;
-}
-
-
-
-#TabsToolbar,
-#navigator-toolbox {
-  background-color: var(--chrome-background-color);
-  color: var(--chrome-color);
 }
 
