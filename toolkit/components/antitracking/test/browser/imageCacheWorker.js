@@ -24,8 +24,6 @@ AntiTracking.runTest("Image cache - should load the image twice.",
     runExtraTests: false,
     cookieBehavior,
     blockingByContentBlocking,
-    blockingByContentBlockingUI,
-    blockingByContentBlockingRTUI,
     blockingByAllowList,
     callback: async _ => {
       

@@ -1476,32 +1476,15 @@ PREF("preferences.allow.omt-write", bool, true)
 
 
 
-#include "ContentBlockingDefaultPrefValues.h"
+
+
 
 
 VARCACHE_PREF(
   "browser.contentblocking.enabled",
    browser_contentblocking_enabled,
-  bool, CONTENTBLOCKING_ENABLED
+  bool, true
 )
-
-
-VARCACHE_PREF(
-  "browser.contentblocking.ui.enabled",
-   browser_contentblocking_ui_enabled,
-  bool, CONTENTBLOCKING_UI_ENABLED
-)
-
-
-VARCACHE_PREF(
-  "browser.contentblocking.rejecttrackers.ui.enabled",
-   browser_contentblocking_rejecttrackers_ui_enabled,
-  bool, CONTENTBLOCKING_REJECTTRACKERS_UI_ENABLED
-)
-
-#undef CONTENTBLOCKING_ENABLED
-#undef CONTENTBLOCKING_UI_ENABLED
-#undef CONTENTBLOCKING_REJECTTRACKERS_UI_ENABLED
 
 
 VARCACHE_PREF(
