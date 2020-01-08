@@ -14,7 +14,7 @@ const { getConfig } = require("./bin/configure");
 
 const webpackConfig = {
   entry: {
-    netmonitor: [path.join(__dirname, "launchpad.js")]
+    netmonitor: [path.join(__dirname, "launchpad.js")],
   },
 
   module: {
@@ -42,15 +42,15 @@ const webpackConfig = {
           
           "rewrite-lazy-getter",
         ],
-      }
-    ]
+      },
+    ],
   },
 
   resolveLoader: {
     modules: [
       "node_modules",
       path.resolve("../shared/webpack"),
-    ]
+    ],
   },
 
   output: {
@@ -110,21 +110,21 @@ const mappings = [
     (result) => {
       result.request = result.request
         .replace("./chrome://devtools/skin", path.join(__dirname, "../themes"));
-    }
+    },
   ],
   [
     /chrome:\/\/devtools\/content/,
     (result) => {
       result.request = result.request
         .replace("./chrome://devtools/content", path.join(__dirname, ".."));
-    }
+    },
   ],
   [
     /resource:\/\/devtools/,
     (result) => {
       result.request = result.request
         .replace("./resource://devtools/client", path.join(__dirname, ".."));
-    }
+    },
   ],
 ];
 
@@ -136,7 +136,7 @@ const baseName = path.basename(__dirname);
 
 const config = toolboxConfig(webpackConfig, getConfig(), {
   
-  babelExcludes: new RegExp(`^${basePath}(.(?!${baseName}))*$`)
+  babelExcludes: new RegExp(`^${basePath}(.(?!${baseName}))*$`),
 });
 
 

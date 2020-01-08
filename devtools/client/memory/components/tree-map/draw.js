@@ -17,7 +17,7 @@ const colorCoarseType = require("./color-coarse-type");
 const {
   hslToStyle,
   formatAbbreviatedBytes,
-  L10N
+  L10N,
 } = require("devtools/client/memory/utils");
 
 
@@ -26,7 +26,7 @@ const NO_SCROLL = {
   translateY: 0,
   zoom: 0,
   offsetX: 0,
-  offsetY: 0
+  offsetY: 0,
 };
 
 
@@ -87,7 +87,7 @@ const configureD3Treemap = exports.configureD3Treemap = function(canvas) {
       
       
       canvas.width + (PADDING[1] + PADDING[3]) * ratio,
-      canvas.height + (PADDING[0] + PADDING[2]) * ratio
+      canvas.height + (PADDING[0] + PADDING[2]) * ratio,
     ])
     .sticky(true)
     .padding([

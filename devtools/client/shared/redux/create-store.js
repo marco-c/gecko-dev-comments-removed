@@ -33,7 +33,7 @@ module.exports = (opts = {}) => {
     
     
     
-    waitUntilService
+    waitUntilService,
   ];
 
   if (opts.history) {

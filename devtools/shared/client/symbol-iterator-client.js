@@ -47,7 +47,7 @@ SymbolIteratorClient.prototype = {
   slice: DebuggerClient.requester({
     type: "slice",
     start: arg(0),
-    count: arg(1)
+    count: arg(1),
   }, {}),
 
   
@@ -57,7 +57,7 @@ SymbolIteratorClient.prototype = {
 
 
   all: DebuggerClient.requester({
-    type: "all"
+    type: "all",
   }, {}),
 };
 

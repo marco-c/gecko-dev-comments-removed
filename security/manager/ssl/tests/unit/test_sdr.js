@@ -18,7 +18,7 @@ const gTokenPasswordDialogs = {
     return false; 
   },
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsITokenPasswordDialogs])
+  QueryInterface: ChromeUtils.generateQI([Ci.nsITokenPasswordDialogs]),
 };
 
 add_task(function testEncryptString() {

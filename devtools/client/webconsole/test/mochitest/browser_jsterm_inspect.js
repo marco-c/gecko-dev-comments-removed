@@ -41,7 +41,7 @@ async function performTests() {
   if (windowOiNodes.length === 1) {
     
     await waitForNodeMutation(windowOi, {
-      childList: true
+      childList: true,
     });
     windowOiNodes = windowOi.querySelectorAll(".node");
   }

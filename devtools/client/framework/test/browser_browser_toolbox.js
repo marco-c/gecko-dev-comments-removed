@@ -21,7 +21,7 @@ add_task(async function() {
       ["devtools.browser-toolbox.allow-unsafe-script", true],
       
       
-      ["devtools.debugger.remote-timeout", 120000]
+      ["devtools.debugger.remote-timeout", 120000],
     ]};
     SpecialPowers.pushPrefEnv(options, done);
   });

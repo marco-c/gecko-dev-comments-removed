@@ -26,10 +26,10 @@ add_task(async function() {
 
   
   const SIMPLE_BASE = [
-    "curl " + quote(SIMPLE_SJS)
+    "curl " + quote(SIMPLE_SJS),
   ];
   const SLOW_BASE = [
-    "curl " + quote(SLOW_SJS)
+    "curl " + quote(SLOW_SJS),
   ];
   const BASE_RESULT = [
     "--compressed",
@@ -42,34 +42,34 @@ add_task(async function() {
     header("Referer: " + CURL_URL),
     header("Connection: keep-alive"),
     header("Pragma: no-cache"),
-    header("Cache-Control: no-cache")
+    header("Cache-Control: no-cache"),
   ];
 
   const COOKIE_PARTIAL_RESULT = [
-    header("Cookie: bob=true; tom=cool")
+    header("Cookie: bob=true; tom=cool"),
   ];
 
   const POST_PAYLOAD = "Plaintext value as a payload";
   const POST_PARTIAL_RESULT = [
     "--data " + quote(POST_PAYLOAD),
-    header("Content-Type: text/plain;charset=UTF-8")
+    header("Content-Type: text/plain;charset=UTF-8"),
   ];
 
   const HEAD_PARTIAL_RESULT = [
-    "-I"
+    "-I",
   ];
 
   
   await performRequest("GET");
   await testClipboardContent([
     ...SIMPLE_BASE,
-    ...BASE_RESULT
+    ...BASE_RESULT,
   ]);
   
   await selectIndexAndWaitForSourceEditor(monitor, 0);
   await testClipboardContent([
     ...SIMPLE_BASE,
-    ...BASE_RESULT
+    ...BASE_RESULT,
   ]);
 
   
@@ -77,7 +77,7 @@ add_task(async function() {
   await testClipboardContent([
     ...SIMPLE_BASE,
     ...BASE_RESULT,
-    ...COOKIE_PARTIAL_RESULT
+    ...COOKIE_PARTIAL_RESULT,
   ]);
 
   
@@ -89,7 +89,7 @@ add_task(async function() {
   await testClipboardContent([
     ...SLOW_BASE,
     ...BASE_RESULT,
-    ...COOKIE_PARTIAL_RESULT
+    ...COOKIE_PARTIAL_RESULT,
   ]);
 
   
@@ -98,7 +98,7 @@ add_task(async function() {
     ...SIMPLE_BASE,
     ...BASE_RESULT,
     ...COOKIE_PARTIAL_RESULT,
-    ...POST_PARTIAL_RESULT
+    ...POST_PARTIAL_RESULT,
   ]);
 
   
@@ -107,7 +107,7 @@ add_task(async function() {
     ...SIMPLE_BASE,
     ...BASE_RESULT,
     ...COOKIE_PARTIAL_RESULT,
-    ...HEAD_PARTIAL_RESULT
+    ...HEAD_PARTIAL_RESULT,
   ]);
 
   await teardown(monitor);
@@ -117,7 +117,7 @@ add_task(async function() {
     await ContentTask.spawn(tab.linkedBrowser, {
       url: SIMPLE_SJS,
       method_: method,
-      payload_: payload
+      payload_: payload,
     }, async function({url, method_, payload_}) {
       content.wrappedJSObject.performRequest(url, method_, payload_);
     });

@@ -23,7 +23,7 @@
 
 const kDebuggerPrefs = [
   "devtools.debugger.remote-enabled",
-  "devtools.chrome.enabled"
+  "devtools.chrome.enabled",
 ];
 
 const DEVTOOLS_ENABLED_PREF = "devtools.enabled";
@@ -80,43 +80,43 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
     {
       id: "toggleToolbox",
       shortcut: KeyShortcutsBundle.GetStringFromName("toggleToolbox.commandkey"),
-      modifiers
+      modifiers,
     },
     
     {
       id: "toggleToolboxF12",
       shortcut: KeyShortcutsBundle.GetStringFromName("toggleToolboxF12.commandkey"),
-      modifiers: "" 
+      modifiers: "", 
     },
     
     {
       id: "webide",
       shortcut: KeyShortcutsBundle.GetStringFromName("webide.commandkey"),
-      modifiers: "shift"
+      modifiers: "shift",
     },
     
     {
       id: "browserToolbox",
       shortcut: KeyShortcutsBundle.GetStringFromName("browserToolbox.commandkey"),
-      modifiers: "accel,alt,shift"
+      modifiers: "accel,alt,shift",
     },
     
     {
       id: "browserConsole",
       shortcut: KeyShortcutsBundle.GetStringFromName("browserConsole.commandkey"),
-      modifiers: "accel,shift"
+      modifiers: "accel,shift",
     },
     
     {
       id: "responsiveDesignMode",
       shortcut: KeyShortcutsBundle.GetStringFromName("responsiveDesignMode.commandkey"),
-      modifiers
+      modifiers,
     },
     
     {
       id: "scratchpad",
       shortcut: KeyShortcutsBundle.GetStringFromName("scratchpad.commandkey"),
-      modifiers: "shift"
+      modifiers: "shift",
     },
 
     
@@ -126,49 +126,49 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
     {
       toolId: "inspector",
       shortcut: KeyShortcutsBundle.GetStringFromName("inspector.commandkey"),
-      modifiers
+      modifiers,
     },
     
     {
       toolId: "webconsole",
       shortcut: KeyShortcutsBundle.GetStringFromName("webconsole.commandkey"),
-      modifiers
+      modifiers,
     },
     
     {
       toolId: "jsdebugger",
       shortcut: KeyShortcutsBundle.GetStringFromName("debugger.commandkey"),
-      modifiers
+      modifiers,
     },
     
     {
       toolId: "netmonitor",
       shortcut: KeyShortcutsBundle.GetStringFromName("netmonitor.commandkey"),
-      modifiers
+      modifiers,
     },
     
     {
       toolId: "styleeditor",
       shortcut: KeyShortcutsBundle.GetStringFromName("styleeditor.commandkey"),
-      modifiers: "shift"
+      modifiers: "shift",
     },
     
     {
       toolId: "performance",
       shortcut: KeyShortcutsBundle.GetStringFromName("performance.commandkey"),
-      modifiers: "shift"
+      modifiers: "shift",
     },
     
     {
       toolId: "storage",
       shortcut: KeyShortcutsBundle.GetStringFromName("storage.commandkey"),
-      modifiers: "shift"
+      modifiers: "shift",
     },
     
     {
       toolId: "dom",
       shortcut: KeyShortcutsBundle.GetStringFromName("dom.commandkey"),
-      modifiers
+      modifiers,
     },
   ];
 
@@ -178,7 +178,7 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
     shortcuts.push({
       id: "inspectorMac",
       shortcut: KeyShortcutsBundle.GetStringFromName("inspector.commandkey"),
-      modifiers: "accel,shift"
+      modifiers: "accel,shift",
     });
   }
 
@@ -447,7 +447,7 @@ DevToolsStartup.prototype = {
         panel.setAttribute("class", "panel-subview-body");
         view.appendChild(panel);
         doc.getElementById("PanelUI-multiView").appendChild(view);
-      }
+      },
     };
     CustomizableUI.createWidget(item);
     CustomizableWidgets.push(item);
@@ -1001,10 +1001,10 @@ const JsonView = {
         },
         onError(status) {
           throw new Error("JSON Viewer's onSave failed in startPersistence");
-        }
+        },
       });
     }
-  }
+  },
 };
 
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory(

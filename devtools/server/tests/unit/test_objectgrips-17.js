@@ -89,7 +89,7 @@ async function testPrincipal(globalPrincipal) {
     for (gGlobalIsInvisible of [true, false]) {
       gGlobal = Cu.Sandbox(globalPrincipal, {
         wantXrays: globalHasXrays,
-        invisibleToDebugger: gGlobalIsInvisible
+        invisibleToDebugger: gGlobalIsInvisible,
       });
       
       

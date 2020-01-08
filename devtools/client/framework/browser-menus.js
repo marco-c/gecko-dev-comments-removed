@@ -92,7 +92,7 @@ function createToolMenuElements(toolDefinition, doc) {
     doc,
     id: "menuitem_" + id,
     label: toolDefinition.menuLabel || toolDefinition.label,
-    accesskey: toolDefinition.accesskey
+    accesskey: toolDefinition.accesskey,
   });
   
   
@@ -100,7 +100,7 @@ function createToolMenuElements(toolDefinition, doc) {
   menuitem.addEventListener("command", oncommand);
 
   return {
-    menuitem
+    menuitem,
   };
 }
 
@@ -228,7 +228,7 @@ function addTopLevelItems(doc) {
         id,
         label: l10n(l10nKey + ".label"),
         accesskey: l10n(l10nKey + ".accesskey"),
-        isCheckbox: item.checkbox
+        isCheckbox: item.checkbox,
       });
       menuitem.addEventListener("command", item.oncommand);
       menuItems.appendChild(menuitem);

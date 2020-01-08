@@ -109,7 +109,7 @@ function createModule(id) {
       configurable: false,
       enumerable: true,
       value: id,
-      writable: false
+      writable: false,
     },
 
     
@@ -118,8 +118,8 @@ function createModule(id) {
       configurable: false,
       enumerable: true,
       value: Object.create(null),
-      writable: true
-    }
+      writable: true,
+    },
   });
 }
 
@@ -140,7 +140,7 @@ function defineLazyGetter(object, prop, getter) {
     },
     set(value) {
       redefine(this, value);
-    }
+    },
   });
 }
 
@@ -401,7 +401,7 @@ var chrome = {
   Ci: undefined,
   Cu: undefined,
   Cr: undefined,
-  components: undefined
+  components: undefined,
 };
 
 var loader = {
@@ -413,7 +413,7 @@ var loader = {
         return object[name];
       },
       configurable: true,
-      enumerable: true
+      enumerable: true,
     });
   },
   lazyImporter: function() {
@@ -425,9 +425,9 @@ var loader = {
   lazyRequireGetter: function(obj, property, module, destructure) {
     Object.defineProperty(obj, property, {
       get: () => destructure ? worker.require(module)[property]
-                             : worker.require(module || property)
+                             : worker.require(module || property),
     });
-  }
+  },
 };
 
 
@@ -469,7 +469,7 @@ var {
         sandboxName: name,
         sandboxPrototype: prototype,
         wantComponents: false,
-        wantXrays: false
+        wantXrays: false,
       });
     };
 
@@ -503,7 +503,7 @@ var {
       loadSubScript,
       reportError,
       setImmediate,
-      xpcInspector
+      xpcInspector,
     };
   }
   
@@ -530,7 +530,7 @@ var {
       requestors.pop();
       scope.leaveEventLoop();
       return requestors.length;
-    }
+    },
   };
 
   return {
@@ -542,7 +542,7 @@ var {
     loadSubScript: this.loadSubScript,
     reportError: this.reportError,
     setImmediate: this.setImmediate,
-    xpcInspector: xpcInspector
+    xpcInspector: xpcInspector,
   };
 }).call(this);
 
@@ -570,7 +570,7 @@ this.worker = new WorkerDebuggerLoader({
     "Debugger": Debugger,
     "Services": Object.create(null),
     "chrome": chrome,
-    "xpcInspector": xpcInspector
+    "xpcInspector": xpcInspector,
   },
   paths: {
     
@@ -580,7 +580,7 @@ this.worker = new WorkerDebuggerLoader({
     
     "source-map": "resource://devtools/shared/sourcemap/source-map.js",
     
-    "xpcshell-test": "resource://test"
+    "xpcshell-test": "resource://test",
     
-  }
+  },
 });

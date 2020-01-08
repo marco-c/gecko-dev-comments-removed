@@ -37,7 +37,7 @@ function editableTextTest(aID) {
     
     var dataContainer = {
       func: aFunc,
-      funcArgs: Array.slice(arguments, 1)
+      funcArgs: Array.slice(arguments, 1),
     };
     this.mEventQueue.push(dataContainer);
 
@@ -217,7 +217,7 @@ function editableTextTest(aID) {
     var checker = {
       check: function valueChecker_check() {
         is(getValue(), aValue, "Wrong value " + aValue);
-      }
+      },
     };
     return checker;
   }
@@ -226,7 +226,7 @@ function editableTextTest(aID) {
     var checker = {
       check: function clipboardChecker_check() {
         is(getTextFromClipboard(), aText, "Wrong text in clipboard.");
-      }
+      },
     };
     return checker;
   }
@@ -256,7 +256,7 @@ function editableTextTest(aID) {
         aChecker.check();
         et.unwrapNextTest(); 
       },
-      getID: function getID() { return aInvokerID; }
+      getID: function getID() { return aInvokerID; },
     };
 
     if (aRemoveTriple) {

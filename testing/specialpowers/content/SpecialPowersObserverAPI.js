@@ -218,7 +218,7 @@ SpecialPowersObserverAPI.prototype = {
 
     var channel = NetUtil.newChannel({
       uri: aUrl,
-      loadUsingSystemPrincipal: true
+      loadUsingSystemPrincipal: true,
     });
     var input = channel.open2();
     scriptableStream.init(input);
@@ -499,7 +499,7 @@ SpecialPowersObserverAPI.prototype = {
             delete sb.assert;
             return sb.assert = assert;
           },
-          configurable: true
+          configurable: true,
         });
 
         
@@ -647,5 +647,5 @@ SpecialPowersObserverAPI.prototype = {
     
     throw new SpecialPowersError("Unreached code"); 
     return undefined;
-  }
+  },
 };

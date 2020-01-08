@@ -19,7 +19,7 @@ types.addDictType("AllocationsRecordingOptions", {
   
   
   
-  maxLogLength: "number"
+  maxLogLength: "number",
 });
 
 const memorySpec = generateActorSpec({
@@ -50,57 +50,57 @@ const memorySpec = generateActorSpec({
     attach: {
       request: {},
       response: {
-        type: RetVal("string")
-      }
+        type: RetVal("string"),
+      },
     },
     detach: {
       request: {},
       response: {
-        type: RetVal("string")
-      }
+        type: RetVal("string"),
+      },
     },
     getState: {
       response: {
-        state: RetVal(0, "string")
-      }
+        state: RetVal(0, "string"),
+      },
     },
     takeCensus: {
       request: {},
-      response: RetVal("json")
+      response: RetVal("json"),
     },
     startRecordingAllocations: {
       request: {
-        options: Arg(0, "nullable:AllocationsRecordingOptions")
+        options: Arg(0, "nullable:AllocationsRecordingOptions"),
       },
       response: {
         
-        value: RetVal(0, "nullable:number")
-      }
+        value: RetVal(0, "nullable:number"),
+      },
     },
     stopRecordingAllocations: {
       request: {},
       response: {
         
-        value: RetVal(0, "nullable:number")
-      }
+        value: RetVal(0, "nullable:number"),
+      },
     },
     getAllocationsSettings: {
       request: {},
       response: {
-        options: RetVal(0, "json")
-      }
+        options: RetVal(0, "json"),
+      },
     },
     getAllocations: {
       request: {},
-      response: RetVal("json")
+      response: RetVal("json"),
     },
     forceGarbageCollection: {
       request: {},
-      response: {}
+      response: {},
     },
     forceCycleCollection: {
       request: {},
-      response: {}
+      response: {},
     },
     measure: {
       request: {},
@@ -108,15 +108,15 @@ const memorySpec = generateActorSpec({
     },
     residentUnique: {
       request: {},
-      response: { value: RetVal("number") }
+      response: { value: RetVal("number") },
     },
     saveHeapSnapshot: {
       request: {
-        boundaries: Arg(0, "nullable:json")
+        boundaries: Arg(0, "nullable:json"),
       },
       response: {
-        snapshotId: RetVal("string")
-      }
+        snapshotId: RetVal("string"),
+      },
     },
   },
 });

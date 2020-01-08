@@ -31,7 +31,7 @@ function enableActorReleaser(hud) {
 
         
         state = reducer(state, {
-          type: REMOVED_ACTORS_CLEAR
+          type: REMOVED_ACTORS_CLEAR,
         });
       }
 

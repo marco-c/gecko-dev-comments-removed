@@ -37,8 +37,8 @@ add_task(async function() {
         type: "plain",
         fullMimeType: "text/plain; charset=utf-8",
         size: L10N.getFormatStrWithNumbers("networkMenu.sizeB", 0),
-        time: true
-      }
+        time: true,
+      },
     },
     {
       
@@ -51,8 +51,8 @@ add_task(async function() {
         type: "plain",
         fullMimeType: "text/plain; charset=utf-8",
         size: L10N.getFormatStrWithNumbers("networkMenu.sizeB", 22),
-        time: true
-      }
+        time: true,
+      },
     },
     {
       
@@ -65,8 +65,8 @@ add_task(async function() {
         type: "plain",
         fullMimeType: "text/plain; charset=utf-8",
         size: L10N.getFormatStrWithNumbers("networkMenu.sizeB", 22),
-        time: true
-      }
+        time: true,
+      },
     },
     {
       
@@ -79,8 +79,8 @@ add_task(async function() {
         type: "plain",
         fullMimeType: "text/plain; charset=utf-8",
         size: L10N.getFormatStrWithNumbers("networkMenu.sizeB", 22),
-        time: true
-      }
+        time: true,
+      },
     },
     {
       
@@ -93,9 +93,9 @@ add_task(async function() {
         type: "plain",
         fullMimeType: "text/plain; charset=utf-8",
         size: L10N.getFormatStrWithNumbers("networkMenu.sizeB", 22),
-        time: true
-      }
-    }
+        time: true,
+      },
+    },
   ];
 
   

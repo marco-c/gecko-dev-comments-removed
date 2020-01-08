@@ -64,7 +64,7 @@ add_task(async function testFilter() {
   
   await setFilterState(hud, {
     error: true,
-    log: false
+    log: false,
   });
 
   const shouldBeVisible = "Should be visible";

@@ -42,7 +42,7 @@ return fs.writeFile(globalsFile, JSON.stringify({environments: environmentGlobal
   console.log("Creating rules data file");
   
   let rulesData = {
-    "use-services.js": require("../lib/rules/use-services.js")().getServicesInterfaceMap()
+    "use-services.js": require("../lib/rules/use-services.js")().getServicesInterfaceMap(),
   };
 
   return fs.writeFile(rulesFile, JSON.stringify({rulesData}), err1 => {

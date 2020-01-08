@@ -106,7 +106,7 @@ Sanitizer.prototype = {
 
       get canClear() {
         return true;
-      }
+      },
     },
 
     
@@ -134,7 +134,7 @@ Sanitizer.prototype = {
 
       get canClear() {
         return true;
-      }
+      },
     },
 
     
@@ -174,7 +174,7 @@ Sanitizer.prototype = {
 
       get canClear() {
         return true;
-      }
+      },
     },
 
     
@@ -220,7 +220,7 @@ Sanitizer.prototype = {
 
       get canClear() {
           return true;
-      }
+      },
     },
 
     
@@ -249,7 +249,7 @@ Sanitizer.prototype = {
         
         
         return true;
-      }
+      },
     },
 
     
@@ -272,7 +272,7 @@ Sanitizer.prototype = {
 
       get canClear() {
         return true;
-      }
+      },
     },
 
     
@@ -284,7 +284,7 @@ Sanitizer.prototype = {
 
       get canClear() {
         return true;
-      }
+      },
     },
 
     
@@ -299,12 +299,12 @@ Sanitizer.prototype = {
           let time = startTime * 1000;
           FormHistory.update({
             op: "remove",
-            firstUsedStart: time
+            firstUsedStart: time,
           }, {
             handleCompletion() {
               TelemetryStopwatch.finish("FX_SANITIZE_FORMDATA", refObj);
               resolve();
-            }
+            },
           });
         });
       },
@@ -314,10 +314,10 @@ Sanitizer.prototype = {
         let countDone = {
           handleResult: function(aResult) { count = aResult; },
           handleError: function(aError) { Cu.reportError(aError); },
-          handleCompletion: function(aReason) { aCallback(aReason == 0 && count > 0); }
+          handleCompletion: function(aReason) { aCallback(aReason == 0 && count > 0); },
         };
         FormHistory.count({}, countDone);
-      }
+      },
     },
 
     
@@ -367,7 +367,7 @@ Sanitizer.prototype = {
 
       get canClear() {
         return true;
-      }
+      },
     },
 
     
@@ -382,7 +382,7 @@ Sanitizer.prototype = {
       get canClear() {
         let count = Services.logins.countLogins("", "", ""); 
         return (count > 0);
-      }
+      },
     },
 
     
@@ -406,7 +406,7 @@ Sanitizer.prototype = {
 
       get canClear() {
         return true;
-      }
+      },
     },
 
     
@@ -422,10 +422,10 @@ Sanitizer.prototype = {
             Cu.reportError("Java-side synced tabs clearing failed: " + err);
             aCallback(false);
           });
-      }
-    }
+      },
+    },
 
-  }
+  },
 };
 
 var Sanitizer = new Sanitizer();

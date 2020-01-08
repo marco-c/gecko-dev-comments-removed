@@ -13,7 +13,7 @@ var inspector = Cc["@mozilla.org/jsinspector;1"].getService(Ci.nsIJSInspector);
 
 var requestor = (count) => ({
   url: "http://foo/bar/" + count,
-  connection: "conn" + (count % 3)
+  connection: "conn" + (count % 3),
 });
 
 function run_test() {

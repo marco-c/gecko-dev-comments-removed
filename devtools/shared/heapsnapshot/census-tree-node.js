@@ -707,7 +707,7 @@ function makeFilterPredicate(filterString) {
 exports.censusReportToCensusTreeNode = function(breakdown, report,
                                                  options = {
                                                    invert: false,
-                                                   filter: null
+                                                   filter: null,
                                                  }) {
   
   

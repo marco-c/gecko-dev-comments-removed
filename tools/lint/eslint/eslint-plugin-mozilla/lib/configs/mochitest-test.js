@@ -3,13 +3,13 @@
 
 module.exports = {
   "env": {
-    "browser": true
+    "browser": true,
   },
 
   
   "globals": {
     
-    "SpecialPowers": false
+    "SpecialPowers": false,
   },
 
   "overrides": [{
@@ -17,13 +17,13 @@ module.exports = {
       
       
       
-      "mozilla/simpletest": true
+      "mozilla/simpletest": true,
     },
-    "files": ["*.js"]
+    "files": ["*.js"],
   }],
 
   "plugins": [
-    "mozilla"
+    "mozilla",
   ],
 
   "rules": {
@@ -33,6 +33,6 @@ module.exports = {
     
     
     "mozilla/no-define-cc-etc": "off",
-    "no-shadow": "error"
-  }
+    "no-shadow": "error",
+  },
 };

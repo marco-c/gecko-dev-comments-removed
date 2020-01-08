@@ -54,10 +54,10 @@ function setup_code() {
     new SourceNode(1, 0, "c.js", "" + function c() {
       debugger; 
     }),
-    "\n"
+    "\n",
   ])).toStringWithSourceMap({
     file: "abc.js",
-    sourceRoot: "http://example.com/"
+    sourceRoot: "http://example.com/",
   });
   
 

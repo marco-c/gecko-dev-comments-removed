@@ -15,7 +15,7 @@ var uid = 1;
 
 const trace = {
   log: function(...args) {
-  }
+  },
 };
 
 
@@ -194,7 +194,7 @@ const HarExporter = {
       getTabTarget,
     } = connector;
     const {
-      form: { title, url }
+      form: { title, url },
     } = getTabTarget();
 
     

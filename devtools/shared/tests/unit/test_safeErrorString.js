@@ -44,7 +44,7 @@ function test_with_thrower() {
   const s = DevToolsUtils.safeErrorString({
     toString: () => {
       throw new Error("Muahahaha");
-    }
+    },
   });
   
   Assert.equal(typeof s, "string");
@@ -52,7 +52,7 @@ function test_with_thrower() {
 
 function test_with_psychotic() {
   const s = DevToolsUtils.safeErrorString({
-    toString: () => Object.create(null)
+    toString: () => Object.create(null),
   });
   
   Assert.equal(typeof s, "string");

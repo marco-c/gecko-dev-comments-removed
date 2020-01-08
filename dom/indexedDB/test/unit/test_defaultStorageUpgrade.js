@@ -90,7 +90,7 @@ function* testSteps()
 
     
     { url: "http://localhost", dbName: "dbZ",
-      dbOptions: { version: 1, storage: "temporary" } }
+      dbOptions: { version: 1, storage: "temporary" } },
   ];
 
   function openDatabase(params) {

@@ -26,7 +26,7 @@ function executeSoon(aFun)
   SpecialPowers.Services.tm.dispatchToMainThread({
     run() {
       aFun();
-    }
+    },
   });
 }
 
@@ -72,8 +72,8 @@ function* testHarnessSteps() {
       "set": [
         ["dom.indexedDB.testing", true],
         ["dom.indexedDB.experimental", true],
-        ["javascript.options.wasm_baselinejit", true]  
-      ]
+        ["javascript.options.wasm_baselinejit", true],  
+      ],
     },
     nextTestHarnessStep
   );
@@ -86,8 +86,8 @@ function* testHarnessSteps() {
       {
         type: "indexedDB",
         allow: true,
-        context: document
-      }
+        context: document,
+      },
     ],
     nextTestHarnessStep
   );
@@ -298,7 +298,7 @@ ExpectError.prototype = {
       event.stopPropagation();
     }
     grabEventAndContinueHandler(event);
-  }
+  },
 };
 
 function compareKeys(_k1_, _k2_) {
@@ -499,7 +499,7 @@ function workerScript() {
         _event_.stopPropagation();
       }
       grabEventAndContinueHandler(_event_);
-    }
+    },
   };
 
   self.compareKeys = function(_k1_, _k2_) {

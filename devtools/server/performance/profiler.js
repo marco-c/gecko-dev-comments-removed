@@ -14,7 +14,7 @@ loader.lazyRequireGetter(this, "DeferredTask", "resource://gre/modules/DeferredT
 const PROFILER_SYSTEM_EVENTS = [
   "console-api-profiler",
   "profiler-started",
-  "profiler-stopped"
+  "profiler-stopped",
 ];
 
 
@@ -28,7 +28,7 @@ var DEFAULT_PROFILER_OPTIONS = {
   
   interval: 1,
   features: ["js"],
-  threadFilters: ["GeckoMain"]
+  threadFilters: ["GeckoMain"],
 };
 
 
@@ -216,7 +216,7 @@ const ProfilerManager = (function() {
       return {
         position: position.value,
         totalSize: totalSize.value,
-        generation: generation.value
+        generation: generation.value,
       };
     },
 
@@ -245,7 +245,7 @@ const ProfilerManager = (function() {
         currentTime: elapsedTime,
         position,
         totalSize,
-        generation
+        generation,
       };
     },
 
@@ -256,7 +256,7 @@ const ProfilerManager = (function() {
 
     get sharedLibraries() {
       return {
-        sharedLibraries: Services.profiler.sharedLibraries
+        sharedLibraries: Services.profiler.sharedLibraries,
       };
     },
 
@@ -402,7 +402,7 @@ const ProfilerManager = (function() {
     _emitProfilerStatus: function() {
       this.emitEvent("profiler-status", this.isActive());
       this._poller.arm();
-    }
+    },
   };
 })();
 

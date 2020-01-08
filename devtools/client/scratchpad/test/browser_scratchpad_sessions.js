@@ -9,12 +9,12 @@ const testState = {
   windows: [{
     tabs: [
       { entries: [{ url: "about:blank", triggeringPrincipal_base64 }] },
-    ]
+    ],
   }],
   scratchpads: [
     { text: "text1", executionContext: 1 },
-    { text: "", executionContext: 2, filename: "test.js" }
-  ]
+    { text: "", executionContext: 2, filename: "test.js" },
+  ],
 };
 
 

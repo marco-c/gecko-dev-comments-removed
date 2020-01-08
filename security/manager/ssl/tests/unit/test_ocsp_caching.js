@@ -235,7 +235,7 @@ function add_tests() {
         }
         
         aCallback.onProxyFilterResult(aProxy);
-      }
+      },
     };
     protocolProxyService.registerChannelFilter(proxyFilter, 0);
     

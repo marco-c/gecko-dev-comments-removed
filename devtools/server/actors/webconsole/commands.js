@@ -17,7 +17,7 @@ const KEY_PREFIX = /^--/;
 
 const DEFAULT_VALUE = true;
 const COMMAND_DEFAULT_FLAG = {
-  screenshot: "filename"
+  screenshot: "filename",
 };
 
 

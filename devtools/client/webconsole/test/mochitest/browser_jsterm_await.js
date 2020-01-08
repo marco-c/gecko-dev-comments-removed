@@ -41,7 +41,7 @@ async function performTests() {
   
   const {
     visibleMessages,
-    messagesById
+    messagesById,
   } = hud.ui.consoleOutput.getStore().getState().messages;
   const [commandId, resultId] = visibleMessages;
   const delta = messagesById.get(resultId).timeStamp -

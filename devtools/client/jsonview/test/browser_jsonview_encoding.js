@@ -12,38 +12,38 @@ add_task(async function() {
   const tests = [
     {
       input: bom,
-      output: ""
+      output: "",
     }, {
       input: "%FE%FF", 
-      output: "\uFFFD\uFFFD"
+      output: "\uFFFD\uFFFD",
     }, {
       input: "%FF%FE", 
-      output: "\uFFFD\uFFFD"
+      output: "\uFFFD\uFFFD",
     }, {
       input: bom + "%30",
-      output: "0"
+      output: "0",
     }, {
       input: bom + bom,
-      output: "\uFEFF"
+      output: "\uFEFF",
     }, {
       input: "%00%61",
-      output: "\u0000a"
+      output: "\u0000a",
     }, {
       input: "%61%00",
-      output: "a\u0000"
+      output: "a\u0000",
     }, {
       input: "%30%FF",
-      output: "0\uFFFD" 
+      output: "0\uFFFD", 
     }, {
       input: "%C3%A0",
-      output: "\u00E0" 
+      output: "\u00E0", 
     }, {
       input: "%E2%9D%A4",
-      output: "\u2764" 
+      output: "\u2764", 
     }, {
       input: "%F0%9F%9A%80",
-      output: "\uD83D\uDE80" 
-    }
+      output: "\uD83D\uDE80", 
+    },
   ];
 
   for (const {input, output} of tests) {

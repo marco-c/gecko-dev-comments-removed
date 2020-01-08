@@ -78,7 +78,7 @@ var LEX_TESTS = [
 
   
   
-  ["/* bad comment", ["comment"]]
+  ["/* bad comment", ["comment"]],
 ];
 
 function test_lexer_linecol(cssText, locations) {
@@ -127,7 +127,7 @@ var LINECOL_TESTS = [
   ["simple", ["ident:0:0", ":0:6"]],
   ["\n    stuff", ["whitespace:0:0", "ident:1:4", ":1:9"]],
   ['"string with \\\nnewline"    \r\n', ["string:0:0", "whitespace:1:8",
-                                         ":2:0"]]
+                                         ":2:0"]],
 ];
 
 var EOFCHAR_TESTS = [

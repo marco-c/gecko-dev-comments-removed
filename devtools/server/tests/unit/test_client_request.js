@@ -19,11 +19,11 @@ TestActor.prototype = {
 
   error: function() {
     return {error: "code", message: "human message"};
-  }
+  },
 };
 TestActor.prototype.requestTypes = {
   "hello": TestActor.prototype.hello,
-  "error": TestActor.prototype.error
+  "error": TestActor.prototype.error,
 };
 
 function run_test() {
@@ -79,7 +79,7 @@ function test_client_request_callback() {
   
   gClient.request({
     to: gActorId,
-    type: "hello"
+    type: "hello",
   }, response => {
     Assert.equal(response.from, gActorId);
     Assert.equal(response.hello, "world");
@@ -92,7 +92,7 @@ function test_client_request_promise() {
   
   const request = gClient.request({
     to: gActorId,
-    type: "hello"
+    type: "hello",
   });
 
   request.then(response => {
@@ -108,7 +108,7 @@ function test_client_request_promise_error() {
   
   const request = gClient.request({
     to: gActorId,
-    type: "error"
+    type: "error",
   });
 
   request.then(() => {
@@ -126,7 +126,7 @@ function test_client_request_event_emitter() {
   
   const request = gClient.request({
     to: gActorId,
-    type: "hello"
+    type: "hello",
   });
   request.on("json-reply", reply => {
     Assert.equal(reply.from, gActorId);
@@ -142,14 +142,14 @@ function test_close_client_while_sending_requests() {
   
   const activeRequest = gClient.request({
     to: gActorId,
-    type: "hello"
+    type: "hello",
   });
 
   
   
   const pendingRequest = gClient.request({
     to: gActorId,
-    type: "hello"
+    type: "hello",
   });
 
   const expectReply = defer();
@@ -186,7 +186,7 @@ function test_client_request_after_close() {
   
   const request = gClient.request({
     to: gActorId,
-    type: "hello"
+    type: "hello",
   });
 
   request.then(response => {
@@ -205,7 +205,7 @@ function test_client_request_after_close_callback() {
   
   gClient.request({
     to: gActorId,
-    type: "hello"
+    type: "hello",
   }, response => {
     ok(true, "Request failed after client.close");
     Assert.equal(response.error, "connectionClosed");

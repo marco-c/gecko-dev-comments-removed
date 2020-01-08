@@ -48,7 +48,7 @@ async function openOptions(toolbox) {
     
     get checkbox() {
       return panel.panelDoc.getElementById("accessibility");
-    }
+    },
   };
 }
 

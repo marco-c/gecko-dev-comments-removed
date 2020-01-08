@@ -33,7 +33,7 @@ add_task(async function runTest() {
       ["devtools.browser-toolbox.allow-unsafe-script", true],
       
       
-      ["devtools.debugger.remote-timeout", 120000]
+      ["devtools.debugger.remote-timeout", 120000],
     ]};
     SpecialPowers.pushPrefEnv(options, done);
   });

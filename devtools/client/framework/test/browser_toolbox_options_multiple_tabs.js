@@ -34,7 +34,7 @@ async function openToolboxOptionsInNewTab() {
     
     get checkbox() {
       return panel.panelDoc.getElementById(id);
-    }
+    },
   };
 }
 

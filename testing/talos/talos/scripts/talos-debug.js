@@ -165,7 +165,7 @@ window.talosDebug = {
     }
 
     alert(res);
-  }
+  },
 };
 
 

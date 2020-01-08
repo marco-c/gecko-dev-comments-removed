@@ -22,7 +22,7 @@ const DampTestFront = protocol.FrontClassWithSpec(dampTestSpec, {
     protocol.Front.prototype.initialize.call(this, client);
     
     this.manage(this);
-  }
+  },
 });
 
 module.exports = async function() {

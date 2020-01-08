@@ -234,7 +234,7 @@ ToolboxHostManager.prototype = {
     
     this.postMessage({
       name: "switched-host",
-      hostType
+      hostType,
     });
   },
 
@@ -252,6 +252,6 @@ ToolboxHostManager.prototype = {
     this.host.frame.removeEventListener("unload", this, true);
 
     return this.host.destroy();
-  }
+  },
 };
 exports.ToolboxHostManager = ToolboxHostManager;

@@ -10,11 +10,11 @@
 module.exports = {
   "env": {
     "browser": true,
-    "es6": true
+    "es6": true,
   },
 
   "extends": [
-    "eslint:recommended"
+    "eslint:recommended",
   ],
 
   "globals": {
@@ -78,7 +78,7 @@ module.exports = {
     
     
     
-    "uneval": false
+    "uneval": false,
   },
 
   "overrides": [{
@@ -86,32 +86,32 @@ module.exports = {
     
     "files": "**/*.xml",
     "rules": {
-      "mozilla/use-services": "off"
-    }
+      "mozilla/use-services": "off",
+    },
   }, {
     
     "env": {
       "browser": false,
-      "mozilla/jsm": true
+      "mozilla/jsm": true,
     },
     "files": "**/*.jsm",
     "rules": {
       "mozilla/mark-exported-symbols-as-used": "error",
       "no-unused-vars": ["error", {
         "args": "none",
-        "vars": "all"
-      }]
-    }
+        "vars": "all",
+      }],
+    },
   }],
 
   "parserOptions": {
-    "ecmaVersion": 9
+    "ecmaVersion": 9,
   },
 
   
   "plugins": [
     "mozilla",
-    "no-unsanitized"
+    "no-unsanitized",
   ],
 
   
@@ -180,7 +180,7 @@ module.exports = {
     "key-spacing": ["error", {
       "afterColon": true,
       "beforeColon": false,
-      "mode": "minimum"
+      "mode": "minimum",
     }],
 
     
@@ -280,7 +280,7 @@ module.exports = {
       "ArrayExpression": true,
       "AssignmentExpression": true,
       "ObjectExpression": true,
-      "VariableDeclarator": true
+      "VariableDeclarator": true,
     } }],
 
     
@@ -324,7 +324,7 @@ module.exports = {
     
     "no-unused-vars": ["error", {
       "args": "none",
-      "vars": "local"
+      "vars": "local",
     }],
 
     
@@ -357,7 +357,7 @@ module.exports = {
     
     "quotes": ["error", "double", {
       "allowTemplateLiterals": true,
-      "avoidEscape": true
+      "avoidEscape": true,
     }],
 
     
@@ -377,7 +377,7 @@ module.exports = {
     "space-before-function-paren": ["error", {
       "anonymous": "never",
       "asyncArrow": "always",
-      "named": "never"
+      "named": "never",
     }],
 
     
@@ -390,12 +390,12 @@ module.exports = {
     "space-unary-ops": ["error", {
       "nonwords": false,
       "overrides": {
-        "typeof": false 
+        "typeof": false, 
       },
-      "words": true
+      "words": true,
     }],
 
     
     "spaced-comment": "error",
-  }
+  },
 };

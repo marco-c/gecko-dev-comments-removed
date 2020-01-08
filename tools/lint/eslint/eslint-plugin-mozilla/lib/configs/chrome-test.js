@@ -4,13 +4,13 @@
 module.exports = {
   "env": {
     "browser": true,
-    "mozilla/browser-window": true
+    "mozilla/browser-window": true,
   },
 
   
   "globals": {
     
-    "SpecialPowers": false
+    "SpecialPowers": false,
   },
 
   "overrides": [{
@@ -18,18 +18,18 @@ module.exports = {
       
       
       
-      "mozilla/simpletest": true
+      "mozilla/simpletest": true,
     },
-    "files": ["*.js"]
+    "files": ["*.js"],
   }],
 
   "plugins": [
-    "mozilla"
+    "mozilla",
   ],
 
   rules: {
     "mozilla/import-content-task-globals": "error",
     "mozilla/import-headjs-globals": "error",
-    "mozilla/mark-test-function-used": "error"
-  }
+    "mozilla/mark-test-function-used": "error",
+  },
 };

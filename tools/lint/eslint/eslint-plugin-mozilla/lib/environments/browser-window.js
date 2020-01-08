@@ -33,7 +33,7 @@ const EXTRA_SCRIPTS = [
   "browser/components/downloads/content/downloads.js",
   "browser/components/downloads/content/indicator.js",
   
-  "toolkit/content/editMenuOverlay.js"
+  "toolkit/content/editMenuOverlay.js",
 ];
 
 const extraDefinitions = [
@@ -41,7 +41,7 @@ const extraDefinitions = [
   
   
   {name: "XPCOMUtils", writable: false},
-  {name: "Task", writable: false}
+  {name: "Task", writable: false},
 ];
 
 
@@ -49,7 +49,7 @@ const MAPPINGS = {
   "printUtils.js": "toolkit/components/printing/content/printUtils.js",
   "panelUI.js": "browser/components/customizableui/content/panelUI.js",
   "viewSourceUtils.js":
-    "toolkit/components/viewsource/content/viewSourceUtils.js"
+    "toolkit/components/viewsource/content/viewSourceUtils.js",
 };
 
 const globalScriptsRegExp =
@@ -122,7 +122,7 @@ function mapGlobals(fileGlobals) {
 function getMozillaCentralItems() {
   return {
     globals: mapGlobals(getScriptGlobals()),
-    browserjsScripts: getGlobalScriptsIncludes().concat(EXTRA_SCRIPTS)
+    browserjsScripts: getGlobalScriptsIncludes().concat(EXTRA_SCRIPTS),
   };
 }
 

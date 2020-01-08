@@ -58,7 +58,7 @@ const runtimeExtra = {
   
   connectionParameters: PropTypes.oneOfType([
     PropTypes.shape(networkRuntimeConnectionParameter),
-    PropTypes.shape(usbRuntimeConnectionParameter)
+    PropTypes.shape(usbRuntimeConnectionParameter),
   ]).isRequired,
 
   

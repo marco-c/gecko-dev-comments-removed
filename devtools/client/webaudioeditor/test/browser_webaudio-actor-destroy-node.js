@@ -13,7 +13,7 @@ add_task(async function() {
     once(front, "start-context"),
     
     
-    getN(front, "create-node", 13)
+    getN(front, "create-node", 13),
   ]);
 
   const waitUntilDestroyed = getN(front, "destroy-node", 10);

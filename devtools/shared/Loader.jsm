@@ -175,7 +175,7 @@ DevToolsLoader.prototype = {
       loader.modules[uri] = {
         get exports() {
           return modules[id];
-        }
+        },
       };
     }
 
@@ -219,7 +219,7 @@ DevToolsLoader.prototype = {
 
 
 
-  invisibleToDebugger: Services.appinfo.name !== "Firefox"
+  invisibleToDebugger: Services.appinfo.name !== "Firefox",
 };
 
 
@@ -229,8 +229,8 @@ this.require = this.devtools.require.bind(this.devtools);
 
 
 Object.defineProperty(this.devtools, "Toolbox", {
-  get: () => this.require("devtools/client/framework/toolbox").Toolbox
+  get: () => this.require("devtools/client/framework/toolbox").Toolbox,
 });
 Object.defineProperty(this.devtools, "TargetFactory", {
-  get: () => this.require("devtools/client/framework/target").TargetFactory
+  get: () => this.require("devtools/client/framework/target").TargetFactory,
 });

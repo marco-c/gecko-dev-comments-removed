@@ -9,7 +9,7 @@ const { BrowserLoader } = Cu.import("resource://devtools/client/shared/browser-l
 
 const require = BrowserLoader({
   baseURI: "resource://devtools/client/accessibility/",
-  window
+  window,
 }).require;
 
 

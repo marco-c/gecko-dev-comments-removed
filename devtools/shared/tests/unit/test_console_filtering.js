@@ -25,7 +25,7 @@ var callback = {
       seenTypes |= 4;
     }
     seenMessages++;
-  }
+  },
 };
 
 let policy;
@@ -69,7 +69,7 @@ function run_test() {
   
   
   const console1 = new ConsoleAPI({
-    consoleID: "addon/foo"
+    consoleID: "addon/foo",
   });
 
   

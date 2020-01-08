@@ -25,5 +25,5 @@ module.exports = {
   },
   openLink: () => {},
   
-  createElement: tagName => document.createElement(tagName)
+  createElement: tagName => document.createElement(tagName),
 };

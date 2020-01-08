@@ -12,7 +12,7 @@ const flags = require("devtools/shared/flags");
 
 const GRAPH_DEFAULTS = {
   translate: [20, 20],
-  scale: 1
+  scale: 1,
 };
 
 
@@ -22,12 +22,12 @@ const ARROW_WIDTH = 8;
 
 const MARKER_STYLING = {
   light: "#AAA",
-  dark: "#CED3D9"
+  dark: "#CED3D9",
 };
 Object.defineProperty(this, "MARKER_STYLING", {
   value: MARKER_STYLING,
   enumerable: true,
-  writable: false
+  writable: false,
 });
 
 const GRAPH_DEBOUNCE_TIMER = 100;
@@ -311,5 +311,5 @@ var ContextView = {
 
     this.focusNode(id);
     window.emit(EVENTS.UI_SELECT_NODE, id);
-  }
+  },
 };

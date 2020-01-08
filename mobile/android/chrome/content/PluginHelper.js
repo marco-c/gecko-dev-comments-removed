@@ -37,7 +37,7 @@ var PluginHelper = {
             Services.perms.add(uri, "plugins", Ci.nsIPermissionManager.DENY_ACTION);
 
           
-        }
+        },
       },
       {
         label: Strings.browser.GetStringFromName("clickToPlayPlugins.activate"),
@@ -48,8 +48,8 @@ var PluginHelper = {
 
           PluginHelper.playAllPlugins(aTab.browser.contentWindow);
         },
-        positive: true
-      }
+        positive: true,
+      },
     ];
 
     
@@ -222,5 +222,5 @@ var PluginHelper = {
         
         return null;
     }
-  }
+  },
 };

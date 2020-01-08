@@ -31,7 +31,7 @@ function runTests() {
     method: "display",
     code: message,
     result: message + openComment + "Hello World!" + closeComment,
-    label: "message display output"
+    label: "message display output",
   },
   {
     
@@ -39,21 +39,21 @@ function runTests() {
       code: error1,
       result: error1 + openComment +
             "Exception: Error: Ouch!\n@" + scratchpad.uniqueName + ":1:7" + closeComment,
-      label: "error display output"
+      label: "error display output",
   },
   {
     
       method: "display",
       code: error2,
       result: error2 + openComment + "Exception: A thrown string" + closeComment,
-      label: "thrown string display output"
+      label: "thrown string display output",
   },
   {
     
       method: "display",
       code: error3,
       result: error3 + openComment + "Exception: [object Object]" + closeComment,
-      label: "thrown object display output"
+      label: "thrown object display output",
   },
   {
     
@@ -62,14 +62,14 @@ function runTests() {
       result: error4 + openComment + "Exception: HierarchyRequestError: Node cannot be inserted " +
             "at the specified point in the hierarchy\n@" +
             scratchpad.uniqueName + ":1:0" + closeComment,
-      label: "Alternative format error display output"
+      label: "Alternative format error display output",
   },
   {
     
       method: "run",
       code: message,
       result: message,
-      label: "message run output"
+      label: "message run output",
   },
   {
     
@@ -77,21 +77,21 @@ function runTests() {
       code: error1,
       result: error1 + openComment +
             "Exception: Error: Ouch!\n@" + scratchpad.uniqueName + ":1:7" + closeComment,
-      label: "error run output"
+      label: "error run output",
   },
   {
     
       method: "run",
       code: error2,
       result: error2 + openComment + "Exception: A thrown string" + closeComment,
-      label: "thrown string run output"
+      label: "thrown string run output",
   },
   {
     
       method: "run",
       code: error3,
       result: error3 + openComment + "Exception: [object Object]" + closeComment,
-      label: "thrown object run output"
+      label: "thrown object run output",
   },
   {
     
@@ -100,7 +100,7 @@ function runTests() {
       result: error4 + openComment + "Exception: HierarchyRequestError: Node cannot be inserted " +
             "at the specified point in the hierarchy\n@" +
             scratchpad.uniqueName + ":1:0" + closeComment,
-      label: "Alternative format error run output"
+      label: "Alternative format error run output",
   }];
 
   runAsyncTests(scratchpad, tests).then(finish);

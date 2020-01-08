@@ -452,7 +452,7 @@ MessageManagerTunnel.prototype = {
 
   OUTER_TO_INNER_FRAME_SCRIPTS: [
     
-    "resource://devtools/server/startup/frame.js"
+    "resource://devtools/server/startup/frame.js",
   ],
 
   get outer() {

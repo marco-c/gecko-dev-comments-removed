@@ -218,7 +218,7 @@ function* testSteps()
     
     
     { attrs: { userContextId: 1 }, url: "http://localhost:98", dbName: "dbT",
-      dbOptions: { version: 1, storage: "default" } }
+      dbOptions: { version: 1, storage: "default" } },
   ];
 
   function openDatabase(params) {

@@ -113,8 +113,8 @@ var CallsListView = extend(WidgetMethods, {
       this.push([view], {
         staged: true,
         attachment: {
-          actor: call
-        }
+          actor: call,
+        },
       });
 
       
@@ -449,5 +449,5 @@ var CallsListView = extend(WidgetMethods, {
         window.emit(EVENTS.SOURCE_NOT_FOUND_IN_JS_DEBUGGER);
       }
     });
-  }
+  },
 });

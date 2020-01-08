@@ -36,7 +36,7 @@ class GeckoViewNavigation extends GeckoViewModule {
       "GeckoView:GoForward",
       "GeckoView:LoadUri",
       "GeckoView:Reload",
-      "GeckoView:Stop"
+      "GeckoView:Stop",
     ]);
   }
 
@@ -111,7 +111,7 @@ class GeckoViewNavigation extends GeckoViewModule {
             Services.obs.removeObserver(handler, "geckoview-window-created");
             resolve(aSubject);
           }
-        }
+        },
       };
 
       
@@ -129,14 +129,14 @@ class GeckoViewNavigation extends GeckoViewModule {
 
     const message = {
       type: "GeckoView:OnNewSession",
-      uri: aUri ? aUri.displaySpec : ""
+      uri: aUri ? aUri.displaySpec : "",
     };
 
     let browser = undefined;
     this.eventDispatcher.sendRequestForResult(message).then(sessionId => {
       return this.waitAndSetupWindow(sessionId, {
         opener: (aFlags & Ci.nsIBrowserDOMWindow.OPEN_NO_OPENER) ? null : aOpener,
-        nextTabParentId: aNextTabParentId
+        nextTabParentId: aNextTabParentId,
       });
     }).then(window => {
       browser = (window && window.browser) || null;
@@ -156,7 +156,7 @@ class GeckoViewNavigation extends GeckoViewModule {
                                 where=${aWhere} flags=${aFlags}`;
 
     if (LoadURIDelegate.load(this.window, this.eventDispatcher,
-                             aUri, aWhere, aFlags, aTriggeringPrincipal)) {
+                             aUri, aWhere, aFlags)) {
       
       Components.returnCode = Cr.NS_ERROR_ABORT;
       return null;
@@ -180,8 +180,7 @@ class GeckoViewNavigation extends GeckoViewModule {
                                        name=${aName}`;
 
     if (LoadURIDelegate.load(this.window, this.eventDispatcher,
-                             aUri, aWhere, aFlags,
-                             aParams.triggeringPrincipal)) {
+                             aUri, aWhere, aFlags)) {
       
       Components.returnCode = Cr.NS_ERROR_ABORT;
       return null;
@@ -202,7 +201,7 @@ class GeckoViewNavigation extends GeckoViewModule {
                           where=${aWhere} flags=${aFlags}`;
 
     if (LoadURIDelegate.load(this.window, this.eventDispatcher,
-                             aUri, aWhere, aFlags, aTriggeringPrincipal)) {
+                             aUri, aWhere, aFlags)) {
       return null;
     }
 
@@ -232,8 +231,7 @@ class GeckoViewNavigation extends GeckoViewModule {
 
   
   openURIInFrame(aUri, aParams, aWhere, aFlags, aNextTabParentId, aName) {
-    const browser = this.handleOpenUri(aUri, null, aWhere, aFlags,
-                                       aParams.triggeringPrincipal,
+    const browser = this.handleOpenUri(aUri, null, aWhere, aFlags, null,
                                        aNextTabParentId);
     return browser;
   }

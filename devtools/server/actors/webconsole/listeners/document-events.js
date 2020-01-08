@@ -69,7 +69,7 @@ DocumentEventsListener.prototype = {
       
       
       
-      time: window.performance.timing.domInteractive
+      time: window.performance.timing.domInteractive,
     };
     this.console.conn.send(packet);
   },
@@ -88,7 +88,7 @@ DocumentEventsListener.prototype = {
       
       
       
-      time: window.performance.timing.domComplete
+      time: window.performance.timing.domComplete,
     };
     this.console.conn.send(packet);
   },
@@ -97,5 +97,5 @@ DocumentEventsListener.prototype = {
     EventEmitter.off(this.console.parentActor, "window-ready", this.onWindowReady);
 
     this.listener = null;
-  }
+  },
 };

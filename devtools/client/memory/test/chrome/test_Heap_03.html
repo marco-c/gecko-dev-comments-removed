@@ -22,7 +22,7 @@
 
              for (const state of [dominatorTreeState.COMPUTING, dominatorTreeState.FETCHING]) {
                await renderComponent(Heap(immutableUpdate(TEST_HEAP_PROPS, {
-                 view: { state: viewState.DOMINATOR_TREE, },
+                 view: { state: viewState.DOMINATOR_TREE },
                  snapshot: immutableUpdate(TEST_HEAP_PROPS.snapshot, {
                    dominatorTree: immutableUpdate(TEST_HEAP_PROPS.snapshot.dominatorTree, {
                      state,
@@ -38,10 +38,10 @@
 
              for (
               const state of [
-               dominatorTreeState.LOADED, dominatorTreeState.INCREMENTAL_FETCHING
+               dominatorTreeState.LOADED, dominatorTreeState.INCREMENTAL_FETCHING,
               ]) {
                await renderComponent(Heap(immutableUpdate(TEST_HEAP_PROPS, {
-                 view: { state: viewState.DOMINATOR_TREE, },
+                 view: { state: viewState.DOMINATOR_TREE },
                  snapshot: immutableUpdate(TEST_HEAP_PROPS.snapshot, {
                    dominatorTree: immutableUpdate(TEST_HEAP_PROPS.snapshot.dominatorTree, {
                      state,
@@ -56,7 +56,7 @@
              }
 
              await renderComponent(Heap(immutableUpdate(TEST_HEAP_PROPS, {
-               view: { state: viewState.DOMINATOR_TREE, },
+               view: { state: viewState.DOMINATOR_TREE },
                snapshot: immutableUpdate(TEST_HEAP_PROPS.snapshot, {
                  dominatorTree: {
                    state: dominatorTreeState.ERROR,

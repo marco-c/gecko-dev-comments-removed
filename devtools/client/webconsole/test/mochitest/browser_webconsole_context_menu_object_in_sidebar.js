@@ -36,7 +36,7 @@ add_task(async function() {
   if (oiNodes.length === 1) {
     
     await waitForNodeMutation(objectInspector, {
-      childList: true
+      childList: true,
     });
   }
 
@@ -59,7 +59,7 @@ add_task(async function() {
   if (oiNodes.length === 1) {
     
     await waitForNodeMutation(objectInspector, {
-      childList: true
+      childList: true,
     });
   }
 

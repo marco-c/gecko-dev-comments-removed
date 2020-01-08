@@ -40,7 +40,7 @@ function enableNetProvider(hud) {
       const actions = {
         updateRequest: (id, data, batch) => {
           proxy.dispatchRequestUpdate(id, data);
-        }
+        },
       };
 
       
@@ -49,7 +49,7 @@ function enableNetProvider(hud) {
       if (!dataProvider && proxy.webConsoleClient) {
         dataProvider = new DataProvider({
           actions,
-          webConsoleClient: proxy.webConsoleClient
+          webConsoleClient: proxy.webConsoleClient,
         });
 
         

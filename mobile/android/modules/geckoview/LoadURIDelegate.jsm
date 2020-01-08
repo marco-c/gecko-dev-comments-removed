@@ -18,23 +18,16 @@ GeckoViewUtils.initLogging("LoadURIDelegate", this);
 const LoadURIDelegate = {
   
   
-  load: function(aWindow, aEventDispatcher, aUri, aWhere, aFlags,
-                 aTriggeringPrincipal) {
+  load: function(aWindow, aEventDispatcher, aUri, aWhere, aFlags) {
     if (!aWindow) {
       return false;
     }
-
-    const triggerUri = aTriggeringPrincipal &&
-                       (aTriggeringPrincipal.isNullPrincipal
-                        ? null
-                        : aTriggeringPrincipal.URI);
 
     const message = {
       type: "GeckoView:OnLoadRequest",
       uri: aUri ? aUri.displaySpec : "",
       where: aWhere,
       flags: aFlags,
-      triggerUri: triggerUri && triggerUri.displaySpec,
     };
 
     let handled = undefined;
@@ -65,7 +58,7 @@ const LoadURIDelegate = {
       uri: aUri && aUri.spec,
       error: aError,
       errorModule: aErrorModule,
-      errorClass
+      errorClass,
     };
 
     let errorPageURI = undefined;
@@ -85,5 +78,5 @@ const LoadURIDelegate = {
         aWindow.closed || errorPageURI !== undefined);
 
     return errorPageURI;
-  }
+  },
 };

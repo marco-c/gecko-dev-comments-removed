@@ -25,7 +25,7 @@ function run_test() {
         
         
         Services.tm.dispatchToMainThread({
-          run: test_black_box
+          run: test_black_box,
         });
       });
   });

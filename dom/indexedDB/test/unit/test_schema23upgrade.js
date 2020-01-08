@@ -9,7 +9,7 @@ function* testSteps()
 {
   const openParams = [
     
-    { url: "http://www.mozilla.org", dbName: "dbB", dbVersion: 1 }
+    { url: "http://www.mozilla.org", dbName: "dbB", dbVersion: 1 },
   ];
 
   clearAllDatabases(continueToNextStepSync);

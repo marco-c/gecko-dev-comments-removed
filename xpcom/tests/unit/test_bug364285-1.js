@@ -7,7 +7,7 @@ var nameArray = [
  "\u65E5\u672C\u8A9E",                              
  "\u4E2D\u6587",                                    
  "\uD55C\uAD6D\uC5B4",                              
- "\uD801\uDC0F\uD801\uDC2D\uD801\uDC3B\uD801\uDC2B" 
+ "\uD801\uDC0F\uD801\uDC2D\uD801\uDC3B\uD801\uDC2B", 
 ];
 
 function getTempDir() {

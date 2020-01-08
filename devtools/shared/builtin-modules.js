@@ -63,7 +63,7 @@ const {
     "TextEncoder",
     "URL",
     "XMLHttpRequest",
-  ]
+  ],
 });
 
 
@@ -90,12 +90,12 @@ function defineLazyGetter(object, name, lambda) {
         value,
         writable: true,
         configurable: true,
-        enumerable: true
+        enumerable: true,
       });
       return value;
     },
     configurable: true,
-    enumerable: true
+    enumerable: true,
   });
 }
 
@@ -197,12 +197,12 @@ function lazyRequireGetter(obj, property, module, destructure) {
         value,
         writable: true,
         configurable: true,
-        enumerable: true
+        enumerable: true,
       });
       return value;
     },
     configurable: true,
-    enumerable: true
+    enumerable: true,
   });
 }
 
@@ -248,7 +248,7 @@ defineLazyGetter(exports.modules, "Timer", () => {
   
   return {
     setTimeout,
-    clearTimeout
+    clearTimeout,
   };
 });
 
@@ -291,7 +291,7 @@ exports.globals = {
     lazyServiceGetter: defineLazyServiceGetter,
     lazyRequireGetter: lazyRequireGetter,
     
-    id: null
+    id: null,
   },
   Node,
   reportError: Cu.reportError,
@@ -314,7 +314,7 @@ function lazyGlobal(name, getter) {
       return globals[name];
     },
     configurable: true,
-    enumerable: true
+    enumerable: true,
   });
 }
 

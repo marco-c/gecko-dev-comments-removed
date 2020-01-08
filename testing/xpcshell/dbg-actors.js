@@ -29,7 +29,7 @@ function createRootActor(connection) {
       
       
       Services.obs.notifyObservers(null, "xpcshell-test-devtools-shutdown");
-    }
+    },
   };
   return new RootActor(connection, parameters);
 }

@@ -59,7 +59,7 @@ function* testSteps()
 
     
     { url: "http://localhost:90", dbName: "dbL",
-      dbOptions: { version: 1, storage: "default" } }
+      dbOptions: { version: 1, storage: "default" } },
   ];
 
   function openDatabase(params) {

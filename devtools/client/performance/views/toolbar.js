@@ -22,7 +22,7 @@ var ToolbarView = {
 
     this.optionsView = new OptionsView({
       branchName: BRANCH_NAME,
-      menupopup: this._popup
+      menupopup: this._popup,
     });
 
     
@@ -154,7 +154,7 @@ var ToolbarView = {
     this.emit(EVENTS.UI_PREF_CHANGED, prefName, value);
   },
 
-  toString: () => "[object ToolbarView]"
+  toString: () => "[object ToolbarView]",
 };
 
 EventEmitter.decorate(ToolbarView);

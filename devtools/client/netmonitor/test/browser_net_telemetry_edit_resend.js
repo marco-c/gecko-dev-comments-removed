@@ -47,7 +47,7 @@ add_task(async function() {
 
   
   checkTelemetryEvent({}, {
-    method: "edit_resend"
+    method: "edit_resend",
   });
 
   return teardown(monitor);
