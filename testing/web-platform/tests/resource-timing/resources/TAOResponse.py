@@ -23,6 +23,10 @@ def main(request, response):
     
         response.headers.set('Timing-Allow-Origin', origin)
         response.headers.append('Timing-Allow-Origin', '*')
+    elif tao == 'multi_wildcard':
+    
+        response.headers.set('Timing-Allow-Origin', '*')
+        response.headers.append('Timing-Allow-Origin', '*')
     elif tao == 'match_origin':
     
         response.headers.set('Timing-Allow-Origin', origin)
