@@ -59,3 +59,31 @@ add_task(async function test_search() {
     Assert.equal(this.rows.length, 3);
   });
 });
+
+add_task(async function test_search_delayed() {
+  await AboutConfigTest.withNewTab(async function() {
+    let prefs = this.document.getElementById("prefs");
+
+    
+    this.search("test.aboutconfig.a");
+    Assert.equal(this.rows.length, 2);
+
+    
+    
+    let prefsTableChanged = new Promise(resolve => {
+      let observer = new MutationObserver(() => {
+        observer.disconnect();
+        resolve();
+      });
+      observer.observe(prefs, { childList: true });
+    });
+
+    
+    EventUtils.synthesizeKey("b");
+    Assert.equal(this.rows.length, 2);
+
+    
+    await prefsTableChanged;
+    Assert.equal(this.rows.length, 1);
+  });
+});

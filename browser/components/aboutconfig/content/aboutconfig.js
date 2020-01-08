@@ -2,10 +2,14 @@
 
 
 
+ChromeUtils.import("resource://gre/modules/DeferredTask.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/Preferences.jsm");
 
+const SEARCH_TIMEOUT_MS = 500;
+
 let gDefaultBranch = Services.prefs.getDefaultBranch("");
+let gFilterPrefsTask = new DeferredTask(() => filterPrefs(), SEARCH_TIMEOUT_MS);
 
 
 
@@ -289,10 +293,21 @@ function loadPrefs() {
     new PrefRow(name);
   }
 
-  search.addEventListener("keypress", e => {
-    if (e.key == "Enter") {
-      filterPrefs();
+  search.addEventListener("keypress", event => {
+    switch (event.key) {
+      case "Escape":
+        search.value = "";
+        
+      case "Enter":
+        gFilterPrefsTask.disarm();
+        filterPrefs();
     }
+  });
+
+  search.addEventListener("input", () => {
+    
+    gFilterPrefsTask.disarm();
+    gFilterPrefsTask.arm();
   });
 
   prefs.addEventListener("click", event => {
