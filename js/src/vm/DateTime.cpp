@@ -626,13 +626,17 @@ IsOlsonCompatibleWindowsTimeZoneId(const char* tz)
 }
 #elif ENABLE_INTL_API && defined(ICU_TZ_HAS_RECREATE_DEFAULT)
 static inline const char*
-TZContainsPath(const char* tzVar)
+TZContainsAbsolutePath(const char* tzVar)
 {
     
     
-    
-    
-    return tzVar[0] == ':' && tzVar[1] == '/' ? tzVar + 1 : nullptr;
+    if (tzVar[0] == ':' && tzVar[1] == '/') {
+        return tzVar + 1;
+    }
+    if (tzVar[0] == '/') {
+        return tzVar;
+    }
+    return nullptr;
 }
 
 
@@ -780,7 +784,10 @@ js::ResyncICUDefaultTimeZone()
             
             
             
-            if (const char* tzlink = TZContainsPath(tz))
+            
+            
+            
+            if (const char* tzlink = TZContainsAbsolutePath(tz))
                 tzid.setTo(ReadTimeZoneLink(tzlink));
 #endif 
 
