@@ -16,42 +16,59 @@ function run_test() {
   let sub1Principal = getPrincipalFromURI("http://sub1.example.com");
   pm.addFromPrincipal(sub1Principal, "test/subdomains", pm.ALLOW_ACTION, 0, 0);
   Assert.equal(pm.testPermissionFromPrincipal(sub1Principal, "test/subdomains"), pm.ALLOW_ACTION);
+  Assert.equal(pm.testPermissionOriginNoSuffix(sub1Principal.originNoSuffix, "test/subdomains"), pm.ALLOW_ACTION);
 
   
   let subsubPrincipal = getPrincipalFromURI("http://sub.sub1.example.com");
   Assert.equal(pm.testPermissionFromPrincipal(subsubPrincipal, "test/subdomains"), pm.ALLOW_ACTION);
+  Assert.equal(pm.testPermissionOriginNoSuffix(subsubPrincipal.originNoSuffix, "test/subdomains"), pm.ALLOW_ACTION);
 
   
   let sub2Principal = getPrincipalFromURI("http://sub2.example.com");
   Assert.equal(pm.testPermissionFromPrincipal(sub2Principal, "test/subdomains"), pm.UNKNOWN_ACTION);
+  Assert.equal(pm.testPermissionOriginNoSuffix(sub2Principal.originNoSuffix, "test/subdomains"), pm.UNKNOWN_ACTION);
 
   
   pm.removeFromPrincipal(sub1Principal, "test/subdomains");
   Assert.equal(pm.testPermissionFromPrincipal(sub1Principal, "test/subdomains"), pm.UNKNOWN_ACTION);
+  Assert.equal(pm.testPermissionOriginNoSuffix(sub1Principal.originNoSuffix, "test/subdomains"), pm.UNKNOWN_ACTION);
 
   
   let mainPrincipal = getPrincipalFromURI("http://example.com");
   pm.addFromPrincipal(mainPrincipal, "test/subdomains", pm.ALLOW_ACTION, 0, 0);
   Assert.equal(pm.testPermissionFromPrincipal(mainPrincipal, "test/subdomains"), pm.ALLOW_ACTION);
+  Assert.equal(pm.testPermissionOriginNoSuffix(mainPrincipal.originNoSuffix, "test/subdomains"), pm.ALLOW_ACTION);
 
   
   Assert.equal(pm.testPermissionFromPrincipal(sub1Principal, "test/subdomains"), pm.ALLOW_ACTION);
+  Assert.equal(pm.testPermissionOriginNoSuffix(sub1Principal.originNoSuffix, "test/subdomains"), pm.ALLOW_ACTION);
   Assert.equal(pm.testPermissionFromPrincipal(sub2Principal, "test/subdomains"), pm.ALLOW_ACTION);
+  Assert.equal(pm.testPermissionOriginNoSuffix(sub2Principal.originNoSuffix, "test/subdomains"), pm.ALLOW_ACTION);
   Assert.equal(pm.testPermissionFromPrincipal(subsubPrincipal, "test/subdomains"), pm.ALLOW_ACTION);
+  Assert.equal(pm.testPermissionOriginNoSuffix(subsubPrincipal.originNoSuffix, "test/subdomains"), pm.ALLOW_ACTION);
 
   
   pm.removeFromPrincipal(mainPrincipal, "test/subdomains");
   Assert.equal(pm.testPermissionFromPrincipal(mainPrincipal, "test/subdomains"), pm.UNKNOWN_ACTION);
+  Assert.equal(pm.testPermissionOriginNoSuffix(mainPrincipal.originNoSuffix, "test/subdomains"), pm.UNKNOWN_ACTION);
   Assert.equal(pm.testPermissionFromPrincipal(sub1Principal, "test/subdomains"), pm.UNKNOWN_ACTION);
+  Assert.equal(pm.testPermissionOriginNoSuffix(sub1Principal.originNoSuffix, "test/subdomains"), pm.UNKNOWN_ACTION);
   Assert.equal(pm.testPermissionFromPrincipal(sub2Principal, "test/subdomains"), pm.UNKNOWN_ACTION);
+  Assert.equal(pm.testPermissionOriginNoSuffix(sub2Principal.originNoSuffix, "test/subdomains"), pm.UNKNOWN_ACTION);
   Assert.equal(pm.testPermissionFromPrincipal(subsubPrincipal, "test/subdomains"), pm.UNKNOWN_ACTION);
+  Assert.equal(pm.testPermissionOriginNoSuffix(subsubPrincipal.originNoSuffix, "test/subdomains"), pm.UNKNOWN_ACTION);
 
   
   let crazyPrincipal = getPrincipalFromURI("http://com");
   pm.addFromPrincipal(crazyPrincipal, "test/subdomains", pm.ALLOW_ACTION, 0, 0);
   Assert.equal(pm.testPermissionFromPrincipal(crazyPrincipal, "test/subdomains"),  pm.ALLOW_ACTION);
+  Assert.equal(pm.testPermissionOriginNoSuffix(crazyPrincipal.originNoSuffix, "test/subdomains"),  pm.ALLOW_ACTION);
   Assert.equal(pm.testPermissionFromPrincipal(mainPrincipal, "test/subdomains"),   pm.UNKNOWN_ACTION);
+  Assert.equal(pm.testPermissionOriginNoSuffix(mainPrincipal.originNoSuffix, "test/subdomains"),   pm.UNKNOWN_ACTION);
   Assert.equal(pm.testPermissionFromPrincipal(sub1Principal, "test/subdomains"),   pm.UNKNOWN_ACTION);
+  Assert.equal(pm.testPermissionOriginNoSuffix(sub1Principal.originNoSuffix, "test/subdomains"),   pm.UNKNOWN_ACTION);
   Assert.equal(pm.testPermissionFromPrincipal(sub2Principal, "test/subdomains"),   pm.UNKNOWN_ACTION);
+  Assert.equal(pm.testPermissionOriginNoSuffix(sub2Principal.originNoSuffix, "test/subdomains"),   pm.UNKNOWN_ACTION);
   Assert.equal(pm.testPermissionFromPrincipal(subsubPrincipal, "test/subdomains"), pm.UNKNOWN_ACTION);
+  Assert.equal(pm.testPermissionOriginNoSuffix(subsubPrincipal.originNoSuffix, "test/subdomains"), pm.UNKNOWN_ACTION);
 }
