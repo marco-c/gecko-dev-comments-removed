@@ -1221,7 +1221,7 @@ public class BrowserSearch extends HomeFragment
             
             
             
-            Pattern pattern = Pattern.compile(mSearchTerm, Pattern.CASE_INSENSITIVE);
+            Pattern pattern = Pattern.compile(mSearchTerm, Pattern.CASE_INSENSITIVE | Pattern.LITERAL);
             Matcher matcher = pattern.matcher(title.toString());
 
             while (matcher.find()) {
