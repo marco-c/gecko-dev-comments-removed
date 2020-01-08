@@ -1379,6 +1379,12 @@ pref("identity.sync.tokenserver.uri", "https://token.services.mozilla.com/1.0/sy
 
 
 
+
+
+pref("identity.fxaccounts.autoconfig.uri", "");
+
+
+
 pref("identity.mobilepromo.android", "https://www.mozilla.org/firefox/android/?utm_source=firefox-browser&utm_medium=firefox-browser&utm_campaign=");
 pref("identity.mobilepromo.ios", "https://www.mozilla.org/firefox/ios/?utm_source=firefox-browser&utm_medium=firefox-browser&utm_campaign=");
 
