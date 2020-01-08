@@ -66,6 +66,10 @@ class TabBase {
     this.id = id;
     this.nativeTab = nativeTab;
     this.activeTabWindowID = null;
+
+    if (!extension.privateBrowsingAllowed && this._incognito) {
+      throw new ExtensionError(`Invalid tab ID: ${id}`);
+    }
   }
 
   
@@ -799,6 +803,9 @@ const WINDOW_ID_CURRENT = -2;
 
 class WindowBase {
   constructor(extension, window, id) {
+    if (!extension.canAccessWindow(window)) {
+      throw new ExtensionError("extension cannot access window");
+    }
     this.extension = extension;
     this.window = window;
     this.id = id;
@@ -1406,6 +1413,31 @@ class WindowTrackerBase extends EventEmitter {
 
 
 
+  get topNonPBWindow() {
+    return Services.wm.getMostRecentNonPBWindow("navigator:browser");
+  }
+
+  
+
+
+
+
+
+
+
+  getTopWindow(context) {
+    if (context && !context.privateBrowsingAllowed) {
+      return this.topNonPBWindow;
+    }
+    return this.topWindow;
+  }
+
+  
+
+
+
+
+
 
 
 
@@ -1423,7 +1455,7 @@ class WindowTrackerBase extends EventEmitter {
 
 
   getCurrentWindow(context) {
-    return (context && context.currentWindow) || this.topWindow;
+    return (context && context.currentWindow) || this.getTopWindow(context);
   }
 
   
@@ -1450,9 +1482,11 @@ class WindowTrackerBase extends EventEmitter {
     let window = Services.wm.getOuterWindowWithId(id);
     if (window && !window.closed && (window.document.readyState !== "complete"
         || this.isBrowserWindow(window))) {
-      
-      
-      return window;
+      if (!context || context.canAccessWindow(window)) {
+        
+        
+        return window;
+      }
     }
 
     if (strict) {
@@ -1833,7 +1867,23 @@ class TabManagerBase {
 
 
   getWrapper(nativeTab) {
-    return this._tabs.get(nativeTab);
+    if (this.canAccessTab(nativeTab)) {
+      return this._tabs.get(nativeTab);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  canAccessTab(nativeTab) {
+    throw new Error("Not implemented");
   }
 
   
@@ -1974,7 +2024,9 @@ class WindowManagerBase {
 
 
   getWrapper(window) {
-    return this._windows.get(window);
+    if (this.extension.canAccessWindow(window)) {
+      return this._windows.get(window);
+    }
   }
 
   
@@ -2008,11 +2060,14 @@ class WindowManagerBase {
           return;
         }
         if (lastFocusedWindow === true) {
-          yield windowManager.getWrapper(global.windowTracker.topWindow);
+          let window = global.windowTracker.getTopWindow(context);
+          if (window) {
+            yield windowManager.getWrapper(window);
+          }
           return;
         }
       }
-      yield* windowManager.getAll();
+      yield* windowManager.getAll(context);
     }
     for (let windowWrapper of candidates(this)) {
       if (!queryInfo || windowWrapper.matches(queryInfo, context)) {
