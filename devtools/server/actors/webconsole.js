@@ -27,6 +27,7 @@ loader.lazyRequireGetter(this, "StackTraceCollector", "devtools/shared/webconsol
 loader.lazyRequireGetter(this, "JSPropertyProvider", "devtools/shared/webconsole/js-property-provider", true);
 loader.lazyRequireGetter(this, "Parser", "resource://devtools/shared/Parser.jsm", true);
 loader.lazyRequireGetter(this, "NetUtil", "resource://gre/modules/NetUtil.jsm", true);
+loader.lazyRequireGetter(this, "WebConsoleCommands", "devtools/server/actors/webconsole/utils", true);
 loader.lazyRequireGetter(this, "addWebConsoleCommands", "devtools/server/actors/webconsole/utils", true);
 loader.lazyRequireGetter(this, "formatCommand", "devtools/server/actors/webconsole/commands", true);
 loader.lazyRequireGetter(this, "isCommand", "devtools/server/actors/webconsole/commands", true);
@@ -1134,9 +1135,14 @@ WebConsoleActor.prototype =
           ));
     }
 
+    
+    
+    
+    matches = [...new Set(matches)].sort();
+
     return {
       from: this.actorID,
-      matches: matches.sort(),
+      matches,
       matchProp: result.matchProp,
     };
   },
@@ -1421,36 +1427,32 @@ WebConsoleActor.prototype =
     
     
     
-    let found$ = false, found$$ = false, disableScreenshot = false;
+    
+    const availableHelpers = [...WebConsoleCommands._originalCommands.keys()]
+      .filter(h => h !== "print");
+
+    let helpersToDisable = [];
+    const helperCache = {};
+
     
     
     if (!isCmd) {
-      
-      disableScreenshot = true;
       if (frame) {
         const env = frame.environment;
         if (env) {
-          found$ = !!env.find("$");
-          found$$ = !!env.find("$$");
+          helpersToDisable = availableHelpers.filter(name => !!env.find(name));
         }
       } else {
-        found$ = !!dbgWindow.getOwnPropertyDescriptor("$");
-        found$$ = !!dbgWindow.getOwnPropertyDescriptor("$$");
+        helpersToDisable = availableHelpers.filter(name =>
+          !!dbgWindow.getOwnPropertyDescriptor(name));
       }
+      
+      helpersToDisable.push("screenshot");
     }
 
-    let $ = null, $$ = null, screenshot = null;
-    if (found$) {
-      $ = bindings.$;
-      delete bindings.$;
-    }
-    if (found$$) {
-      $$ = bindings.$$;
-      delete bindings.$$;
-    }
-    if (disableScreenshot) {
-      screenshot = bindings.screenshot;
-      delete bindings.screenshot;
+    for (const helper of helpersToDisable) {
+      helperCache[helper] = bindings[helper];
+      delete bindings[helper];
     }
 
     
@@ -1547,14 +1549,8 @@ WebConsoleActor.prototype =
     delete helpers.helperResult;
     delete helpers.selectedNode;
 
-    if ($) {
-      bindings.$ = $;
-    }
-    if ($$) {
-      bindings.$$ = $$;
-    }
-    if (screenshot) {
-      bindings.screenshot = screenshot;
+    for (const [helperName, helper] of Object.entries(helperCache)) {
+      bindings[helperName] = helper;
     }
 
     if (bindings._self) {
