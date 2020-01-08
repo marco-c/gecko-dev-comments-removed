@@ -295,6 +295,9 @@ function promiseMessage(aMessage, aAction) {
 function promisePopupNotificationShown(aName, aAction) {
   return new Promise(resolve => {
 
+    
+    window.focus();
+
     PopupNotifications.panel.addEventListener("popupshown", function() {
       ok(!!PopupNotifications.getNotification(aName), aName + " notification shown");
       ok(PopupNotifications.isPanelOpen, "notification panel open");
