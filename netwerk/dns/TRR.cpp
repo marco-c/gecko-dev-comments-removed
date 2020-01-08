@@ -140,8 +140,7 @@ TRR::DohEncode(nsCString &aBody, bool aDisableECS)
     aBody += 4;    
                    
     aBody += '\0'; 
-                   
-    aBody += 1;    
+    aBody += AF_INET; 
 
     aBody += '\0'; 
     aBody += '\0';
