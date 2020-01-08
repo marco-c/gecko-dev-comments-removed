@@ -365,16 +365,10 @@ this.AntiTracking = {
               let originLog = contentBlockingLog[trackerOrigin];
               for (let i = 0; i < originLog.length; ++i) {
                 let item = originLog[i];
-                switch (item[0]) {
-                case Ci.nsIWebProgressListener.STATE_LOADED_TRACKING_CONTENT:
-                  is(item[1], true, "Correct blocking status reported");
-                  ok(item[2] >= 1, "Correct repeat count reported");
-                  break;
-                case Ci.nsIWebProgressListener.STATE_COOKIES_LOADED:
-                  is(item[1], true, "Correct blocking status reported");
-                  ok(item[2] >= 1, "Correct repeat count reported");
-                  break;
-                }
+                is(item[0], Ci.nsIWebProgressListener.STATE_LOADED_TRACKING_CONTENT,
+                   "Correct blocking type must be reported");
+                is(item[1], true, "Correct blocking status reported");
+                ok(item[2] >= 1, "Correct repeat count reported");
               }
             }
           }
@@ -554,11 +548,20 @@ this.AntiTracking = {
             contentBlockingLog = JSON.parse(contentBlockingLogJSON);
           } catch (e) {
           }
+          
+          
+          
           if (cookieBlocked) {
+            if (cookieBlocked == 1) {
+              is(oldState & Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER, 0,
+                 "When blocking the first cookie, old state should not have had the " +
+                 "STATE_COOKIES_BLOCKED_TRACKER bit");
+            }
+
             for (let trackerOrigin in contentBlockingLog) {
               is(trackerOrigin, TEST_3RD_PARTY_DOMAIN, "Correct tracker origin must be reported");
               let originLog = contentBlockingLog[trackerOrigin];
-              ok(originLog.length >= 1, "We should have at least two items in the log");
+              ok(originLog.length > 1, "We should have at least two items in the log");
               for (let i = 0; i < originLog.length; ++i) {
                 let item = originLog[i];
                 switch (item[0]) {
@@ -579,10 +582,6 @@ this.AntiTracking = {
                   } else {
                     is(item[2], 1, "Correct repeat count reported");
                   }
-                  break;
-                case Ci.nsIWebProgressListener.STATE_COOKIES_LOADED:
-                  is(item[1], true, "Correct blocking status reported");
-                  ok(item[2] >= 1, "Correct repeat count reported");
                   break;
                 }
               }
@@ -697,18 +696,17 @@ this.AntiTracking = {
             }
 
             for (let trackerOrigin in contentBlockingLog) {
+              is(trackerOrigin, TEST_3RD_PARTY_DOMAIN, "Correct tracker origin must be reported");
               let originLog = contentBlockingLog[trackerOrigin];
-              ok(originLog.length >= 1, "We should have at least two items in the log");
+              ok(originLog.length > 1, "We should have at least two items in the log");
               for (let i = 0; i < originLog.length; ++i) {
                 let item = originLog[i];
                 switch (item[0]) {
                 case Ci.nsIWebProgressListener.STATE_LOADED_TRACKING_CONTENT:
-                  is(trackerOrigin, TEST_3RD_PARTY_DOMAIN, "Correct tracker origin must be reported");
                   is(item[1], true, "Correct blocking status reported");
                   ok(item[2] >= 1, "Correct repeat count reported");
                   break;
                 case Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT:
-                  is(trackerOrigin, TEST_3RD_PARTY_DOMAIN, "Correct tracker origin must be reported");
                   if (item[1]) {
                     ok(item[2] >= 1, "Correct repeat count reported");
                   } else {
@@ -718,14 +716,8 @@ this.AntiTracking = {
                   }
                   break;
                 case Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER:
-                  is(trackerOrigin, TEST_3RD_PARTY_DOMAIN, "Correct tracker origin must be reported");
                   
                   
-                  ok(item[2] >= 1, "Correct repeat count reported");
-                  break;
-                case Ci.nsIWebProgressListener.STATE_COOKIES_LOADED:
-                  
-                  is(item[1], true, "Correct blocking status reported");
                   ok(item[2] >= 1, "Correct repeat count reported");
                   break;
                 }
