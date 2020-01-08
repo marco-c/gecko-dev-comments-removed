@@ -434,8 +434,6 @@ class TypedArrayObjectTemplate : public TypedArrayObject
                  CreateSingleton createSingleton, uint32_t byteOffset, uint32_t len,
                  HandleObject proto)
     {
-        MOZ_ASSERT_IF(!buffer, byteOffset == 0);
-        MOZ_ASSERT_IF(buffer, !buffer->isDetached());
         MOZ_ASSERT(len < INT32_MAX / sizeof(NativeType));
 
         gc::AllocKind allocKind = buffer
@@ -461,77 +459,8 @@ class TypedArrayObjectTemplate : public TypedArrayObject
         } else {
             obj = makeTypedInstance(cx, createSingleton, allocKind);
         }
-        if (!obj) {
+        if (!obj || !obj->init(cx, buffer, byteOffset, len, BYTES_PER_ELEMENT)) {
             return nullptr;
-        }
-
-        bool isSharedMemory = buffer && IsSharedArrayBuffer(buffer.get());
-
-        obj->setFixedSlot(TypedArrayObject::BUFFER_SLOT, ObjectOrNullValue(buffer));
-        
-        
-        if (isSharedMemory) {
-            obj->setIsSharedMemory();
-        }
-
-        if (buffer) {
-            obj->initDataPointer(buffer->dataPointerEither() + byteOffset);
-
-            
-            
-            
-            auto ptr = buffer->dataPointerEither();
-            if (!IsInsideNursery(obj) && cx->nursery().isInside(ptr)) {
-                
-                
-                
-                
-                
-                if (isSharedMemory) {
-                    MOZ_ASSERT(buffer->byteLength() == 0 &&
-                               (uintptr_t(ptr.unwrapValue()) & gc::ChunkMask) == 0);
-                } else {
-                    cx->runtime()->gc.storeBuffer().putWholeCell(obj);
-                }
-            }
-        } else {
-            void* data = obj->fixedData(FIXED_DATA_START);
-            obj->initPrivate(data);
-            memset(data, 0, len * sizeof(NativeType));
-#ifdef DEBUG
-            if (len == 0) {
-                uint8_t* elements = static_cast<uint8_t*>(data);
-                elements[0] = ZeroLengthArrayData;
-            }
-#endif
-        }
-
-        obj->setFixedSlot(TypedArrayObject::LENGTH_SLOT, Int32Value(len));
-        obj->setFixedSlot(TypedArrayObject::BYTEOFFSET_SLOT, Int32Value(byteOffset));
-
-#ifdef DEBUG
-        if (buffer) {
-            uint32_t arrayByteLength = obj->byteLength();
-            uint32_t arrayByteOffset = obj->byteOffset();
-            uint32_t bufferByteLength = buffer->byteLength();
-            
-            if (IsArrayBuffer(buffer.get())) {
-                MOZ_ASSERT_IF(!AsArrayBuffer(buffer.get()).isDetached(),
-                              buffer->dataPointerEither().unwrap() <= obj->dataPointerEither().unwrap());
-            }
-            MOZ_ASSERT(bufferByteLength - arrayByteOffset >= arrayByteLength);
-            MOZ_ASSERT(arrayByteOffset <= bufferByteLength);
-        }
-
-        
-        MOZ_ASSERT(obj->numFixedSlots() == TypedArrayObject::DATA_SLOT);
-#endif
-
-        
-        if (buffer && buffer->is<ArrayBufferObject>()) {
-            if (!buffer->as<ArrayBufferObject>().addView(cx, obj)) {
-                return nullptr;
-            }
         }
 
         return obj;

@@ -48,59 +48,9 @@ DataViewObject::create(JSContext* cx, uint32_t byteOffset, uint32_t byteLength,
         return nullptr;
     }
 
-    MOZ_ASSERT(byteOffset <= INT32_MAX);
-    MOZ_ASSERT(byteLength <= INT32_MAX);
-    MOZ_ASSERT(byteOffset + byteLength < UINT32_MAX);
-
     DataViewObject* obj = NewObjectWithClassProto<DataViewObject>(cx, proto);
-    if (!obj) {
+    if (!obj || !obj->init(cx, arrayBuffer, byteOffset, byteLength,  1)) {
         return nullptr;
-    }
-
-    
-    
-    
-    MOZ_ASSERT(byteOffset <= arrayBuffer->byteLength());
-    MOZ_ASSERT(byteOffset + byteLength <= arrayBuffer->byteLength());
-
-    
-    
-    
-    bool isSharedMemory = IsSharedArrayBuffer(arrayBuffer.get());
-    if (isSharedMemory) {
-        obj->setIsSharedMemory();
-    }
-
-    obj->setFixedSlot(BYTEOFFSET_SLOT, Int32Value(byteOffset));
-    obj->setFixedSlot(LENGTH_SLOT, Int32Value(byteLength));
-    obj->setFixedSlot(BUFFER_SLOT, ObjectValue(*arrayBuffer));
-
-    SharedMem<uint8_t*> ptr = arrayBuffer->dataPointerEither();
-    obj->initDataPointer(ptr + byteOffset);
-
-    
-    
-    if (!IsInsideNursery(obj) && cx->nursery().isInside(ptr)) {
-        
-        
-        
-        
-        
-        if (isSharedMemory) {
-            MOZ_ASSERT(arrayBuffer->byteLength() == 0 &&
-                       (uintptr_t(ptr.unwrapValue()) & gc::ChunkMask) == 0);
-        } else {
-            cx->runtime()->gc.storeBuffer().putWholeCell(obj);
-        }
-    }
-
-    
-    MOZ_ASSERT(obj->numFixedSlots() == DATA_SLOT);
-
-    if (arrayBuffer->is<ArrayBufferObject>()) {
-        if (!arrayBuffer->as<ArrayBufferObject>().addView(cx, obj)) {
-            return nullptr;
-        }
     }
 
     return obj;
