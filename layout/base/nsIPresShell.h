@@ -503,6 +503,8 @@ public:
 
   virtual void NotifyCounterStylesAreDirty() = 0;
 
+  bool FrameIsAncestorOfDirtyRoot(nsIFrame* aFrame) const;
+
   
 
 
@@ -1760,6 +1762,9 @@ protected:
 
   
   nsTHashtable<nsPtrHashKey<WeakFrame>> mWeakFrames;
+
+  
+  nsTArray<nsIFrame*> mDirtyRoots;
 
 #ifdef MOZ_GECKO_PROFILER
   

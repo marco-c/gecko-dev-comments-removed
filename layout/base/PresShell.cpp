@@ -4563,6 +4563,27 @@ PresShell::NotifyCounterStylesAreDirty()
   mFrameConstructor->NotifyCounterStylesAreDirty();
 }
 
+bool
+nsIPresShell::FrameIsAncestorOfDirtyRoot(nsIFrame* aFrame) const
+{
+  MOZ_ASSERT(aFrame);
+
+  
+  
+  
+  for (nsIFrame* dirtyFrame : mDirtyRoots) {
+    while (dirtyFrame) {
+      if (dirtyFrame == aFrame) {
+        return true;
+      }
+
+      dirtyFrame = dirtyFrame->GetParent();
+    }
+  }
+
+  return false;
+}
+
 void
 PresShell::ReconstructFrames()
 {

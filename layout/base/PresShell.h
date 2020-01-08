@@ -784,9 +784,6 @@ private:
   
   nsTHashtable<nsPtrHashKey<nsIFrame> > mFramesToDirty;
 
-  
-  nsTArray<nsIFrame*> mDirtyRoots;
-
   nsTArray<nsAutoPtr<DelayedEvent> > mDelayedEvents;
 private:
   nsIFrame* mCurrentEventFrame;
