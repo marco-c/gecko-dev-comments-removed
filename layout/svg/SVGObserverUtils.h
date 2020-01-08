@@ -253,8 +253,9 @@ public:
   
 
 
-  static nsSVGPaintServerFrame *GetPaintServer(nsIFrame* aTargetFrame,
-                                               nsStyleSVGPaint nsStyleSVG::* aPaint);
+  static nsSVGPaintServerFrame*
+  GetAndObservePaintServer(nsIFrame* aPaintedFrame,
+                           nsStyleSVGPaint nsStyleSVG::* aPaint);
 
   
 
@@ -262,7 +263,7 @@ public:
 
 
   static bool
-  GetMarkerFrames(nsIFrame* aMarkedFrame, nsSVGMarkerFrame*(*aFrames)[3]);
+  GetAndObserveMarkers(nsIFrame* aMarkedFrame, nsSVGMarkerFrame*(*aFrames)[3]);
 
   
 
@@ -366,7 +367,7 @@ public:
 
 
   static SVGGeometryElement*
-  GetTextPathsReferencedPath(nsIFrame* aTextPathFrame);
+  GetAndObserveTextPathsPath(nsIFrame* aTextPathFrame);
 
   
 
@@ -389,7 +390,7 @@ public:
 
 
   static nsIFrame*
-  GetTemplateFrame(nsIFrame* aFrame, HrefToTemplateCallback aGetHref);
+  GetAndObserveTemplate(nsIFrame* aFrame, HrefToTemplateCallback aGetHref);
 
   static void
   RemoveTemplateObserver(nsIFrame* aFrame);
