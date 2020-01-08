@@ -14,7 +14,7 @@
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-function updateWindow(window, buffer, width, height) {
+function updateWindow(window, buffer, width, height, hadFailure) {
   
   let canvas = window.middlemanCanvas;
   if (!canvas) {
@@ -36,10 +36,20 @@ function updateWindow(window, buffer, width, height) {
       `scale(${ 1 / scale }) translate(-${ width / scale }px, -${ height / scale }px)`;
   }
 
+  const cx = canvas.getContext("2d");
+
   const graphicsData = new Uint8Array(buffer);
-  const imageData = canvas.getContext("2d").getImageData(0, 0, width, height);
+  const imageData = cx.getImageData(0, 0, width, height);
   imageData.data.set(graphicsData);
-  canvas.getContext("2d").putImageData(imageData, 0, 0);
+  cx.putImageData(imageData, 0, 0);
+
+  
+  
+  if (hadFailure) {
+    cx.fillStyle = "red";
+    cx.font = "48px serif";
+    cx.fillText("PAINT FAILURE", 10, 50);
+  }
 
   
   window.document.title = "RECORD/REPLAY";
@@ -48,11 +58,11 @@ function updateWindow(window, buffer, width, height) {
 
 
 
-function Update(buffer, width, height) {
+function Update(buffer, width, height, hadFailure) {
   try {
     
     for (const window of Services.ww.getWindowEnumerator()) {
-      updateWindow(window, buffer, width, height);
+      updateWindow(window, buffer, width, height, hadFailure);
     }
   } catch (e) {
     dump("Middleman Graphics Update Exception: " + e + "\n");
