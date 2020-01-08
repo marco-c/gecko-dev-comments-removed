@@ -475,6 +475,11 @@ pref("browser.tabs.showAudioPlayingIcon", true);
 
 pref("browser.tabs.delayHidingAudioPlayingIconMS", 3000);
 
+
+#ifdef NIGHTLY_BUILD
+pref("browser.tabs.remote.separatePrivilegedContentProcess", true);
+#endif
+
 pref("browser.ctrlTab.recentlyUsedOrder", true);
 
 
@@ -1026,12 +1031,6 @@ pref("security.sandbox.gpu.level", 0);
 pref("security.sandbox.gmp.win32k-disable", false);
 #endif
 
-#if defined(NIGHTLY_BUILD) && defined(XP_MACOSX) && defined(MOZ_SANDBOX)
-
-
-pref("security.sandbox.content.mac.earlyinit", true);
-#endif
-
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX) && defined(MOZ_CONTENT_SANDBOX)
 
 
@@ -1099,14 +1098,11 @@ pref("security.sandbox.pledge.content", "stdio rpath wpath cpath inet recvfd sen
 #endif
 #endif
 
-#if defined(MOZ_SANDBOX)
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX) && defined(MOZ_CONTENT_SANDBOX)
 
 
 
 pref("security.sandbox.content.tempDirSuffix", "");
-#endif
-pref("security.sandbox.plugin.tempDirSuffix", "");
 #endif
 
 #if defined(MOZ_SANDBOX)
