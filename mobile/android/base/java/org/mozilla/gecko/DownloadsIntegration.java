@@ -106,6 +106,27 @@ public class DownloadsIntegration implements BundleEventListener
             return false;
         }
 
+        if (Versions.feature23Plus) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            return false;
+        }
+
         int state = PackageManager.COMPONENT_ENABLED_STATE_DEFAULT;
         try {
             final PackageManager pm = GeckoAppShell.getApplicationContext()
