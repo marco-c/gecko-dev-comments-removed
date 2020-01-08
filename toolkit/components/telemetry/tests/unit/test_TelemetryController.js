@@ -147,7 +147,7 @@ add_task(async function test_disableDataUpload() {
   }
 
   
-  let snapshot = Telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false).parent;
+  let snapshot = Telemetry.getSnapshotForScalars("main", false).parent;
   Assert.ok(!(OPTIN_PROBE in snapshot), "Data optin scalar should not be set at start");
 
   
@@ -166,7 +166,7 @@ add_task(async function test_disableDataUpload() {
   
   await TelemetrySend.testWaitOnOutgoingPings();
 
-  snapshot = Telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false).parent;
+  snapshot = Telemetry.getSnapshotForScalars("main", false).parent;
   Assert.ok(!(OPTIN_PROBE in snapshot), "Data optin scalar should not be set after optout");
 
   
@@ -174,13 +174,12 @@ add_task(async function test_disableDataUpload() {
 
   
   await ContentTaskUtils.waitForCondition(() => {
-    const scalarSnapshot =
-      Telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
+    const scalarSnapshot = Telemetry.getSnapshotForScalars("main", false);
     return Object.keys(scalarSnapshot).includes("parent") &&
            OPTIN_PROBE in scalarSnapshot.parent;
   });
 
-  snapshot = Telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false).parent;
+  snapshot = Telemetry.getSnapshotForScalars("main", false).parent;
   Assert.ok(snapshot[OPTIN_PROBE], "Enabling data upload should set optin probe");
 
   

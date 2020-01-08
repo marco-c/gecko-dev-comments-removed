@@ -43,8 +43,7 @@ function check_histogram(histogram_type, name, min, max, bucket_count) {
   var s = h.snapshot();
   Assert.equal(0, s.sum);
 
-  var hgrams = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
-                                            false).parent;
+  var hgrams = Telemetry.getSnapshotForHistograms("main", false).parent;
   let gh = hgrams[name];
   Assert.equal(gh.histogram_type, histogram_type);
 
@@ -81,8 +80,7 @@ function test_instantiate() {
   
   h.add(1);
   let snapshot = h.snapshot();
-  let subsession = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
-                                                false ).parent;
+  let subsession = Telemetry.getSnapshotForHistograms("main", false ).parent;
   Assert.ok(ID in subsession);
   Assert.equal(snapshot.sum, subsession[ID].sum,
                "Histogram and subsession histogram sum must match.");
@@ -140,8 +138,7 @@ add_task(async function test_noSerialization() {
   
   
   Telemetry.getHistogramById("NEWTAB_PAGE_PINNED_SITES_COUNT");
-  let histograms = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
-                                                false ).parent;
+  let histograms = Telemetry.getSnapshotForHistograms("main", false ).parent;
   Assert.equal(false, "NEWTAB_PAGE_PINNED_SITES_COUNT" in histograms);
 });
 
@@ -394,7 +391,7 @@ add_task(async function test_expired_histogram() {
   dummy.add(1);
 
   for (let process of ["main", "content", "gpu", "extension"]) {
-    let histograms = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+    let histograms = Telemetry.getSnapshotForHistograms("main",
                                                   false );
     if (!(process in histograms)) {
       info("Nothing present for process " + process);
@@ -402,7 +399,7 @@ add_task(async function test_expired_histogram() {
     }
     Assert.equal(histograms[process].__expired__, undefined);
   }
-  let parentHgrams = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+  let parentHgrams = Telemetry.getSnapshotForHistograms("main",
                                                   false ).parent;
   Assert.equal(parentHgrams[test_expired_id], undefined);
 });
@@ -412,8 +409,7 @@ add_task(async function test_keyed_expired_histogram() {
   var dummy = Telemetry.getKeyedHistogramById(test_expired_id);
   dummy.add("someKey", 1);
 
-  const histograms = Telemetry.snapshotKeyedHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
-                                                       false );
+  const histograms = Telemetry.getSnapshotForKeyedHistograms("main", false );
   for (let process of ["parent", "content", "gpu", "extension"]) {
     if (!(process in histograms)) {
       info("Nothing present for process " + process);
@@ -476,8 +472,7 @@ add_task(async function test_keyed_boolean_histogram() {
   Assert.deepEqual(h.keys().sort(), testKeys);
   Assert.deepEqual(h.snapshot(), testSnapShot);
 
-  let parentHgrams = Telemetry.snapshotKeyedHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
-                                                       false ).parent;
+  let parentHgrams = Telemetry.getSnapshotForKeyedHistograms("main", false ).parent;
   Assert.deepEqual(parentHgrams[KEYED_ID], testSnapShot);
 
   h.clear();
@@ -532,8 +527,7 @@ add_task(async function test_keyed_count_histogram() {
   Assert.deepEqual(h.keys().sort(), testKeys);
   Assert.deepEqual(h.snapshot(), testSnapShot);
 
-  let parentHgrams = Telemetry.snapshotKeyedHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
-                                                       false ).parent;
+  let parentHgrams = Telemetry.getSnapshotForKeyedHistograms("main", false ).parent;
   Assert.deepEqual(parentHgrams[KEYED_ID], testSnapShot);
 
   
@@ -599,8 +593,7 @@ add_task(async function test_keyed_flag_histogram() {
   Assert.deepEqual(h.keys().sort(), [KEY]);
   Assert.deepEqual(h.snapshot(), testSnapshot);
 
-  let parentHgrams = Telemetry.snapshotKeyedHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
-                                                       false ).parent;
+  let parentHgrams = Telemetry.getSnapshotForKeyedHistograms("main", false ).parent;
   Assert.deepEqual(parentHgrams[KEYED_ID], testSnapshot);
 
   h.clear();
@@ -750,7 +743,7 @@ add_task(async function test_histogramSnapshots() {
   keyed.add("a", 1);
 
   
-  let parentHgrams = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+  let parentHgrams = Telemetry.getSnapshotForHistograms("main",
                                                   false ).parent;
   Assert.ok(!("TELEMETRY_TEST_KEYED_COUNT" in parentHgrams));
 });
@@ -758,34 +751,35 @@ add_task(async function test_histogramSnapshots() {
 add_task(async function test_datasets() {
   
 
-  const RELEASE_CHANNEL_OPTOUT = Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTOUT;
-  const RELEASE_CHANNEL_OPTIN  = Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN;
+  const currentRecordExtended = Telemetry.canRecordExtended;
 
   
-  let registered = Telemetry.snapshotHistograms(RELEASE_CHANNEL_OPTIN,
-                                                false );
+  Telemetry.canRecordExtended = true;
+  let registered = Telemetry.getSnapshotForHistograms("main", false );
   registered = new Set(Object.keys(registered.parent));
   Assert.ok(registered.has("TELEMETRY_TEST_FLAG"));
   Assert.ok(registered.has("TELEMETRY_TEST_RELEASE_OPTIN"));
   Assert.ok(registered.has("TELEMETRY_TEST_RELEASE_OPTOUT"));
-  registered = Telemetry.snapshotHistograms(RELEASE_CHANNEL_OPTOUT,
-                                            false );
+  Telemetry.canRecordExtended = false;
+  registered = Telemetry.getSnapshotForHistograms("main", false );
   registered = new Set(Object.keys(registered.parent));
   Assert.ok(!registered.has("TELEMETRY_TEST_FLAG"));
   Assert.ok(!registered.has("TELEMETRY_TEST_RELEASE_OPTIN"));
   Assert.ok(registered.has("TELEMETRY_TEST_RELEASE_OPTOUT"));
 
   
-  registered = Telemetry.snapshotKeyedHistograms(RELEASE_CHANNEL_OPTIN,
-                                                 false );
+  Telemetry.canRecordExtended = true;
+  registered = Telemetry.getSnapshotForKeyedHistograms("main", false );
   registered = new Set(Object.keys(registered.parent));
   Assert.ok(registered.has("TELEMETRY_TEST_KEYED_FLAG"));
   Assert.ok(registered.has("TELEMETRY_TEST_KEYED_RELEASE_OPTOUT"));
-  registered = Telemetry.snapshotKeyedHistograms(RELEASE_CHANNEL_OPTOUT,
-                                                 false );
+  Telemetry.canRecordExtended = false;
+  registered = Telemetry.getSnapshotForKeyedHistograms("main", false );
   registered = new Set(Object.keys(registered.parent));
   Assert.ok(!registered.has("TELEMETRY_TEST_KEYED_FLAG"));
   Assert.ok(registered.has("TELEMETRY_TEST_KEYED_RELEASE_OPTOUT"));
+
+  Telemetry.canRecordExtended = currentRecordExtended;
 });
 
 add_task(async function test_keyed_keys() {
@@ -812,8 +806,7 @@ add_task(async function test_keyed_keys() {
   Assert.ok(!("not-allowed" in snap), "'not-allowed' must not be recorded.");
 
   
-  const parentScalars =
-    Telemetry.snapshotKeyedScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false).parent;
+  const parentScalars = Telemetry.getSnapshotForKeyedScalars("main", false).parent;
   const scalarName = "telemetry.accumulate_unknown_histogram_keys";
   Assert.ok(scalarName in parentScalars, "Accumulation to unallowed keys must be reported.");
   Assert.ok("TELEMETRY_TEST_KEYED_KEYS" in parentScalars[scalarName],
@@ -1057,7 +1050,7 @@ async function test_productSpecificHistograms() {
   multiproduct_histo.add(42);
   mobile_histo.add(42);
 
-  let histograms = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+  let histograms = Telemetry.getSnapshotForHistograms("main",
                                                 false ).parent;
 
   Assert.ok(DEFAULT_PRODUCTS_HISTOGRAM in histograms, "Should have recorded default products histogram");
@@ -1090,7 +1083,7 @@ async function test_mobileSpecificHistograms() {
   multiproduct_histo.add(1);
   mobile_histo.add(1);
 
-  let histograms = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+  let histograms = Telemetry.getSnapshotForHistograms("main",
                                                 false ).parent;
 
   Assert.ok(DEFAULT_PRODUCTS_HISTOGRAM in histograms, "Should have recorded default products histogram");
@@ -1110,7 +1103,7 @@ async function test_clearHistogramsOnSnapshot() {
   let snapshot;
 
   
-  snapshot = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+  snapshot = Telemetry.getSnapshotForHistograms("main",
                                               false ).parent;
   Assert.ok(!(COUNT in snapshot));
 
@@ -1118,7 +1111,7 @@ async function test_clearHistogramsOnSnapshot() {
   h.add(1);
 
   Assert.equal(h.snapshot().sum, 1);
-  snapshot = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+  snapshot = Telemetry.getSnapshotForHistograms("main",
                                               false ).parent;
   Assert.ok(COUNT in snapshot);
   Assert.equal(snapshot[COUNT].sum, 1);
@@ -1128,14 +1121,14 @@ async function test_clearHistogramsOnSnapshot() {
   h.add(41);
 
   Assert.equal(h.snapshot().sum, 42);
-  snapshot = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+  snapshot = Telemetry.getSnapshotForHistograms("main",
                                               true ).parent;
   Assert.ok(COUNT in snapshot);
   Assert.equal(snapshot[COUNT].sum, 42);
 
   
   Assert.equal(h.snapshot().sum, 0);
-  snapshot = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+  snapshot = Telemetry.getSnapshotForHistograms("main",
                                               false ).parent;
   Assert.ok(!(COUNT in snapshot));
 });
@@ -1173,7 +1166,7 @@ add_task(async function test_valid_os_smoketest() {
   let h = Telemetry.getHistogramById(existingProbe);
   h.clear();
   h.add(1);
-  let snapshot = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+  let snapshot = Telemetry.getSnapshotForHistograms("main",
                                               false ).parent;
   Assert.ok(existingProbe in snapshot, `${existingProbe} should be recorded on ${AppConstants.platform}`);
   Assert.equal(snapshot[existingProbe].sum, 1);
