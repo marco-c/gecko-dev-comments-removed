@@ -830,8 +830,6 @@ public:
 
   void EndAllTrackAndFinish();
 
-  void RegisterForAudioMixing();
-
   
 
 
@@ -938,7 +936,6 @@ protected:
   nsTArray<TrackBound<DirectMediaStreamTrackListener>> mDirectTrackListeners;
   bool mPullEnabled;
   bool mFinishPending;
-  bool mNeedsMixing;
 };
 
 
