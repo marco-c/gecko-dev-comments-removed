@@ -14,9 +14,7 @@ const dedupe = new Dedupe(site => site && site.url);
 const INITIAL_STATE = {
   App: {
     
-    initialized: false,
-    
-    version: null
+    initialized: false
   },
   Snippets: {initialized: false},
   TopSites: {

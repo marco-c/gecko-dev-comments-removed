@@ -279,14 +279,8 @@ this.ActivityStream = class ActivityStream {
   
 
 
-
-
-
-
-
-  constructor(options = {}) {
+  constructor() {
     this.initialized = false;
-    this.options = options;
     this.store = new Store();
     this.feeds = FEEDS_CONFIG;
     this._defaultPrefs = new DefaultPrefs(PREFS_CONFIG);
@@ -300,7 +294,7 @@ this.ActivityStream = class ActivityStream {
       
       this.store.init(this.feeds, ac.BroadcastToContent({
         type: at.INIT,
-        data: {version: this.options.version}
+        data: {}
       }), {type: at.UNINIT});
 
       this.initialized = true;

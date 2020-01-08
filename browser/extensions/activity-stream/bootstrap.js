@@ -18,12 +18,8 @@ const RESOURCE_HOST = "activity-stream";
 const BROWSER_READY_NOTIFICATION = "sessionstore-windows-restored";
 const RESOURCE_BASE = "resource://activity-stream";
 
-const ACTIVITY_STREAM_OPTIONS = {newTabURL: "about:newtab"};
-
 let activityStream;
 let modulesToUnload = new Set();
-let startupData;
-let startupReason;
 let waitingForBrowserReady = true;
 
 
@@ -58,17 +54,14 @@ XPCOMUtils.defineLazyModuleGetter(this, "ActivityStream",
 
 
 
-
-
-function init(reason) {
+function init() {
   
   if (activityStream && activityStream.initialized) {
     return;
   }
-  const options = Object.assign({}, startupData || {}, ACTIVITY_STREAM_OPTIONS);
-  activityStream = new ActivityStream(options);
+  activityStream = new ActivityStream();
   try {
-    activityStream.init(reason);
+    activityStream.init();
   } catch (e) {
     Cu.reportError(e);
   }
@@ -125,7 +118,7 @@ function migratePref(oldPrefName, cbIfNotDefault) {
 
 function onBrowserReady() {
   waitingForBrowserReady = false;
-  init(startupReason);
+  init();
 
   
   migratePref("browser.newtabpage.rows", rows => {
@@ -172,11 +165,6 @@ this.startup = function startup(data, reason) {
                                     resProto.ALLOW_CONTENT_ACCESS);
 
   
-  
-  startupData = data;
-  startupReason = reason;
-
-  
   if (Services.startup.startingUp) {
     Services.obs.addObserver(observe, BROWSER_READY_NOTIFICATION);
   } else {
@@ -189,8 +177,6 @@ this.shutdown = function shutdown(data, reason) {
   resProto.setSubstitution(RESOURCE_HOST, null);
 
   
-  startupData = null;
-  startupReason = null;
   uninit(reason);
 
   
