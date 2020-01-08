@@ -651,6 +651,8 @@ AutoEntryScript::AutoEntryScript(nsIGlobalObject* aGlobalObject,
   
   
   , mCallerOverride(cx())
+  , mAutoProfilerLabel("AutoEntryScript", aReason, __LINE__,
+                       js::ProfilingStackFrame::Category::JS)
 {
   MOZ_ASSERT(aGlobalObject);
 
