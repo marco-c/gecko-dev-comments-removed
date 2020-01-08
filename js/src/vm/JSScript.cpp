@@ -1002,12 +1002,20 @@ JSScript::setSourceObject(JSObject* object)
 }
 
 void
-JSScript::setDefaultClassConstructorSpan(JSObject* sourceObject, uint32_t start, uint32_t end)
+JSScript::setDefaultClassConstructorSpan(JSObject* sourceObject, uint32_t start, uint32_t end,
+                                         unsigned line, unsigned column)
 {
     MOZ_ASSERT(isDefaultClassConstructor());
     setSourceObject(sourceObject);
     toStringStart_ = start;
     toStringEnd_ = end;
+    sourceStart_ = start;
+    sourceEnd_ = end;
+    lineno_ = line;
+    column_ = column;
+    
+    
+    bitFields_.selfHosted_ = false;
 }
 
 js::ScriptSourceObject&
