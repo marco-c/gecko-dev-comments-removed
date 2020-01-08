@@ -129,13 +129,14 @@ class Output(object):
 
             
             
+
+            
+            
             
             
             
 
             
-            
-
             if len(subtests) > 1:
                 suite['value'] = self.construct_summary(vals, testname=test.name)
 

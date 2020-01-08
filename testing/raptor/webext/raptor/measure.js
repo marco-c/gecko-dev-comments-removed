@@ -8,8 +8,10 @@ var gRetryCounter = 0;
 
 
 
+
 var getHero = false;
 var heroesToCapture = [];
+
 
 
 
@@ -21,7 +23,9 @@ var getFNBPaint = false;
 
 
 
+
 var getDCF = false;
+
 
 
 
@@ -31,7 +35,13 @@ var getTTFI = false;
 
 
 
+
 var getFCP = false;
+
+
+
+
+var getLoadTime = false;
 
 
 var startMeasure = "fetchStart";
@@ -99,6 +109,14 @@ function setup(settings) {
     if (getTTFI) {
       console.log("will be measuring ttfi");
       measureTTFI();
+    }
+  }
+
+  if (settings.measure.loadtime !== undefined) {
+    getLoadTime = settings.measure.loadtime;
+    if (getLoadTime) {
+      console.log("will be measuring loadtime");
+      measureLoadTime();
     }
   }
 }
@@ -249,6 +267,29 @@ function measureFCP() {
       window.setTimeout(measureFCP, 100);
     } else {
       console.log("\nunable to get a value for time-to-fcp after " + gRetryCounter + " retries\n");
+    }
+  }
+}
+
+function measureLoadTime() {
+  var x = window.performance.timing.loadEventStart;
+
+  if (typeof(x) == "undefined") {
+    console.log("ERROR: loadEventStart is undefined");
+    return;
+  }
+  if (x > 0) {
+    console.log("got loadEventStart: " + x);
+    gRetryCounter = 0;
+    var startTime = perfData.timing.fetchStart;
+    sendResult("loadtime", x - startTime);
+  } else {
+    gRetryCounter += 1;
+    if (gRetryCounter <= 40 * (1000 / 200)) {
+      console.log("\loadEventStart is not yet available (0), retry number " + gRetryCounter + "...\n");
+      window.setTimeout(measureLoadTime, 100);
+    } else {
+      console.log("\nunable to get a value for loadEventStart after " + gRetryCounter + " retries\n");
     }
   }
 }
