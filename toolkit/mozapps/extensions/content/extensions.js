@@ -3098,6 +3098,30 @@ var gDetailView = {
       browser.setAttribute("remote", "true");
       browser.setAttribute("remoteType", E10SUtils.EXTENSION_REMOTE_TYPE);
       readyPromise = promiseEvent("XULFrameLoaderCreated", browser);
+
+      readyPromise.then(() => {
+        if (!browser.messageManager) {
+          
+          
+          return;
+        }
+        const parentChromeWindow = window.docShell.parent.domWindow;
+        const parentContextMenuPopup = parentChromeWindow.document.getElementById("contentAreaContextMenu");
+
+        
+        
+        
+        document.getElementById("contentAreaContextMenu").openPopupAtScreen = (...args) => {
+          return parentContextMenuPopup.openPopupAtScreen(...args);
+        };
+
+        
+        
+        
+        
+        browser.messageManager.addMessageListener(
+          "contextmenu", message => parentChromeWindow.openContextMenu(message));
+      });
     } else {
       readyPromise = promiseEvent("load", browser, true);
     }
