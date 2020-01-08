@@ -24,7 +24,7 @@ namespace frontend {
 
 const char MAGIC_HEADER[] = "BINJS";
 
-const uint32_t MAGIC_FORMAT_VERSION = 0;
+const uint32_t MAGIC_FORMAT_VERSION = 1;
 
 
 const char SECTION_HEADER_GRAMMAR[] = "[GRAMMAR]";

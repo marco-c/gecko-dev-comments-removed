@@ -157,6 +157,15 @@ class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEPa
     void poison();
 
     
+    enum class AssertedScopeKind {
+        Block,
+        Catch,
+        Global,
+        Parameter,
+        Var,
+    };
+
+    
 #include "frontend/BinSource-auto.h"
 
     
@@ -169,12 +178,22 @@ class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEPa
     buildFunctionBox(GeneratorKind generatorKind, FunctionAsyncKind functionAsyncKind, FunctionSyntaxKind syntax, ParseNode* name);
 
     
-    MOZ_MUST_USE JS::Result<Ok> parseAndUpdateScope(ParseContext::Scope& varScope,
-        ParseContext::Scope& letScope);
+    MOZ_MUST_USE JS::Result<Ok> addScopeName(AssertedScopeKind scopeKind, HandleAtom name,
+                                             ParseContext::Scope* scope,
+                                             DeclarationKind declKind,
+                                             bool isCaptured);
+
     
-    MOZ_MUST_USE JS::Result<Ok> parseAndUpdateScopeNames(ParseContext::Scope& scope,
-        DeclarationKind kind);
-    MOZ_MUST_USE JS::Result<Ok> parseAndUpdateCapturedNames(const BinKind kind);
+    
+    
+    MOZ_MUST_USE JS::Result<Ok> getDeclaredScope(AssertedScopeKind scopeKind,
+                                                 AssertedDeclaredKind kind,
+                                                 ParseContext::Scope*& scope,
+                                                 DeclarationKind& declKind);
+    MOZ_MUST_USE JS::Result<Ok> getBoundScope(AssertedScopeKind scopeKind,
+                                              ParseContext::Scope*& scope,
+                                              DeclarationKind& declKind);
+
     MOZ_MUST_USE JS::Result<Ok> checkBinding(JSAtom* name);
 
     
