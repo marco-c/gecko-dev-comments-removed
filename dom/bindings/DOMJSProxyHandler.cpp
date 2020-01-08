@@ -105,6 +105,9 @@ CheckDOMProxy(JSObject* proxy)
   MOZ_ASSERT(!js::gc::EdgeNeedsSweepUnbarriered(&proxy));
   nsISupports* native = UnwrapDOMObject<nsISupports>(proxy);
   nsWrapperCache* cache;
+  
+  
+  JS::AutoSuppressGCAnalysis nogc;
   CallQueryInterface(native, &cache);
   MOZ_ASSERT(cache->GetWrapperPreserveColor() == proxy);
 #endif

@@ -5,6 +5,7 @@
 
 
 #include "ContentFrameMessageManager.h"
+#include "js/RootingAPI.h"
 #include "mozilla/dom/ScriptSettings.h"
 
 using namespace mozilla;
@@ -13,12 +14,15 @@ using namespace mozilla::dom;
 JSObject*
 ContentFrameMessageManager::GetOrCreateWrapper()
 {
-  AutoJSAPI jsapi;
-  jsapi.Init();
+  JS::RootedValue val(RootingCx());
+  {
+    
+    AutoJSAPI jsapi;
+    jsapi.Init();
 
-  JS::RootedValue val(jsapi.cx());
-  if (!GetOrCreateDOMReflectorNoWrap(jsapi.cx(), this, &val)) {
-    return nullptr;
+    if (!GetOrCreateDOMReflectorNoWrap(jsapi.cx(), this, &val)) {
+      return nullptr;
+    }
   }
   MOZ_ASSERT(val.isObject());
   return &val.toObject();
