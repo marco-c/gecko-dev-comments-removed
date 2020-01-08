@@ -1482,7 +1482,9 @@ private:
   
   
   
-  const bool mIsSecureContext;
+  
+  
+  bool mIsSecureContext;
 
   bool mDebuggerRegistered;
 
