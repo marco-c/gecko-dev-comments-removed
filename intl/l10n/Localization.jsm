@@ -25,6 +25,9 @@ const { L10nRegistry } = ChromeUtils.import("resource://gre/modules/L10nRegistry
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
 const { AppConstants } = ChromeUtils.import("resource://gre/modules/AppConstants.jsm", {});
 
+
+
+
 class CachedIterable extends Array {
   
 
@@ -42,6 +45,12 @@ class CachedIterable extends Array {
     return new this(iterable);
   }
 }
+
+
+
+
+
+
 
 class CachedAsyncIterable extends CachedIterable {
   
@@ -97,7 +106,7 @@ class CachedAsyncIterable extends CachedIterable {
     return {
       async next() {
         if (cached.length <= cur) {
-          cached.push(cached.iterator.next());
+          cached.push(await cached.iterator.next());
         }
         return cached[cur++];
       },
@@ -114,10 +123,10 @@ class CachedAsyncIterable extends CachedIterable {
     let idx = 0;
     while (idx++ < count) {
       const last = this[this.length - 1];
-      if (last && await (last).done) {
+      if (last && last.done) {
         break;
       }
-      this.push(this.iterator.next());
+      this.push(await this.iterator.next());
     }
     
     
@@ -134,9 +143,9 @@ class CachedAsyncIterable extends CachedIterable {
 
 
 
-function defaultGenerateMessages(resourceIds) {
+function defaultGenerateBundles(resourceIds) {
   const appLocales = Services.locale.appLocalesAsBCP47;
-  return L10nRegistry.generateContexts(appLocales, resourceIds);
+  return L10nRegistry.generateBundles(appLocales, resourceIds);
 }
 
 
@@ -153,11 +162,11 @@ class Localization {
 
 
 
-  constructor(resourceIds = [], generateMessages = defaultGenerateMessages) {
+  constructor(resourceIds = [], generateBundles = defaultGenerateBundles) {
     this.resourceIds = resourceIds;
-    this.generateMessages = generateMessages;
-    this.ctxs = CachedAsyncIterable.from(
-      this.generateMessages(this.resourceIds));
+    this.generateBundles = generateBundles;
+    this.bundles = CachedAsyncIterable.from(
+      this.generateBundles(this.resourceIds));
   }
 
   
@@ -192,15 +201,15 @@ class Localization {
   async formatWithFallback(keys, method) {
     const translations = [];
 
-    for await (const ctx of this.ctxs) {
-      const missingIds = keysFromContext(method, ctx, keys, translations);
+    for await (const bundle of this.bundles) {
+      const missingIds = keysFromBundle(method, bundle, keys, translations);
 
       if (missingIds.size === 0) {
         break;
       }
 
       if (AppConstants.NIGHTLY_BUILD || Cu.isInAutomation) {
-        const locale = ctx.locales[0];
+        const locale = bundle.locales[0];
         const ids = Array.from(missingIds).join(", ");
         if (Cu.isInAutomation) {
           throw new Error(`Missing translations in ${locale}: ${ids}`);
@@ -235,8 +244,11 @@ class Localization {
 
 
 
+
+
+
   formatMessages(keys) {
-    return this.formatWithFallback(keys, messageFromContext);
+    return this.formatWithFallback(keys, messageFromBundle);
   }
 
   
@@ -259,7 +271,7 @@ class Localization {
 
 
   formatValues(keys) {
-    return this.formatWithFallback(keys, valueFromContext);
+    return this.formatWithFallback(keys, valueFromBundle);
   }
 
   
@@ -327,8 +339,8 @@ class Localization {
 
 
   onChange(eager = false) {
-    this.ctxs = CachedAsyncIterable.from(
-      this.generateMessages(this.resourceIds));
+    this.bundles = CachedAsyncIterable.from(
+      this.generateBundles(this.resourceIds));
     if (eager) {
       
       
@@ -338,7 +350,7 @@ class Localization {
       const appLocale = Services.locale.appLocaleAsBCP47;
       const lastFallback = Services.locale.lastFallbackLocale;
       const prefetchCount = appLocale === lastFallback ? 1 : 2;
-      this.ctxs.touchNext(prefetchCount);
+      this.bundles.touchNext(prefetchCount);
     }
   }
 }
@@ -365,9 +377,9 @@ Localization.prototype.QueryInterface = ChromeUtils.generateQI([
 
 
 
-function valueFromContext(ctx, errors, id, args) {
-  const msg = ctx.getMessage(id);
-  return ctx.format(msg, args, errors);
+function valueFromBundle(bundle, errors, id, args) {
+  const msg = bundle.getMessage(id);
+  return bundle.format(msg, args, errors);
 }
 
 
@@ -392,18 +404,18 @@ function valueFromContext(ctx, errors, id, args) {
 
 
 
-function messageFromContext(ctx, errors, id, args) {
-  const msg = ctx.getMessage(id);
+function messageFromBundle(bundle, errors, id, args) {
+  const msg = bundle.getMessage(id);
 
   const formatted = {
-    value: ctx.format(msg, args, errors),
+    value: bundle.format(msg, args, errors),
     attributes: null,
   };
 
   if (msg.attrs) {
     formatted.attributes = [];
     for (const [name, attr] of Object.entries(msg.attrs)) {
-      const value = ctx.format(attr, args, errors);
+      const value = bundle.format(attr, args, errors);
       if (value !== null) {
         formatted.attributes.push({name, value});
       }
@@ -445,7 +457,7 @@ function messageFromContext(ctx, errors, id, args) {
 
 
 
-function keysFromContext(method, ctx, keys, translations) {
+function keysFromBundle(method, bundle, keys, translations) {
   const messageErrors = [];
   const missingIds = new Set();
 
@@ -454,9 +466,9 @@ function keysFromContext(method, ctx, keys, translations) {
       return;
     }
 
-    if (ctx.hasMessage(id)) {
+    if (bundle.hasMessage(id)) {
       messageErrors.length = 0;
-      translations[i] = method(ctx, messageErrors, id, args);
+      translations[i] = method(bundle, messageErrors, id, args);
       
     } else {
       missingIds.add(id);

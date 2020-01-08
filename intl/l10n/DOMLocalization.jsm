@@ -17,7 +17,6 @@
 
 
 
-
 const { Localization } =
   ChromeUtils.import("resource://gre/modules/Localization.jsm", {});
 const { Services } =
@@ -411,8 +410,8 @@ class DOMLocalization extends Localization {
 
 
 
-  constructor(resourceIds, generateMessages) {
-    super(resourceIds, generateMessages);
+  constructor(resourceIds, generateBundles) {
+    super(resourceIds, generateBundles);
 
     
     this.roots = new Set();

@@ -1,6 +1,6 @@
 const { AppConstants } = ChromeUtils.import("resource://gre/modules/AppConstants.jsm", {});
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
-const { MessageContext, FluentResource } = ChromeUtils.import("resource://gre/modules/MessageContext.jsm", {});
+const { FluentBundle, FluentResource } = ChromeUtils.import("resource://gre/modules/Fluent.jsm", {});
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
@@ -88,7 +88,7 @@ const L10nRegistry = {
 
 
 
-  async* generateContexts(requestedLangs, resourceIds) {
+  async* generateBundles(requestedLangs, resourceIds) {
     if (this.bootstrap !== null) {
       await this.bootstrap;
     }
@@ -96,7 +96,7 @@ const L10nRegistry = {
     const pseudoNameFromPref = Services.prefs.getStringPref("intl.l10n.pseudo", "");
     for (const locale of requestedLangs) {
       for await (const dataSets of generateResourceSetsForLocale(locale, sourcesOrder, resourceIds)) {
-        const ctx = new MessageContext(locale, {
+        const bundle = new FluentBundle(locale, {
           ...MSG_CONTEXT_OPTIONS,
           transform: PSEUDO_STRATEGIES[pseudoNameFromPref],
         });
@@ -104,9 +104,9 @@ const L10nRegistry = {
           if (data === null) {
             return;
           }
-          ctx.addResource(data);
+          bundle.addResource(data);
         }
-        yield ctx;
+        yield bundle;
       }
     }
   },

@@ -52,10 +52,10 @@ window.Application = {
     this.updateDomain();
     await this.updateWorkers();
 
-    const messageContexts = await this.createMessageContexts();
+    const fluentBundles = await this.createFluentBundles();
 
     
-    const app = App({ client: this.client, messageContexts, serviceContainer });
+    const app = App({ client: this.client, fluentBundles, serviceContainer });
     render(Provider({ store: this.store }, app), this.mount);
   },
 
@@ -63,10 +63,10 @@ window.Application = {
 
 
 
-  async createMessageContexts() {
+  async createFluentBundles() {
     const locales = Services.locale.appLocalesAsBCP47;
     const generator =
-      L10nRegistry.generateContexts(locales, ["devtools/application.ftl"]);
+      L10nRegistry.generateBundles(locales, ["devtools/application.ftl"]);
 
     
     
