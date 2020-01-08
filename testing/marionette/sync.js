@@ -28,6 +28,7 @@ this.EXPORTED_SYMBOLS = [
   "TimedPromise",
   "waitForEvent",
   "waitForMessage",
+  "waitForObserverTopic",
 ];
 
 const {TYPE_ONE_SHOT, TYPE_REPEATING_SLACK} = Ci.nsITimer;
@@ -509,5 +510,53 @@ function waitForMessage(messageManager, messageName,
       messageManager.removeMessageListener(messageName, onMessage);
       resolve(msg.data);
     });
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function waitForObserverTopic(topic, {checkFn = null} = {}) {
+  if (typeof topic != "string") {
+    throw new TypeError();
+  }
+  if (checkFn != null && typeof checkFn != "function") {
+    throw new TypeError();
+  }
+
+  return new Promise((resolve, reject) => {
+    Services.obs.addObserver(function observer(subject, topic, data) {
+      log.trace(`Received observer notification ${topic}`);
+      try {
+        if (checkFn && !checkFn(subject, data)) {
+          return;
+        }
+        Services.obs.removeObserver(observer, topic);
+        resolve({subject, data});
+      } catch (ex) {
+        Services.obs.removeObserver(observer, topic);
+        reject(ex);
+      }
+    }, topic);
   });
 }
