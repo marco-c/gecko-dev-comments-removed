@@ -6904,7 +6904,14 @@ nsViewportInfo nsIDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
         size = displaySize;
       }
 
-      size.width = clamped(size.width, float(kViewportMinSize.width),
+      
+      
+      
+      
+      
+      CSSSize effectiveMinSize = Min(CSSSize(kViewportMinSize), displaySize);
+
+      size.width = clamped(size.width, effectiveMinSize.width,
                            float(kViewportMaxSize.width));
 
       
@@ -6914,7 +6921,7 @@ nsViewportInfo nsIDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
         scaleFloat = (scaleFloat > defaultScale) ? scaleFloat : defaultScale;
       }
 
-      size.height = clamped(size.height, float(kViewportMinSize.height),
+      size.height = clamped(size.height, effectiveMinSize.height,
                             float(kViewportMaxSize.height));
 
       
