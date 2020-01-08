@@ -175,13 +175,11 @@ public:
   
   
   
-  
   template<class Item>
-  elem_type* InsertElementAt(index_type aIndex, const Item& aItem)
+  void InsertElementAt(index_type aIndex, const Item& aItem)
   {
-    elem_type* item = mArray.InsertElementAt(aIndex, aItem);
+    mArray.InsertElementAt(aIndex, aItem);
     AdjustIterators(aIndex, 1);
-    return item;
   }
 
   
@@ -196,26 +194,21 @@ public:
   
   
   
-  
   template<class Item>
-  bool PrependElementUnlessExists(const Item& aItem)
+  void PrependElementUnlessExists(const Item& aItem)
   {
-    if (Contains(aItem)) {
-      return true;
+    if (!Contains(aItem)) {
+      mArray.InsertElementAt(0, aItem);
+      AdjustIterators(0, 1);
     }
-
-    bool inserted = mArray.InsertElementAt(0, aItem) != nullptr;
-    AdjustIterators(0, 1);
-    return inserted;
   }
 
   
   
-  
   template<class Item>
-  elem_type* AppendElement(const Item& aItem)
+  void AppendElement(const Item& aItem)
   {
-    return mArray.AppendElement(aItem);
+    mArray.AppendElement(aItem);
   }
 
   
@@ -228,11 +221,12 @@ public:
   
   
   
-  
   template<class Item>
-  bool AppendElementUnlessExists(const Item& aItem)
+  void AppendElementUnlessExists(const Item& aItem)
   {
-    return Contains(aItem) || AppendElement(aItem) != nullptr;
+    if (!Contains(aItem)) {
+      mArray.AppendElement(aItem);
+    }
   }
 
   
