@@ -878,7 +878,7 @@ public:
   int32_t GetScrollMaxY(mozilla::ErrorResult& aError);
   bool GetFullScreen(mozilla::ErrorResult& aError);
   bool GetFullScreen() override;
-  void SetFullScreen(bool aFullScreen, mozilla::ErrorResult& aError);
+  void SetFullScreen(bool aFullscreen, mozilla::ErrorResult& aError);
   bool Find(const nsAString& aString, bool aCaseSensitive, bool aBackwards,
             bool aWrapAround, bool aWholeWord, bool aSearchInFrames,
             bool aShowDialog, mozilla::ErrorResult& aError);

@@ -57,7 +57,7 @@ private:
   virtual ~ScreenOrientation();
 
   
-  class FullScreenEventListener;
+  class FullscreenEventListener;
 
   
   
@@ -98,7 +98,7 @@ private:
   nsIDocument* GetResponsibleDocument() const;
 
   RefPtr<nsScreen> mScreen;
-  RefPtr<FullScreenEventListener> mFullScreenListener;
+  RefPtr<FullscreenEventListener> mFullscreenListener;
   RefPtr<VisibleEventListener> mVisibleListener;
   OrientationType mType;
   uint16_t mAngle;

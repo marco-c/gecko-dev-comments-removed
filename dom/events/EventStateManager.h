@@ -305,7 +305,7 @@ public:
                                nsIContent* aContent);
 
   
-  static void SetFullScreenState(dom::Element* aElement, bool aIsFullScreen);
+  static void SetFullscreenState(dom::Element* aElement, bool aIsFullscreen);
 
   static bool IsRemoteTarget(nsIContent* aTarget);
 

@@ -291,9 +291,9 @@ nsString* nsContentUtils::sAltText = nullptr;
 nsString* nsContentUtils::sModifierSeparator = nullptr;
 
 bool nsContentUtils::sInitialized = false;
-bool nsContentUtils::sIsFullScreenApiEnabled = false;
+bool nsContentUtils::sIsFullscreenApiEnabled = false;
 bool nsContentUtils::sIsUnprefixedFullscreenApiEnabled = false;
-bool nsContentUtils::sTrustedFullScreenOnly = true;
+bool nsContentUtils::sTrustedFullscreenOnly = true;
 bool nsContentUtils::sIsCutCopyAllowed = true;
 bool nsContentUtils::sIsUpgradableDisplayContentPrefEnabled = false;
 bool nsContentUtils::sIsFrameTimingPrefEnabled = false;
@@ -640,13 +640,13 @@ nsContentUtils::Init()
   Preferences::AddBoolVarCache(&sAllowXULXBL_for_file,
                                "dom.allow_XUL_XBL_for_file");
 
-  Preferences::AddBoolVarCache(&sIsFullScreenApiEnabled,
+  Preferences::AddBoolVarCache(&sIsFullscreenApiEnabled,
                                "full-screen-api.enabled");
 
   Preferences::AddBoolVarCache(&sIsUnprefixedFullscreenApiEnabled,
                                "full-screen-api.unprefix.enabled");
 
-  Preferences::AddBoolVarCache(&sTrustedFullScreenOnly,
+  Preferences::AddBoolVarCache(&sTrustedFullscreenOnly,
                                "full-screen-api.allow-trusted-requests-only");
 
   Preferences::AddBoolVarCache(&sIsCutCopyAllowed,
@@ -7108,20 +7108,20 @@ nsContentUtils::ChannelShouldInheritPrincipal(nsIPrincipal* aLoadingPrincipal,
 
 
 bool
-nsContentUtils::IsFullScreenApiEnabled()
+nsContentUtils::IsFullscreenApiEnabled()
 {
-  return sIsFullScreenApiEnabled;
+  return sIsFullscreenApiEnabled;
 }
 
 
 bool
-nsContentUtils::IsRequestFullScreenAllowed(CallerType aCallerType)
+nsContentUtils::IsRequestFullscreenAllowed(CallerType aCallerType)
 {
   
   
   
 
-  if (!sTrustedFullScreenOnly || aCallerType == CallerType::System) {
+  if (!sTrustedFullscreenOnly || aCallerType == CallerType::System) {
     return true;
   }
 

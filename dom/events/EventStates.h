@@ -215,7 +215,7 @@ private:
 #define NS_EVENT_STATE_URLTARGET     NS_DEFINE_EVENT_STATE_MACRO(8)
 
 
-#define NS_EVENT_STATE_FULL_SCREEN   NS_DEFINE_EVENT_STATE_MACRO(9)
+#define NS_EVENT_STATE_FULLSCREEN    NS_DEFINE_EVENT_STATE_MACRO(9)
 
 #define NS_EVENT_STATE_VALID         NS_DEFINE_EVENT_STATE_MACRO(10)
 
@@ -360,7 +360,7 @@ private:
   NS_EVENT_STATE_FOCUS |                      \
   NS_EVENT_STATE_FOCUSRING |                  \
   NS_EVENT_STATE_FOCUS_WITHIN |               \
-  NS_EVENT_STATE_FULL_SCREEN |                \
+  NS_EVENT_STATE_FULLSCREEN |                 \
   NS_EVENT_STATE_HOVER |                      \
   NS_EVENT_STATE_URLTARGET                    \
 )

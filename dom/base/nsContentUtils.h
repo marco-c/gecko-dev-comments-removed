@@ -2262,7 +2262,7 @@ public:
   
 
 
-  static bool IsFullScreenApiEnabled();
+  static bool IsFullscreenApiEnabled();
 
   
 
@@ -2276,7 +2276,7 @@ public:
 
 
 
-  static bool IsRequestFullScreenAllowed(mozilla::dom::CallerType aCallerType);
+  static bool IsRequestFullscreenAllowed(mozilla::dom::CallerType aCallerType);
 
   
 
@@ -3449,9 +3449,9 @@ private:
   static bool sIsHandlingKeyBoardEvent;
   static bool sAllowXULXBL_for_file;
   static bool sDisablePopups;
-  static bool sIsFullScreenApiEnabled;
+  static bool sIsFullscreenApiEnabled;
   static bool sIsUnprefixedFullscreenApiEnabled;
-  static bool sTrustedFullScreenOnly;
+  static bool sTrustedFullscreenOnly;
   static bool sIsCutCopyAllowed;
   static uint32_t sHandlingInputTimeout;
   static bool sIsPerformanceTimingEnabled;

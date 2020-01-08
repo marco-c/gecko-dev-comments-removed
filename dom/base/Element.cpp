@@ -1920,7 +1920,7 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
   if (HasPointerLock()) {
     nsIDocument::UnlockPointer();
   }
-  if (mState.HasState(NS_EVENT_STATE_FULL_SCREEN)) {
+  if (mState.HasState(NS_EVENT_STATE_FULLSCREEN)) {
     
     
     nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
@@ -3560,9 +3560,9 @@ Element::AttrValueToCORSMode(const nsAttrValue* aValue)
 }
 
 static const char*
-GetFullScreenError(CallerType aCallerType)
+GetFullscreenError(CallerType aCallerType)
 {
-  if (!nsContentUtils::IsRequestFullScreenAllowed(aCallerType)) {
+  if (!nsContentUtils::IsRequestFullscreenAllowed(aCallerType)) {
     return "FullscreenDeniedNotInputDriven";
   }
 
@@ -3579,7 +3579,7 @@ Element::RequestFullscreen(CallerType aCallerType, ErrorResult& aError)
   
   
   
-  if (const char* error = GetFullScreenError(aCallerType)) {
+  if (const char* error = GetFullscreenError(aCallerType)) {
     OwnerDoc()->DispatchFullscreenError(error);
     return;
   }
@@ -3587,7 +3587,7 @@ Element::RequestFullscreen(CallerType aCallerType, ErrorResult& aError)
   auto request = MakeUnique<FullscreenRequest>(this);
   request->mIsCallerChrome = (aCallerType == CallerType::System);
 
-  OwnerDoc()->AsyncRequestFullScreen(std::move(request));
+  OwnerDoc()->AsyncRequestFullscreen(std::move(request));
 }
 
 void

@@ -1752,7 +1752,7 @@ public:
 
 
 
-  void AsyncRequestFullScreen(mozilla::UniquePtr<FullscreenRequest>&&);
+  void AsyncRequestFullscreen(mozilla::UniquePtr<FullscreenRequest>&&);
 
   
   
@@ -1760,7 +1760,7 @@ public:
 
   
   
-  void RequestFullScreen(mozilla::UniquePtr<FullscreenRequest>&& aRequest);
+  void RequestFullscreen(mozilla::UniquePtr<FullscreenRequest>&& aRequest);
 
   
   
@@ -1769,12 +1769,12 @@ public:
   
   
   
-  bool FullScreenStackPush(Element* aElement);
+  bool FullscreenStackPush(Element* aElement);
 
   
   
   
-  void FullScreenStackPop();
+  void FullscreenStackPop();
 
   
 
@@ -1800,7 +1800,7 @@ public:
 
 
 
-  void RestorePreviousFullScreenState();
+  void RestorePreviousFullscreenState();
 
   
 
@@ -3279,7 +3279,7 @@ public:
   nsIURI* GetDocumentURIObject() const;
   
   bool FullscreenEnabled(mozilla::dom::CallerType aCallerType);
-  Element* FullScreenStackTop();
+  Element* FullscreenStackTop();
   bool Fullscreen()
   {
     return !!GetFullscreenElement();
@@ -4579,7 +4579,7 @@ protected:
   
   
   
-  nsTArray<nsWeakPtr> mFullScreenStack;
+  nsTArray<nsWeakPtr> mFullscreenStack;
 
   
   

@@ -292,7 +292,7 @@ public:
 
   nsClassHashtable<nsStringHashKey, nsRadioGroupStruct> mRadioGroups;
 
-  friend class nsCallRequestFullScreen;
+  friend class nsCallRequestFullscreen;
 
   
   
