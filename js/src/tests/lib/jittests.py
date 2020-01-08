@@ -512,6 +512,11 @@ def check_output(out, err, rc, timed_out, test, options):
         if rc == 1 and ("Hit MOZ_CRASH" in err or "Assertion failure:" in err):
             return True
 
+        
+        
+        if rc == 139:
+            return True
+
     if rc != test.expect_status:
         
         
