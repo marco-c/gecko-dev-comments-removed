@@ -806,7 +806,13 @@ GetAtomLength(JSAtom* atom)
     return reinterpret_cast<JS::shadow::String*>(atom)->length();
 }
 
-static const uint32_t MaxStringLength = (1 << 28) - 1;
+
+
+static const uint32_t MaxStringLength = (1 << 30) - 2;
+
+static_assert((uint64_t(MaxStringLength) + 1) * sizeof(char16_t) <= INT32_MAX,
+              "size of null-terminated JSString char buffer must fit in "
+              "INT32_MAX");
 
 MOZ_ALWAYS_INLINE size_t
 GetFlatStringLength(JSFlatString* s)

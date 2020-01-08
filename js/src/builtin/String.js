@@ -514,9 +514,13 @@ function String_repeat(count) {
         ThrowRangeError(JSMSG_RESULTING_STRING_TOO_LARGE);
 
     
-    assert((MAX_STRING_LENGTH & (MAX_STRING_LENGTH + 1)) === 0,
-           "MAX_STRING_LENGTH can be used as a bitmask");
-    n = n & MAX_STRING_LENGTH;
+    
+    
+    assert(TO_INT32(MAX_STRING_LENGTH + 1) == MAX_STRING_LENGTH + 1,
+           "MAX_STRING_LENGTH + 1 must fit in int32");
+    assert(((MAX_STRING_LENGTH + 1) & (MAX_STRING_LENGTH + 2)) === 0,
+           "MAX_STRING_LENGTH + 1 can be used as a bitmask");
+    n = n & (MAX_STRING_LENGTH + 1);
 
     
     var T = "";
