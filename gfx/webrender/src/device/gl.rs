@@ -745,8 +745,8 @@ pub struct Device {
     bound_read_fbo: FBOId,
     bound_draw_fbo: FBOId,
     program_mode_id: UniformLocation,
-    default_read_fbo: gl::GLuint,
-    default_draw_fbo: gl::GLuint,
+    default_read_fbo: FBOId,
+    default_draw_fbo: FBOId,
 
     device_pixel_ratio: f32,
     upload_method: UploadMethod,
@@ -790,29 +790,59 @@ pub struct Device {
 
 
 #[derive(Clone, Copy)]
-pub struct TextureDrawTarget<'a> {
+pub enum DrawTarget<'a> {
     
-    pub texture: &'a Texture,
     
-    pub layer: LayerIndex,
+    Default(DeviceUintSize),
     
-    pub with_depth: bool,
+    Texture {
+        
+        texture: &'a Texture,
+        
+        layer: LayerIndex,
+        
+        with_depth: bool,
+    },
+}
+
+impl<'a> DrawTarget<'a> {
+    
+    pub fn is_default(&self) -> bool {
+        match *self {
+            DrawTarget::Default(..) => true,
+            _ => false,
+        }
+    }
+
+    
+    pub fn dimensions(&self) -> DeviceUintSize {
+        match *self {
+            DrawTarget::Default(d) => d,
+            DrawTarget::Texture { texture, .. } => texture.get_dimensions(),
+        }
+    }
 }
 
 
 #[derive(Clone, Copy)]
-pub struct TextureReadTarget<'a> {
+pub enum ReadTarget<'a> {
     
-    pub texture: &'a Texture,
+    Default,
     
-    pub layer: LayerIndex,
+    Texture {
+        
+        texture: &'a Texture,
+        
+        layer: LayerIndex,
+    }
 }
 
-impl<'a> From<TextureDrawTarget<'a>> for TextureReadTarget<'a> {
-    fn from(t: TextureDrawTarget<'a>) -> Self {
-        TextureReadTarget {
-            texture: t.texture,
-            layer: t.layer,
+impl<'a> From<DrawTarget<'a>> for ReadTarget<'a> {
+    fn from(t: DrawTarget<'a>) -> Self {
+        match t {
+            DrawTarget::Default(..) => ReadTarget::Default,
+            DrawTarget::Texture { texture, layer, .. } =>
+                ReadTarget::Texture { texture, layer },
         }
     }
 }
@@ -895,8 +925,8 @@ impl Device {
             bound_read_fbo: FBOId(0),
             bound_draw_fbo: FBOId(0),
             program_mode_id: UniformLocation::INVALID,
-            default_read_fbo: 0,
-            default_draw_fbo: 0,
+            default_read_fbo: FBOId(0),
+            default_draw_fbo: FBOId(0),
 
             max_texture_size,
             renderer_name,
@@ -995,12 +1025,12 @@ impl Device {
         unsafe {
             self.gl.get_integer_v(gl::READ_FRAMEBUFFER_BINDING, &mut default_read_fbo);
         }
-        self.default_read_fbo = default_read_fbo[0] as gl::GLuint;
+        self.default_read_fbo = FBOId(default_read_fbo[0] as gl::GLuint);
         let mut default_draw_fbo = [0];
         unsafe {
             self.gl.get_integer_v(gl::DRAW_FRAMEBUFFER_BINDING, &mut default_draw_fbo);
         }
-        self.default_draw_fbo = default_draw_fbo[0] as gl::GLuint;
+        self.default_draw_fbo = FBOId(default_draw_fbo[0] as gl::GLuint);
 
         
         for i in 0 .. self.bound_textures.len() {
@@ -1019,8 +1049,8 @@ impl Device {
         self.gl.bind_vertex_array(0);
 
         
-        self.bound_read_fbo = FBOId(self.default_read_fbo);
-        self.bound_draw_fbo = FBOId(self.default_draw_fbo);
+        self.bound_read_fbo = self.default_read_fbo;
+        self.bound_draw_fbo = self.default_draw_fbo;
 
         
         self.gl.pixel_store_i(gl::UNPACK_ALIGNMENT, 1);
@@ -1066,10 +1096,11 @@ impl Device {
         }
     }
 
-    pub fn bind_read_target(&mut self, texture_target: Option<TextureReadTarget>) {
-        let fbo_id = texture_target.map_or(FBOId(self.default_read_fbo), |target| {
-            target.texture.fbos[target.layer]
-        });
+    pub fn bind_read_target(&mut self, target: ReadTarget) {
+        let fbo_id = match target {
+            ReadTarget::Default => self.default_read_fbo,
+            ReadTarget::Texture { texture, layer } => texture.fbos[layer],
+        };
 
         self.bind_read_target_impl(fbo_id)
     }
@@ -1083,29 +1114,40 @@ impl Device {
         }
     }
 
+    pub fn reset_read_target(&mut self) {
+        let fbo = self.default_read_fbo;
+        self.bind_read_target_impl(fbo);
+    }
+
+
+    pub fn reset_draw_target(&mut self) {
+        let fbo = self.default_draw_fbo;
+        self.bind_draw_target_impl(fbo);
+    }
+
     pub fn bind_draw_target(
         &mut self,
-        texture_target: Option<TextureDrawTarget>,
-        dimensions: Option<DeviceUintSize>,
+        target: DrawTarget,
     ) {
-        let fbo_id = texture_target.map_or(FBOId(self.default_draw_fbo), |target| {
-            if target.with_depth {
-                target.texture.fbos_with_depth[target.layer]
-            } else {
-                target.texture.fbos[target.layer]
+        let (fbo_id, dimensions) = match target {
+            DrawTarget::Default(d) => (self.default_draw_fbo, d),
+            DrawTarget::Texture { texture, layer, with_depth } => {
+                let dim = texture.get_dimensions();
+                if with_depth {
+                    (texture.fbos_with_depth[layer], dim)
+                } else {
+                    (texture.fbos[layer], dim)
+                }
             }
-        });
+        };
 
         self.bind_draw_target_impl(fbo_id);
-
-        if let Some(dimensions) = dimensions {
-            self.gl.viewport(
-                0,
-                0,
-                dimensions.width as _,
-                dimensions.height as _,
-            );
-        }
+        self.gl.viewport(
+            0,
+            0,
+            dimensions.width as _,
+            dimensions.height as _,
+        );
     }
 
     pub fn create_fbo_for_external_texture(&mut self, texture_id: u32) -> FBOId {
@@ -1420,7 +1462,7 @@ impl Device {
             self.bind_draw_target_impl(*draw_fbo);
             self.blit_render_target(rect, rect);
         }
-        self.bind_read_target(None);
+        self.reset_read_target();
     }
 
     
@@ -2161,8 +2203,8 @@ impl Device {
     }
 
     pub fn end_frame(&mut self) {
-        self.bind_draw_target(None, None);
-        self.bind_read_target(None);
+        self.reset_draw_target();
+        self.reset_read_target();
 
         debug_assert!(self.inside_frame);
         self.inside_frame = false;
