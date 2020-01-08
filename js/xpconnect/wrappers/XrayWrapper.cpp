@@ -233,8 +233,7 @@ ReportWrapperDenial(JSContext* cx, HandleId id, WrapperDenialType type, const ch
 
     
     uint64_t windowId = 0;
-    nsGlobalWindowInner* win = WindowGlobalOrNull(CurrentGlobalOrNull(cx));
-    if (win)
+    if (nsGlobalWindowInner* win = CurrentWindowOrNull(cx))
       windowId = win->WindowID();
 
 

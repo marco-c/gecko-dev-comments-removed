@@ -195,7 +195,7 @@ public:
   nsRadioGroupStruct* GetOrCreateRadioGroup(const nsAString& aName);
 
   
-  static bool IsShadowDOMEnabled(JSContext* aCx, JSObject* aObject);
+  static bool IsShadowDOMEnabled(JSContext* aCx, JSObject* aGlobal);
   
   static bool IsShadowDOMEnabled(const nsINode* aNode);
 
