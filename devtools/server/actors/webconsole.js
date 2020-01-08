@@ -311,7 +311,11 @@ WebConsoleActor.prototype =
       
       
       const console = window.wrappedJSObject.console;
-      isNative = new XPCNativeWrapper(console).IS_NATIVE_CONSOLE;
+      
+      
+      if (console) {
+        isNative = new XPCNativeWrapper(console).IS_NATIVE_CONSOLE;
+      }
     } catch (ex) {
       
     }
