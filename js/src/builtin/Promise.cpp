@@ -1744,10 +1744,6 @@ static MOZ_MUST_USE bool
 AddPromiseReaction(JSContext* cx, Handle<PromiseObject*> promise,
                    Handle<PromiseReactionRecord*> reaction);
 
-static MOZ_MUST_USE bool
-BlockOnPromise(JSContext* cx, HandleValue promise, HandleObject blockedPromise,
-               HandleValue onFulfilled, HandleValue onRejected, bool onFulfilledReturnsUndefined);
-
 static JSFunction*
 GetResolveFunctionFromReject(JSFunction* reject)
 {
@@ -2285,6 +2281,195 @@ RunResolutionFunction(JSContext *cx, HandleObject resolutionFun, HandleValue res
     return RejectPromiseInternal(cx, promise, result);
 }
 
+static bool
+IsPromiseSpecies(JSContext* cx, JSFunction* species);
+
+
+
+
+template <typename T>
+static MOZ_MUST_USE bool
+CommonPerformPromiseAllRace(JSContext *cx, JS::ForOfIterator& iterator, HandleObject C,
+                            Handle<PromiseCapability> resultCapability, bool* done,
+                            bool resolveReturnsUndefined, T getResolveFun)
+{
+    RootedObject promiseCtor(cx, GlobalObject::getOrCreatePromiseConstructor(cx, cx->global()));
+    if (!promiseCtor)
+        return false;
+
+    RootedValue CVal(cx, ObjectValue(*C));
+    HandleObject resultPromise = resultCapability.promise();
+    RootedValue resolveFunVal(cx);
+    RootedValue rejectFunVal(cx, ObjectValue(*resultCapability.reject()));
+
+    
+    
+    
+    RootedValue nextValueOrNextPromise(cx);
+    RootedObject nextPromiseObj(cx);
+    RootedValue resolveOrThen(cx);
+    RootedObject thenSpeciesOrBlockedPromise(cx);
+    Rooted<PromiseCapability> thenCapability(cx);
+
+    while (true) {
+        
+        RootedValue& nextValue = nextValueOrNextPromise;
+        if (!iterator.next(&nextValue, done)) {
+            
+            *done = true;
+
+            
+            return false;
+        }
+
+        
+        if (*done)
+            return true;
+
+        
+        
+        
+        
+        RootedValue& staticResolve = resolveOrThen;
+        if (!GetProperty(cx, C, CVal, cx->names().resolve, &staticResolve))
+            return false;
+
+        RootedValue& nextPromise = nextValueOrNextPromise;
+        if (!Call(cx, staticResolve, CVal, nextValue, &nextPromise))
+            return false;
+
+        
+        
+        JSObject* resolveFun = getResolveFun();
+        if (!resolveFun)
+            return false;
+        resolveFunVal.setObject(*resolveFun);
+
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        
+        nextPromiseObj = ToObject(cx, nextPromise);
+        if (!nextPromiseObj)
+            return false;
+
+        RootedValue& thenVal = resolveOrThen;
+        if (!GetProperty(cx, nextPromiseObj, nextPromise, cx->names().then, &thenVal))
+            return false;
+
+        
+        
+        bool addToDependent = true;
+
+        if (nextPromiseObj->is<PromiseObject>() && IsNativeFunction(thenVal, Promise_then)) {
+            
+            
+
+            
+            RootedObject& thenSpecies = thenSpeciesOrBlockedPromise;
+            thenSpecies = SpeciesConstructor(cx, nextPromiseObj, JSProto_Promise,
+                                             IsPromiseSpecies);
+            if (!thenSpecies)
+                return false;
+
+            
+            
+            
+            thenCapability.resolve().set(nullptr);
+            thenCapability.reject().set(nullptr);
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if (thenSpecies == promiseCtor &&
+                resolveReturnsUndefined &&
+                resultPromise->is<PromiseObject>() &&
+                !PromiseHasAnyFlag(resultPromise->as<PromiseObject>(),
+                                   PROMISE_FLAG_DEFAULT_RESOLVING_FUNCTIONS))
+            {
+                thenCapability.promise().set(resultPromise);
+                addToDependent = false;
+            } else {
+                
+                if (!NewPromiseCapability(cx, thenSpecies, &thenCapability, true))
+                    return false;
+            }
+
+            
+            Handle<PromiseObject*> promise = nextPromiseObj.as<PromiseObject>();
+            if (!PerformPromiseThen(cx, promise, resolveFunVal, rejectFunVal, thenCapability))
+                return false;
+        } else {
+            
+            RootedValue& ignored = thenVal;
+            if (!Call(cx, thenVal, nextPromise, resolveFunVal, rejectFunVal, &ignored))
+                return false;
+
+            
+            
+            
+            
+            
+            
+            if (!nextPromise.isObject())
+                addToDependent = false;
+        }
+
+        
+        if (addToDependent) {
+            
+            
+            
+            
+            
+            
+            
+            
+            RootedObject& blockedPromise = thenSpeciesOrBlockedPromise;
+            blockedPromise = resultPromise;
+
+            mozilla::Maybe<AutoRealm> ar;
+            if (IsProxy(nextPromiseObj)) {
+                nextPromiseObj = CheckedUnwrap(nextPromiseObj);
+                if (!nextPromiseObj) {
+                    ReportAccessDenied(cx);
+                    return false;
+                }
+                if (JS_IsDeadWrapper(nextPromiseObj)) {
+                    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEAD_OBJECT);
+                    return false;
+                }
+                ar.emplace(cx, nextPromiseObj);
+                if (!cx->compartment()->wrap(cx, &blockedPromise))
+                    return false;
+            }
+
+            
+            
+            
+            
+            if (nextPromiseObj->is<PromiseObject>() && resultPromise->is<PromiseObject>()) {
+                Handle<PromiseObject*> promise = nextPromiseObj.as<PromiseObject>();
+                if (!AddDummyPromiseReactionForDebugger(cx, promise, blockedPromise))
+                    return false;
+            }
+        }
+    }
+}
+
 
 static MOZ_MUST_USE bool
 PerformPromiseAll(JSContext *cx, JS::ForOfIterator& iterator, HandleObject C,
@@ -2292,11 +2477,8 @@ PerformPromiseAll(JSContext *cx, JS::ForOfIterator& iterator, HandleObject C,
 {
     *done = false;
 
-    HandleObject promiseObj = resultCapability.promise();
-
     
     MOZ_ASSERT(C->isConstructor());
-    RootedValue CVal(cx, ObjectValue(*C));
 
     
 
@@ -2322,8 +2504,8 @@ PerformPromiseAll(JSContext *cx, JS::ForOfIterator& iterator, HandleObject C,
     
     RootedArrayObject valuesArray(cx);
     RootedValue valuesArrayVal(cx);
-    if (IsWrapper(promiseObj)) {
-        JSObject* unwrappedPromiseObj = CheckedUnwrap(promiseObj);
+    if (IsWrapper(resultCapability.promise())) {
+        JSObject* unwrappedPromiseObj = CheckedUnwrap(resultCapability.promise());
         MOZ_ASSERT(unwrappedPromiseObj);
 
         {
@@ -2350,7 +2532,7 @@ PerformPromiseAll(JSContext *cx, JS::ForOfIterator& iterator, HandleObject C,
     
     
     Rooted<PromiseAllDataHolder*> dataHolder(cx);
-    dataHolder = NewPromiseAllDataHolder(cx, promiseObj, valuesArrayVal,
+    dataHolder = NewPromiseAllDataHolder(cx, resultCapability.promise(), valuesArrayVal,
                                          resultCapability.resolve());
     if (!dataHolder)
         return false;
@@ -2358,40 +2540,7 @@ PerformPromiseAll(JSContext *cx, JS::ForOfIterator& iterator, HandleObject C,
     
     uint32_t index = 0;
 
-    
-    RootedValue nextValue(cx);
-    RootedValue nextPromise(cx);
-    RootedValue rejectFunVal(cx, ObjectValue(*resultCapability.reject()));
-    RootedValue resolveFunVal(cx);
-    RootedValue staticResolve(cx);
-
-    while (true) {
-        
-        if (!iterator.next(&nextValue, done)) {
-            
-            *done = true;
-
-            
-            return false;
-        }
-
-        
-        if (*done) {
-            
-
-            
-            int32_t remainingCount = dataHolder->decreaseRemainingCount();
-
-            
-            if (remainingCount == 0) {
-                return RunResolutionFunction(cx, resultCapability.resolve(), valuesArrayVal,
-                                             ResolveMode, promiseObj);
-            }
-
-            
-            return true;
-        }
-
+    auto getResolve = [cx, &valuesArray, &dataHolder, &index]() -> JSObject* {
         
         { 
             
@@ -2399,26 +2548,15 @@ PerformPromiseAll(JSContext *cx, JS::ForOfIterator& iterator, HandleObject C,
             AutoRealm ar(cx, valuesArray);
 
             if (!NewbornArrayPush(cx, valuesArray, UndefinedValue()))
-                return false;
+                return nullptr;
         }
-
-        
-        
-        
-        if (!GetProperty(cx, C, CVal, cx->names().resolve, &staticResolve))
-            return false;
-
-        FixedInvokeArgs<1> resolveArgs(cx);
-        resolveArgs[0].set(nextValue);
-        if (!Call(cx, staticResolve, CVal, resolveArgs, &nextPromise))
-            return false;
 
         
         JSFunction* resolveFunc = NewNativeFunction(cx, PromiseAllResolveElementFunction, 1,
                                                     nullptr,gc::AllocKind::FUNCTION_EXTENDED,
                                                     GenericObject);
         if (!resolveFunc)
-            return false;
+            return nullptr;
 
         
         resolveFunc->setExtendedSlot(PromiseAllResolveElementFunctionSlot_Data,
@@ -2432,14 +2570,26 @@ PerformPromiseAll(JSContext *cx, JS::ForOfIterator& iterator, HandleObject C,
         dataHolder->increaseRemainingCount();
 
         
-        resolveFunVal.setObject(*resolveFunc);
-        if (!BlockOnPromise(cx, nextPromise, promiseObj, resolveFunVal, rejectFunVal, true))
-            return false;
-
-        
         index++;
         MOZ_ASSERT(index > 0);
+
+        return resolveFunc;
+    };
+
+    
+    if (!CommonPerformPromiseAllRace(cx, iterator, C, resultCapability, done, true, getResolve))
+        return false;
+
+    
+    int32_t remainingCount = dataHolder->decreaseRemainingCount();
+
+    
+    if (remainingCount == 0) {
+        return RunResolutionFunction(cx, resultCapability.resolve(), valuesArrayVal, ResolveMode,
+                                     resultCapability.promise());
     }
+
+    return true;
 }
 
 
@@ -2583,8 +2733,11 @@ PerformPromiseRace(JSContext *cx, JS::ForOfIterator& iterator, HandleObject C,
                    Handle<PromiseCapability> resultCapability, bool* done)
 {
     *done = false;
+
+    
     MOZ_ASSERT(C->isConstructor());
-    RootedValue CVal(cx, ObjectValue(*C));
+
+    
 
     
     
@@ -2592,52 +2745,13 @@ PerformPromiseRace(JSContext *cx, JS::ForOfIterator& iterator, HandleObject C,
     bool isDefaultResolveFn = IsNativeFunction(resultCapability.resolve(),
                                                ResolvePromiseFunction);
 
-    HandleObject promiseObj = resultCapability.promise();
-    RootedValue resolveFunVal(cx, ObjectValue(*resultCapability.resolve()));
-    RootedValue rejectFunVal(cx, ObjectValue(*resultCapability.reject()));
+    auto getResolve = [&resultCapability]() -> JSObject* {
+        return resultCapability.resolve();
+    };
 
-    RootedValue nextValue(cx);
-    RootedValue nextPromise(cx);
-    RootedValue staticResolve(cx);
-
-    while (true) {
-        
-        if (!iterator.next(&nextValue, done)) {
-            
-            *done = true;
-
-            
-            return false;
-        }
-
-        
-        if (*done) {
-            
-
-            
-            return true;
-        }
-
-        
-        
-        
-        if (!GetProperty(cx, C, CVal, cx->names().resolve, &staticResolve))
-            return false;
-
-        FixedInvokeArgs<1> resolveArgs(cx);
-        resolveArgs[0].set(nextValue);
-        if (!Call(cx, staticResolve, CVal, resolveArgs, &nextPromise))
-            return false;
-
-        
-        if (!BlockOnPromise(cx, nextPromise, promiseObj, resolveFunVal, rejectFunVal,
-                            isDefaultResolveFn))
-        {
-            return false;
-        }
-    }
-
-    MOZ_ASSERT_UNREACHABLE("Shouldn't reach the end of PerformPromiseRace");
+    
+    return CommonPerformPromiseAllRace(cx, iterator, C, resultCapability, done,
+                                       isDefaultResolveFn, getResolve);
 }
 
 
@@ -3675,129 +3789,6 @@ PerformPromiseThenWithReaction(JSContext* cx, Handle<PromiseObject*> promise,
 
     
     return true;
-}
-
-
-
-
-
-
-
-
-
-
-static MOZ_MUST_USE bool
-BlockOnPromise(JSContext* cx, HandleValue promiseVal, HandleObject blockedPromise_,
-               HandleValue onFulfilled, HandleValue onRejected, bool onFulfilledReturnsUndefined)
-{
-    RootedObject promiseObj(cx, ToObject(cx, promiseVal));
-    if (!promiseObj)
-        return false;
-
-    RootedValue thenVal(cx);
-    if (!GetProperty(cx, promiseObj, promiseVal, cx->names().then, &thenVal))
-        return false;
-
-    if (promiseObj->is<PromiseObject>() && IsNativeFunction(thenVal, Promise_then)) {
-        
-        
-        
-        RootedObject PromiseCtor(cx,
-                                 GlobalObject::getOrCreatePromiseConstructor(cx, cx->global()));
-        if (!PromiseCtor)
-            return false;
-
-        RootedObject C(cx, SpeciesConstructor(cx, promiseObj, JSProto_Promise, IsPromiseSpecies));
-        if (!C)
-            return false;
-
-        Rooted<PromiseCapability> resultCapability(cx);
-
-        
-        
-        bool addToDependent = true;
-
-        
-        
-        
-        
-        
-        
-        
-        
-        if (C == PromiseCtor &&
-            onFulfilledReturnsUndefined &&
-            blockedPromise_->is<PromiseObject>() &&
-            !PromiseHasAnyFlag(blockedPromise_->as<PromiseObject>(),
-                               PROMISE_FLAG_DEFAULT_RESOLVING_FUNCTIONS))
-        {
-            resultCapability.promise().set(blockedPromise_);
-            addToDependent = false;
-        } else {
-            
-            if (!NewPromiseCapability(cx, C, &resultCapability, true))
-                return false;
-        }
-
-        
-        Handle<PromiseObject*> promise = promiseObj.as<PromiseObject>();
-        if (!PerformPromiseThen(cx, promise, onFulfilled, onRejected, resultCapability))
-            return false;
-
-        if (!addToDependent)
-            return true;
-    } else {
-        
-        RootedValue rval(cx);
-        if (!Call(cx, thenVal, promiseVal, onFulfilled, onRejected, &rval))
-            return false;
-    }
-
-    
-    
-    
-    
-    
-    if (!promiseVal.isObject())
-        return true;
-
-    
-    
-    
-    
-    
-    
-    
-    RootedObject unwrappedPromiseObj(cx, promiseObj);
-    RootedObject blockedPromise(cx, blockedPromise_);
-
-    mozilla::Maybe<AutoRealm> ar;
-    if (IsProxy(promiseObj)) {
-        unwrappedPromiseObj = CheckedUnwrap(promiseObj);
-        if (!unwrappedPromiseObj) {
-            ReportAccessDenied(cx);
-            return false;
-        }
-        if (JS_IsDeadWrapper(unwrappedPromiseObj)) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEAD_OBJECT);
-            return false;
-        }
-        ar.emplace(cx, unwrappedPromiseObj);
-        if (!cx->compartment()->wrap(cx, &blockedPromise))
-            return false;
-    }
-
-    
-    
-    
-    
-    if (!unwrappedPromiseObj->is<PromiseObject>())
-        return true;
-    if (!blockedPromise_->is<PromiseObject>())
-        return true;
-
-    Handle<PromiseObject*> promise = unwrappedPromiseObj.as<PromiseObject>();
-    return AddDummyPromiseReactionForDebugger(cx, promise, blockedPromise);
 }
 
 static MOZ_MUST_USE bool
