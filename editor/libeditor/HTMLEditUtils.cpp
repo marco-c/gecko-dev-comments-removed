@@ -8,6 +8,7 @@
 #include "TextEditUtils.h"              
 #include "mozilla/ArrayUtils.h"         
 #include "mozilla/Assertions.h"         
+#include "mozilla/EditAction.h"         
 #include "mozilla/EditorBase.h"         
 #include "mozilla/dom/Element.h"        
 #include "nsAString.h"                  
@@ -697,6 +698,101 @@ HTMLEditUtils::IsSingleLineContainer(nsINode& aNode)
          aNode.IsAnyOfHTMLElements(nsGkAtoms::li,
                                    nsGkAtoms::dt,
                                    nsGkAtoms::dd);
+}
+
+EditAction
+HTMLEditUtils::GetEditActionForInsert(const nsAtom& aTagName)
+{
+  
+  
+  if (&aTagName == nsGkAtoms::ul) {
+    
+    return EditAction::eInsertUnorderedListElement;
+  }
+  if (&aTagName == nsGkAtoms::ol) {
+    
+    return EditAction::eInsertOrderedListElement;
+  }
+  if (&aTagName == nsGkAtoms::hr) {
+    
+    return EditAction::eInsertHorizontalRuleElement;
+  }
+  return EditAction::eInsertNode;
+}
+
+EditAction
+HTMLEditUtils::GetEditActionForInsert(const Element& aElement)
+{
+  return GetEditActionForInsert(*aElement.NodeInfo()->NameAtom());
+}
+
+EditAction
+HTMLEditUtils::GetEditActionForFormatText(const nsAtom& aProperty,
+                                          const nsAtom* aAttribute,
+                                          bool aToSetStyle)
+{
+  
+  
+  if (&aProperty == nsGkAtoms::b) {
+    return aToSetStyle ? EditAction::eSetFontWeightProperty :
+                         EditAction::eRemoveFontWeightProperty;
+  }
+  if (&aProperty == nsGkAtoms::i) {
+    return aToSetStyle ? EditAction::eSetTextStyleProperty :
+                         EditAction::eRemoveTextStyleProperty;
+  }
+  if (&aProperty == nsGkAtoms::u) {
+    return aToSetStyle ? EditAction::eSetTextDecorationPropertyUnderline :
+                         EditAction::eRemoveTextDecorationPropertyUnderline;
+  }
+  if (&aProperty == nsGkAtoms::strike) {
+    return aToSetStyle ? EditAction::eSetTextDecorationPropertyLineThrough :
+                         EditAction::eRemoveTextDecorationPropertyLineThrough;
+  }
+  if (&aProperty == nsGkAtoms::sup) {
+    return aToSetStyle ? EditAction::eSetVerticalAlignPropertySuper :
+                         EditAction::eRemoveVerticalAlignPropertySuper;
+  }
+  if (&aProperty == nsGkAtoms::sub) {
+    return aToSetStyle ? EditAction::eSetVerticalAlignPropertySub :
+                         EditAction::eRemoveVerticalAlignPropertySub;
+  }
+  if (&aProperty == nsGkAtoms::font) {
+    if (aAttribute == nsGkAtoms::face) {
+      return aToSetStyle ? EditAction::eSetFontFamilyProperty :
+                           EditAction::eRemoveFontFamilyProperty;
+    }
+    if (aAttribute == nsGkAtoms::color) {
+      return aToSetStyle ? EditAction::eSetColorProperty :
+                           EditAction::eRemoveColorProperty;
+    }
+    if (aAttribute == nsGkAtoms::bgcolor) {
+      return aToSetStyle ? EditAction::eSetBackgroundColorPropertyInline :
+                           EditAction::eRemoveBackgroundColorPropertyInline;
+    }
+  }
+  return aToSetStyle ? EditAction::eSetInlineStyleProperty :
+                       EditAction::eRemoveInlineStyleProperty;
+}
+
+EditAction
+HTMLEditUtils::GetEditActionForAlignment(const nsAString& aAlignType)
+{
+  
+  
+  if (aAlignType.EqualsLiteral("left")) {
+    return EditAction::eAlignLeft;
+  }
+  if (aAlignType.EqualsLiteral("right")) {
+    return EditAction::eAlignRight;
+  }
+  if (aAlignType.EqualsLiteral("center")) {
+    return EditAction::eAlignCenter;
+  }
+  if (aAlignType.EqualsLiteral("justify")) {
+    return EditAction::eJustify;
+  }
+  return EditAction::eSetAlignment;
 }
 
 } 

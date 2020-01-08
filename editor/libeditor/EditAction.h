@@ -30,6 +30,9 @@ enum class EditAction
   eInsertParagraphSeparator,
 
   
+  eInsertLineBreak,
+
+  
   
   eDeleteSelection,
 
@@ -94,9 +97,36 @@ enum class EditAction
   eDrop,
 
   
+  eIndent,
+
+  
+  eOutdent,
+
+  
   
   
   eReplaceText,
+
+  
+  
+  eInsertTableRowElement,
+
+  
+  eRemoveTableRowElement,
+
+  
+  eInsertTableColumn,
+
+  
+  eRemoveTableColumn,
+
+  
+  
+  eResizeElement,
+
+  
+  
+  eMoveElement,
 
   
   
@@ -125,17 +155,185 @@ enum class EditAction
   eJoinNodes,
 
   
+  
+  eInsertBlockElement,
+
+  
+  eInsertHorizontalRuleElement,
+
+  
+  
+  eInsertLinkElement,
+
+  
+  
+  
+  eInsertUnorderedListElement,
+  eInsertOrderedListElement,
+  eInsertDefinitionListElementv,
+
+  
+  eRemoveListElement,
+
+  
+  eInsertBlockquoteElement,
+
+  
+  
+  eNormalizeTable,
+
+  
+  eRemoveTableElement,
+
+  
+  
+  eDeleteTableCellContents,
+
+  
+  
+  eInsertTableCellElement,
+
+  
+  eRemoveTableCellElement,
+
+  
+  eJoinTableCellElements,
+
+  
+  eSplitTableCellElement,
+
+  
+  
+  eSetTableCellElementType,
+
+  
+  
+  eSetInlineStyleProperty,
+
+  
+  
+  eRemoveInlineStyleProperty,
+
+  
+  eSetFontWeightProperty,
+  eRemoveFontWeightProperty,
+
+  
+  eSetTextStyleProperty,
+  eRemoveTextStyleProperty,
+
+  
+  eSetTextDecorationPropertyUnderline,
+  eRemoveTextDecorationPropertyUnderline,
+
+  
+  eSetTextDecorationPropertyLineThrough,
+  eRemoveTextDecorationPropertyLineThrough,
+
+  
+  eSetVerticalAlignPropertySuper,
+  eRemoveVerticalAlignPropertySuper,
+
+  
+  eSetVerticalAlignPropertySub,
+  eRemoveVerticalAlignPropertySub,
+
+  
+  eSetFontFamilyProperty,
+  eRemoveFontFamilyProperty,
+
+  
+  eSetColorProperty,
+  eRemoveColorProperty,
+
+  
+  eSetBackgroundColorPropertyInline,
+  eRemoveBackgroundColorPropertyInline,
+
+  
+  
+  eRemoveAllInlineStyleProperties,
+
+  
+  eIncrementFontSize,
+
+  
+  eDecrementFontSize,
+
+  
+  
+  eSetAlignment,
+
+  
+  
+  eAlignLeft,
+  eAlignRight,
+  eAlignCenter,
+  eJustify,
+
+  
+  eSetBackgroundColor,
+
+  
+  
+  eSetPositionToAbsoluteOrStatic,
+
+  
+  eIncreaseOrDecreaseZIndex,
+
+  
+  eAddOverrideStyleSheet,
+
+  
+  eRemoveOverrideStyleSheet,
+
+  
+  
+  eReplaceOverrideStyleSheet,
+
+  
+  eEnableStyleSheet,
+
+  
+  eEnableOrDisableCSS,
+
+  
+  
+  eEnableOrDisableAbsolutePositionEditor,
+
+  
+  
+  eEnableOrDisableResizer,
+
+  
+  
+  eEnableOrDisableInlineTableEditingUI,
+
+  
   eSetCharacterSet,
 
   
   eSetWrapWidth,
 
   
+  eRewrap,
+
+  
   
   eSetText,
 
   
+  eSetHTML,
+
+  
+  eInsertHTML,
+
+  
   eHidePassword,
+
+  
+  
+  eCreateBogusNode,
 };
 
 

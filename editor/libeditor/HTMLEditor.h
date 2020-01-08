@@ -244,6 +244,13 @@ public:
     if (mIsObjectResizingEnabled == aEnable) {
       return;
     }
+
+    AutoEditActionDataSetter editActionData(
+      *this, EditAction::eEnableOrDisableResizer);
+    if (NS_WARN_IF(!editActionData.CanHandle())) {
+      return;
+    }
+
     mIsObjectResizingEnabled = aEnable;
     RefPtr<Selection> selection = GetSelection();
     if (NS_WARN_IF(!selection)) {
@@ -265,6 +272,13 @@ public:
     if (mIsInlineTableEditingEnabled == aEnable) {
       return;
     }
+
+    AutoEditActionDataSetter editActionData(
+      *this, EditAction::eEnableOrDisableInlineTableEditingUI);
+    if (NS_WARN_IF(!editActionData.CanHandle())) {
+      return;
+    }
+
     mIsInlineTableEditingEnabled = aEnable;
     RefPtr<Selection> selection = GetSelection();
     if (NS_WARN_IF(!selection)) {
@@ -287,6 +301,13 @@ public:
     if (mIsAbsolutelyPositioningEnabled == aEnable) {
       return;
     }
+
+    AutoEditActionDataSetter editActionData(
+      *this, EditAction::eEnableOrDisableAbsolutePositionEditor);
+    if (NS_WARN_IF(!editActionData.CanHandle())) {
+      return;
+    }
+
     mIsAbsolutelyPositioningEnabled = aEnable;
     RefPtr<Selection> selection = GetSelection();
     if (NS_WARN_IF(!selection)) {
@@ -356,15 +377,13 @@ public:
                                           bool* aAny,
                                           bool* aAll,
                                           nsAString& outValue);
-  nsresult RemoveInlineProperty(nsAtom* aProperty,
-                                nsAtom* aAttribute)
-  {
-    nsresult rv = RemoveInlinePropertyInternal(aProperty, aAttribute);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-    return NS_OK;
-  }
+
+  
+
+
+
+  nsresult RemoveInlinePropertyAsAction(nsAtom& aProperty,
+                                        nsAtom* aAttribute);
 
   
 
@@ -979,6 +998,7 @@ protected:
   nsresult SetPositionToStatic(Element& aElement);
 
   
+
 
 
 
