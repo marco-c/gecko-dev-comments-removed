@@ -6,6 +6,7 @@
 
 #include "ds/LifoAlloc.h"
 
+#include "mozilla/Likely.h"
 #include "mozilla/MathAlgorithms.h"
 
 #include "ds/MemoryProtectionExceptionHandler.h"
@@ -142,23 +143,17 @@ LifoAlloc::newChunkWithCapacity(size_t n)
 
     
     
-    uint8_t* u8begin = nullptr;
-    uint8_t* u8end = u8begin + detail::BumpChunkReservedSpace;
-    u8end = detail::BumpChunk::nextAllocEnd(detail::BumpChunk::nextAllocBase(u8end), n);
-    size_t allocSizeWithCanaries = u8end - u8begin;
 
-    
-    if (allocSizeWithCanaries < n ||
-        (allocSizeWithCanaries & (size_t(1) << (BitSize<size_t>::value - 1))))
+    size_t minSize;
+    if (MOZ_UNLIKELY(!detail::BumpChunk::allocSizeWithRedZone(n, &minSize) ||
+                     (minSize & (size_t(1) << (BitSize<size_t>::value - 1)))))
     {
         return nullptr;
     }
 
-    size_t chunkSize;
-    if (allocSizeWithCanaries > defaultChunkSize_)
-        chunkSize = RoundUpPow2(allocSizeWithCanaries);
-    else
-        chunkSize = defaultChunkSize_;
+    const size_t chunkSize = minSize > defaultChunkSize_
+                             ?  RoundUpPow2(minSize)
+                             : defaultChunkSize_;
 
     
     UniqueBumpChunk result = detail::BumpChunk::newWithCapacity(chunkSize);
