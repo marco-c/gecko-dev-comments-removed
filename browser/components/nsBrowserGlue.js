@@ -1813,7 +1813,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 69;
+    const UI_VERSION = 70;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     let currentUIVersion;
@@ -2123,6 +2123,17 @@ BrowserGlue.prototype = {
           Services.prefs.clearUserPref("social." + item);
         }
       }
+    }
+
+    if (currentUIVersion < 70) {
+      
+      
+      Services.prefs.setBoolPref("browser.ctrlTab.recentlyUsedOrder",
+        Services.prefs.getBoolPref("browser.ctrlTab.previews", false));
+      Services.prefs.clearUserPref("browser.ctrlTab.previews");
+      
+      
+      Services.prefs.setBoolPref("browser.ctrlTab.migrated", true);
     }
 
     
