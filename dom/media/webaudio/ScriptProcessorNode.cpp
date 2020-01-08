@@ -119,9 +119,33 @@ public:
   }
 
   
+
+  
+  
+  void NotifyNodeIsConnected(bool aIsConnected)
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    if (!aIsConnected) {
+      
+      mLatency = 0.0f;
+      mLastEventTime = TimeStamp();
+      mDroppingBuffers = false;
+      
+      
+      
+    }
+    mNodeIsConnected = aIsConnected;
+  }
+
   void FinishProducingOutputBuffer(const AudioChunk& aBuffer)
   {
     MOZ_ASSERT(NS_IsMainThread());
+
+    if (!mNodeIsConnected) {
+      
+      
+      return;
+    }
 
     TimeStamp now = TimeStamp::Now();
 
@@ -165,6 +189,7 @@ public:
   }
 
   
+
   AudioChunk GetOutputBuffer()
   {
     MOZ_ASSERT(!NS_IsMainThread());
@@ -196,16 +221,14 @@ public:
     return mDelaySoFar == STREAM_TIME_MAX ? 0 : mDelaySoFar;
   }
 
-  void Reset()
+  void Flush()
   {
     MOZ_ASSERT(!NS_IsMainThread());
     mDelaySoFar = STREAM_TIME_MAX;
-    mLatency = 0.0f;
     {
       MutexAutoLock lock(mOutputQueue.Lock());
       mOutputQueue.Clear();
     }
-    mLastEventTime = TimeStamp();
   }
 
 private:
@@ -213,9 +236,11 @@ private:
   
   
   
+  
   StreamTime mDelaySoFar;
   
-  float mSampleRate;
+  const float mSampleRate;
+  
   
   
   float mLatency;
@@ -224,6 +249,8 @@ private:
   TimeStamp mLastEventTime;
   
   bool mDroppingBuffers;
+  
+  bool mNodeIsConnected;
 };
 
 class ScriptProcessorNodeEngine final : public AudioNodeEngine
@@ -273,7 +300,7 @@ public:
     
     if (!mIsConnected) {
       aOutput->SetNull(WEBAUDIO_BLOCK_SIZE);
-      mSharedBuffers->Reset();
+      mSharedBuffers->Flush();
       mInputWriteIndex = 0;
       return;
     }
@@ -557,6 +584,9 @@ ScriptProcessorNode::UpdateConnectedStatus()
   } else {
     MarkInactive();
   }
+
+  auto engine = static_cast<ScriptProcessorNodeEngine*>(mStream->Engine());
+  engine->GetSharedBuffers()->NotifyNodeIsConnected(isConnected);
 }
 
 } 
