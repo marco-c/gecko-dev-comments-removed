@@ -334,7 +334,9 @@ mozilla::TimeStamp
 nsDOMNavigationTiming::GetUnloadEventStartTimeStamp() const
 {
   nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
-  nsresult rv = ssm->CheckSameOriginURI(mLoadedURI, mUnloadedURI, false);
+  
+  
+  nsresult rv = ssm->CheckSameOriginURI(mLoadedURI, mUnloadedURI, false, false);
   if (NS_SUCCEEDED(rv)) {
     return mUnloadStart;
   }
@@ -345,7 +347,9 @@ mozilla::TimeStamp
 nsDOMNavigationTiming::GetUnloadEventEndTimeStamp() const
 {
   nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
-  nsresult rv = ssm->CheckSameOriginURI(mLoadedURI, mUnloadedURI, false);
+  
+  
+  nsresult rv = ssm->CheckSameOriginURI(mLoadedURI, mUnloadedURI, false, false);
   if (NS_SUCCEEDED(rv)) {
     return mUnloadEnd;
   }

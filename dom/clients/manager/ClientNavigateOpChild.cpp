@@ -73,7 +73,9 @@ public:
     
     
     
-    rv = ssm->CheckSameOriginURI(mBaseURL, channelURL, false);
+    
+    
+    rv = ssm->CheckSameOriginURI(mBaseURL, channelURL, false, false);
     if (NS_FAILED(rv)) {
       mPromise->Resolve(NS_OK, __func__);
       return NS_OK;

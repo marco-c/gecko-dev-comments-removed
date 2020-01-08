@@ -15,6 +15,7 @@
 #include "nsIServiceManager.h"
 #include "nsIScriptObjectPrincipal.h"
 #include "nsIScriptContext.h"
+#include "nsIScriptError.h"
 #include "nsIURL.h"
 #include "nsIURIMutator.h"
 #include "nsINestedURI.h"
@@ -29,6 +30,7 @@
 #include "nsCRTGlue.h"
 #include "nsDocShell.h"
 #include "nsError.h"
+#include "nsGlobalWindowInner.h"
 #include "nsDOMCID.h"
 #include "nsTextFormatter.h"
 #include "nsIStringBundle.h"
@@ -541,13 +543,16 @@ nsScriptSecurityManager::JSPrincipalsSubsume(JSPrincipals *first,
 NS_IMETHODIMP
 nsScriptSecurityManager::CheckSameOriginURI(nsIURI* aSourceURI,
                                             nsIURI* aTargetURI,
-                                            bool reportError)
+                                            bool reportError,
+                                            bool aFromPrivateWindow)
 {
+  
+  
     if (!SecurityCompareURIs(aSourceURI, aTargetURI))
     {
          if (reportError) {
-            ReportError(nullptr, "CheckSameOriginError",
-                        aSourceURI, aTargetURI);
+            ReportError("CheckSameOriginError",
+                        aSourceURI, aTargetURI, aFromPrivateWindow);
          }
          return NS_ERROR_DOM_BAD_URI;
     }
@@ -732,7 +737,8 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
         
         
         rv = CheckLoadURIFlags(sourceURI, aTargetURI, sourceBaseURI,
-                               targetBaseURI, aFlags);
+                               targetBaseURI, aFlags,
+                               aPrincipal->OriginAttributesRef().mPrivateBrowsingId > 0);
         NS_ENSURE_SUCCESS(rv, rv);
         
         return aPrincipal->CheckMayLoad(targetBaseURI, true, false);
@@ -861,7 +867,8 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
         
         if (!schemesMatch || (denySameSchemeLinks && !isSamePage)) {
             return CheckLoadURIFlags(currentURI, currentOtherURI,
-                                     sourceBaseURI, targetBaseURI, aFlags);
+                                     sourceBaseURI, targetBaseURI, aFlags,
+                                     aPrincipal->OriginAttributesRef().mPrivateBrowsingId > 0);
         }
         
         nsCOMPtr<nsINestedURI> nestedURI = do_QueryInterface(currentURI);
@@ -898,7 +905,8 @@ nsScriptSecurityManager::CheckLoadURIFlags(nsIURI *aSourceURI,
                                            nsIURI *aTargetURI,
                                            nsIURI *aSourceBaseURI,
                                            nsIURI *aTargetBaseURI,
-                                           uint32_t aFlags)
+                                           uint32_t aFlags,
+                                           bool aFromPrivateWindow)
 {
     
     
@@ -915,7 +923,7 @@ nsScriptSecurityManager::CheckLoadURIFlags(nsIURI *aSourceURI,
     if (NS_FAILED(rv)) {
         
         if (reportErrors) {
-            ReportError(nullptr, errorTag, aSourceURI, aTargetURI);
+            ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow);
         }
         return rv;
     }
@@ -994,7 +1002,7 @@ nsScriptSecurityManager::CheckLoadURIFlags(nsIURI *aSourceURI,
         }
 
         if (reportErrors) {
-            ReportError(nullptr, errorTag, aSourceURI, aTargetURI);
+            ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow);
         }
         return NS_ERROR_DOM_BAD_URI;
     }
@@ -1021,7 +1029,7 @@ nsScriptSecurityManager::CheckLoadURIFlags(nsIURI *aSourceURI,
 
         
         if (reportErrors) {
-            ReportError(nullptr, errorTag, aSourceURI, aTargetURI);
+            ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow);
         }
         return NS_ERROR_DOM_BAD_URI;
     }
@@ -1066,8 +1074,8 @@ nsScriptSecurityManager::CheckLoadURIFlags(nsIURI *aSourceURI,
 }
 
 nsresult
-nsScriptSecurityManager::ReportError(JSContext* cx, const char* aMessageTag,
-                                     nsIURI* aSource, nsIURI* aTarget)
+nsScriptSecurityManager::ReportError(const char* aMessageTag, nsIURI* aSource,
+                                     nsIURI* aTarget, bool aFromPrivateWindow)
 {
     nsresult rv;
     NS_ENSURE_TRUE(aSource && aTarget, NS_ERROR_NULL_POINTER);
@@ -1098,21 +1106,18 @@ nsScriptSecurityManager::ReportError(JSContext* cx, const char* aMessageTag,
                                       message);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
-    
-    
-    if (cx)
-    {
-        SetPendingException(cx, message.get());
-    }
-    else 
-    {
-        nsCOMPtr<nsIConsoleService> console(
-            do_GetService("@mozilla.org/consoleservice;1"));
-        NS_ENSURE_TRUE(console, NS_ERROR_FAILURE);
+    nsCOMPtr<nsIConsoleService> console(do_GetService(NS_CONSOLESERVICE_CONTRACTID));
+    NS_ENSURE_TRUE(console, NS_ERROR_FAILURE);
+    nsCOMPtr<nsIScriptError> error(do_CreateInstance(NS_SCRIPTERROR_CONTRACTID));
+    NS_ENSURE_TRUE(error, NS_ERROR_FAILURE);
 
-        console->LogStringMessage(message.get());
-    }
+    
+    rv = error->Init(message, EmptyString(), 
+                     EmptyString(), 0, 0,
+                     nsIScriptError::errorFlag,
+                    "SOP", aFromPrivateWindow);
+    NS_ENSURE_SUCCESS(rv, rv);
+    console->LogMessage(error);
     return NS_OK;
 }
 
