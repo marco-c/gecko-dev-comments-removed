@@ -713,31 +713,6 @@ TextEditor::DeleteSelectionAsAction(EDirection aDirection,
   }
 
   
-  AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::DeleteTxnName);
-  nsresult rv = DeleteSelectionAsSubAction(aDirection, aStripWrappers);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  return NS_OK;
-}
-
-nsresult
-TextEditor::DeleteSelectionAsSubAction(EDirection aDirection,
-                                       EStripWrappers aStripWrappers)
-{
-  MOZ_ASSERT(IsEditActionDataAvailable());
-  MOZ_ASSERT(mPlaceholderBatch);
-
-  MOZ_ASSERT(aStripWrappers == eStrip || aStripWrappers == eNoStrip);
-
-  if (!mRules) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-
-  
-  RefPtr<TextEditRules> rules(mRules);
-
-  
   
   
   
@@ -763,6 +738,54 @@ TextEditor::DeleteSelectionAsSubAction(EDirection aDirection,
         break;
     }
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!SelectionRefPtr()->IsCollapsed()) {
+    switch (editAction) {
+      case EditAction::eDeleteWordBackward:
+      case EditAction::eDeleteToBeginningOfSoftLine:
+        editActionData.UpdateEditAction(EditAction::eDeleteBackward);
+        break;
+      case EditAction::eDeleteWordForward:
+      case EditAction::eDeleteToEndOfSoftLine:
+        editActionData.UpdateEditAction(EditAction::eDeleteForward);
+        break;
+      default:
+        break;
+    }
+  }
+
+  
+  AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::DeleteTxnName);
+  nsresult rv = DeleteSelectionAsSubAction(aDirection, aStripWrappers);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
+
+nsresult
+TextEditor::DeleteSelectionAsSubAction(EDirection aDirection,
+                                       EStripWrappers aStripWrappers)
+{
+  MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(mPlaceholderBatch);
+
+  MOZ_ASSERT(aStripWrappers == eStrip || aStripWrappers == eNoStrip);
+
+  if (!mRules) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
+  
+  RefPtr<TextEditRules> rules(mRules);
 
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
                                       *this,
