@@ -9,6 +9,7 @@ const EXPORTED_SYMBOLS = ["ExtensionShortcuts"];
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/ExtensionCommon.jsm");
 ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm");
+ChromeUtils.import("resource://gre/modules/ShortcutUtils.jsm");
 
 ChromeUtils.defineModuleGetter(this, "ExtensionParent",
                                "resource://gre/modules/ExtensionParent.jsm");
@@ -28,10 +29,7 @@ XPCOMUtils.defineLazyGetter(this, "sidebarActionFor", () => {
   return ExtensionParent.apiManager.global.sidebarActionFor;
 });
 
-const {
-  chromeModifierKeyMap,
-  ExtensionError,
-} = ExtensionUtils;
+const {ExtensionError} = ExtensionUtils;
 const {makeWidgetId} = ExtensionCommon;
 
 const EXECUTE_PAGE_ACTION = "_execute_page_action";
@@ -338,7 +336,7 @@ class ExtensionShortcuts {
     let chromeKey = parts.pop();
 
     
-    keyElement.setAttribute("modifiers", this.getModifiersAttribute(parts));
+    keyElement.setAttribute("modifiers", ShortcutUtils.getModifiersAttribute(parts));
 
     
     
@@ -347,53 +345,12 @@ class ExtensionShortcuts {
       keyElement.setAttribute("id", id);
     }
 
-    if (/^[A-Z]$/.test(chromeKey)) {
-      
-      keyElement.setAttribute("key", chromeKey);
-    } else {
-      keyElement.setAttribute("keycode", this.getKeycodeAttribute(chromeKey));
+    let [attribute, value] = ShortcutUtils.getKeyAttribute(chromeKey);
+    keyElement.setAttribute(attribute, value);
+    if (attribute == "keycode") {
       keyElement.setAttribute("event", "keydown");
     }
 
     return keyElement;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  getKeycodeAttribute(chromeKey) {
-    if (/^[0-9]/.test(chromeKey)) {
-      return `VK_${chromeKey}`;
-    }
-    return `VK${chromeKey.replace(/([A-Z])/g, "_$&").toUpperCase()}`;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  getModifiersAttribute(chromeModifiers) {
-    return Array.from(chromeModifiers, modifier => {
-      return chromeModifierKeyMap[modifier];
-    }).join(" ");
   }
 }

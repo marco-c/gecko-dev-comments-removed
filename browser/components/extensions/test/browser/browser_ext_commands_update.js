@@ -168,14 +168,14 @@ add_task(async function test_update_defined_command() {
   }
 
   
-  checkKey(extension.id, "I", "accel shift");
+  checkKey(extension.id, "I", "accel,shift");
 
   await extension.awaitMessage("ready");
   extension.sendMessage("run");
   await extension.awaitFinish("commands");
 
   
-  checkNumericKey(extension.id, "9", "alt shift");
+  checkNumericKey(extension.id, "9", "alt,shift");
 
   
   let storedCommands = ExtensionSettingsStore.getAllForExtension(
@@ -188,7 +188,7 @@ add_task(async function test_update_defined_command() {
   
   extension.sendMessage("update", {name: "foo", shortcut: "Ctrl+Shift+M"});
   await extension.awaitMessage("updateDone");
-  checkKey(extension.id, "M", "accel shift");
+  checkKey(extension.id, "M", "accel,shift");
 
   
   
@@ -206,7 +206,7 @@ add_task(async function test_update_defined_command() {
   extension.sendMessage("reset", "foo");
   await extension.awaitMessage("resetDone");
 
-  checkKey(extension.id, "I", "accel shift");
+  checkKey(extension.id, "I", "accel,shift");
 
   
   let addon = await AddonManager.getAddonByID(extension.id);
@@ -224,7 +224,7 @@ add_task(async function test_update_defined_command() {
   
   await TestUtils.waitForCondition(() => extensionKeyset(extension.id));
   
-  checkNumericKey(extension.id, "9", "alt shift");
+  checkNumericKey(extension.id, "9", "alt,shift");
 
   
   updatedExtension = ExtensionTestUtils.loadExtension({
@@ -246,7 +246,7 @@ add_task(async function test_update_defined_command() {
 
   await TestUtils.waitForCondition(() => extensionKeyset(extension.id));
   
-  checkNumericKey(extension.id, "9", "alt shift");
+  checkNumericKey(extension.id, "9", "alt,shift");
 });
 
 add_task(async function updateSidebarCommand() {
