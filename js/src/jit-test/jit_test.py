@@ -266,6 +266,11 @@ def main(argv):
         
         options.exclude += [os.path.join('debug', 'Script-getOffsetsCoverage-02.js')]
 
+        
+        
+        options.exclude += [os.path.join('debug', 'Debugger-findScripts-uncompleted-01.js')]
+        options.exclude += [os.path.join('debug', 'Debugger-findScripts-uncompleted-02.js')]
+
     if options.exclude_from:
         with open(options.exclude_from) as fh:
             for line in fh:
