@@ -67,6 +67,11 @@ FrameBuilder::Build()
   mWidgetRenderView = new RenderViewMLGPU(this, target, region);
 
   
+  if (ContainerLayerMLGPU* root = mRoot->AsLayerMLGPU()->AsContainerLayerMLGPU()) {
+    root->ComputeIntermediateSurfaceBounds();
+  }
+
+  
   {
     Maybe<gfx::Polygon> geometry;
     RenderTargetIntRect clip(0, 0, target->GetSize().width, target->GetSize().height);
