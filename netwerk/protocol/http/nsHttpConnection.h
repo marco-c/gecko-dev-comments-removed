@@ -215,7 +215,7 @@ public:
     static MOZ_MUST_USE nsresult MakeConnectString(nsAHttpTransaction *trans,
                                                    nsHttpRequestHead *request,
                                                    nsACString &result);
-    void    SetupSecondaryTLS();
+    void    SetupSecondaryTLS(nsAHttpTransaction *aSpdyConnectTransaction = nullptr);
     void    SetInSpdyTunnel(bool arg);
 
     
@@ -310,6 +310,7 @@ private:
     
     RefPtr<nsAHttpTransaction>    mTransaction;
     RefPtr<TLSFilterTransaction>  mTLSFilter;
+    nsWeakPtr                     mWeakTrans; 
 
     RefPtr<nsHttpHandler>         mHttpHandler; 
 
