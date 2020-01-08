@@ -665,11 +665,6 @@ nsDocShell::LoadURI(nsDocShellLoadState* aLoadState)
     StartupTimeline::RecordOnce(StartupTimeline::FIRST_LOAD_URI);
   }
 
-  
-  
-  
-  
-
   MOZ_LOG(gDocShellLeakLog, LogLevel::Debug,
           ("nsDocShell[%p]: loading %s with flags 0x%08x",
            this, aLoadState->URI()->GetSpecOrDefault().get(),
@@ -2855,8 +2850,10 @@ nsDocShell::SetDocLoaderParent(nsDocLoader* aParent)
   
   RecomputeCanExecuteScripts();
 
-  nsCOMPtr<nsPIDOMWindowOuter> window = GetWindow();
-  if (window) {
+  
+  if (!aParent && mScriptGlobal) {
+    nsCOMPtr<nsPIDOMWindowOuter> window = mScriptGlobal->AsOuter();
+    MOZ_ASSERT(window);
     auto* win = nsGlobalWindowOuter::Cast(window);
     win->ParentWindowChanged();
   }
