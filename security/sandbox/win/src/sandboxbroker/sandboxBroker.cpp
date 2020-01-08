@@ -44,7 +44,6 @@ bool SandboxBroker::sRunningFromNetworkDrive = false;
 static UniquePtr<nsString> sBinDir;
 static UniquePtr<nsString> sProfileDir;
 static UniquePtr<nsString> sContentTempDir;
-static UniquePtr<nsString> sPluginTempDir;
 static UniquePtr<nsString> sRoamingAppDataDir;
 static UniquePtr<nsString> sLocalAppDataDir;
 static UniquePtr<nsString> sUserExtensionsDevDir;
@@ -116,7 +115,6 @@ SandboxBroker::GeckoDependentInitialize()
   CacheDirAndAutoClear(dirSvc, NS_GRE_DIR, &sBinDir);
   CacheDirAndAutoClear(dirSvc, NS_APP_USER_PROFILE_50_DIR, &sProfileDir);
   CacheDirAndAutoClear(dirSvc, NS_APP_CONTENT_PROCESS_TEMP_DIR, &sContentTempDir);
-  CacheDirAndAutoClear(dirSvc, NS_APP_PLUGIN_PROCESS_TEMP_DIR, &sPluginTempDir);
   CacheDirAndAutoClear(dirSvc, NS_WIN_APPDATA_DIR, &sRoamingAppDataDir);
   CacheDirAndAutoClear(dirSvc, NS_WIN_LOCAL_APPDATA_DIR, &sLocalAppDataDir);
   CacheDirAndAutoClear(dirSvc, XRE_USER_SYS_EXTENSION_DEV_DIR, &sUserExtensionsDevDir);
@@ -700,6 +698,11 @@ SandboxBroker::SetSecurityLevelForPluginProcess(int32_t aSandboxLevel)
     delayedIntegrityLevel = sandbox::INTEGRITY_LEVEL_MEDIUM;
   }
 
+#ifndef NIGHTLY_BUILD
+  
+  mPolicy->SetDoNotUseRestrictingSIDs();
+#endif
+
   sandbox::ResultCode result = SetJobLevel(mPolicy, jobLevel,
                                            0 );
   SANDBOX_ENSURE_SUCCESS(result,
@@ -744,15 +747,6 @@ SandboxBroker::SetSecurityLevelForPluginProcess(int32_t aSandboxLevel)
   result = mPolicy->SetDelayedProcessMitigations(delayedMitigations);
   SANDBOX_ENSURE_SUCCESS(result,
                          "Invalid flags for SetDelayedProcessMitigations.");
-
-#ifndef NIGHTLY_BUILD
-  
-  mPolicy->SetDoNotUseRestrictingSIDs();
-#else
-  
-  AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_ANY,
-                   sPluginTempDir, NS_LITERAL_STRING("\\*"));
-#endif
 
   if (aSandboxLevel >= 2) {
     
