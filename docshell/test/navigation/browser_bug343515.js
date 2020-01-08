@@ -101,7 +101,7 @@ function step3() {
     }
   }).then(() => {
     
-    ctx.tab2Browser.loadURI(testPath + "bug343515_pg3.html");
+    BrowserTestUtils.loadURI(ctx.tab2Browser, testPath + "bug343515_pg3.html");
 
     
     
@@ -170,7 +170,7 @@ function step5() {
     return BrowserTestUtils.switchTab(gBrowser, ctx.tab1);
   }).then(() => {
     
-    ctx.tab1Browser.loadURI(testPath + "bug343515_pg3.html");
+    BrowserTestUtils.loadURI(ctx.tab1Browser, testPath + "bug343515_pg3.html");
 
     
     
