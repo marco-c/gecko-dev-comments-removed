@@ -26,8 +26,8 @@ function checkIsDefaultMenuItemVisible(visibleMenuItemIds) {
 
 add_task(async function overrideContext_in_extension_tab() {
   await SpecialPowers.pushPrefEnv({
-    set: [["dom.webcomponents.shadowdom.enabled", true]],
-  });
+    set: [["dom.webcomponents.shadowdom.enabled", true],
+          ["security.allow_eval_with_system_principal", true]]});
 
   function extensionTabScript() {
     document.addEventListener("contextmenu", () => {
