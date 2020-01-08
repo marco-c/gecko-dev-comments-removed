@@ -12,7 +12,29 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
 });
 
+
 const SEARCH_COUNTS_HISTOGRAM_KEY = "SEARCH_COUNTS";
+const SEARCH_WITH_ADS_SCALAR = "browser.search.with_ads";
+const SEARCH_AD_CLICKS_SCALAR = "browser.search.ad_clicks";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 const SEARCH_PROVIDER_INFO = {
@@ -22,6 +44,7 @@ const SEARCH_PROVIDER_INFO = {
     "codeParam": "client",
     "codePrefixes": ["firefox"],
     "followonParams": ["oq", "ved", "ei"],
+    "extraAdServersRegexps": [/^https:\/\/www\.googleadservices\.com\/(?:pagead\/)?aclk/],
   },
   "duckduckgo": {
     "regexp": /^https:\/\/duckduckgo\.com\//,
@@ -52,10 +75,80 @@ const BROWSER_SEARCH_PREF = "browser.search.";
 
 XPCOMUtils.defineLazyPreferenceGetter(this, "loggingEnabled", BROWSER_SEARCH_PREF + "log", false);
 
+
+
+
+
+
+
 class TelemetryHandler {
   constructor() {
+    this._browserInfoByUrl = new Map();
+    this._initialized = false;
     this.__searchProviderInfo = null;
+    this._contentHandler = new ContentHandler({
+      browserInfoByUrl: this._browserInfoByUrl,
+      getProviderInfoForUrl: this._getProviderInfoForUrl.bind(this),
+    });
   }
+
+  
+
+
+
+
+  init() {
+    if (this._initialized) {
+      return;
+    }
+
+    this._contentHandler.init();
+
+    for (let win of Services.wm.getEnumerator("navigator:browser")) {
+      this._registerWindow(win);
+    }
+    Services.wm.addListener(this);
+
+    this._initialized = true;
+  }
+
+  
+
+
+  uninit() {
+    if (!this._initialized) {
+      return;
+    }
+
+    this._contentHandler.uninit();
+
+    for (let win of Services.wm.getEnumerator("navigator:browser")) {
+      this._unregisterWindow(win);
+    }
+    Services.wm.removeListener(this);
+
+    this._initialized = false;
+  }
+
+  
+
+
+
+
+  handleEvent(event) {
+    if (event.type != "TabClose") {
+      Cu.reportError(`Received unexpected event type ${event.type}`);
+      return;
+    }
+
+    this.stopTrackingBrowser(event.target.linkedBrowser);
+  }
+
+  
+
+
+
+
 
   overrideSearchTelemetryForTests(infoByProvider) {
     if (infoByProvider) {
@@ -66,19 +159,162 @@ class TelemetryHandler {
     } else {
       this.__searchProviderInfo = SEARCH_PROVIDER_INFO;
     }
+    this._contentHandler.overrideSearchTelemetryForTests(this.__searchProviderInfo);
   }
 
-  recordSearchURLTelemetry(url) {
-    let entry = Object.entries(this._searchProviderInfo).find(
-      ([_, info]) => info.regexp.test(url)
-    );
-    if (!entry) {
+  
+
+
+
+
+
+
+
+  updateTrackingStatus(browser, url) {
+    let info = this._checkURLForSerpMatch(url);
+    if (!info) {
+      this.stopTrackingBrowser(browser);
       return;
     }
-    let [provider, searchProviderInfo] = entry;
+
+    this._reportSerpPage(info, url);
+
+    
+    if (info.code) {
+      let item = this._browserInfoByUrl.get(url);
+      if (item) {
+        item.browsers.add(browser);
+      } else {
+        this._browserInfoByUrl.set(url, {
+          browser: new WeakSet([browser]),
+          info,
+        });
+      }
+    }
+  }
+
+  
+
+
+
+
+
+  stopTrackingBrowser(browser) {
+    for (let [url, item] of this._browserInfoByUrl) {
+      item.browser.delete(browser);
+
+      if (!item.browser.length) {
+        this._browserInfoByUrl.delete(url);
+      }
+    }
+  }
+
+  
+
+  
+
+
+
+
+
+  onOpenWindow(xulWin) {
+    let win = xulWin.docShell.domWindow;
+    win.addEventListener("load", () => {
+      if (win.document.documentElement.getAttribute("windowtype") != "navigator:browser") {
+        return;
+      }
+
+      this._registerWindow(win);
+    }, {once: true});
+  }
+
+  
+
+
+
+
+
+  onCloseWindow(xulWin) {
+    let win = xulWin.docShell.domWindow;
+
+    if (win.document.documentElement.getAttribute("windowtype") != "navigator:browser") {
+      return;
+    }
+
+    this._unregisterWindow(win);
+  }
+
+  
+
+
+
+
+  _registerWindow(win) {
+    this._contentHandler.registerWindow(win);
+    win.gBrowser.tabContainer.addEventListener("TabClose", this);
+  }
+
+  
+
+
+
+
+
+  _unregisterWindow(win) {
+    for (let tab of win.gBrowser.tabs) {
+      this.stopTrackingBrowser(tab);
+    }
+
+    this._contentHandler.unregisterWindow(win);
+    win.gBrowser.tabContainer.removeEventListener("TabClose", this);
+  }
+
+  
+
+
+
+
+
+
+
+  _getProviderInfoForUrl(url, useOnlyExtraAdServers = false) {
+    if (useOnlyExtraAdServers) {
+      return Object.entries(this._searchProviderInfo).find(
+        ([_, info]) => {
+          if (info.extraAdServersRegexps) {
+            for (let regexp of info.extraAdServersRegexps) {
+              if (regexp.test(url)) {
+                return true;
+              }
+            }
+          }
+          return false;
+        }
+      );
+    }
+
+    return Object.entries(this._searchProviderInfo).find(
+      ([_, info]) => info.regexp.test(url)
+    );
+  }
+
+  
+
+
+
+
+
+
+
+  _checkURLForSerpMatch(url) {
+    let info = this._getProviderInfoForUrl(url);
+    if (!info) {
+      return null;
+    }
+    let [provider, searchProviderInfo] = info;
     let queries = new URLSearchParams(url.split("#")[0].split("?")[1]);
     if (!queries.get(searchProviderInfo.queryParam)) {
-      return;
+      return null;
     }
     
     
@@ -114,12 +350,28 @@ class TelemetryHandler {
         }
       }
     }
+    return {provider, type, code};
+  }
 
-    let payload = `${provider}.in-content:${type}:${code || "none"}`;
+  
+
+
+
+
+
+
+
+
+  _reportSerpPage(info, url) {
+    let payload = `${info.provider}.in-content:${info.type}:${info.code || "none"}`;
     let histogram = Services.telemetry.getKeyedHistogramById(SEARCH_COUNTS_HISTOGRAM_KEY);
     histogram.add(payload);
-    LOG("recordSearchURLTelemetry: " + payload);
+    LOG(`SearchTelemetry::recordSearchURLTelemetry: ${payload} for ${url}`);
   }
+
+  
+
+
 
   get _searchProviderInfo() {
     if (!this.__searchProviderInfo) {
@@ -132,10 +384,166 @@ class TelemetryHandler {
 
 
 
-function LOG(aText) {
+
+
+
+
+class ContentHandler {
+  
+
+
+
+
+
+
+
+  constructor(options) {
+    this._browserInfoByUrl = options.browserInfoByUrl;
+    this._getProviderInfoForUrl = options.getProviderInfoForUrl;
+  }
+
+  
+
+
+
+  init() {
+    Services.ppmm.sharedData.set("SearchTelemetry:ProviderInfo", SEARCH_PROVIDER_INFO);
+
+    Cc["@mozilla.org/network/http-activity-distributor;1"]
+      .getService(Ci.nsIHttpActivityDistributor)
+      .addObserver(this);
+  }
+
+  
+
+
+  uninit() {
+    Cc["@mozilla.org/network/http-activity-distributor;1"]
+      .getService(Ci.nsIHttpActivityDistributor)
+      .removeObserver(this);
+  }
+
+  
+
+
+
+
+  receiveMessage(msg) {
+    if (msg.name != "SearchTelemetry:PageInfo") {
+      LOG(`"Received unexpected message: ${msg.name}`);
+      return;
+    }
+
+    this._reportPageWithAds(msg.data);
+  }
+
+  
+
+
+
+
+
+  overrideSearchTelemetryForTests(providerInfo) {
+    Services.ppmm.sharedData.set("SearchTelemetry:ProviderInfo", providerInfo);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  observeActivity(httpChannel, activityType, activitySubtype, timestamp, extraSizeData, extraStringData) {
+    if (!this._browserInfoByUrl.size ||
+        activityType != Ci.nsIHttpActivityObserver.ACTIVITY_TYPE_HTTP_TRANSACTION ||
+        activitySubtype != Ci.nsIHttpActivityObserver.ACTIVITY_SUBTYPE_TRANSACTION_CLOSE) {
+      return;
+    }
+
+    let channel = httpChannel.QueryInterface(Ci.nsIHttpChannel);
+    let loadInfo;
+    try {
+      loadInfo = channel.loadInfo;
+    } catch (e) {
+      
+      return;
+    }
+
+    try {
+      let uri = channel.URI;
+      let triggerURI = loadInfo.triggeringPrincipal.URI;
+
+      if (!triggerURI || !this._browserInfoByUrl.has(triggerURI.spec)) {
+        return;
+      }
+
+      let info = this._getProviderInfoForUrl(uri.spec, true);
+      if (!info) {
+        return;
+      }
+
+      Services.telemetry.keyedScalarAdd(SEARCH_AD_CLICKS_SCALAR, info[0], 1);
+      LOG(`SearchTelemetry::recordSearchURLTelemetry: Counting ad click in page for ${info[0]} ${triggerURI.spec}`);
+    } catch (e) {
+      Cu.reportError(e);
+    }
+  }
+
+  
+
+
+
+
+
+  registerWindow(win) {
+    win.messageManager.addMessageListener("SearchTelemetry:PageInfo", this);
+  }
+
+  
+
+
+
+
+  unregisterWindow(win) {
+    win.messageManager.removeMessageListener("SearchTelemetry:PageInfo", this);
+  }
+
+  
+
+
+
+
+
+
+
+  _reportPageWithAds(info) {
+    let item = this._browserInfoByUrl.get(info.url);
+    if (!item) {
+      LOG(`Expected to report URI with ads but couldn't find the information`);
+      return;
+    }
+
+    Services.telemetry.keyedScalarAdd(SEARCH_WITH_ADS_SCALAR, item.info.provider, 1);
+    LOG(`SearchTelemetry::recordSearchURLTelemetry: Counting ads in page for ${item.info.provider} ${info.url}`);
+  }
+}
+
+
+
+
+
+
+function LOG(msg) {
   if (loggingEnabled) {
-    dump(`*** SearchTelemetry: ${aText}\n"`);
-    Services.console.logStringMessage(aText);
+    dump(`*** SearchTelemetry: ${msg}\n"`);
+    Services.console.logStringMessage(msg);
   }
 }
 
