@@ -144,7 +144,7 @@ proxy.AsyncMessageChannel = class {
       
       
       this.closeHandler = async ({type, target}) => {
-        log.debug(`Received DOM event ${type} for ${target}`);
+        log.trace(`Received DOM event ${type} for ${target}`);
 
         let messageManager;
         switch (type) {
@@ -165,7 +165,7 @@ proxy.AsyncMessageChannel = class {
       
       
       this.dialogueObserver_ = (subject, topic) => {
-        log.debug(`Received observer notification ${topic}`);
+        log.trace(`Received observer notification ${topic}`);
 
         this.removeAllListeners_();
         
