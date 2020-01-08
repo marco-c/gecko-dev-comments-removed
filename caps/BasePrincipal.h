@@ -246,6 +246,8 @@ class BasePrincipal : public nsJSPrincipals {
   
   void FinishInit(const nsACString& aOriginNoSuffix,
                   const OriginAttributes& aOriginAttributes);
+  void FinishInit(BasePrincipal* aOther,
+                  const OriginAttributes& aOriginAttributes);
 
   nsCOMPtr<nsIContentSecurityPolicy> mCSP;
   nsCOMPtr<nsIContentSecurityPolicy> mPreloadCSP;
