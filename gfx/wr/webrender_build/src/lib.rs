@@ -1,0 +1,11 @@
+
+
+
+
+#[cfg(any(feature = "serde"))]
+#[macro_use]
+extern crate serde;
+
+extern crate sha2;
+
+pub mod shader;

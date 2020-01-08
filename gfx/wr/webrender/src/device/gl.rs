@@ -2,7 +2,7 @@
 
 
 
-use super::super::shader_source;
+use super::super::shader_source::SHADERS;
 use api::{ColorF, ImageFormat, MemoryReport};
 use api::{DeviceIntPoint, DeviceIntRect, DeviceIntSize};
 use api::TextureTarget;
@@ -19,8 +19,6 @@ use std::borrow::Cow;
 use std::cell::{Cell, RefCell};
 use std::cmp;
 use std::collections::hash_map::Entry;
-use std::fs::File;
-use std::io::Read;
 use std::marker::PhantomData;
 use std::mem;
 use std::os::raw::c_void;
@@ -32,6 +30,8 @@ use std::slice;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT, Ordering};
 use std::thread;
+use webrender_build::shader::ProgramSourceDigest;
+use webrender_build::shader::{parse_shader_source, shader_source_from_file};
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Ord, Eq, PartialOrd)]
@@ -82,7 +82,6 @@ const SHADER_VERSION_GLES: &str = "#version 300 es\n";
 
 const SHADER_KIND_VERTEX: &str = "#define WR_VERTEX_SHADER\n";
 const SHADER_KIND_FRAGMENT: &str = "#define WR_FRAGMENT_SHADER\n";
-const SHADER_IMPORT: &str = "#include ";
 
 pub struct TextureSlot(pub usize);
 
@@ -184,41 +183,17 @@ fn get_shader_version(gl: &gl::Gl) -> &'static str {
 
 
 
-fn get_shader_source(shader_name: &str, base_path: Option<&PathBuf>) -> Option<Cow<'static, str>> {
+fn get_shader_source(shader_name: &str, base_path: Option<&PathBuf>) -> Cow<'static, str> {
     if let Some(ref base) = base_path {
         let shader_path = base.join(&format!("{}.glsl", shader_name));
-        if shader_path.exists() {
-            let mut source = String::new();
-            File::open(&shader_path)
-                .unwrap()
-                .read_to_string(&mut source)
-                .unwrap();
-            return Some(Cow::Owned(source));
-        }
-    }
-
-    shader_source::SHADERS
-        .get(shader_name)
-        .map(|s| Cow::Borrowed(*s))
-}
-
-
-
-fn parse_shader_source<F: FnMut(&str)>(source: Cow<'static, str>, base_path: Option<&PathBuf>, output: &mut F) {
-    for line in source.lines() {
-        if line.starts_with(SHADER_IMPORT) {
-            let imports = line[SHADER_IMPORT.len() ..].split(',');
-
-            
-            for import in imports {
-                if let Some(include) = get_shader_source(import, base_path) {
-                    parse_shader_source(include, base_path, output);
-                }
-            }
-        } else {
-            output(line);
-            output("\n");
-        }
+        Cow::Owned(shader_source_from_file(&shader_path))
+    } else {
+        Cow::Borrowed(
+            SHADERS
+            .get(shader_name)
+            .expect("Shader not found")
+            .source
+        )
     }
 }
 
@@ -264,6 +239,19 @@ fn do_build_shader_string<F: FnMut(&str)>(
     override_path: Option<&PathBuf>,
     mut output: F,
 ) {
+    build_shader_prefix_string(gl_version_string, features, kind, base_filename, &mut output);
+    build_shader_main_string(base_filename, override_path, &mut output);
+}
+
+
+
+fn build_shader_prefix_string<F: FnMut(&str)>(
+    gl_version_string: &str,
+    features: &str,
+    kind: &str,
+    base_filename: &str,
+    output: &mut F,
+) {
     
     output(gl_version_string);
 
@@ -276,12 +264,16 @@ fn do_build_shader_string<F: FnMut(&str)>(
 
     
     output(features);
+}
 
-    
-    
-    if let Some(shared_source) = get_shader_source(base_filename, override_path) {
-        parse_shader_source(shared_source, override_path, &mut output);
-    }
+
+fn build_shader_main_string<F: FnMut(&str)>(
+    base_filename: &str,
+    override_path: Option<&PathBuf>,
+    output: &mut F,
+) {
+    let shared_source = get_shader_source(base_filename, override_path);
+    parse_shader_source(shared_source, &|f| get_shader_source(f, override_path), output);
 }
 
 pub trait FileWatcherHandler: Send {
@@ -691,19 +683,6 @@ pub struct VBOId(gl::GLuint);
 #[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
 struct IBOId(gl::GLuint);
 
-#[derive(PartialEq, Eq, Hash, Debug, Clone, Default)]
-#[cfg_attr(feature = "serialize_program", derive(Deserialize, Serialize))]
-pub struct ProgramSourceDigest([u8; 32]);
-
-impl ::std::fmt::Display for ProgramSourceDigest {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        for byte in self.0.iter() {
-            f.write_fmt(format_args!("{:02x}", byte))?;
-        }
-        Ok(())
-    }
-}
-
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ProgramSourceInfo {
     base_filename: &'static str,
@@ -714,9 +693,15 @@ pub struct ProgramSourceInfo {
 impl ProgramSourceInfo {
     fn new(
         device: &Device,
-        base_filename: &'static str,
+        name: &'static str,
         features: String,
     ) -> Self {
+        
+        
+        
+        
+        
+        
         
         
         
@@ -725,34 +710,40 @@ impl ProgramSourceInfo {
 
         
         let mut hasher = Sha256::new();
+        let version_str = get_shader_version(&*device.gl());
+        let override_path = device.resource_override_path.as_ref();
+        let source_and_digest = SHADERS.get(&name).expect("Shader not found");
 
         
         hasher.input(device.renderer_name.as_bytes());
 
         
-        device.build_shader_string(
+        build_shader_prefix_string(
+            version_str,
             &features,
-            SHADER_KIND_VERTEX,
-            &base_filename,
-            |s| hasher.input(s.as_bytes()),
+            &"DUMMY",
+            &name,
+            &mut |s| hasher.input(s.as_bytes()),
         );
 
         
-        device.build_shader_string(
-            &features,
-            SHADER_KIND_FRAGMENT,
-            base_filename,
-            |s| hasher.input(s.as_bytes()),
-        );
+        
+        if override_path.is_some() || cfg!(debug_assertions) {
+            let mut h = Sha256::new();
+            build_shader_main_string(&name, override_path, &mut |s| h.input(s.as_bytes()));
+            let d: ProgramSourceDigest = h.into();
+            let digest = format!("{}", d);
+            debug_assert!(override_path.is_some() || digest == source_and_digest.digest);
+            hasher.input(digest.as_bytes());
+        } else {
+            hasher.input(source_and_digest.digest.as_bytes());
+        };
 
         
-        let mut digest = ProgramSourceDigest::default();
-        digest.0.copy_from_slice(hasher.result().as_slice());
-
         ProgramSourceInfo {
-            base_filename,
+            base_filename: name,
             features,
-            digest,
+            digest: hasher.into(),
         }
     }
 
