@@ -5077,12 +5077,13 @@ template <typename Tok>
 static bool
 ParseBinASTData(JSContext* cx, uint8_t* buf_data, uint32_t buf_length,
                 GlobalSharedContext* globalsc, UsedNameTracker& usedNames,
-                const JS::ReadOnlyCompileOptions& options)
+                const JS::ReadOnlyCompileOptions& options,
+                HandleScriptSourceObject sourceObj)
 {
     MOZ_ASSERT(globalsc);
 
     
-    BinASTParser<Tok> reader(cx, cx->tempLifoAlloc(), usedNames, options);
+    BinASTParser<Tok> reader(cx, cx->tempLifoAlloc(), usedNames, options, sourceObj);
 
     JS::Result<ParseNode*> parsed = reader.parse(globalsc, buf_data, buf_length);
 
@@ -5183,12 +5184,17 @@ BinParse(JSContext* cx, unsigned argc, Value* vp)
 
     UsedNameTracker usedNames(cx);
 
+    RootedScriptSourceObject sourceObj(cx, frontend::CreateScriptSourceObject(cx, options, Nothing()));
+    if (!sourceObj) {
+        return false;
+    }
+
     Directives directives(false);
     GlobalSharedContext globalsc(cx, ScopeKind::Global, directives, false);
 
     auto parseFunc = useMultipart ? ParseBinASTData<frontend::BinTokenReaderMultipart>
                                   : ParseBinASTData<frontend::BinTokenReaderTester>;
-    if (!parseFunc(cx, buf_data, buf_length, &globalsc, usedNames, options)) {
+    if (!parseFunc(cx, buf_data, buf_length, &globalsc, usedNames, options, sourceObj)) {
         return false;
     }
 
@@ -10798,9 +10804,6 @@ main(int argc, char** argv, char** envp)
         || !op.addBoolOption('\0', "no-async-stacks", "Disable async stacks")
         || !op.addMultiStringOption('\0', "dll", "LIBRARY", "Dynamically load LIBRARY")
         || !op.addBoolOption('\0', "suppress-minidump", "Suppress crash minidumps")
-#ifdef JS_TRACE_LOGGING
-        || !op.addBoolOption('\0', "enable-tracelogger","Enable Trace Logging")
-#endif
     )
     {
         return EXIT_FAILURE;
@@ -10863,12 +10866,6 @@ main(int argc, char** argv, char** envp)
     if (op.getBoolOption("suppress-minidump")) {
         js::NoteIntentionalCrash();
     }
-
-#ifdef JS_TRACE_LOGGING
-    if (op.getBoolOption("enable-tracelogger")) {
-        jit::JitOptions.enableTraceLogger = true;
-    }
-#endif
 
     if (!InitSharedObjectMailbox()) {
         return 1;

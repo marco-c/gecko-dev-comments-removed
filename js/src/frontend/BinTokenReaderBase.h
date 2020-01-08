@@ -28,16 +28,16 @@ class MOZ_STACK_CLASS BinTokenReaderBase
     
     class SkippableSubTree {
       public:
-        SkippableSubTree(const uint8_t* start, const size_t length)
-          : start_(start)
+        SkippableSubTree(const size_t startOffset, const size_t length)
+          : startOffset_(startOffset)
           , length_(length)
         { }
 
         
         
         
-        const uint8_t* start() const {
-            return start_;
+        size_t startOffset() const {
+            return startOffset_;
         }
 
         
@@ -45,7 +45,7 @@ class MOZ_STACK_CLASS BinTokenReaderBase
             return length_;
         }
       private:
-        const uint8_t* start_;
+        const size_t startOffset_;
         const size_t length_;
     };
 
@@ -55,6 +55,9 @@ class MOZ_STACK_CLASS BinTokenReaderBase
     TokenPos pos();
     TokenPos pos(size_t startOffset);
     size_t offset() const;
+
+    
+    void seek(size_t offset);
 
      
 

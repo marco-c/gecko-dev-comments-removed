@@ -1750,6 +1750,7 @@ JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx, HandleFuncti
         
         
         
+        bool isBinAST = lazy->scriptSource()->hasBinASTSource();
         bool canRelazify = !lazy->numInnerFunctions() && !lazy->hasDirectEval();
 
         if (script) {
@@ -1783,24 +1784,38 @@ JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx, HandleFuncti
 
         
 
-        MOZ_ASSERT(lazy->scriptSource()->hasSourceText());
-
-        
         size_t lazyLength = lazy->sourceEnd() - lazy->sourceStart();
-        UncompressedSourceCache::AutoHoldEntry holder;
-        ScriptSource::PinnedChars chars(cx, lazy->scriptSource(), holder,
-                                        lazy->sourceStart(), lazyLength);
-        if (!chars.get()) {
-            return false;
-        }
+        if (isBinAST) {
+#if defined(JS_BUILD_BINAST)
+            if (!frontend::CompileLazyBinASTFunction(cx, lazy,
+                    lazy->scriptSource()->binASTSource() + lazy->sourceStart(), lazyLength))
+            {
+                MOZ_ASSERT(fun->isInterpretedLazy());
+                MOZ_ASSERT(fun->lazyScript() == lazy);
+                MOZ_ASSERT(!lazy->hasScript());
+                return false;
+            }
+#else
+            MOZ_CRASH("Trying to delazify BinAST function in non-BinAST build");
+#endif 
+        } else {
+            MOZ_ASSERT(lazy->scriptSource()->hasSourceText());
 
-        if (!frontend::CompileLazyFunction(cx, lazy, chars.get(), lazyLength)) {
             
-            
-            MOZ_ASSERT(fun->isInterpretedLazy());
-            MOZ_ASSERT(fun->lazyScript() == lazy);
-            MOZ_ASSERT(!lazy->hasScript());
-            return false;
+            UncompressedSourceCache::AutoHoldEntry holder;
+            ScriptSource::PinnedChars chars(cx, lazy->scriptSource(), holder,
+                                            lazy->sourceStart(), lazyLength);
+            if (!chars.get())
+                return false;
+
+            if (!frontend::CompileLazyFunction(cx, lazy, chars.get(), lazyLength)) {
+		
+		
+                MOZ_ASSERT(fun->isInterpretedLazy());
+                MOZ_ASSERT(fun->lazyScript() == lazy);
+                MOZ_ASSERT(!lazy->hasScript());
+                return false;
+            }
         }
 
         script = fun->nonLazyScript();
