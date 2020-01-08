@@ -4,6 +4,7 @@
 
 
 
+ 
 
 
 {
@@ -173,6 +174,18 @@ const ReflectLoader = new class {
         let path = this.resolve(name, null);
         return this.loadAndExecute(path);
     }
+
+    populateImportMeta(module, metaObject) {
+        
+
+        let path;
+        if (ReflectApply(MapPrototypeHas, this.modulePaths, [module])) {
+            path = ReflectApply(MapPrototypeGet, this.modulePaths, [module]);
+        } else {
+            path = "(unknown)";
+        }
+        metaObject.url = path;
+    }
 };
 
 setModuleLoadHook((path) => ReflectLoader.importRoot(path));
@@ -182,4 +195,9 @@ setModuleResolveHook((module, requestName) => {
     return ReflectLoader.loadAndParse(path);
 });
 
+setModuleMetadataHook((module, metaObject) => {
+    ReflectLoader.populateImportMeta(module, metaObject);
+});
+
 }
+
