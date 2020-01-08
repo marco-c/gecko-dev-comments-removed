@@ -4,136 +4,329 @@
 
 
 
-#include "nsWaylandDisplay.h"
 #include "WindowSurfaceWayland.h"
 
+#include "base/message_loop.h"          
+#include "base/task.h"                  
 #include "nsPrintfCString.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Tools.h"
 #include "gfxPlatform.h"
 #include "mozcontainer.h"
 #include "nsTArray.h"
-#include "base/message_loop.h"          
-#include "base/task.h"                  
+#include "mozilla/StaticMutex.h"
+#include "mozwayland/mozwayland.h"
 
 #include <sys/mman.h>
+#include <assert.h>
 #include <fcntl.h>
 #include <errno.h>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 namespace mozilla {
 namespace widget {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #define BUFFER_BPP 4
-gfx::SurfaceFormat WindowBackBuffer::mFormat = gfx::SurfaceFormat::B8G8R8A8;
+#define MAX_DISPLAY_CONNECTIONS 2
+
+static nsWaylandDisplay* gWaylandDisplays[MAX_DISPLAY_CONNECTIONS];
+static StaticMutex gWaylandDisplaysMutex;
+
+
+
+
+
+
+
+
+static nsWaylandDisplay* WaylandDisplayGet(wl_display *aDisplay);
+static void WaylandDisplayRelease(wl_display *aDisplay);
+static void WaylandDisplayLoop(wl_display *aDisplay);
+
+
+
+#define EVENT_LOOP_DELAY (1000/240)
+
+
+static nsWaylandDisplay*
+WaylandDisplayGetLocked(wl_display *aDisplay, const StaticMutexAutoLock&)
+{
+  for (auto& display: gWaylandDisplays) {
+    if (display && display->Matches(aDisplay)) {
+      NS_ADDREF(display);
+      return display;
+    }
+  }
+
+  for (auto& display: gWaylandDisplays) {
+    if (display == nullptr) {
+      display = new nsWaylandDisplay(aDisplay);
+      NS_ADDREF(display);
+      return display;
+    }
+  }
+
+  MOZ_CRASH("There's too many wayland display conections!");
+  return nullptr;
+}
+
+static nsWaylandDisplay*
+WaylandDisplayGet(wl_display *aDisplay)
+{
+  StaticMutexAutoLock lock(gWaylandDisplaysMutex);
+  return WaylandDisplayGetLocked(aDisplay, lock);
+}
+
+static bool
+WaylandDisplayReleaseLocked(wl_display *aDisplay,
+                            const StaticMutexAutoLock&)
+{
+  for (auto& display: gWaylandDisplays) {
+    if (display && display->Matches(aDisplay)) {
+      int rc = display->Release();
+      if (rc == 0) {
+        display = nullptr;
+      }
+      return true;
+    }
+  }
+  MOZ_ASSERT(false, "Missing nsWaylandDisplay for this thread!");
+  return false;
+}
+
+static void
+WaylandDisplayRelease(wl_display *aDisplay)
+{
+  StaticMutexAutoLock lock(gWaylandDisplaysMutex);
+  WaylandDisplayReleaseLocked(aDisplay, lock);
+}
+
+static void
+WaylandDisplayLoopLocked(wl_display* aDisplay,
+                         const StaticMutexAutoLock&)
+{
+  for (auto& display: gWaylandDisplays) {
+    if (display && display->Matches(aDisplay)) {
+      if (display->DisplayLoop()) {
+        MessageLoop::current()->PostDelayedTask(
+            NewRunnableFunction("WaylandDisplayLoop",
+                               &WaylandDisplayLoop,
+                               aDisplay),
+            EVENT_LOOP_DELAY);
+      }
+      break;
+    }
+  }
+}
+
+static void
+WaylandDisplayLoop(wl_display* aDisplay)
+{
+  MOZ_ASSERT(!NS_IsMainThread());
+  StaticMutexAutoLock lock(gWaylandDisplaysMutex);
+  WaylandDisplayLoopLocked(aDisplay, lock);
+}
+
+static void
+global_registry_handler(void *data, wl_registry *registry, uint32_t id,
+                        const char *interface, uint32_t version)
+{
+  if (strcmp(interface, "wl_shm") == 0) {
+    auto interface = reinterpret_cast<nsWaylandDisplay *>(data);
+    auto shm = static_cast<wl_shm*>(
+        wl_registry_bind(registry, id, &wl_shm_interface, 1));
+    wl_proxy_set_queue((struct wl_proxy *)shm, interface->GetEventQueue());
+    interface->SetShm(shm);
+  }
+}
+
+static void
+global_registry_remover(void *data, wl_registry *registry, uint32_t id)
+{
+}
+
+static const struct wl_registry_listener registry_listener = {
+  global_registry_handler,
+  global_registry_remover
+};
+
+wl_shm*
+nsWaylandDisplay::GetShm()
+{
+  MOZ_ASSERT(mThreadId == PR_GetCurrentThread());
+
+  if (!mShm) {
+    
+    
+    wl_registry* registry = wl_display_get_registry(mDisplay);
+    wl_registry_add_listener(registry, &registry_listener, this);
+
+    wl_proxy_set_queue((struct wl_proxy *)registry, mEventQueue);
+    if (mEventQueue) {
+      wl_display_roundtrip_queue(mDisplay, mEventQueue);
+    } else {
+      wl_display_roundtrip(mDisplay);
+    }
+
+    MOZ_RELEASE_ASSERT(mShm, "Wayland registry query failed!");
+  }
+
+  return(mShm);
+}
+
+bool
+nsWaylandDisplay::DisplayLoop()
+{
+  wl_display_dispatch_queue_pending(mDisplay, mEventQueue);
+  return true;
+}
+
+bool
+nsWaylandDisplay::Matches(wl_display *aDisplay)
+{
+  return mThreadId == PR_GetCurrentThread() && aDisplay == mDisplay;
+}
+
+NS_IMPL_ISUPPORTS(nsWaylandDisplay, nsISupports);
+
+nsWaylandDisplay::nsWaylandDisplay(wl_display *aDisplay)
+  : mThreadId(PR_GetCurrentThread())
+  
+  
+  
+  , mFormat(gfx::SurfaceFormat::B8G8R8A8)
+  , mShm(nullptr)
+  , mDisplay(aDisplay)
+{
+  if (NS_IsMainThread()) {
+    
+    mEventQueue = nullptr;
+  } else {
+    mEventQueue = wl_display_create_queue(mDisplay);
+    MessageLoop::current()->PostTask(NewRunnableFunction(
+        "WaylandDisplayLoop", &WaylandDisplayLoop, mDisplay));
+  }
+}
+
+nsWaylandDisplay::~nsWaylandDisplay()
+{
+  MOZ_ASSERT(mThreadId == PR_GetCurrentThread());
+  
+  mDisplay = nullptr;
+
+  if (mEventQueue) {
+    wl_event_queue_destroy(mEventQueue);
+    mEventQueue = nullptr;
+  }
+}
 
 int
 WaylandShmPool::CreateTemporaryFile(int aSize)
@@ -351,7 +544,7 @@ WindowBackBuffer::Lock()
   return gfxPlatform::CreateDrawTargetForData(static_cast<unsigned char*>(mShmPool.GetImageData()),
                                               lockSize,
                                               BUFFER_BPP * mWidth,
-                                              mFormat);
+                                              mWaylandDisplay->GetSurfaceFormat());
 }
 
 static void
@@ -369,7 +562,7 @@ static const struct wl_callback_listener frame_listener = {
 
 WindowSurfaceWayland::WindowSurfaceWayland(nsWindow *aWindow)
   : mWindow(aWindow)
-  , mWaylandDisplay(WaylandDisplayGet())
+  , mWaylandDisplay(WaylandDisplayGet(aWindow->GetWaylandDisplay()))
   , mWaylandBuffer(nullptr)
   , mFrameCallback(nullptr)
   , mLastCommittedSurface(nullptr)
@@ -417,9 +610,9 @@ WindowSurfaceWayland::~WindowSurfaceWayland()
     mDisplayThreadMessageLoop->PostTask(
       NewRunnableFunction("WaylandDisplayRelease",
                           &WaylandDisplayRelease,
-                          mWaylandDisplay));
+                          mWaylandDisplay->GetDisplay()));
   } else {
-    WaylandDisplayRelease(mWaylandDisplay);
+    WaylandDisplayRelease(mWaylandDisplay->GetDisplay());
   }
 }
 
@@ -507,7 +700,7 @@ WindowSurfaceWayland::LockImageSurface(const gfx::IntSize& aLockSize)
   if (!mImageSurface || mImageSurface->CairoStatus() ||
       !(aLockSize <= mImageSurface->GetSize())) {
     mImageSurface = new gfxImageSurface(aLockSize,
-        SurfaceFormatToImageFormat(WindowBackBuffer::GetSurfaceFormat()));
+        SurfaceFormatToImageFormat(mWaylandDisplay->GetSurfaceFormat()));
     if (mImageSurface->CairoStatus()) {
       return nullptr;
     }
@@ -516,7 +709,7 @@ WindowSurfaceWayland::LockImageSurface(const gfx::IntSize& aLockSize)
   return gfxPlatform::CreateDrawTargetForData(mImageSurface->Data(),
                                               mImageSurface->GetSize(),
                                               mImageSurface->Stride(),
-                                              WindowBackBuffer::GetSurfaceFormat());
+                                              mWaylandDisplay->GetSurfaceFormat());
 }
 
 
