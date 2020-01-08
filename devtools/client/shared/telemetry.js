@@ -137,7 +137,15 @@ class Telemetry {
 
 
   finish(histogramId, obj, canceledOkay) {
-    return TelemetryStopwatch.finish(histogramId, obj, canceledOkay);
+    
+    this.ignoreStopwatchErrors(true);
+
+    const result = TelemetryStopwatch.finish(histogramId, obj, canceledOkay);
+
+    
+    this.ignoreStopwatchErrors(false);
+
+    return result;
   }
 
   
@@ -162,7 +170,28 @@ class Telemetry {
 
 
   finishKeyed(histogramId, key, obj, canceledOkay) {
-    return TelemetryStopwatch.finishKeyed(histogramId, key, obj, canceledOkay);
+    
+    this.ignoreStopwatchErrors(true);
+
+    const result = TelemetryStopwatch.finishKeyed(histogramId, key, obj, canceledOkay);
+
+    
+    this.ignoreStopwatchErrors(false);
+
+    return result;
+  }
+
+  
+
+
+
+
+
+  ignoreStopwatchErrors(testing) {
+    
+    
+    
+    TelemetryStopwatch.setTestModeEnabled(testing);
   }
 
   
@@ -617,6 +646,13 @@ class Telemetry {
     if (charts.useTimedEvent) {
       const sig = `devtools.main,tool_timer,${id},null`;
       const event = PENDING_EVENTS.get(sig);
+
+      if (!event) {
+        
+        
+        return;
+      }
+
       const time = this.msSystemNow() - event.extra.time_open;
 
       this.addEventProperties("devtools.main", "tool_timer", id, null, {
