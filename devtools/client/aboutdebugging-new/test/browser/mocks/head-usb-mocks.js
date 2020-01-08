@@ -29,6 +29,12 @@ class UsbMocks {
     };
 
     
+    
+    this.usbRuntimesMock.refreshUSBRuntimes = () => {
+      this.emitUpdate();
+    };
+
+    
     this._observerMock = addObserverMock(this.usbRuntimesMock);
 
     
