@@ -29,14 +29,16 @@ FreezeThaw(JSContext* cx, JS::HandleScript script)
     
     JS::TranscodeBuffer buffer;
     JS::TranscodeResult rs = JS::EncodeScript(cx, buffer, script);
-    if (rs != JS::TranscodeResult_Ok)
+    if (rs != JS::TranscodeResult_Ok) {
         return nullptr;
+    }
 
     
     JS::RootedScript script2(cx);
     rs = JS::DecodeScript(cx, buffer, &script2);
-    if (rs != JS::TranscodeResult_Ok)
+    if (rs != JS::TranscodeResult_Ok) {
         return nullptr;
+    }
     return script2;
 }
 

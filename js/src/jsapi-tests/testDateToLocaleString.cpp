@@ -17,8 +17,9 @@ BEGIN_TEST(testDateToLocaleString)
     
     JS::Rooted<JS::Value> haveIntl(cx);
     EVAL("typeof Intl !== 'undefined'", &haveIntl);
-    if (!haveIntl.toBoolean())
+    if (!haveIntl.toBoolean()) {
         return true;
+    }
 
     
     

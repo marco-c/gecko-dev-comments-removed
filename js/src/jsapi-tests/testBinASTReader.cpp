@@ -49,8 +49,9 @@ readFull(JSContext* cx, const char* path, js::Vector<char16_t>& buf)
     js::Vector<uint8_t> intermediate(cx);
     readFull(path, intermediate);
 
-    if (!buf.appendAll(intermediate))
+    if (!buf.appendAll(intermediate)) {
         MOZ_CRASH("Couldn't read data");
+    }
 }
 
 
@@ -69,8 +70,9 @@ runTestFromPath(JSContext* cx, const char* path)
     enterJsDirectory();
     DIR* dir = opendir(path);
     exitJsDirectory();
-    if (!dir)
+    if (!dir) {
         MOZ_CRASH("Couldn't open directory");
+    }
 
 
     while (auto entry = readdir(dir)) {
@@ -82,12 +84,15 @@ runTestFromPath(JSContext* cx, const char* path)
     MOZ_ASSERT(path[pathlen - 1] == '\\');
 
     Vector<char> pattern(cx);
-    if (!pattern.append(path, pathlen))
+    if (!pattern.append(path, pathlen)) {
         MOZ_CRASH();
-    if (!pattern.append('*'))
+    }
+    if (!pattern.append('*')) {
         MOZ_CRASH();
-    if (!pattern.append('\0'))
+    }
+    if (!pattern.append('\0')) {
         MOZ_CRASH();
+    }
 
     WIN32_FIND_DATA FindFileData;
     enterJsDirectory();
@@ -106,22 +111,28 @@ runTestFromPath(JSContext* cx, const char* path)
 
         
         if (isDirectory) {
-            if (strcmp(d_name, ".") == 0)
+            if (strcmp(d_name, ".") == 0) {
                 continue;
-            if (strcmp(d_name, "..") == 0)
+            }
+            if (strcmp(d_name, "..") == 0) {
                 continue;
+            }
 
             Vector<char> subPath(cx);
             
-            if (!subPath.append(path, pathlen))
+            if (!subPath.append(path, pathlen)) {
                 MOZ_CRASH();
-            if (!subPath.append(d_name, namlen))
+            }
+            if (!subPath.append(d_name, namlen)) {
                 MOZ_CRASH();
+            }
             
-            if (!subPath.append(path[pathlen - 1]))
+            if (!subPath.append(path[pathlen - 1])) {
                 MOZ_CRASH();
-            if (!subPath.append(0))
+            }
+            if (!subPath.append(0)) {
                 MOZ_CRASH();
+            }
             runTestFromPath<Tok>(cx, subPath.begin());
             continue;
         }
@@ -137,8 +148,9 @@ runTestFromPath(JSContext* cx, const char* path)
 
         
         fprintf(stderr, "Considering %s\n", d_name);
-        if (namlen < sizeof(BIN_SUFFIX))
+        if (namlen < sizeof(BIN_SUFFIX)) {
             continue;
+        }
         if (strncmp(d_name + namlen - (sizeof(BIN_SUFFIX) - 1),
                     BIN_SUFFIX,
                     sizeof(BIN_SUFFIX)
@@ -147,13 +159,16 @@ runTestFromPath(JSContext* cx, const char* path)
 
         
         Vector<char> txtPath(cx);
-        if (!txtPath.append(path, pathlen))
+        if (!txtPath.append(path, pathlen)) {
             MOZ_CRASH();
-        if (!txtPath.append(d_name, namlen))
+        }
+        if (!txtPath.append(d_name, namlen)) {
             MOZ_CRASH();
+        }
         txtPath.shrinkBy(sizeof(BIN_SUFFIX) - 1);
-        if (!txtPath.append(TXT_SUFFIX, sizeof(TXT_SUFFIX)))
+        if (!txtPath.append(TXT_SUFFIX, sizeof(TXT_SUFFIX))) {
             MOZ_CRASH();
+        }
         fprintf(stderr, "Testing %s\n", txtPath.begin());
 
         
@@ -168,32 +183,38 @@ runTestFromPath(JSContext* cx, const char* path)
 
         RootedScriptSourceObject sourceObject(cx, frontend::CreateScriptSourceObject(
                                                   cx, txtOptions, mozilla::Nothing()));
-        if (!sourceObject)
+        if (!sourceObject) {
             MOZ_CRASH("Couldn't initialize ScriptSourceObject");
+        }
 
         js::frontend::Parser<js::frontend::FullParseHandler, char16_t> txtParser(
             cx, allocScope.alloc(), txtOptions, txtSource.begin(), txtSource.length(),
              false, txtUsedNames, nullptr,
             nullptr, sourceObject, frontend::ParseGoal::Script);
-        if (!txtParser.checkOptions())
+        if (!txtParser.checkOptions()) {
             MOZ_CRASH("Bad options");
+        }
 
         auto txtParsed = txtParser.parse(); 
         RootedValue txtExn(cx);
         if (!txtParsed) {
             
-            if (!js::GetAndClearException(cx, &txtExn))
+            if (!js::GetAndClearException(cx, &txtExn)) {
                 MOZ_CRASH("Couldn't clear exception");
+            }
         }
 
         
         Vector<char> binPath(cx);
-        if (!binPath.append(path, pathlen))
+        if (!binPath.append(path, pathlen)) {
             MOZ_CRASH();
-        if (!binPath.append(d_name, namlen))
+        }
+        if (!binPath.append(d_name, namlen)) {
             MOZ_CRASH();
-        if (!binPath.append(0))
+        }
+        if (!binPath.append(0)) {
             MOZ_CRASH();
+        }
 
         js::Vector<uint8_t> binSource(cx);
         readFull(binPath.begin(), binSource);
@@ -213,8 +234,9 @@ runTestFromPath(JSContext* cx, const char* path)
         RootedValue binExn(cx);
         if (binParsed.isErr()) {
             
-            if (!js::GetAndClearException(cx, &binExn))
+            if (!js::GetAndClearException(cx, &binExn)) {
                 MOZ_CRASH("Couldn't clear binExn");
+            }
         }
 
         
@@ -222,8 +244,9 @@ runTestFromPath(JSContext* cx, const char* path)
             fprintf(stderr, "Text file parsing failed: ");
 
             js::ErrorReport report(cx);
-            if (!report.init(cx, txtExn, js::ErrorReport::WithSideEffects))
+            if (!report.init(cx, txtExn, js::ErrorReport::WithSideEffects)) {
                 MOZ_CRASH("Couldn't report txtExn");
+            }
 
             PrintError(cx, stderr, report.toStringResult(), report.report(),  true);
             MOZ_CRASH("Binary parser accepted a file that text parser rejected");
@@ -233,8 +256,9 @@ runTestFromPath(JSContext* cx, const char* path)
             fprintf(stderr, "Binary file parsing failed: ");
 
             js::ErrorReport report(cx);
-            if (!report.init(cx, binExn, js::ErrorReport::WithSideEffects))
+            if (!report.init(cx, binExn, js::ErrorReport::WithSideEffects)) {
                 MOZ_CRASH("Couldn't report binExn");
+            }
 
             PrintError(cx, stderr, report.toStringResult(), report.report(),  true);
             MOZ_CRASH("Binary parser rejected a file that text parser accepted");
@@ -248,13 +272,15 @@ runTestFromPath(JSContext* cx, const char* path)
 #if defined(DEBUG) 
         
         Sprinter binPrinter(cx);
-        if (!binPrinter.init())
+        if (!binPrinter.init()) {
             MOZ_CRASH("Couldn't display binParsed");
+        }
         DumpParseTree(binParsed.unwrap(), binPrinter);
 
         Sprinter txtPrinter(cx);
-        if (!txtPrinter.init())
+        if (!txtPrinter.init()) {
             MOZ_CRASH("Couldn't display txtParsed");
+        }
         DumpParseTree(txtParsed, txtPrinter);
 
         if (strcmp(binPrinter.string(), txtPrinter.string()) != 0) {
@@ -266,24 +292,30 @@ runTestFromPath(JSContext* cx, const char* path)
       
       
             auto fd = open("/tmp/bin.ast", O_CREAT | O_TRUNC | O_WRONLY, 0666);
-            if (!fd)
+            if (!fd) {
                 MOZ_CRASH("Could not open bin.ast");
+            }
             auto result = write(fd, binPrinter.string(), binPrinter.stringEnd() - binPrinter.string());
-            if (result <= 0)
+            if (result <= 0) {
                 MOZ_CRASH("Could not write to bin.ast");
+            }
             result = close(fd);
-            if (result != 0)
+            if (result != 0) {
                 MOZ_CRASH("Could not close bin.ast");
+            }
 
             fd = open("/tmp/txt.ast", O_CREAT | O_TRUNC | O_WRONLY, 0666);
-            if (!fd)
+            if (!fd) {
                 MOZ_CRASH("Could not open txt.ast");
+            }
             result = write(fd, txtPrinter.string(), txtPrinter.stringEnd() - txtPrinter.string());
-            if (result <= 0)
+            if (result <= 0) {
                 MOZ_CRASH("Could not write to txt.ast");
+            }
             result = close(fd);
-            if (result != 0)
+            if (result != 0) {
                 MOZ_CRASH("Could not close txt.ast");
+            }
 #endif 
             MOZ_CRASH("Got distinct ASTs");
         }
@@ -293,11 +325,13 @@ runTestFromPath(JSContext* cx, const char* path)
     }
 
 #if defined(XP_WIN)
-    if (!FindClose(hFind))
+    if (!FindClose(hFind)) {
         MOZ_CRASH("Could not close Find");
+    }
 #elif defined(XP_UNIX)
-    if (closedir(dir) != 0)
+    if (closedir(dir) != 0) {
         MOZ_CRASH("Could not close dir");
+    }
 #endif 
 }
 

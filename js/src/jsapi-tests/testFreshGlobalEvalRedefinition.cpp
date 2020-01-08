@@ -31,8 +31,9 @@ BEGIN_TEST(testRedefineGlobalEval)
     
     JS::RealmOptions options;
     JS::Rooted<JSObject*> g(cx, JS_NewGlobalObject(cx, &cls, nullptr, JS::FireOnNewGlobalHook, options));
-    if (!g)
+    if (!g) {
         return false;
+    }
 
     JSAutoRealm ar(cx, g);
     JS::Rooted<JS::Value> v(cx);

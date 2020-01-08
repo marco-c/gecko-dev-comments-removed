@@ -161,10 +161,12 @@ END_TEST(testArrayBuffer_bug720949_viewList)
 
 BEGIN_TEST(testArrayBuffer_externalize)
 {
-    if (!testWithSize(cx, 2))    
+    if (!testWithSize(cx, 2)) {  
         return false;
-    if (!testWithSize(cx, 2000)) 
+    }
+    if (!testWithSize(cx, 2000)) { 
         return false;
+    }
 
     return true;
 }
@@ -218,8 +220,9 @@ static bool
 hasExpectedLength(JSContext* cx, JS::HandleObject obj, uint32_t* len)
 {
     JS::RootedValue v(cx);
-    if (!JS_GetProperty(cx, obj, "byteLength", &v))
+    if (!JS_GetProperty(cx, obj, "byteLength", &v)) {
         return false;
+    }
     *len = v.toInt32();
     return true;
 }

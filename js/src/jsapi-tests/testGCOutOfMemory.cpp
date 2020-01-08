@@ -57,8 +57,9 @@ virtual JSContext* createContext() override {
     
     
     JSContext* cx = JS_NewContext(1024 * 1024, 128 * 1024);
-    if (!cx)
+    if (!cx) {
         return nullptr;
+    }
     setNativeStackQuota(cx);
     return cx;
 }
