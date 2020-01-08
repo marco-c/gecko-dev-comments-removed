@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#include "aom/aom_integer.h"
+#include "./aom_integer.h"
 
 
 

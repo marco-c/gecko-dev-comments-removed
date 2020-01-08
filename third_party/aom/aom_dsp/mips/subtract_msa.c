@@ -9,8 +9,7 @@
 
 
 
-#include "config/aom_dsp_rtcd.h"
-
+#include "./aom_dsp_rtcd.h"
 #include "aom_dsp/mips/macros_msa.h"
 
 static void sub_blk_4x4_msa(const uint8_t *src_ptr, int32_t src_stride,

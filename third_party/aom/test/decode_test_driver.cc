@@ -18,12 +18,13 @@
 
 namespace libaom_test {
 
+const char kVP8Name[] = "WebM Project VP8";
 const char kAV1Name[] = "AOMedia Project AV1 Decoder";
 
 aom_codec_err_t Decoder::PeekStream(const uint8_t *cxdata, size_t size,
                                     aom_codec_stream_info_t *stream_info) {
-  return aom_codec_peek_stream_info(CodecInterface(), cxdata, size,
-                                    stream_info);
+  return aom_codec_peek_stream_info(
+      CodecInterface(), cxdata, static_cast<unsigned int>(size), stream_info);
 }
 
 aom_codec_err_t Decoder::DecodeFrame(const uint8_t *cxdata, size_t size) {
@@ -35,8 +36,14 @@ aom_codec_err_t Decoder::DecodeFrame(const uint8_t *cxdata, size_t size,
   aom_codec_err_t res_dec;
   InitOnce();
   API_REGISTER_STATE_CHECK(
-      res_dec = aom_codec_decode(&decoder_, cxdata, size, user_priv));
+      res_dec = aom_codec_decode(
+          &decoder_, cxdata, static_cast<unsigned int>(size), user_priv, 0));
   return res_dec;
+}
+
+bool Decoder::IsVP8() const {
+  const char *codec_name = GetDecoderName();
+  return strncmp(kVP8Name, codec_name, sizeof(kVP8Name) - 1) == 0;
 }
 
 bool Decoder::IsAV1() const {
@@ -44,13 +51,24 @@ bool Decoder::IsAV1() const {
   return strncmp(kAV1Name, codec_name, sizeof(kAV1Name) - 1) == 0;
 }
 
-void DecoderTest::HandlePeekResult(Decoder *const ,
-                                   CompressedVideoSource * ,
+void DecoderTest::HandlePeekResult(Decoder *const decoder,
+                                   CompressedVideoSource *video,
                                    const aom_codec_err_t res_peek) {
-  
+  const bool is_vp8 = decoder->IsVP8();
+  if (is_vp8) {
+    
 
-  ASSERT_EQ(AOM_CODEC_OK, res_peek)
-      << "Peek return failed: " << aom_codec_err_to_string(res_peek);
+
+    if (video->frame_number() == 0) {
+      ASSERT_EQ(AOM_CODEC_OK, res_peek)
+          << "Peek return failed: " << aom_codec_err_to_string(res_peek);
+    }
+  } else {
+    
+
+    ASSERT_EQ(AOM_CODEC_OK, res_peek)
+        << "Peek return failed: " << aom_codec_err_to_string(res_peek);
+  }
 }
 
 void DecoderTest::RunLoop(CompressedVideoSource *video,
@@ -58,7 +76,6 @@ void DecoderTest::RunLoop(CompressedVideoSource *video,
   Decoder *const decoder = codec_->CreateDecoder(dec_cfg, flags_);
   ASSERT_TRUE(decoder != NULL);
   bool end_of_file = false;
-  bool peeked_stream = false;
 
   
   for (video->Begin(); !::testing::Test::HasFailure() && !end_of_file;
@@ -66,23 +83,15 @@ void DecoderTest::RunLoop(CompressedVideoSource *video,
     PreDecodeFrameHook(*video, decoder);
 
     aom_codec_stream_info_t stream_info;
-    stream_info.is_annexb = 0;
-
     if (video->cxdata() != NULL) {
-      if (!peeked_stream) {
-        
-        
-        
-        const aom_codec_err_t res_peek = decoder->PeekStream(
-            video->cxdata(), video->frame_size(), &stream_info);
-        HandlePeekResult(decoder, video, res_peek);
-        ASSERT_FALSE(::testing::Test::HasFailure());
-        peeked_stream = true;
-      }
+      const aom_codec_err_t res_peek = decoder->PeekStream(
+          video->cxdata(), video->frame_size(), &stream_info);
+      HandlePeekResult(decoder, video, res_peek);
+      ASSERT_FALSE(::testing::Test::HasFailure());
 
       aom_codec_err_t res_dec =
           decoder->DecodeFrame(video->cxdata(), video->frame_size());
-      if (!HandleDecodeResult(res_dec, *video, decoder)) break;
+      if (!HandleDecodeResult(res_dec, decoder)) break;
     } else {
       
       const aom_codec_err_t res_dec = decoder->DecodeFrame(NULL, 0);

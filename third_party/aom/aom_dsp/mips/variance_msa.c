@@ -9,8 +9,7 @@
 
 
 
-#include "config/aom_dsp_rtcd.h"
-
+#include "./aom_dsp_rtcd.h"
 #include "aom_dsp/mips/macros_msa.h"
 
 #define CALC_MSE_B(src, ref, var)                                   \

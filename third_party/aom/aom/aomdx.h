@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 
-#include "aom/aom.h"
+#include "./aom.h"
 
 
 
@@ -37,9 +37,11 @@ extern aom_codec_iface_t aom_codec_av1_dx_algo;
 extern aom_codec_iface_t *aom_codec_av1_dx(void);
 
 
+#ifndef AOM_ACCOUNTING_H_
 
 
 typedef struct Accounting Accounting;
+#endif
 
 #ifndef AOM_INSPECTION_H_
 
@@ -64,30 +66,6 @@ typedef struct aom_inspect_init {
 
 
 
-typedef struct aom_tile_data {
-  
-  size_t coded_tile_data_size;
-  
-  const void *coded_tile_data;
-  
-  size_t extra_size;
-} aom_tile_data;
-
-
-
-
-
-typedef struct av1_ext_ref_frame {
-  
-  aom_image_t *img;
-  
-  int num;
-} av1_ext_ref_frame_t;
-
-
-
-
-
 
 
 
@@ -105,6 +83,13 @@ enum aom_dec_control_id {
 
 
   AOMD_GET_LAST_REF_USED,
+
+  
+
+
+
+  AOMD_SET_DECRYPTOR,
+  
 
   
 
@@ -164,50 +149,6 @@ enum aom_dec_control_id {
 
   AV1_SET_DECODE_TILE_ROW,
   AV1_SET_DECODE_TILE_COL,
-  
-
-
-
-  AV1_SET_TILE_MODE,
-  
-
-
-  AV1D_GET_FRAME_HEADER_INFO,
-  
-
-
-  AV1D_GET_TILE_DATA,
-  
-
-
-
-  AV1D_SET_EXT_REF_PTR,
-  
-
-
-  AV1D_EXT_TILE_DEBUG,
-
-  
-  AV1D_SET_IS_ANNEXB,
-
-  
-
-
-
-
-
-  AV1D_SET_OPERATING_POINT,
-
-  
-
-
-
-
-
-
-
-
-  AV1D_SET_OUTPUT_ALL_LAYERS,
 
   
 
@@ -217,6 +158,24 @@ enum aom_dec_control_id {
 
   AOM_DECODER_CTRL_ID_MAX,
 };
+
+
+
+
+typedef void (*aom_decrypt_cb)(void *decrypt_state, const unsigned char *input,
+                               unsigned char *output, int count);
+
+
+
+
+
+typedef struct aom_decrypt_init {
+  
+  aom_decrypt_cb decrypt_cb;
+
+  
+  void *decrypt_state;
+} aom_decrypt_init;
 
 
 
@@ -234,6 +193,10 @@ AOM_CTRL_USE_TYPE(AOMD_GET_LAST_REF_USED, int *)
 #define AOM_CTRL_AOMD_GET_LAST_REF_USED
 AOM_CTRL_USE_TYPE(AOMD_GET_LAST_QUANTIZER, int *)
 #define AOM_CTRL_AOMD_GET_LAST_QUANTIZER
+AOM_CTRL_USE_TYPE(AOMD_SET_DECRYPTOR, aom_decrypt_init *)
+#define AOM_CTRL_AOMD_SET_DECRYPTOR
+
+
 AOM_CTRL_USE_TYPE(AV1D_GET_DISPLAY_SIZE, int *)
 #define AOM_CTRL_AV1D_GET_DISPLAY_SIZE
 AOM_CTRL_USE_TYPE(AV1D_GET_BIT_DEPTH, unsigned int *)
@@ -248,22 +211,6 @@ AOM_CTRL_USE_TYPE(AV1_SET_DECODE_TILE_ROW, int)
 #define AOM_CTRL_AV1_SET_DECODE_TILE_ROW
 AOM_CTRL_USE_TYPE(AV1_SET_DECODE_TILE_COL, int)
 #define AOM_CTRL_AV1_SET_DECODE_TILE_COL
-AOM_CTRL_USE_TYPE(AV1_SET_TILE_MODE, unsigned int)
-#define AOM_CTRL_AV1_SET_TILE_MODE
-AOM_CTRL_USE_TYPE(AV1D_GET_FRAME_HEADER_INFO, aom_tile_data *)
-#define AOM_CTRL_AV1D_GET_FRAME_HEADER_INFO
-AOM_CTRL_USE_TYPE(AV1D_GET_TILE_DATA, aom_tile_data *)
-#define AOM_CTRL_AV1D_GET_TILE_DATA
-AOM_CTRL_USE_TYPE(AV1D_SET_EXT_REF_PTR, av1_ext_ref_frame_t *)
-#define AOM_CTRL_AV1D_SET_EXT_REF_PTR
-AOM_CTRL_USE_TYPE(AV1D_EXT_TILE_DEBUG, unsigned int)
-#define AOM_CTRL_AV1D_EXT_TILE_DEBUG
-AOM_CTRL_USE_TYPE(AV1D_SET_IS_ANNEXB, unsigned int)
-#define AOM_CTRL_AV1D_SET_IS_ANNEXB
-AOM_CTRL_USE_TYPE(AV1D_SET_OPERATING_POINT, int)
-#define AOM_CTRL_AV1D_SET_OPERATING_POINT
-AOM_CTRL_USE_TYPE(AV1D_SET_OUTPUT_ALL_LAYERS, int)
-#define AOM_CTRL_AV1D_SET_OUTPUT_ALL_LAYERS
 AOM_CTRL_USE_TYPE(AV1_SET_INSPECTION_CALLBACK, aom_inspect_init *)
 #define AOM_CTRL_AV1_SET_INSPECTION_CALLBACK
 

@@ -9,8 +9,7 @@
 
 
 
-#include "config/aom_config.h"
-
+#include "./aom_config.h"
 #include "third_party/googletest/src/googletest/include/gtest/gtest.h"
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
@@ -38,14 +37,18 @@ class AqSegmentTest
     if (video->frame() == 1) {
       encoder->Control(AOME_SET_CPUUSED, set_cpu_used_);
       encoder->Control(AV1E_SET_AQ_MODE, aq_mode_);
+#if CONFIG_EXT_DELTA_Q
       encoder->Control(AV1E_SET_DELTAQ_MODE, deltaq_mode_);
+#endif
       encoder->Control(AOME_SET_MAX_INTRA_BITRATE_PCT, 100);
     }
   }
 
   void DoTest(int aq_mode) {
     aq_mode_ = aq_mode;
+#if CONFIG_EXT_DELTA_Q
     deltaq_mode_ = 0;
+#endif
     cfg_.kf_max_dist = 12;
     cfg_.rc_min_quantizer = 8;
     cfg_.rc_max_quantizer = 56;
@@ -62,7 +65,9 @@ class AqSegmentTest
 
   int set_cpu_used_;
   int aq_mode_;
+#if CONFIG_EXT_DELTA_Q
   int deltaq_mode_;
+#endif
 };
 
 
@@ -85,6 +90,21 @@ TEST_P(AqSegmentTestLarge, TestNoMisMatchAQ2) { DoTest(2); }
 
 TEST_P(AqSegmentTestLarge, TestNoMisMatchAQ3) { DoTest(3); }
 
+#if !CONFIG_EXT_DELTA_Q
+
+
+TEST_P(AqSegmentTest, TestNoMisMatchAQ4) {
+  cfg_.rc_end_usage = AOM_CQ;
+  aq_mode_ = 4;
+
+  ::libaom_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
+                                       30, 1, 0, 15);
+
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+}
+#endif
+
+#if CONFIG_EXT_DELTA_Q
 
 
 TEST_P(AqSegmentTest, TestNoMisMatchExtDeltaQ) {
@@ -96,6 +116,7 @@ TEST_P(AqSegmentTest, TestNoMisMatchExtDeltaQ) {
 
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 }
+#endif
 
 AV1_INSTANTIATE_TEST_CASE(AqSegmentTest,
                           ::testing::Values(::libaom_test::kRealTime,

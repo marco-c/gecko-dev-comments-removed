@@ -11,8 +11,7 @@
 
 #include <immintrin.h>  
 
-#include "config/av1_rtcd.h"
-
+#include "./av1_rtcd.h"
 #include "aom/aom_integer.h"
 
 static INLINE void read_coeff(const tran_low_t *coeff, intptr_t offset,

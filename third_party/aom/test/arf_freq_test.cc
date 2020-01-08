@@ -50,7 +50,9 @@ const TestVideoParam kTestVectors[] = {
   { "hantro_collage_w352h288.yuv", 352, 288, 30, 1, 8, AOM_IMG_FMT_I420,
     AOM_BITS_8, 0 },
   { "rush_hour_444.y4m", 352, 288, 30, 1, 8, AOM_IMG_FMT_I444, AOM_BITS_8, 1 },
-  
+#if CONFIG_HIGHBITDEPTH
+
+#endif  
 };
 
 const TestEncodeParam kEncodeVectors[] = {
@@ -206,6 +208,7 @@ TEST_P(ArfFreqTestLarge, MinArfFreqTest) {
   }
 }
 
+#if CONFIG_HIGHBITDEPTH || CONFIG_EXT_REFS
 #if CONFIG_AV1_ENCODER
 
 
@@ -219,5 +222,10 @@ INSTANTIATE_TEST_CASE_P(
             static_cast<const libaom_test::CodecFactory *>(&libaom_test::kAV1)),
         ::testing::ValuesIn(kTestVectors), ::testing::ValuesIn(kEncodeVectors),
         ::testing::ValuesIn(kMinArfVectors)));
+#endif  
+#else
+AV1_INSTANTIATE_TEST_CASE(ArfFreqTestLarge, ::testing::ValuesIn(kTestVectors),
+                          ::testing::ValuesIn(kEncodeVectors),
+                          ::testing::ValuesIn(kMinArfVectors));
 #endif  
 }  

@@ -22,8 +22,7 @@ namespace {
 
 
 const libaom_test::TestMode kEncodingModeVectors[] = {
-  ::libaom_test::kTwoPassGood,
-  ::libaom_test::kOnePassGood,
+  ::libaom_test::kTwoPassGood, ::libaom_test::kOnePassGood,
 };
 
 
@@ -83,7 +82,7 @@ TEST_P(MotionVectorTestLarge, OverallTest) {
   
   if (sizeof(void *) == 4) {
     width = 2048;
-    height = 360;
+    height = 1080;
   }
 
   cfg_.rc_target_bitrate = 24000;

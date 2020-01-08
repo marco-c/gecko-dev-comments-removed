@@ -14,6 +14,9 @@
 
 #include "av1/common/entropymv.h"
 #include "av1/common/entropy.h"
+#if CONFIG_PVQ
+#include "av1/encoder/encint.h"
+#endif
 #include "av1/common/mvref_common.h"
 #include "av1/encoder/hash.h"
 #if CONFIG_DIST_8X8
@@ -24,6 +27,12 @@
 extern "C" {
 #endif
 
+#if CONFIG_PVQ
+
+
+#define MAX_PVQ_BLOCKS_IN_SB (MAX_SB_SQUARE >> 2 * OD_LOG_BSIZE0)
+#endif
+
 typedef struct {
   unsigned int sse;
   int sum;
@@ -32,37 +41,51 @@ typedef struct {
 
 typedef struct macroblock_plane {
   DECLARE_ALIGNED(16, int16_t, src_diff[MAX_SB_SQUARE]);
+#if CONFIG_PVQ
+  DECLARE_ALIGNED(16, int16_t, src_int16[MAX_SB_SQUARE]);
+#endif
   tran_low_t *qcoeff;
   tran_low_t *coeff;
   uint16_t *eobs;
+#if CONFIG_LV_MAP
   uint8_t *txb_entropy_ctx;
+#endif
   struct buf_2d src;
 
   
-  
-  
-  
-  const int16_t *quant_fp_QTX;
-  const int16_t *round_fp_QTX;
-  const int16_t *quant_QTX;
-  const int16_t *quant_shift_QTX;
-  const int16_t *zbin_QTX;
-  const int16_t *round_QTX;
-  const int16_t *dequant_QTX;
+  const int16_t *quant_fp;
+  const int16_t *round_fp;
+  const int16_t *quant;
+  const int16_t *quant_shift;
+  const int16_t *zbin;
+  const int16_t *round;
+#if CONFIG_NEW_QUANT
+  const cuml_bins_type_nuq *cuml_bins_nuq[QUANT_PROFILES];
+#endif  
 } MACROBLOCK_PLANE;
 
+typedef int av1_coeff_cost[PLANE_TYPES][REF_TYPES][COEF_BANDS][COEFF_CONTEXTS]
+                          [TAIL_TOKENS];
+
+#if CONFIG_LV_MAP
 typedef struct {
   int txb_skip_cost[TXB_SKIP_CONTEXTS][2];
-  int base_eob_cost[SIG_COEF_CONTEXTS_EOB][3];
-  int base_cost[SIG_COEF_CONTEXTS][4];
-  int eob_extra_cost[EOB_COEF_CONTEXTS][2];
+  int nz_map_cost[SIG_COEF_CONTEXTS][2];
+  int eob_cost[EOB_COEF_CONTEXTS][2];
   int dc_sign_cost[DC_SIGN_CONTEXTS][2];
+  int base_cost[NUM_BASE_LEVELS][COEFF_BASE_CONTEXTS][2];
+#if BR_NODE
   int lps_cost[LEVEL_CONTEXTS][COEFF_BASE_RANGE + 1];
+  int br_cost[BASE_RANGE_SETS][LEVEL_CONTEXTS][2];
+#else   
+  int lps_cost[LEVEL_CONTEXTS][2];
+#endif  
+#if CONFIG_CTX1D
+  int eob_mode_cost[TX_CLASSES][2];
+  int empty_line_cost[TX_CLASSES][EMPTY_LINE_CONTEXTS][2];
+  int hv_eob_cost[TX_CLASSES][HV_EOB_CONTEXTS][2];
+#endif
 } LV_MAP_COEFF_COST;
-
-typedef struct {
-  int eob_cost[2][11];
-} LV_MAP_EOB_COST;
 
 typedef struct {
   tran_low_t tcoeff[MAX_MB_PLANE][MAX_SB_SQUARE];
@@ -72,17 +95,20 @@ typedef struct {
   int dc_sign_ctx[MAX_MB_PLANE]
                  [MAX_SB_SQUARE / (TX_SIZE_W_MIN * TX_SIZE_H_MIN)];
 } CB_COEFF_BUFFER;
+#endif
 
 typedef struct {
+  int_mv ref_mvs[MODE_CTX_REF_FRAMES][MAX_MV_REF_CANDIDATES];
   int16_t mode_context[MODE_CTX_REF_FRAMES];
+#if CONFIG_LV_MAP
   
   tran_low_t *tcoeff[MAX_MB_PLANE];
   uint16_t *eobs[MAX_MB_PLANE];
   uint8_t *txb_skip_ctx[MAX_MB_PLANE];
   int *dc_sign_ctx[MAX_MB_PLANE];
+#endif
   uint8_t ref_mv_count[MODE_CTX_REF_FRAMES];
   CANDIDATE_MV ref_mv_stack[MODE_CTX_REF_FRAMES][MAX_REF_MV_STACK_SIZE];
-  int_mv global_mvs[REF_FRAMES];
   int16_t compound_mode_context[MODE_CTX_REF_FRAMES];
 } MB_MODE_INFO_EXT;
 
@@ -94,119 +120,39 @@ typedef struct {
 } MvLimits;
 
 typedef struct {
-  uint8_t best_palette_color_map[MAX_PALETTE_SQUARE];
-  int kmeans_data_buf[2 * MAX_PALETTE_SQUARE];
+  uint8_t best_palette_color_map[MAX_SB_SQUARE];
+  float kmeans_data_buf[2 * MAX_SB_SQUARE];
 } PALETTE_BUFFER;
 
 typedef struct {
+  TX_TYPE tx_type;
   TX_SIZE tx_size;
-  TX_SIZE inter_tx_size[INTER_TX_SIZE_BUF_LEN];
-  uint8_t blk_skip[MAX_MIB_SIZE * MAX_MIB_SIZE];
-  TX_TYPE txk_type[TXK_TYPE_BUF_LEN];
+#if CONFIG_VAR_TX
+  TX_SIZE min_tx_size;
+  TX_SIZE inter_tx_size[MAX_MIB_SIZE][MAX_MIB_SIZE];
+  uint8_t blk_skip[MAX_MIB_SIZE * MAX_MIB_SIZE * 8];
+#endif  
+#if CONFIG_TXK_SEL
+  TX_TYPE txk_type[MAX_SB_SQUARE / (TX_SIZE_W_MIN * TX_SIZE_H_MIN)];
+#endif  
   RD_STATS rd_stats;
   uint32_t hash_value;
-} MB_RD_INFO;
+} TX_RD_INFO;
 
 #define RD_RECORD_BUFFER_LEN 8
 typedef struct {
-  MB_RD_INFO tx_rd_info[RD_RECORD_BUFFER_LEN];  
+  TX_RD_INFO tx_rd_info[RD_RECORD_BUFFER_LEN];  
   int index_start;
   int num;
-  CRC32C crc_calculator;  
-} MB_RD_RECORD;
-
-typedef struct {
-  int64_t dist;
-  int64_t sse;
-  int rate;
-  uint16_t eob;
-  TX_TYPE tx_type;
-  uint16_t entropy_context;
-  uint8_t txb_entropy_ctx;
-  uint8_t valid;
-  uint8_t fast;  
-} TXB_RD_INFO;
-
-#define TX_SIZE_RD_RECORD_BUFFER_LEN 256
-typedef struct {
-  uint32_t hash_vals[TX_SIZE_RD_RECORD_BUFFER_LEN];
-  TXB_RD_INFO tx_rd_info[TX_SIZE_RD_RECORD_BUFFER_LEN];
-  int index_start;
-  int num;
-} TXB_RD_RECORD;
-
-typedef struct tx_size_rd_info_node {
-  TXB_RD_INFO *rd_info_array;  
-  struct tx_size_rd_info_node *children[4];
-} TXB_RD_INFO_NODE;
-
-
-
-
-#define FIRST_PARTITION_PASS_SAMPLE_REGION 8
-#define FIRST_PARTITION_PASS_SAMPLE_REGION_LOG2 3
-#define FIRST_PARTITION_PASS_STATS_TABLES                     \
-  (MAX_MIB_SIZE >> FIRST_PARTITION_PASS_SAMPLE_REGION_LOG2) * \
-      (MAX_MIB_SIZE >> FIRST_PARTITION_PASS_SAMPLE_REGION_LOG2)
-#define FIRST_PARTITION_PASS_STATS_STRIDE \
-  (MAX_MIB_SIZE_LOG2 - FIRST_PARTITION_PASS_SAMPLE_REGION_LOG2)
-
-static INLINE int av1_first_partition_pass_stats_index(int mi_row, int mi_col) {
-  const int row =
-      (mi_row & MAX_MIB_MASK) >> FIRST_PARTITION_PASS_SAMPLE_REGION_LOG2;
-  const int col =
-      (mi_col & MAX_MIB_MASK) >> FIRST_PARTITION_PASS_SAMPLE_REGION_LOG2;
-  return (row << FIRST_PARTITION_PASS_STATS_STRIDE) + col;
-}
-
-typedef struct {
-  uint8_t ref0_counts[REF_FRAMES];  
-  uint8_t ref1_counts[REF_FRAMES];  
-  int sample_counts;                
-} FIRST_PARTITION_PASS_STATS;
-
-#define MAX_INTERP_FILTER_STATS 64
-typedef struct {
-  InterpFilters filters;
-  int_mv mv[2];
-  int8_t ref_frames[2];
-} INTERPOLATION_FILTER_STATS;
+  CRC_CALCULATOR crc_calculator;  
+} TX_RD_RECORD;
 
 typedef struct macroblock MACROBLOCK;
 struct macroblock {
   struct macroblock_plane plane[MAX_MB_PLANE];
 
   
-  
-  
-  int rd_model;
-
-  
-  
-  
-  int cb_partition_scan;
-
-  FIRST_PARTITION_PASS_STATS
-  first_partition_pass_stats[FIRST_PARTITION_PASS_STATS_TABLES];
-
-  
-  INTERPOLATION_FILTER_STATS interp_filter_stats[2][MAX_INTERP_FILTER_STATS];
-  int interp_filter_stats_idx[2];
-
-  
-  int use_cb_search_range;
-
-  
-  MB_RD_RECORD mb_rd_record;
-
-  
-  TXB_RD_RECORD txb_rd_record_8X8[(MAX_MIB_SIZE >> 1) * (MAX_MIB_SIZE >> 1)];
-  TXB_RD_RECORD txb_rd_record_16X16[(MAX_MIB_SIZE >> 2) * (MAX_MIB_SIZE >> 2)];
-  TXB_RD_RECORD txb_rd_record_32X32[(MAX_MIB_SIZE >> 3) * (MAX_MIB_SIZE >> 3)];
-  TXB_RD_RECORD txb_rd_record_64X64[(MAX_MIB_SIZE >> 4) * (MAX_MIB_SIZE >> 4)];
-
-  
-  TXB_RD_RECORD txb_rd_record_intra;
+  TX_RD_RECORD tx_rd_record;
 
   MACROBLOCKD e_mbd;
   MB_MODE_INFO_EXT *mbmi_ext;
@@ -227,29 +173,34 @@ struct macroblock {
   int *m_search_count_ptr;
   int *ex_search_count_ptr;
 
+#if CONFIG_VAR_TX
   unsigned int txb_split_count;
+#endif
 
   
   
   BLOCK_SIZE min_partition_size;
   BLOCK_SIZE max_partition_size;
 
-  unsigned int max_mv_context[REF_FRAMES];
+  int mv_best_ref_index[TOTAL_REFS_PER_FRAME];
+  unsigned int max_mv_context[TOTAL_REFS_PER_FRAME];
   unsigned int source_variance;
-  unsigned int pred_sse[REF_FRAMES];
-  int pred_mv_sad[REF_FRAMES];
+  unsigned int pred_sse[TOTAL_REFS_PER_FRAME];
+  int pred_mv_sad[TOTAL_REFS_PER_FRAME];
 
   int *nmvjointcost;
-  int nmv_vec_cost[MV_JOINTS];
-  int *nmvcost[2];
-  int *nmvcost_hp[2];
-  int **mv_cost_stack;
+  int nmv_vec_cost[NMV_CONTEXTS][MV_JOINTS];
+  int *nmvcost[NMV_CONTEXTS][2];
+  int *nmvcost_hp[NMV_CONTEXTS][2];
+  int **mv_cost_stack[NMV_CONTEXTS];
   int **mvcost;
 
+#if CONFIG_MOTION_VAR
   int32_t *wsrc_buf;
   int32_t *mask_buf;
   uint8_t *above_pred_buf;
   uint8_t *left_pred_buf;
+#endif  
 
   PALETTE_BUFFER *palette_buffer;
 
@@ -257,80 +208,108 @@ struct macroblock {
   
   MvLimits mv_limits;
 
-  uint8_t blk_skip[MAX_MIB_SIZE * MAX_MIB_SIZE];
-  uint8_t blk_skip_drl[MAX_MIB_SIZE * MAX_MIB_SIZE];
+#if CONFIG_VAR_TX
+  uint8_t blk_skip[MAX_MB_PLANE][MAX_MIB_SIZE * MAX_MIB_SIZE * 8];
+  uint8_t blk_skip_drl[MAX_MB_PLANE][MAX_MIB_SIZE * MAX_MIB_SIZE * 8];
+#endif
 
   int skip;
+
+#if CONFIG_CB4X4
   int skip_chroma_rd;
-  int skip_cost[SKIP_CONTEXTS][2];
+#endif
 
-  int skip_mode;  
-  int skip_mode_cost[SKIP_CONTEXTS][2];
-
-  int compound_idx;
-
+#if CONFIG_LV_MAP
   LV_MAP_COEFF_COST coeff_costs[TX_SIZES][PLANE_TYPES];
-  LV_MAP_EOB_COST eob_costs[7][2];
   uint16_t cb_offset;
+#endif
+
+  av1_coeff_cost token_head_costs[TX_SIZES];
+  av1_coeff_cost token_tail_costs[TX_SIZES];
 
   
-  int intra_inter_cost[INTRA_INTER_CONTEXTS][2];
-
   int mbmode_cost[BLOCK_SIZE_GROUPS][INTRA_MODES];
   int newmv_mode_cost[NEWMV_MODE_CONTEXTS][2];
-  int zeromv_mode_cost[GLOBALMV_MODE_CONTEXTS][2];
+  int zeromv_mode_cost[ZEROMV_MODE_CONTEXTS][2];
   int refmv_mode_cost[REFMV_MODE_CONTEXTS][2];
   int drl_mode_cost0[DRL_MODE_CONTEXTS][2];
 
-  int comp_inter_cost[COMP_INTER_CONTEXTS][2];
-  int single_ref_cost[REF_CONTEXTS][SINGLE_REFS - 1][2];
-  int comp_ref_type_cost[COMP_REF_TYPE_CONTEXTS]
-                        [CDF_SIZE(COMP_REFERENCE_TYPES)];
-  int uni_comp_ref_cost[UNI_COMP_REF_CONTEXTS][UNIDIR_COMP_REFS - 1]
-                       [CDF_SIZE(2)];
-  
-  
-  int comp_ref_cost[REF_CONTEXTS][FWD_REFS - 1][2];
-  
-  
-  int comp_bwdref_cost[REF_CONTEXTS][BWD_REFS - 1][2];
   int inter_compound_mode_cost[INTER_MODE_CONTEXTS][INTER_COMPOUND_MODES];
-  int compound_type_cost[BLOCK_SIZES_ALL][COMPOUND_TYPES - 1];
-  int wedge_idx_cost[BLOCK_SIZES_ALL][16];
-  int interintra_cost[BLOCK_SIZE_GROUPS][2];
-  int wedge_interintra_cost[BLOCK_SIZES_ALL][2];
+  int compound_type_cost[BLOCK_SIZES_ALL][COMPOUND_TYPES];
+#if CONFIG_COMPOUND_SINGLEREF
+  int inter_singleref_comp_mode_cost[INTER_MODE_CONTEXTS]
+                                    [INTER_SINGLEREF_COMP_MODES];
+#endif  
+#if CONFIG_INTERINTRA
   int interintra_mode_cost[BLOCK_SIZE_GROUPS][INTERINTRA_MODES];
+#endif  
+#if CONFIG_MOTION_VAR || CONFIG_WARPED_MOTION
   int motion_mode_cost[BLOCK_SIZES_ALL][MOTION_MODES];
+#if CONFIG_MOTION_VAR && CONFIG_WARPED_MOTION
   int motion_mode_cost1[BLOCK_SIZES_ALL][2];
-  int intra_uv_mode_cost[CFL_ALLOWED_TYPES][INTRA_MODES][UV_INTRA_MODES];
+#if CONFIG_NCOBMC_ADAPT_WEIGHT
+  int motion_mode_cost2[BLOCK_SIZES_ALL][OBMC_FAMILY_MODES];
+#endif
+#endif  
+#if CONFIG_MOTION_VAR && CONFIG_NCOBMC_ADAPT_WEIGHT
+  int ncobmc_mode_cost[ADAPT_OVERLAP_BLOCKS][MAX_NCOBMC_MODES];
+#endif  
+#endif  
+  int intra_uv_mode_cost[INTRA_MODES][UV_INTRA_MODES];
   int y_mode_costs[INTRA_MODES][INTRA_MODES][INTRA_MODES];
-  int filter_intra_cost[BLOCK_SIZES_ALL][2];
-  int filter_intra_mode_cost[FILTER_INTRA_MODES];
   int switchable_interp_costs[SWITCHABLE_FILTER_CONTEXTS][SWITCHABLE_FILTERS];
-  int partition_cost[PARTITION_CONTEXTS][EXT_PARTITION_TYPES];
-  int palette_y_size_cost[PALATTE_BSIZE_CTXS][PALETTE_SIZES];
-  int palette_uv_size_cost[PALATTE_BSIZE_CTXS][PALETTE_SIZES];
+#if CONFIG_EXT_PARTITION_TYPES
+  int partition_cost[PARTITION_CONTEXTS + CONFIG_UNPOISON_PARTITION_CTX]
+                    [EXT_PARTITION_TYPES];
+#else
+  int partition_cost[PARTITION_CONTEXTS + CONFIG_UNPOISON_PARTITION_CTX]
+                    [PARTITION_TYPES];
+#endif  
+#if CONFIG_MRC_TX
+  int mrc_mask_inter_cost[PALETTE_SIZES][PALETTE_COLOR_INDEX_CONTEXTS]
+                         [PALETTE_COLORS];
+  int mrc_mask_intra_cost[PALETTE_SIZES][PALETTE_COLOR_INDEX_CONTEXTS]
+                         [PALETTE_COLORS];
+#endif  
+  int palette_y_size_cost[PALETTE_BLOCK_SIZES][PALETTE_SIZES];
+  int palette_uv_size_cost[PALETTE_BLOCK_SIZES][PALETTE_SIZES];
   int palette_y_color_cost[PALETTE_SIZES][PALETTE_COLOR_INDEX_CONTEXTS]
                           [PALETTE_COLORS];
   int palette_uv_color_cost[PALETTE_SIZES][PALETTE_COLOR_INDEX_CONTEXTS]
                            [PALETTE_COLORS];
-  int palette_y_mode_cost[PALATTE_BSIZE_CTXS][PALETTE_Y_MODE_CONTEXTS][2];
-  int palette_uv_mode_cost[PALETTE_UV_MODE_CONTEXTS][2];
+#if CONFIG_CFL
   
   int cfl_cost[CFL_JOINT_SIGNS][CFL_PRED_PLANES][CFL_ALPHABET_SIZE];
+#endif  
   int tx_size_cost[TX_SIZES - 1][TX_SIZE_CONTEXTS][TX_SIZES];
-  int txfm_partition_cost[TXFM_PARTITION_CONTEXTS][2];
+#if CONFIG_EXT_TX
+#if CONFIG_LGT_FROM_PRED
+  int intra_lgt_cost[LGT_SIZES][INTRA_MODES][2];
+  int inter_lgt_cost[LGT_SIZES][2];
+#endif
   int inter_tx_type_costs[EXT_TX_SETS_INTER][EXT_TX_SIZES][TX_TYPES];
   int intra_tx_type_costs[EXT_TX_SETS_INTRA][EXT_TX_SIZES][INTRA_MODES]
                          [TX_TYPES];
-  int angle_delta_cost[DIRECTIONAL_MODES][2 * MAX_ANGLE_DELTA + 1];
+#else
+  int intra_tx_type_costs[EXT_TX_SIZES][TX_TYPES][TX_TYPES];
+  int inter_tx_type_costs[EXT_TX_SIZES][TX_TYPES];
+#endif  
+#if CONFIG_EXT_INTRA
+#if CONFIG_INTRA_INTERP
+  int intra_filter_cost[INTRA_FILTERS + 1][INTRA_FILTERS];
+#endif  
+#endif  
+#if CONFIG_LOOP_RESTORATION
   int switchable_restore_cost[RESTORE_SWITCHABLE_TYPES];
-  int wiener_restore_cost[2];
-  int sgrproj_restore_cost[2];
+#endif  
+#if CONFIG_INTRABC
   int intrabc_cost[2];
+#endif  
+
+  int optimize;
 
   
-  MV pred_mv[REF_FRAMES];
+  MV pred_mv[TOTAL_REFS_PER_FRAME];
 
   
   int_mv best_mv;
@@ -341,64 +320,37 @@ struct macroblock {
   int use_default_intra_tx_type;
   
   int use_default_inter_tx_type;
+#if CONFIG_PVQ
+  int rate;
+  
+  int pvq_skip[MAX_MB_PLANE];
+  PVQ_QUEUE *pvq_q;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  PVQ_INFO pvq[MAX_PVQ_BLOCKS_IN_SB][MAX_MB_PLANE];
+  daala_enc_ctx daala_enc;
+  int pvq_speed;
+  int pvq_coded;  
+#endif
 #if CONFIG_DIST_8X8
   int using_dist_8x8;
   aom_tune_metric tune_metric;
-  DECLARE_ALIGNED(16, int16_t, pred_luma[MAX_SB_SQUARE]);
+#if CONFIG_CB4X4
+#if CONFIG_HIGHBITDEPTH
+  DECLARE_ALIGNED(16, uint16_t, decoded_8x8[8 * 8]);
+#else
+  DECLARE_ALIGNED(16, uint8_t, decoded_8x8[8 * 8]);
+#endif
 #endif  
-  int comp_idx_cost[COMP_INDEX_CONTEXTS][2];
-  int comp_group_idx_cost[COMP_GROUP_IDX_CONTEXTS][2];
-  
-  int tx_search_prune[EXT_TX_SET_TYPES];
-  int must_find_valid_partition;
-  int tx_split_prune_flag;  
+#endif  
 };
-
-static INLINE int is_rect_tx_allowed_bsize(BLOCK_SIZE bsize) {
-  static const char LUT[BLOCK_SIZES_ALL] = {
-    0,  
-    1,  
-    1,  
-    0,  
-    1,  
-    1,  
-    0,  
-    1,  
-    1,  
-    0,  
-    1,  
-    1,  
-    0,  
-    0,  
-    0,  
-    0,  
-    1,  
-    1,  
-    1,  
-    1,  
-    1,  
-    1,  
-  };
-
-  return LUT[bsize];
-}
-
-static INLINE int is_rect_tx_allowed(const MACROBLOCKD *xd,
-                                     const MB_MODE_INFO *mbmi) {
-  return is_rect_tx_allowed_bsize(mbmi->sb_type) &&
-         !xd->lossless[mbmi->segment_id];
-}
-
-static INLINE int tx_size_to_depth(TX_SIZE tx_size, BLOCK_SIZE bsize) {
-  TX_SIZE ctx_size = max_txsize_rect_lookup[bsize];
-  int depth = 0;
-  while (tx_size != ctx_size) {
-    depth++;
-    ctx_size = sub_tx_size_map[ctx_size];
-    assert(depth <= MAX_TX_DEPTH);
-  }
-  return depth;
-}
 
 #ifdef __cplusplus
 }  

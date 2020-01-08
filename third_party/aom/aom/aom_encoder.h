@@ -30,7 +30,7 @@
 extern "C" {
 #endif
 
-#include "aom/aom_codec.h"
+#include "./aom_codec.h"
 
 
 
@@ -159,8 +159,6 @@ typedef struct aom_codec_cx_pkt {
 
 
       int partition_id;
-      
-      size_t vis_frame_size;
     } frame;                            
     aom_fixed_buf_t twopass_stats;      
     aom_fixed_buf_t firstpass_mb_stats; 
@@ -283,25 +281,6 @@ typedef struct aom_codec_enc_cfg {
 
 
   unsigned int g_h;
-
-  
-
-
-  unsigned int g_limit;
-
-  
-
-
-
-
-  unsigned int g_forced_max_frame_width;
-
-  
-
-
-
-
-  unsigned int g_forced_max_frame_height;
 
   
 
@@ -610,11 +589,6 @@ typedef struct aom_codec_enc_cfg {
   
 
 
-  int fwd_kf_enabled;
-
-  
-
-
 
 
 
@@ -643,54 +617,8 @@ typedef struct aom_codec_enc_cfg {
 
 
 
-  unsigned int sframe_dist;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  unsigned int sframe_mode;
-
-  
-
-
-
-
 
   unsigned int large_scale_tile;
-
-  
-
-
-
-
-  unsigned int monochrome;
-
-  
-
-
-
-
-
-
-  unsigned int full_still_picture_hdr;
-
-  
-
-
-
-
-
-  unsigned int save_as_annexb;
 
   
 
@@ -733,11 +661,6 @@ typedef struct aom_codec_enc_cfg {
 
 
   int tile_heights[MAX_TILE_HEIGHTS];
-
-  
-
-
-  cfg_options_t cfg;
 } aom_codec_enc_cfg_t; 
 
 
@@ -860,6 +783,19 @@ aom_codec_err_t aom_codec_enc_config_set(aom_codec_ctx_t *ctx,
 aom_fixed_buf_t *aom_codec_get_global_headers(aom_codec_ctx_t *ctx);
 
 
+#define AOM_DL_GOOD_QUALITY (1000000)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -885,7 +821,8 @@ aom_fixed_buf_t *aom_codec_get_global_headers(aom_codec_ctx_t *ctx);
 
 aom_codec_err_t aom_codec_encode(aom_codec_ctx_t *ctx, const aom_image_t *img,
                                  aom_codec_pts_t pts, unsigned long duration,
-                                 aom_enc_frame_flags_t flags);
+                                 aom_enc_frame_flags_t flags,
+                                 unsigned long deadline);
 
 
 

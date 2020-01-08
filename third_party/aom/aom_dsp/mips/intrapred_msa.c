@@ -9,8 +9,7 @@
 
 
 
-#include "config/aom_dsp_rtcd.h"
-
+#include "./aom_dsp_rtcd.h"
 #include "aom_dsp/mips/macros_msa.h"
 
 #define IPRED_SUBS_UH2_UH(in0, in1, out0, out1) \

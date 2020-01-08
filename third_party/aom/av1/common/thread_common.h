@@ -11,9 +11,7 @@
 
 #ifndef AV1_COMMON_LOOPFILTER_THREAD_H_
 #define AV1_COMMON_LOOPFILTER_THREAD_H_
-
-#include "config/aom_config.h"
-
+#include "./aom_config.h"
 #include "av1/common/av1_loopfilter.h"
 #include "aom_util/aom_thread.h"
 
@@ -22,21 +20,16 @@ extern "C" {
 #endif
 
 struct AV1Common;
-
-typedef struct AV1LfMTInfo {
-  int mi_row;
-  int plane;
-  int dir;
-} AV1LfMTInfo;
+struct FRAME_COUNTS;
 
 
 typedef struct AV1LfSyncData {
 #if CONFIG_MULTITHREAD
-  pthread_mutex_t *mutex_[MAX_MB_PLANE];
-  pthread_cond_t *cond_[MAX_MB_PLANE];
+  pthread_mutex_t *mutex_;
+  pthread_cond_t *cond_;
 #endif
   
-  int *cur_sb_col[MAX_MB_PLANE];
+  int *cur_sb_col;
   
   
   int sync_range;
@@ -45,72 +38,27 @@ typedef struct AV1LfSyncData {
   
   LFWorkerData *lfdata;
   int num_workers;
-
-#if CONFIG_MULTITHREAD
-  pthread_mutex_t *job_mutex;
-#endif
-  AV1LfMTInfo *job_queue;
-  int jobs_enqueued;
-  int jobs_dequeued;
 } AV1LfSync;
 
-typedef struct AV1LrMTInfo {
-  int v_start;
-  int v_end;
-  int lr_unit_row;
-  int plane;
-  int sync_mode;
-  int v_copy_start;
-  int v_copy_end;
-} AV1LrMTInfo;
 
-typedef struct LoopRestorationWorkerData {
-  int32_t *rst_tmpbuf;
-  void *rlbs;
-  void *lr_ctxt;
-} LRWorkerData;
-
-
-typedef struct AV1LrSyncData {
-#if CONFIG_MULTITHREAD
-  pthread_mutex_t *mutex_[MAX_MB_PLANE];
-  pthread_cond_t *cond_[MAX_MB_PLANE];
-#endif
-  
-  int *cur_sb_col[MAX_MB_PLANE];
-  
-  
-  int sync_range;
-  int rows;
-  int num_planes;
-
-  int num_workers;
-
-#if CONFIG_MULTITHREAD
-  pthread_mutex_t *job_mutex;
-#endif
-  
-  LRWorkerData *lrworkerdata;
-
-  AV1LrMTInfo *job_queue;
-  int jobs_enqueued;
-  int jobs_dequeued;
-} AV1LrSync;
+void av1_loop_filter_alloc(AV1LfSync *lf_sync, struct AV1Common *cm, int rows,
+                           int width, int num_workers);
 
 
 void av1_loop_filter_dealloc(AV1LfSync *lf_sync);
 
+
 void av1_loop_filter_frame_mt(YV12_BUFFER_CONFIG *frame, struct AV1Common *cm,
-                              struct macroblockd *mbd, int plane_start,
-                              int plane_end, int partial_frame,
-                              AVxWorker *workers, int num_workers,
-                              AV1LfSync *lf_sync);
-void av1_loop_restoration_filter_frame_mt(YV12_BUFFER_CONFIG *frame,
-                                          struct AV1Common *cm,
-                                          int optimized_lr, AVxWorker *workers,
-                                          int num_workers, AV1LrSync *lr_sync,
-                                          void *lr_ctxt);
-void av1_loop_restoration_dealloc(AV1LrSync *lr_sync, int num_workers);
+                              struct macroblockd_plane *planes,
+                              int frame_filter_level,
+#if CONFIG_LOOPFILTER_LEVEL
+                              int frame_filter_level_r,
+#endif
+                              int y_only, int partial_frame, AVxWorker *workers,
+                              int num_workers, AV1LfSync *lf_sync);
+
+void av1_accumulate_frame_counts(struct FRAME_COUNTS *acc_counts,
+                                 struct FRAME_COUNTS *counts);
 
 #ifdef __cplusplus
 }  
