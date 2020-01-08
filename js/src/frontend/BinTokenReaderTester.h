@@ -22,6 +22,8 @@
 namespace js {
 namespace frontend {
 
+class BinASTSourceMetadata;
+
 
 
 
@@ -212,6 +214,11 @@ class MOZ_STACK_CLASS BinTokenReaderTester: public BinTokenReaderBase
 
 
     MOZ_MUST_USE JS::Result<uint32_t> readInternalUint32();
+
+  public:
+    void traceMetadata(JSTracer*) {}
+    BinASTSourceMetadata* takeMetadata() { MOZ_CRASH("Tester format has no metadata to take!"); }
+    MOZ_MUST_USE JS::Result<Ok> initFromScriptSource(ScriptSource*) { MOZ_CRASH("Tester format not for dynamic use"); }
 
   public:
     

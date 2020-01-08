@@ -1444,6 +1444,16 @@ ScriptSourceObject::finalize(FreeOp* fop, JSObject* obj)
     sso->source()->decref();
 }
 
+void
+ScriptSourceObject::trace(JSTracer* trc, JSObject* obj)
+{
+    
+    
+    if (obj->as<ScriptSourceObject>().hasSource()) {
+        obj->as<ScriptSourceObject>().source()->trace(trc);
+    }
+}
+
 static const ClassOps ScriptSourceObjectClassOps = {
     nullptr, 
     nullptr, 
@@ -1455,7 +1465,7 @@ static const ClassOps ScriptSourceObjectClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 
-    nullptr  
+    ScriptSourceObject::trace
 };
 
 const Class ScriptSourceObject::class_ = {
@@ -2078,6 +2088,18 @@ ScriptSource::setSourceCopy(JSContext* cx, SourceBufferHolder& srcBuf)
     return true;
 }
 
+void
+ScriptSource::trace(JSTracer* trc)
+{
+#ifdef JS_BUILD_BINAST
+    if (binASTMetadata_) {
+        binASTMetadata_->trace(trc);
+    }
+#else
+    MOZ_ASSERT(!binASTMetadata_);
+#endif 
+}
+
 static MOZ_MUST_USE bool
 reallocUniquePtr(UniqueChars& unique, size_t size)
 {
@@ -2363,6 +2385,78 @@ ScriptSource::performXDR(XDRState<mode>* xdr)
             RawDataMatcher rdm;
             void* p = data.match(rdm);
             MOZ_TRY(xdr->codeBytes(p, byteLen));
+        }
+
+        uint8_t hasMetadata = !!binASTMetadata_;
+        MOZ_TRY(xdr->codeUint8(&hasMetadata));
+        if (hasMetadata) {
+#if defined(JS_BUILD_BINAST)
+            uint32_t numBinKinds;
+            uint32_t numStrings;
+            if (mode == XDR_ENCODE) {
+                numBinKinds = binASTMetadata_->numBinKinds();
+                numStrings = binASTMetadata_->numStrings();
+            }
+            MOZ_TRY(xdr->codeUint32(&numBinKinds));
+            MOZ_TRY(xdr->codeUint32(&numStrings));
+
+            if (mode == XDR_DECODE) {
+                
+                
+                setBinASTSourceMetadata(
+                    static_cast<frontend::BinASTSourceMetadata*>(
+                        js_calloc(frontend::BinASTSourceMetadata::totalSize(numBinKinds, numStrings))));
+                if (!binASTMetadata_) {
+                    return xdr->fail(JS::TranscodeResult_Throw);
+                }
+            }
+
+            for (uint32_t i = 0; i < numBinKinds; i++) {
+                frontend::BinKind* binKindBase = binASTMetadata_->binKindBase();
+                MOZ_TRY(xdr->codeEnum32(&binKindBase[i]));
+            }
+
+            RootedAtom atom(xdr->cx());
+            JSAtom** atomsBase = binASTMetadata_->atomsBase();
+            auto slices = binASTMetadata_->sliceBase();
+            auto sourceBase = reinterpret_cast<const char*>(binASTSource());
+
+            for (uint32_t i = 0; i < numStrings; i++) {
+                uint8_t isNull;
+                if (mode == XDR_ENCODE) {
+                    atom = binASTMetadata_->getAtom(i);
+                    isNull = !atom;
+                }
+                MOZ_TRY(xdr->codeUint8(&isNull));
+                if (isNull) {
+                    atom = nullptr;
+                } else {
+                    MOZ_TRY(XDRAtom(xdr, &atom));
+                }
+                if (mode == XDR_DECODE) {
+                    atomsBase[i] = atom;
+                }
+
+                uint64_t sliceOffset;
+                uint32_t sliceLen;
+                if (mode == XDR_ENCODE) {
+                    auto &slice = binASTMetadata_->getSlice(i);
+                    sliceOffset = slice.begin()-sourceBase;
+                    sliceLen = slice.byteLen_;
+                }
+
+                MOZ_TRY(xdr->codeUint64(&sliceOffset));
+                MOZ_TRY(xdr->codeUint32(&sliceLen));
+
+                if (mode == XDR_DECODE) {
+                    new (&slices[i]) frontend::BinASTSourceMetadata::CharSlice(sourceBase + sliceOffset, sliceLen);
+                }
+            }
+#else
+            
+            MOZ_ASSERT(mode != XDR_ENCODE);
+            xdr->fail(JS::TranscodeResult_Throw);
+#endif 
         }
     }
 
