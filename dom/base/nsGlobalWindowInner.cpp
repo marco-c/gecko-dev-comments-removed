@@ -3095,8 +3095,7 @@ nsGlobalWindowInner::GetOwnPropertyNames(JSContext* aCx, JS::AutoIdVector& aName
 nsGlobalWindowInner::IsPrivilegedChromeWindow(JSContext* aCx, JSObject* aObj)
 {
   
-  nsGlobalWindowInner* win = xpc::WindowOrNull(aObj);
-  return win && win->IsChromeWindow() &&
+  return xpc::WindowOrNull(aObj)->IsChromeWindow() &&
          nsContentUtils::ObjectPrincipal(aObj) == nsContentUtils::GetSystemPrincipal();
 }
 
