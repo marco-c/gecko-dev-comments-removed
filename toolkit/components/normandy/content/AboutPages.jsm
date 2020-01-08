@@ -6,9 +6,10 @@
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
+ChromeUtils.defineModuleGetter(this, "AddonStudies", "resource://normandy/lib/AddonStudies.jsm");
 ChromeUtils.defineModuleGetter(this, "AddonStudyAction", "resource://normandy/actions/AddonStudyAction.jsm");
 ChromeUtils.defineModuleGetter(this, "CleanupManager", "resource://normandy/lib/CleanupManager.jsm");
-ChromeUtils.defineModuleGetter(this, "AddonStudies", "resource://normandy/lib/AddonStudies.jsm");
+ChromeUtils.defineModuleGetter(this, "PreferenceExperiments", "resource://normandy/lib/PreferenceExperiments.jsm");
 ChromeUtils.defineModuleGetter(this, "RecipeRunner", "resource://normandy/lib/RecipeRunner.jsm");
 
 var EXPORTED_SYMBOLS = ["AboutPages"];
@@ -95,8 +96,10 @@ XPCOMUtils.defineLazyGetter(this.AboutPages, "aboutStudies", () => {
 
 
     registerParentListeners() {
-      Services.mm.addMessageListener("Shield:GetStudyList", this);
-      Services.mm.addMessageListener("Shield:RemoveStudy", this);
+      Services.mm.addMessageListener("Shield:GetAddonStudyList", this);
+      Services.mm.addMessageListener("Shield:GetPreferenceStudyList", this);
+      Services.mm.addMessageListener("Shield:RemoveAddonStudy", this);
+      Services.mm.addMessageListener("Shield:RemovePreferenceStudy", this);
       Services.mm.addMessageListener("Shield:OpenDataPreferences", this);
       Services.mm.addMessageListener("Shield:GetStudiesEnabled", this);
     },
@@ -105,8 +108,10 @@ XPCOMUtils.defineLazyGetter(this.AboutPages, "aboutStudies", () => {
 
 
     unregisterParentListeners() {
-      Services.mm.removeMessageListener("Shield:GetStudyList", this);
-      Services.mm.removeMessageListener("Shield:RemoveStudy", this);
+      Services.mm.removeMessageListener("Shield:GetAddonStudyList", this);
+      Services.mm.removeMessageListener("Shield:GetPreferenceStudyList", this);
+      Services.mm.removeMessageListener("Shield:RemoveAddonStudy", this);
+      Services.mm.removeMessageListener("Shield:RemovePreferenceStudy", this);
       Services.mm.removeMessageListener("Shield:OpenDataPreferences", this);
       Services.mm.removeMessageListener("Shield:GetStudiesEnabled", this);
     },
@@ -118,11 +123,17 @@ XPCOMUtils.defineLazyGetter(this.AboutPages, "aboutStudies", () => {
 
     receiveMessage(message) {
       switch (message.name) {
-        case "Shield:GetStudyList":
-          this.sendStudyList(message.target);
+        case "Shield:GetAddonStudyList":
+          this.sendAddonStudyList(message.target);
           break;
-        case "Shield:RemoveStudy":
-          this.removeStudy(message.data.recipeId, message.data.reason);
+        case "Shield:GetPreferenceStudyList":
+          this.sendPreferenceStudyList(message.target);
+          break;
+        case "Shield:RemoveAddonStudy":
+          this.removeAddonStudy(message.data.recipeId, message.data.reason);
+          break;
+        case "Shield:RemovePreferenceStudy":
+          this.removePreferenceStudy(message.data.experimentName, message.data.reason);
           break;
         case "Shield:OpenDataPreferences":
           this.openDataPreferences();
@@ -140,10 +151,28 @@ XPCOMUtils.defineLazyGetter(this.AboutPages, "aboutStudies", () => {
 
 
 
-    async sendStudyList(target) {
+    async sendAddonStudyList(target) {
       try {
-        target.messageManager.sendAsyncMessage("Shield:ReceiveStudyList", {
+        target.messageManager.sendAsyncMessage("Shield:ReceiveAddonStudyList", {
           studies: await AddonStudies.getAll(),
+        });
+      } catch (err) {
+        
+        Cu.reportError(err);
+      }
+    },
+
+    
+
+
+
+
+
+
+    async sendPreferenceStudyList(target) {
+      try {
+        target.messageManager.sendAsyncMessage("Shield:ReceivePreferenceStudyList", {
+          studies: await PreferenceExperiments.getAll(),
         });
       } catch (err) {
         
@@ -177,13 +206,26 @@ XPCOMUtils.defineLazyGetter(this.AboutPages, "aboutStudies", () => {
 
 
 
-    async removeStudy(recipeId, reason) {
+    async removeAddonStudy(recipeId, reason) {
       const action = new AddonStudyAction();
       await action.unenroll(recipeId, reason);
 
       
-      Services.mm.broadcastAsyncMessage("Shield:ReceiveStudyList", {
+      Services.mm.broadcastAsyncMessage("Shield:ReceiveAddonStudyList", {
         studies: await AddonStudies.getAll(),
+      });
+    },
+
+    
+
+
+
+    async removePreferenceStudy(experimentName, reason) {
+      PreferenceExperiments.stop(experimentName, { reason });
+
+      
+      Services.mm.broadcastAsyncMessage("Shield:ReceivePreferenceStudyList", {
+        studies: await PreferenceExperiments.getAll(),
       });
     },
 
