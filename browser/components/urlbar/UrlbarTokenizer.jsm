@@ -26,7 +26,8 @@ var UrlbarTokenizer = {
 
   
   
-  REGEXP_PROTOCOL: /^[A-Z+.-]+:(\/\/)?(?!\/)/i,
+  
+  REGEXP_LIKE_PROTOCOL: /^[A-Z+.-]+:\/{0,2}(?!\/)/i,
   REGEXP_USERINFO_INVALID_CHARS: /[^\w.~%!$&'()*+,;=:-]/,
   REGEXP_HOSTPORT_INVALID_CHARS: /[^\[\]A-Z0-9.:-]/i,
   REGEXP_HOSTPORT_IP_LIKE: /^[a-f0-9\.\[\]:]+$/i,
@@ -84,7 +85,7 @@ var UrlbarTokenizer = {
     if (this.REGEXP_SPACES.test(token))
       return false;
     
-    if (this.REGEXP_PROTOCOL.test(token))
+    if (this.REGEXP_LIKE_PROTOCOL.test(token))
       return true;
     
     
@@ -103,6 +104,11 @@ var UrlbarTokenizer = {
     if (path.length && userinfo.length)
       return true;
 
+    
+    
+    if (/^\/[a-z]/i.test(path)) {
+      return true;
+    }
     
     if (["%", "?", "#"].some(c => path.includes(c)))
       return true;
@@ -132,6 +138,9 @@ var UrlbarTokenizer = {
 
 
   looksLikeOrigin(token) {
+    if (token.length == 0) {
+      return false;
+    }
     let atIndex = token.indexOf("@");
     if (atIndex != -1 && this.REGEXP_COMMON_EMAIL.test(token)) {
       
@@ -141,12 +150,14 @@ var UrlbarTokenizer = {
     let hostPort = atIndex != -1 ? token.slice(atIndex + 1) : token;
     logger.debug("userinfo", userinfo);
     logger.debug("hostPort", hostPort);
-    if (this.REGEXP_HOSTPORT_IPV4.test(hostPort))
+    if (this.REGEXP_HOSTPORT_IPV4.test(hostPort) ||
+        this.REGEXP_HOSTPORT_IPV6.test(hostPort)) {
       return true;
-    if (this.REGEXP_HOSTPORT_IPV6.test(hostPort))
-      return true;
+    }
+
     
-    return !this.REGEXP_USERINFO_INVALID_CHARS.test(userinfo) &&
+    return !this.REGEXP_LIKE_PROTOCOL.test(hostPort) &&
+           !this.REGEXP_USERINFO_INVALID_CHARS.test(userinfo) &&
            !this.REGEXP_HOSTPORT_INVALID_CHARS.test(hostPort) &&
            (!this.REGEXP_HOSTPORT_IP_LIKE.test(hostPort) ||
             !this.REGEXP_HOSTPORT_INVALID_IP.test(hostPort));
@@ -238,30 +249,22 @@ function splitString(searchString) {
 
 
 
+
+
+
+
 function filterTokens(tokens) {
   let filtered = [];
-  let foundRestriction = [];
-  
-  
-  let combinables = new Set([
-    UrlbarTokenizer.TYPE.RESTRICT_TITLE,
-    UrlbarTokenizer.TYPE.RESTRICT_URL,
-  ]);
-  for (let token of tokens) {
+  let restrictions = [];
+  for (let i = 0; i < tokens.length; ++i) {
+    let token = tokens[i];
     let tokenObj = {
       value: token,
       type: UrlbarTokenizer.TYPE.TEXT,
     };
     let restrictionType = CHAR_TO_TYPE_MAP.get(token);
-    let firstRestriction = foundRestriction.length > 0 ? foundRestriction[0] : null;
-    if (tokens.length > 1 &&
-        restrictionType &&
-        !firstRestriction ||
-        (foundRestriction.length == 1 &&
-         (combinables.has(firstRestriction) && !combinables.has(restrictionType)) ||
-         (!combinables.has(firstRestriction) && combinables.has(restrictionType)))) {
-      tokenObj.type = restrictionType;
-      foundRestriction.push(restrictionType);
+    if (restrictionType) {
+      restrictions.push({index: i, type: restrictionType});
     } else if (UrlbarTokenizer.looksLikeOrigin(token)) {
       tokenObj.type = UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN;
     } else if (UrlbarTokenizer.looksLikeUrl(token, {requirePath: true})) {
@@ -269,6 +272,47 @@ function filterTokens(tokens) {
     }
     filtered.push(tokenObj);
   }
+
+  
+  if (restrictions.length > 0) {
+    
+    
+    
+    let matchingRestrictionFound = false;
+    let typeRestrictionFound = false;
+    function assignRestriction(r) {
+      if (r && !(matchingRestrictionFound && typeRestrictionFound)) {
+        if ([UrlbarTokenizer.TYPE.RESTRICT_TITLE,
+             UrlbarTokenizer.TYPE.RESTRICT_URL].includes(r.type)) {
+          if (!matchingRestrictionFound) {
+            matchingRestrictionFound = true;
+            filtered[r.index].type = r.type;
+            return true;
+          }
+        } else if (!typeRestrictionFound) {
+          typeRestrictionFound = true;
+          filtered[r.index].type = r.type;
+          return true;
+        }
+      }
+      return false;
+    }
+
+    
+    let found = assignRestriction(restrictions.find(r => r.index == 0));
+    if (found) {
+      
+      assignRestriction(restrictions.find(r => r.index == 1));
+    }
+    
+    let lastIndex = tokens.length - 1;
+    found = assignRestriction(restrictions.find(r => r.index == lastIndex));
+    if (found) {
+      
+      assignRestriction(restrictions.find(r => r.index == lastIndex - 1));
+    }
+  }
+
   logger.info("Filtered Tokens", tokens);
   return filtered;
 }

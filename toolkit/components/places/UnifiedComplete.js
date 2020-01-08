@@ -37,11 +37,6 @@ const MAXIMUM_ALLOWED_EXTENSION_TIME_MS = 3000;
 const RECENT_REMOTE_TAB_THRESHOLD_MS = 259200000; 
 
 
-
-
-const REGEXP_SINGLEWORD_HOST = new RegExp("^[a-z0-9-]+$", "i");
-
-
 const REGEXP_USER_CONTEXT_ID = /(?:^| )user-context-id:(\d+)/;
 
 
@@ -54,10 +49,7 @@ const REGEXP_INSERT_METHOD = /(?:^| )insert-method:(\d+)/;
 const REGEXP_SPACES = /\s+/;
 
 
-const REGEXP_STRIP_PREFIX = /^[a-zA-Z]+:(?:\/\/)?/;
-
-
-const REGEXP_ORIGIN = /^[^\s\/\?\#]+$/;
+const REGEXP_STRIP_PREFIX = /^[a-z]+:(?:\/){0,2}/i;
 
 
 const NOTIFYRESULT_DELAY_MS = 16;
@@ -344,15 +336,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 XPCOMUtils.defineLazyPreferenceGetter(this, "syncUsernamePref",
                                       "services.sync.username");
 
-
-
-
-XPCOMUtils.defineLazyGetter(this, "TOKEN_TO_BEHAVIOR_MAP", () => new Map(
-  Object.entries(UrlbarTokenizer.RESTRICT).map(
-    ([type, char]) => [char, type.toLowerCase()]
-  )
-));
-
 function setTimeout(callback, ms) {
   let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
   timer.initWithCallback(callback, ms, timer.TYPE_ONE_SHOT);
@@ -410,20 +393,19 @@ XPCOMUtils.defineLazyGetter(this, "ProfileAgeCreatedPromise", async () => {
 });
 
 
+XPCOMUtils.defineLazyGetter(this, "typeToBehaviorMap", () => {
+  return new Map([
+    [UrlbarTokenizer.TYPE.RESTRICT_HISTORY, "history"],
+    [UrlbarTokenizer.TYPE.RESTRICT_BOOKMARK, "bookmark"],
+    [UrlbarTokenizer.TYPE.RESTRICT_TAG, "tag"],
+    [UrlbarTokenizer.TYPE.RESTRICT_OPENPAGE, "openpage"],
+    [UrlbarTokenizer.TYPE.RESTRICT_SEARCH, "search"],
+    [UrlbarTokenizer.TYPE.RESTRICT_TITLE, "title"],
+    [UrlbarTokenizer.TYPE.RESTRICT_URL, "url"],
+  ]);
+});
 
 
-
-
-
-
-
-
-
-
-
-function getUnfilteredSearchTokens(searchString) {
-  return searchString.length ? searchString.split(REGEXP_SPACES) : [];
-}
 
 
 
@@ -529,14 +511,6 @@ function looksLikeUrl(str, ignoreAlphanumericHosts = false) {
 
 
 
-function looksLikeOrigin(str) {
-  
-  return REGEXP_ORIGIN.test(str);
-}
-
-
-
-
 
 
 
@@ -600,8 +574,10 @@ function Search(searchString, searchParam, autocompleteListener,
   
   this._originalSearchString = searchString;
   this._trimmedOriginalSearchString = searchString.trim();
-  let [prefix, suffix] = stripPrefix(this._trimmedOriginalSearchString);
-  this._searchString = Services.textToSubURI.unEscapeURIForUI("UTF-8", suffix);
+  let unescapedSearchString =
+    Services.textToSubURI.unEscapeURIForUI("UTF-8", this._trimmedOriginalSearchString);
+  let [prefix, suffix] = stripPrefix(unescapedSearchString);
+  this._searchString = suffix;
   this._strippedPrefix = prefix.toLowerCase();
 
   this._matchBehavior = Ci.mozIPlacesAutoComplete.MATCH_BOUNDARY;
@@ -627,21 +603,25 @@ function Search(searchString, searchParam, autocompleteListener,
                           parseInt(userContextId[1], 10) :
                           Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID;
 
-  let unfilteredTokens = getUnfilteredSearchTokens(this._searchString);
+  
+  
+  let {tokens} = UrlbarTokenizer.tokenize({searchString: unescapedSearchString});
 
-  
-  
   
   this._leadingRestrictionToken = null;
-  if (unfilteredTokens.length > 1 &&
-      this._trimmedOriginalSearchString.startsWith(unfilteredTokens[0]) &&
-      Object.values(UrlbarTokenizer.RESTRICT).includes(unfilteredTokens[0])) {
-    this._leadingRestrictionToken = unfilteredTokens[0];
-  } else if (this._trimmedOriginalSearchString.startsWith(UrlbarTokenizer.RESTRICT.SEARCH)) {
-    this._leadingRestrictionToken = UrlbarTokenizer.RESTRICT.SEARCH;
+  if (tokens.length > 0) {
+    if (UrlbarTokenizer.isRestrictionToken(tokens[0]) &&
+        (tokens.length > 1 || tokens[0].type == UrlbarTokenizer.TYPE.RESTRICT_SEARCH)) {
+      this._leadingRestrictionToken = tokens[0].value;
+    }
+    
+    
+    if (prefix && tokens[0].value.length > prefix.length) {
+      tokens[0].value = tokens[0].value.substring(prefix.length);
+    }
   }
 
-  this._searchTokens = this.filterTokens(unfilteredTokens);
+  this._searchTokens = this.filterTokens(tokens);
 
   
   
@@ -650,11 +630,9 @@ function Search(searchString, searchParam, autocompleteListener,
   
   
   
-  this._heuristicToken =
-    this._searchTokens[0] &&
-      this._trimmedOriginalSearchString.startsWith(this._searchTokens[0]) ?
-    this._searchTokens[0] :
-    null;
+  let firstToken = this._searchTokens.length > 0 && this._searchTokens[0].value;
+  this._heuristicToken = firstToken &&
+    this._trimmedOriginalSearchString.startsWith(firstToken) ? firstToken : null;
 
   this._keywordSubstitute = null;
 
@@ -774,15 +752,22 @@ Search.prototype = {
 
 
 
-
   filterTokens(tokens) {
     let foundToken = false;
     
-    for (let i = tokens.length - 1; i >= 0; i--) {
-      let behavior = TOKEN_TO_BEHAVIOR_MAP.get(tokens[i]);
+    let filtered = [];
+    for (let token of tokens) {
+      if (!UrlbarTokenizer.isRestrictionToken(token)) {
+        filtered.push(token);
+        continue;
+      }
+      let behavior = typeToBehaviorMap.get(token.type);
+      if (!behavior) {
+        throw new Error(`Unknown token type ${token.type}`);
+      }
       
       
-      if (behavior && (behavior != "openpage" || this._enableActions)) {
+      if (behavior != "openpage" || this._enableActions) {
         
         
         if (!foundToken) {
@@ -792,18 +777,15 @@ Search.prototype = {
           this.setBehavior("restrict");
         }
         this.setBehavior(behavior);
-        tokens.splice(i, 1);
       }
     }
-
     
     
     
     if (!UrlbarPrefs.get("filter.javascript")) {
       this.setBehavior("javascript");
     }
-
-    return tokens;
+    return filtered;
   },
 
   
@@ -967,7 +949,7 @@ Search.prototype = {
         !this._inPrivateWindow) {
       let query =
         this._searchEngineAliasMatch ? this._searchEngineAliasMatch.query :
-        substringAt(this._originalSearchString, this._searchTokens[0]);
+        substringAt(this._originalSearchString, this._searchTokens[0].value);
       if (query) {
         
         query = query.substr(0, UrlbarPrefs.get("maxCharsForSearchSuggestions"));
@@ -1417,8 +1399,8 @@ Search.prototype = {
 
     
     if (this._searchTokens.length == 1 &&
-        REGEXP_SINGLEWORD_HOST.test(this._searchTokens[0]) &&
-        Services.uriFixup.isDomainWhitelisted(this._searchTokens[0], -1)) {
+        this._searchTokens[0].type == UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN &&
+        Services.uriFixup.isDomainWhitelisted(this._searchTokens[0].value, -1)) {
       return true;
     }
 
@@ -1431,7 +1413,12 @@ Search.prototype = {
 
     
     
-    return this._searchTokens.some(looksLikeUrl);
+    
+    return this._searchTokens.some(t => {
+      return t.type == UrlbarTokenizer.TYPE.POSSIBLE_URL ||
+             (t.type == UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN &&
+              !/^[a-z0-9-]+$/i.test(t.value));
+    });
   },
 
   async _matchKnownUrl(conn) {
@@ -1441,7 +1428,7 @@ Search.prototype = {
     
     
     let query, params;
-    if (looksLikeOrigin(this._searchString)) {
+    if (UrlbarTokenizer.looksLikeOrigin(this._searchString)) {
       [query, params] = this._originQuery;
     } else {
       [query, params] = this._urlQuery;
@@ -1539,7 +1526,7 @@ Search.prototype = {
       searchStr = searchStr.slice(0, -1);
     }
     
-    if (!looksLikeOrigin(searchStr)) {
+    if (!UrlbarTokenizer.looksLikeOrigin(searchStr)) {
       return false;
     }
 
@@ -1760,6 +1747,11 @@ Search.prototype = {
   
   
   _matchUnknownUrl() {
+    if (!this._searchString && this._strippedPrefix) {
+      
+      
+      return false;
+    }
     let flags = Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
                 Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
     let fixupInfo = null;
@@ -1879,7 +1871,7 @@ Search.prototype = {
     
     let terms = parseResult.terms.toLowerCase();
     if (this._searchTokens.length > 0 &&
-        this._searchTokens.every(token => !terms.includes(token))) {
+        this._searchTokens.every(token => !terms.includes(token.value))) {
       return;
     }
 
@@ -2287,9 +2279,9 @@ Search.prototype = {
 
 
   get _keywordSubstitutedSearchString() {
-    let tokens = this._searchTokens;
+    let tokens = this._searchTokens.map(t => t.value);
     if (this._keywordSubstitute) {
-      tokens = [this._keywordSubstitute, ...this._searchTokens.slice(1)];
+      tokens = [this._keywordSubstitute, ...tokens.slice(1)];
     }
     return tokens.join(" ");
   },
