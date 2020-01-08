@@ -32,9 +32,10 @@ add_task(async function test_history_clear() {
   
   
   
-  PlacesUtils.annotations.setPageAnnotation(uri("http://download.mozilla.org/"),
-                                            "never", "never", 0,
-                                            PlacesUtils.annotations.EXPIRE_NEVER);
+  await PlacesUtils.history.update({
+    url: "http://download.mozilla.org/",
+    annotations: new Map([["never", "never"]]),
+  });
 
   
   

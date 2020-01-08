@@ -33,7 +33,10 @@ add_task(async function test_historyClear() {
     
     as.setItemAnnotation(id, "persist", "test", 0, as.EXPIRE_NEVER);
     
-    as.setPageAnnotation(pageURI, "persist", "test", 0, as.EXPIRE_NEVER);
+    await PlacesUtils.history.update({
+      url: pageURI,
+      annotations: new Map([["persist", "test"]]),
+    });
   }
 
   
@@ -42,7 +45,10 @@ add_task(async function test_historyClear() {
     
     let pageURI = uri("http://page_anno." + i + ".mozilla.org/");
     await PlacesTestUtils.addVisits({ uri: pageURI });
-    as.setPageAnnotation(pageURI, "expire", "test", 0, as.EXPIRE_NEVER);
+    await PlacesUtils.history.update({
+      url: pageURI,
+      annotations: new Map([["expire", "test"]]),
+    });
   }
 
   
