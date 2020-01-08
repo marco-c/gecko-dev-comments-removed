@@ -279,25 +279,31 @@ this.sidebarAction = class extends ExtensionAPI {
 
 
 
-
-
-
-  getContextData({tabId, windowId}) {
+  getTargetFromDetails({tabId, windowId}) {
     if (tabId != null && windowId != null) {
       throw new ExtensionError("Only one of tabId and windowId can be specified.");
     }
-    let target, values;
     if (tabId != null) {
-      target = tabTracker.getTab(tabId);
-      values = this.tabContext.get(target);
+      return tabTracker.getTab(tabId);
     } else if (windowId != null) {
-      target = windowTracker.getWindow(windowId);
-      values = this.tabContext.get(target);
-    } else {
-      target = null;
-      values = this.globals;
+      return windowTracker.getWindow(windowId);
     }
-    return {target, values};
+    return null;
+  }
+
+  
+
+
+
+
+
+
+
+  getContextData(target) {
+    if (target) {
+      return this.tabContext.get(target);
+    }
+    return this.globals;
   }
 
   
@@ -310,8 +316,8 @@ this.sidebarAction = class extends ExtensionAPI {
 
 
 
-  setProperty(details, prop, value) {
-    let {target, values} = this.getContextData(details);
+  setProperty(target, prop, value) {
+    let values = this.getContextData(target);
     if (value === null) {
       delete values[prop];
     } else {
@@ -331,8 +337,16 @@ this.sidebarAction = class extends ExtensionAPI {
 
 
 
-  getProperty(details, prop) {
-    return this.getContextData(details).values[prop];
+  getProperty(target, prop) {
+    return this.getContextData(target)[prop];
+  }
+
+  setPropertyFromDetails(details, prop, value) {
+    return this.setProperty(this.getTargetFromDetails(details), prop, value);
+  }
+
+  getPropertyFromDetails(details, prop) {
+    return this.getProperty(this.getTargetFromDetails(details), prop);
   }
 
   
@@ -389,11 +403,11 @@ this.sidebarAction = class extends ExtensionAPI {
     return {
       sidebarAction: {
         async setTitle(details) {
-          sidebarAction.setProperty(details, "title", details.title);
+          sidebarAction.setPropertyFromDetails(details, "title", details.title);
         },
 
         getTitle(details) {
-          return sidebarAction.getProperty(details, "title");
+          return sidebarAction.getPropertyFromDetails(details, "title");
         },
 
         async setIcon(details) {
@@ -401,7 +415,7 @@ this.sidebarAction = class extends ExtensionAPI {
           if (!Object.keys(icon).length) {
             icon = null;
           }
-          sidebarAction.setProperty(details, "icon", icon);
+          sidebarAction.setPropertyFromDetails(details, "icon", icon);
         },
 
         async setPanel(details) {
@@ -416,11 +430,11 @@ this.sidebarAction = class extends ExtensionAPI {
             }
           }
 
-          sidebarAction.setProperty(details, "panel", url);
+          sidebarAction.setPropertyFromDetails(details, "panel", url);
         },
 
         getPanel(details) {
-          return sidebarAction.getProperty(details, "panel");
+          return sidebarAction.getPropertyFromDetails(details, "panel");
         },
 
         open() {
