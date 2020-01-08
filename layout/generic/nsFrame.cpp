@@ -4129,80 +4129,30 @@ nsFrame::GetDataForTableSelection(const nsFrameSelection* aFrameSelection,
   return NS_OK;
 }
 
+static StyleUserSelect
+UsedUserSelect(const nsIFrame* aFrame)
+{
+  if (aFrame->HasAnyStateBits(NS_FRAME_GENERATED_CONTENT)) {
+    return StyleUserSelect::None;
+  }
+
+  auto style = aFrame->StyleUIReset()->mUserSelect;
+  if (style != StyleUserSelect::Auto) {
+    return style;
+  }
+
+  auto* parent = nsLayoutUtils::GetParentOrPlaceholderFor(aFrame);
+  return parent ? UsedUserSelect(parent) : StyleUserSelect::Text;
+}
+
 bool
 nsIFrame::IsSelectable(StyleUserSelect* aSelectStyle) const
 {
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  StyleUserSelect selectStyle  = StyleUserSelect::Auto;
-  nsIFrame* frame              = const_cast<nsIFrame*>(this);
-  bool containsEditable        = false;
-
-  while (frame) {
-    const nsStyleUIReset* userinterface = frame->StyleUIReset();
-    switch (userinterface->mUserSelect) {
-      case StyleUserSelect::All: {
-        
-        if (selectStyle != StyleUserSelect::MozText) {
-          selectStyle = userinterface->mUserSelect;
-        }
-        nsIContent* frameContent = frame->GetContent();
-        containsEditable = frameContent &&
-          frameContent->EditableDescendantCount() > 0;
-        break;
-      }
-      default:
-        
-        if (selectStyle == StyleUserSelect::Auto) {
-          selectStyle = userinterface->mUserSelect;
-        }
-        break;
-    }
-    frame = nsLayoutUtils::GetParentOrPlaceholderFor(frame);
-  }
-
-  
-  if (selectStyle == StyleUserSelect::Auto ||
-      selectStyle == StyleUserSelect::MozText) {
-    selectStyle = StyleUserSelect::Text;
-  }
-
-  
-  
-  bool allowSelection = true;
-  if (selectStyle == StyleUserSelect::All) {
-    allowSelection = !containsEditable;
-  }
-
-  
+  auto style = UsedUserSelect(this);
   if (aSelectStyle) {
-    *aSelectStyle = selectStyle;
+    *aSelectStyle = style;
   }
-
-  return !(mState & NS_FRAME_GENERATED_CONTENT) &&
-         allowSelection &&
-         selectStyle != StyleUserSelect::None;
+  return style != StyleUserSelect::None;
 }
 
 
@@ -4976,15 +4926,21 @@ static FrameTarget GetSelectionClosestFrameForLine(
   WritingMode wm = aLine->mWritingMode;
   LogicalPoint pt(wm, aPoint, aLine->mContainerSize);
   bool canSkipBr = false;
+  bool lastFrameWasEditable = false;
   for (int32_t n = aLine->GetChildCount(); n;
        --n, frame = frame->GetNextSibling()) {
     
     
+    
+    
+    
     if (!SelfIsSelectable(frame, aFlags) || frame->IsEmpty() ||
-        (canSkipBr && frame->IsBrFrame())) {
+        (canSkipBr && frame->IsBrFrame() &&
+         lastFrameWasEditable == frame->GetContent()->IsEditable())) {
       continue;
     }
     canSkipBr = true;
+    lastFrameWasEditable = frame->GetContent() && frame->GetContent()->IsEditable();
     LogicalRect frameRect = LogicalRect(wm, frame->GetRect(),
                                         aLine->mContainerSize);
     if (pt.I(wm) >= frameRect.IStart(wm)) {
@@ -5175,18 +5131,14 @@ OffsetsForSingleFrame(nsIFrame* aFrame, const nsPoint& aPoint)
 
 static nsIFrame* AdjustFrameForSelectionStyles(nsIFrame* aFrame) {
   nsIFrame* adjustedFrame = aFrame;
-  for (nsIFrame* frame = aFrame; frame; frame = frame->GetParent())
-  {
+  for (nsIFrame* frame = aFrame; frame; frame = frame->GetParent()) {
     
     
     StyleUserSelect userSelect = frame->StyleUIReset()->mUserSelect;
-    if (userSelect == StyleUserSelect::MozText) {
-      
-      
+    if (userSelect != StyleUserSelect::Auto && userSelect != StyleUserSelect::All) {
       break;
     }
-    if (userSelect == StyleUserSelect::All ||
-        frame->IsGeneratedContentFrame()) {
+    if (userSelect == StyleUserSelect::All || frame->IsGeneratedContentFrame()) {
       adjustedFrame = frame;
     }
   }
@@ -5199,8 +5151,7 @@ nsIFrame::ContentOffsets nsIFrame::GetContentOffsetsFromPoint(const nsPoint& aPo
   nsIFrame *adjustedFrame;
   if (aFlags & IGNORE_SELECTION_STYLE) {
     adjustedFrame = this;
-  }
-  else {
+  } else {
     
     
     
@@ -5211,8 +5162,7 @@ nsIFrame::ContentOffsets nsIFrame::GetContentOffsetsFromPoint(const nsPoint& aPo
 
     
     
-    if (adjustedFrame && adjustedFrame->StyleUIReset()->mUserSelect ==
-        StyleUserSelect::All) {
+    if (adjustedFrame->StyleUIReset()->mUserSelect == StyleUserSelect::All) {
       nsPoint adjustedPoint = aPoint + this->GetOffsetTo(adjustedFrame);
       return OffsetsForSingleFrame(adjustedFrame, adjustedPoint);
     }
@@ -8132,8 +8082,7 @@ nsFrame::GetNextPrevLineFromeBlockFrame(nsPresContext* aPresContext,
                                         nsPeekOffsetStruct *aPos,
                                         nsIFrame *aBlockFrame,
                                         int32_t aLineStart,
-                                        int8_t aOutSideLimit
-                                        )
+                                        int8_t aOutSideLimit)
 {
   
   if (!aBlockFrame || !aPos)
@@ -8241,6 +8190,19 @@ nsFrame::GetNextPrevLineFromeBlockFrame(nsPresContext* aPresContext,
       if (NS_FAILED(result))
         return result;
 
+      auto FoundValidFrame = [aPos](const ContentOffsets& aOffsets, const nsIFrame* aFrame) {
+        if (!aOffsets.content) {
+          return false;
+        }
+        if (!aFrame->IsSelectable(nullptr)) {
+          return false;
+        }
+        if (aPos->mForceEditableRegion && !aOffsets.content->IsEditable()) {
+          return false;
+        }
+        return true;
+      };
+
       nsIFrame *storeOldResultFrame = resultFrame;
       while ( !found ){
         nsPoint point;
@@ -8294,8 +8256,7 @@ nsFrame::GetNextPrevLineFromeBlockFrame(nsPresContext* aPresContext,
           }
         }
 
-        if (!resultFrame->HasView())
-        {
+        if (!resultFrame->HasView()) {
           nsView* view;
           nsPoint offset;
           resultFrame->GetOffsetFromView(offset, &view);
@@ -8304,12 +8265,9 @@ nsFrame::GetNextPrevLineFromeBlockFrame(nsPresContext* aPresContext,
           aPos->mResultContent = offsets.content;
           aPos->mContentOffset = offsets.offset;
           aPos->mAttach = offsets.associate;
-          if (offsets.content)
-          {
-            if (resultFrame->IsSelectable(nullptr)) {
-              found = true;
-              break;
-            }
+          if (FoundValidFrame(offsets, resultFrame)) {
+            found = true;
+            break;
           }
         }
 
@@ -8346,16 +8304,13 @@ nsFrame::GetNextPrevLineFromeBlockFrame(nsPresContext* aPresContext,
         aPos->mResultContent = offsets.content;
         aPos->mContentOffset = offsets.offset;
         aPos->mAttach = offsets.associate;
-        if (offsets.content)
-        {
-          if (resultFrame->IsSelectable(nullptr)) {
-            found = true;
-            if (resultFrame == farStoppingFrame)
-              aPos->mAttach = CARET_ASSOCIATE_BEFORE;
-            else
-              aPos->mAttach = CARET_ASSOCIATE_AFTER;
-            break;
-          }
+        if (FoundValidFrame(offsets, resultFrame)) {
+          found = true;
+          if (resultFrame == farStoppingFrame)
+            aPos->mAttach = CARET_ASSOCIATE_BEFORE;
+          else
+            aPos->mAttach = CARET_ASSOCIATE_AFTER;
+          break;
         }
         if (aPos->mDirection == eDirPrevious && (resultFrame == nearStoppingFrame))
           break;
@@ -8579,6 +8534,7 @@ nsIFrame::PeekOffset(nsPeekOffsetStruct* aPos)
           result =
             current->GetFrameFromDirection(aPos->mDirection, aPos->mVisual,
                                            aPos->mJumpLines, aPos->mScrollViewStop,
+                                           aPos->mForceEditableRegion,
                                            &current, &offset, &jumpedLine,
                                            &movedOverNonSelectable);
           if (NS_FAILED(result))
@@ -8590,9 +8546,7 @@ nsIFrame::PeekOffset(nsPeekOffsetStruct* aPos)
             eatingNonRenderableWS = true;
 
           
-          if (movedOverNonSelectable) {
-            movedOverNonSelectableText = true;
-          }
+          movedOverNonSelectableText |= movedOverNonSelectable;
         }
 
         
@@ -8682,6 +8636,7 @@ nsIFrame::PeekOffset(nsPeekOffsetStruct* aPos)
           result =
             current->GetFrameFromDirection(aPos->mDirection, aPos->mVisual,
                                            aPos->mJumpLines, aPos->mScrollViewStop,
+                                           aPos->mForceEditableRegion,
                                            &nextFrame, &nextFrameOffset, &jumpedLine,
                                            &movedOverNonSelectableText);
           
@@ -9039,6 +8994,7 @@ nsFrame::GetLineNumber(nsIFrame *aFrame, bool aLockScroll, nsIFrame** aContainin
 nsresult
 nsIFrame::GetFrameFromDirection(nsDirection aDirection, bool aVisual,
                                 bool aJumpLines, bool aScrollViewStop,
+                                bool aForceEditableRegion,
                                 nsIFrame** aOutFrame, int32_t* aOutOffset,
                                 bool* aOutJumpedLine, bool* aOutMovedOverNonSelectableText)
 {
@@ -9143,24 +9099,31 @@ nsIFrame::GetFrameFromDirection(nsDirection aDirection, bool aVisual,
       return NS_ERROR_FAILURE;
     }
 
-    
-    if (atLineEdge && aDirection == eDirPrevious &&
-        traversedFrame->IsBrFrame()) {
-      int32_t lineFrameCount;
-      nsIFrame *currentBlockFrame, *currentFirstFrame;
-      nsRect usedRect;
-      int32_t currentLine = nsFrame::GetLineNumber(traversedFrame, aScrollViewStop, &currentBlockFrame);
-      nsAutoLineIterator iter = currentBlockFrame->GetLineIterator();
-      result = iter->GetLine(currentLine, &currentFirstFrame, &lineFrameCount, usedRect);
-      if (NS_FAILED(result)) {
-        return result;
+    auto IsSelectable = [aForceEditableRegion](const nsIFrame* aFrame) {
+      if (!aFrame->IsSelectable(nullptr)) {
+        return false;
       }
-      if (lineFrameCount > 1) {
+      return !aForceEditableRegion || aFrame->GetContent()->IsEditable();
+    };
+
+    
+    
+    if (atLineEdge && aDirection == eDirPrevious && traversedFrame->IsBrFrame()) {
+      bool canSkipBr = false;
+      for (nsIFrame* current = traversedFrame->GetPrevSibling();
+           current;
+           current = current->GetPrevSibling()) {
+        if (IsSelectable(current)) {
+          canSkipBr = true;
+          break;
+        }
+      }
+      if (canSkipBr) {
         continue;
       }
     }
 
-    selectable = traversedFrame->IsSelectable(nullptr);
+    selectable = IsSelectable(traversedFrame);
     if (!selectable) {
       *aOutMovedOverNonSelectableText = true;
     }

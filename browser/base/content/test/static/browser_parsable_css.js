@@ -49,10 +49,6 @@ let whitelist = [
    errorMessage: /Error in parsing value for \u2018-moz-appearance\u2019/iu,
    isFromDevTools: false},
   
-  {sourceName: /contenteditable.css$/i,
-   errorMessage: /Error in parsing value for \u2018-moz-user-select\u2019/iu,
-   isFromDevTools: false},
-  
   
   
   {sourceName: /jsonview\/css\/general\.css$/i,
