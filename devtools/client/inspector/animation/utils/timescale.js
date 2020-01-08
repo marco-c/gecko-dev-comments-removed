@@ -23,33 +23,23 @@ class TimeScale {
       return this._initializeWithoutCreatedTime(animations);
     }
 
-    let animationsCurrentTime = -Number.MAX_VALUE;
-    let minStartTime = Infinity;
-    let maxEndTime = 0;
-    let zeroPositionTime = 0;
+    let resultCurrentTime = -Number.MAX_VALUE;
+    let resultMinStartTime = Infinity;
+    let resultMaxEndTime = 0;
+    let resultZeroPositionTime = 0;
 
     for (const animation of animations) {
       const {
-        createdTime,
         currentTime,
         currentTimeAtCreated,
         delay,
-        duration,
-        endDelay = 0,
-        iterationCount,
-        playbackRate,
-      } = animation.state;
+        endTime,
+        startTimeAtCreated,
+      } = animation.state.absoluteValues;
+      let { startTime } = animation.state.absoluteValues;
 
-      const toRate = v => v / playbackRate;
-      const negativeDelay = toRate(Math.min(delay, 0));
-      let startPositionTime = createdTime + negativeDelay;
-      
-      
-      const originalCurrentTime =
-            toRate(currentTimeAtCreated ? currentTimeAtCreated : startPositionTime);
-      const startPositionTimeAtCreated =
-            createdTime + originalCurrentTime;
-      let animationZeroPositionTime = 0;
+      const negativeDelay = Math.min(delay, 0);
+      let zeroPositionTime = 0;
 
       
       
@@ -57,48 +47,30 @@ class TimeScale {
       
       
       
-      if (originalCurrentTime < negativeDelay &&
-          startPositionTimeAtCreated < minStartTime) {
-        startPositionTime = startPositionTimeAtCreated;
-        animationZeroPositionTime = Math.abs(originalCurrentTime);
-      } else if (negativeDelay < 0 && startPositionTime < minStartTime) {
-        animationZeroPositionTime = Math.abs(negativeDelay);
+      if (currentTimeAtCreated < negativeDelay) {
+        startTime = startTimeAtCreated;
+        zeroPositionTime = Math.abs(currentTimeAtCreated);
+      } else if (negativeDelay < 0) {
+        zeroPositionTime = Math.abs(negativeDelay);
       }
 
-      let endTime = 0;
-
-      if (duration === Infinity) {
+      if (startTime < resultMinStartTime) {
+        resultMinStartTime = startTime;
         
         
-        
-        
-        
-        endTime = createdTime + (delay > 0 ? delay * 2 : 1);
+        resultZeroPositionTime = zeroPositionTime;
       } else {
-        endTime = createdTime +
-                  toRate(delay +
-                         duration * (iterationCount || 1) +
-                         Math.max(endDelay, 0));
+        resultZeroPositionTime = Math.max(resultZeroPositionTime, zeroPositionTime);
       }
 
-      maxEndTime = Math.max(maxEndTime, endTime);
-      animationsCurrentTime =
-        Math.max(animationsCurrentTime, createdTime + toRate(currentTime));
-
-      if (startPositionTime < minStartTime) {
-        minStartTime = startPositionTime;
-        
-        
-        zeroPositionTime = animationZeroPositionTime;
-      } else {
-        zeroPositionTime = Math.max(zeroPositionTime, animationZeroPositionTime);
-      }
+      resultMaxEndTime = Math.max(resultMaxEndTime, endTime);
+      resultCurrentTime = Math.max(resultCurrentTime, currentTime);
     }
 
-    this.minStartTime = minStartTime;
-    this.maxEndTime = maxEndTime;
-    this.currentTime = animationsCurrentTime;
-    this.zeroPositionTime = zeroPositionTime;
+    this.minStartTime = resultMinStartTime;
+    this.maxEndTime = resultMaxEndTime;
+    this.currentTime = resultCurrentTime;
+    this.zeroPositionTime = resultZeroPositionTime;
   }
 
   
