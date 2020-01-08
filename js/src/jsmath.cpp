@@ -572,7 +572,7 @@ js::powi(double x, int32_t y)
 double
 js::ecmaPow(double x, double y)
 {
-    AutoUnsafeCallWithABI unsafe;
+    AutoUnsafeCallWithABI unsafe(UnsafeABIStrictness::AllowPendingExceptions);
 
     
 
