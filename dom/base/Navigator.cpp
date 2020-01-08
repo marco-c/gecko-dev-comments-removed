@@ -880,8 +880,15 @@ Navigator::Vibrate(const nsTArray<uint32_t>& aPattern)
 
 
 uint32_t
-Navigator::MaxTouchPoints()
+Navigator::MaxTouchPoints(CallerType aCallerType)
 {
+  
+  
+  if (aCallerType != CallerType::System &&
+      nsContentUtils::ShouldResistFingerprinting()) {
+    return 0;
+  }
+
   nsCOMPtr<nsIWidget> widget = widget::WidgetUtils::DOMWindowToWidget(mWindow->GetOuterWindow());
 
   NS_ENSURE_TRUE(widget, 0);
