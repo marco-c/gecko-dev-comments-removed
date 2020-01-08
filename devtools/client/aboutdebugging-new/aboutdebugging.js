@@ -82,8 +82,8 @@ const AboutDebugging = {
     addNetworkLocationsObserver(this.onNetworkLocationsUpdated);
 
     
+    this.onUSBRuntimesUpdated();
     addUSBRuntimesObserver(this.onUSBRuntimesUpdated);
-    getUSBRuntimes();
 
     adbAddon.on("update", this.onAdbAddonUpdated);
     this.onAdbAddonUpdated();
