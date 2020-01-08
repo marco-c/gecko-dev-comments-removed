@@ -1815,7 +1815,10 @@ window._gBrowser = {
     userContextId,
   } = {}) {
     let b = document.createXULElement("browser");
-    b.permanentKey = {};
+    
+    
+    
+    b.permanentKey = new (Cu.getGlobalForObject(Services).Object);
 
     const defaultBrowserAttributes = {
       contextmenu: "contentAreaContextMenu",
