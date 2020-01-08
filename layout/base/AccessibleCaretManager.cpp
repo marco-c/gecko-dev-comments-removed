@@ -903,12 +903,14 @@ AccessibleCaretManager::SetSelectionDragState(bool aState) const
 
   
   
-  #ifdef MOZ_WIDGET_ANDROID
+#ifdef MOZ_WIDGET_ANDROID
+  if (XRE_IsParentProcess()) {
     nsIDocument* doc = mPresShell->GetDocument();
     MOZ_ASSERT(doc);
     nsIWidget* widget = nsContentUtils::WidgetForDocument(doc);
     static_cast<nsWindow*>(widget)->SetSelectionDragState(aState);
-  #endif
+  }
+#endif
 }
 
 bool
