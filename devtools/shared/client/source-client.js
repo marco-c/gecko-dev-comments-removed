@@ -4,7 +4,7 @@
 
 "use strict";
 
-const {DebuggerClient} = require("devtools/shared/client/debugger-client");
+const {arg, DebuggerClient} = require("devtools/shared/client/debugger-client");
 loader.lazyRequireGetter(this, "BreakpointClient", "devtools/shared/client/breakpoint-client");
 
 const noop = () => {};
@@ -44,36 +44,46 @@ SourceClient.prototype = {
   
 
 
-  blackBox: DebuggerClient.requester({
-    type: "blackbox",
-  }, {
-    after: function(response) {
-      if (!response.error) {
-        this._isBlackBoxed = true;
-        if (this._activeThread) {
-          this._activeThread.emit("blackboxchange", this);
-        }
-      }
-      return response;
+  blackBox: DebuggerClient.requester(
+    {
+      type: "blackbox",
+      range: arg(0),
     },
-  }),
+    {
+      telemetry: "BLACKBOX",
+      after: function(response) {
+        if (!response.error) {
+          this._isBlackBoxed = true;
+          if (this._activeThread) {
+            this._activeThread.emit("blackboxchange", this);
+          }
+        }
+        return response;
+      },
+    },
+  ),
 
   
 
 
-  unblackBox: DebuggerClient.requester({
-    type: "unblackbox",
-  }, {
-    after: function(response) {
-      if (!response.error) {
-        this._isBlackBoxed = false;
-        if (this._activeThread) {
-          this._activeThread.emit("blackboxchange", this);
-        }
-      }
-      return response;
+  unblackBox: DebuggerClient.requester(
+    {
+      type: "unblackbox",
+      range: arg(0),
     },
-  }),
+    {
+      telemetry: "UNBLACKBOX",
+      after: function(response) {
+        if (!response.error) {
+          this._isBlackBoxed = false;
+          if (this._activeThread) {
+            this._activeThread.emit("blackboxchange", this);
+          }
+        }
+        return response;
+      },
+    },
+  ),
 
   
 

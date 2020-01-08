@@ -25,7 +25,7 @@ function TabSources(threadActor, allowSourceFn = () => true) {
     return !isHiddenSource(source) && allowSourceFn(source);
   };
 
-  this.blackBoxedSources = new Set();
+  this.blackBoxedSources = new Map();
   this.neverAutoBlackBoxSources = new Set();
 
   
@@ -328,8 +328,14 @@ TabSources.prototype = {
 
 
 
-  isBlackBoxed: function(url) {
-    return this.blackBoxedSources.has(url);
+  isBlackBoxed: function(url, line, column) {
+    const ranges = this.blackBoxedSources.get(url);
+    if (!ranges) {
+      return this.blackBoxedSources.has(url);
+    }
+
+    const range = ranges.find(r => isLocationInRange({ line, column }, r));
+    return !!range;
   },
 
   
@@ -338,8 +344,22 @@ TabSources.prototype = {
 
 
 
-  blackBox: function(url) {
-    this.blackBoxedSources.add(url);
+  blackBox: function(url, range) {
+    if (!range) {
+      
+      return this.blackBoxedSources.set(url, null);
+    }
+
+    const ranges = this.blackBoxedSources.get(url) || [];
+    
+    const index = ranges.findIndex(r => (
+      r.end.line <= range.start.line &&
+      r.end.column <= range.start.column)
+    );
+
+    ranges.splice(index + 1, 0, range);
+    this.blackBoxedSources.set(url, ranges);
+    return true;
   },
 
   
@@ -348,8 +368,28 @@ TabSources.prototype = {
 
 
 
-  unblackBox: function(url) {
-    this.blackBoxedSources.delete(url);
+  unblackBox: function(url, range) {
+    if (!range) {
+      return this.blackBoxedSources.delete(url);
+    }
+
+    const ranges = this.blackBoxedSources.get(url);
+    const index = ranges.findIndex(r =>
+        r.start.line === range.start.line
+      && r.start.column === range.start.column
+      && r.end.line === range.end.line
+      && r.end.column === range.end.column
+    );
+
+    if (index !== -1) {
+      ranges.splice(index, 1);
+    }
+
+    if (ranges.length === 0) {
+      return this.blackBoxedSources.delete(url);
+    }
+
+    return this.blackBoxedSources.set(url, ranges);
   },
 
   iter: function() {
@@ -369,6 +409,13 @@ TabSources.prototype = {
 
 function isHiddenSource(source) {
   return source.introductionType === "Function.prototype";
+}
+
+function isLocationInRange({ line, column }, range) {
+  return (range.start.line <= line
+    || (range.start.line == line && range.start.column <= column))
+    && (range.end.line >= line
+    || (range.end.line == line && range.end.column >= column));
 }
 
 exports.TabSources = TabSources;
