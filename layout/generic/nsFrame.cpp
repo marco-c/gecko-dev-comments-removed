@@ -2690,11 +2690,14 @@ void nsIFrame::BuildDisplayListForStackingContext(
   
   
   
+  bool needHitTestInfo = aBuilder->BuildCompositorHitTestInfo() &&
+                         StyleUI()->GetEffectivePointerEvents(this) !=
+                             NS_STYLE_POINTER_EVENTS_NONE;
   bool opacityItemForEventsAndPluginsOnly = false;
   if (effects->mOpacity == 0.0 && aBuilder->IsForPainting() &&
       !(disp->mWillChangeBitField & NS_STYLE_WILL_CHANGE_OPACITY) &&
       !nsLayoutUtils::HasAnimationOfProperty(effectSet, eCSSProperty_opacity)) {
-    if (aBuilder->WillComputePluginGeometry()) {
+    if (needHitTestInfo || aBuilder->WillComputePluginGeometry()) {
       opacityItemForEventsAndPluginsOnly = true;
     } else {
       return;
