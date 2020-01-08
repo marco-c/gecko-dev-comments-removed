@@ -1154,8 +1154,12 @@
 
 
 
+
+
+
+
  \
-    macro(JSOP_GOSUB,     116,"gosub",      NULL,         5,  0,  0,  JOF_JUMP) \
+    macro(JSOP_GOSUB,     116,"gosub",      NULL,         5,  2,  0,  JOF_JUMP) \
     
 
 
@@ -1166,8 +1170,9 @@
 
 
 
+
  \
-    macro(JSOP_RETSUB,    117,"retsub",     NULL,         1,  2,  0,  JOF_BYTE|JOF_IC) \
+    macro(JSOP_RETSUB,    117,"retsub",     NULL,         1,  2,  0,  JOF_BYTE) \
     \
      \
     
@@ -1281,7 +1286,18 @@
 
  \
     macro(JSOP_GETELEM_SUPER, 125, "getelem-super", NULL, 1,  3,  1, JOF_BYTE|JOF_ELEM|JOF_TYPESET|JOF_IC) \
-    macro(JSOP_UNUSED126, 126, "unused126", NULL, 5,  0,  1, JOF_UINT32) \
+    
+
+
+
+
+
+
+
+
+
+ \
+    macro(JSOP_RESUMEINDEX, 126, "resume-index", NULL, 4,  0,  1, JOF_UINT24) \
     \
     
 

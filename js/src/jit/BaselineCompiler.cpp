@@ -1220,7 +1220,6 @@ BaselineCompiler::emitBody()
             
           case JSOP_SETINTRINSIC:
             
-          case JSOP_UNUSED126:
           case JSOP_UNUSED206:
           case JSOP_LIMIT:
             
@@ -1856,6 +1855,12 @@ BaselineCompiler::emit_JSOP_UINT24()
 {
     frame.push(Int32Value(GET_UINT24(pc)));
     return true;
+}
+
+bool
+BaselineCompiler::emit_JSOP_RESUMEINDEX()
+{
+    return emit_JSOP_UINT24();
 }
 
 bool
@@ -3938,14 +3943,6 @@ bool
 BaselineCompiler::emit_JSOP_GOSUB()
 {
     
-    
-    
-    frame.push(BooleanValue(false));
-
-    int32_t nextOffset = script->pcToOffset(GetNextPc(pc));
-    frame.push(Int32Value(nextOffset));
-
-    
     frame.syncStack(0);
     jsbytecode* target = pc + GET_JUMP_OFFSET(pc);
     masm.jump(labelOf(target));
@@ -3957,8 +3954,29 @@ BaselineCompiler::emit_JSOP_RETSUB()
 {
     frame.popRegsAndSync(2);
 
-    ICRetSub_Fallback::Compiler stubCompiler(cx);
-    return emitOpIC(stubCompiler.getStub(&stubSpace_));
+    Label isReturn;
+    masm.branchTestBooleanTruthy( false, R0, &isReturn);
+
+    
+    prepareVMCall();
+    pushArg(R1);
+    if (!callVM(ThrowInfo)) {
+        return false;
+    }
+
+    masm.bind(&isReturn);
+
+    
+    Register scratch1 = R2.scratchReg();
+    Register scratch2 = R0.scratchReg();
+    masm.movePtr(ImmGCPtr(script), scratch1);
+    masm.loadPtr(Address(scratch1, JSScript::offsetOfBaselineScript()), scratch1);
+    masm.load32(Address(scratch1, BaselineScript::offsetOfResumeEntriesOffset()), scratch2);
+    masm.addPtr(scratch2, scratch1);
+    masm.unboxInt32(R1, scratch2);
+    masm.loadPtr(BaseIndex(scratch1, scratch2, ScaleFromElemWidth(sizeof(uintptr_t))), scratch1);
+    masm.jump(scratch1);
+    return true;
 }
 
 typedef bool (*PushLexicalEnvFn)(JSContext*, BaselineFrame*, Handle<LexicalScope*>);
