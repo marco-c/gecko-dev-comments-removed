@@ -17,10 +17,6 @@
 
 
 
-
-
-
-
 exports.KeyCodes = {
   DOM_VK_CANCEL: 3,
   DOM_VK_HELP: 6,
@@ -136,9 +132,6 @@ exports.KeyCodes = {
   DOM_VK_CLOSE_BRACKET: 221,
   DOM_VK_QUOTE: 222,
   DOM_VK_META: 224,
-
-  
-  
   DOM_VK_COLON: 58,
   DOM_VK_VOLUME_MUTE: 181,
   DOM_VK_VOLUME_DOWN: 182,
