@@ -1045,7 +1045,8 @@ nsresult xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp,
   
   
 
-  if (principal == nsXPConnect::SystemPrincipal()) {
+  bool isSystemPrincipal = principal == nsXPConnect::SystemPrincipal();
+  if (isSystemPrincipal) {
     creationOptions.setClampAndJitterTime(false);
   }
 
@@ -1055,6 +1056,12 @@ nsresult xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp,
         js::UncheckedUnwrap(options.sameZoneAs));
   } else if (options.freshZone) {
     creationOptions.setNewCompartmentAndZone();
+  } else if (isSystemPrincipal && !options.invisibleToDebugger &&
+             !options.freshCompartment) {
+    
+    
+    
+    creationOptions.setExistingCompartment(xpc::PrivilegedJunkScope());
   } else {
     creationOptions.setNewCompartmentInSystemZone();
   }
@@ -1072,27 +1079,42 @@ nsresult xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp,
     return NS_ERROR_FAILURE;
   }
 
-  CompartmentPrivate* priv = CompartmentPrivate::Get(sandbox);
-  priv->allowWaivers = options.allowWaivers;
-  priv->isWebExtensionContentScript = options.isWebExtensionContentScript;
-  priv->isContentXBLCompartment = options.isContentXBLScope;
-  priv->isUAWidgetCompartment = options.isUAWidgetScope;
+  
+  bool hasExclusiveExpandos = !isSystemPrincipal;
 
   
-  if (principal != nsXPConnect::SystemPrincipal()) {
-    priv->hasExclusiveExpandos = true;
+  
+  
+  
+  
+  
+  
+  
+  
+  bool wantXrays = AccessCheck::isChrome(sandbox) ? false : options.wantXrays;
+
+  if (creationOptions.compartmentSpecifier() ==
+      JS::CompartmentSpecifier::ExistingCompartment) {
+    
+    
+    CompartmentPrivate* priv = CompartmentPrivate::Get(sandbox);
+    MOZ_RELEASE_ASSERT(priv->allowWaivers == options.allowWaivers);
+    MOZ_RELEASE_ASSERT(priv->isWebExtensionContentScript ==
+                       options.isWebExtensionContentScript);
+    MOZ_RELEASE_ASSERT(priv->isContentXBLCompartment ==
+                       options.isContentXBLScope);
+    MOZ_RELEASE_ASSERT(priv->isUAWidgetCompartment == options.isUAWidgetScope);
+    MOZ_RELEASE_ASSERT(priv->hasExclusiveExpandos == hasExclusiveExpandos);
+    MOZ_RELEASE_ASSERT(priv->wantXrays == wantXrays);
+  } else {
+    CompartmentPrivate* priv = CompartmentPrivate::Get(sandbox);
+    priv->allowWaivers = options.allowWaivers;
+    priv->isWebExtensionContentScript = options.isWebExtensionContentScript;
+    priv->isContentXBLCompartment = options.isContentXBLScope;
+    priv->isUAWidgetCompartment = options.isUAWidgetScope;
+    priv->hasExclusiveExpandos = hasExclusiveExpandos;
+    priv->wantXrays = wantXrays;
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  priv->wantXrays = AccessCheck::isChrome(sandbox) ? false : options.wantXrays;
 
   {
     JSAutoRealm ar(cx, sandbox);
