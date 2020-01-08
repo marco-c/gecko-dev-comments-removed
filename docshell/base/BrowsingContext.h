@@ -48,18 +48,7 @@ public:
   static void CleanupContexts(uint64_t aProcessId);
 
   static already_AddRefed<BrowsingContext> Get(uint64_t aId);
-
-  
-  
-  
-  explicit BrowsingContext(nsIDocShell* aDocShell);
-  
-  
-  
-  
-  BrowsingContext(uint64_t aBrowsingContextId,
-                  const nsAString& aName,
-                  const Maybe<uint64_t>& aProcessId = Nothing());
+  static already_AddRefed<BrowsingContext> Create(nsIDocShell* aDocShell);
 
   
   
@@ -82,7 +71,6 @@ public:
 
   uint64_t Id() const { return mBrowsingContextId; }
   uint64_t OwnerProcessId() const;
-  bool IsOwnedByProcess() const { return mProcessId.isSome(); }
 
   already_AddRefed<BrowsingContext> GetParent()
   {
@@ -104,14 +92,17 @@ public:
 
   using Children = AutoCleanLinkedList<RefPtr<BrowsingContext>>;
 
-private:
+protected:
   virtual ~BrowsingContext();
+  
+  
+  
+  explicit BrowsingContext(nsIDocShell* aDocShell);
+  BrowsingContext(uint64_t aBrowsingContextId,
+                  const nsAString& aName);
 
+private:
   const uint64_t mBrowsingContextId;
-
-  
-  
-  Maybe<uint64_t> mProcessId;
 
   WeakPtr<BrowsingContext> mParent;
   Children mChildren;
