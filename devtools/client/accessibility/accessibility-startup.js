@@ -44,23 +44,28 @@ class AccessibilityStartup {
     
     
     
-    this._walker = await this._accessibility.getWalker();
+    try {
+      this._walker = await this._accessibility.getWalker();
 
-    this._supports = {};
-    
-    this._supports.enableDisable =
-      await this.target.actorHasMethod("accessibility", "enable");
+      this._supports = {};
+      
+      this._supports.enableDisable =
+        await this.target.actorHasMethod("accessibility", "enable");
 
-    if (this._supports.enableDisable) {
-      ([ this._supports.relations, this._supports.snapshot ] = await Promise.all([
-        this.target.actorHasMethod("accessible", "getRelations"),
-        this.target.actorHasMethod("accessible", "snapshot"),
-      ]));
+      if (this._supports.enableDisable) {
+        ([ this._supports.relations, this._supports.snapshot ] = await Promise.all([
+          this.target.actorHasMethod("accessible", "getRelations"),
+          this.target.actorHasMethod("accessible", "snapshot"),
+        ]));
 
-      await this._accessibility.bootstrap();
+        await this._accessibility.bootstrap();
+      }
+
+      return true;
+    } catch (e) {
+      
+      return false;
     }
-
-    return true;
   }
 
   
