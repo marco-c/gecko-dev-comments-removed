@@ -143,21 +143,6 @@ function waitUntilClientConnected(client) {
 
 
 
-function connectDebuggerClient(client) {
-  return client.connect()
-    .then(() => client.listTabs())
-    .then(tabs => {
-      return tabs.tabs[tabs.selected];
-    });
-}
-
-
-
-
-
-
-
-
 
 function once(target, eventName, useCapture = false) {
   info("Waiting for event: '" + eventName + "' on " + target + ".");
