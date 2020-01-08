@@ -19,6 +19,7 @@ async function setDefaultTopSites() {
   
   await pushPrefs(["browser.newtabpage.activity-stream.feeds.topsites", false]);
   await pushPrefs(["browser.newtabpage.activity-stream.feeds.topsites", true]);
+  await pushPrefs(["browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts", true]);
 }
 
 async function clearHistoryAndBookmarks() { 
