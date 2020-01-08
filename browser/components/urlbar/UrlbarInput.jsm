@@ -178,6 +178,10 @@ class UrlbarInput {
 
   
 
+  _get_focused() {
+    return this.inputField.getAttribute("focused") == "true";
+  }
+
   _set_value(val) {
     val = this.trimValue(val);
 
