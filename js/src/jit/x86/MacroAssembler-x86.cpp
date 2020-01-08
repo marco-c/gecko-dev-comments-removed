@@ -1120,15 +1120,6 @@ MacroAssembler::wasmTruncateFloat32ToUInt64(FloatRegister input, Register64 outp
 
 
 
-
-
-MOZ_ALIGNED_DECL(static const uint64_t, 16) TO_DOUBLE[4] = {
-    0x4530000043300000LL,
-    0x0LL,
-    0x4330000000000000LL,
-    0x4530000000000000LL
-};
-
 bool
 MacroAssembler::convertUInt64ToDoubleNeedsTemp()
 {
@@ -1187,8 +1178,16 @@ MacroAssembler::convertUInt64ToDouble(Register64 src, FloatRegister dest, Regist
     
     
     
-    movePtr(ImmWord((uintptr_t)TO_DOUBLE), temp);
-    vpunpckldq(Operand(temp, 0), dest128, dest128);
+    
+    static const int32_t CST1[4] = {
+        0x43300000,
+        0x45300000,
+        0x0,
+        0x0,
+    };
+
+    loadConstantSimd128Int(SimdConstant::CreateX4(CST1), ScratchSimd128Reg);
+    vpunpckldq(ScratchSimd128Reg, dest128, dest128);
 
     
     
@@ -1198,7 +1197,15 @@ MacroAssembler::convertUInt64ToDouble(Register64 src, FloatRegister dest, Regist
     
     
     
-    vsubpd(Operand(temp, sizeof(uint64_t) * 2), dest128, dest128);
+    static const int32_t CST2[4] = {
+        0x0,
+        0x43300000,
+        0x0,
+        0x45300000,
+    };
+
+    loadConstantSimd128Int(SimdConstant::CreateX4(CST2), ScratchSimd128Reg);
+    vsubpd(ScratchSimd128Reg, dest128, dest128);
 
     
     
