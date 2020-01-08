@@ -10,6 +10,7 @@
 #include "mozilla/dom/PointerEvent.h"
 #include "mozilla/dom/PointerEventBinding.h"
 #include "mozilla/MouseEvents.h"
+#include "nsContentUtils.h"
 #include "prtime.h"
 
 namespace mozilla {
@@ -146,8 +147,13 @@ NS_IMPL_ADDREF_INHERITED(PointerEvent, MouseEvent)
 NS_IMPL_RELEASE_INHERITED(PointerEvent, MouseEvent)
 
 void
-PointerEvent::GetPointerType(nsAString& aPointerType)
+PointerEvent::GetPointerType(nsAString& aPointerType, CallerType aCallerType)
 {
+  if (ShouldResistFingerprinting(aCallerType)) {
+    aPointerType.AssignLiteral("mouse");
+    return;
+  }
+
   ConvertPointerTypeToString(mEvent->AsPointerEvent()->inputSource, aPointerType);
 }
 
@@ -158,45 +164,66 @@ PointerEvent::PointerId()
 }
 
 int32_t
-PointerEvent::Width()
+PointerEvent::Width(CallerType aCallerType)
 {
-  return mEvent->AsPointerEvent()->mWidth;
+  return ShouldResistFingerprinting(aCallerType) ?
+           1 : mEvent->AsPointerEvent()->mWidth;
 }
 
 int32_t
-PointerEvent::Height()
+PointerEvent::Height(CallerType aCallerType)
 {
-  return mEvent->AsPointerEvent()->mHeight;
+  return ShouldResistFingerprinting(aCallerType) ?
+           1 : mEvent->AsPointerEvent()->mHeight;
 }
 
 float
-PointerEvent::Pressure()
+PointerEvent::Pressure(CallerType aCallerType)
 {
-  return mEvent->AsPointerEvent()->pressure;
+  if (mEvent->mMessage == ePointerUp ||
+      !ShouldResistFingerprinting(aCallerType)) {
+    return mEvent->AsPointerEvent()->pressure;
+  }
+
+  
+  
+  
+  
+  
+  float spoofedPressure = 0.0;
+  if (mEvent->AsPointerEvent()->buttons) {
+    spoofedPressure = 0.5;
+  }
+
+  return spoofedPressure;
 }
 
 float
-PointerEvent::TangentialPressure()
+PointerEvent::TangentialPressure(CallerType aCallerType)
 {
-  return mEvent->AsPointerEvent()->tangentialPressure;
+  return ShouldResistFingerprinting(aCallerType) ?
+           0 : mEvent->AsPointerEvent()->tangentialPressure;
 }
 
 int32_t
-PointerEvent::TiltX()
+PointerEvent::TiltX(CallerType aCallerType)
 {
-  return mEvent->AsPointerEvent()->tiltX;
+  return ShouldResistFingerprinting(aCallerType) ?
+           0 : mEvent->AsPointerEvent()->tiltX;
 }
 
 int32_t
-PointerEvent::TiltY()
+PointerEvent::TiltY(CallerType aCallerType)
 {
-  return mEvent->AsPointerEvent()->tiltY;
+  return ShouldResistFingerprinting(aCallerType) ?
+           0 : mEvent->AsPointerEvent()->tiltY;
 }
 
 int32_t
-PointerEvent::Twist()
+PointerEvent::Twist(CallerType aCallerType)
 {
-  return mEvent->AsPointerEvent()->twist;
+  return ShouldResistFingerprinting(aCallerType) ?
+           0 : mEvent->AsPointerEvent()->twist;
 }
 
 bool
@@ -247,6 +274,30 @@ PointerEvent::GetCoalescedEvents(nsTArray<RefPtr<PointerEvent>>& aPointerEvents)
     }
   }
   aPointerEvents.AppendElements(mCoalescedEvents);
+}
+
+bool
+PointerEvent::ShouldResistFingerprinting(CallerType aCallerType)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!mEvent->IsTrusted() ||
+      aCallerType == CallerType::System ||
+      !nsContentUtils::ShouldResistFingerprinting() ||
+      mEvent->AsPointerEvent()->inputSource ==
+        MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
+    return false;
+  }
+
+  nsCOMPtr<nsIDocument> doc = GetDocument();
+
+  return doc && !nsContentUtils::IsChromeDoc(doc);
 }
 
 } 

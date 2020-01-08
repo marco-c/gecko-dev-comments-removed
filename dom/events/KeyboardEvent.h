@@ -109,10 +109,6 @@ private:
 
   
   
-  already_AddRefed<nsIDocument> GetDocument();
-
-  
-  
   bool GetSpoofedModifierStates(const Modifiers aModifierKey,
                                 const bool aRawModifierState);
 
