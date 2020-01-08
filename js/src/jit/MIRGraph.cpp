@@ -32,8 +32,6 @@ MIRGenerator::MIRGenerator(CompileRealm* realm, const JitCompileOptions& options
     wasmMaxStackArgBytes_(0),
     needsOverrecursedCheck_(false),
     needsStaticStackAlignment_(false),
-    usesSimd_(false),
-    cachedUsesSimd_(false),
     modifiesFrameArguments_(false),
     instrumentedProfiling_(false),
     instrumentedProfilingIsCached_(false),
@@ -43,37 +41,6 @@ MIRGenerator::MIRGenerator(CompileRealm* realm, const JitCompileOptions& options
     options(options),
     gs_(alloc)
 { }
-
-bool
-MIRGenerator::usesSimd()
-{
-    if (cachedUsesSimd_)
-        return usesSimd_;
-
-    cachedUsesSimd_ = true;
-    for (ReversePostorderIterator block = graph_->rpoBegin(),
-                                  end   = graph_->rpoEnd();
-         block != end;
-         block++)
-    {
-        
-        
-        
-        for (MInstructionIterator inst = block->begin(); inst != block->end(); inst++) {
-            
-            
-            
-            
-            if (IsSimdType(inst->type())) {
-                MOZ_ASSERT(SupportsSimd);
-                usesSimd_ = true;
-                return true;
-            }
-        }
-    }
-    usesSimd_ = false;
-    return false;
-}
 
 mozilla::GenericErrorResult<AbortReason>
 MIRGenerator::abort(AbortReason r)

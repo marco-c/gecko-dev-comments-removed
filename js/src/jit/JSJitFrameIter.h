@@ -407,9 +407,7 @@ struct MaybeReadFallback
     }
 };
 
-
 class RResumePoint;
-class RSimdBox;
 
 
 
@@ -471,7 +469,6 @@ class SnapshotIterator
     void warnUnreadableAllocation();
 
   private:
-    friend class RSimdBox;
     const FloatRegisters::RegisterContent* floatAllocationPointer(const RValueAllocation& a) const;
 
   public:

@@ -318,22 +318,7 @@ class CodeGenerator final : public CodeGeneratorSpecific
 #endif
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    uint32_t simdTemplatesToReadBarrier_;
-
-    
     uint32_t realmStubsToReadBarrier_;
-
-    void addSimdTemplateToReadBarrier(SimdType simdType);
 
 #define LIR_OP(op) void visit##op(L##op* ins);
     LIR_OPCODE_LIST(LIR_OP)

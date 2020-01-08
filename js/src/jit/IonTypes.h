@@ -105,9 +105,6 @@ enum BailoutKind
     Bailout_NonSymbolInput,
 
     
-    Bailout_UnexpectedSimdInput,
-
-    
     
     Bailout_NonSharedTypedArrayInput,
 
@@ -208,8 +205,6 @@ BailoutKindString(BailoutKind kind)
         return "Bailout_NonStringInput";
       case Bailout_NonSymbolInput:
         return "Bailout_NonSymbolInput";
-      case Bailout_UnexpectedSimdInput:
-        return "Bailout_UnexpectedSimdInput";
       case Bailout_NonSharedTypedArrayInput:
         return "Bailout_NonSharedTypedArrayInput";
       case Bailout_Debugger:
@@ -251,6 +246,19 @@ static const uint32_t ELEMENT_TYPE_MASK = (1 << ELEMENT_TYPE_BITS) - 1;
 static const uint32_t VECTOR_SCALE_BITS = 3;
 static const uint32_t VECTOR_SCALE_SHIFT = ELEMENT_TYPE_BITS + ELEMENT_TYPE_SHIFT;
 static const uint32_t VECTOR_SCALE_MASK = (1 << VECTOR_SCALE_BITS) - 1;
+
+
+
+
+
+enum class SimdSign {
+    
+    NotApplicable,
+    
+    Unsigned,
+    
+    Signed,
+};
 
 class SimdConstant {
   public:
@@ -457,39 +465,6 @@ IsSimdType(MIRType type)
     return ((unsigned(type) >> VECTOR_SCALE_SHIFT) & VECTOR_SCALE_MASK) != 0;
 }
 
-
-
-static inline unsigned
-SimdTypeToLength(MIRType type)
-{
-    MOZ_ASSERT(IsSimdType(type));
-    return 1 << ((unsigned(type) >> VECTOR_SCALE_SHIFT) & VECTOR_SCALE_MASK);
-}
-
-
-
-static inline MIRType
-SimdTypeToLaneType(MIRType type)
-{
-    MOZ_ASSERT(IsSimdType(type));
-    static_assert(unsigned(MIRType::Last) <= ELEMENT_TYPE_MASK,
-                  "ELEMENT_TYPE_MASK should be larger than the last MIRType");
-    return MIRType((unsigned(type) >> ELEMENT_TYPE_SHIFT) & ELEMENT_TYPE_MASK);
-}
-
-
-
-
-static inline MIRType
-SimdTypeToLaneArgumentType(MIRType type)
-{
-    MIRType laneType = SimdTypeToLaneType(type);
-
-    
-    
-    return laneType == MIRType::Boolean ? MIRType::Int32 : laneType;
-}
-
 static inline MIRType
 MIRTypeFromValueType(JSValueType type)
 {
@@ -690,24 +665,6 @@ IsNullOrUndefined(MIRType type)
 }
 
 static inline bool
-IsFloatingPointSimdType(MIRType type)
-{
-    return type == MIRType::Float32x4;
-}
-
-static inline bool
-IsIntegerSimdType(MIRType type)
-{
-    return IsSimdType(type) && SimdTypeToLaneType(type) == MIRType::Int32;
-}
-
-static inline bool
-IsBooleanSimdType(MIRType type)
-{
-    return IsSimdType(type) && SimdTypeToLaneType(type) == MIRType::Boolean;
-}
-
-static inline bool
 IsMagicType(MIRType type)
 {
     return type == MIRType::MagicHole ||
@@ -735,18 +692,10 @@ ScalarTypeToMIRType(Scalar::Type type)
         return MIRType::Float32;
       case Scalar::Float64:
         return MIRType::Double;
-      case Scalar::Float32x4:
-        return MIRType::Float32x4;
-      case Scalar::Int8x16:
-        return MIRType::Int8x16;
-      case Scalar::Int16x8:
-        return MIRType::Int16x8;
-      case Scalar::Int32x4:
-        return MIRType::Int32x4;
       case Scalar::MaxTypedArrayViewType:
         break;
     }
-    MOZ_CRASH("unexpected SIMD kind");
+    MOZ_CRASH("unexpected kind");
 }
 
 static inline unsigned
@@ -764,17 +713,10 @@ ScalarTypeToLength(Scalar::Type type)
       case Scalar::Float64:
       case Scalar::Uint8Clamped:
         return 1;
-      case Scalar::Float32x4:
-      case Scalar::Int32x4:
-        return 4;
-      case Scalar::Int16x8:
-        return 8;
-      case Scalar::Int8x16:
-        return 16;
       case Scalar::MaxTypedArrayViewType:
         break;
     }
-    MOZ_CRASH("unexpected SIMD kind");
+    MOZ_CRASH("unexpected kind");
 }
 
 static inline const char*

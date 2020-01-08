@@ -254,9 +254,6 @@ def main(argv):
     
     if os.getenv('GCOV_PREFIX') is not None:
         
-        options.exclude += [os.path.join('asm.js', 'testSIMD.js')]               
-
-        
         options.exclude += [os.path.join('basic', 'functionnames.js')]           
         options.exclude += [os.path.join('debug', 'Debugger-findScripts-23.js')]
         options.exclude += [os.path.join('debug', 'bug1160182.js')]
