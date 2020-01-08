@@ -2874,6 +2874,9 @@ public:
     bool isContentXBLCompartment;
 
     
+    bool isSandboxCompartment;
+
+    
     
     
     

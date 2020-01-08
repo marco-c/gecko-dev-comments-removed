@@ -85,6 +85,8 @@ bool IsContentXBLCompartment(JS::Compartment* compartment);
 bool IsContentXBLScope(JS::Realm* realm);
 bool IsInContentXBLScope(JSObject* obj);
 
+bool IsInSandboxCompartment(JSObject* obj);
+
 
 
 
