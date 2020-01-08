@@ -53,11 +53,6 @@ async function testUpdateNoPrompt(filename, id,
 
 
 
-add_task(() => testUpdateNoPrompt("browser_legacy.xpi",
-                                  "legacy_update@tests.mozilla.org", "1.1"));
-
-
-
 add_task(() => testUpdateNoPrompt("browser_webext_update_perms1.xpi",
                                   "update_perms@tests.mozilla.org"));
 

@@ -12,30 +12,33 @@ function getRemoveButton(document, id) {
   return document.querySelector(`[data-addon-id="${id}"] .uninstall-button`);
 }
 
-add_task(async function removeLegacyExtension() {
-  const addonID = "test-devtools@mozilla.org";
-  const addonName = "test-devtools";
 
-  const { tab, document } = await openAboutDebugging("addons");
-  await waitForInitialAddonList(document);
 
-  
-  await installAddon({
-    document,
-    path: "addons/unpacked/install.rdf",
-    name: addonName,
-  });
 
-  ok(getTargetEl(document, addonID), "add-on is shown");
 
-  info("Click on the remove button and wait until the addon container is removed");
-  getRemoveButton(document, addonID).click();
-  await waitUntil(() => !getTargetEl(document, addonID), 100);
 
-  info("add-on is not shown");
 
-  await closeAboutDebugging(tab);
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 add_task(async function removeWebextension() {
   const addonID = "test-devtools-webextension@mozilla.org";

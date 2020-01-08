@@ -2,22 +2,12 @@
 
 
 
-const ADDONS = {
-  test_bootstrap1_1: {
-    "install.rdf": {
-      "id": "bootstrap1@tests.mozilla.org",
-      "name": "Test Bootstrap 1",
-    },
-    "bootstrap.js": BOOTSTRAP_MONITOR_BOOTSTRAP_JS,
-  },
-};
 
-add_task(async function setup() {
+
+add_task(async function test() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
   await promiseStartupManager();
-});
 
-add_task(async function() {
   let profileDir = OS.Constants.Path.profileDir;
   let trashDir = OS.Path.join(profileDir, "extensions", "trash");
   let testFile = OS.Path.join(trashDir, "test.txt");
@@ -34,32 +24,12 @@ add_task(async function() {
   let fileExists = await OS.File.exists(testFile);
   ok(fileExists, "test.txt should have been created in " + trashDir);
 
-  let promiseInstallStatus = new Promise((resolve, reject) => {
-    let listener = {
-      onInstallFailed() {
-        AddonManager.removeInstallListener(listener);
-        reject("extension installation should not have failed");
-      },
-      onInstallEnded() {
-        AddonManager.removeInstallListener(listener);
-        ok(true, "extension installation should not have failed");
-        resolve();
-      },
-    };
-
-    AddonManager.addInstallListener(listener);
-  });
-
-  await AddonTestUtils.promiseInstallXPI(ADDONS.test_bootstrap1_1);
+  await promiseInstallWebExtension({});
 
   
   
   fileExists = await OS.File.exists(testFile);
   ok(fileExists, "test.txt should still exist");
-
-  
-  
-  await promiseInstallStatus;
 
   
   await promiseShutdownManager();

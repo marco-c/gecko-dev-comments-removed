@@ -1,7 +1,6 @@
 const {AddonManagerPrivate} = ChromeUtils.import("resource://gre/modules/AddonManager.jsm", {});
 
 const ID_PERMS = "update_perms@tests.mozilla.org";
-const ID_LEGACY = "legacy_update@tests.mozilla.org";
 const ID_ORIGINS = "update_origins@tests.mozilla.org";
 
 function getBadgeStatus() {
@@ -79,11 +78,6 @@ async function testNoPrompt(origUrl, id) {
 
 add_task(() => testNoPrompt(`${BASE}/browser_webext_update_perms1.xpi`,
                             ID_PERMS));
-
-
-
-
-add_task(() => testNoPrompt(`${BASE}/browser_legacy.xpi`, ID_LEGACY));
 
 
 

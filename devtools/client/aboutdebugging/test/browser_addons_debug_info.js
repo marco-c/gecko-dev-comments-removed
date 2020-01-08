@@ -13,25 +13,28 @@ function testFilePath(container, expectedFilePath) {
   is(filePath.previousElementSibling.textContent, "Location", "file path has label");
 }
 
-add_task(async function testLegacyAddon() {
-  const addonId = "test-devtools@mozilla.org";
-  const addonName = "test-devtools";
-  const { tab, document } = await openAboutDebugging("addons");
-  await waitForInitialAddonList(document);
 
-  await installAddon({
-    document,
-    path: "addons/unpacked/install.rdf",
-    name: addonName,
-  });
 
-  const container = document.querySelector(`[data-addon-id="${addonId}"]`);
-  testFilePath(container, "browser/devtools/client/aboutdebugging/test/addons/unpacked/");
 
-  await uninstallAddon({document, id: addonId, name: addonName});
 
-  await closeAboutDebugging(tab);
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 add_task(async function testWebExtension() {
   const addonId = "test-devtools-webextension-nobg@mozilla.org";
