@@ -1141,10 +1141,26 @@ ReadableStream_getReader(JSContext* cx, unsigned argc, Value* vp)
 }
 
 
+static MOZ_MUST_USE bool
+ReadableStream_pipeThrough(JSContext* cx, unsigned argc, Value* vp)
+{
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED, "pipeThrough");
+    return false;
+    
+
+    
+}
 
 
 
-
+static MOZ_MUST_USE bool
+ReadableStream_pipeTo(JSContext* cx, unsigned argc, Value* vp)
+{
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED, "pipeTo");
+    return false;
+}
 
 static MOZ_MUST_USE bool
 ReadableStreamTee(JSContext* cx, Handle<ReadableStream*> stream, bool cloneForBranch2,
@@ -1186,6 +1202,8 @@ ReadableStream_tee(JSContext* cx, unsigned argc, Value* vp)
 static const JSFunctionSpec ReadableStream_methods[] = {
     JS_FN("cancel",         ReadableStream_cancel,      1, 0),
     JS_FN("getReader",      ReadableStream_getReader,   0, 0),
+    JS_FN("pipeThrough",    ReadableStream_pipeThrough, 2, 0),
+    JS_FN("pipeTo",         ReadableStream_pipeTo,      1, 0),
     JS_FN("tee",            ReadableStream_tee,         0, 0),
     JS_FS_END
 };
