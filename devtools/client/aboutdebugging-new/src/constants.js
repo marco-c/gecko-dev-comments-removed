@@ -31,4 +31,7 @@ const PAGES = {
 };
 
 
-module.exports = Object.assign({}, { PAGES }, actionTypes, { DEBUG_TARGETS });
+module.exports = Object.assign({}, {
+  DEBUG_TARGETS,
+  PAGES,
+}, actionTypes);
