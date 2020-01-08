@@ -23,14 +23,6 @@ const INITIAL_STATE = {
   
   customInstanceValues: [],
   
-  families: {
-    
-    used: [],
-    
-    notUsed: []
-  },
-  
-  
   fonts: [],
   
   instance: {
@@ -83,7 +75,7 @@ const reducers = {
     return newState;
   },
 
-  [UPDATE_EDITOR_STATE](state, { fonts, families, properties, id }) {
+  [UPDATE_EDITOR_STATE](state, { fonts, properties, id }) {
     const axes = parseFontVariationAxes(properties["font-variation-settings"]);
 
     
@@ -103,7 +95,7 @@ const reducers = {
       axes.wdth = match[1];
     }
 
-    return { ...state, axes, fonts, families, properties, id };
+    return { ...state, axes, fonts, properties, id };
   },
 
   [UPDATE_PROPERTY_VALUE](state, { property, value }) {

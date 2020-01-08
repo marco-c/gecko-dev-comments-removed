@@ -93,30 +93,6 @@ class FontEditor extends PureComponent {
     });
   }
 
-  renderFamilesNotUsed(familiesNotUsed = []) {
-    if (!familiesNotUsed.length) {
-      return null;
-    }
-
-    const familiesList = familiesNotUsed.map(family => {
-      return dom.div(
-        {
-          className: "font-family-unused",
-        },
-        family
-      );
-    });
-
-    return dom.details(
-      {},
-      dom.summary(
-        {},
-        getStr("fontinspector.familiesUnusedLabel")
-      ),
-      familiesList
-    );
-  }
-
   
 
 
@@ -124,9 +100,7 @@ class FontEditor extends PureComponent {
 
 
 
-
-
-  renderFontFamily(fonts, families) {
+  renderFontFamily(fonts) {
     if (!fonts.length) {
       return null;
     }
@@ -158,8 +132,7 @@ class FontEditor extends PureComponent {
           className: "font-control-box",
         },
         topUsedFontsList,
-        moreUsedFonts,
-        this.renderFamilesNotUsed(families.notUsed)
+        moreUsedFonts
       )
     );
   }
@@ -299,7 +272,7 @@ class FontEditor extends PureComponent {
 
   render() {
     const { fontEditor } = this.props;
-    const { fonts, families, axes, instance, properties, warning } = fontEditor;
+    const { fonts, axes, instance, properties, warning } = fontEditor;
     
     const font = fonts[0];
     const hasFontAxes = font && font.variationAxes;
@@ -322,7 +295,7 @@ class FontEditor extends PureComponent {
         id: "font-editor"
       },
       
-      this.renderFontFamily(fonts, families),
+      this.renderFontFamily(fonts),
       
       hasFontInstances && this.renderInstances(font.variationInstances, instance),
       

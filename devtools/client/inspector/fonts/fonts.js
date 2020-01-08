@@ -311,51 +311,6 @@ class FontInspector {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  filterFontsUsed(fonts = [], fontFamilies = []) {
-    return fontFamilies.reduce((acc, family) => {
-      const match = fonts.find(font => {
-        const generic = typeof font.CSSGeneric === "string"
-          ? font.CSSGeneric.toLowerCase()
-          : font.CSSGeneric;
-
-        return generic === family.toLowerCase()
-          || font.CSSFamilyName.toLowerCase() === family.toLowerCase();
-      });
-
-      if (match) {
-        acc.push(match);
-      }
-
-      return acc;
-    }, []);
-  }
-
-  
-
-
-
-
-
   async getFontProperties() {
     const properties = {};
 
@@ -573,33 +528,6 @@ class FontInspector {
     }
 
     return this.writers.get(name);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  groupFontFamilies(fontsUsed = [], fontFamilies = []) {
-    const families = {};
-    
-    families.used = fontsUsed.map(font =>
-      font.CSSGeneric ? font.CSSGeneric : font.CSSFamilyName
-    );
-    const familiesUsedLowercase = families.used.map(family => family.toLowerCase());
-    
-    families.notUsed = fontFamilies
-      .filter(family => !familiesUsedLowercase.includes(family.toLowerCase()));
-
-    return families;
   }
 
   
@@ -943,31 +871,13 @@ class FontInspector {
       this.ruleView.rules.find(rule => rule.domRule.type === ELEMENT_STYLE);
 
     const properties = await this.getFontProperties();
-    const familiesDeclared =
-      properties["font-family"].split(",")
-      .map(font => font.replace(/["']+/g, "").trim());
-    
-    let fontsUsed = this.filterFontsUsed(fonts, familiesDeclared);
-    
-    const families = this.groupFontFamilies(fontsUsed, familiesDeclared);
     
     const axes = parseFontVariationAxes(properties["font-variation-settings"]);
     Object.keys(axes).map(axis => {
       this.writers.set(axis, this.getWriterForAxis(axis));
     });
 
-    
-    if (!fontsUsed.length && fonts.length) {
-      const otherVarFonts = fonts.filter(font => {
-        return (font.variationAxes && font.variationAxes.length);
-      });
-
-      
-      
-      fontsUsed = otherVarFonts.length ? otherVarFonts : fonts;
-    }
-
-    this.store.dispatch(updateFontEditor(fontsUsed, families, properties, node.actorID));
+    this.store.dispatch(updateFontEditor(fonts, properties, node.actorID));
     this.inspector.emit("fonteditor-updated");
     
     this.ruleView.on("property-value-updated", this.onRulePropertyUpdated);

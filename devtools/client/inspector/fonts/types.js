@@ -82,14 +82,6 @@ exports.fontOptions = {
   previewText: PropTypes.string,
 };
 
-const fontFamilies = {
-  
-  used: PropTypes.arrayOf(PropTypes.string),
-
-  
-  notUsed: PropTypes.arrayOf(PropTypes.string),
-};
-
 exports.fontEditor = {
   
   axes: PropTypes.object,
@@ -97,9 +89,6 @@ exports.fontEditor = {
   
   
   customInstanceValues: PropTypes.array,
-
-  
-  families: PropTypes.shape(fontFamilies),
 
   
   fonts: PropTypes.arrayOf(PropTypes.shape(font)),
