@@ -344,6 +344,22 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   char_iterator BeginWriting()
   {
     if (!EnsureMutable()) {
@@ -819,6 +835,25 @@ public:
 
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
