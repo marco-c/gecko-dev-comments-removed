@@ -1,0 +1,17 @@
+
+
+
+
+
+
+#ifndef nsLayoutModule_h
+#define nsLayoutModule_h
+
+#include "nscore.h"
+
+
+
+
+void nsLayoutModuleInitialize();
+
+#endif 

@@ -210,19 +210,11 @@ static bool gInitialized = false;
 
 
 
-static nsresult
-Initialize()
+void
+nsLayoutModuleInitialize()
 {
   if (gInitialized) {
     MOZ_CRASH("Recursive layout module initialization");
-    return NS_ERROR_FAILURE;
-  }
-  if (XRE_GetProcessType() == GeckoProcessType_GPU) {
-    
-    
-    
-    
-    return NS_OK;
   }
 
   static_assert(sizeof(uintptr_t) == sizeof(void*),
@@ -231,18 +223,22 @@ Initialize()
 
   gInitialized = true;
 
-  nsresult rv;
-  rv = xpcModuleCtor();
-  if (NS_FAILED(rv))
-    return rv;
-
-  rv = nsLayoutStatics::Initialize();
-  if (NS_FAILED(rv)) {
-    Shutdown();
-    return rv;
+  if (XRE_GetProcessType() == GeckoProcessType_GPU) {
+    
+    
+    
+    
+    return;
   }
 
-  return NS_OK;
+  if (NS_FAILED(xpcModuleCtor())) {
+    MOZ_CRASH("xpcModuleCtor failed");
+  }
+
+  if (NS_FAILED(nsLayoutStatics::Initialize())) {
+    Shutdown();
+    MOZ_CRASH("nsLayoutStatics::Initialize failed");
+  }
 }
 
 
@@ -685,6 +681,14 @@ static const mozilla::Module::CategoryEntry kLayoutCategories[] = {
   { nullptr }
   
 };
+
+static nsresult
+Initialize()
+{
+  
+  MOZ_RELEASE_ASSERT(gInitialized);
+  return NS_OK;
+}
 
 static void
 LayoutModuleDtor()
