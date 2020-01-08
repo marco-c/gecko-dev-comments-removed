@@ -253,9 +253,6 @@ HTMLEditor::SetAllResizersPosition()
 NS_IMETHODIMP
 HTMLEditor::RefreshResizers()
 {
-  if (NS_WARN_IF(!mResizedObject)) {
-    return NS_OK;
-  }
   nsresult rv = RefreshResizersInternal();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -266,6 +263,9 @@ HTMLEditor::RefreshResizers()
 nsresult
 HTMLEditor::RefreshResizersInternal()
 {
+  
+  
+  
   if (!mResizedObject) {
     return NS_OK;
   }
@@ -301,6 +301,7 @@ HTMLEditor::RefreshResizersInternal()
 nsresult
 HTMLEditor::ShowResizersInternal(Element& aResizedElement)
 {
+  
   
   
   if (NS_WARN_IF(mResizedObject)) {
@@ -520,7 +521,10 @@ HTMLEditor::HideResizers()
 nsresult
 HTMLEditor::HideResizersInternal()
 {
-  if (NS_WARN_IF(!mResizedObject)) {
+  
+  
+  
+  if (!mResizedObject) {
     return NS_OK;
   }
 
@@ -1143,14 +1147,6 @@ HTMLEditor::SetFinalSize(int32_t aX,
 
   DebugOnly<nsresult> rv = RefreshResizersInternal();
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed ot refresh resizers");
-}
-
-NS_IMETHODIMP
-HTMLEditor::GetResizedObject(Element** aResizedObject)
-{
-  RefPtr<Element> ret = mResizedObject;
-  ret.forget(aResizedObject);
-  return NS_OK;
 }
 
 NS_IMETHODIMP
