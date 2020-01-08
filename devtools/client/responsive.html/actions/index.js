@@ -49,9 +49,6 @@ createEnum([
   "CHANGE_RELOAD_CONDITION",
 
   
-  "CHANGE_TOUCH_SIMULATION",
-
-  
   "LOAD_DEVICE_LIST_START",
 
   
@@ -83,6 +80,9 @@ createEnum([
 
   
   "TOGGLE_LEFT_ALIGNMENT",
+
+  
+  "TOGGLE_TOUCH_SIMULATION",
 
   
   "UPDATE_DEVICE_DISPLAYED",

@@ -5,14 +5,35 @@
 "use strict";
 
 const {
+  CHANGE_DISPLAY_PIXEL_RATIO,
   TOGGLE_LEFT_ALIGNMENT,
+  TOGGLE_TOUCH_SIMULATION,
 } = require("./index");
 
 module.exports = {
 
+  
+
+
+
+
+  changeDisplayPixelRatio(displayPixelRatio) {
+    return {
+      type: CHANGE_DISPLAY_PIXEL_RATIO,
+      displayPixelRatio,
+    };
+  },
+
   toggleLeftAlignment(enabled) {
     return {
       type: TOGGLE_LEFT_ALIGNMENT,
+      enabled,
+    };
+  },
+
+  toggleTouchSimulation(enabled) {
+    return {
+      type: TOGGLE_TOUCH_SIMULATION,
       enabled,
     };
   },
