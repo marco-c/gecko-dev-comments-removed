@@ -57,14 +57,19 @@ function createContext(searchString = "foo") {
 
 
 
-function promiseControllerNotification(controller, notification) {
-  return new Promise(resolve => {
+
+function promiseControllerNotification(controller, notification, expected = true) {
+  return new Promise((resolve, reject) => {
     let proxifiedObserver = new Proxy({}, {
       get: (target, name) => {
         if (name == notification) {
           return (...args) => {
             controller.removeQueryListener(proxifiedObserver);
-            resolve(args);
+            if (expected) {
+              resolve(args);
+            } else {
+              reject();
+            }
           };
         }
         return () => false;
@@ -73,7 +78,6 @@ function promiseControllerNotification(controller, notification) {
     controller.addQueryListener(proxifiedObserver);
   });
 }
-
 
 
 
@@ -100,6 +104,9 @@ function registerBasicTestProvider(results, cancelCallback) {
     },
     get type() {
       return UrlbarUtils.PROVIDER_TYPE.PROFILE;
+    },
+    get sources() {
+      return results.map(r => r.source);
     },
     async startQuery(context, add) {
       Assert.ok(context, "context is passed-in");
