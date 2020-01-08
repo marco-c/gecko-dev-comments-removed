@@ -2118,8 +2118,30 @@ nsPermissionManager::CloseDB(bool aRebuildOnSuccess)
 }
 
 nsresult
+nsPermissionManager::RemoveAllFromIPC()
+{
+  MOZ_ASSERT(IsChildProcess());
+
+  
+  
+  
+  RemoveAllFromMemory();
+
+  return NS_OK;
+}
+
+nsresult
 nsPermissionManager::RemoveAllInternal(bool aNotifyObservers)
 {
+  ENSURE_NOT_CHILD_PROCESS;
+
+  
+  nsTArray<ContentParent*> parents;
+  ContentParent::GetAll(parents);
+  for (ContentParent* parent : parents) {
+    Unused << parent->SendRemoveAllPermissions();
+  }
+
   
   
   
