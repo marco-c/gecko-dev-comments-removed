@@ -2343,12 +2343,24 @@ static MOZ_MUST_USE bool ReadableStreamDefaultControllerClose(
 
 
 
-static MOZ_MUST_USE bool VerifyControllerStateForClosing(
-    JSContext* cx, Handle<ReadableStreamController*> unwrappedController) {
+static MOZ_MUST_USE bool CheckReadableStreamControllerCanCloseOrEnqueue(
+    JSContext* cx, Handle<ReadableStreamController*> unwrappedController,
+    const char* action) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
   
   if (unwrappedController->closeRequested()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_READABLESTREAMCONTROLLER_CLOSED, "close");
+                              JSMSG_READABLESTREAMCONTROLLER_CLOSED, action);
     return false;
   }
 
@@ -2358,7 +2370,7 @@ static MOZ_MUST_USE bool VerifyControllerStateForClosing(
   if (!unwrappedStream->readable()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_READABLESTREAMCONTROLLER_NOT_READABLE,
-                              "close");
+                              action);
     return false;
   }
 
@@ -2381,7 +2393,9 @@ static bool ReadableStreamDefaultController_close(JSContext* cx, unsigned argc,
   }
 
   
-  if (!VerifyControllerStateForClosing(cx, unwrappedController)) {
+  
+  if (!CheckReadableStreamControllerCanCloseOrEnqueue(cx, unwrappedController,
+                                                      "close")) {
     return false;
   }
 
@@ -2410,18 +2424,9 @@ static bool ReadableStreamDefaultController_enqueue(JSContext* cx,
   }
 
   
-  if (unwrappedController->closeRequested()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_READABLESTREAMCONTROLLER_CLOSED, "enqueue");
-    return false;
-  }
-
   
-  
-  if (!unwrappedController->stream()->readable()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_READABLESTREAMCONTROLLER_NOT_READABLE,
-                              "enqueue");
+  if (!CheckReadableStreamControllerCanCloseOrEnqueue(cx, unwrappedController,
+                                                      "enqueue")) {
     return false;
   }
 
@@ -2994,7 +2999,10 @@ static MOZ_MUST_USE bool ReadableStreamDefaultControllerEnqueue(
   Rooted<ReadableStream*> unwrappedStream(cx, unwrappedController->stream());
 
   
+  
+  
   MOZ_ASSERT(!unwrappedController->closeRequested());
+  MOZ_ASSERT(unwrappedStream->readable());
 
   
   
@@ -4775,7 +4783,8 @@ JS_PUBLIC_API bool JS::ReadableStreamClose(JSContext* cx,
 
   Rooted<ReadableStreamController*> unwrappedControllerObj(
       cx, unwrappedStream->controller());
-  if (!VerifyControllerStateForClosing(cx, unwrappedControllerObj)) {
+  if (!CheckReadableStreamControllerCanCloseOrEnqueue(
+          cx, unwrappedControllerObj, "close")) {
     return false;
   }
 
