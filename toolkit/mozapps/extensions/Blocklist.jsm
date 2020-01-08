@@ -95,6 +95,13 @@ ChromeUtils.defineModuleGetter(this, "ServiceRequest",
 const BlocklistClients = {};
 ChromeUtils.defineModuleGetter(BlocklistClients, "initialize",
                                "resource://services-common/blocklist-clients.js");
+XPCOMUtils.defineLazyGetter(this, "RemoteSettings", function() {
+  
+  BlocklistClients.initialize();
+  
+  const { RemoteSettings } = ChromeUtils.import("resource://services-settings/remote-settings.js", {});
+  return RemoteSettings;
+});
 
 const TOOLKIT_ID                      = "toolkit@mozilla.org";
 const KEY_PROFILEDIR                  = "ProfD";
@@ -109,6 +116,7 @@ const PREF_BLOCKLIST_LEVEL            = "extensions.blocklist.level";
 const PREF_BLOCKLIST_PINGCOUNTTOTAL   = "extensions.blocklist.pingCountTotal";
 const PREF_BLOCKLIST_PINGCOUNTVERSION = "extensions.blocklist.pingCountVersion";
 const PREF_BLOCKLIST_SUPPRESSUI       = "extensions.blocklist.suppressUI";
+const PREF_BLOCKLIST_UPDATE_ENABLED   = "services.blocklist.update_enabled";
 const PREF_APP_DISTRIBUTION           = "distribution.id";
 const PREF_APP_DISTRIBUTION_VERSION   = "distribution.version";
 const PREF_EM_LOGGING_ENABLED         = "extensions.logging.enabled";
@@ -297,13 +305,6 @@ var Blocklist = {
                                MAX_BLOCK_LEVEL);
     Services.prefs.addObserver("extensions.blocklist.", this);
     Services.prefs.addObserver(PREF_EM_LOGGING_ENABLED, this);
-
-    
-    
-    
-    
-    
-    BlocklistClients.initialize();
 
     
     
@@ -684,6 +685,14 @@ var Blocklist = {
     request.addEventListener("error", event => this.onXMLError(event));
     request.addEventListener("load", event => this.onXMLLoad(event));
     request.send(null);
+
+    
+    
+    if (Services.prefs.getBoolPref(PREF_BLOCKLIST_UPDATE_ENABLED)) {
+      RemoteSettings.pollChanges().catch(() => {
+        
+      });
+    }
   },
 
   async onXMLLoad(aEvent) {

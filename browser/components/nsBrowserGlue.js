@@ -130,7 +130,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ProcessHangMonitor: "resource:///modules/ProcessHangMonitor.jsm",
   ReaderParent: "resource:///modules/ReaderParent.jsm",
   RemotePrompt: "resource:///modules/RemotePrompt.jsm",
-  RemoteSettings: "resource://services-settings/remote-settings.js",
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.jsm",
   Sanitizer: "resource:///modules/Sanitizer.jsm",
   SavantShieldStudy: "resource:///modules/SavantShieldStudy.jsm",
@@ -1307,10 +1306,6 @@ BrowserGlue.prototype = {
       
       
       this._gmpInstallManager.simpleCheckAndInstall().catch(() => {});
-    });
-
-    Services.tm.idleDispatchToMainThread(() => {
-      RemoteSettings.init();
     });
   },
 
