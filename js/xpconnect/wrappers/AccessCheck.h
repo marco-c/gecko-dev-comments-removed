@@ -91,11 +91,13 @@ struct CrossOriginAccessiblePropertiesOnly : public Policy {
     static bool deny(JSContext* cx, js::Wrapper::Action act, JS::HandleId id,
                      bool mayThrow) {
         
-        if (act == js::Wrapper::ENUMERATE)
+        if (act == js::Wrapper::ENUMERATE) {
             return true;
-        if (mayThrow)
+        }
+        if (mayThrow) {
             AccessCheck::reportCrossOriginDenial(cx, id,
                                                  NS_LITERAL_CSTRING("access"));
+        }
         return false;
     }
     static bool allowNativeCall(JSContext* cx, JS::IsAcceptableThis test, JS::NativeImpl impl) {
