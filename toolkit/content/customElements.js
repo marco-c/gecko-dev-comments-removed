@@ -13,10 +13,53 @@
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
+
+
+
+
+let gIsDOMContentLoaded = false;
+const gElementsPendingConnection = new Set();
+window.addEventListener("DOMContentLoaded", () => {
+  gIsDOMContentLoaded = true;
+  for (let element of gElementsPendingConnection) {
+    try {
+      if (element.isConnected) {
+        element.connectedCallback();
+      }
+    } catch (ex) { console.error(ex); }
+  }
+  gElementsPendingConnection.clear();
+}, { once: true, capture: true });
+
 const gXULDOMParser = new DOMParser();
 gXULDOMParser.forceEnableXULXBL();
 
 class MozXULElement extends XULElement {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  delayConnectedCallback() {
+    if (gIsDOMContentLoaded) {
+      return false;
+    }
+    gElementsPendingConnection.add(this);
+    return true;
+  }
+
+  get isConnectedAndReady() {
+    return gIsDOMContentLoaded && this.isConnected;
+  }
+
   
 
 
