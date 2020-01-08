@@ -294,7 +294,7 @@ void InitRecordingOrReplayingProcess(int* aArgc, char*** aArgv) {
 
   
   
-  HitCheckpoint(CheckpointId::Invalid,  false);
+  HitExecutionPoint(js::ExecutionPoint(),  false);
 
   
   if (gInitializationFailureMessage) {
@@ -635,7 +635,7 @@ bool CurrentRepaintCannotFail() {
 
 
 
-static double gLastCheckpointTime;
+static double gLastPauseTime;
 
 
 static double gIdleTimeStart;
@@ -650,23 +650,24 @@ void EndIdleTime() {
 
   
   
-  gLastCheckpointTime += CurrentTime() - gIdleTimeStart;
+  gLastPauseTime += CurrentTime() - gIdleTimeStart;
   gIdleTimeStart = 0;
 }
 
-void HitCheckpoint(size_t aId, bool aRecordingEndpoint) {
+void HitExecutionPoint(const js::ExecutionPoint& aPoint,
+                       bool aRecordingEndpoint) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   double time = CurrentTime();
   PauseMainThreadAndInvokeCallback([=]() {
     double duration = 0;
-    if (aId > CheckpointId::First) {
-      duration = time - gLastCheckpointTime;
+    if (gLastPauseTime) {
+      duration = time - gLastPauseTime;
       MOZ_RELEASE_ASSERT(duration > 0);
     }
     gChannel->SendMessage(
-        HitCheckpointMessage(aId, aRecordingEndpoint, duration));
+        HitExecutionPointMessage(aPoint, aRecordingEndpoint, duration));
   });
-  gLastCheckpointTime = time;
+  gLastPauseTime = time;
 }
 
 
@@ -678,13 +679,6 @@ void RespondToRequest(const js::CharBuffer& aBuffer) {
       DebuggerResponseMessage::New(aBuffer.begin(), aBuffer.length());
   gChannel->SendMessage(*msg);
   free(msg);
-}
-
-void HitBreakpoint(bool aRecordingEndpoint) {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-  PauseMainThreadAndInvokeCallback([=]() {
-    gChannel->SendMessage(HitBreakpointMessage(aRecordingEndpoint));
-  });
 }
 
 void SendMiddlemanCallRequest(const char* aInputData, size_t aInputSize,
