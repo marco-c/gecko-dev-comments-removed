@@ -432,6 +432,7 @@ IsTypeofKind(ParseNodeKind kind)
 
 
 
+
 enum ParseNodeArity
 {
     PN_NULLARY,                         
@@ -555,6 +556,7 @@ class ParseNode
             union {
                 unsigned iflags;        
                 bool isStatic;          
+                bool hasDefault;        
             };
         } binary;
         struct {                        
@@ -1267,6 +1269,48 @@ struct ClassMethod : public BinaryNode {
     }
     bool isStatic() const {
         return pn_u.binary.isStatic;
+    }
+};
+
+struct SwitchStatement : public BinaryNode {
+    SwitchStatement(uint32_t begin, ParseNode* discriminant, ParseNode* lexicalForCaseList,
+                    bool hasDefault)
+      : BinaryNode(ParseNodeKind::Switch, JSOP_NOP,
+                   TokenPos(begin, lexicalForCaseList->pn_pos.end),
+                   discriminant, lexicalForCaseList)
+    {
+#ifdef DEBUG
+        MOZ_ASSERT(lexicalForCaseList->isKind(ParseNodeKind::LexicalScope));
+        ParseNode* cases = lexicalForCaseList->scopeBody();
+        MOZ_ASSERT(cases->isKind(ParseNodeKind::StatementList));
+        bool found = false;
+        CaseClause* firstCase = cases->pn_head ? &cases->pn_head->as<CaseClause>() : nullptr;
+        for (CaseClause* caseNode = firstCase; caseNode; caseNode = caseNode->next()) {
+            if (caseNode->isDefault()) {
+                found = true;
+                break;
+            }
+        }
+        MOZ_ASSERT(found == hasDefault);
+#endif
+
+        pn_u.binary.hasDefault = hasDefault;
+    }
+
+    static bool test(const ParseNode& node) {
+        bool match = node.isKind(ParseNodeKind::Switch);
+        MOZ_ASSERT_IF(match, node.isArity(PN_BINARY));
+        return match;
+    }
+
+    ParseNode& discriminant() const {
+        return *pn_u.binary.left;
+    }
+    ParseNode& lexicalForCaseList() const {
+        return *pn_u.binary.right;
+    }
+    bool hasDefault() const {
+        return pn_u.binary.hasDefault;
     }
 };
 
