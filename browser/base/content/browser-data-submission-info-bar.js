@@ -2,8 +2,6 @@
 
 
 
-const LOGGER_NAME = "Toolkit.Telemetry";
-const LOGGER_PREFIX = "DataNotificationInfoBar::";
 
 
 
@@ -16,9 +14,10 @@ var gDataNotificationInfoBar = {
   _DATA_REPORTING_NOTIFICATION: "data-reporting",
 
   get _log() {
-    let Log = ChromeUtils.import("resource://gre/modules/Log.jsm", {}).Log;
+    let { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm", {});
     delete this._log;
-    return this._log = Log.repository.getLoggerWithMessagePrefix(LOGGER_NAME, LOGGER_PREFIX);
+    return this._log = Log.repository.getLoggerWithMessagePrefix(
+      "Toolkit.Telemetry", "DataNotificationInfoBar::");
   },
 
   init() {
