@@ -39,6 +39,31 @@ using namespace mozilla::a11y;
 
 
 
+role
+HTMLFormAccessible::NativeRole() const
+{
+  nsAutoString name;
+  const_cast<HTMLFormAccessible*>(this)->Name(name);
+  return name.IsEmpty() ? roles::FORM : roles::FORM_LANDMARK;
+}
+
+nsAtom*
+HTMLFormAccessible::LandmarkRole() const
+{
+  if (!HasOwnContent()) {
+    return nullptr;
+  }
+
+  
+  nsAutoString name;
+  const_cast<HTMLFormAccessible*>(this)->Name(name);
+  return name.IsEmpty() ? nullptr : nsGkAtoms::form;
+}
+
+
+
+
+
 uint64_t
 HTMLRadioButtonAccessible::NativeState() const
 {
