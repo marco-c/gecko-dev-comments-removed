@@ -305,6 +305,10 @@ function InitAndStartRefTests()
 
     
     if (g.focusFilterMode != FOCUS_FILTER_NON_NEEDS_FOCUS_TESTS) {
+        var fm = Cc["@mozilla.org/focus-manager;1"].getService(Ci.nsIFocusManager);
+        if (fm.activeWindow != g.containingWindow) {
+            Focus();
+        }
         g.browser.addEventListener("focus", ReadTests, true);
         g.browser.focus();
     } else {
