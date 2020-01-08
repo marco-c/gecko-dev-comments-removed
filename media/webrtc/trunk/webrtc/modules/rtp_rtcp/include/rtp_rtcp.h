@@ -324,6 +324,10 @@ class RtpRtcp : public Module {
       struct RtpPacketLossStats* loss_stats) const = 0;
 
   
+  virtual void RemoteRTCPSenderInfo(uint32_t* packet_count,
+                                    uint32_t* octet_count) const = 0;
+
+  
   
   virtual int32_t RemoteRTCPStat(
       std::vector<RTCPReportBlock>* receive_blocks) const = 0;
