@@ -95,19 +95,12 @@ use quote::ToTokens;
 
 
 
-
-pub trait Spanned: private::Sealed {
+pub trait Spanned {
     
     
     
     
     fn span(&self) -> Span;
-}
-
-mod private {
-    use quote::ToTokens;
-    pub trait Sealed {}
-    impl<T: ToTokens> Sealed for T {}
 }
 
 impl<T> Spanned for T

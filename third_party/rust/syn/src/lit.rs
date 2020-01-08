@@ -15,17 +15,12 @@ use proc_macro2::Ident;
 #[cfg(feature = "parsing")]
 use proc_macro2::TokenStream;
 #[cfg(feature = "parsing")]
-use Error;
+use {ParseError, Synom};
 
 use proc_macro2::TokenTree;
 
 #[cfg(feature = "extra-traits")]
 use std::hash::{Hash, Hasher};
-
-#[cfg(feature = "parsing")]
-use lookahead;
-#[cfg(feature = "parsing")]
-use parse::Parse;
 
 ast_enum_of_structs! {
     /// A Rust literal such as a string or integer or boolean.
@@ -126,54 +121,13 @@ impl LitStr {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     #[cfg(feature = "parsing")]
-    pub fn parse<T: Parse>(&self) -> Result<T, Error> {
+    pub fn parse<T: Synom>(&self) -> Result<T, ParseError> {
         use proc_macro2::Group;
 
         
         
-        fn spanned_tokens(s: &LitStr) -> Result<TokenStream, Error> {
+        fn spanned_tokens(s: &LitStr) -> Result<TokenStream, ParseError> {
             let stream = ::parse_str(&s.value())?;
             Ok(respan_token_stream(stream, s.span()))
         }
@@ -383,13 +337,6 @@ macro_rules! lit_extra_traits {
                 self.$field.to_string().hash(state);
             }
         }
-
-        #[cfg(feature = "parsing")]
-        #[doc(hidden)]
-        #[allow(non_snake_case)]
-        pub fn $ty(marker: lookahead::TokenMarker) -> $ty {
-            match marker {}
-        }
     };
 }
 
@@ -464,111 +411,96 @@ ast_enum! {
 }
 
 #[cfg(feature = "parsing")]
-#[doc(hidden)]
-#[allow(non_snake_case)]
-pub fn Lit(marker: lookahead::TokenMarker) -> Lit {
-    match marker {}
-}
-
-#[cfg(feature = "parsing")]
 pub mod parsing {
     use super::*;
-    use parse::{Parse, ParseStream, Result};
+    use buffer::Cursor;
+    use parse_error;
+    use synom::PResult;
+    use synom::Synom;
 
-    impl Parse for Lit {
-        fn parse(input: ParseStream) -> Result<Self> {
-            input.step(|cursor| {
-                if let Some((lit, rest)) = cursor.literal() {
-                    return Ok((Lit::new(lit), rest));
-                }
-                while let Some((ident, rest)) = cursor.ident() {
-                    let value = if ident == "true" {
-                        true
-                    } else if ident == "false" {
-                        false
+    impl Synom for Lit {
+        fn parse(input: Cursor) -> PResult<Self> {
+            match input.literal() {
+                Some((lit, rest)) => {
+                    if lit.to_string().starts_with('/') {
+                        
+                        parse_error()
                     } else {
-                        break;
-                    };
-                    let lit_bool = LitBool {
-                        value: value,
-                        span: ident.span(),
-                    };
-                    return Ok((Lit::Bool(lit_bool), rest));
+                        Ok((Lit::new(lit), rest))
+                    }
                 }
-                Err(cursor.error("expected literal"))
-            })
+                _ => match input.ident() {
+                    Some((ident, rest)) => Ok((
+                        Lit::Bool(LitBool {
+                            value: if ident == "true" {
+                                true
+                            } else if ident == "false" {
+                                false
+                            } else {
+                                return parse_error();
+                            },
+                            span: ident.span(),
+                        }),
+                        rest,
+                    )),
+                    _ => parse_error(),
+                },
+            }
+        }
+
+        fn description() -> Option<&'static str> {
+            Some("literal")
         }
     }
 
-    impl Parse for LitStr {
-        fn parse(input: ParseStream) -> Result<Self> {
-            let head = input.fork();
-            match input.parse()? {
-                Lit::Str(lit) => Ok(lit),
-                _ => Err(head.error("expected string literal")),
-            }
-        }
-    }
+    impl_synom!(LitStr "string literal" switch!(
+        syn!(Lit),
+        Lit::Str(lit) => value!(lit)
+        |
+        _ => reject!()
+    ));
 
-    impl Parse for LitByteStr {
-        fn parse(input: ParseStream) -> Result<Self> {
-            let head = input.fork();
-            match input.parse()? {
-                Lit::ByteStr(lit) => Ok(lit),
-                _ => Err(head.error("expected byte string literal")),
-            }
-        }
-    }
+    impl_synom!(LitByteStr "byte string literal" switch!(
+        syn!(Lit),
+        Lit::ByteStr(lit) => value!(lit)
+        |
+        _ => reject!()
+    ));
 
-    impl Parse for LitByte {
-        fn parse(input: ParseStream) -> Result<Self> {
-            let head = input.fork();
-            match input.parse()? {
-                Lit::Byte(lit) => Ok(lit),
-                _ => Err(head.error("expected byte literal")),
-            }
-        }
-    }
+    impl_synom!(LitByte "byte literal" switch!(
+        syn!(Lit),
+        Lit::Byte(lit) => value!(lit)
+        |
+        _ => reject!()
+    ));
 
-    impl Parse for LitChar {
-        fn parse(input: ParseStream) -> Result<Self> {
-            let head = input.fork();
-            match input.parse()? {
-                Lit::Char(lit) => Ok(lit),
-                _ => Err(head.error("expected character literal")),
-            }
-        }
-    }
+    impl_synom!(LitChar "character literal" switch!(
+        syn!(Lit),
+        Lit::Char(lit) => value!(lit)
+        |
+        _ => reject!()
+    ));
 
-    impl Parse for LitInt {
-        fn parse(input: ParseStream) -> Result<Self> {
-            let head = input.fork();
-            match input.parse()? {
-                Lit::Int(lit) => Ok(lit),
-                _ => Err(head.error("expected integer literal")),
-            }
-        }
-    }
+    impl_synom!(LitInt "integer literal" switch!(
+        syn!(Lit),
+        Lit::Int(lit) => value!(lit)
+        |
+        _ => reject!()
+    ));
 
-    impl Parse for LitFloat {
-        fn parse(input: ParseStream) -> Result<Self> {
-            let head = input.fork();
-            match input.parse()? {
-                Lit::Float(lit) => Ok(lit),
-                _ => Err(head.error("expected floating point literal")),
-            }
-        }
-    }
+    impl_synom!(LitFloat "floating point literal" switch!(
+        syn!(Lit),
+        Lit::Float(lit) => value!(lit)
+        |
+        _ => reject!()
+    ));
 
-    impl Parse for LitBool {
-        fn parse(input: ParseStream) -> Result<Self> {
-            let head = input.fork();
-            match input.parse()? {
-                Lit::Bool(lit) => Ok(lit),
-                _ => Err(head.error("expected boolean literal")),
-            }
-        }
-    }
+    impl_synom!(LitBool "boolean literal" switch!(
+        syn!(Lit),
+        Lit::Bool(lit) => value!(lit)
+        |
+        _ => reject!()
+    ));
 }
 
 #[cfg(feature = "printing")]

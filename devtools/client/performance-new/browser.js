@@ -4,9 +4,6 @@
 "use strict";
 const Services = require("Services");
 
-const TRANSFER_EVENT = "devtools:perf-html-transfer-profile";
-const SYMBOL_TABLE_REQUEST_EVENT = "devtools:perf-html-request-symbol-table";
-const SYMBOL_TABLE_RESPONSE_EVENT = "devtools:perf-html-reply-symbol-table";
 
 
 
@@ -21,13 +18,7 @@ const SYMBOL_TABLE_RESPONSE_EVENT = "devtools:perf-html-reply-symbol-table";
 
 
 
-
-
-
-
-
-
-function receiveProfile(profile, getSymbolTableCallback) {
+function receiveProfile(profile) {
   
   
   const win = Services.wm.getMostRecentWindow("navigator:browser");
@@ -48,23 +39,7 @@ function receiveProfile(profile, getSymbolTableCallback) {
     "chrome://devtools/content/performance-new/frame-script.js",
     false
   );
-  mm.sendAsyncMessage(TRANSFER_EVENT, profile);
-  mm.addMessageListener(SYMBOL_TABLE_REQUEST_EVENT, e => {
-    const { debugName, breakpadId } = e.data;
-    getSymbolTableCallback(debugName, breakpadId).then(result => {
-      const [addr, index, buffer] = result;
-      mm.sendAsyncMessage(SYMBOL_TABLE_RESPONSE_EVENT, {
-        status: "success",
-        debugName, breakpadId, result: [addr, index, buffer]
-      });
-    }, error => {
-      mm.sendAsyncMessage(SYMBOL_TABLE_RESPONSE_EVENT, {
-        status: "error",
-        debugName, breakpadId,
-        error: `${error}`,
-      });
-    });
-  });
+  mm.sendAsyncMessage("devtools:perf-html-transfer-profile", profile);
 }
 
 

@@ -15,23 +15,134 @@
 
 
 
-#[cfg(all(
-    not(all(target_arch = "wasm32", target_os = "unknown")),
-    feature = "proc-macro"
-))]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "proc-macro")]
 use proc_macro as pm;
-use proc_macro2::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
+use proc_macro2::{Delimiter, Ident, Literal, Span, TokenStream};
+use proc_macro2::{Group, Punct, TokenTree};
 
 use std::marker::PhantomData;
 use std::ptr;
 
-use Lifetime;
+#[cfg(synom_verbose_trace)]
+use std::fmt::{self, Debug};
 
 
 
 enum Entry {
     
-    Group(Group, TokenBuffer),
+    Group(Span, Delimiter, TokenBuffer),
     Ident(Ident),
     Punct(Punct),
     Literal(Literal),
@@ -39,6 +150,10 @@ enum Entry {
     
     End(*const Entry),
 }
+
+
+
+
 
 
 
@@ -74,7 +189,7 @@ impl TokenBuffer {
                 TokenTree::Group(g) => {
                     
                     
-                    seqs.push((entries.len(), g));
+                    seqs.push((entries.len(), g.span(), g.delimiter(), g.stream().clone()));
                     entries.push(Entry::End(ptr::null()));
                 }
             }
@@ -88,7 +203,7 @@ impl TokenBuffer {
         
         
         let mut entries = entries.into_boxed_slice();
-        for (idx, group) in seqs {
+        for (idx, span, delim, seq_stream) in seqs {
             
             
             
@@ -96,8 +211,8 @@ impl TokenBuffer {
 
             
             
-            let inner = Self::inner_new(group.stream(), seq_up);
-            entries[idx] = Entry::Group(group, inner);
+            let inner = Self::inner_new(seq_stream, seq_up);
+            entries[idx] = Entry::Group(span, delim, inner);
         }
 
         TokenBuffer { data: entries }
@@ -108,10 +223,7 @@ impl TokenBuffer {
     
     
     
-    #[cfg(all(
-        not(all(target_arch = "wasm32", target_os = "unknown")),
-        feature = "proc-macro"
-    ))]
+    #[cfg(feature = "proc-macro")]
     pub fn new(stream: pm::TokenStream) -> TokenBuffer {
         Self::new2(stream.into())
     }
@@ -128,6 +240,10 @@ impl TokenBuffer {
         unsafe { Cursor::create(&self.data[0], &self.data[self.data.len() - 1]) }
     }
 }
+
+
+
+
 
 
 
@@ -215,14 +331,12 @@ impl<'a> Cursor<'a> {
     
     
     fn ignore_none(&mut self) {
-        if let Entry::Group(ref group, ref buf) = *self.entry() {
-            if group.delimiter() == Delimiter::None {
-                
-                
-                
-                unsafe {
-                    *self = Cursor::create(&buf.data[0], self.scope);
-                }
+        if let Entry::Group(_, Delimiter::None, ref buf) = *self.entry() {
+            
+            
+            
+            unsafe {
+                *self = Cursor::create(&buf.data[0], self.scope);
             }
         }
     }
@@ -245,9 +359,9 @@ impl<'a> Cursor<'a> {
             self.ignore_none();
         }
 
-        if let Entry::Group(ref group, ref buf) = *self.entry() {
-            if group.delimiter() == delim {
-                return Some((buf.begin(), group.span(), unsafe { self.bump() }));
+        if let Entry::Group(span, group_delim, ref buf) = *self.entry() {
+            if group_delim == delim {
+                return Some((buf.begin(), span, unsafe { self.bump() }));
             }
         }
 
@@ -269,9 +383,7 @@ impl<'a> Cursor<'a> {
     pub fn punct(mut self) -> Option<(Punct, Cursor<'a>)> {
         self.ignore_none();
         match *self.entry() {
-            Entry::Punct(ref op) if op.as_char() != '\'' => {
-                Some((op.clone(), unsafe { self.bump() }))
-            }
+            Entry::Punct(ref op) => Some((op.clone(), unsafe { self.bump() })),
             _ => None,
         }
     }
@@ -282,28 +394,6 @@ impl<'a> Cursor<'a> {
         self.ignore_none();
         match *self.entry() {
             Entry::Literal(ref lit) => Some((lit.clone(), unsafe { self.bump() })),
-            _ => None,
-        }
-    }
-
-    
-    
-    pub fn lifetime(mut self) -> Option<(Lifetime, Cursor<'a>)> {
-        self.ignore_none();
-        match *self.entry() {
-            Entry::Punct(ref op) if op.as_char() == '\'' && op.spacing() == Spacing::Joint => {
-                let next = unsafe { self.bump() };
-                match next.ident() {
-                    Some((ident, rest)) => {
-                        let lifetime = Lifetime {
-                            apostrophe: op.span(),
-                            ident: ident,
-                        };
-                        Some((lifetime, rest))
-                    }
-                    None => None,
-                }
-            }
             _ => None,
         }
     }
@@ -329,7 +419,12 @@ impl<'a> Cursor<'a> {
     
     pub fn token_tree(self) -> Option<(TokenTree, Cursor<'a>)> {
         let tree = match *self.entry() {
-            Entry::Group(ref group, _) => group.clone().into(),
+            Entry::Group(span, delim, ref buf) => {
+                let stream = buf.begin().token_stream();
+                let mut g = Group::new(delim, stream);
+                g.set_span(span);
+                TokenTree::from(g)
+            }
             Entry::Literal(ref lit) => lit.clone().into(),
             Entry::Ident(ref ident) => ident.clone().into(),
             Entry::Punct(ref op) => op.clone().into(),
@@ -345,11 +440,24 @@ impl<'a> Cursor<'a> {
     
     pub fn span(self) -> Span {
         match *self.entry() {
-            Entry::Group(ref group, _) => group.span(),
+            Entry::Group(span, ..) => span,
             Entry::Literal(ref l) => l.span(),
             Entry::Ident(ref t) => t.span(),
             Entry::Punct(ref o) => o.span(),
             Entry::End(..) => Span::call_site(),
         }
+    }
+}
+
+
+
+#[cfg(synom_verbose_trace)]
+impl<'a> Debug for Cursor<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        
+        
+        f.debug_tuple("Cursor")
+            .field(&self.token_stream().to_string())
+            .finish()
     }
 }

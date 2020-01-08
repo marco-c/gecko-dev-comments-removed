@@ -85,20 +85,10 @@ exports.PerfActor = ActorClassWithSpec(perfSpec, {
     Services.profiler.StopProfiler();
   },
 
-  async getSymbolTable(debugPath, breakpadId) {
-    const [addr, index, buffer] =
-      await Services.profiler.getSymbolTable(debugPath, breakpadId);
-    
-    
-    
-    return [Array.from(addr), Array.from(index), Array.from(buffer)];
-  },
-
   async getProfileAndStopProfiler() {
     if (!IS_SUPPORTED_PLATFORM) {
       return null;
     }
-
     let profile;
     try {
       

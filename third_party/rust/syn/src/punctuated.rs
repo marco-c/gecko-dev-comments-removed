@@ -38,11 +38,11 @@ use std::slice;
 use std::vec;
 
 #[cfg(feature = "parsing")]
-use parse::{Parse, ParseStream, Result};
-#[cfg(any(feature = "full", feature = "derive"))]
-use private;
+use buffer::Cursor;
 #[cfg(feature = "parsing")]
-use token::Token;
+use parse_error;
+#[cfg(feature = "parsing")]
+use synom::{PResult, Synom};
 
 
 
@@ -208,16 +208,18 @@ impl<T, P> Punctuated<T, P> {
     pub fn empty_or_trailing(&self) -> bool {
         self.last.is_none()
     }
+}
 
+impl<T, P> Punctuated<T, P>
+where
+    P: Default,
+{
     
     
     
     
     
-    pub fn push(&mut self, value: T)
-    where
-        P: Default,
-    {
+    pub fn push(&mut self, value: T) {
         if !self.empty_or_trailing() {
             self.push_punct(Default::default());
         }
@@ -230,10 +232,7 @@ impl<T, P> Punctuated<T, P> {
     
     
     
-    pub fn insert(&mut self, index: usize, value: T)
-    where
-        P: Default,
-    {
+    pub fn insert(&mut self, index: usize, value: T) {
         assert!(index <= self.len());
 
         if index == self.len() {
@@ -241,113 +240,6 @@ impl<T, P> Punctuated<T, P> {
         } else {
             self.inner.insert(index, (value, Default::default()));
         }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "parsing")]
-    pub fn parse_terminated(input: ParseStream) -> Result<Self>
-    where
-        T: Parse,
-        P: Parse,
-    {
-        Self::parse_terminated_with(input, T::parse)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "parsing")]
-    pub fn parse_terminated_with(
-        input: ParseStream,
-        parser: fn(ParseStream) -> Result<T>,
-    ) -> Result<Self>
-    where
-        P: Parse,
-    {
-        let mut punctuated = Punctuated::new();
-
-        loop {
-            if input.is_empty() {
-                break;
-            }
-            let value = parser(input)?;
-            punctuated.push_value(value);
-            if input.is_empty() {
-                break;
-            }
-            let punct = input.parse()?;
-            punctuated.push_punct(punct);
-        }
-
-        Ok(punctuated)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "parsing")]
-    pub fn parse_separated_nonempty(input: ParseStream) -> Result<Self>
-    where
-        T: Parse,
-        P: Token + Parse,
-    {
-        Self::parse_separated_nonempty_with(input, T::parse)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "parsing")]
-    pub fn parse_separated_nonempty_with(
-        input: ParseStream,
-        parser: fn(ParseStream) -> Result<T>,
-    ) -> Result<Self>
-    where
-        P: Token + Parse,
-    {
-        let mut punctuated = Punctuated::new();
-
-        loop {
-            let value = parser(input)?;
-            punctuated.push_value(value);
-            if !P::peek(input.cursor()) {
-                break;
-            }
-            let punct = input.parse()?;
-            punctuated.push_punct(punct);
-        }
-
-        Ok(punctuated)
     }
 }
 
@@ -574,8 +466,10 @@ struct PrivateIter<'a, T: 'a, P: 'a> {
 }
 
 #[cfg(any(feature = "full", feature = "derive"))]
-impl private {
-    pub fn empty_punctuated_iter<'a, T>() -> Iter<'a, T> {
+impl<'a, T> Iter<'a, T> {
+    
+    #[doc(hidden)]
+    pub fn private_empty() -> Self {
         Iter {
             inner: Box::new(iter::empty()),
         }
@@ -625,15 +519,6 @@ pub struct IterMut<'a, T: 'a> {
 struct PrivateIterMut<'a, T: 'a, P: 'a> {
     inner: slice::IterMut<'a, (T, P)>,
     last: option::IntoIter<&'a mut T>,
-}
-
-#[cfg(any(feature = "full", feature = "derive"))]
-impl private {
-    pub fn empty_punctuated_iter_mut<'a, T>() -> IterMut<'a, T> {
-        IterMut {
-            inner: Box::new(iter::empty()),
-        }
-    }
 }
 
 impl<'a, T> Iterator for IterMut<'a, T> {
@@ -753,6 +638,126 @@ impl<T, P> IndexMut<usize> for Punctuated<T, P> {
             }
         } else {
             &mut self.inner[index].0
+        }
+    }
+}
+
+#[cfg(feature = "parsing")]
+impl<T, P> Punctuated<T, P>
+where
+    T: Synom,
+    P: Synom,
+{
+    
+    
+    pub fn parse_separated(input: Cursor) -> PResult<Self> {
+        Self::parse_separated_with(input, T::parse)
+    }
+
+    
+    
+    
+    pub fn parse_separated_nonempty(input: Cursor) -> PResult<Self> {
+        Self::parse_separated_nonempty_with(input, T::parse)
+    }
+
+    
+    
+    pub fn parse_terminated(input: Cursor) -> PResult<Self> {
+        Self::parse_terminated_with(input, T::parse)
+    }
+
+    
+    
+    pub fn parse_terminated_nonempty(input: Cursor) -> PResult<Self> {
+        Self::parse_terminated_nonempty_with(input, T::parse)
+    }
+}
+
+#[cfg(feature = "parsing")]
+impl<T, P> Punctuated<T, P>
+where
+    P: Synom,
+{
+    
+    
+    pub fn parse_separated_with(input: Cursor, parse: fn(Cursor) -> PResult<T>) -> PResult<Self> {
+        Self::parse(input, parse, false)
+    }
+
+    
+    
+    pub fn parse_separated_nonempty_with(
+        input: Cursor,
+        parse: fn(Cursor) -> PResult<T>,
+    ) -> PResult<Self> {
+        match Self::parse(input, parse, false) {
+            Ok((ref b, _)) if b.is_empty() => parse_error(),
+            other => other,
+        }
+    }
+
+    
+    
+    pub fn parse_terminated_with(input: Cursor, parse: fn(Cursor) -> PResult<T>) -> PResult<Self> {
+        Self::parse(input, parse, true)
+    }
+
+    
+    
+    pub fn parse_terminated_nonempty_with(
+        input: Cursor,
+        parse: fn(Cursor) -> PResult<T>,
+    ) -> PResult<Self> {
+        match Self::parse(input, parse, true) {
+            Ok((ref b, _)) if b.is_empty() => parse_error(),
+            other => other,
+        }
+    }
+
+    fn parse(
+        mut input: Cursor,
+        parse: fn(Cursor) -> PResult<T>,
+        terminated: bool,
+    ) -> PResult<Self> {
+        let mut res = Punctuated::new();
+
+        
+        match parse(input) {
+            Err(_) => Ok((res, input)),
+            Ok((o, i)) => {
+                if i == input {
+                    return parse_error();
+                }
+                input = i;
+                res.push_value(o);
+
+                
+                while let Ok((s, i2)) = P::parse(input) {
+                    if i2 == input {
+                        break;
+                    }
+
+                    
+                    if let Ok((o3, i3)) = parse(i2) {
+                        if i3 == i2 {
+                            break;
+                        }
+                        res.push_punct(s);
+                        res.push_value(o3);
+                        input = i3;
+                    } else {
+                        break;
+                    }
+                }
+                if terminated {
+                    if let Ok((sep, after)) = P::parse(input) {
+                        res.push_punct(sep);
+                        input = after;
+                    }
+                }
+                Ok((res, input))
+            }
         }
     }
 }
