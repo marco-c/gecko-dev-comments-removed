@@ -425,14 +425,6 @@ CustomizeMode.prototype = {
 
       await this._unwrapToolbarItems();
 
-      if (this._changed) {
-        
-        
-        
-        
-        this.persistCurrentSets();
-      }
-
       
       this.areas.clear();
 
@@ -1065,19 +1057,6 @@ CustomizeMode.prototype = {
     })().catch(log.error);
   },
 
-  persistCurrentSets(aSetBeforePersisting) {
-    let document = this.document;
-    let toolbars = document.querySelectorAll("toolbar[customizable='true'][currentset]");
-    for (let toolbar of toolbars) {
-      if (aSetBeforePersisting) {
-        let set = toolbar.currentSet;
-        toolbar.setAttribute("currentset", set);
-      }
-      
-      Services.xulStore.persist(toolbar, "currentset");
-    }
-  },
-
   reset() {
     this.resetting = true;
     
@@ -1093,8 +1072,6 @@ CustomizeMode.prototype = {
 
       await this._wrapToolbarItems();
       this.populatePalette();
-
-      this.persistCurrentSets(true);
 
       this._updateResetButton();
       this._updateUndoResetButton();
@@ -1120,8 +1097,6 @@ CustomizeMode.prototype = {
 
       await this._wrapToolbarItems();
       this.populatePalette();
-
-      this.persistCurrentSets(true);
 
       this._updateResetButton();
       this._updateUndoResetButton();

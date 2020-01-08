@@ -209,7 +209,6 @@ var CustomizableUIInternal = {
     }
 
     this.registerArea(CustomizableUI.AREA_NAVBAR, {
-      legacy: true,
       type: CustomizableUI.TYPE_TOOLBAR,
       overflowable: true,
       defaultPlacements: navbarPlacements,
@@ -218,7 +217,6 @@ var CustomizableUIInternal = {
 
     if (AppConstants.MENUBAR_CAN_AUTOHIDE) {
       this.registerArea(CustomizableUI.AREA_MENUBAR, {
-        legacy: true,
         type: CustomizableUI.TYPE_TOOLBAR,
         defaultPlacements: [
           "menubar-items",
@@ -228,7 +226,6 @@ var CustomizableUIInternal = {
     }
 
     this.registerArea(CustomizableUI.AREA_TABSTRIP, {
-      legacy: true,
       type: CustomizableUI.TYPE_TOOLBAR,
       defaultPlacements: [
         "tabbrowser-tabs",
@@ -238,7 +235,6 @@ var CustomizableUIInternal = {
       defaultCollapsed: null,
     }, true);
     this.registerArea(CustomizableUI.AREA_BOOKMARKS, {
-      legacy: true,
       type: CustomizableUI.TYPE_TOOLBAR,
       defaultPlacements: [
         "personal-bookmarks",
@@ -590,7 +586,7 @@ var CustomizableUIInternal = {
 
     let areaIsKnown = gAreas.has(aName);
     let props = areaIsKnown ? gAreas.get(aName) : new Map();
-    const kImmutableProperties = new Set(["type", "legacy", "overflowable"]);
+    const kImmutableProperties = new Set(["type", "overflowable"]);
     for (let key in aProperties) {
       if (areaIsKnown && kImmutableProperties.has(key) &&
           props.get(key) != aProperties[key]) {
@@ -635,7 +631,7 @@ var CustomizableUIInternal = {
       
       this._placeNewDefaultWidgetsInArea(aName);
 
-      if (props.get("legacy") && !gPlacements.has(aName)) {
+      if (props.get("type") == CustomizableUI.TYPE_TOOLBAR && !gPlacements.has(aName)) {
         
         
         if (!gFuturePlacements.has(aName)) {
@@ -707,34 +703,19 @@ var CustomizableUIInternal = {
 
     
     if (!areaProperties) {
-      
-      
-      if (!aToolbar.hasAttribute("defaultset")) {
-        if (!gPendingBuildAreas.has(area)) {
-          gPendingBuildAreas.set(area, new Map());
-        }
-        let pendingNodes = gPendingBuildAreas.get(area);
-        pendingNodes.set(aToolbar, aExistingChildren);
-        return;
+      if (!gPendingBuildAreas.has(area)) {
+        gPendingBuildAreas.set(area, new Map());
       }
-      let props = {type: CustomizableUI.TYPE_TOOLBAR, legacy: true};
-      let defaultsetAttribute = aToolbar.getAttribute("defaultset") || "";
-      props.defaultPlacements = defaultsetAttribute.split(",").filter(s => s);
-      this.registerArea(area, props);
-      areaProperties = gAreas.get(area);
+      let pendingNodes = gPendingBuildAreas.get(area);
+      pendingNodes.set(aToolbar, aExistingChildren);
+      return;
     }
 
     this.beginBatchUpdate();
     try {
       let placements = gPlacements.get(area);
-      if (!placements && areaProperties.has("legacy")) {
-        let legacyState = aToolbar.getAttribute("currentset");
-        if (legacyState) {
-          legacyState = legacyState.split(",").filter(s => s);
-        }
-
-        
-        this.restoreStateForArea(area, legacyState);
+      if (!placements && areaProperties.get("type") == CustomizableUI.TYPE_TOOLBAR) {
+        this.restoreStateForArea(area);
         placements = gPlacements.get(area);
       }
 
@@ -763,7 +744,6 @@ var CustomizableUIInternal = {
         this.buildArea(area, placements, aToolbar);
       }
       this.notifyListeners("onAreaNodeRegistered", area, aToolbar.customizationTarget);
-      aToolbar.setAttribute("currentset", placements.join(","));
     } finally {
       this.endBatchUpdate();
     }
@@ -1074,10 +1054,6 @@ var CustomizableUIInternal = {
       }
       this.notifyListeners("onWidgetAfterDOMChange", widgetNode, null, container, true);
 
-      if (isToolbar) {
-        areaNode.setAttribute("currentset", gPlacements.get(aArea).join(","));
-      }
-
       let windowCache = gSingleWrapperCache.get(window);
       if (windowCache) {
         windowCache.delete(aWidgetId);
@@ -1242,10 +1218,6 @@ var CustomizableUIInternal = {
 
     let [insertionContainer, nextNode] = this.findInsertionPoints(widgetNode, aAreaNode);
     this.insertWidgetBefore(widgetNode, nextNode, insertionContainer, areaId);
-
-    if (gAreas.get(areaId).get("type") == CustomizableUI.TYPE_TOOLBAR) {
-      aAreaNode.setAttribute("currentset", gPlacements.get(areaId).join(","));
-    }
   },
 
   findInsertionPoints(aNode, aAreaNode) {
@@ -2024,8 +1996,6 @@ var CustomizableUIInternal = {
 
   
   
-  
-  
   loadSavedState() {
     let state = Services.prefs.getCharPref(kPrefCustomizationState, "");
     if (!state) {
@@ -2057,7 +2027,7 @@ var CustomizableUIInternal = {
     gNewElementCount = gSavedState.newElementCount || 0;
   },
 
-  restoreStateForArea(aArea, aLegacyState) {
+  restoreStateForArea(aArea) {
     let placementsPreexisted = gPlacements.has(aArea);
 
     this.beginBatchUpdate();
@@ -2082,15 +2052,6 @@ var CustomizableUIInternal = {
         for (let id of placements)
           this.addWidgetToArea(id, aArea);
         gDirty = false;
-        restored = true;
-      }
-
-      if (!restored && aLegacyState) {
-        log.debug("Restoring " + aArea + " from legacy state");
-        for (let id of aLegacyState)
-          this.addWidgetToArea(id, aArea);
-        
-        
         restored = true;
       }
 
@@ -2382,7 +2343,7 @@ var CustomizableUIInternal = {
     if (gPlacements.has(aArea)) {
       return false;
     }
-    return gAreas.get(aArea).has("legacy");
+    return gAreas.get(aArea).get("type") == CustomizableUI.TYPE_TOOLBAR;
   },
 
   
@@ -2812,14 +2773,33 @@ var CustomizableUIInternal = {
     return true;
   },
 
+  _getCurrentWidgetsInContainer(container) {
+    
+    
+    let currentWidgets = new Set();
+    function addUnskippedChildren(parent) {
+      for (let node of parent.children) {
+        let realNode = node.localName == "toolbarpaletteitem" ? node.firstElementChild : node;
+        if (realNode.getAttribute("skipintoolbarset") != "true") {
+          currentWidgets.add(realNode.id);
+        }
+      }
+    }
+    addUnskippedChildren(container.customizationTarget);
+    if (container.getAttribute("overflowing") == "true") {
+      let overflowTarget = container.getAttribute("overflowtarget");
+      addUnskippedChildren(container.ownerDocument.getElementById(overflowTarget));
+    }
+    
+    
+    
+    let orderedPlacements = CustomizableUI.getWidgetIdsInArea(container.id);
+    return orderedPlacements.filter(w => currentWidgets.has(w));
+  },
+
   get inDefaultState() {
     for (let [areaId, props] of gAreas) {
       let defaultPlacements = props.get("defaultPlacements");
-      
-      if (!defaultPlacements) {
-        continue;
-      }
-
       let currentPlacements = gPlacements.get(areaId);
       
       
@@ -2839,12 +2819,9 @@ var CustomizableUIInternal = {
         
         
         if (props.get("type") == CustomizableUI.TYPE_TOOLBAR) {
-          let currentSet = container.currentSet;
-          currentPlacements = currentSet ? currentSet.split(",") : [];
-          currentPlacements = currentPlacements.filter(removableOrDefault);
+          currentPlacements =
+            this._getCurrentWidgetsInContainer(container).filter(removableOrDefault);
         } else {
-          
-          currentPlacements = [...currentPlacements];
           currentPlacements = currentPlacements.filter((item) => {
             let itemNode = container.getElementsByAttribute("id", item)[0];
             return itemNode && removableOrDefault(itemNode || item);
@@ -2856,7 +2833,8 @@ var CustomizableUIInternal = {
           let collapsed = container.getAttribute(attribute) == "true";
           let defaultCollapsed = props.get("defaultCollapsed");
           if (defaultCollapsed !== null && collapsed != defaultCollapsed) {
-            log.debug("Found " + areaId + " had non-default toolbar visibility (expected " + defaultCollapsed + ", was " + collapsed + ")");
+            log.debug("Found " + areaId + " had non-default toolbar visibility" +
+                      "(expected " + defaultCollapsed + ", was " + collapsed + ")");
             return false;
           }
         }
@@ -3128,14 +3106,10 @@ var CustomizableUI = {
 
 
 
-
-
   registerArea(aName, aProperties) {
     CustomizableUIInternal.registerArea(aName, aProperties);
   },
   
-
-
 
 
 
@@ -3186,8 +3160,6 @@ var CustomizableUI = {
     CustomizableUIInternal.unregisterArea(aName, aDestroyPlacements);
   },
   
-
-
 
 
 
@@ -3479,7 +3451,6 @@ var CustomizableUI = {
 
 
 
-
   getWidgetIdsInArea(aArea) {
     if (!gAreas.has(aArea)) {
       throw new Error("Unknown customization area: " + aArea);
@@ -3492,7 +3463,6 @@ var CustomizableUI = {
     return [...gPlacements.get(aArea)];
   },
   
-
 
 
 

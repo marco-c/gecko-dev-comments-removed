@@ -9,13 +9,12 @@ requestLongerTimeout(2);
 const kTestBarID = "testBar";
 const kWidgetID = "characterencoding-button";
 
-function createTestBar(aLegacy) {
+function createTestBar() {
   let testBar = document.createXULElement("toolbar");
   testBar.id = kTestBarID;
   testBar.setAttribute("customizable", "true");
   CustomizableUI.registerArea(kTestBarID, {
     type: CustomizableUI.TYPE_TOOLBAR,
-    legacy: aLegacy,
   });
   gNavToolbox.appendChild(testBar);
   return testBar;
@@ -40,10 +39,9 @@ function createTestBar(aLegacy) {
 
 
 
-
-function checkRestoredPresence(aWidgetID, aLegacy) {
+function checkRestoredPresence(aWidgetID) {
   return (async function() {
-    let testBar = createTestBar(aLegacy);
+    let testBar = createTestBar();
     CustomizableUI.addWidgetToArea(aWidgetID, kTestBarID);
     let placement = CustomizableUI.getPlacementOfWidget(aWidgetID);
     is(placement.area, kTestBarID,
@@ -55,7 +53,7 @@ function checkRestoredPresence(aWidgetID, aLegacy) {
     placement = CustomizableUI.getPlacementOfWidget(aWidgetID);
     is(placement, null, "Expected " + aWidgetID + " to be in the palette");
 
-    testBar = createTestBar(aLegacy);
+    testBar = createTestBar();
 
     await startCustomizing();
     placement = CustomizableUI.getPlacementOfWidget(aWidgetID);
@@ -71,11 +69,6 @@ function checkRestoredPresence(aWidgetID, aLegacy) {
 }
 
 add_task(async function() {
-  await checkRestoredPresence("downloads-button", false);
-  await checkRestoredPresence("downloads-button", true);
-});
-
-add_task(async function() {
-  await checkRestoredPresence("characterencoding-button", false);
-  await checkRestoredPresence("characterencoding-button", true);
+  await checkRestoredPresence("downloads-button");
+  await checkRestoredPresence("characterencoding-button");
 });
