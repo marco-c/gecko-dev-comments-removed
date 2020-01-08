@@ -796,14 +796,7 @@ nsSHistory::PurgeHistory(int32_t aNumEntries)
 
   aNumEntries = std::min(aNumEntries, Length());
 
-  bool purgeHistory = true;
-  NOTIFY_LISTENERS_CANCELABLE(OnHistoryPurge, purgeHistory,
-                              (aNumEntries, &purgeHistory));
-
-  if (!purgeHistory) {
-    
-    return NS_SUCCESS_LOSS_OF_INSIGNIFICANT_DATA;
-  }
+  NOTIFY_LISTENERS(OnHistoryPurge, (aNumEntries));
 
   
   mEntries.RemoveElementsAt(0, aNumEntries);
@@ -952,14 +945,9 @@ NS_IMETHODIMP
 nsSHistory::ReloadCurrentEntry()
 {
   
-  bool canNavigate = true;
   nsCOMPtr<nsIURI> currentURI;
   GetCurrentURI(getter_AddRefs(currentURI));
-  NOTIFY_LISTENERS_CANCELABLE(OnHistoryGotoIndex, canNavigate,
-                              (mIndex, currentURI, &canNavigate));
-  if (!canNavigate) {
-    return NS_OK;
-  }
+  NOTIFY_LISTENERS(OnHistoryGotoIndex, (mIndex, currentURI));
 
   return LoadEntry(mIndex, LOAD_HISTORY, HIST_CMD_RELOAD);
 }
@@ -1529,18 +1517,9 @@ nsSHistory::LoadEntry(int32_t aIndex, long aLoadType, uint32_t aHistCmd)
   MOZ_ASSERT((prevEntry && nextEntry && nextURI), "prevEntry, nextEntry and nextURI can't be null");
 
   
-  bool canNavigate = true;
   if (aHistCmd == HIST_CMD_GOTOINDEX) {
     
-    NOTIFY_LISTENERS_CANCELABLE(OnHistoryGotoIndex, canNavigate,
-                                (aIndex, nextURI, &canNavigate));
-  }
-
-  if (!canNavigate) {
-    
-    
-    mRequestedIndex = -1;
-    return NS_OK;  
+    NOTIFY_LISTENERS(OnHistoryGotoIndex, (aIndex, nextURI));
   }
 
   if (mRequestedIndex == mIndex) {

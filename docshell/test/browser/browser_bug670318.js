@@ -34,19 +34,16 @@ add_task(async function test() {
             delete content._testListener;
             content.setTimeout(() => { content.location.reload(); }, 0);
           }
-
-          return true;
         },
 
         OnHistoryReload: () => true,
-        OnHistoryGotoIndex: () => true,
-        OnHistoryPurge: () => true,
+        OnHistoryGotoIndex: () => {},
+        OnHistoryPurge: () => {},
         OnHistoryReplaceEntry: () => {
           
           
           
           ++count;
-          return true;
         },
 
         QueryInterface: ChromeUtils.generateQI([Ci.nsISHistoryListener,

@@ -124,7 +124,7 @@ var lazilyLoadedBrowserScripts = [
   ["RemoteDebugger", "chrome://browser/content/RemoteDebugger.js"],
   ["gViewSourceUtils", "chrome://global/content/viewSourceUtils.js"],
 ];
-if (!["release", "esr"].includes(AppConstants.MOZ_UPDATE_CHANNEL)) {
+if (!AppConstants.RELEASE_OR_BETA) {
   lazilyLoadedBrowserScripts.push(
     ["WebcompatReporter", "chrome://browser/content/WebcompatReporter.js"]);
 }
@@ -538,7 +538,7 @@ var BrowserApp = {
       
       InitLater(() => AsyncPrefs.init());
 
-      if (!["release", "esr"].includes(AppConstants.MOZ_UPDATE_CHANNEL)) {
+      if (!AppConstants.RELEASE_OR_BETA) {
         InitLater(() => WebcompatReporter.init());
       }
 
@@ -4677,12 +4677,10 @@ Tab.prototype = {
 
   OnHistoryGotoIndex: function(index, gotoURI) {
     Services.obs.notifyObservers(this.browser, "Content:HistoryChange");
-    return true;
   },
 
   OnHistoryPurge: function(numEntries) {
     Services.obs.notifyObservers(this.browser, "Content:HistoryChange");
-    return true;
   },
 
   OnHistoryReplaceEntry: function(index) {
