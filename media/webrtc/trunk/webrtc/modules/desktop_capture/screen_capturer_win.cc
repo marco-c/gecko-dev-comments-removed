@@ -38,6 +38,7 @@ std::unique_ptr<DesktopCapturer> CreateScreenCapturerWinDirectx() {
 std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawScreenCapturer(
     const DesktopCaptureOptions& options) {
   std::unique_ptr<DesktopCapturer> capturer(new ScreenCapturerWinGdi(options));
+#ifdef CAPTURE_ALLOW_DIRECTX
   if (options.allow_directx_capturer()) {
     
     
@@ -47,6 +48,7 @@ std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawScreenCapturer(
           CreateScreenCapturerWinDirectx(), std::move(capturer)));
     }
   }
+#endif
 
   if (options.allow_use_magnification_api()) {
     

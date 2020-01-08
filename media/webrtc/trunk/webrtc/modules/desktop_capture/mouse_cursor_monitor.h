@@ -98,6 +98,9 @@ class MouseCursorMonitor {
   virtual void Init(Callback* callback, Mode mode) = 0;
 
   
+  virtual void Stop() = 0;
+
+  
   
   
   

@@ -11,6 +11,9 @@
 #ifndef MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURE_TYPES_H_
 #define MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURE_TYPES_H_
 
+#ifndef XP_WIN
+#include <sys/types.h> 
+#endif
 #include <stdint.h>
 
 #include "typedefs.h"  
@@ -37,6 +40,13 @@ typedef intptr_t ScreenId;
 const ScreenId kFullDesktopScreenId = -1;
 
 const ScreenId kInvalidScreenId = -2;
+
+typedef intptr_t ProcessId;
+const ProcessId DesktopProcessId = 0;
+
+#ifdef XP_WIN
+typedef int pid_t;
+#endif
 
 
 

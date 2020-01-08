@@ -314,19 +314,6 @@ class VideoCodingModule : public Module {
   
   virtual int32_t RegisterPacketRequestCallback(
       VCMPacketRequestCallback* callback) = 0;
- 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual int32_t RegisterReceiveStateCallback(
-      VCMReceiveStateCallback* callback) = 0;
 
   
   
