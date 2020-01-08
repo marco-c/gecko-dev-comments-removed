@@ -46,9 +46,16 @@ namespace image {
 
 
 
+
+
+
+
+
+
 enum class MOZ_MUST_USE_TYPE ImgDrawResult : uint8_t
 {
   SUCCESS,
+  SUCCESS_NOT_COMPLETE,
   INCOMPLETE,
   WRONG_SIZE,
   NOT_READY,
@@ -71,7 +78,11 @@ operator&(const ImgDrawResult aLeft, const ImgDrawResult aRight)
   if (MOZ_LIKELY(aLeft == ImgDrawResult::SUCCESS)) {
     return aRight;
   }
-  if (aLeft == ImgDrawResult::BAD_IMAGE && aRight != ImgDrawResult::SUCCESS) {
+
+  if ((aLeft == ImgDrawResult::BAD_IMAGE ||
+       aLeft == ImgDrawResult::SUCCESS_NOT_COMPLETE) &&
+      aRight != ImgDrawResult::SUCCESS &&
+      aRight != ImgDrawResult::SUCCESS_NOT_COMPLETE) {
     return aRight;
   }
   return aLeft;
