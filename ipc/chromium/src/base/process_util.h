@@ -93,7 +93,7 @@ void SetAllFDsToCloseOnExec();
 
 
 
-void CloseSuperfluousFds(std::function<bool(int)>&& should_preserve);
+void CloseSuperfluousFds(void* aCtx, bool (*aShouldPreserve)(void*, int));
 
 typedef std::vector<std::pair<int, int> > file_handle_mapping_vector;
 typedef std::map<std::string, std::string> environment_map;
