@@ -1010,8 +1010,10 @@ pref("accessibility.typeaheadfind.autostart", true);
 pref("accessibility.typeaheadfind.casesensitive", 0);
 pref("accessibility.typeaheadfind.linksonly", true);
 pref("accessibility.typeaheadfind.startlinksonly", false);
+
+
+
 pref("accessibility.typeaheadfind.timeout", 4000);
-pref("accessibility.typeaheadfind.enabletimeout", true);
 pref("accessibility.typeaheadfind.soundURL", "beep");
 pref("accessibility.typeaheadfind.enablesound", true);
 #ifdef XP_MACOSX
