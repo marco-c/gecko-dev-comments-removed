@@ -124,7 +124,7 @@ FirefoxOnAndroidRuntime.detect = async function(adbDevice, model) {
   
   
   const query = "cat /proc/net/unix";
-  const rawSocketInfo = await adbDevice.shell(query);
+  const rawSocketInfo = await ADB.shell(query);
   let socketInfos = rawSocketInfo.split(/\r?\n/);
   
   socketInfos = socketInfos.filter(l => l.includes("firefox-debugger-socket"));
