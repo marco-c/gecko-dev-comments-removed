@@ -271,7 +271,7 @@ RootActor.prototype = {
 
 
 
-  onListTabs: async function(request) {
+  onListTabs: async function(options) {
     const tabList = this._parameters.tabList;
     if (!tabList) {
       return { from: this.actorID, error: "noTabs",
@@ -290,7 +290,6 @@ RootActor.prototype = {
     const targetActorList = [];
     let selected;
 
-    const options = request.options || {};
     const targetActors = await tabList.getList(options);
     for (const targetActor of targetActors) {
       if (targetActor.exited) {
