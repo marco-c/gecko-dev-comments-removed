@@ -42,6 +42,10 @@
 
 # define JS_HAZ_GC_SUPPRESSED __attribute__((tag("Suppress GC")))
 
+
+
+# define JS_HAZ_CAN_RUN_SCRIPT __attribute__((tag("Can run script")))
+
 #else
 
 # define JS_HAZ_GC_THING
@@ -51,6 +55,7 @@
 # define JS_HAZ_NON_GC_POINTER
 # define JS_HAZ_GC_CALL
 # define JS_HAZ_GC_SUPPRESSED
+# define JS_HAZ_CAN_RUN_SCRIPT
 
 #endif
 
