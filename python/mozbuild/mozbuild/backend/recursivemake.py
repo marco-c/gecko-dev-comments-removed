@@ -1092,7 +1092,9 @@ class RecursiveMakeBackend(CommonBackend):
             
             
             
-            mk.add_statement('%s_deps = %s' % (module, ' '.join(deps)))
+
+            mk.add_statement('%s_deps = %s' % (module, ' '.join(d.full_path
+                                                                for d in deps)))
 
             build_files.add_optional_exists('%s.xpt' % module)
 

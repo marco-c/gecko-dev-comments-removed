@@ -31,8 +31,6 @@ from mozbuild.frontend.data import (
     HostGeneratedSources,
     HostRustLibrary,
     IPDLCollection,
-    LocalizedPreprocessedFiles,
-    LocalizedFiles,
     RustLibrary,
     SharedLibrary,
     StaticLibrary,
@@ -67,8 +65,8 @@ class XPIDLManager(object):
 
         The IDL file will be built, installed, etc.
         """
-        basename = mozpath.basename(idl.source_path)
-        dirname = mozpath.dirname(idl.source_path)
+        basename = mozpath.basename(idl.source_path.full_path)
+        dirname = mozpath.dirname(idl.source_path.full_path)
         root = mozpath.splitext(basename)[0]
         xpt = '%s.xpt' % idl.module
 
@@ -374,28 +372,8 @@ class CommonBackend(BuildBackend):
             self._write_unified_file(unified_file, source_filenames,
                                      output_directory, poison_windows_h)
 
-    def localized_path(self, relativesrcdir, filename):
-        '''Return the localized path for a file.
-
-        Given ``relativesrcdir``, a path relative to the topsrcdir, return a path to ``filename``
-        from the current locale as specified by ``MOZ_UI_LOCALE``, using ``L10NBASEDIR`` as the
-        parent directory for non-en-US locales.
-        '''
-        ab_cd = self.environment.substs['MOZ_UI_LOCALE'][0]
-        l10nbase = mozpath.join(self.environment.substs['L10NBASEDIR'], ab_cd)
-        
-        if filename.startswith('en-US/'):
-            e, filename = filename.split('en-US/')
-            assert(not e)
-        if ab_cd == 'en-US':
-            return mozpath.join(self.environment.topsrcdir, relativesrcdir, 'en-US', filename)
-        if mozpath.basename(relativesrcdir) == 'locales':
-            l10nrelsrcdir = mozpath.dirname(relativesrcdir)
-        else:
-            l10nrelsrcdir = relativesrcdir
-        return mozpath.join(l10nbase, l10nrelsrcdir, filename)
-
     def _consume_jar_manifest(self, obj):
+        
         
         
         
@@ -408,9 +386,8 @@ class CommonBackend(BuildBackend):
         if obj.defines:
             pp.context.update(obj.defines.defines)
         pp.context.update(self.environment.defines)
-        ab_cd = obj.config.substs['MOZ_UI_LOCALE'][0]
         pp.context.update(
-            AB_CD=ab_cd,
+            AB_CD='en-US',
             BUILD_FASTER=1,
         )
         pp.out = JarManifestParser()
@@ -436,8 +413,6 @@ class CommonBackend(BuildBackend):
                 jar_context['DEFINES'] = obj.defines.defines
             files = jar_context['FINAL_TARGET_FILES']
             files_pp = jar_context['FINAL_TARGET_PP_FILES']
-            localized_files = jar_context['LOCALIZED_FILES']
-            localized_files_pp = jar_context['LOCALIZED_PP_FILES']
 
             for e in jarinfo.entries:
                 if e.is_locale:
@@ -454,7 +429,7 @@ class CommonBackend(BuildBackend):
                 if '*' not in e.source and not os.path.exists(src.full_path):
                     if e.is_locale:
                         raise Exception(
-                            '%s: Cannot find %s (tried %s)' % (obj.path, e.source, src.full_path))
+                            '%s: Cannot find %s' % (obj.path, e.source))
                     if e.source.startswith('/'):
                         src = Path(jar_context, '!' + e.source)
                     else:
@@ -474,26 +449,15 @@ class CommonBackend(BuildBackend):
                     if '*' in e.source:
                         raise Exception('%s: Wildcards are not supported with '
                                         'preprocessing' % obj.path)
-                    if e.is_locale:
-                        localized_files_pp[path] += [src]
-                    else:
-                        files_pp[path] += [src]
+                    files_pp[path] += [src]
                 else:
-                    if e.is_locale:
-                        localized_files[path] += [src]
-                    else:
-                        files[path] += [src]
+                    files[path] += [src]
 
             if files:
                 self.consume_object(FinalTargetFiles(jar_context, files))
             if files_pp:
                 self.consume_object(
                     FinalTargetPreprocessedFiles(jar_context, files_pp))
-            if localized_files:
-                self.consume_object(LocalizedFiles(jar_context, localized_files))
-            if localized_files_pp:
-                self.consume_object(
-                    LocalizedPreprocessedFiles(jar_context, localized_files_pp))
 
             for m in jarinfo.chrome_manifests:
                 entry = parse_manifest_line(
