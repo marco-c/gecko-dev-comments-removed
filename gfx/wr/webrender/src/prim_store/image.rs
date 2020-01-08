@@ -12,7 +12,6 @@ use display_list_flattener::{AsInstanceKind, CreateShadow, IsVisible};
 use frame_builder::FrameBuildingState;
 use gpu_cache::{GpuCacheHandle, GpuDataRequest};
 use intern::{DataStore, Handle, Internable, Interner, InternDebug, UpdateList};
-use picture::SurfaceIndex;
 use prim_store::{
     EdgeAaSegmentMask, OpacityBindingIndex, PrimitiveInstanceKind,
     PrimitiveOpacity, PrimitiveSceneData, PrimKey, PrimKeyCommonData,
@@ -175,12 +174,6 @@ impl ImageData {
     
     pub fn update(
         &mut self,
-        
-        
-        
-        
-        
-        surface_index: SurfaceIndex,
         common: &mut PrimTemplateCommonData,
         frame_state: &mut FrameBuildingState,
     ) {
@@ -248,7 +241,6 @@ impl ImageData {
                                 request,
                                 texel_rect: self.sub_rect,
                             };
-                            let surfaces = &mut frame_state.surfaces;
 
                             
                             *handle = Some(frame_state.resource_cache.request_render_task(
@@ -284,14 +276,8 @@ impl ImageData {
                                             task_id: cache_to_target_task_id,
                                         },
                                     );
-                                    let target_to_cache_task_id = render_tasks.add(target_to_cache_task);
 
-                                    
-                                    surfaces[surface_index.0].tasks.push(target_to_cache_task_id);
-
-                                    
-                                    
-                                    target_to_cache_task_id
+                                    render_tasks.add(target_to_cache_task)
                                 }
                             ));
                         }

@@ -2286,7 +2286,6 @@ impl PrimitiveStore {
                     
                     let scale_factor = TypedScale::new(1.0) * frame_context.device_pixel_scale;
                     let task_size = (LayoutSize::from_au(cache_key.size) * scale_factor).ceil().to_i32();
-                    let surfaces = &mut frame_state.surfaces;
 
                     
                     
@@ -2310,9 +2309,7 @@ impl PrimitiveStore {
                                 cache_key.wavy_line_thickness.to_f32_px(),
                                 LayoutSize::from_au(cache_key.size),
                             );
-                            let task_id = render_tasks.add(task);
-                            surfaces[pic_context.surface_index.0].tasks.push(task_id);
-                            task_id
+                            render_tasks.add(task)
                         }
                     ));
                 }
@@ -2376,7 +2373,6 @@ impl PrimitiveStore {
                 
                 
                 let mut handles: SmallVec<[RenderTaskCacheEntryHandle; 8]> = SmallVec::new();
-                let surfaces = &mut frame_state.surfaces;
 
                 for segment in &border_data.border_segments {
                     
@@ -2403,11 +2399,7 @@ impl PrimitiveStore {
                                 ),
                             );
 
-                            let task_id = render_tasks.add(task);
-
-                            surfaces[pic_context.surface_index.0].tasks.push(task_id);
-
-                            task_id
+                            render_tasks.add(task)
                         }
                     ));
                 }
@@ -2460,11 +2452,7 @@ impl PrimitiveStore {
 
                 
                 
-                image_data.update(
-                    pic_context.surface_index,
-                    common_data,
-                    frame_state,
-                );
+                image_data.update(common_data, frame_state);
 
                 let image_instance = &mut self.images[*image_instance_index];
 
