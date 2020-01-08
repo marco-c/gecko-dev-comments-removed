@@ -1870,15 +1870,6 @@ private:
     return Rehashed;
   }
 
-  bool overRemoved()
-  {
-    
-    
-    
-    
-    return mRemovedCount >= (capacity() >> 2);
-  }
-
   RebuildStatus rehashIfOverloaded(
     FailureBehavior aReportFailure = ReportFailure)
   {
@@ -1886,9 +1877,12 @@ private:
       return NotOverloaded;
     }
 
-    uint32_t newCapacity = overRemoved()
-                         ? rawCapacity()
-                         : rawCapacity() * 2;
+    
+    
+    
+    
+    bool manyRemoved = mRemovedCount >= (capacity() >> 2);
+    uint32_t newCapacity = manyRemoved ? rawCapacity() : rawCapacity() * 2;
     return changeTableSize(newCapacity, aReportFailure);
   }
 
