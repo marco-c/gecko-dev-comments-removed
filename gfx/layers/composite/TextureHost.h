@@ -183,6 +183,14 @@ public:
 
   int NumCompositableRefs() const { return mCompositableCount; }
 
+  
+  
+  virtual bool IsDirectMap() { return false; }
+  
+  
+  
+  virtual void Sync() { }
+
 protected:
 
   RefPtr<TextureSource> mNextSibling;
