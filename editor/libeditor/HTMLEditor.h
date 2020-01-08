@@ -322,27 +322,8 @@ public:
 
   nsresult DoInlineTableEditingAction(const Element& aUIAnonymousElement);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  Element*
-  GetElementOrParentByTagName(const nsAtom& aTagName, nsINode* aNode);
+  already_AddRefed<Element>
+  GetElementOrParentByTagName(const nsAString& aTagName, nsINode* aNode);
 
   
 
@@ -832,48 +813,6 @@ protected:
 
   nsresult CollapseSelectionAfter(Selection& aSelection,
                                   Element& aElement);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  Element*
-  GetElementOrParentByTagNameAtSelection(Selection& aSelection,
-                                         const nsAtom& aTagName);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  Element*
-  GetElementOrParentByTagNameInternal(const nsAtom& aTagName,
-                                      nsINode& aNode);
 
   
 
