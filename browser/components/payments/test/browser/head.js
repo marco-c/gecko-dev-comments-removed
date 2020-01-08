@@ -322,12 +322,10 @@ add_task(async function setup_head() {
       
       return;
     }
-    if (msg.errorMessage.match(/docShell is null.*BrowserUtils.jsm/)) {
+    if (msg.message.match(/docShell is null.*BrowserUtils.jsm/)) {
       
       return;
     }
-    info("message: " + msg.message);
-    info("errorMessage: " + msg.errorMessage);
     ok(false, msg.message || msg.errorMessage);
   });
   await setupFormAutofillStorage();
