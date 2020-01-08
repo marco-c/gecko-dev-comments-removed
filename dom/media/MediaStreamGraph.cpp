@@ -3666,6 +3666,7 @@ MediaStreamGraphImpl::Destroy()
   UnregisterWeakMemoryReporter(this);
 
   
+  
   mSelfRef = nullptr;
 }
 

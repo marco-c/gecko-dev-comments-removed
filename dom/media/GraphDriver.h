@@ -220,9 +220,7 @@ protected:
   
   GraphTime mIterationEnd;
   
-  
-  
-  MediaStreamGraphImpl* mGraphImpl;
+  const RefPtr<MediaStreamGraphImpl> mGraphImpl;
 
   
   
