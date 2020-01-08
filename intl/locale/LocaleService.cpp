@@ -416,13 +416,27 @@ LocaleService::FilterMatches(const nsTArray<nsCString>& aRequested,
 bool
 LocaleService::IsAppLocaleRTL()
 {
-  nsAutoCString locale;
-  GetAppLocaleAsBCP47(locale);
-
+  
+  
   int pref = Preferences::GetInt("intl.uidirection", -1);
   if (pref >= 0) {
     return (pref > 0);
   }
+
+  
+  
+  nsAutoCString locale;
+  if (NS_SUCCEEDED(Preferences::GetCString("intl.l10n.pseudo", locale))) {
+    if (locale.EqualsLiteral("bidi")) {
+      return true;
+    }
+    if (locale.EqualsLiteral("accented")) {
+      return false;
+    }
+  }
+
+  GetAppLocaleAsBCP47(locale);
+
   return uloc_isRightToLeft(locale.get());
 }
 
