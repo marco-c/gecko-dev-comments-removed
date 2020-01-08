@@ -21,15 +21,15 @@
 use baldrdash as bd;
 use compile::{symbolic_function_name, wasm_function_name};
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
-use cranelift_codegen::entity::EntityMap;
+use cranelift_codegen::entity::{EntityRef, PrimaryMap, SecondaryMap};
 use cranelift_codegen::ir;
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::InstBuilder;
-use cranelift_codegen::isa::TargetIsa;
+use cranelift_codegen::isa::{CallConv, TargetFrontendConfig, TargetIsa};
 use cranelift_codegen::packed_option::PackedOption;
-use cranelift_codegen::settings::{CallConv, Flags};
+use cranelift_codegen::settings::Flags;
 use cranelift_wasm::{
-    self, FuncIndex, GlobalIndex, MemoryIndex, SignatureIndex, TableIndex, WasmResult,
+    self, FuncIndex, GlobalIndex, MemoryIndex, ReturnMode, SignatureIndex, TableIndex, WasmResult,
 };
 use std::collections::HashMap;
 use target_lexicon::Triple;
@@ -56,6 +56,11 @@ pub fn native_pointer_size() -> i32 {
 fn offset32(offset: usize) -> ir::immediates::Offset32 {
     assert!(offset <= i32::max_value() as usize);
     (offset as i32).into()
+}
+
+
+fn imm64(offset: usize) -> ir::immediates::Imm64 {
+    (offset as i64).into()
 }
 
 
@@ -102,7 +107,7 @@ pub struct TransEnv<'a, 'b, 'c> {
 
     
     
-    tables: Vec<TableInfo>,
+    tables: PrimaryMap<TableIndex, TableInfo>,
 
     
     
@@ -118,7 +123,10 @@ pub struct TransEnv<'a, 'b, 'c> {
     
     
     
-    func_gvs: EntityMap<FuncIndex, PackedOption<ir::GlobalValue>>,
+    func_gvs: SecondaryMap<FuncIndex, PackedOption<ir::GlobalValue>>,
+
+    
+    vmctx_gv: PackedOption<ir::GlobalValue>,
 
     
     
@@ -149,9 +157,10 @@ impl<'a, 'b, 'c> TransEnv<'a, 'b, 'c> {
             isa,
             env,
             static_env,
-            tables: Vec::new(),
+            tables: PrimaryMap::new(),
             signatures: HashMap::new(),
-            func_gvs: EntityMap::new(),
+            func_gvs: SecondaryMap::new(),
+            vmctx_gv: None.into(),
             instance_gv: None.into(),
             interrupt_gv: None.into(),
             symbolic: [None.into(); 2],
@@ -161,21 +170,38 @@ impl<'a, 'b, 'c> TransEnv<'a, 'b, 'c> {
     }
 
     
+    fn get_vmctx_gv(&mut self, func: &mut ir::Function) -> ir::GlobalValue {
+        match self.vmctx_gv.expand() {
+            Some(gv) => gv,
+            None => {
+                
+                let gv = func.create_global_value(ir::GlobalValueData::VMContext);
+                self.vmctx_gv = Some(gv).into();
+                gv
+            }
+        }
+    }
+
+    
     
     fn get_table(&mut self, func: &mut ir::Function, table: TableIndex) -> TableInfo {
         
-        while self.tables.len() <= table {
-            let wtab = self.env.table(self.tables.len());
-            self.tables.push(TableInfo::new(wtab, func));
+        let vmctx = self.get_vmctx_gv(func);
+        while self.tables.len() <= table.index() {
+            let wtab = self.env.table(TableIndex::new(self.tables.len()));
+            self.tables.push(TableInfo::new(wtab, func, vmctx));
         }
         self.tables[table].clone()
     }
 
     
     fn sig_global(&mut self, func: &mut ir::Function, offset: usize) -> ir::GlobalValue {
+        let vmctx = self.get_vmctx_gv(func);
         *self.signatures.entry(offset as i32).or_insert_with(|| {
-            func.create_global_value(ir::GlobalValueData::VMContext {
-                offset: offset32(offset),
+            func.create_global_value(ir::GlobalValueData::IAddImm {
+                base: vmctx,
+                offset: imm64(offset),
+                global_type: native_pointer_type(),
             })
         })
     }
@@ -187,8 +213,11 @@ impl<'a, 'b, 'c> TransEnv<'a, 'b, 'c> {
             return gv;
         }
         
-        let gv = func.create_global_value(ir::GlobalValueData::VMContext {
-            offset: offset32(self.env.func_import_tls_offset(index)),
+        let vmctx = self.get_vmctx_gv(func);
+        let gv = func.create_global_value(ir::GlobalValueData::IAddImm {
+            base: vmctx,
+            offset: imm64(self.env.func_import_tls_offset(index)),
+            global_type: native_pointer_type(),
         });
         
         self.func_gvs[index] = gv.into();
@@ -201,11 +230,12 @@ impl<'a, 'b, 'c> TransEnv<'a, 'b, 'c> {
             Some(gv) => gv,
             None => {
                 
-                let gv = pos
-                    .func
-                    .create_global_value(ir::GlobalValueData::VMContext {
-                        offset: offset32(self.static_env.instanceTlsOffset),
-                    });
+                let vmctx = self.get_vmctx_gv(pos.func);
+                let gv = pos.func.create_global_value(ir::GlobalValueData::IAddImm {
+                    base: vmctx,
+                    offset: imm64(self.static_env.instanceTlsOffset),
+                    global_type: native_pointer_type(),
+                });
                 self.instance_gv = gv.into();
                 gv
             }
@@ -221,11 +251,12 @@ impl<'a, 'b, 'c> TransEnv<'a, 'b, 'c> {
             Some(gv) => gv,
             None => {
                 
-                let gv = pos
-                    .func
-                    .create_global_value(ir::GlobalValueData::VMContext {
-                        offset: offset32(self.static_env.interruptTlsOffset),
-                    });
+                let vmctx = self.get_vmctx_gv(pos.func);
+                let gv = pos.func.create_global_value(ir::GlobalValueData::IAddImm {
+                    base: vmctx,
+                    offset: imm64(self.static_env.interruptTlsOffset),
+                    global_type: native_pointer_type(),
+                });
                 self.interrupt_gv = gv.into();
                 gv
             }
@@ -264,17 +295,23 @@ impl<'a, 'b, 'c> TransEnv<'a, 'b, 'c> {
     
     fn switch_to_wasm_tls_realm(&mut self, pos: &mut FuncCursor) {
         if self.cx_addr.is_none() {
+            let vmctx = self.get_vmctx_gv(&mut pos.func);
             self.cx_addr = pos
                 .func
-                .create_global_value(ir::GlobalValueData::VMContext {
-                    offset: offset32(self.static_env.cxTlsOffset),
+                .create_global_value(ir::GlobalValueData::IAddImm {
+                    base: vmctx,
+                    offset: imm64(self.static_env.cxTlsOffset),
+                    global_type: native_pointer_type(),
                 }).into();
         }
         if self.realm_addr.is_none() {
+            let vmctx = self.get_vmctx_gv(&mut pos.func);
             self.realm_addr = pos
                 .func
-                .create_global_value(ir::GlobalValueData::VMContext {
-                    offset: offset32(self.static_env.realmTlsOffset),
+                .create_global_value(ir::GlobalValueData::IAddImm {
+                    base: vmctx,
+                    offset: imm64(self.static_env.realmTlsOffset),
+                    global_type: native_pointer_type(),
                 }).into();
         }
 
@@ -337,12 +374,8 @@ impl<'a, 'b, 'c> TransEnv<'a, 'b, 'c> {
 }
 
 impl<'a, 'b, 'c> cranelift_wasm::FuncEnvironment for TransEnv<'a, 'b, 'c> {
-    fn flags(&self) -> &Flags {
-        self.isa.flags()
-    }
-
-    fn triple(&self) -> &Triple {
-        self.isa.triple()
+    fn target_config(&self) -> TargetFrontendConfig {
+        self.isa.frontend_config()
     }
 
     fn pointer_type(&self) -> ir::Type {
@@ -364,16 +397,23 @@ impl<'a, 'b, 'c> cranelift_wasm::FuncEnvironment for TransEnv<'a, 'b, 'c> {
             cranelift_wasm::GlobalVariable::Const(global.emit_constant(&mut pos))
         } else {
             
-            let offset = offset32(global.tls_offset());
-            let mut gv = func.create_global_value(ir::GlobalValueData::VMContext { offset });
+            let offset = global.tls_offset();
+            let mut gv = self.get_vmctx_gv(func);
 
             
             
             if global.is_indirect() {
-                gv = func.create_global_value(ir::GlobalValueData::Deref {
+                gv = func.create_global_value(ir::GlobalValueData::Load {
                     base: gv,
-                    offset: offset32(0),
-                    memory_type: native_pointer_type(),
+                    offset: offset32(offset),
+                    global_type: native_pointer_type(),
+                    readonly: false,
+                });
+            } else {
+                gv = func.create_global_value(ir::GlobalValueData::IAddImm {
+                    base: gv,
+                    offset: imm64(offset),
+                    global_type: native_pointer_type(),
                 });
             }
 
@@ -387,18 +427,19 @@ impl<'a, 'b, 'c> cranelift_wasm::FuncEnvironment for TransEnv<'a, 'b, 'c> {
     }
 
     fn make_heap(&mut self, func: &mut ir::Function, index: MemoryIndex) -> ir::Heap {
-        assert_eq!(index, 0, "Only one WebAssembly memory supported");
+        assert_eq!(index.index(), 0, "Only one WebAssembly memory supported");
         
-        let base_addr =
-            func.create_global_value(ir::GlobalValueData::VMContext { offset: 0.into() });
+        let base_addr = self.get_vmctx_gv(func);
         
-        let base = func.create_global_value(ir::GlobalValueData::Deref {
+        
+        let base = func.create_global_value(ir::GlobalValueData::Load {
             base: base_addr,
             offset: offset32(0),
-            memory_type: native_pointer_type(),
+            global_type: native_pointer_type(),
+            readonly: true,
         });
         let min_size = ir::immediates::Imm64::new(self.env.min_memory_length());
-        let guard_size = ir::immediates::Imm64::new(self.static_env.memoryGuardSize as i64);
+        let guard_size = imm64(self.static_env.memoryGuardSize);
 
         let bound = self.static_env.staticMemoryBound;
         let style = if bound > 0 {
@@ -406,14 +447,12 @@ impl<'a, 'b, 'c> cranelift_wasm::FuncEnvironment for TransEnv<'a, 'b, 'c> {
             let bound = (bound as i64).into();
             ir::HeapStyle::Static { bound }
         } else {
-            let offset = native_pointer_size().into();
             
-            let bound_gv_addr = func.create_global_value(ir::GlobalValueData::VMContext { offset });
-            
-            let bound_gv = func.create_global_value(ir::GlobalValueData::Deref {
-                base: bound_gv_addr,
-                offset: offset32(0),
-                memory_type: ir::types::I32,
+            let bound_gv = func.create_global_value(ir::GlobalValueData::Load {
+                base: base_addr,
+                offset: native_pointer_size().into(),
+                global_type: ir::types::I32,
+                readonly: false,
             });
             ir::HeapStyle::Dynamic { bound_gv }
         };
@@ -448,16 +487,18 @@ impl<'a, 'b, 'c> cranelift_wasm::FuncEnvironment for TransEnv<'a, 'b, 'c> {
 
         
         
-        let bound_gv = func.create_global_value(ir::GlobalValueData::Deref {
+        let bound_gv = func.create_global_value(ir::GlobalValueData::Load {
             base: table_desc.global,
             offset: 0.into(),
-            memory_type: ir::types::I32,
+            global_type: ir::types::I32,
+            readonly: false,
         });
 
-        let base_gv = func.create_global_value(ir::GlobalValueData::Deref {
+        let base_gv = func.create_global_value(ir::GlobalValueData::Load {
             base: table_desc.global,
-            offset: native_pointer_size().into(),
-            memory_type: native_pointer_type(),
+            offset: offset32(native_pointer_size() as usize),
+            global_type: native_pointer_type(),
+            readonly: false,
         });
 
         func.create_table(ir::TableData {
@@ -496,7 +537,7 @@ impl<'a, 'b, 'c> cranelift_wasm::FuncEnvironment for TransEnv<'a, 'b, 'c> {
 
         
         
-        assert_eq!(table_index, 0);
+        assert_eq!(table_index.index(), 0);
         let wtable = self.get_table(pos.func, table_index);
 
         
@@ -586,7 +627,7 @@ impl<'a, 'b, 'c> cranelift_wasm::FuncEnvironment for TransEnv<'a, 'b, 'c> {
 
         let call = pos
             .ins()
-            .CallIndirect(ir::Opcode::CallIndirect, ir::types::VOID, sig_ref, args)
+            .CallIndirect(ir::Opcode::CallIndirect, ir::types::INVALID, sig_ref, args)
             .0;
         self.switch_to_wasm_tls_realm(&mut pos);
         Ok(call)
@@ -636,7 +677,7 @@ impl<'a, 'b, 'c> cranelift_wasm::FuncEnvironment for TransEnv<'a, 'b, 'c> {
             let sig = pos.func.dfg.ext_funcs[callee].signature;
             let call = pos
                 .ins()
-                .CallIndirect(ir::Opcode::CallIndirect, ir::types::VOID, sig, args)
+                .CallIndirect(ir::Opcode::CallIndirect, ir::types::INVALID, sig, args)
                 .0;
             self.switch_to_wasm_tls_realm(&mut pos);
             Ok(call)
@@ -652,7 +693,7 @@ impl<'a, 'b, 'c> cranelift_wasm::FuncEnvironment for TransEnv<'a, 'b, 'c> {
 
             Ok(pos
                 .ins()
-                .Call(ir::Opcode::Call, ir::types::VOID, callee, args)
+                .Call(ir::Opcode::Call, ir::types::INVALID, callee, args)
                 .0)
         }
     }
@@ -732,6 +773,12 @@ impl<'a, 'b, 'c> cranelift_wasm::FuncEnvironment for TransEnv<'a, 'b, 'c> {
         let interrupt = self.load_interrupt_flag(&mut pos);
         pos.ins().trapnz(interrupt, ir::TrapCode::Interrupt);
     }
+
+    fn return_mode(&self) -> ReturnMode {
+        
+        
+        ReturnMode::FallthroughReturn
+    }
 }
 
 
@@ -749,12 +796,16 @@ struct TableInfo {
 
 impl TableInfo {
     
-    pub fn new(wtab: bd::TableDesc, func: &mut ir::Function) -> TableInfo {
+    pub fn new(wtab: bd::TableDesc, func: &mut ir::Function, vmctx: ir::GlobalValue) -> TableInfo {
         
         let offset = wtab.tls_offset();
         assert!(offset < i32::max_value() as usize);
-        let offset = (offset as i32).into();
-        let global = func.create_global_value(ir::GlobalValueData::VMContext { offset });
+        let offset = imm64(offset);
+        let global = func.create_global_value(ir::GlobalValueData::IAddImm {
+            base: vmctx,
+            offset,
+            global_type: native_pointer_type(),
+        });
 
         TableInfo {
             global,
