@@ -500,6 +500,15 @@ class TabBase {
 
 
 
+  get successorTabId() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
 
 
 
@@ -609,6 +618,7 @@ class TabBase {
       isArticle: this.isArticle,
       isInReaderMode: this.isInReaderMode,
       sharingState: this.sharingState,
+      successorTabId: this.successorTabId,
     };
 
     

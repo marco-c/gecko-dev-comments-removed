@@ -780,6 +780,11 @@ class Tab extends TabBase {
     return this.url && this.url.startsWith(READER_MODE_PREFIX);
   }
 
+  get successorTabId() {
+    const {successor} = this.nativeTab;
+    return successor ? tabTracker.getId(successor) : -1;
+  }
+
   
 
 
