@@ -156,8 +156,6 @@ class BytecodeLocation
 
     
     
-    
-    
     BytecodeLocation getTableSwitchCaseByIndex(size_t index) const {
         MOZ_ASSERT(is(JSOP_TABLESWITCH));
         RawBytecode offsetLoc = rawBytecode_ +

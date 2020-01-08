@@ -1951,10 +1951,7 @@ ControlFlowGenerator::processTableSwitch(JSOp op, jssrcnote* sn)
         MOZ_ASSERT(casepc >= pc && casepc <= exitpc);
         CFGBlock* caseBlock;
 
-        if (casepc == pc) {
-            
-            
-            
+        if (casepc == defaultpc) {
             
             caseBlock = CFGBlock::New(alloc(), defaultpc);
             caseBlock->setStopIns(CFGGoto::New(alloc(), defaultcase));

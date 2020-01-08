@@ -324,12 +324,12 @@ LCovSource::writeScript(JSScript* script)
 
             
             size_t caseId = 0;
+            bool tableJumpsToDefault = false;
             for (size_t i = 0; i < numCases; i++) {
                 jsbytecode* casepc = pc + GET_JUMP_OFFSET(jumpTable + JUMP_OFFSET_LEN * i);
                 MOZ_ASSERT(script->code() <= casepc && casepc < end);
-                
-                if (casepc == pc) {
-                    continue;
+                if (casepc == defaultpc) {
+                    tableJumpsToDefault = true;
                 }
 
                 
@@ -393,7 +393,11 @@ LCovSource::writeScript(JSScript* script)
             
             
             bool defaultHasOwnClause = true;
-            if (defaultpc != exitpc) {
+            if (tableJumpsToDefault) {
+                
+                
+                defaultHasOwnClause = false;
+            } else if (defaultpc != exitpc) {
                 defaultHits = 0;
 
                 
@@ -402,18 +406,10 @@ LCovSource::writeScript(JSScript* script)
                 for (size_t j = 0; j < numCases; j++) {
                     jsbytecode* testpc = pc + GET_JUMP_OFFSET(jumpTable + JUMP_OFFSET_LEN * j);
                     MOZ_ASSERT(script->code() <= testpc && testpc < end);
-                    if (lastcasepc < testpc && testpc <= defaultpc) {
+                    if (lastcasepc < testpc && testpc < defaultpc) {
                         lastcasepc = testpc;
                         foundLastCase = true;
                     }
-                }
-
-                
-                
-                
-                
-                if (foundLastCase && lastcasepc == defaultpc) {
-                    defaultHasOwnClause = false;
                 }
 
                 
