@@ -1023,6 +1023,12 @@ pref("security.sandbox.gpu.level", 0);
 pref("security.sandbox.gmp.win32k-disable", false);
 #endif
 
+#if defined(NIGHTLY_BUILD) && defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+
+
+pref("security.sandbox.content.mac.earlyinit", false);
+#endif
+
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX) && defined(MOZ_CONTENT_SANDBOX)
 
 
