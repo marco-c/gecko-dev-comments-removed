@@ -73,9 +73,8 @@ void UpdateLog::Init(NS_tchar* sourcePath,
       (dstFilePathLen <
          static_cast<int>(sizeof(mDstFilePath)/sizeof(mDstFilePath[0])))) {
 #ifdef XP_WIN
-    if (GetTempFileNameW(sourcePath, L"log", 0, mTmpFilePath) != 0) {
+    if (GetUUIDTempFilePath(sourcePath, L"log", mTmpFilePath)) {
       logFP = NS_tfopen(mTmpFilePath, NS_T("w"));
-
       
       
       DeleteFileW(mDstFilePath);

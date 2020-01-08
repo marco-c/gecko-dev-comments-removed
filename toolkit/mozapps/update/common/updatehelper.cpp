@@ -267,13 +267,53 @@ PathAppendSafe(LPWSTR base, LPCWSTR extra)
 
 
 
+
+
+
+BOOL
+GetUUIDTempFilePath(LPCWSTR basePath, LPCWSTR prefix, LPWSTR tmpPath)
+{
+  WCHAR filename[MAX_PATH + 1] = { L"\0" };
+  if (prefix) {
+    wcsncpy(filename, prefix, MAX_PATH);
+  }
+
+  UUID tmpFileNameUuid;
+  RPC_WSTR tmpFileNameString = nullptr;
+  if (UuidCreate(&tmpFileNameUuid) != RPC_S_OK) {
+    return FALSE;
+  }
+  if (UuidToStringW(&tmpFileNameUuid, &tmpFileNameString) != RPC_S_OK) {
+    return FALSE;
+  }
+  if (!tmpFileNameString) {
+    return FALSE;
+  }
+
+  wcsncat(filename, (LPCWSTR)tmpFileNameString, MAX_PATH);
+  RpcStringFreeW(&tmpFileNameString);
+
+  wcsncpy(tmpPath, basePath, MAX_PATH);
+  if (!PathAppendSafe(tmpPath, filename)) {
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+
+
+
+
+
+
 BOOL
 WriteStatusFailure(LPCWSTR updateDirPath, int errorCode)
 {
   
   
   WCHAR tmpUpdateStatusFilePath[MAX_PATH + 1] = { L'\0' };
-  if (GetTempFileNameW(updateDirPath, L"svc", 0, tmpUpdateStatusFilePath) == 0) {
+  if (!GetUUIDTempFilePath(updateDirPath, L"svc", tmpUpdateStatusFilePath)) {
     return FALSE;
   }
 
