@@ -253,7 +253,13 @@ class Moof final : public Atom {
   Result<Ok, nsresult> ParseTrun(Box& aBox, Mvhd& aMvhd, Mdhd& aMdhd,
                                  Edts& aEdts, uint64_t* aDecodeTime,
                                  bool aIsAudio);
-  bool ProcessCenc();
+  
+  
+  
+  
+  
+  
+  bool ProcessCencAuxInfo(AtomType aScheme);
   uint64_t mMaxRoundingError;
 };
 
