@@ -102,8 +102,6 @@ class JSTerm extends Component {
     this.onContextMenu = this.onContextMenu.bind(this);
     this.imperativeUpdate = this.imperativeUpdate.bind(this);
 
-    this.SELECTED_FRAME = -1;
-
     
 
 
@@ -350,7 +348,7 @@ class JSTerm extends Component {
 
             "Ctrl-Space": () => {
               if (!this.autocompletePopup.isOpen) {
-                this.fetchAutocompletionProperties(true);
+                this.props.autocompleteUpdate(true);
                 return null;
               }
 
@@ -578,7 +576,6 @@ class JSTerm extends Component {
     executeString = mappedExpressionRes ? mappedExpressionRes.expression : executeString;
 
     const options = {
-      frame: this.SELECTED_FRAME,
       selectedNodeActor,
       mapped: mappedExpressionRes ? mappedExpressionRes.mapped : null,
     };
@@ -611,12 +608,6 @@ class JSTerm extends Component {
 
 
 
-
-
-
-
-
-
   requestEvaluation(str, options = {}) {
     
     
@@ -624,13 +615,8 @@ class JSTerm extends Component {
       "lines": str.split(/\n/).length,
     });
 
-    let frameActor = null;
-    if ("frame" in options) {
-      frameActor = this.getFrameActor(options.frame);
-    }
-
     return this.webConsoleClient.evaluateJSAsync(str, null, {
-      frameActor,
+      frameActor: this.props.serviceContainer.getFrameActor(options.frame),
       ...options,
     });
   }
@@ -648,30 +634,6 @@ class JSTerm extends Component {
   copyObject(evalString, evalOptions) {
     return this.webConsoleClient.evaluateJSAsync(`copy(${evalString})`,
       null, evalOptions);
-  }
-
-  
-
-
-
-
-
-
-
-  getFrameActor(frame) {
-    const state = this.hud.owner.getDebuggerFrames();
-    if (!state) {
-      return null;
-    }
-
-    let grip;
-    if (frame == this.SELECTED_FRAME) {
-      grip = state.frames[state.selected];
-    } else {
-      grip = state.frames[frame];
-    }
-
-    return grip ? grip.actor : null;
   }
 
   
@@ -786,7 +748,7 @@ class JSTerm extends Component {
     const value = this.getInputValue();
     if (this.lastInputValue !== value) {
       this.resizeInput();
-      this.fetchAutocompletionProperties();
+      this.props.autocompleteUpdate();
       this.lastInputValue = value;
     }
   }
@@ -873,7 +835,7 @@ class JSTerm extends Component {
 
       if (event.key === " " && !this.autocompletePopup.isOpen) {
         
-        this.fetchAutocompletionProperties(true);
+        this.props.autocompleteUpdate(true);
         event.preventDefault();
       }
 
@@ -1136,47 +1098,6 @@ class JSTerm extends Component {
 
 
 
-  async fetchAutocompletionProperties(force = false) {
-    const inputValue = this.getInputValue();
-    const frameActorId = this.getFrameActor(this.SELECTED_FRAME);
-    const cursor = this.getSelectionStart();
-
-    const {editor, inputNode} = this;
-    if (
-      (inputNode && inputNode.selectionStart != inputNode.selectionEnd) ||
-      (editor && editor.getSelection())
-    ) {
-      this.clearCompletion();
-      this.emit("autocomplete-updated");
-      return;
-    }
-
-    let selectedNodeActor = null;
-    const inspectorSelection = this.hud.owner.getInspectorSelection();
-    if (inspectorSelection && inspectorSelection.nodeFront) {
-      selectedNodeActor = inspectorSelection.nodeFront.actorID;
-    }
-
-    this.props.autocompleteUpdate({
-      inputValue,
-      cursor,
-      frameActorId,
-      force,
-      client: this.webConsoleClient,
-      selectedNodeActor,
-    });
-  }
-
-  
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1321,6 +1242,7 @@ class JSTerm extends Component {
         this.autocompletePopup.hidePopup();
       }
     }
+    this.emit("autocomplete-updated");
   }
 
   
@@ -1636,14 +1558,11 @@ function mapStateToProps(state) {
 
 function mapDispatchToProps(dispatch) {
   return {
-
     appendToHistory: (expr) => dispatch(historyActions.appendToHistory(expr)),
     clearHistory: () => dispatch(historyActions.clearHistory()),
     updateHistoryPosition: (direction, expression) =>
       dispatch(historyActions.updateHistoryPosition(direction, expression)),
-    autocompleteUpdate: options => dispatch(
-      autocompleteActions.autocompleteUpdate(options)
-    ),
+    autocompleteUpdate: force => dispatch(autocompleteActions.autocompleteUpdate(force)),
     autocompleteBailOut: () => dispatch(autocompleteActions.autocompleteBailOut()),
   };
 }

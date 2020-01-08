@@ -17,23 +17,18 @@ const {
 
 
 
+function autocompleteUpdate(force) {
+  return ({dispatch, getState, services}) => {
+    if (services.inputHasSelection()) {
+      return dispatch(autocompleteClear());
+    }
 
+    const inputValue = services.getInputValue();
+    const frameActorId = services.getFrameActor();
+    const cursor = services.getInputCursor();
 
-
-
-
-
-function autocompleteUpdate({
-  inputValue,
-  cursor,
-  client,
-  frameActorId,
-  force,
-  selectedNodeActor,
-}) {
-  return ({dispatch, getState}) => {
-    const {cache} = getState().autocomplete;
-
+    const state = getState().autocomplete;
+    const { cache } = state;
     if (!force && (
       !inputValue ||
       /^[a-zA-Z0-9_$]/.test(inputValue.substring(cursor))
@@ -56,8 +51,7 @@ function autocompleteUpdate({
     return dispatch(autocompleteDataFetch({
       input,
       frameActorId,
-      client,
-      selectedNodeActor,
+      client: services.getWebConsoleClient(),
     }));
   };
 }
@@ -97,14 +91,13 @@ function generateRequestId() {
 
 
 
-
 function autocompleteDataFetch({
   input,
   frameActorId,
   client,
-  selectedNodeActor,
 }) {
-  return ({dispatch}) => {
+  return ({dispatch, services}) => {
+    const selectedNodeActor = services.getSelectedNodeActor();
     const id = generateRequestId();
     dispatch({type: AUTOCOMPLETE_PENDING_REQUEST, id});
     client.autocomplete(input, undefined, frameActorId, selectedNodeActor).then(res => {
