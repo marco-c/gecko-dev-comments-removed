@@ -21,8 +21,7 @@ add_task(async function test_search() {
     
     
     
-    Assert.greater(this.document.getElementById("prefs").childElementCount,
-                   prefArray.length - 50);
+    Assert.greater(this.rows.length, prefArray.length - 50);
 
     
     
@@ -37,8 +36,7 @@ add_task(async function test_search() {
     
     
     
-    Assert.equal(this.document.getElementById("prefs").childElementCount,
-                 filteredPrefArray.length + 1);
+    Assert.equal(this.rows.length, filteredPrefArray.length + 1);
 
     
     search.value = "";
@@ -50,8 +48,7 @@ add_task(async function test_search() {
     
     
     
-    Assert.greater(this.document.getElementById("prefs").childElementCount,
-                   prefArray.length - 50);
+    Assert.greater(this.rows.length, prefArray.length - 50);
 
     
     search.value = "aJunkValueasdf";
@@ -59,15 +56,13 @@ add_task(async function test_search() {
     EventUtils.sendKey("return");
 
     
-    Assert.equal(this.document.getElementById("prefs").childElementCount,
-                 1);
+    Assert.equal(this.rows.length, 1);
 
     
     search.value = "test.aboutconfig.a";
     search.focus();
     EventUtils.sendKey("return");
 
-    Assert.equal(this.document.getElementById("prefs").childElementCount,
-                 2);
+    Assert.equal(this.rows.length, 2);
   });
 });
