@@ -1,5 +1,4 @@
-if (!('oomTest' in this))
-    quit();
+
 function g(f, params) {
     entryPoints(params);
 }

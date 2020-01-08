@@ -1,7 +1,4 @@
 
-if (typeof oomAfterAllocations != "function")
-  quit();
-
 lfcode = new Array();
 oomAfterAllocations(100);
 loadFile(file);

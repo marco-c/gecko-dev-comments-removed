@@ -1,5 +1,4 @@
-if (!('oomTest' in this))
-  quit();
+
 
 oomTest(() => {
     var max = 400;

@@ -1,5 +1,4 @@
-if (!('oomTest' in this))
-    quit();
+
 oomTest(function() {
   eval(`var clonebuffer = serialize("abc");
   clonebuffer.clonebuffer = "\

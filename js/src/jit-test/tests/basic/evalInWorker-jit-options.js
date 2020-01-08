@@ -1,5 +1,4 @@
-if (helperThreadCount() === 0)
-    quit();
+
 var fun = function() {
     var ex;
     try {

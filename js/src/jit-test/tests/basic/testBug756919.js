@@ -1,5 +1,3 @@
-if (!('oomTest' in this))
-    quit();
 
 function test(x) {
     var upvar = "";

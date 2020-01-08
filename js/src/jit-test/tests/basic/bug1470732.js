@@ -1,5 +1,3 @@
-if (helperThreadCount() === 0)
-    quit();
 
 var i = 0;
 while(i++ < 500) {

@@ -1,5 +1,4 @@
-if (helperThreadCount() == 0)
-    quit();
+
 function eval(source) {
     offThreadCompileModule(source);
 }

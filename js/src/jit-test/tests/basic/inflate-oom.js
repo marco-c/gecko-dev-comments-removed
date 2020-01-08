@@ -1,5 +1,4 @@
-if (!('oomTest' in this))
-    quit();
+
 function test() {
     function foo() {
         return 1;

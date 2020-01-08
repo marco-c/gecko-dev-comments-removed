@@ -1,8 +1,7 @@
 
 
 
-if (typeof dumpStringRepresentation !== 'function')
-  quit(0);
+
 
 print("Empty string:");
 dumpStringRepresentation("");

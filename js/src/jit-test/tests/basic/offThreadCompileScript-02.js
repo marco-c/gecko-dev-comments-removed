@@ -1,7 +1,6 @@
 
 
-if (helperThreadCount() === 0)
-  quit(0);
+
 
 offThreadCompileScript('Error()');
 assertEq(!!runOffThreadScript().stack.match(/^@<string>:1:1\n/), true);

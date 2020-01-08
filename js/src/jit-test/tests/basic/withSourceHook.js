@@ -1,12 +1,9 @@
 
 
 
+
+
 load(libdir + 'asserts.js');
-
-
-
-if (typeof withSourceHook != 'function')
-  quit(0);
 
 var log = '';
 

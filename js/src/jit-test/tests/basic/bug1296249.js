@@ -1,7 +1,4 @@
 
-if (!('oomTest' in this))
-    quit();
-
 function f(x) {
     new Int32Array(x);
 }
