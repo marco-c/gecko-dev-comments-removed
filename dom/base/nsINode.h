@@ -646,21 +646,21 @@ public:
 
 
 
-
-
-
-  nsIDocument* GetComposedDoc() const
+  bool IsInComposedDoc() const
   {
-    return IsInShadowTree() ?
-      GetComposedDocInternal() : GetUncomposedDoc();
+    return GetBoolFlag(IsConnected);
   }
 
   
 
 
-  bool IsInComposedDoc() const
+
+
+
+
+  nsIDocument* GetComposedDoc() const
   {
-    return IsInUncomposedDoc() || (IsInShadowTree() && GetComposedDocInternal());
+    return IsInComposedDoc() ? OwnerDoc() : nullptr;
   }
 
   
@@ -1418,8 +1418,6 @@ private:
 
   mozilla::dom::SVGUseElement* DoGetContainingSVGUseShadowHost() const;
 
-  nsIDocument* GetComposedDocInternal() const;
-
   nsIContent* GetNextNodeImpl(const nsINode* aRoot,
                               const bool aSkipChildren) const
   {
@@ -1502,6 +1500,9 @@ private:
     
     IsInDocument,
     
+    
+    IsConnected,
+    
     ParentIsContent,
     
     NodeIsElement,
@@ -1555,8 +1556,6 @@ private:
     NodeAncestorHasDirAuto,
     
     NodeHandlingClick,
-    
-    NodeHasRelevantHoverRules,
     
     
     ElementHasWeirdParserInsertionMode,
@@ -1680,8 +1679,6 @@ public:
   
   inline bool NodeOrAncestorHasDirAuto() const;
 
-  bool HasRelevantHoverRules() const { return GetBoolFlag(NodeHasRelevantHoverRules); }
-  void SetHasRelevantHoverRules() { SetBoolFlag(NodeHasRelevantHoverRules); }
   void SetParserHasNotified() { SetBoolFlag(ParserHasNotified); };
   bool HasParserNotified() { return GetBoolFlag(ParserHasNotified); }
 
@@ -1700,8 +1697,9 @@ public:
 protected:
   void SetParentIsContent(bool aValue) { SetBoolFlag(ParentIsContent, aValue); }
   void SetIsInDocument() { SetBoolFlag(IsInDocument); }
-  void SetNodeIsContent() { SetBoolFlag(NodeIsContent); }
   void ClearInDocument() { ClearBoolFlag(IsInDocument); }
+  void SetIsConnected(bool aConnected) { SetBoolFlag(IsConnected, aConnected); }
+  void SetNodeIsContent() { SetBoolFlag(NodeIsContent); }
   void SetIsElement() { SetBoolFlag(NodeIsElement); }
   void SetHasID() { SetBoolFlag(ElementHasID); }
   void ClearHasID() { ClearBoolFlag(ElementHasID); }
