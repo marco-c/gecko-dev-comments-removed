@@ -1474,23 +1474,25 @@ public:
       nsRect visible = aVisibleRect;
       nsRect dirtyRectRelativeToDirtyFrame = aDirtyRect;
 
-      if (nsLayoutUtils::IsFixedPosFrameInDisplayPort(aFrame) &&
-          aBuilder->IsPaintingToWindow()) {
-        
-        
-        nsIPresShell* ps = aFrame->PresShell();
-        if (ps->IsVisualViewportSizeSet()) {
-          dirtyRectRelativeToDirtyFrame =
-            nsRect(nsPoint(0, 0), ps->GetVisualViewportSize());
-          visible = dirtyRectRelativeToDirtyFrame;
 #ifdef MOZ_WIDGET_ANDROID
-        } else {
-          dirtyRectRelativeToDirtyFrame =
-            nsRect(nsPoint(0, 0), aFrame->GetParent()->GetSize());
-          visible = dirtyRectRelativeToDirtyFrame;
-#endif
+        if (nsLayoutUtils::IsFixedPosFrameInDisplayPort(aFrame) &&
+            aBuilder->IsPaintingToWindow()) {
+            
+            
+            
+            dirtyRectRelativeToDirtyFrame =
+              nsRect(nsPoint(0, 0), aFrame->GetParent()->GetSize());
+
+            nsIPresShell* ps = aFrame->PresShell();
+            if (ps->IsVisualViewportSizeSet() &&
+                dirtyRectRelativeToDirtyFrame.Size() < ps->GetVisualViewportSize()) {
+                dirtyRectRelativeToDirtyFrame.SizeTo(ps->GetVisualViewportSize());
+            }
+
+            visible = dirtyRectRelativeToDirtyFrame;
         }
-      }
+#endif
+
       *aOutDirtyRect = dirtyRectRelativeToDirtyFrame - aFrame->GetPosition();
       visible -= aFrame->GetPosition();
 

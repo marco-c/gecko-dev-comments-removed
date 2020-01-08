@@ -283,12 +283,12 @@ ViewportFrame::AdjustReflowInputAsContainingBlock(ReflowInput* aReflowInput) con
 
   
   
+  
   nsRect rect(0, 0, aReflowInput->ComputedWidth(), aReflowInput->ComputedHeight());
   nsIPresShell* ps = PresShell();
-  if (ps->IsVisualViewportSizeSet()) {
+  if (ps->IsVisualViewportSizeSet() && rect.Size() < ps->GetVisualViewportSize()) {
     rect.SizeTo(ps->GetVisualViewportSize());
   }
-
   return rect;
 }
 
