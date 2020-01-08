@@ -421,7 +421,6 @@ private:
     
     
     void     ClearPendingQueue(mozilla::LinkedList<RefPtr<nsHostRecord>>& aPendingQ);
-    nsresult ConditionallyCreateThread(nsHostRecord *rec);
 
     
 
@@ -429,7 +428,7 @@ private:
 
     nsresult ConditionallyRefreshRecord(nsHostRecord *rec, const nsACString &host);
 
-    void ThreadFunc();
+    void ResolveHostTask();
 
     enum {
         METHOD_HIT = 1,
@@ -445,7 +444,6 @@ private:
     uint32_t      mDefaultCacheLifetime; 
     uint32_t      mDefaultGracePeriod; 
     mutable Mutex mLock;    
-    CondVar       mIdleTaskCV;
     nsRefPtrHashtable<nsGenericHashKey<nsHostKey>, nsHostRecord> mRecordDB;
     mozilla::LinkedList<RefPtr<nsHostRecord>> mHighQ;
     mozilla::LinkedList<RefPtr<nsHostRecord>> mMediumQ;
@@ -459,7 +457,6 @@ private:
     RefPtr<nsIThreadPool> mResolverThreads;
 
     mozilla::Atomic<bool>     mShutdown;
-    mozilla::Atomic<uint32_t> mNumIdleTasks;
     mozilla::Atomic<uint32_t> mActiveTaskCount;
     mozilla::Atomic<uint32_t> mActiveAnyThreadCount;
     mozilla::Atomic<uint32_t> mPendingCount;
