@@ -60,23 +60,36 @@ const ChangesActor = protocol.ActorClassWithSpec(changesSpec, {
   },
 
   allChanges: function() {
+    
+
+
+
+
+
+    this._changesHaveBeenRequested = true;
     return this.changes.slice();
   },
 
   pushChange: function(change) {
     this.changes.push(change);
-    this.emit("add-change", change);
+    if (this._changesHaveBeenRequested) {
+      this.emit("add-change", change);
+    }
   },
 
   popChange: function() {
     const change = this.changes.pop();
-    this.emit("remove-change", change);
+    if (this._changesHaveBeenRequested) {
+      this.emit("remove-change", change);
+    }
     return change;
   },
 
   clearChanges: function() {
     this.changes.length = 0;
-    this.emit("clear-changes");
+    if (this._changesHaveBeenRequested) {
+      this.emit("clear-changes");
+    }
   },
 });
 
