@@ -1074,6 +1074,18 @@ class TreeMetadataEmitter(LoggingMixin):
                     not context.config.substs.get('MOZ_NO_DEBUG_RTL')):
                 rtl_flag += 'd'
             computed_flags.resolve_flags('RTL', [rtl_flag])
+            
+            
+            
+            
+            
+            
+            
+            code_for_xul = context.get('FINAL_LIBRARY', 'notxul') == 'xul'
+            if context.config.substs.get('CLANG_CL') and code_for_xul:
+                computed_flags.resolve_flags('PROFILE_GEN_DYN_CFLAGS',
+                                             ['-Xclang',
+                                              '-finstrument-functions-after-inlining'])
             if not context.config.substs.get('CROSS_COMPILE'):
                 computed_host_flags.resolve_flags('RTL', [rtl_flag])
 
