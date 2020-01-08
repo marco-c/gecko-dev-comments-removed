@@ -8,11 +8,9 @@ const { Cu } = require("chrome");
 const { dumpn } = require("devtools/shared/DevToolsUtils");
 
 function createTCPSocket(location, port, options) {
-  
   const { TCPSocket } =
     Cu.getGlobalForObject(Cu.import("resource://gre/modules/Services.jsm", {}));
 
-  
   return new TCPSocket(location, port, options);
 }
 
