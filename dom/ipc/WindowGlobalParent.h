@@ -71,6 +71,8 @@ public:
   uint64_t OuterWindowId() { return mOuterWindowId; }
   uint64_t InnerWindowId() { return mInnerWindowId; }
 
+  bool IsCurrentGlobal();
+
   
   
   WindowGlobalParent(const WindowGlobalInit& aInit, bool aInProcess);
@@ -86,6 +88,7 @@ public:
 protected:
   
   mozilla::ipc::IPCResult RecvUpdateDocumentURI(nsIURI* aURI) override;
+  mozilla::ipc::IPCResult RecvBecomeCurrentWindowGlobal() override;
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
