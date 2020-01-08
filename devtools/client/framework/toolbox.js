@@ -63,8 +63,6 @@ loader.lazyRequireGetter(this, "HUDService",
   "devtools/client/webconsole/hudservice", true);
 loader.lazyRequireGetter(this, "viewSource",
   "devtools/client/shared/view-source");
-loader.lazyRequireGetter(this, "StyleSheetsFront",
-  "devtools/shared/fronts/stylesheets", true);
 loader.lazyRequireGetter(this, "buildHarLog",
   "devtools/client/netmonitor/src/har/har-builder-utils", true);
 loader.lazyRequireGetter(this, "getKnownDeviceFront",
@@ -125,7 +123,6 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId,
 
   this._initInspector = null;
   this._inspector = null;
-  this._styleSheets = null;
   this._netMonitorAPI = null;
 
   
@@ -2939,12 +2936,6 @@ Toolbox.prototype = {
     outstanding.push(this.destroyPreference());
 
     
-    if (this._styleSheets) {
-      this._styleSheets.destroy();
-      this._styleSheets = null;
-    }
-
-    
     
     
     const deviceFront = getKnownDeviceFront(this.target.client);
@@ -3132,17 +3123,6 @@ Toolbox.prototype = {
     this.performance.off("*", this._onPerformanceFrontEvent);
     await this.performance.destroy();
     this._performance = null;
-  },
-
-  
-
-
-
-  initStyleSheetsFront: function() {
-    if (!this._styleSheets && this.target.hasActor("styleSheets")) {
-      this._styleSheets = StyleSheetsFront(this.target.client, this.target.form);
-    }
-    return this._styleSheets;
   },
 
   

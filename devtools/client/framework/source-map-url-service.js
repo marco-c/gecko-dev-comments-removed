@@ -53,30 +53,33 @@ function SourceMapURLService(toolbox, sourceMapService) {
 
 SourceMapURLService.prototype._getLoadingPromise = function() {
   if (!this._loadingPromise) {
-    let styleSheetsLoadingPromise = null;
-    this._stylesheetsFront = this._toolbox.initStyleSheetsFront();
-    if (this._stylesheetsFront) {
+    this._loadingPromise = (async () => {
+      if (this._target.isWorkerTarget) {
+        return;
+      }
+      this._stylesheetsFront = await this._target.getFront("stylesheets");
       this._stylesheetsFront.on("stylesheet-added", this._onNewStyleSheet);
-      styleSheetsLoadingPromise =
+      const styleSheetsLoadingPromise =
           this._stylesheetsFront.getStyleSheets().then(sheets => {
             sheets.forEach(this._onNewStyleSheet);
           }, () => {
             
           });
-    }
 
-    
-    const loadingPromise = this._toolbox.threadClient.getSources().then(({sources}) => {
       
-      
-      for (const source of sources) {
-        this._onSourceUpdated({source});
-      }
-    }, e => {
-      
-    });
+      const loadingPromise = this._toolbox.threadClient.getSources().then(({sources}) => {
+        
+        
+        for (const source of sources) {
+          this._onSourceUpdated({source});
+        }
+      }, e => {
+        
+      });
 
-    this._loadingPromise = Promise.all([styleSheetsLoadingPromise, loadingPromise]);
+      await styleSheetsLoadingPromise;
+      await loadingPromise;
+    })();
   }
   return this._loadingPromise;
 };
