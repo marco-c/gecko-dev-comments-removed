@@ -436,6 +436,8 @@ TEST(Jemalloc, InPlace)
   
 }
 
+
+#if !defined(XP_WIN) || !defined(MOZ_CODE_COVERAGE)
 TEST(Jemalloc, JunkPoison)
 {
   jemalloc_stats_t stats;
@@ -622,3 +624,4 @@ TEST(Jemalloc, JunkPoison)
   
   
 }
+#endif
