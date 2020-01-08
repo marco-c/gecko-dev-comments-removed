@@ -4021,8 +4021,13 @@ window._gBrowser = {
   },
 
   unpinMultiSelectedTabs() {
-    for (let tab of this.selectedTabs) {
-        this.unpinTab(tab);
+    
+    
+    
+    let selectedTabs = this.selectedTabs;
+    for (let i = selectedTabs.length - 1; i >= 0; i--) {
+      let tab = selectedTabs[i];
+      this.unpinTab(tab);
     }
   },
 
