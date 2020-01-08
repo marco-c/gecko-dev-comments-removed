@@ -221,16 +221,33 @@ MOZ_NoReturn(int aLine)
        MOZ_NoReturn(line); \
      } while (false)
 #else
+
+
+
+
+
+
+
+
+
+
+
+#  ifdef MOZ_UBSAN
+#    define MOZ_CRASH_WRITE_ADDR 0x1
+#  else
+#    define MOZ_CRASH_WRITE_ADDR NULL
+#  endif
+
 #  ifdef __cplusplus
 #    define MOZ_REALLY_CRASH(line) \
        do { \
-         *((volatile int*) NULL) = line; \
+         *((volatile int*) MOZ_CRASH_WRITE_ADDR) = line; \
          ::abort(); \
        } while (false)
 #  else
 #    define MOZ_REALLY_CRASH(line) \
        do { \
-         *((volatile int*) NULL) = line; \
+         *((volatile int*) MOZ_CRASH_WRITE_ADDR) = line; \
          abort(); \
        } while (false)
 #  endif
