@@ -71,9 +71,6 @@ function updateWindowCanvas(window, buffer, width, height, hadFailure) {
     cx.font = "48px serif";
     cx.fillText("PAINT FAILURE", 10, 50);
   }
-
-  
-  window.document.title = "RECORD/REPLAY";
 }
 
 
