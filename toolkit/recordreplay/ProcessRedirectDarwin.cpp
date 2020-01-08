@@ -1021,6 +1021,13 @@ static PreambleResult
 Preamble_fcntl(CallArguments* aArguments)
 {
   
+  
+  
+  
+  if (AreThreadEventsPassedThrough()) {
+    return PreambleResult::Redirect;
+  }
+
   auto& cmd = aArguments->Arg<1, size_t>();
   switch (cmd) {
   case F_GETFL:
