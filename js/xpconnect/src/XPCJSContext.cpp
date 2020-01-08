@@ -79,10 +79,6 @@ using namespace xpc;
 using namespace JS;
 using mozilla::dom::AutoEntryScript;
 
-
-
-static constexpr size_t kWatchdogStackSize = 32 * 1024;
-
 static void WatchdogMain(void* arg);
 class Watchdog;
 class WatchdogManager;
@@ -147,7 +143,7 @@ class Watchdog
             
             mThread = PR_CreateThread(PR_USER_THREAD, WatchdogMain, this,
                                       PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
-                                      PR_JOINABLE_THREAD, kWatchdogStackSize);
+                                      PR_JOINABLE_THREAD, 0);
             if (!mThread)
                 MOZ_CRASH("PR_CreateThread failed!");
 
@@ -476,8 +472,6 @@ static void
 WatchdogMain(void* arg)
 {
     AUTO_PROFILER_REGISTER_THREAD("JS Watchdog");
-    
-    Unused << NS_GetCurrentThread();
     NS_SetCurrentThreadName("JS Watchdog");
 
     Watchdog* self = static_cast<Watchdog*>(arg);
