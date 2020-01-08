@@ -4,34 +4,25 @@
 
 
 
-#include <math.h>
-
+#include "OSVRSession.h"
 #include "prenv.h"
 #include "gfxPrefs.h"
 #include "nsString.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/SharedLibrary.h"
-
 #include "mozilla/gfx/Quaternion.h"
 
-#ifdef XP_WIN
-#include "../layers/d3d11/CompositorD3D11.h"
-#include "../layers/d3d11/TextureD3D11.h"
-#endif
-
-#include "gfxVROSVR.h"
-
-#include "mozilla/dom/GamepadEventTypes.h"
-#include "mozilla/dom/GamepadBinding.h"
+#if defined(XP_WIN)
+#include <d3d11.h>
+#include "mozilla/gfx/DeviceManagerDx.h"
+#endif 
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
-using namespace mozilla::layers;
+using namespace mozilla;
 using namespace mozilla::gfx;
-using namespace mozilla::gfx::impl;
-using namespace mozilla::dom;
 
 namespace {
 
@@ -208,194 +199,59 @@ SetFromTanRadians(double left, double right, double bottom, double top)
   return fovInfo;
 }
 
-VRDisplayOSVR::VRDisplayOSVR(OSVR_ClientContext* context,
-                         OSVR_ClientInterface* iface,
-                         OSVR_DisplayConfig* display)
-  : VRDisplayLocal(VRDeviceType::OSVR)
-  , m_ctx(context)
-  , m_iface(iface)
-  , m_display(display)
+OSVRSession::OSVRSession()
+  : VRSession()
+  , mRuntimeLoaded(false)
+  , mOSVRInitialized(false)
+  , mClientContextInitialized(false)
+  , mDisplayConfigInitialized(false)
+  , mInterfaceInitialized(false)
+  , m_ctx(nullptr)
+  , m_iface(nullptr)
+  , m_display(nullptr)
 {
 
-  MOZ_COUNT_CTOR_INHERITED(VRDisplayOSVR, VRDisplayLocal);
-
-  VRDisplayState& state = mDisplayInfo.mDisplayState;
-  state.mIsConnected = true;
-  strncpy(state.mDisplayName, "OSVR HMD", kVRDisplayNameMaxLen);
-  state.mCapabilityFlags = VRDisplayCapabilityFlags::Cap_None;
-  state.mCapabilityFlags =
-    VRDisplayCapabilityFlags::Cap_Orientation | VRDisplayCapabilityFlags::Cap_Position;
-
-  state.mCapabilityFlags |= VRDisplayCapabilityFlags::Cap_External;
-  state.mCapabilityFlags |= VRDisplayCapabilityFlags::Cap_Present;
-
-  
-  
-
-  OSVR_EyeCount numEyes;
-  osvr_ClientGetNumEyesForViewer(*m_display, 0, &numEyes);
-
-  for (uint8_t eye = 0; eye < numEyes; eye++) {
-    double left, right, bottom, top;
-    
-    osvr_ClientGetViewerEyeSurfaceProjectionClippingPlanes(
-      *m_display, 0, eye, 0, &left, &right, &bottom, &top);
-    state.mEyeFOV[eye] =
-      SetFromTanRadians(-left, right, -bottom, top);
-  }
-
-  
-  
-  OSVR_DisplayDimension width, height;
-  osvr_ClientGetDisplayDimensions(*m_display, 0, &width, &height);
-
-
-  for (uint8_t eye = 0; eye < numEyes; eye++) {
-
-    OSVR_ViewportDimension l, b, w, h;
-    osvr_ClientGetRelativeViewportForViewerEyeSurface(*m_display, 0, eye, 0, &l,
-                                                      &b, &w, &h);
-    state.mEyeResolution.width = w;
-    state.mEyeResolution.height = h;
-    OSVR_Pose3 eyePose;
-    
-    OSVR_ReturnCode ret =
-      osvr_ClientGetViewerEyePose(*m_display, 0, eye, &eyePose);
-    while (ret != OSVR_RETURN_SUCCESS) {
-      osvr_ClientUpdate(*m_ctx);
-      ret = osvr_ClientGetViewerEyePose(*m_display, 0, eye, &eyePose);
-    }
-    state.mEyeTranslation[eye].x = eyePose.translation.data[0];
-    state.mEyeTranslation[eye].y = eyePose.translation.data[1];
-    state.mEyeTranslation[eye].z = eyePose.translation.data[2];
-
-    Matrix4x4 pose;
-    pose.SetRotationFromQuaternion(gfx::Quaternion(osvrQuatGetX(&eyePose.rotation),
-                                                   osvrQuatGetY(&eyePose.rotation),
-                                                   osvrQuatGetZ(&eyePose.rotation),
-                                                   osvrQuatGetW(&eyePose.rotation)));
-    pose.PreTranslate(eyePose.translation.data[0], eyePose.translation.data[1], eyePose.translation.data[2]);
-    pose.Invert();
-    mHeadToEye[eye] = pose;
-  }
 }
-
-void
-VRDisplayOSVR::Destroy()
+OSVRSession::~OSVRSession()
 {
-  
-  m_ctx = nullptr;
-  m_iface = nullptr;
-  m_display = nullptr;
+  Shutdown();
 }
-
-void
-VRDisplayOSVR::ZeroSensor()
-{
-  
-  osvr_ClientSetRoomRotationUsingHead(*m_ctx);
-}
-
-VRHMDSensorState
-VRDisplayOSVR::GetSensorState()
-{
-
-  
-  
-  osvr_ClientUpdate(*m_ctx);
-
-  VRHMDSensorState result{};
-  OSVR_TimeValue timestamp;
-
-  OSVR_OrientationState orientation;
-
-  OSVR_ReturnCode ret =
-    osvr_GetOrientationState(*m_iface, &timestamp, &orientation);
-
-  result.timestamp = timestamp.seconds;
-  result.inputFrameID = mDisplayInfo.mFrameId;
-
-  if (ret == OSVR_RETURN_SUCCESS) {
-    result.flags |= VRDisplayCapabilityFlags::Cap_Orientation;
-    result.pose.orientation[0] = orientation.data[1];
-    result.pose.orientation[1] = orientation.data[2];
-    result.pose.orientation[2] = orientation.data[3];
-    result.pose.orientation[3] = orientation.data[0];
-  } else {
-    
-    result.pose.orientation[3] = 1.0f;
-  }
-
-  OSVR_PositionState position;
-  ret = osvr_GetPositionState(*m_iface, &timestamp, &position);
-  if (ret == OSVR_RETURN_SUCCESS) {
-    result.flags |= VRDisplayCapabilityFlags::Cap_Position;
-    result.pose.position[0] = position.data[0];
-    result.pose.position[1] = position.data[1];
-    result.pose.position[2] = position.data[2];
-  }
-
-  result.CalcViewMatrices(mHeadToEye);
-
-  return result;
-}
-
-#if defined(XP_WIN)
 
 bool
-VRDisplayOSVR::SubmitFrame(ID3D11Texture2D* aSource,
-  const IntSize& aSize,
-  const gfx::Rect& aLeftEyeRect,
-  const gfx::Rect& aRightEyeRect)
+OSVRSession::Initialize(mozilla::gfx::VRSystemState& aSystemState)
 {
-  
-  return false;
-}
-
-#elif defined(XP_MACOSX)
-
-bool
-VRDisplayOSVR::SubmitFrame(MacIOSurface* aMacIOSurface,
-                           const IntSize& aSize,
-                           const gfx::Rect& aLeftEyeRect,
-                           const gfx::Rect& aRightEyeRect)
-{
-  
-  MOZ_ASSERT(mSubmitThread->GetThread() == NS_GetCurrentThread());
-  return false;
-}
-
-#endif
-
-void
-VRDisplayOSVR::StartPresentation()
-{
-  
-}
-
-void
-VRDisplayOSVR::StopPresentation()
-{
-  
-}
-
-already_AddRefed<VRSystemManagerOSVR>
-VRSystemManagerOSVR::Create()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
   if (!gfxPrefs::VREnabled() || !gfxPrefs::VROSVREnabled()) {
-    return nullptr;
+    return false;
+  }
+  if (mOSVRInitialized) {
+    return true;
   }
   if (!LoadOSVRRuntime()) {
-    return nullptr;
+    return false;
   }
-  RefPtr<VRSystemManagerOSVR> manager = new VRSystemManagerOSVR();
-  return manager.forget();
+  mRuntimeLoaded = true;
+  
+  InitializeClientContext();
+  
+  InitializeInterface();
+  
+  InitializeDisplay();
+  
+  CheckOSVRStatus();
+
+  if (!mOSVRInitialized) {
+    return false;
+  }
+
+  if (!InitState(aSystemState)) {
+    return false;
+  }
+
+  return true;
 }
 
 void
-VRSystemManagerOSVR::CheckOSVRStatus()
+OSVRSession::CheckOSVRStatus()
 {
   if (mOSVRInitialized) {
     return;
@@ -419,7 +275,7 @@ VRSystemManagerOSVR::CheckOSVRStatus()
 }
 
 void
-VRSystemManagerOSVR::InitializeClientContext()
+OSVRSession::InitializeClientContext()
 {
   
   if (mClientContextInitialized) {
@@ -448,7 +304,7 @@ VRSystemManagerOSVR::InitializeClientContext()
 }
 
 void
-VRSystemManagerOSVR::InitializeInterface()
+OSVRSession::InitializeInterface()
 {
   
   if (mInterfaceInitialized) {
@@ -465,7 +321,7 @@ VRSystemManagerOSVR::InitializeInterface()
 }
 
 void
-VRSystemManagerOSVR::InitializeDisplay()
+OSVRSession::InitializeDisplay()
 {
   
   if (mDisplayConfigInitialized) {
@@ -500,44 +356,86 @@ VRSystemManagerOSVR::InitializeDisplay()
 }
 
 bool
-VRSystemManagerOSVR::Init()
+OSVRSession::InitState(mozilla::gfx::VRSystemState& aSystemState)
 {
+  VRDisplayState& state = aSystemState.displayState;
+  strncpy(state.mDisplayName, "OSVR HMD", kVRDisplayNameMaxLen);
+  state.mEightCC = GFX_VR_EIGHTCC('O', 'S', 'V', 'R', ' ', ' ', ' ', ' ');
+  state.mIsConnected = true;
+  state.mIsMounted = false;
+  state.mCapabilityFlags = (VRDisplayCapabilityFlags)((int)VRDisplayCapabilityFlags::Cap_None |
+    (int)VRDisplayCapabilityFlags::Cap_Orientation |
+    (int)VRDisplayCapabilityFlags::Cap_Position |
+    (int)VRDisplayCapabilityFlags::Cap_External |
+    (int)VRDisplayCapabilityFlags::Cap_Present);
+  state.mReportsDroppedFrames = false;
 
   
   
-  if (!mOSVRInitialized) {
-    nsIThread* thread = nullptr;
-    NS_GetCurrentThread(&thread);
-    mOSVRThread = already_AddRefed<nsIThread>(thread);
 
+  OSVR_EyeCount numEyes;
+  osvr_ClientGetNumEyesForViewer(m_display, 0, &numEyes);
+
+  for (uint8_t eye = 0; eye < numEyes; eye++) {
+    double left, right, bottom, top;
     
-    InitializeClientContext();
-    
-    InitializeInterface();
-    
-    InitializeDisplay();
-    
-    CheckOSVRStatus();
+    osvr_ClientGetViewerEyeSurfaceProjectionClippingPlanes(
+      m_display, 0, eye, 0, &left, &right, &bottom, &top);
+    state.mEyeFOV[eye] =
+      SetFromTanRadians(-left, right, -bottom, top);
   }
 
-  return mOSVRInitialized;
+  
+  
+  OSVR_DisplayDimension width, height;
+  osvr_ClientGetDisplayDimensions(m_display, 0, &width, &height);
+
+  for (uint8_t eye = 0; eye < numEyes; eye++) {
+
+    OSVR_ViewportDimension l, b, w, h;
+    osvr_ClientGetRelativeViewportForViewerEyeSurface(m_display, 0, eye, 0, &l,
+                                                      &b, &w, &h);
+    state.mEyeResolution.width = w;
+    state.mEyeResolution.height = h;
+    OSVR_Pose3 eyePose;
+    
+    OSVR_ReturnCode ret =
+      osvr_ClientGetViewerEyePose(m_display, 0, eye, &eyePose);
+    while (ret != OSVR_RETURN_SUCCESS) {
+      osvr_ClientUpdate(m_ctx);
+      ret = osvr_ClientGetViewerEyePose(m_display, 0, eye, &eyePose);
+    }
+    state.mEyeTranslation[eye].x = eyePose.translation.data[0];
+    state.mEyeTranslation[eye].y = eyePose.translation.data[1];
+    state.mEyeTranslation[eye].z = eyePose.translation.data[2];
+
+    Matrix4x4 pose;
+    pose.SetRotationFromQuaternion(gfx::Quaternion(osvrQuatGetX(&eyePose.rotation),
+                                                   osvrQuatGetY(&eyePose.rotation),
+                                                   osvrQuatGetZ(&eyePose.rotation),
+                                                   osvrQuatGetW(&eyePose.rotation)));
+    pose.PreTranslate(eyePose.translation.data[0], eyePose.translation.data[1], eyePose.translation.data[2]);
+    pose.Invert();
+    mHeadToEye[eye] = pose;
+  }
+
+  
+  VRHMDSensorState& sensorState = aSystemState.sensorState;
+  sensorState.flags = (VRDisplayCapabilityFlags)(
+    (int)VRDisplayCapabilityFlags::Cap_Orientation |
+    (int)VRDisplayCapabilityFlags::Cap_Position);
+  sensorState.pose.orientation[3] = 1.0f; 
+
+  return true;
 }
 
 void
-VRSystemManagerOSVR::Destroy()
+OSVRSession::Shutdown()
 {
-  Shutdown();
-}
-
-void
-VRSystemManagerOSVR::Shutdown()
-{
-  if (mOSVRInitialized) {
-    MOZ_ASSERT(NS_GetCurrentThread() == mOSVRThread);
-    mOSVRThread = nullptr;
-    mHMDInfo = nullptr;
-    mOSVRInitialized = false;
+  if (!mRuntimeLoaded) {
+    return;
   }
+  mOSVRInitialized = false;
   
   if (m_ctx) {
     osvr_ClientFreeDisplay(m_display);
@@ -548,91 +446,98 @@ VRSystemManagerOSVR::Shutdown()
 }
 
 void
-VRSystemManagerOSVR::NotifyVSync()
+OSVRSession::ProcessEvents(mozilla::gfx::VRSystemState& aSystemState)
 {
-  VRSystemManager::NotifyVSync();
 
+}
+
+void
+OSVRSession::StartFrame(mozilla::gfx::VRSystemState& aSystemState)
+{
+  UpdateHeadsetPose(aSystemState);
+}
+
+void
+OSVRSession::UpdateHeadsetPose(mozilla::gfx::VRSystemState& aState)
+{
+  
+  
+  osvr_ClientUpdate(m_ctx);
+
+  VRHMDSensorState result{};
+  OSVR_TimeValue timestamp;
+
+  OSVR_OrientationState orientation;
+
+  OSVR_ReturnCode ret =
+    osvr_GetOrientationState(m_iface, &timestamp, &orientation);
+
+  aState.sensorState.timestamp = timestamp.seconds;
+
+  if (ret == OSVR_RETURN_SUCCESS) {
+    result.flags |= VRDisplayCapabilityFlags::Cap_Orientation;
+    result.pose.orientation[0] = orientation.data[1];
+    result.pose.orientation[1] = orientation.data[2];
+    result.pose.orientation[2] = orientation.data[3];
+    result.pose.orientation[3] = orientation.data[0];
+  } else {
+    
+    result.pose.orientation[3] = 1.0f;
+  }
+
+  OSVR_PositionState position;
+  ret = osvr_GetPositionState(m_iface, &timestamp, &position);
+  if (ret == OSVR_RETURN_SUCCESS) {
+    result.flags |= VRDisplayCapabilityFlags::Cap_Position;
+    result.pose.position[0] = position.data[0];
+    result.pose.position[1] = position.data[1];
+    result.pose.position[2] = position.data[2];
+  }
+
+  result.CalcViewMatrices(mHeadToEye);
+}
+
+bool
+OSVRSession::ShouldQuit() const
+{
+  return false;
+}
+
+bool
+OSVRSession::StartPresentation()
+{
+  return false;
   
 }
 
 void
-VRSystemManagerOSVR::Enumerate()
+OSVRSession::StopPresentation()
 {
   
-  CheckOSVRStatus();
-
-  if (!Init()) {
-    return;
-  }
-
-  mHMDInfo = new VRDisplayOSVR(&m_ctx, &m_iface, &m_display);
 }
 
 bool
-VRSystemManagerOSVR::ShouldInhibitEnumeration()
+OSVRSession::SubmitFrame(const mozilla::gfx::VRLayer_Stereo_Immersive& aLayer)
 {
-  if (VRSystemManager::ShouldInhibitEnumeration()) {
-    return true;
-  }
-  if (mHMDInfo) {
-    
-    
-    
-    
-    return true;
-  }
   return false;
+   
 }
 
 void
-VRSystemManagerOSVR::GetHMDs(nsTArray<RefPtr<VRDisplayHost>>& aHMDResult)
+OSVRSession::VibrateHaptic(uint32_t aControllerIdx, uint32_t aHapticIndex,
+                           float aIntensity, float aDuration)
 {
-  if (mHMDInfo) {
-    aHMDResult.AppendElement(mHMDInfo);
-  }
-}
 
-bool
-VRSystemManagerOSVR::GetIsPresenting()
-{
-  if (mHMDInfo) {
-    VRDisplayInfo displayInfo(mHMDInfo->GetDisplayInfo());
-    return displayInfo.GetPresentingGroups() != kVRGroupNone;
-  }
-
-  return false;
 }
 
 void
-VRSystemManagerOSVR::HandleInput()
+OSVRSession::StopVibrateHaptic(uint32_t aControllerIdx)
 {
+
 }
 
 void
-VRSystemManagerOSVR::VibrateHaptic(uint32_t aControllerIdx,
-                                   uint32_t aHapticIndex,
-                                   double aIntensity,
-                                   double aDuration,
-                                   const VRManagerPromise& aPromise)
+OSVRSession::StopAllHaptics()
 {
-}
 
-void
-VRSystemManagerOSVR::StopVibrateHaptic(uint32_t aControllerIdx)
-{
-}
-
-void
-VRSystemManagerOSVR::GetControllers(nsTArray<RefPtr<VRControllerHost>>& aControllerResult)
-{
-}
-
-void
-VRSystemManagerOSVR::ScanForControllers()
-{
-}
-
-void
-VRSystemManagerOSVR::RemoveControllers()
-{
 }
