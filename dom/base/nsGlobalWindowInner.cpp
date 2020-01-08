@@ -926,33 +926,43 @@ nsGlobalWindowInner::nsGlobalWindowInner(nsGlobalWindowOuter *aOuterWindow)
   
   PR_INIT_CLIST(this);
 
-  
-  PR_INSERT_AFTER(this, aOuterWindow);
-
-  mTimeoutManager = MakeUnique<TimeoutManager>(*this);
-
-  mObserver = new nsGlobalWindowObserver(this);
-  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-  if (os) {
+  if (aOuterWindow) {
     
     
-    os->AddObserver(mObserver, NS_IOSERVICE_OFFLINE_STATUS_TOPIC,
-                    false);
+    PR_INSERT_AFTER(this, aOuterWindow);
 
-    os->AddObserver(mObserver, MEMORY_PRESSURE_OBSERVER_TOPIC, false);
+    mTimeoutManager =
+      MakeUnique<mozilla::dom::TimeoutManager>(*nsGlobalWindowInner::Cast(AsInner()));
 
-    if (aOuterWindow->IsTopLevelWindow()) {
-      os->AddObserver(mObserver, "clear-site-data-reload-needed", false);
+    mObserver = new nsGlobalWindowObserver(this);
+    if (mObserver) {
+      nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+      if (os) {
+        
+        
+        os->AddObserver(mObserver, NS_IOSERVICE_OFFLINE_STATUS_TOPIC,
+                        false);
+
+        os->AddObserver(mObserver, MEMORY_PRESSURE_OBSERVER_TOPIC, false);
+
+        if (aOuterWindow->IsTopLevelWindow()) {
+          os->AddObserver(mObserver, "clear-site-data-reload-needed", false);
+        }
+      }
+
+      Preferences::AddStrongObserver(mObserver, "intl.accept_languages");
+
+      
+      RefPtr<StorageNotifierService> sns =
+        StorageNotifierService::GetOrCreate();
+      if (sns) {
+        sns->Register(mObserver);
+      }
     }
-  }
-
-  Preferences::AddStrongObserver(mObserver, "intl.accept_languages");
-
-  
-  RefPtr<StorageNotifierService> sns =
-    StorageNotifierService::GetOrCreate();
-  if (sns) {
-    sns->Register(mObserver);
+  } else {
+    
+    
+    MOZ_ASSERT(IsFrozen());
   }
 
   if (XRE_IsContentProcess()) {
@@ -2008,6 +2018,18 @@ nsGlobalWindowInner::DialogsAreBeingAbused()
   return false;
 }
 
+void
+nsGlobalWindowInner::DisableDialogs()
+{
+  FORWARD_TO_OUTER_VOID(DisableDialogs, ());
+}
+
+void
+nsGlobalWindowInner::EnableDialogs()
+{
+  FORWARD_TO_OUTER_VOID(EnableDialogs, ());
+}
+
 nsresult
 nsGlobalWindowInner::PostHandleEvent(EventChainPostVisitor& aVisitor)
 {
@@ -2291,6 +2313,18 @@ nsPIDOMWindowInner::Resume()
 }
 
 void
+nsPIDOMWindowInner::Freeze()
+{
+  nsGlobalWindowInner::Cast(this)->Freeze();
+}
+
+void
+nsPIDOMWindowInner::Thaw()
+{
+  nsGlobalWindowInner::Cast(this)->Thaw();
+}
+
+void
 nsPIDOMWindowInner::SyncStateFromParentWindow()
 {
   nsGlobalWindowInner::Cast(this)->SyncStateFromParentWindow();
@@ -2312,6 +2346,12 @@ Maybe<ServiceWorkerDescriptor>
 nsPIDOMWindowInner::GetController() const
 {
   return nsGlobalWindowInner::Cast(this)->GetController();
+}
+
+RefPtr<mozilla::dom::ServiceWorker>
+nsPIDOMWindowInner::GetOrCreateServiceWorker(const mozilla::dom::ServiceWorkerDescriptor& aDescriptor)
+{
+  return nsGlobalWindowInner::Cast(this)->GetOrCreateServiceWorker(aDescriptor);
 }
 
 void
@@ -2710,6 +2750,16 @@ nsPIDOMWindowOuter*
 nsGlobalWindowInner::GetScriptableParent()
 {
   FORWARD_TO_OUTER(GetScriptableParent, (), nullptr);
+}
+
+
+
+
+
+nsPIDOMWindowOuter*
+nsGlobalWindowInner::GetScriptableParentOrNull()
+{
+  FORWARD_TO_OUTER(GetScriptableParentOrNull, (), nullptr);
 }
 
 
@@ -3766,6 +3816,24 @@ nsGlobalWindowInner::Blur(ErrorResult& aError)
 }
 
 void
+nsGlobalWindowInner::Back(ErrorResult& aError)
+{
+  FORWARD_TO_OUTER_OR_THROW(BackOuter, (aError), aError, );
+}
+
+void
+nsGlobalWindowInner::Forward(ErrorResult& aError)
+{
+  FORWARD_TO_OUTER_OR_THROW(ForwardOuter, (aError), aError, );
+}
+
+void
+nsGlobalWindowInner::Home(nsIPrincipal& aSubjectPrincipal, ErrorResult& aError)
+{
+  FORWARD_TO_OUTER_OR_THROW(HomeOuter, (aSubjectPrincipal, aError), aError, );
+}
+
+void
 nsGlobalWindowInner::Stop(ErrorResult& aError)
 {
   FORWARD_TO_OUTER_OR_THROW(StopOuter, (aError), aError, );
@@ -4121,6 +4189,12 @@ nsresult
 nsGlobalWindowInner::Close()
 {
   FORWARD_TO_OUTER(Close, (), NS_ERROR_UNEXPECTED);
+}
+
+void
+nsGlobalWindowInner::ReallyCloseWindow()
+{
+  FORWARD_TO_OUTER_VOID(ReallyCloseWindow, ());
 }
 
 bool
@@ -4814,6 +4888,26 @@ nsGlobalWindowInner::DispatchSyncPopState()
 
 
 
+static nsCanvasFrame*
+FindCanvasFrame(nsIFrame* aFrame)
+{
+    nsCanvasFrame* canvasFrame = do_QueryFrame(aFrame);
+    if (canvasFrame) {
+        return canvasFrame;
+    }
+
+    for (nsIFrame* kid : aFrame->PrincipalChildList()) {
+        canvasFrame = FindCanvasFrame(kid);
+        if (canvasFrame) {
+            return canvasFrame;
+        }
+    }
+
+    return nullptr;
+}
+
+
+
 void
 nsGlobalWindowInner::UpdateCanvasFocus(bool aFocusChanged, nsIContent* aNewContent)
 {
@@ -4833,19 +4927,26 @@ nsGlobalWindowInner::UpdateCanvasFocus(bool aFocusChanged, nsIContent* aNewConte
 
   Element *rootElement = mDoc->GetRootElement();
   if (rootElement) {
-    if ((mHasFocus || aFocusChanged) &&
-        (mFocusedElement == rootElement || aNewContent == rootElement)) {
-      nsCanvasFrame* canvasFrame = presShell->GetCanvasFrame();
-      if (canvasFrame) {
-        canvasFrame->SetHasFocus(mHasFocus && rootElement == aNewContent);
+      if ((mHasFocus || aFocusChanged) &&
+          (mFocusedElement == rootElement || aNewContent == rootElement)) {
+          nsIFrame* frame = rootElement->GetPrimaryFrame();
+          if (frame) {
+              frame = frame->GetParent();
+              nsCanvasFrame* canvasFrame = do_QueryFrame(frame);
+              if (canvasFrame) {
+                  canvasFrame->SetHasFocus(mHasFocus && rootElement == aNewContent);
+              }
+          }
       }
-    }
   } else {
-    
-    nsCanvasFrame* canvasFrame = presShell->GetCanvasFrame();
-    if (canvasFrame) {
-      canvasFrame->SetHasFocus(false);
-    }
+      
+      nsIFrame* frame = presShell->GetRootFrame();
+      if (frame) {
+          nsCanvasFrame* canvasFrame = FindCanvasFrame(frame);
+          if (canvasFrame) {
+              canvasFrame->SetHasFocus(false);
+          }
+      }
   }
 }
 

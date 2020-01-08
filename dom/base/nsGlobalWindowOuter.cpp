@@ -306,6 +306,9 @@ using mozilla::TimeStamp;
   return GetCurrentInnerWindowInternal()->method args;                  \
   PR_END_MACRO
 
+#define DEFAULT_HOME_PAGE "www.mozilla.org"
+#define PREF_BROWSER_STARTUP_HOMEPAGE "browser.startup.homepage"
+
 static LazyLogModule gDOMLeakPRLogOuter("DOMLeakOuter");
 
 static int32_t              gOpenPopupSpamCount               = 0;
@@ -851,6 +854,13 @@ nsGlobalWindowOuter::nsGlobalWindowOuter()
   
   MOZ_ASSERT(IsFrozen());
 
+  if (XRE_IsContentProcess()) {
+    nsCOMPtr<nsIDocShell> docShell = GetDocShell();
+    if (docShell) {
+      mTabChild = docShell->GetTabChild();
+    }
+  }
+
   
   
   
@@ -1136,6 +1146,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsGlobalWindowOuter)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLocalStorage)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSuspendedDoc)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocumentPrincipal)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTabChild)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDoc)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIdleService)
 
@@ -1163,6 +1174,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsGlobalWindowOuter)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mLocalStorage)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSuspendedDoc)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocumentPrincipal)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mTabChild)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDoc)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mIdleService)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mIdleObservers)
@@ -1242,6 +1254,12 @@ JSObject *
 nsGlobalWindowOuter::GetGlobalJSObject()
 {
   return FastGetGlobalJSObject();
+}
+
+void
+nsGlobalWindowOuter::TraceGlobalJSObject(JSTracer* aTrc)
+{
+  TraceWrapper(aTrc, "active window global");
 }
 
 bool
@@ -2165,6 +2183,7 @@ nsGlobalWindowOuter::DetachFromDocShell()
     
     mDocumentPrincipal = mDoc->NodePrincipal();
     mDocumentURI = mDoc->GetDocumentURI();
+    mDocBaseURI = mDoc->GetDocBaseURI();
 
     
     DropOuterWindowDocs();
@@ -4851,6 +4870,81 @@ nsGlobalWindowOuter::BlurOuter()
 }
 
 void
+nsGlobalWindowOuter::BackOuter(ErrorResult& aError)
+{
+  nsCOMPtr<nsIWebNavigation> webNav(do_QueryInterface(mDocShell));
+  if (!webNav) {
+    aError.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+
+  aError = webNav->GoBack();
+}
+
+void
+nsGlobalWindowOuter::ForwardOuter(ErrorResult& aError)
+{
+  nsCOMPtr<nsIWebNavigation> webNav(do_QueryInterface(mDocShell));
+  if (!webNav) {
+    aError.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+
+  aError = webNav->GoForward();
+}
+
+void
+nsGlobalWindowOuter::HomeOuter(nsIPrincipal& aSubjectPrincipal, ErrorResult& aError)
+{
+  if (!mDocShell) {
+    return;
+  }
+
+  nsAutoString homeURL;
+  Preferences::GetLocalizedString(PREF_BROWSER_STARTUP_HOMEPAGE, homeURL);
+
+  if (homeURL.IsEmpty()) {
+    
+#ifdef DEBUG_seth
+    printf("all else failed.  using %s as the home page\n", DEFAULT_HOME_PAGE);
+#endif
+    homeURL = NS_LITERAL_STRING(DEFAULT_HOME_PAGE);
+  }
+
+#ifdef MOZ_PHOENIX
+  {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    int32_t firstPipe = homeURL.FindChar('|');
+
+    if (firstPipe > 0) {
+      homeURL.Truncate(firstPipe);
+    }
+  }
+#endif
+
+  nsCOMPtr<nsIWebNavigation> webNav(do_QueryInterface(mDocShell));
+  if (!webNav) {
+    aError.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+
+  aError = webNav->LoadURI(homeURL.get(),
+                           nsIWebNavigation::LOAD_FLAGS_NONE,
+                           nullptr,
+                           nullptr,
+                           nullptr,
+                           &aSubjectPrincipal);
+}
+
+void
 nsGlobalWindowOuter::StopOuter(ErrorResult& aError)
 {
   nsCOMPtr<nsIWebNavigation> webNav(do_QueryInterface(mDocShell));
@@ -6562,6 +6656,12 @@ nsGlobalWindowOuter::SetIsBackgroundInternal(bool aIsBackground)
 }
 
 void
+nsGlobalWindowOuter::MaybeUpdateTouchState()
+{
+  FORWARD_TO_INNER_VOID(MaybeUpdateTouchState, ());
+}
+
+void
 nsGlobalWindowOuter::SetChromeEventHandler(EventTarget* aChromeEventHandler)
 {
   SetChromeEventHandlerInternal(aChromeEventHandler);
@@ -7144,6 +7244,13 @@ nsGlobalWindowOuter::SecurityCheckURL(const char *aURL, nsIURI** aURI)
   return NS_OK;
 }
 
+bool
+nsGlobalWindowOuter::IsPrivateBrowsing()
+{
+  nsCOMPtr<nsILoadContext> loadContext = do_QueryInterface(GetDocShell());
+  return loadContext && loadContext->UsePrivateBrowsing();
+}
+
 void
 nsGlobalWindowOuter::FlushPendingNotifications(FlushType aType)
 {
@@ -7229,10 +7336,27 @@ nsGlobalWindowOuter::RestoreWindowState(nsISupports *aState)
   return NS_OK;
 }
 
+
+void
+nsGlobalWindowOuter::EventListenerAdded(nsAtom* aType)
+{
+}
+
+void
+nsGlobalWindowOuter::EventListenerRemoved(nsAtom* aType)
+{
+}
+
 void
 nsGlobalWindowOuter::AddSizeOfIncludingThis(nsWindowSizes& aWindowSizes) const
 {
   aWindowSizes.mDOMOtherSize += aWindowSizes.mState.mMallocSizeOf(this);
+}
+
+bool
+nsGlobalWindowOuter::UpdateVRDisplays(nsTArray<RefPtr<mozilla::dom::VRDisplay>>& aDevices)
+{
+  FORWARD_TO_INNER(UpdateVRDisplays, (aDevices), false);
 }
 
 uint32_t
@@ -7613,6 +7737,12 @@ nsPIDOMWindowOuter::GetDocumentURI() const
   return mDoc ? mDoc->GetDocumentURI() : mDocumentURI.get();
 }
 
+
+nsIURI*
+nsPIDOMWindowOuter::GetDocBaseURI() const
+{
+  return mDoc ? mDoc->GetDocBaseURI() : mDocBaseURI.get();
+}
 
 void
 nsPIDOMWindowOuter::MaybeCreateDoc()

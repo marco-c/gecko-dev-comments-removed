@@ -276,6 +276,9 @@ public:
   Create(nsGlobalWindowOuter* aOuter, bool aIsChrome);
 
   
+  void ReallyCloseWindow();
+
+  
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
 
   
@@ -349,14 +352,6 @@ public:
   void Suspend();
   void Resume();
   virtual bool IsSuspended() const override;
-
-  
-  
-  
-  
-  
-  
-  
   void Freeze();
   void Thaw();
   virtual bool IsFrozen() const override;
@@ -453,6 +448,14 @@ public:
   
   
   bool DialogsAreBeingAbused();
+
+  
+  
+  
+  
+  
+  void EnableDialogs();
+  void DisableDialogs();
 
   nsIScriptContext *GetContextInternal();
 
@@ -673,6 +676,7 @@ public:
   void GetEvent(JSContext* aCx, JS::MutableHandle<JS::Value> aRetval);
   already_AddRefed<nsPIDOMWindowOuter> GetParent(mozilla::ErrorResult& aError);
   nsPIDOMWindowOuter* GetScriptableParent() override;
+  nsPIDOMWindowOuter* GetScriptableParentOrNull() override;
   mozilla::dom::Element*
   GetFrameElement(nsIPrincipal& aSubjectPrincipal,
                   mozilla::ErrorResult& aError);
@@ -883,6 +887,9 @@ public:
   bool GetFullScreen(mozilla::ErrorResult& aError);
   bool GetFullScreen() override;
   void SetFullScreen(bool aFullScreen, mozilla::ErrorResult& aError);
+  void Back(mozilla::ErrorResult& aError);
+  void Forward(mozilla::ErrorResult& aError);
+  void Home(nsIPrincipal& aSubjectPrincipal, mozilla::ErrorResult& aError);
   bool Find(const nsAString& aString, bool aCaseSensitive, bool aBackwards,
             bool aWrapAround, bool aWholeWord, bool aSearchInFrames,
             bool aShowDialog, mozilla::ErrorResult& aError);
