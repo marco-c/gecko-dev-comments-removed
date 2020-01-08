@@ -11,6 +11,7 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 
+class nsIChannel;
 class nsIHttpChannel;
 class nsIPrincipal;
 class nsIURI;
@@ -88,6 +89,11 @@ public:
   static nsresult
   IsOnContentBlockingAllowList(nsIURI* aTopWinURI, bool& aIsAllowListed);
 
+  
+  
+  
+  static void
+  NotifyRejection(nsIChannel* aChannel);
 };
 
 } 

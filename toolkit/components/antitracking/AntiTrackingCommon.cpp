@@ -833,3 +833,14 @@ AntiTrackingCommon::IsOnContentBlockingAllowList(nsIURI* aTopWinURI,
 
   return NS_OK;
 }
+
+ void
+AntiTrackingCommon::NotifyRejection(nsIChannel* aChannel)
+{
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
+  if (!httpChannel) {
+    return;
+  }
+
+  
+}
