@@ -16,8 +16,12 @@ mod error_reporter;
 #[path = "../../../ports/geckolib/stylesheet_loader.rs"]
 mod stylesheet_loader;
 
-#[allow(non_snake_case, unused_unsafe, private_no_mangle_fns)]
+#[allow(non_snake_case, unused_unsafe)]
 mod glue {
+    
+    
+    
+    
     
     
     
