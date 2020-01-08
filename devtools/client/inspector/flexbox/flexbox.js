@@ -118,6 +118,52 @@ class FlexboxInspector {
 
 
 
+  async getCustomHostColors() {
+    if (this._customHostColors) {
+      return this._customHostColors;
+    }
+
+    
+    this._customHostColors = await asyncStorage.getItem("flexboxInspectorHostColors")
+      || {};
+    return this._customHostColors;
+  }
+
+  
+
+
+
+
+
+
+  async getFlexItems(flexboxFront) {
+    const flexItemFronts = await flexboxFront.getFlexItems();
+    const flexItems = [];
+
+    for (const flexItemFront of flexItemFronts) {
+      
+      let itemNodeFront = flexItemFront.nodeFront;
+      if (!itemNodeFront) {
+        itemNodeFront = await this.walker.getNodeFromActor(flexItemFront.actorID,
+          ["element"]);
+      }
+
+      flexItems.push({
+        actorID: flexItemFront.actorID,
+        flexItemSizing: flexItemFront.flexItemSizing,
+        nodeFront: itemNodeFront,
+        properties: flexItemFront.properties,
+      });
+    }
+
+    return flexItems;
+  }
+
+  
+
+
+
+
   async getOverlayColor() {
     if (this._overlayColor) {
       return this._overlayColor;
@@ -132,22 +178,6 @@ class FlexboxInspector {
     const hostName = parseURL(currentUrl).hostname || parseURL(currentUrl).protocol;
     this._overlayColor = customColors[hostName] ? customColors[hostName] : FLEXBOX_COLOR;
     return this._overlayColor;
-  }
-
-  
-
-
-
-
-  async getCustomHostColors() {
-    if (this._customHostColors) {
-      return this._customHostColors;
-    }
-
-    
-    this._customHostColors = await asyncStorage.getItem("flexboxInspectorHostColors")
-      || {};
-    return this._customHostColors;
   }
 
   
@@ -382,33 +412,11 @@ class FlexboxInspector {
           ["containerEl"]);
       }
 
+      const flexItems = await this.getFlexItems(flexboxFront);
       
-      const flexItemFronts = await flexboxFront.getFlexItems();
-      const flexItems = [];
-      let flexItemShown = null;
-
-      for (const flexItemFront of flexItemFronts) {
-        
-        let itemNodeFront = flexItemFront.nodeFront;
-        if (!itemNodeFront) {
-          itemNodeFront = await this.walker.getNodeFromActor(flexItemFront.actorID,
-            ["element"]);
-        }
-
-        
-        
-        if (!flexItemShown && itemNodeFront === this.selection.nodeFront) {
-          flexItemShown = itemNodeFront.actorID;
-        }
-
-        flexItems.push({
-          actorID: flexItemFront.actorID,
-          flexItemSizing: flexItemFront.flexItemSizing,
-          nodeFront: itemNodeFront,
-          properties: flexItemFront.properties,
-        });
-      }
-
+      
+      const flexItemShown = flexItems.find(item =>
+        item.nodeFront === this.selection.nodeFront);
       const highlighted = this._highlighters &&
         containerNodeFront == this.highlighters.flexboxHighlighterShown;
       const color = await this.getOverlayColor();
@@ -417,7 +425,7 @@ class FlexboxInspector {
         actorID: flexboxFront.actorID,
         color,
         flexItems,
-        flexItemShown,
+        flexItemShown: flexItemShown ? flexItemShown.nodeFront.actorID : null,
         highlighted,
         nodeFront: containerNodeFront,
         properties: flexboxFront.properties,
