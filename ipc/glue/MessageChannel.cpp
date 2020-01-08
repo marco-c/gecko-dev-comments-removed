@@ -634,7 +634,6 @@ MessageChannel::MessageChannel(const char* aName,
     mPeerPidSet(false),
     mPeerPid(-1),
     mIsPostponingSends(false),
-    mInKillHardShutdown(false),
     mBuildIDsConfirmedMatch(false)
 {
     MOZ_COUNT_CTOR(ipc::MessageChannel);
@@ -798,10 +797,7 @@ MessageChannel::Clear()
     
 
 #if !defined(ANDROID)
-    
-    
-    
-    if (!Unsound_IsClosed() && !mInKillHardShutdown) {
+    if (!Unsound_IsClosed()) {
         CrashReporter::AnnotateCrashReport(
           CrashReporter::Annotation::IPCFatalErrorProtocol, nsDependentCString(mName));
         switch (mChannelState) {

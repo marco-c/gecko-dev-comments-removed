@@ -1731,28 +1731,14 @@ DelayedDeleteSubprocess(GeckoChildProcessHost* aSubprocess)
   XRE_GetIOMessageLoop()->PostTask(task.forget());
 }
 
-
-
-
-struct DelayedDeleteContentParentTask : public Runnable
-{
-  explicit DelayedDeleteContentParentTask(ContentParent* aObj)
-    : Runnable("dom::DelayedDeleteContentParentTask")
-    , mKungFuDeathGrip(aObj)
-  {
-  }
-
-  
-  NS_IMETHOD Run() override { return NS_OK; }
-
-  RefPtr<ContentParent> mKungFuDeathGrip;
-};
-
 } 
 
 void
 ContentParent::ActorDestroy(ActorDestroyReason why)
 {
+  RefPtr<ContentParent> kungFuDeathGrip(mSelfRef.forget());
+  MOZ_RELEASE_ASSERT(kungFuDeathGrip);
+
   if (mForceKillTimer) {
     mForceKillTimer->Cancel();
     mForceKillTimer = nullptr;
@@ -1783,7 +1769,6 @@ ContentParent::ActorDestroy(ActorDestroyReason why)
   ShutDownProcess(why == NormalShutdown ? CLOSE_CHANNEL
                                         : CLOSE_CHANNEL_WITH_ERROR);
 
-  RefPtr<ContentParent> kungFuDeathGrip(this);
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
   if (obs) {
     size_t length = ArrayLength(sObserverTopics);
@@ -1870,7 +1855,9 @@ ContentParent::ActorDestroy(ActorDestroyReason why)
   
   
   
-  NS_DispatchToCurrentThread(new DelayedDeleteContentParentTask(this));
+  NS_DispatchToCurrentThread(
+    NS_NewRunnableFunction("DelayedReleaseContentParent",
+                           [kungFuDeathGrip] { }));
 
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
   nsTArray<ContentParentId> childIDArray =
@@ -2245,6 +2232,9 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
     return false;
   }
 
+  
+  mSelfRef = this;
+
 #ifdef ASYNC_CONTENTPROC_LAUNCH
   OpenWithAsyncPid(mSubprocess->GetChannel());
 #else
@@ -2291,6 +2281,7 @@ ContentParent::ContentParent(ContentParent* aOpener,
                              const nsAString& aRecordingFile,
                              int32_t aJSPluginID)
   : nsIContentParent()
+  , mSelfRef(nullptr)
   , mSubprocess(nullptr)
   , mLaunchTS(TimeStamp::Now())
   , mActivateTS(TimeStamp::Now())
@@ -3344,11 +3335,6 @@ ContentParent::KillHard(const char* aReason)
   }
   mCalledKillHard = true;
   mForceKillTimer = nullptr;
-
-  MessageChannel* channel = GetIPCChannel();
-  if (channel) {
-    channel->SetInKillHardShutdown();
-  }
 
   
   

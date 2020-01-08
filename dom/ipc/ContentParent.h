@@ -1280,6 +1280,8 @@ public:
   }
 
 private:
+  
+  RefPtr<ContentParent> mSelfRef;
 
   
   
