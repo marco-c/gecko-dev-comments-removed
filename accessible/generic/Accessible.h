@@ -913,6 +913,7 @@ public:
 
 
 
+
   bool NeedsDOMUIEvent() const
     { return !(mStateFlags & eIgnoreDOMUIEvent); }
 
