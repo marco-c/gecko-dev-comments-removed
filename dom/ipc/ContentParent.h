@@ -363,15 +363,6 @@ public:
                         const ContentParentId& aCpId,
                         bool aMarkedDestroying);
 
-  
-  void
-  RegisterRemoteWorkerActor();
-
-  
-  
-  void
-  UnregisterRemoveWorkerActor();
-
   void ReportChildAlreadyBlocked();
 
   bool RequestRunToCompletion();
@@ -535,6 +526,7 @@ public:
   virtual PContentPermissionRequestParent*
   AllocPContentPermissionRequestParent(const InfallibleTArray<PermissionRequest>& aRequests,
                                        const IPC::Principal& aPrincipal,
+                                       const IPC::Principal& aTopLevelPrincipal,
                                        const bool& aIsTrusted,
                                        const TabId& aTabId) override;
 
@@ -1309,13 +1301,6 @@ private:
   
   
   nsCOMPtr<nsITimer> mForceKillTimer;
-
-  
-  
-  
-  
-  Atomic<uint32_t> mRemoteWorkerActors;
-
   
   
   

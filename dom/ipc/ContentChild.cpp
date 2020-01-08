@@ -44,7 +44,6 @@
 #include "mozilla/dom/MemoryReportRequest.h"
 #include "mozilla/dom/PLoginReputationChild.h"
 #include "mozilla/dom/PushNotifier.h"
-#include "mozilla/dom/RemoteWorkerService.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/dom/TabGroup.h"
 #include "mozilla/dom/nsIContentChild.h"
@@ -1225,8 +1224,6 @@ ContentChild::InitXPCOM(const XPCOMInitData& aXPCOMInit,
   }
 
   ClientManager::Startup();
-
-  RemoteWorkerService::Initialize();
 
   nsCOMPtr<nsIConsoleService> svc(do_GetService(NS_CONSOLESERVICE_CONTRACTID));
   if (!svc) {
@@ -3156,6 +3153,7 @@ ContentChild::RecvUpdateWindow(const uintptr_t& aChildId)
 PContentPermissionRequestChild*
 ContentChild::AllocPContentPermissionRequestChild(const InfallibleTArray<PermissionRequest>& aRequests,
                                                   const IPC::Principal& aPrincipal,
+                                                  const IPC::Principal& aTopLevelPrincipal,
                                                   const bool& aIsHandlingUserInput,
                                                   const TabId& aTabId)
 {

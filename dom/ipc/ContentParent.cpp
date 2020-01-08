@@ -1862,11 +1862,6 @@ ContentParent::ShouldKeepProcessAlive() const
     return true;
   }
 
-  
-  if (mRemoteWorkerActors) {
-    return true;
-  }
-
   if (!sBrowserContentParents) {
     return false;
   }
@@ -2390,7 +2385,6 @@ ContentParent::ContentParent(ContentParent* aOpener,
   , mChildID(gContentChildID++)
   , mGeolocationWatchID(-1)
   , mJSPluginID(aJSPluginID)
-  , mRemoteWorkerActors(0)
   , mNumDestroyingTabs(0)
   , mIsAvailable(true)
   , mIsAlive(true)
@@ -4878,6 +4872,7 @@ ContentParent::RecvUpdateDropEffect(const uint32_t& aDragAction,
 PContentPermissionRequestParent*
 ContentParent::AllocPContentPermissionRequestParent(const InfallibleTArray<PermissionRequest>& aRequests,
                                                     const IPC::Principal& aPrincipal,
+                                                    const IPC::Principal& aTopLevelPrincipal,
                                                     const bool& aIsHandlingUserInput,
                                                     const TabId& aTabId)
 {
@@ -4891,6 +4886,7 @@ ContentParent::AllocPContentPermissionRequestParent(const InfallibleTArray<Permi
   return nsContentPermissionUtils::CreateContentPermissionRequestParent(aRequests,
                                                                         tp->GetOwnerElement(),
                                                                         aPrincipal,
+                                                                        aTopLevelPrincipal,
                                                                         aIsHandlingUserInput,
                                                                         aTabId);
 }
@@ -6167,33 +6163,4 @@ ContentParent::RecvSetOpenerBrowsingContext(
   context->SetOpener(opener);
 
   return IPC_OK();
-}
-
-void
-ContentParent::RegisterRemoteWorkerActor()
-{
-  ++mRemoteWorkerActors;
-}
-
-void
-ContentParent::UnregisterRemoveWorkerActor()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (--mRemoteWorkerActors) {
-    return;
-  }
-
-  ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
-  if (!cpm->GetTabParentCountByProcessId(ChildID()) &&
-      !ShouldKeepProcessAlive() &&
-      !TryToRecycle()) {
-    
-    
-    MessageLoop::current()->PostTask(
-      NewRunnableMethod<ShutDownMethod>("dom::ContentParent::ShutDownProcess",
-                                        this,
-                                        &ContentParent::ShutDownProcess,
-                                        SEND_SHUTDOWN_MESSAGE));
-  }
 }
