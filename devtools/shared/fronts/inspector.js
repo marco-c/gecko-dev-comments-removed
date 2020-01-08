@@ -3,11 +3,6 @@
 
 "use strict";
 
-const Telemetry = require("devtools/client/shared/telemetry");
-const telemetry = new Telemetry();
-const TELEMETRY_EYEDROPPER_OPENED = "DEVTOOLS_EYEDROPPER_OPENED_COUNT";
-const TELEMETRY_EYEDROPPER_OPENED_MENU = "DEVTOOLS_MENU_EYEDROPPER_OPENED_COUNT";
-
 const {
   Front,
   FrontClassWithSpec,
@@ -22,6 +17,8 @@ const {
 const defer = require("devtools/shared/defer");
 loader.lazyRequireGetter(this, "nodeConstants",
   "devtools/shared/dom-node-constants");
+loader.lazyRequireGetter(this, "CommandUtils",
+  "devtools/client/shared/developer-toolbar", true);
 
 
 
@@ -487,13 +484,14 @@ var InspectorFront = FrontClassWithSpec(inspectorSpec, {
     impl: "_getPageStyle"
   }),
 
-  pickColorFromPage: custom(async function(options) {
-    await this._pickColorFromPage(options);
-    if (options.fromMenu) {
-      telemetry.getHistogramById(TELEMETRY_EYEDROPPER_OPENED_MENU).add(true);
-    } else {
-      telemetry.getHistogramById(TELEMETRY_EYEDROPPER_OPENED).add(true);
+  pickColorFromPage: custom(async function(toolbox, options) {
+    if (toolbox) {
+      
+      
+      CommandUtils.executeOnTarget(toolbox.target, "eyedropper --hide");
     }
+
+    await this._pickColorFromPage(options);
   }, {
     impl: "_pickColorFromPage"
   })
