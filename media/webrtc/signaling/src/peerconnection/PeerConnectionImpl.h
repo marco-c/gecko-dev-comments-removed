@@ -86,7 +86,7 @@ typedef NS_ConvertUTF8toUTF16 PCObserverString;
 #if defined(__cplusplus) && __cplusplus >= 201103L
 typedef struct Timecard Timecard;
 #else
-#include "timecard.h"
+#include "signaling/src/common/time_profiling/timecard.h"
 #endif
 
 
@@ -129,25 +129,21 @@ class PCUuidGenerator : public mozilla::JsepUuidGenerator {
 class RTCStatsQuery {
   public:
     explicit RTCStatsQuery(bool internalStats);
+    RTCStatsQuery(RTCStatsQuery&& aOrig) = default;
     ~RTCStatsQuery();
 
     nsAutoPtr<mozilla::dom::RTCStatsReportInternal> report;
-    std::string error;
     
     mozilla::TimeStamp iceStartTime;
-    
-    bool failed;
 
-  private:
-    friend class PeerConnectionImpl;
-    std::string pcName;
     bool internalStats;
-    nsTArray<RefPtr<mozilla::MediaPipeline>> pipelines;
     std::string transportId;
-    RefPtr<PeerConnectionMedia> media;
     bool grabAllLevels;
     DOMHighResTimeStamp now;
 };
+
+typedef MozPromise<UniquePtr<RTCStatsQuery>, nsresult, true>
+  RTCStatsQueryPromise;
 
 
 
@@ -544,11 +540,8 @@ public:
   
   void startCallTelem();
 
-  nsresult BuildStatsQuery_m(
-      mozilla::dom::MediaStreamTrack *aSelector,
-      RTCStatsQuery *query);
-
-  static nsresult ExecuteStatsQuery_s(RTCStatsQuery *query);
+  RefPtr<RTCStatsQueryPromise> GetStats(
+      dom::MediaStreamTrack* aSelector, bool aInternalStats);
 
   
   
@@ -566,6 +559,14 @@ private:
   virtual ~PeerConnectionImpl();
   PeerConnectionImpl(const PeerConnectionImpl&rhs);
   PeerConnectionImpl& operator=(PeerConnectionImpl);
+  nsresult BuildStatsQuery_m(
+      mozilla::dom::MediaStreamTrack *aSelector,
+      RTCStatsQuery *query);
+  static RefPtr<RTCStatsQueryPromise> ExecuteStatsQuery_s(
+    UniquePtr<RTCStatsQuery>&& query,
+    const nsTArray<RefPtr<MediaPipeline>>& aPipelines,
+    const RefPtr<MediaTransportHandler>& aTransportHandler);
+
   nsresult CalculateFingerprint(const std::string& algorithm,
                                 std::vector<uint8_t>* fingerprint) const;
   nsresult ConfigureJsepSessionCodecs();
@@ -615,10 +616,6 @@ private:
       JsepTransceiver* aJsepTransceiver,
       dom::MediaStreamTrack* aSendTrack,
       ErrorResult& aRv);
-
-  static void GetStatsForPCObserver_s(
-      const std::string& pcHandle,
-      nsAutoPtr<RTCStatsQuery> query);
 
   
   static void DeliverStatsReportToPCObserver_m(
@@ -681,7 +678,7 @@ private:
   std::string mName;
 
   
-  nsCOMPtr<nsIEventTarget> mSTSThread;
+  nsCOMPtr<nsISerialEventTarget> mSTSThread;
 
   
   RefPtr<mozilla::DataChannelConnection> mDataConnection;

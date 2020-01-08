@@ -6,6 +6,7 @@
 #define peerconnectionctx_h___h__
 
 #include <string>
+#include <map>
 
 #include "WebrtcGlobalChild.h"
 
@@ -79,12 +80,11 @@ class PeerConnectionCtx {
 
   nsCOMPtr<nsITimer> mTelemetryTimer;
 
-public:
-  
-  
-  nsTArray<nsAutoPtr<mozilla::dom::RTCStatsReportInternal>> mLastReports;
 private:
 
+  void DeliverStats(RTCStatsQuery& aQuery);
+
+  std::map<nsString,std::unique_ptr<mozilla::dom::RTCStatsReportInternal>> mLastReports;
   
   
   

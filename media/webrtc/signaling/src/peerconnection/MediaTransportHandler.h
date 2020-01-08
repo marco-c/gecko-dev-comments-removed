@@ -13,6 +13,9 @@
 #include "nricectx.h" 
 #include "nsDOMNavigationTiming.h" 
 
+
+#include "signaling/src/peerconnection/PeerConnectionImpl.h"
+
 #include <map>
 #include <string>
 #include <set>
@@ -25,6 +28,7 @@ class NrIceMediaStream;
 class NrIceResolver;
 class SdpFingerprintAttributeList; 
 class TransportFlow;
+class RTCStatsQuery;
 
 namespace dom {
 struct RTCConfiguration;
@@ -112,14 +116,8 @@ class MediaTransportHandler : public MediaTransportBase,
     TransportLayer::State GetState(const std::string& aTransportId,
                                    bool aRtcp) const override;
 
-    
-    void GetAllIceStats(DOMHighResTimeStamp now,
-                        dom::RTCStatsReportInternal* report);
-
-    
-    void GetIceStats(const std::string& aTransportId,
-                     DOMHighResTimeStamp now,
-                     dom::RTCStatsReportInternal* report);
+    RefPtr<RTCStatsQueryPromise> GetIceStats(
+        UniquePtr<RTCStatsQuery>&& aQuery);
 
     
     struct CandidateInfo {
