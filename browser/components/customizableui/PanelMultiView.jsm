@@ -516,6 +516,15 @@ var PanelMultiView = class extends AssociatedToNode {
       try {
         canCancel = false;
         this._panel.openPopup(...args);
+
+        
+        
+        
+        if (this._panel.state == "closed" && this.openViews.length) {
+          this.dispatchCustomEvent("popuphidden");
+          return false;
+        }
+
         return true;
       } catch (ex) {
         this.dispatchCustomEvent("popuphidden");
@@ -1056,8 +1065,10 @@ var PanelMultiView = class extends AssociatedToNode {
   }
 
   handleEvent(aEvent) {
-    if (aEvent.type.startsWith("popup") && aEvent.target != this._panel) {
-      
+    
+    
+    if (aEvent.type.startsWith("popup") && aEvent.target != this._panel &&
+                                           aEvent.target != this.node) {
       return;
     }
     switch (aEvent.type) {
