@@ -214,10 +214,17 @@ enum class PreambleResult {
   Veto,
 
   
+  
   Redirect,
 
   
-  PassThrough
+  
+  
+  IgnoreRedirect,
+
+  
+  
+  PassThrough,
 };
 
 
