@@ -163,12 +163,18 @@ async function fetchLatestChanges(url, lastEtag) {
     } catch (e) {
       payload = e.message;
     }
+
     if (!payload.hasOwnProperty("data")) {
       
       
-      throw new Error(`Server error ${response.status} ${response.statusText}: ${JSON.stringify(payload)}`);
+      
+      const is404FromCustomServer = response.status == 404 && Services.prefs.prefHasUserValue(PREF_SETTINGS_SERVER);
+      if (!is404FromCustomServer) {
+        throw new Error(`Server error ${response.status} ${response.statusText}: ${JSON.stringify(payload)}`);
+      }
+    } else {
+      changes = payload.data;
     }
-    changes = payload.data;
   }
   
   
