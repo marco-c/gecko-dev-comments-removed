@@ -962,16 +962,16 @@ public:
 
     
     
-    static void ParseFontList(const nsAString& aFamilyList,
-                              nsTArray<nsString>& aFontList);
+    static void ParseFontList(const nsACString& aFamilyList,
+                              nsTArray<nsCString>& aFontList);
 
     
     static void AppendPrefsFontList(const char *aPrefName,
-                                    nsTArray<nsString>& aFontList);
+                                    nsTArray<nsCString>& aFontList);
 
     
     static void GetPrefsFontList(const char *aPrefName, 
-                                 nsTArray<nsString>& aFontList);
+                                 nsTArray<nsCString>& aFontList);
 
     
     static nsresult MakeUniqueUserFontName(nsAString& aName);
