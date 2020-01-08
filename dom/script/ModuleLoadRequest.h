@@ -44,11 +44,9 @@ public:
 
   
   ModuleLoadRequest(nsIURI* aURI,
-                    nsIScriptElement* aElement,
-                    CORSMode aCORSMode,
+                    ScriptFetchOptions* aFetchOptions,
                     const SRIMetadata& aIntegrity,
                     nsIURI* aReferrer,
-                    mozilla::net::ReferrerPolicy,
                     ScriptLoader* aLoader);
 
   

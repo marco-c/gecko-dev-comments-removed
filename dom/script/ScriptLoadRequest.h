@@ -35,6 +35,33 @@ enum class ScriptKind {
 
 
 
+
+
+
+
+class ScriptFetchOptions
+{
+  ~ScriptFetchOptions();
+
+public:
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(ScriptFetchOptions)
+  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(ScriptFetchOptions)
+
+  ScriptFetchOptions(mozilla::CORSMode aCORSMode,
+                     mozilla::net::ReferrerPolicy aReferrerPolicy,
+                     nsIScriptElement* aElement,
+                     nsIPrincipal* aTriggeringPrincipal);
+
+  const mozilla::CORSMode mCORSMode;
+  const mozilla::net::ReferrerPolicy mReferrerPolicy;
+  nsCOMPtr<nsIScriptElement> mElement;
+  nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
+};
+
+
+
+
+
 class ScriptLoadRequest : public nsISupports,
                           private mozilla::LinkedListElement<ScriptLoadRequest>
 {
@@ -50,11 +77,9 @@ protected:
 public:
   ScriptLoadRequest(ScriptKind aKind,
                     nsIURI* aURI,
-                    nsIScriptElement* aElement,
-                    mozilla::CORSMode aCORSMode,
+                    ScriptFetchOptions* aFetchOptions,
                     const SRIMetadata &aIntegrity,
-                    nsIURI* aReferrer,
-                    mozilla::net::ReferrerPolicy aReferrerPolicy);
+                    nsIURI* aReferrer);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ScriptLoadRequest)
@@ -69,17 +94,17 @@ public:
   void FireScriptAvailable(nsresult aResult)
   {
     bool isInlineClassicScript = mIsInline && !IsModuleRequest();
-    mElement->ScriptAvailable(aResult, mElement, isInlineClassicScript, mURI,
+    Element()->ScriptAvailable(aResult, Element(), isInlineClassicScript, mURI,
                               mLineNo);
   }
   void FireScriptEvaluated(nsresult aResult)
   {
-    mElement->ScriptEvaluated(aResult, mElement, mIsInline);
+    Element()->ScriptEvaluated(aResult, Element(), mIsInline);
   }
 
   bool IsPreload()
   {
-    return mElement == nullptr;
+    return Element() == nullptr;
   }
 
   virtual void Cancel();
@@ -224,6 +249,31 @@ public:
     return true;
   }
 
+  mozilla::CORSMode CORSMode() const
+  {
+    return mFetchOptions->mCORSMode;
+  }
+  mozilla::net::ReferrerPolicy ReferrerPolicy() const
+  {
+    return mFetchOptions->mReferrerPolicy;
+  }
+  nsIScriptElement* Element() const
+  {
+    return mFetchOptions->mElement;
+  }
+  nsIPrincipal* TriggeringPrincipal() const
+  {
+    return mFetchOptions->mTriggeringPrincipal;
+  }
+
+  void SetElement(nsIScriptElement* aElement)
+  {
+    
+    MOZ_ASSERT(aElement);
+    MOZ_ASSERT(!Element());
+    mFetchOptions->mElement = aElement;
+  }
+
   bool ShouldAcceptBinASTEncoding() const;
 
   void ClearScriptSource();
@@ -234,12 +284,11 @@ public:
   using super::getNext;
   using super::isInList;
 
-  const ScriptKind mKind;
-  nsCOMPtr<nsIScriptElement> mElement;
-  bool mScriptFromHead;   
+  const ScriptKind mKind; 
+  ScriptMode mScriptMode; 
   Progress mProgress;     
   DataType mDataType;     
-  ScriptMode mScriptMode; 
+  bool mScriptFromHead;   
   bool mIsInline;         
   bool mHasSourceMapURL;  
   bool mInDeferList;      
@@ -249,6 +298,9 @@ public:
   bool mIsCanceled;       
   bool mWasCompiledOMT;   
   bool mIsTracking;       
+
+  RefPtr<ScriptFetchOptions> mFetchOptions;
+
   JS::OffThreadToken* mOffThreadToken; 
   nsString mSourceMapURL; 
 
@@ -271,14 +323,11 @@ public:
   uint32_t mBytecodeOffset; 
 
   const nsCOMPtr<nsIURI> mURI;
-  nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
   nsCOMPtr<nsIPrincipal> mOriginPrincipal;
   nsAutoCString mURL;     
   int32_t mLineNo;
-  const mozilla::CORSMode mCORSMode;
   const SRIMetadata mIntegrity;
   const nsCOMPtr<nsIURI> mReferrer;
-  const mozilla::net::ReferrerPolicy mReferrerPolicy;
 
   
   
