@@ -30,3 +30,43 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.layout.boxmodel.opened");
   Services.prefs.clearUserPref("devtools.layout.grid.opened");
 });
+
+
+
+
+
+
+
+
+
+
+
+
+async function toggleHighlighterON(button, highlighters, store) {
+  info("Toggling ON the flexbox highlighter from the layout panel.");
+  const onHighlighterShown = highlighters.once("flexbox-highlighter-shown");
+  const onToggleChange = waitUntilState(store, state => state.flexbox.highlighted);
+  button.click();
+  await onHighlighterShown;
+  await onToggleChange;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+async function toggleHighlighterOFF(button, highlighters, store) {
+  info("Toggling OFF the flexbox highlighter from the layout panel.");
+  const onHighlighterHidden = highlighters.once("flexbox-highlighter-hidden");
+  const onToggleChange = waitUntilState(store, state => !state.flexbox.highlighted);
+  button.click();
+  await onHighlighterHidden;
+  await onToggleChange;
+}
