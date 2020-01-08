@@ -95,18 +95,26 @@ const L10nRegistry = {
     const sourcesOrder = Array.from(this.sources.keys()).reverse();
     const pseudoNameFromPref = Services.prefs.getStringPref("intl.l10n.pseudo", "");
     for (const locale of requestedLangs) {
-      for await (const dataSets of generateResourceSetsForLocale(locale, sourcesOrder, resourceIds)) {
-        const ctx = new MessageContext(locale, {
-          ...MSG_CONTEXT_OPTIONS,
-          transform: PSEUDO_STRATEGIES[pseudoNameFromPref],
-        });
-        for (const data of dataSets) {
-          if (data === null) {
-            return null;
-          }
-          ctx.addResource(data);
+      for (const fetchPromises of generateResourceSetsForLocale(locale, sourcesOrder, resourceIds)) {
+        const ctx = await Promise.all(fetchPromises).then(
+          dataSets => {
+            const ctx = new MessageContext(locale, {
+              ...MSG_CONTEXT_OPTIONS,
+              transform: PSEUDO_STRATEGIES[pseudoNameFromPref],
+            });
+            for (const data of dataSets) {
+              if (data === null) {
+                return null;
+              }
+              ctx.addResource(data);
+            }
+            return ctx;
+          },
+          () => null
+        );
+        if (ctx !== null) {
+          yield ctx;
         }
-        yield ctx;
       }
     }
   },
@@ -182,7 +190,7 @@ const L10nRegistry = {
 
 
 
-async function* generateResourceSetsForLocale(locale, sourcesOrder, resourceIds, resolvedOrder = []) {
+function* generateResourceSetsForLocale(locale, sourcesOrder, resourceIds, resolvedOrder = []) {
   const resolvedLength = resolvedOrder.length;
   const resourcesLength = resourceIds.length;
 
@@ -196,32 +204,14 @@ async function* generateResourceSetsForLocale(locale, sourcesOrder, resourceIds,
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    for (let [idx, sourceName] of order.entries()) {
-      if (L10nRegistry.sources.get(sourceName).hasFile(locale, resourceIds[idx]) === false) {
-        if (idx === order.length - 1) {
-          continue;
-        } else {
-          return;
-        }
-      }
+    if (L10nRegistry.sources.get(sourceName).hasFile(locale, resourceIds[resolvedOrder.length]) === false) {
+      continue;
     }
 
     
     
     if (resolvedLength + 1 === resourcesLength) {
-      let dataSet = await generateResourceSet(locale, order, resourceIds);
-      
-      
-      if (!dataSet.includes(false)) {
-        yield dataSet;
-      }
+      yield generateResourceSet(locale, order, resourceIds);
     } else if (resolvedLength < resourcesLength) {
       
       
@@ -356,10 +346,10 @@ const PSEUDO_STRATEGIES = {
 
 
 
-async function generateResourceSet(locale, sourcesOrder, resourceIds) {
-  return Promise.all(resourceIds.map((resourceId, i) => {
+function generateResourceSet(locale, sourcesOrder, resourceIds) {
+  return resourceIds.map((resourceId, i) => {
     return L10nRegistry.sources.get(sourcesOrder[i]).fetchFile(locale, resourceId);
-  }));
+  });
 }
 
 
@@ -430,14 +420,14 @@ class FileSource {
 
   fetchFile(locale, path) {
     if (!this.locales.includes(locale)) {
-      return false;
+      return Promise.reject(`The source has no resources for locale "${locale}"`);
     }
 
     const fullPath = this.getPath(locale, path);
 
     if (this.cache.hasOwnProperty(fullPath)) {
       if (this.cache[fullPath] === false) {
-        return false;
+        return Promise.reject(`The source has no resources for path "${fullPath}"`);
       }
       
       
@@ -445,7 +435,7 @@ class FileSource {
         return this.cache[fullPath];
       }
     } else if (this.indexed) {
-        return false;
+        return Promise.reject(`The source has no resources for path "${fullPath}"`);
       }
     return this.cache[fullPath] = L10nRegistry.load(fullPath).then(
       data => {
@@ -453,7 +443,7 @@ class FileSource {
       },
       err => {
         this.cache[fullPath] = false;
-        return false;
+        return Promise.reject(err);
       }
     );
   }
