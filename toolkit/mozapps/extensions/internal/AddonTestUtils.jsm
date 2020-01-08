@@ -23,12 +23,11 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {EventEmitter} = ChromeUtils.import("resource://gre/modules/EventEmitter.jsm", {});
 const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm", {});
 
+
 ChromeUtils.defineModuleGetter(this, "AMTelemetry",
                                "resource://gre/modules/AddonManager.jsm");
 ChromeUtils.defineModuleGetter(this, "Extension",
                                "resource://gre/modules/Extension.jsm");
-ChromeUtils.defineModuleGetter(this, "ExtensionTestCommon",
-                               "resource://testing-common/ExtensionTestCommon.jsm");
 XPCOMUtils.defineLazyGetter(this, "Management", () => {
   let {Management} = ChromeUtils.import("resource://gre/modules/Extension.jsm", {});
   return Management;
@@ -1137,7 +1136,7 @@ var AddonTestUtils = {
 
 
   createTempWebExtensionFile(data) {
-    let file = ExtensionTestCommon.generateXPI(data);
+    let file = Extension.generateXPI(data);
     this.tempXPIs.push(file);
     return file;
   },
