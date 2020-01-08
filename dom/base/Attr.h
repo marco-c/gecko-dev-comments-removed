@@ -51,10 +51,20 @@ public:
 
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 
-  
-  void SetMap(nsDOMAttributeMap *aMap) override;
+  nsDOMAttributeMap* GetMap()
+  {
+    return mAttrMap;
+  }
+
+  void SetMap(nsDOMAttributeMap *aMap);
+
   Element* GetElement() const;
-  nsresult SetOwnerDocument(nsIDocument* aDocument) override;
+
+  
+
+
+
+  nsresult SetOwnerDocument(nsIDocument* aDocument);
 
   
   virtual bool IsNodeOfType(uint32_t aFlags) const override;
@@ -100,6 +110,7 @@ protected:
   static bool sInitialized;
 
 private:
+  RefPtr<nsDOMAttributeMap> mAttrMap;
   nsString mValue;
 };
 
