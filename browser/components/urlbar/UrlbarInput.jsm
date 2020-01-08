@@ -251,6 +251,14 @@ class UrlbarInput {
     this._loadURL(url, where, openParams);
   }
 
+  handleRevert() {
+    this.window.gBrowser.userTypedValue = null;
+    this.window.URLBarSetURI(null, true);
+    if (this.value && this.focused) {
+      this.select();
+    }
+  }
+
   
 
 
@@ -273,8 +281,7 @@ class UrlbarInput {
 
     switch (result.type) {
       case UrlbarUtils.MATCH_TYPE.TAB_SWITCH: {
-        
-        
+        this.handleRevert();
         let prevTab = this.window.gBrowser.selectedTab;
         let loadOpts = {
           adoptIntoActiveWindow: UrlbarPrefs.get("switchTabs.adoptIntoActiveWindow"),
@@ -590,8 +597,7 @@ class UrlbarInput {
     browser.focus();
 
     if (openUILinkWhere != "current") {
-      
-      
+      this.handleRevert();
     }
 
     try {
@@ -600,8 +606,7 @@ class UrlbarInput {
       
       
       if (ex.result != Cr.NS_ERROR_LOAD_SHOWED_ERRORPAGE) {
-        
-        
+        this.handleRevert();
       }
     }
 
