@@ -119,18 +119,33 @@ impl<T, U> Polygon<T, U> where
     U: fmt::Debug,
 {
     
+    #[deprecated(since = "0.12.1", note = "Use try_from_points instead")]
     pub fn from_points(
         points: [TypedPoint3D<T, U>; 4],
         anchor: usize,
     ) -> Self {
+        Self::try_from_points(points, anchor).unwrap()
+    }
+
+    
+    
+    
+    pub fn try_from_points(
+        points: [TypedPoint3D<T, U>; 4],
+        anchor: usize,
+    ) -> Option<Self> {
         let edge1 = points[1] - points[0];
         let edge2 = points[2] - points[0];
         let edge3 = points[3] - points[0];
+        let edge4 = points[3] - points[1];
+
+        if edge2.square_length() < T::epsilon() || edge4.square_length() < T::epsilon() {
+            return None
+        }
 
         
         
         
-        debug_assert!(edge2.square_length() > T::approx_epsilon());
         let normal_rough1 = edge1.cross(edge2);
         let normal_rough2 = edge2.cross(edge3);
         let square_length1 = normal_rough1.square_length();
@@ -144,14 +159,14 @@ impl<T, U> Polygon<T, U> where
         let offset = -points[0].to_vector()
             .dot(normal);
 
-        Polygon {
+        Some(Polygon {
             points,
             plane: Plane {
                 normal,
                 offset,
             },
             anchor,
-        }
+        })
     }
 
     
@@ -186,7 +201,7 @@ impl<T, U> Polygon<T, U> where
         
         
         
-        Some(Self::from_points(points, anchor))
+        Self::try_from_points(points, anchor)
     }
 
     
@@ -228,7 +243,7 @@ impl<T, U> Polygon<T, U> where
         
         
         
-        Some(Polygon::from_points(points, self.anchor))
+        Polygon::try_from_points(points, self.anchor)
     }
 
     
@@ -252,11 +267,17 @@ impl<T, U> Polygon<T, U> where
     }
 
     
+    
+    pub fn is_empty(&self) -> bool {
+        (self.points[0] - self.points[2]).square_length() < T::epsilon() ||
+        (self.points[1] - self.points[3]).square_length() < T::epsilon()
+    }
+
+    
     pub fn contains(&self, other: &Self) -> bool {
         
         self.plane.contains(&other.plane)
     }
-
 
     
     
