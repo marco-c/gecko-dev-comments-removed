@@ -77,6 +77,8 @@ enum class ColorDepth : uint8_t {
   Color10,
   
   Color12,
+  
+  Color16,
 
   Sentinel 
 };
@@ -276,6 +278,9 @@ struct DocumentHandle;
 
 
 struct LayoutPixel;
+
+
+
 
 
 
