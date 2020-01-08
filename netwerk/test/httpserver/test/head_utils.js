@@ -375,7 +375,9 @@ function RawTest(host, port, data, responseCheck) {
 
 
 
-function runRawTests(testArray, done) {
+
+
+function runRawTests(testArray, done, beforeTestCallback) {
   do_test_pending();
 
   var sts = Cc["@mozilla.org/network/socket-transport-service;1"]
@@ -397,6 +399,11 @@ function runRawTests(testArray, done) {
       return;
     }
 
+    if (beforeTestCallback) {
+      try {
+        beforeTestCallback(testIndex);
+      } catch (e) {  }
+    }
 
     var rawTest = testArray[testIndex];
 
