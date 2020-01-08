@@ -116,45 +116,6 @@ BlockedContentSourceToString(nsCSPContext::BlockedContentSource aSource,
 
 
 
-
-
-nsresult
-CreateCacheKey_Internal(nsIURI* aContentLocation,
-                        nsContentPolicyType aContentType,
-                        nsACString& outCacheKey)
-{
-  if (!aContentLocation) {
-    return NS_ERROR_FAILURE;
-  }
-
-  bool isDataScheme = false;
-  nsresult rv = aContentLocation->SchemeIs("data", &isDataScheme);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  outCacheKey.Truncate();
-  if (aContentType != nsIContentPolicy::TYPE_SCRIPT && isDataScheme) {
-    
-    outCacheKey.AppendLiteral("data:");
-    outCacheKey.AppendInt(aContentType);
-    return NS_OK;
-  }
-
-  nsAutoCString spec;
-  rv = aContentLocation->GetSpec(spec);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  if (spec.Length() <= CSP_CACHE_URI_CUTOFF_SIZE) {
-    outCacheKey.Append(spec);
-    outCacheKey.AppendLiteral("!");
-    outCacheKey.AppendInt(aContentType);
-  }
-
-  return NS_OK;
-}
-
-
-
 NS_IMETHODIMP
 nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
                          nsIURI*             aContentLocation,
@@ -178,8 +139,6 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
   
   aContentType = nsContentUtils::InternalContentPolicyTypeToExternalOrWorker(aContentType);
 
-  nsresult rv = NS_OK;
-
   
   
   
@@ -187,16 +146,6 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
   
   
   
-
-  nsAutoCString cacheKey;
-  rv = CreateCacheKey_Internal(aContentLocation, aContentType, cacheKey);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  bool isCached = mShouldLoadCache.Get(cacheKey, outDecision);
-  if (isCached && cacheKey.Length() > 0) {
-    
-    return NS_OK;
-  }
 
   
   *outDecision = nsIContentPolicy::ACCEPT;
@@ -239,11 +188,6 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
 
   *outDecision = permitted ? nsIContentPolicy::ACCEPT
                            : nsIContentPolicy::REJECT_SERVER;
-
-  
-  if (cacheKey.Length() > 0 && !isPreload) {
-    mShouldLoadCache.Put(cacheKey, *outDecision);
-  }
 
   if (CSPCONTEXTLOGENABLED()) {
     CSPCONTEXTLOG(("nsCSPContext::ShouldLoad, decision: %s, "
@@ -335,7 +279,6 @@ nsCSPContext::~nsCSPContext()
   for (uint32_t i = 0; i < mPolicies.Length(); i++) {
     delete mPolicies[i];
   }
-  mShouldLoadCache.Clear();
 }
 
 NS_IMETHODIMP
@@ -430,8 +373,6 @@ nsCSPContext::AppendPolicy(const nsAString& aPolicyString,
     }
 
     mPolicies.AppendElement(policy);
-    
-    mShouldLoadCache.Clear();
   }
   return NS_OK;
 }
