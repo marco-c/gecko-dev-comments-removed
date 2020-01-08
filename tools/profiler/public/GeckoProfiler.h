@@ -46,7 +46,6 @@
 #define AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING(label, category, nsCStr)
 #define AUTO_PROFILER_LABEL_DYNAMIC_LOSSY_NSSTRING(label, category, nsStr)
 #define AUTO_PROFILER_LABEL_FAST(label, category, ctx)
-#define AUTO_PROFILER_LABEL_DYNAMIC_FAST(label, dynamicString, category, ctx, flags)
 
 #define PROFILER_ADD_MARKER(markerName)
 #define PROFILER_ADD_NETWORK_MARKER(uri, pri, channel, type, start, end, count, timings, redirect)
@@ -474,7 +473,7 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 #define AUTO_PROFILER_LABEL(label, category) \
-  mozilla::AutoProfilerLabel PROFILER_RAII(label, nullptr, \
+  mozilla::AutoProfilerLabel PROFILER_RAII(label, nullptr, __LINE__, \
                                            js::ProfilingStackFrame::Category::category)
 
 
@@ -498,7 +497,7 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 #define AUTO_PROFILER_LABEL_DYNAMIC_CSTR(label, category, cStr) \
   mozilla::AutoProfilerLabel \
-    PROFILER_RAII(label, cStr, js::ProfilingStackFrame::Category::category)
+    PROFILER_RAII(label, cStr, __LINE__, js::ProfilingStackFrame::Category::category)
 
 
 
@@ -512,7 +511,7 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
   mozilla::Maybe<AutoProfilerLabel> raiiObjectNsCString; \
   if (profiler_is_active()) { \
     autoCStr.emplace(nsCStr); \
-    raiiObjectNsCString.emplace(label, autoCStr->get(), \
+    raiiObjectNsCString.emplace(label, autoCStr->get(), __LINE__, \
                                 js::ProfilingStackFrame::Category::category); \
   }
 
@@ -529,7 +528,7 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
   mozilla::Maybe<AutoProfilerLabel> raiiObjectLossyNsString; \
   if (profiler_is_active()) { \
     asciiStr.emplace(nsStr); \
-    raiiObjectLossyNsString.emplace(label, asciiStr->get(), \
+    raiiObjectLossyNsString.emplace(label, asciiStr->get(), __LINE__, \
                                     js::ProfilingStackFrame::Category::category); \
   }
 
@@ -540,16 +539,8 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 #define AUTO_PROFILER_LABEL_FAST(label, category, ctx) \
-  mozilla::AutoProfilerLabel PROFILER_RAII(ctx, label, nullptr, \
+  mozilla::AutoProfilerLabel PROFILER_RAII(ctx, label, nullptr, __LINE__, \
                                            js::ProfilingStackFrame::Category::category)
-
-
-
-
-#define AUTO_PROFILER_LABEL_DYNAMIC_FAST(label, dynamicString, category, ctx, flags) \
-  mozilla::AutoProfilerLabel PROFILER_RAII(ctx, label, dynamicString, \
-                                           js::ProfilingStackFrame::Category::category, \
-                                           flags)
 
 
 
@@ -728,39 +719,41 @@ class MOZ_RAII AutoProfilerLabel
 public:
   
   AutoProfilerLabel(const char* aLabel, const char* aDynamicString,
-                    js::ProfilingStackFrame::Category aCategory
+                    uint32_t aLine, js::ProfilingStackFrame::Category aCategory
                     MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
 
     
-    Push(sProfilingStack.get(), aLabel, aDynamicString, aCategory);
+    Push(sProfilingStack.get(), aLabel, aDynamicString, aLine, aCategory);
   }
 
   
   
   AutoProfilerLabel(JSContext* aJSContext,
                     const char* aLabel, const char* aDynamicString,
-                    js::ProfilingStackFrame::Category aCategory,
-                    uint32_t aFlags
+                    uint32_t aLine, js::ProfilingStackFrame::Category aCategory
                     MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    Push(js::GetContextProfilingStackIfEnabled(aJSContext),
-         aLabel, aDynamicString, aCategory, aFlags);
+    if (profiler_is_active()) {
+      Push(js::GetContextProfilingStack(aJSContext),
+           aLabel, aDynamicString, aLine, aCategory);
+    } else {
+      mProfilingStack = nullptr;
+    }
   }
 
   void Push(ProfilingStack* aProfilingStack,
             const char* aLabel, const char* aDynamicString,
-            js::ProfilingStackFrame::Category aCategory,
-            uint32_t aFlags = 0)
+            uint32_t aLine, js::ProfilingStackFrame::Category aCategory)
   {
     
 
     mProfilingStack = aProfilingStack;
     if (mProfilingStack) {
-      mProfilingStack->pushLabelFrame(aLabel, aDynamicString, this, aCategory,
-                                      aFlags);
+      mProfilingStack->pushLabelFrame(aLabel, aDynamicString, this, aLine,
+                                   aCategory);
     }
   }
 

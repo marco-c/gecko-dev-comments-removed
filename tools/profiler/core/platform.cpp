@@ -985,7 +985,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
       
       
       
-      if (profilingStackFrame.isOSRFrame()) {
+      if (profilingStackFrame.kind() == js::ProfilingStackFrame::Kind::JS_OSR) {
           profilingStackIndex++;
           continue;
       }
@@ -1840,9 +1840,8 @@ CollectJavaThreadProfileData()
         parentFrameWasIdleFrame = false;
       }
 
-      buffer->CollectCodeLocation("", frameNameString.get(),
-          js::ProfilingStackFrame::StringTemplate::DEFAULT,
-          Nothing(), Nothing(), category);
+      buffer->CollectCodeLocation("", frameNameString.get(), Nothing(),
+          Nothing(), category);
     }
     sampleId++;
   }
@@ -2494,11 +2493,12 @@ locked_profiler_start(PSLockRef aLock, uint32_t aCapacity, double aInterval,
 
 
 ProfilingStack*
-MozGlueLabelEnter(const char* aLabel, const char* aDynamicString, void* aSp)
+MozGlueLabelEnter(const char* aLabel, const char* aDynamicString, void* aSp,
+                  uint32_t aLine)
 {
   ProfilingStack* profilingStack = AutoProfilerLabel::sProfilingStack.get();
   if (profilingStack) {
-    profilingStack->pushLabelFrame(aLabel, aDynamicString, aSp,
+    profilingStack->pushLabelFrame(aLabel, aDynamicString, aSp, aLine,
                                 js::ProfilingStackFrame::Category::OTHER);
   }
   return profilingStack;

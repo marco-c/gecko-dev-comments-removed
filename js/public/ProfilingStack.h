@@ -146,15 +146,12 @@ class ProfilingStackFrame
                     mozilla::recordreplay::Behavior::DontPreserve> spOrScript;
 
     
-    
-    
-    
     mozilla::Atomic<int32_t, mozilla::ReleaseAcquire,
-                    mozilla::recordreplay::Behavior::DontPreserve> pcOffsetIfJS_;
+                    mozilla::recordreplay::Behavior::DontPreserve> lineOrPcOffset;
 
     
     mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire,
-                    mozilla::recordreplay::Behavior::DontPreserve> flagsAndCategory_;
+                    mozilla::recordreplay::Behavior::DontPreserve> kindAndCategory_;
 
     static int32_t pcToOffset(JSScript* aScript, jsbytecode* aPc);
 
@@ -166,49 +163,34 @@ class ProfilingStackFrame
         dynamicString_ = other.dynamicString();
         void* spScript = other.spOrScript;
         spOrScript = spScript;
-        int32_t offsetIfJS = other.pcOffsetIfJS_;
-        pcOffsetIfJS_ = offsetIfJS;
-        uint32_t flagsAndCategory = other.flagsAndCategory_;
-        flagsAndCategory_ = flagsAndCategory;
+        int32_t offset = other.lineOrPcOffset;
+        lineOrPcOffset = offset;
+        uint32_t kindAndCategory = other.kindAndCategory_;
+        kindAndCategory_ = kindAndCategory;
         return *this;
     }
 
-    
-    
-    enum class Flags : uint32_t {
+    enum class Kind : uint32_t {
         
-        
-        
-
-        
-        IS_LABEL_FRAME = 1 << 0,
+        LABEL = 0,
 
         
         
         
         
         
-        IS_SP_MARKER_FRAME = 1 << 1,
+        SP_MARKER = 1,
 
         
-        IS_JS_FRAME = 1 << 2,
-
-        
-        
-        
-        JS_OSR = 1 << 3,
+        JS_NORMAL = 2,
 
         
         
         
-        
-        
-        STRING_TEMPLATE_METHOD = 1 << 4, 
-        STRING_TEMPLATE_GETTER = 1 << 5, 
-        STRING_TEMPLATE_SETTER = 1 << 6, 
+        JS_OSR = 3,
 
-        FLAGS_BITCOUNT = 7,
-        FLAGS_MASK = (1 << FLAGS_BITCOUNT) - 1
+        KIND_BITCOUNT = 2,
+        KIND_MASK = (1 << KIND_BITCOUNT) - 1
     };
 
     
@@ -226,36 +208,23 @@ class ProfilingStackFrame
         LAST     = DOM,
     };
 
-    static_assert(uint32_t(Category::LAST) <= (UINT32_MAX >> uint32_t(Flags::FLAGS_BITCOUNT)),
-                  "Too many categories to fit into u32 with together with the reserved bits for the flags");
+    static_assert(uint32_t(Category::LAST) <= (UINT32_MAX >> uint32_t(Kind::KIND_BITCOUNT)),
+                  "Too many categories to fit into u32 with two bits reserved for the kind");
 
     bool isLabelFrame() const
     {
-        return uint32_t(flagsAndCategory_) & uint32_t(Flags::IS_LABEL_FRAME);
+        return kind() == Kind::LABEL;
     }
 
     bool isSpMarkerFrame() const
     {
-        return uint32_t(flagsAndCategory_) & uint32_t(Flags::IS_SP_MARKER_FRAME);
+        return kind() == Kind::SP_MARKER;
     }
 
     bool isJsFrame() const
     {
-        return uint32_t(flagsAndCategory_) & uint32_t(Flags::IS_JS_FRAME);
-    }
-
-    bool isOSRFrame() const {
-        return uint32_t(flagsAndCategory_) & uint32_t(Flags::JS_OSR);
-    }
-
-    void setIsOSRFrame(bool isOSR) {
-        if (isOSR) {
-            flagsAndCategory_ =
-                uint32_t(flagsAndCategory_) | uint32_t(Flags::JS_OSR);
-        } else {
-            flagsAndCategory_ =
-                uint32_t(flagsAndCategory_) & ~uint32_t(Flags::JS_OSR);
-        }
+        Kind k = kind();
+        return k == Kind::JS_NORMAL || k == Kind::JS_OSR;
     }
 
     void setLabel(const char* aLabel) { label_ = aLabel; }
@@ -264,16 +233,13 @@ class ProfilingStackFrame
     const char* dynamicString() const { return dynamicString_; }
 
     void initLabelFrame(const char* aLabel, const char* aDynamicString, void* sp,
-                        Category aCategory, uint32_t aFlags)
+                        uint32_t aLine, Category aCategory)
     {
         label_ = aLabel;
         dynamicString_ = aDynamicString;
         spOrScript = sp;
-        
-        flagsAndCategory_ =
-            uint32_t(Flags::IS_LABEL_FRAME) |
-            (uint32_t(aCategory) << uint32_t(Flags::FLAGS_BITCOUNT)) |
-            aFlags;
+        lineOrPcOffset = static_cast<int32_t>(aLine);
+        kindAndCategory_ = uint32_t(Kind::LABEL) | (uint32_t(aCategory) << uint32_t(Kind::KIND_BITCOUNT));
         MOZ_ASSERT(isLabelFrame());
     }
 
@@ -282,10 +248,8 @@ class ProfilingStackFrame
         label_ = "";
         dynamicString_ = nullptr;
         spOrScript = sp;
-        
-        flagsAndCategory_ =
-            uint32_t(Flags::IS_SP_MARKER_FRAME) |
-            (uint32_t(Category::OTHER) << uint32_t(Flags::FLAGS_BITCOUNT));
+        lineOrPcOffset = 0;
+        kindAndCategory_ = uint32_t(Kind::SP_MARKER) | (uint32_t(Category::OTHER) << uint32_t(Kind::KIND_BITCOUNT));
         MOZ_ASSERT(isSpMarkerFrame());
     }
 
@@ -295,19 +259,21 @@ class ProfilingStackFrame
         label_ = aLabel;
         dynamicString_ = aDynamicString;
         spOrScript = aScript;
-        pcOffsetIfJS_ = pcToOffset(aScript, aPc);
-        flagsAndCategory_ =
-            uint32_t(Flags::IS_JS_FRAME) |
-            (uint32_t(Category::JS) << uint32_t(Flags::FLAGS_BITCOUNT));
+        lineOrPcOffset = pcToOffset(aScript, aPc);
+        kindAndCategory_ = uint32_t(Kind::JS_NORMAL) | (uint32_t(Category::JS) << uint32_t(Kind::KIND_BITCOUNT));
         MOZ_ASSERT(isJsFrame());
     }
 
-    uint32_t flags() const {
-        return uint32_t(flagsAndCategory_) & uint32_t(Flags::FLAGS_MASK);
+    void setKind(Kind aKind) {
+        kindAndCategory_ = uint32_t(aKind) | (uint32_t(category()) << uint32_t(Kind::KIND_BITCOUNT));
+    }
+
+    Kind kind() const {
+        return Kind(kindAndCategory_ & uint32_t(Kind::KIND_MASK));
     }
 
     Category category() const {
-        return Category(flagsAndCategory_ >> uint32_t(Flags::FLAGS_BITCOUNT));
+        return Category(kindAndCategory_ >> uint32_t(Kind::KIND_BITCOUNT));
     }
 
     void* stackAddress() const {
@@ -316,6 +282,11 @@ class ProfilingStackFrame
     }
 
     JS_PUBLIC_API(JSScript*) script() const;
+
+    uint32_t line() const {
+        MOZ_ASSERT(!isJsFrame());
+        return static_cast<uint32_t>(lineOrPcOffset);
+    }
 
     
     JSScript* rawScript() const {
@@ -392,20 +363,12 @@ class ProfilingStack final
     ~ProfilingStack();
 
     void pushLabelFrame(const char* label, const char* dynamicString, void* sp,
-                        js::ProfilingStackFrame::Category category,
-                        uint32_t flags = 0) {
-        
-        
-        
-        
-        
-        uint32_t stackPointerVal = stackPointer;
+                        uint32_t line, js::ProfilingStackFrame::Category category) {
+        uint32_t oldStackPointer = stackPointer;
 
-        if (MOZ_UNLIKELY(stackPointerVal >= capacity)) {
-            ensureCapacitySlow();
+        if (MOZ_LIKELY(capacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow())) {
+            frames[oldStackPointer].initLabelFrame(label, dynamicString, sp, line, category);
         }
-        frames[stackPointerVal].initLabelFrame(label, dynamicString, sp,
-                                               category, flags);
 
         
         
@@ -415,17 +378,15 @@ class ProfilingStack final
         
         
         
-        
-        stackPointer = stackPointer + 1;
+        stackPointer = oldStackPointer + 1;
     }
 
     void pushSpMarkerFrame(void* sp) {
         uint32_t oldStackPointer = stackPointer;
 
-        if (MOZ_UNLIKELY(oldStackPointer >= capacity)) {
-            ensureCapacitySlow();
+        if (MOZ_LIKELY(capacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow())) {
+            frames[oldStackPointer].initSpMarkerFrame(sp);
         }
-        frames[oldStackPointer].initSpMarkerFrame(sp);
 
         
         stackPointer = oldStackPointer + 1;
@@ -433,17 +394,14 @@ class ProfilingStack final
 
     void pushJsFrame(const char* label, const char* dynamicString, JSScript* script,
                      jsbytecode* pc) {
-        
-        
         uint32_t oldStackPointer = stackPointer;
 
-        if (MOZ_UNLIKELY(oldStackPointer >= capacity)) {
-            ensureCapacitySlow();
+        if (MOZ_LIKELY(capacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow())) {
+            frames[oldStackPointer].initJsFrame(label, dynamicString, script, pc);
         }
-        frames[oldStackPointer].initJsFrame(label, dynamicString, script, pc);
 
         
-        stackPointer = stackPointer + 1;
+        stackPointer = oldStackPointer + 1;
     }
 
     void pop() {
@@ -457,13 +415,13 @@ class ProfilingStack final
         stackPointer = oldStackPointer - 1;
     }
 
-    uint32_t stackSize() const { return stackPointer; }
+    uint32_t stackSize() const { return std::min(uint32_t(stackPointer), stackCapacity()); }
     uint32_t stackCapacity() const { return capacity; }
 
   private:
     
     
-    MOZ_COLD void ensureCapacitySlow();
+    MOZ_COLD MOZ_MUST_USE bool ensureCapacitySlow();
 
     
     ProfilingStack(const ProfilingStack&) = delete;
@@ -513,16 +471,12 @@ class GeckoProfilerThread
 
     ProfilingStack*         profilingStack_;
 
-    
-    ProfilingStack*         profilingStackIfEnabled_;
-
   public:
     GeckoProfilerThread();
 
     uint32_t stackPointer() { MOZ_ASSERT(infraInstalled()); return profilingStack_->stackPointer; }
     ProfilingStackFrame* stack() { return profilingStack_->frames; }
     ProfilingStack* getProfilingStack() { return profilingStack_; }
-    ProfilingStack* getProfilingStackIfEnabled() { return profilingStackIfEnabled_; }
 
     
 
@@ -531,8 +485,7 @@ class GeckoProfilerThread
 
     bool infraInstalled() { return profilingStack_ != nullptr; }
 
-    void setProfilingStack(ProfilingStack* profilingStack, bool enabled);
-    void enable(bool enable) { profilingStackIfEnabled_ = enable ? profilingStack_ : nullptr; }
+    void setProfilingStack(ProfilingStack* profilingStack);
     void trace(JSTracer* trc);
 
     

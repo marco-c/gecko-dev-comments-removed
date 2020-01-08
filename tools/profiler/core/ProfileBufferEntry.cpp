@@ -937,13 +937,6 @@ private:
 
 
 
-
-
-
-
-
-
-
 #define ERROR_AND_CONTINUE(msg) \
   { \
     fprintf(stderr, "ProfileBuffer parse error: %s", msg); \
@@ -956,7 +949,7 @@ ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                                    double aSinceTime,
                                    UniqueStacks& aUniqueStacks) const
 {
-  UniquePtr<char[]> dynStrBuf = MakeUnique<char[]>(kMaxFrameKeyLength);
+  UniquePtr<char[]> strbuf = MakeUnique<char[]>(kMaxFrameKeyLength);
 
   EntryGetter e(*this);
 
@@ -1031,26 +1024,30 @@ ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
       } else if (e.Get().IsLabel()) {
         numFrames++;
 
+        
         const char* label = e.Get().u.mString;
+        strncpy(strbuf.get(), label, kMaxFrameKeyLength);
+        size_t i = strlen(label);
         e.Next();
 
-        using FrameFlags = js::ProfilingStackFrame::Flags;
-        uint32_t frameFlags = 0;
-        if (e.Has() && e.Get().IsFrameFlags()) {
-          frameFlags = uint32_t(e.Get().u.mUint64);
-          e.Next();
-        }
-
-        
-        
-        size_t i = 0;
-        dynStrBuf[0] = '\0';
+        bool seenFirstDynamicStringFragment = false;
         while (e.Has()) {
           if (e.Get().IsDynamicStringFragment()) {
+            
+            
+            
+            if (!seenFirstDynamicStringFragment) {
+              if (i > 0 && i < kMaxFrameKeyLength) {
+                strbuf[i] = ' ';
+                i++;
+              }
+              seenFirstDynamicStringFragment = true;
+            }
+
             for (size_t j = 0; j < ProfileBufferEntry::kNumChars; j++) {
               const char* chars = e.Get().u.mChars;
               if (i < kMaxFrameKeyLength) {
-                dynStrBuf[i] = chars[j];
+                strbuf[i] = chars[j];
                 i++;
               }
             }
@@ -1059,25 +1056,7 @@ ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
             break;
           }
         }
-        dynStrBuf[kMaxFrameKeyLength - 1] = '\0';
-        bool hasDynamicString = (i != 0);
-
-        nsCString frameLabel;
-        if (label[0] != '\0' && hasDynamicString) {
-          if (frameFlags & uint32_t(FrameFlags::STRING_TEMPLATE_METHOD)) {
-            frameLabel.AppendPrintf("%s.%s", label, dynStrBuf.get());
-          } else if (frameFlags & uint32_t(FrameFlags::STRING_TEMPLATE_GETTER)) {
-            frameLabel.AppendPrintf("get %s.%s", label, dynStrBuf.get());
-          } else if (frameFlags & uint32_t(FrameFlags::STRING_TEMPLATE_SETTER)) {
-            frameLabel.AppendPrintf("set %s.%s", label, dynStrBuf.get());
-          } else {
-            frameLabel.AppendPrintf("%s %s", label, dynStrBuf.get());
-          }
-        } else if (hasDynamicString) {
-          frameLabel.Append(dynStrBuf.get());
-        } else {
-          frameLabel.Append(label);
-        }
+        strbuf[kMaxFrameKeyLength - 1] = '\0';
 
         Maybe<unsigned> line;
         if (e.Has() && e.Get().IsLineNumber()) {
@@ -1098,8 +1077,7 @@ ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
         }
 
         stack = aUniqueStacks.AppendFrame(
-          stack, UniqueStacks::FrameKey(std::move(frameLabel), line, column,
-                                        category));
+          stack, UniqueStacks::FrameKey(strbuf.get(), line, column, category));
 
       } else if (e.Get().IsJitReturnAddr()) {
         numFrames++;
