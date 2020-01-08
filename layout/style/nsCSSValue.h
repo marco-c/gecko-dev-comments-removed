@@ -154,6 +154,8 @@ public:
 
   nsDependentCSubstring GetString() const;
 
+  uint64_t LoadID() const { return mLoadID; }
+
 private:
   
   
@@ -172,6 +174,17 @@ private:
 
 protected:
   const CORSMode mCORSMode;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint64_t mLoadID = 0;
 
   virtual ~URLValueData();
 
@@ -217,22 +230,8 @@ struct ImageValue final : public URLValueData
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-  uint64_t LoadID() const { return mLoadID; }
-
 protected:
   ~ImageValue();
-
-private:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  uint64_t mLoadID = 0;
 };
 
 struct GridNamedArea {
