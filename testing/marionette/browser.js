@@ -13,6 +13,7 @@ const {
 } = ChromeUtils.import("chrome://marionette/content/error.js", {});
 const {
   MessageManagerDestroyedPromise,
+  waitForEvent,
 } = ChromeUtils.import("chrome://marionette/content/sync.js", {});
 
 this.EXPORTED_SYMBOLS = ["browser", "Context", "WindowState"];
@@ -287,17 +288,13 @@ browser.Context = class {
 
 
   closeWindow() {
-    return new Promise(resolve => {
-      
-      let destroyed = new MessageManagerDestroyedPromise(
-          this.window.messageManager);
+    let destroyed = new MessageManagerDestroyedPromise(
+        this.window.messageManager);
+    let unloaded = waitForEvent(this.window, "unload");
 
-      this.window.addEventListener("unload", async () => {
-        await destroyed;
-        resolve();
-      }, {once: true});
-      this.window.close();
-    });
+    this.window.close();
+
+    return Promise.all([destroyed, unloaded]);
   }
 
   
@@ -319,30 +316,25 @@ browser.Context = class {
       return this.closeWindow();
     }
 
-    return new Promise((resolve, reject) => {
+    let destroyed = new MessageManagerDestroyedPromise(this.messageManager);
+    let tabClosed;
+
+    if (this.tabBrowser.closeTab) {
       
-      let browserDetached = async () => {
-        await new MessageManagerDestroyedPromise(this.messageManager);
-        resolve();
-      };
+      tabClosed = waitForEvent(this.tabBrowser.deck, "TabClose");
+      this.tabBrowser.closeTab(this.tab);
 
-      if (this.tabBrowser.closeTab) {
-        
-        this.tabBrowser.deck.addEventListener(
-            "TabClose", browserDetached, {once: true});
-        this.tabBrowser.closeTab(this.tab);
+    } else if (this.tabBrowser.removeTab) {
+      
+      tabClosed = waitForEvent(this.tab, "TabClose");
+      this.tabBrowser.removeTab(this.tab);
 
-      } else if (this.tabBrowser.removeTab) {
-        
-        this.tab.addEventListener(
-            "TabClose", browserDetached, {once: true});
-        this.tabBrowser.removeTab(this.tab);
+    } else {
+      throw new UnsupportedOperationError(
+        `closeTab() not supported in ${this.driver.appName}`);
+    }
 
-      } else {
-        reject(new UnsupportedOperationError(
-            `closeTab() not supported in ${this.driver.appName}`));
-      }
-    });
+    return Promise.all([destroyed, tabClosed]);
   }
 
   

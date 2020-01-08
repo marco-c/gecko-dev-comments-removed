@@ -25,6 +25,7 @@ this.EXPORTED_SYMBOLS = [
   "PollPromise",
   "Sleep",
   "TimedPromise",
+  "waitForEvent",
 ];
 
 const {TYPE_ONE_SHOT, TYPE_REPEATING_SLACK} = Ci.nsITimer;
@@ -367,3 +368,99 @@ class DebounceCallback {
   }
 }
 this.DebounceCallback = DebounceCallback;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function waitForEvent(subject, eventName,
+    {capture = false, checkFn = null, wantsUntrusted = false} = {}) {
+  if (subject == null || !("addEventListener" in subject)) {
+    throw new TypeError();
+  }
+  if (typeof eventName != "string") {
+    throw new TypeError();
+  }
+  if (capture != null && typeof capture != "boolean") {
+    throw new TypeError();
+  }
+  if (checkFn != null && typeof checkFn != "function") {
+    throw new TypeError();
+  }
+  if (wantsUntrusted != null && typeof wantsUntrusted != "boolean") {
+    throw new TypeError();
+  }
+
+  return new Promise((resolve, reject) => {
+    subject.addEventListener(eventName, function listener(event) {
+      log.trace(`Received DOM event ${event.type} for ${event.target}`);
+      try {
+        if (checkFn && !checkFn(event)) {
+          return;
+        }
+        subject.removeEventListener(eventName, listener, capture);
+        executeSoon(() => resolve(event));
+      } catch (ex) {
+        try {
+          subject.removeEventListener(eventName, listener, capture);
+        } catch (ex2) {
+          
+        }
+        executeSoon(() => reject(ex));
+      }
+    }, capture, wantsUntrusted);
+  });
+}
