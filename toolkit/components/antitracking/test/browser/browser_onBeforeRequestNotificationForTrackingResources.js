@@ -8,7 +8,6 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
-
 let extension;
 add_task(async function() {
   extension = ExtensionTestUtils.loadExtension({
