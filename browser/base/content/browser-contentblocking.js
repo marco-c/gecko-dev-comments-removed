@@ -132,7 +132,12 @@ var TrackingProtection = {
 
 var ThirdPartyCookies = {
   PREF_ENABLED: "network.cookie.cookieBehavior",
-  PREF_ENABLED_VALUE: Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
+  PREF_ENABLED_VALUES: [
+    
+    
+    Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN,  
+    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,  
+  ],
   PREF_UI_ENABLED: "browser.contentblocking.rejecttrackers.control-center.ui.enabled",
 
   get categoryItem() {
@@ -147,7 +152,7 @@ var ThirdPartyCookies = {
     XPCOMUtils.defineLazyPreferenceGetter(this, "visible", this.PREF_UI_ENABLED, false);
   },
   get enabled() {
-    return this.behaviorPref == this.PREF_ENABLED_VALUE;
+    return this.PREF_ENABLED_VALUES.includes(this.behaviorPref);
   },
 };
 
