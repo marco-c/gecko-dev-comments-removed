@@ -43,6 +43,27 @@ function promiseContentToChromeMessage(messageType) {
   });
 }
 
+
+
+
+
+
+
+function importDialogDependencies(templateFrame, destinationEl) {
+  for (let template of templateFrame.contentDocument.querySelectorAll("template")) {
+    let imported = document.importNode(template, true);
+    destinationEl.appendChild(imported);
+  }
+
+  let baseURL = new URL("../../res/", window.location.href);
+  let stylesheetLinks = templateFrame.contentDocument.querySelectorAll("link[rel~='stylesheet']");
+  for (let stylesheet of stylesheetLinks) {
+    let imported = document.importNode(stylesheet, true);
+    imported.href = new URL(imported.getAttribute("href"), baseURL);
+    destinationEl.appendChild(imported);
+  }
+}
+
 function deepClone(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
