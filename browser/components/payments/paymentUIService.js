@@ -79,7 +79,7 @@ PaymentUIService.prototype = {
       merchantBrowser.setAttribute("tabmodalPromptShowing", "true");
 
       
-      let tabModalBackground = chromeWindow.document.createElement("box");
+      let tabModalBackground = chromeWindow.document.createXULElement("box");
       tabModalBackground.classList.add("tabModalBackground", "paymentDialogBackground");
       
       merchantBrowser.parentNode.insertBefore(tabModalBackground,
