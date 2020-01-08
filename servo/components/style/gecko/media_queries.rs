@@ -234,10 +234,13 @@ impl Device {
     }
 
     
+    #[inline]
     pub fn zoom_text(&self, size: Au) -> Au {
         size.scale_by(self.pres_context().mEffectiveTextZoom)
     }
+
     
+    #[inline]
     pub fn unzoom_text(&self, size: Au) -> Au {
         size.scale_by(1. / self.pres_context().mEffectiveTextZoom)
     }
