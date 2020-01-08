@@ -116,10 +116,6 @@ public:
 
 
   mozilla::TimeStamp MostRecentRefresh() const;
-  
-
-
-  int64_t MostRecentRefreshEpochTime() const;
 
   
 
@@ -430,7 +426,7 @@ private:
   void DispatchAnimationEvents();
   void RunFrameRequestCallbacks(mozilla::TimeStamp aNowTime);
   void UpdateIntersectionObservations();
-  void Tick(int64_t aNowEpoch, mozilla::TimeStamp aNowTime);
+  void Tick(mozilla::TimeStamp aNowTime);
 
   enum EnsureTimerStartedFlags {
     eNone = 0,
@@ -512,7 +508,6 @@ private:
   
   bool mNotifyDOMContentFlushed;
 
-  int64_t mMostRecentRefreshEpochTime;
   
   
   
