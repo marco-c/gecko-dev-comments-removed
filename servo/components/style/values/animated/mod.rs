@@ -21,10 +21,10 @@ use std::cmp;
 
 pub mod color;
 pub mod effects;
-pub mod transform;
 mod font;
 mod length;
 mod svg;
+pub mod transform;
 
 
 
