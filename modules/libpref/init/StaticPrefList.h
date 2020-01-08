@@ -1145,16 +1145,6 @@ PREF("preferences.allow.omt-write", bool, true)
 
 
 VARCACHE_PREF(
-  "view_source.editor.external",
-   view_source_editor_external,
-  bool, false
-)
-
-
-
-
-
-VARCACHE_PREF(
   "privacy.restrict3rdpartystorage.enabled",
    privacy_restrict3rdpartystorage_enabled,
   RelaxedAtomicBool, false
@@ -1171,6 +1161,16 @@ VARCACHE_PREF(
   "privacy.restrict3rdpartystorage.expiration",
    privacy_restrict3rdpartystorage_expiration,
   uint32_t, 2592000 
+)
+
+
+
+
+
+VARCACHE_PREF(
+  "view_source.editor.external",
+   view_source_editor_external,
+  bool, false
 )
 
 
