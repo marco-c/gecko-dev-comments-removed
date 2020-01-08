@@ -214,8 +214,11 @@ splitter.devtools-horizontal-splitter,
 
 .devtools-dropdown-button {
   background-image: url("chrome://devtools/skin/images/select-arrow.svg") !important;
+  background-position: right center !important;
   background-repeat: no-repeat !important;
   overflow: hidden;
+  padding-inline-start: 2px !important;
+  padding-inline-end: 10px !important;
   fill: var(--theme-toolbar-photon-icon-color);
   -moz-context-properties: fill;
 }
@@ -233,15 +236,3 @@ splitter.devtools-horizontal-splitter,
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-
-
-
-
-
-#network-throttling-menu {
-  padding-left: 2px;
-  padding-right: 10px;
-  background-position: right center;
-}
-
