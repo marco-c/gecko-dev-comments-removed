@@ -3125,6 +3125,8 @@ function checkUpdateLogContents(aCompareLogFile, aStaged = false,
   updateLogContents = updateLogContents.replace(/WORKING DIRECTORY.*/g, "");
   
   updateLogContents = updateLogContents.replace(/NS_main: callback app file .*/g, "");
+  
+  updateLogContents = updateLogContents.replace(/\r/g, "");
 
   if (IS_WIN) {
     
@@ -3141,10 +3143,16 @@ function checkUpdateLogContents(aCompareLogFile, aStaged = false,
     updateLogContents = updateLogContents.replace(/^ensure_remove_recursive: unable to remove directory: .*$/mg, "");
     updateLogContents = updateLogContents.replace(/^Removing tmpDir failed, err: -1$/mg, "");
     updateLogContents = updateLogContents.replace(/^remove_recursive_on_reboot: .*$/mg, "");
+    
+    
+    
+    
+    let re = new RegExp("\n" + ERR_RENAME_FILE + "[^\n]*\n" +
+                        "PerformReplaceRequest: destDir rename[^\n]*\n" +
+                        "rename_file: proceeding to rename the directory\n", "g");
+    updateLogContents = updateLogContents.replace(re, "\n");
   }
 
-  
-  updateLogContents = updateLogContents.replace(/\r/g, "");
   
   updateLogContents = updateLogContents.replace(/, err:.*\n/g, "\n");
   
@@ -3205,8 +3213,8 @@ function checkUpdateLogContents(aCompareLogFile, aStaged = false,
     
     for (let i = 0; i < aryLog.length; ++i) {
       if (aryLog[i] != aryCompare[i]) {
-        logTestInfo("the first incorrect line in the update log is: " +
-                    aryLog[i]);
+        logTestInfo("the first incorrect line is line #" + i + " and the " +
+                    "value is: " + aryLog[i]);
         Assert.equal(aryLog[i], aryCompare[i],
                      "the update log contents" + MSG_SHOULD_EQUAL);
       }
