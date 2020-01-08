@@ -68,6 +68,10 @@
   --theme-highlight-gray: #dde1e4;
 
   
+  --theme-twisty-fill: hsla(0,0%,50%,.70);
+  --theme-twisty-selected-fill: white;
+
+  
 
   --theme-focus-outline-color: #000000;
 
@@ -157,6 +161,10 @@
   --theme-highlight-orange: #d96629;
   --theme-highlight-pink: #df80ff;
   --theme-highlight-gray: #e9f4fe;
+
+  
+  --theme-twisty-fill: var(--grey-45);
+  --theme-twisty-selected-fill: white;
 
   
 
