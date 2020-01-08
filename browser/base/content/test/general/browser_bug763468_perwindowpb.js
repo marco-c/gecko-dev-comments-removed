@@ -4,61 +4,50 @@
 "use strict";
 
 
-function test() {
-  
-  waitForExplicitFinish();
+add_task(async function testPBNewTab() {
+  registerCleanupFunction(async function() {
+    for (let win of windowsToClose) {
+      await BrowserTestUtils.closeWindow(win);
+    }
+  });
 
   let windowsToClose = [];
-  let newTabURL;
-  let mode;
 
-  function doTest(aIsPrivateMode, aWindow, aCallback) {
-    whenNewTabLoaded(aWindow, function() {
-      if (aIsPrivateMode) {
-        mode = "per window private browsing";
-        newTabURL = "about:privatebrowsing";
-      } else {
-        mode = "normal";
-        newTabURL = "about:newtab";
-      }
+  async function doTest(aIsPrivateMode) {
+    let newTabURL;
+    let mode;
+    let win = await BrowserTestUtils.openNewBrowserWindow({private: aIsPrivateMode});
+    windowsToClose.push(win);
 
-      is(aWindow.gBrowser.currentURI.spec, newTabURL,
-        "URL of NewTab should be " + newTabURL + " in " + mode + " mode");
+    if (aIsPrivateMode) {
+      mode = "per window private browsing";
+      newTabURL = "about:privatebrowsing";
+    } else {
+      mode = "normal";
+      newTabURL = "about:newtab";
+    }
+    await openNewTab(win, newTabURL);
 
-      aWindow.gBrowser.removeTab(aWindow.gBrowser.selectedTab);
-      aCallback();
-    });
+    is(win.gBrowser.currentURI.spec, newTabURL,
+      "URL of NewTab should be " + newTabURL + " in " + mode + " mode");
   }
 
-  function testOnWindow(aOptions, aCallback) {
-    whenNewWindowLoaded(aOptions, function(aWin) {
-      windowsToClose.push(aWin);
-      
-      
-      
-      executeSoon(() => aCallback(aWin));
-    });
+  await doTest(false);
+  await doTest(true);
+  await doTest(false);
+});
+
+async function openNewTab(aWindow, aExpectedURL) {
+  
+  aWindow.BrowserOpenTab();
+
+  let browser = aWindow.gBrowser.selectedBrowser;
+  let loadPromise = BrowserTestUtils.browserLoaded(browser, false, aExpectedURL);
+  let alreadyLoaded = await ContentTask.spawn(browser, aExpectedURL, url => {
+    let doc = content.document;
+    return doc && doc.readyState === "complete" && doc.location.href == url;
+  });
+  if (!alreadyLoaded) {
+    await loadPromise;
   }
-
-  
-  registerCleanupFunction(function() {
-    windowsToClose.forEach(function(aWin) {
-      aWin.close();
-    });
-  });
-
-  
-  testOnWindow({}, function(aWin) {
-    doTest(false, aWin, function() {
-      
-      testOnWindow({private: true}, function(aWin2) {
-        doTest(true, aWin2, function() {
-          
-          testOnWindow({}, function(aWin3) {
-            doTest(false, aWin3, finish);
-          });
-        });
-      });
-    });
-  });
 }
