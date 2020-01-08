@@ -24,7 +24,7 @@ use gpu_types::{TransformPalette, TransformPaletteId, UvRectKind};
 use plane_split::{Clipper, Polygon, Splitter};
 use prim_store::{PictureIndex, PrimitiveInstance, SpaceMapper, VisibleFace, PrimitiveInstanceKind};
 use prim_store::{get_raster_rects, CoordinateSpaceMapping, PrimitiveScratchBuffer};
-use prim_store::{OpacityBindingStorage, ImageInstanceStorage, OpacityBindingIndex};
+use prim_store::{OpacityBindingStorage, ImageInstanceStorage, OpacityBindingIndex, RectangleKey};
 use print_tree::PrintTreePrinter;
 use render_backend::FrameResources;
 use render_task::{ClearMode, RenderTask, RenderTaskCacheEntryHandle, TileBlit};
@@ -148,6 +148,9 @@ pub struct Tile {
     visible_rect: Option<WorldRect>,
     
     
+    valid_rect: WorldRect,
+    
+    
     descriptor: TileDescriptor,
     
     pub handle: TextureCacheHandle,
@@ -166,6 +169,10 @@ pub struct Tile {
     
     
     transforms: FastHashSet<SpatialNodeIndex>,
+    
+    
+    
+    potential_clips: FastHashMap<RectangleKey, SpatialNodeIndex>,
 }
 
 impl Tile {
@@ -177,12 +184,14 @@ impl Tile {
             local_rect: LayoutRect::zero(),
             world_rect: WorldRect::zero(),
             visible_rect: None,
+            valid_rect: WorldRect::zero(),
             handle: TextureCacheHandle::invalid(),
             descriptor: TileDescriptor::new(),
             is_same_content: false,
             is_valid: false,
             same_frames: 0,
             transforms: FastHashSet::default(),
+            potential_clips: FastHashMap::default(),
             id,
         }
     }
@@ -191,6 +200,7 @@ impl Tile {
     fn clear(&mut self) {
         self.transforms.clear();
         self.descriptor.clear();
+        self.potential_clips.clear();
     }
 
     
@@ -204,7 +214,7 @@ impl Tile {
         
         
         self.is_valid &= self.is_same_content;
-        self.is_valid &= self.descriptor.is_valid(&tile_bounding_rect);
+        self.is_valid &= self.valid_rect.contains_rect(tile_bounding_rect);
 
         
         if !self.is_same_content {
@@ -225,15 +235,6 @@ pub struct PrimitiveDescriptor {
     first_clip: u16,
     
     clip_count: u16,
-}
-
-
-#[derive(Debug)]
-pub struct PrimitiveRegion {
-    
-    prim_region: WorldRect,
-    
-    tile_offset: WorldPoint,
 }
 
 
@@ -262,12 +263,6 @@ pub struct TileDescriptor {
     opacity_bindings: ComparableVec<OpacityBinding>,
 
     
-    needed_regions: Vec<PrimitiveRegion>,
-
-    
-    current_regions: Vec<PrimitiveRegion>,
-
-    
     
     transforms: ComparableVec<TransformKey>,
 }
@@ -280,8 +275,6 @@ impl TileDescriptor {
             clip_vertices: ComparableVec::new(),
             opacity_bindings: ComparableVec::new(),
             image_keys: ComparableVec::new(),
-            needed_regions: Vec::new(),
-            current_regions: Vec::new(),
             transforms: ComparableVec::new(),
         }
     }
@@ -294,7 +287,6 @@ impl TileDescriptor {
         self.clip_vertices.reset();
         self.opacity_bindings.reset();
         self.image_keys.reset();
-        self.needed_regions.clear();
         self.transforms.reset();
     }
 
@@ -308,49 +300,6 @@ impl TileDescriptor {
         self.clip_vertices.is_valid() &&
         self.prims.is_valid() &&
         self.transforms.is_valid()
-    }
-
-    
-    fn is_valid(&self, tile_bounding_rect: &WorldRect) -> bool {
-        
-        
-        
-        
-        
-        
-        
-        
-        if self.needed_regions.len() == self.current_regions.len() {
-            for (needed, current) in self.needed_regions.iter().zip(self.current_regions.iter()) {
-                let needed_region = needed
-                    .prim_region
-                    .translate(&needed.tile_offset.to_vector())
-                    .intersection(tile_bounding_rect);
-
-                let needed_rect = match needed_region {
-                    Some(rect) => rect,
-                    None => continue,
-                };
-
-                let current_region = current
-                    .prim_region
-                    .translate(&current.tile_offset.to_vector())
-                    .intersection(tile_bounding_rect);
-
-                let current_rect = match current_region {
-                    Some(rect) => rect,
-                    None => return false,
-                };
-
-                if needed_rect != current_rect {
-                    return false;
-                }
-            }
-
-            true
-        } else {
-            false
-        }
     }
 }
 
@@ -801,6 +750,14 @@ impl TileCache {
         let mut clip_spatial_nodes = FastHashSet::default();
 
         
+        
+        
+        
+        
+        
+        let mut world_clips: FastHashMap<RectangleKey, SpatialNodeIndex> = FastHashMap::default();
+
+        
         let is_cacheable = prim_instance.is_cacheable(
             &resources,
             resource_cache,
@@ -896,17 +853,27 @@ impl TileCache {
                             size,
                         );
 
-                        if let Some(clip_world_rect) = self.map_local_to_world.map(&local_rect) {
-                            
-                            
-                            
-                            
-                            world_clip_rect = world_clip_rect
-                                .intersection(&clip_world_rect)
-                                .unwrap_or(WorldRect::zero());
-                        }
+                        match self.map_local_to_world.map(&local_rect) {
+                            Some(clip_world_rect) => {
+                                
+                                
+                                
+                                
+                                world_clip_rect = world_clip_rect
+                                    .intersection(&clip_world_rect)
+                                    .unwrap_or(WorldRect::zero());
 
-                        false
+                                world_clips.insert(
+                                    clip_world_rect.into(),
+                                    clip_chain_node.spatial_node_index,
+                                );
+
+                                false
+                            }
+                            None => {
+                                true
+                            }
+                        }
                     } else {
                         true
                     }
@@ -919,9 +886,10 @@ impl TileCache {
                 }
             };
 
+            clip_vertices.push(clip_chain_node.local_pos);
+            clip_chain_uids.push(clip_chain_node.handle.uid());
+
             if add_to_clip_deps {
-                clip_vertices.push(clip_chain_node.local_pos);
-                clip_chain_uids.push(clip_chain_node.handle.uid());
                 clip_spatial_nodes.insert(clip_chain_node.spatial_node_index);
             }
 
@@ -951,17 +919,6 @@ impl TileCache {
                 
 
                 
-                
-                
-                
-                let prim_region = world_clip_rect.translate(&-world_rect.origin.to_vector());
-
-                tile.descriptor.needed_regions.push(PrimitiveRegion {
-                    prim_region,
-                    tile_offset: world_rect.origin - tile.world_rect.origin.to_vector(),
-                });
-
-                
                 tile.is_same_content &= is_cacheable;
 
                 
@@ -983,6 +940,9 @@ impl TileCache {
                 tile.transforms.insert(prim_instance.spatial_node_index);
                 for spatial_node_index in &clip_spatial_nodes {
                     tile.transforms.insert(*spatial_node_index);
+                }
+                for (world_rect, spatial_node_index) in &world_clips {
+                    tile.potential_clips.insert(world_rect.clone(), *spatial_node_index);
                 }
             }
         }
@@ -1029,6 +989,17 @@ impl TileCache {
 
         
         for (i, tile) in self.tiles.iter_mut().enumerate() {
+            
+            
+            
+            
+            for (clip_world_rect, spatial_node_index) in &tile.potential_clips {
+                let clip_world_rect = WorldRect::from(clip_world_rect.clone());
+                if !clip_world_rect.contains_rect(&self.world_bounding_rect) {
+                    tile.transforms.insert(*spatial_node_index);
+                }
+            }
+
             
             let mut transform_spatial_nodes: Vec<SpatialNodeIndex> = tile.transforms.drain().collect();
             transform_spatial_nodes.sort();
@@ -1128,6 +1099,11 @@ impl TileCache {
                     let src_origin = (visible_rect.origin * frame_context.device_pixel_scale).round().to_i32();
                     let valid_rect = visible_rect.translate(&-tile.world_rect.origin.to_vector());
 
+                    tile.valid_rect = visible_rect
+                        .intersection(&self.world_bounding_rect)
+                        .map(|rect| rect.translate(&-tile.world_rect.origin.to_vector()))
+                        .unwrap_or(WorldRect::zero());
+
                     
                     
                     let dest_rect = (valid_rect * frame_context.device_pixel_scale).round().to_i32();
@@ -1140,10 +1116,6 @@ impl TileCache {
 
                     
                     tile.is_valid = true;
-                    tile.descriptor.current_regions = mem::replace(
-                        &mut tile.descriptor.needed_regions,
-                        Vec::new(),
-                    );
                 }
             }
         }
