@@ -59,7 +59,7 @@ var gTests = [
 
       
       
-      await TestUtils.waitForCondition(() => !tab.getAttribute("sharing"));
+      await promiseWaitForCondition(() => !tab.getAttribute("sharing"));
       is(tab.getAttribute("sharing"), "",
          "the tab no longer has the 'sharing' attribute after closing the stream");
     }
