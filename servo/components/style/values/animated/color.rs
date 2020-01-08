@@ -127,7 +127,7 @@ impl Animate for Color {
 
         Ok(match (*self, *other, procedure) {
             
-            (Foreground, Foreground, Procedure::Interpolate { .. }) => Color::currentcolor(),
+            (Foreground, Foreground, Procedure::Interpolate { .. }) => Foreground,
             
             (Numeric(c1), Numeric(c2), _) => Numeric(c1.animate(&c2, procedure)?),
             
@@ -158,19 +158,71 @@ impl Animate for Color {
             
             _ => {
                 
-                
-                let self_color = self.effective_intermediate_rgba();
-                let other_color = other.effective_intermediate_rgba();
-                let color = self_color.animate(&other_color, procedure)?;
-                
-                
-                let self_ratios = self.effective_ratios();
-                let other_ratios = other.effective_ratios();
-                let ratios = self_ratios.animate(&other_ratios, procedure)?;
-                let alpha = color.alpha / ratios.bg;
-                let color = RGBA { alpha, ..color };
+                fn scaled_rgba(color: &Color) -> RGBA {
+                    match *color {
+                        GenericColor::Numeric(color) => color,
+                        GenericColor::Foreground => RGBA::transparent(),
+                        GenericColor::Complex(color, ratios) => RGBA {
+                            red: color.red * ratios.bg,
+                            green: color.green * ratios.bg,
+                            blue: color.blue * ratios.bg,
+                            alpha: color.alpha * ratios.bg,
+                        },
+                    }
+                }
 
-                Self::with_ratios(color, ratios)
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+
+                
+                
+                
+                let bg_color1 = scaled_rgba(self);
+                let bg_color2 = scaled_rgba(other);
+                
+                let bg_color = bg_color1.animate(&bg_color2, procedure)?;
+
+                
+                
+                let ComplexColorRatios { fg: fg1, .. } = self.effective_ratios();
+                let ComplexColorRatios { fg: fg2, .. } = other.effective_ratios();
+                
+                let fg = fg1.animate(&fg2, procedure)?;
+
+                Self::with_ratios(bg_color, ComplexColorRatios { bg: 1., fg })
             }
         })
     }

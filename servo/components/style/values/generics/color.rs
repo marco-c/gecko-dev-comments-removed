@@ -6,7 +6,7 @@
 
 
 
-#[derive(Animate, Clone, Copy, Debug, MallocSizeOf, PartialEq, ToAnimatedValue)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToAnimatedValue)]
 pub struct ComplexColorRatios {
     
     pub bg: f32,
