@@ -227,6 +227,12 @@ void ClientSingleTiledLayerBuffer::PaintThebes(
       task->mCapture = backBuffer->mCapture;
       task->mTarget = backBuffer->mBackBuffer;
       task->mClients = std::move(backBuffer->mTextureClients);
+      if (discardedFrontBuffer) {
+        task->mClients.AppendElement(discardedFrontBuffer);
+      }
+      if (discardedFrontBufferOnWhite) {
+        task->mClients.AppendElement(discardedFrontBufferOnWhite);
+      }
 
       
       
