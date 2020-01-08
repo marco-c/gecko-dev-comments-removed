@@ -989,14 +989,6 @@ function isPrintable(c, win) {
 event.sendKeyDown = function(keyToSend, modifiers, win) {
   modifiers.type = "keydown";
   event.sendSingleKey(keyToSend, modifiers, win);
-  
-  
-  
-  if (!["VK_SHIFT", "VK_CONTROL", "VK_ALT", "VK_META"]
-      .includes(getKeyCode(keyToSend))) {
-    modifiers.type = "keypress";
-    event.sendSingleKey(keyToSend, modifiers, win);
-  }
   delete modifiers.type;
 };
 
