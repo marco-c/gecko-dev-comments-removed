@@ -226,7 +226,7 @@ function getFamilyName(fontEl) {
 
 
 function getPropertyValue(viewDoc, name) {
-  const selector = `#font-editor .font-value-slider[name=${name}]`;
+  const selector = `#font-editor .font-value-input[name=${name}]`;
   return {
     
     value: viewDoc.querySelector(selector) &&
