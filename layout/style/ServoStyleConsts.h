@@ -79,6 +79,8 @@ enum class StyleAppearance : uint8_t {
   
   Meterchunk,
   
+  MozMenulistButton,
+  
   NumberInput,
   
   Progressbar,

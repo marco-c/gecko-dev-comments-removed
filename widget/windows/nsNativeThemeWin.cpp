@@ -785,6 +785,7 @@ mozilla::Maybe<nsUXThemeClass> nsNativeThemeWin::GetThemeClass(WidgetType aWidge
       return Some(eUXStatus);
     case StyleAppearance::Menulist:
     case StyleAppearance::MenulistButton:
+    case StyleAppearance::MozMenulistButton:
       return Some(eUXCombobox);
     case StyleAppearance::Treeheadercell:
     case StyleAppearance::Treeheadersortarrow:
@@ -1297,7 +1298,8 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame, WidgetType aWidgetType,
 
       return NS_OK;
     }
-    case StyleAppearance::MenulistButton: {
+    case StyleAppearance::MenulistButton:
+    case StyleAppearance::MozMenulistButton: {
       bool isHTML = IsHTMLContent(aFrame);
       nsIFrame* parentFrame = aFrame->GetParent();
       bool isMenulist = !isHTML && parentFrame->IsMenuFrame();
@@ -1828,7 +1830,8 @@ RENDER_AGAIN:
   }
   
   else if (aWidgetType == StyleAppearance::Resizer ||
-           aWidgetType == StyleAppearance::MenulistButton)
+           aWidgetType == StyleAppearance::MenulistButton ||
+           aWidgetType == StyleAppearance::MozMenulistButton)
   {
     DrawThemeBGRTLAware(theme, hdc, part, state,
                         &widgetRect, &clipRect, IsFrameRTL(aFrame));
@@ -2259,6 +2262,8 @@ nsNativeThemeWin::GetWidgetOverflow(nsDeviceContext* aContext,
 
 
 
+
+
 #if 0
   
 
@@ -2351,7 +2356,8 @@ nsNativeThemeWin::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aF
     case StyleAppearance::ScrollbarbuttonRight:
     case StyleAppearance::ScrollbarHorizontal:
     case StyleAppearance::ScrollbarVertical:
-    case StyleAppearance::MenulistButton: {
+    case StyleAppearance::MenulistButton:
+    case StyleAppearance::MozMenulistButton: {
       rv = ClassicGetMinimumWidgetSize(aFrame, aWidgetType, aResult, aIsOverridable);
       ScaleForFrameDPI(aResult, aFrame);
       return rv;
@@ -2566,7 +2572,9 @@ nsNativeThemeWin::WidgetStateChanged(nsIFrame* aFrame, WidgetType aWidgetType,
 
   
   
-  if ((aWidgetType == StyleAppearance::Menulist || aWidgetType == StyleAppearance::MenulistButton) &&
+  if ((aWidgetType == StyleAppearance::Menulist ||
+       aWidgetType == StyleAppearance::MenulistButton ||
+       aWidgetType == StyleAppearance::MozMenulistButton) &&
       IsHTMLContent(aFrame))
   {
     *aShouldRepaint = true;
@@ -2643,6 +2651,7 @@ nsNativeThemeWin::WidgetIsContainer(WidgetType aWidgetType)
 {
   
   if (aWidgetType == StyleAppearance::MenulistButton || 
+      aWidgetType == StyleAppearance::MozMenulistButton || 
       aWidgetType == StyleAppearance::Radio ||
       aWidgetType == StyleAppearance::Checkbox)
     return false;
@@ -2788,6 +2797,7 @@ nsNativeThemeWin::ClassicThemeSupportsWidget(nsIFrame* aFrame,
     case StyleAppearance::ScalethumbHorizontal:
     case StyleAppearance::ScalethumbVertical:
     case StyleAppearance::MenulistButton:
+    case StyleAppearance::MozMenulistButton:
     case StyleAppearance::InnerSpinButton:
     case StyleAppearance::SpinnerUpbutton:
     case StyleAppearance::SpinnerDownbutton:
@@ -2998,6 +3008,7 @@ nsNativeThemeWin::ClassicGetMinimumWidgetSize(nsIFrame* aFrame,
       *aIsOverridable = false;
       break;
     case StyleAppearance::MenulistButton:
+    case StyleAppearance::MozMenulistButton:
       (*aResult).width = ::GetSystemMetrics(SM_CXVSCROLL);
       break;
     case StyleAppearance::Menulist:
@@ -3277,7 +3288,8 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(nsIFrame* aFrame, WidgetT
     case StyleAppearance::Groupbox:
       
       return NS_OK;
-    case StyleAppearance::MenulistButton: {
+    case StyleAppearance::MenulistButton:
+    case StyleAppearance::MozMenulistButton: {
 
       aPart = DFC_SCROLL;
       aState = DFCS_SCROLLCOMBOBOX;
@@ -3662,6 +3674,7 @@ RENDER_AGAIN:
     case StyleAppearance::SpinnerUpbutton:
     case StyleAppearance::SpinnerDownbutton:
     case StyleAppearance::MenulistButton:
+    case StyleAppearance::MozMenulistButton:
     case StyleAppearance::Resizer: {
       int32_t oldTA;
       
@@ -4093,6 +4106,7 @@ nsNativeThemeWin::GetWidgetNativeDrawingFlags(WidgetType aWidgetType)
     
     
     case StyleAppearance::MenulistButton:
+    case StyleAppearance::MozMenulistButton:
     
     case StyleAppearance::Checkbox:
     case StyleAppearance::Radio:
