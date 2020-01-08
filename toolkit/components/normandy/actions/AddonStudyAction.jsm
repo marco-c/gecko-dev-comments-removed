@@ -27,8 +27,14 @@ var EXPORTED_SYMBOLS = ["AddonStudyAction"];
 const OPT_OUT_STUDIES_ENABLED_PREF = "app.shield.optoutstudies.enabled";
 
 class AddonStudyEnrollError extends Error {
-  constructor(studyName, reason) {
+  
+
+
+
+
+  constructor(studyName, extra) {
     let message;
+    let { reason } = extra;
     switch (reason) {
       case "conflicting-addon-id": {
         message = "an add-on with this ID is already installed";
@@ -44,7 +50,7 @@ class AddonStudyEnrollError extends Error {
     }
     super(new Error(`Cannot install study add-on for ${studyName}: ${message}.`));
     this.studyName = studyName;
-    this.reason = reason;
+    this.extra = extra;
   }
 }
 
@@ -146,7 +152,10 @@ class AddonStudyAction extends BaseAction {
 
     const listener = {
       onDownloadFailed() {
-        downloadDeferred.reject(new AddonStudyEnrollError(name, "download-failure"));
+        downloadDeferred.reject(new AddonStudyEnrollError(name, {
+          reason: "download-failure",
+          detail: AddonManager.errorToString(install.error),
+        }));
       },
 
       onDownloadEnded() {
@@ -156,14 +165,17 @@ class AddonStudyAction extends BaseAction {
 
       onInstallStarted(cbInstall) {
         if (cbInstall.existingAddon) {
-          installDeferred.reject(new AddonStudyEnrollError(name, "conflicting-addon-id"));
+          installDeferred.reject(new AddonStudyEnrollError(name, {reason: "conflicting-addon-id"}));
           return false; 
         }
         return true;
       },
 
       onInstallFailed() {
-        installDeferred.reject(new AddonStudyEnrollError(name, "failed-to-install"));
+        installDeferred.reject(new AddonStudyEnrollError(name, {
+          reason: "failed-to-install",
+          detail: AddonManager.errorToString(install.error),
+        }));
       },
 
       onInstallEnded() {
@@ -228,7 +240,7 @@ class AddonStudyAction extends BaseAction {
   reportEnrollError(error) {
     if (error instanceof AddonStudyEnrollError) {
       
-      TelemetryEvents.sendEvent("enrollFailed", "addon_study", error.studyName, { reason: error.reason });
+      TelemetryEvents.sendEvent("enrollFailed", "addon_study", error.studyName, error.extra);
     } else {
       
 
