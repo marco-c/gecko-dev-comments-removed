@@ -138,7 +138,7 @@ async function clientFromURL(url) {
   
   const remoteId = params.get("remoteId");
   if (remoteId) {
-    return remoteClientManager.getClientByRemoteId(remoteId).client;
+    return remoteClientManager.getClientByRemoteId(remoteId);
   }
 
   const host = params.get("host");
