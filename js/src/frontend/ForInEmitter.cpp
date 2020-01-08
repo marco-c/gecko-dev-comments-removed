@@ -41,27 +41,32 @@ ForInEmitter::emitInitialize()
     MOZ_ASSERT(state_ == State::Iterated);
     tdzCacheForIteratedValue_.reset();
 
-    if (!bce_->emit1(JSOP_ITER))                      
+    if (!bce_->emit1(JSOP_ITER)) {                    
         return false;
+    }
 
     
     
-    if (!bce_->emit1(JSOP_UNDEFINED))                 
+    if (!bce_->emit1(JSOP_UNDEFINED)) {               
         return false;
+    }
 
     loopInfo_.emplace(bce_, StatementKind::ForInLoop);
 
     
-    if (!bce_->newSrcNote(SRC_FOR_IN, &noteIndex_))
+    if (!bce_->newSrcNote(SRC_FOR_IN, &noteIndex_)) {
         return false;
+    }
 
     
     
-    if (!loopInfo_->emitEntryJump(bce_))              
+    if (!loopInfo_->emitEntryJump(bce_)) {            
         return false;
+    }
 
-    if (!loopInfo_->emitLoopHead(bce_, Nothing()))    
+    if (!loopInfo_->emitLoopHead(bce_, Nothing())) {  
         return false;
+    }
 
     
     
@@ -76,13 +81,15 @@ ForInEmitter::emitInitialize()
         MOZ_ASSERT(headLexicalEmitterScope_->scope(bce_)->kind() == ScopeKind::Lexical);
 
         if (headLexicalEmitterScope_->hasEnvironment()) {
-            if (!bce_->emit1(JSOP_RECREATELEXICALENV))
+            if (!bce_->emit1(JSOP_RECREATELEXICALENV)) {
                 return false;                         
+            }
         }
 
         
-        if (!headLexicalEmitterScope_->deadZoneFrameSlots(bce_))
+        if (!headLexicalEmitterScope_->deadZoneFrameSlots(bce_)) {
             return false;
+        }
     }
 
 #ifdef DEBUG
@@ -90,8 +97,9 @@ ForInEmitter::emitInitialize()
 #endif
     MOZ_ASSERT(loopDepth_ >= 2);
 
-    if (!bce_->emit1(JSOP_ITERNEXT))                  
+    if (!bce_->emit1(JSOP_ITERNEXT)) {                
         return false;
+    }
 
 #ifdef DEBUG
     state_ = State::Initialize;
@@ -122,21 +130,27 @@ ForInEmitter::emitEnd(const Maybe<uint32_t>& forPos)
 
     if (forPos) {
         
-        if (!bce_->updateSourceCoordNotes(*forPos))
+        if (!bce_->updateSourceCoordNotes(*forPos)) {
             return false;
+        }
     }
 
-    if (!loopInfo_->emitLoopEntry(bce_, Nothing()))   
+    if (!loopInfo_->emitLoopEntry(bce_, Nothing())) { 
         return false;
-    if (!bce_->emit1(JSOP_POP))                       
+    }
+    if (!bce_->emit1(JSOP_POP)) {                     
         return false;
-    if (!bce_->emit1(JSOP_MOREITER))                  
+    }
+    if (!bce_->emit1(JSOP_MOREITER)) {                
         return false;
-    if (!bce_->emit1(JSOP_ISNOITER))                  
+    }
+    if (!bce_->emit1(JSOP_ISNOITER)) {                
         return false;
+    }
 
-    if (!loopInfo_->emitLoopEnd(bce_, JSOP_IFEQ))     
+    if (!loopInfo_->emitLoopEnd(bce_, JSOP_IFEQ)) {   
         return false;
+    }
 
     
     if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::ForIn::BackJumpOffset,
@@ -145,12 +159,14 @@ ForInEmitter::emitEnd(const Maybe<uint32_t>& forPos)
         return false;
     }
 
-    if (!loopInfo_->patchBreaksAndContinues(bce_))
+    if (!loopInfo_->patchBreaksAndContinues(bce_)) {
         return false;
+    }
 
     
-    if (!bce_->emit1(JSOP_POP))                       
+    if (!bce_->emit1(JSOP_POP)) {                     
         return false;
+    }
 
     if (!bce_->tryNoteList.append(JSTRY_FOR_IN, bce_->stackDepth, loopInfo_->headOffset(),
                                   bce_->offset()))
@@ -158,8 +174,9 @@ ForInEmitter::emitEnd(const Maybe<uint32_t>& forPos)
         return false;
     }
 
-    if (!bce_->emit1(JSOP_ENDITER))                   
+    if (!bce_->emit1(JSOP_ENDITER)) {                 
         return false;
+    }
 
     loopInfo_.reset();
 

@@ -51,11 +51,13 @@ ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos)
     tdzCacheForIteratedValue_.reset();
 
     if (iterKind_ == IteratorKind::Async) {
-        if (!bce_->emitAsyncIterator())               
+        if (!bce_->emitAsyncIterator()) {             
             return false;
+        }
     } else {
-        if (!bce_->emitIterator())                    
+        if (!bce_->emitIterator()) {                  
             return false;
+        }
     }
 
     int32_t iterDepth = bce_->stackDepth;
@@ -63,20 +65,24 @@ ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos)
     
     
     
-    if (!bce_->emit1(JSOP_UNDEFINED))                 
+    if (!bce_->emit1(JSOP_UNDEFINED)) {               
         return false;
+    }
 
     loopInfo_.emplace(bce_, iterDepth, allowSelfHostedIter_, iterKind_);
 
     
-    if (!bce_->newSrcNote(SRC_FOR_OF, &noteIndex_))
+    if (!bce_->newSrcNote(SRC_FOR_OF, &noteIndex_)) {
         return false;
+    }
 
-    if (!loopInfo_->emitEntryJump(bce_))              
+    if (!loopInfo_->emitEntryJump(bce_)) {            
         return false;
+    }
 
-    if (!loopInfo_->emitLoopHead(bce_, Nothing()))    
+    if (!loopInfo_->emitLoopHead(bce_, Nothing())) {  
         return false;
+    }
 
     
     
@@ -90,13 +96,15 @@ ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos)
         MOZ_ASSERT(headLexicalEmitterScope_->scope(bce_)->kind() == ScopeKind::Lexical);
 
         if (headLexicalEmitterScope_->hasEnvironment()) {
-            if (!bce_->emit1(JSOP_RECREATELEXICALENV))
+            if (!bce_->emit1(JSOP_RECREATELEXICALENV)) {
                 return false;                         
+            }
         }
 
         
-        if (!headLexicalEmitterScope_->deadZoneFrameSlots(bce_))
+        if (!headLexicalEmitterScope_->deadZoneFrameSlots(bce_)) {
             return false;
+        }
     }
 
 #ifdef DEBUG
@@ -105,51 +113,64 @@ ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos)
 
     
     if (forPos) {
-        if (!bce_->updateSourceCoordNotes(*forPos))
+        if (!bce_->updateSourceCoordNotes(*forPos)) {
             return false;
+        }
     }
 
-    if (!bce_->emit1(JSOP_POP))                       
+    if (!bce_->emit1(JSOP_POP)) {                     
         return false;
-    if (!bce_->emit1(JSOP_DUP2))                      
+    }
+    if (!bce_->emit1(JSOP_DUP2)) {                    
         return false;
+    }
 
-    if (!bce_->emitIteratorNext(forPos, iterKind_, allowSelfHostedIter_))
+    if (!bce_->emitIteratorNext(forPos, iterKind_, allowSelfHostedIter_)) {
         return false;                                 
+    }
 
-    if (!bce_->emit1(JSOP_DUP))                       
+    if (!bce_->emit1(JSOP_DUP)) {                     
         return false;
-    if (!bce_->emitAtomOp(bce_->cx->names().done, JSOP_GETPROP))
+    }
+    if (!bce_->emitAtomOp(bce_->cx->names().done, JSOP_GETPROP)) {
         return false;                                 
+    }
 
     InternalIfEmitter ifDone(bce_);
 
-    if (!ifDone.emitThen())                           
+    if (!ifDone.emitThen()) {                         
         return false;
+    }
 
     
-    if (!bce_->emit1(JSOP_POP))                       
+    if (!bce_->emit1(JSOP_POP)) {                     
         return false;
-    if (!bce_->emit1(JSOP_UNDEFINED))                 
+    }
+    if (!bce_->emit1(JSOP_UNDEFINED)) {               
         return false;
-
-    
-    
-    if (!loopInfo_->emitSpecialBreakForDone(bce_))    
-        return false;
-
-    if (!ifDone.emitEnd())                            
-        return false;
+    }
 
     
     
+    if (!loopInfo_->emitSpecialBreakForDone(bce_)) {  
+        return false;
+    }
+
+    if (!ifDone.emitEnd()) {                          
+        return false;
+    }
+
     
     
-    if (!bce_->emitAtomOp(bce_->cx->names().value, JSOP_GETPROP))
+    
+    
+    if (!bce_->emitAtomOp(bce_->cx->names().value, JSOP_GETPROP)) {
         return false;                                 
+    }
 
-    if (!loopInfo_->emitBeginCodeNeedingIteratorClose(bce_))
+    if (!loopInfo_->emitBeginCodeNeedingIteratorClose(bce_)) {
         return false;
+    }
 
 #ifdef DEBUG
     state_ = State::Initialize;
@@ -167,10 +188,12 @@ ForOfEmitter::emitBody()
                "operation");
 
     
-    if (!bce_->emit1(JSOP_POP))                       
+    if (!bce_->emit1(JSOP_POP)) {                     
         return false;
-    if (!bce_->emit1(JSOP_UNDEFINED))                 
+    }
+    if (!bce_->emit1(JSOP_UNDEFINED)) {               
         return false;
+    }
 
 #ifdef DEBUG
     state_ = State::Body;
@@ -186,8 +209,9 @@ ForOfEmitter::emitEnd(const Maybe<uint32_t>& iteratedPos)
     MOZ_ASSERT(bce_->stackDepth == loopDepth_,
                "the stack must be balanced around the for-of body");
 
-    if (!loopInfo_->emitEndCodeNeedingIteratorClose(bce_))
+    if (!loopInfo_->emitEndCodeNeedingIteratorClose(bce_)) {
         return false;
+    }
 
     loopInfo_->setContinueTarget(bce_->offset());
 
@@ -195,13 +219,16 @@ ForOfEmitter::emitEnd(const Maybe<uint32_t>& iteratedPos)
     
     
     
-    if (!loopInfo_->emitLoopEntry(bce_, iteratedPos))
+    if (!loopInfo_->emitLoopEntry(bce_, iteratedPos)) {
         return false;
+    }
 
-    if (!bce_->emit1(JSOP_FALSE))                     
+    if (!bce_->emit1(JSOP_FALSE)) {                   
         return false;
-    if (!loopInfo_->emitLoopEnd(bce_, JSOP_IFEQ))     
+    }
+    if (!loopInfo_->emitLoopEnd(bce_, JSOP_IFEQ)) {   
         return false;
+    }
 
     MOZ_ASSERT(bce_->stackDepth == loopDepth_);
 
@@ -212,8 +239,9 @@ ForOfEmitter::emitEnd(const Maybe<uint32_t>& iteratedPos)
         return false;
     }
 
-    if (!loopInfo_->patchBreaksAndContinues(bce_))
+    if (!loopInfo_->patchBreaksAndContinues(bce_)) {
         return false;
+    }
 
     if (!bce_->tryNoteList.append(JSTRY_FOR_OF, bce_->stackDepth, loopInfo_->headOffset(),
                                   loopInfo_->breakTargetOffset()))
@@ -221,8 +249,9 @@ ForOfEmitter::emitEnd(const Maybe<uint32_t>& iteratedPos)
         return false;
     }
 
-    if (!bce_->emitPopN(3))                           
+    if (!bce_->emitPopN(3)) {                         
         return false;
+    }
 
     loopInfo_.reset();
 

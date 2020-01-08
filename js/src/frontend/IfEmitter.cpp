@@ -32,27 +32,32 @@ bool
 BranchEmitterBase::emitThenInternal(SrcNoteType type)
 {
     
-    if (kind_ == Kind::MayContainLexicalAccessInBranch)
+    if (kind_ == Kind::MayContainLexicalAccessInBranch) {
         tdzCache_.reset();
+    }
 
     
-    if (!bce_->newSrcNote(type))
+    if (!bce_->newSrcNote(type)) {
         return false;
-    if (!bce_->emitJump(JSOP_IFEQ, &jumpAroundThen_))
+    }
+    if (!bce_->emitJump(JSOP_IFEQ, &jumpAroundThen_)) {
         return false;
+    }
 
     
 #ifdef DEBUG
     
     thenDepth_ = bce_->stackDepth;
 #else
-    if (type == SRC_COND || type == SRC_IF_ELSE)
+    if (type == SRC_COND || type == SRC_IF_ELSE) {
         thenDepth_ = bce_->stackDepth;
+    }
 #endif
 
     
-    if (kind_ == Kind::MayContainLexicalAccessInBranch)
+    if (kind_ == Kind::MayContainLexicalAccessInBranch) {
         tdzCache_.emplace(bce_);
+    }
 
     return true;
 }
@@ -84,12 +89,14 @@ BranchEmitterBase::emitElseInternal()
     
     
     
-    if (!bce_->emitJump(JSOP_GOTO, &jumpsAroundElse_))
+    if (!bce_->emitJump(JSOP_GOTO, &jumpsAroundElse_)) {
         return false;
+    }
 
     
-    if (!bce_->emitJumpTargetAndPatch(jumpAroundThen_))
+    if (!bce_->emitJumpTargetAndPatch(jumpAroundThen_)) {
         return false;
+    }
 
     
     jumpAroundThen_ = JumpList();
@@ -98,8 +105,9 @@ BranchEmitterBase::emitElseInternal()
     bce_->stackDepth = thenDepth_;
 
     
-    if (kind_ == Kind::MayContainLexicalAccessInBranch)
+    if (kind_ == Kind::MayContainLexicalAccessInBranch) {
         tdzCache_.emplace(bce_);
+    }
 
     return true;
 }
@@ -118,13 +126,15 @@ BranchEmitterBase::emitEndInternal()
     if (jumpAroundThen_.offset != -1) {
         
         
-        if (!bce_->emitJumpTargetAndPatch(jumpAroundThen_))
+        if (!bce_->emitJumpTargetAndPatch(jumpAroundThen_)) {
             return false;
+        }
     }
 
     
-    if (!bce_->emitJumpTargetAndPatch(jumpsAroundElse_))
+    if (!bce_->emitJumpTargetAndPatch(jumpsAroundElse_)) {
         return false;
+    }
 
     return true;
 }
@@ -137,8 +147,9 @@ IfEmitter::emitIf(const Maybe<uint32_t>& ifPos)
     if (ifPos) {
         
         
-        if (!bce_->updateSourceCoordNotes(*ifPos))
+        if (!bce_->updateSourceCoordNotes(*ifPos)) {
             return false;
+        }
     }
 
 #ifdef DEBUG
@@ -154,8 +165,9 @@ IfEmitter::emitThen()
     MOZ_ASSERT_IF(state_ == State::ElseIf, tdzCache_.isSome());
     MOZ_ASSERT_IF(state_ != State::ElseIf, tdzCache_.isNothing());
 
-    if (!emitThenInternal(SRC_IF))
+    if (!emitThenInternal(SRC_IF)) {
         return false;
+    }
 
 #ifdef DEBUG
     state_ = State::Then;
@@ -170,8 +182,9 @@ IfEmitter::emitThenElse()
     MOZ_ASSERT_IF(state_ == State::ElseIf, tdzCache_.isSome());
     MOZ_ASSERT_IF(state_ != State::ElseIf, tdzCache_.isNothing());
 
-    if (!emitThenInternal(SRC_IF_ELSE))
+    if (!emitThenInternal(SRC_IF_ELSE)) {
         return false;
+    }
 
 #ifdef DEBUG
     state_ = State::ThenElse;
@@ -184,14 +197,16 @@ IfEmitter::emitElseIf(const Maybe<uint32_t>& ifPos)
 {
     MOZ_ASSERT(state_ == State::ThenElse);
 
-    if (!emitElseInternal())
+    if (!emitElseInternal()) {
         return false;
+    }
 
     if (ifPos) {
         
         
-        if (!bce_->updateSourceCoordNotes(*ifPos))
+        if (!bce_->updateSourceCoordNotes(*ifPos)) {
             return false;
+        }
     }
 
 #ifdef DEBUG
@@ -205,8 +220,9 @@ IfEmitter::emitElse()
 {
     MOZ_ASSERT(state_ == State::ThenElse);
 
-    if (!emitElseInternal())
+    if (!emitElseInternal()) {
         return false;
+    }
 
 #ifdef DEBUG
     state_ = State::Else;
@@ -223,8 +239,9 @@ IfEmitter::emitEnd()
     MOZ_ASSERT_IF(state_ == State::Then, jumpAroundThen_.offset != -1);
     MOZ_ASSERT_IF(state_ == State::Else, jumpAroundThen_.offset == -1);
 
-    if (!emitEndInternal())
+    if (!emitEndInternal()) {
         return false;
+    }
 
 #ifdef DEBUG
     state_ = State::End;
@@ -259,8 +276,9 @@ bool
 CondEmitter::emitThenElse()
 {
     MOZ_ASSERT(state_ == State::Cond);
-    if (!emitThenInternal(SRC_COND))
+    if (!emitThenInternal(SRC_COND)) {
         return false;
+    }
 
 #ifdef DEBUG
     state_ = State::ThenElse;
@@ -273,8 +291,9 @@ CondEmitter::emitElse()
 {
     MOZ_ASSERT(state_ == State::ThenElse);
 
-    if (!emitElseInternal())
+    if (!emitElseInternal()) {
         return false;
+    }
 
 #ifdef DEBUG
     state_ = State::Else;
@@ -288,8 +307,9 @@ CondEmitter::emitEnd()
     MOZ_ASSERT(state_ == State::Else);
     MOZ_ASSERT(jumpAroundThen_.offset == -1);
 
-    if (!emitEndInternal())
+    if (!emitEndInternal()) {
         return false;
+    }
 
 #ifdef DEBUG
     state_ = State::End;

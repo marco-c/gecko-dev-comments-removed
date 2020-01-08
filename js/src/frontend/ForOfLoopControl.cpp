@@ -27,8 +27,9 @@ ForOfLoopControl::emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce)
 {
     tryCatch_.emplace(bce, TryEmitter::Kind::TryCatch, TryEmitter::ControlKind::NonSyntactic);
 
-    if (!tryCatch_->emitTry())
+    if (!tryCatch_->emitTry()) {
         return false;
+    }
 
     MOZ_ASSERT(numYieldsAtBeginCodeNeedingIterClose_ == UINT32_MAX);
     numYieldsAtBeginCodeNeedingIterClose_ = bce->yieldAndAwaitOffsetList.numYields;
@@ -39,62 +40,79 @@ ForOfLoopControl::emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce)
 bool
 ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce)
 {
-    if (!tryCatch_->emitCatch())              
+    if (!tryCatch_->emitCatch()) {            
         return false;
+    }
 
-    if (!bce->emit1(JSOP_EXCEPTION))          
+    if (!bce->emit1(JSOP_EXCEPTION)) {        
         return false;
+    }
     unsigned slotFromTop = bce->stackDepth - iterDepth_;
-    if (!bce->emitDupAt(slotFromTop))         
+    if (!bce->emitDupAt(slotFromTop)) {       
         return false;
+    }
 
     
     
     
-    if (!bce->emit1(JSOP_UNDEFINED))          
+    if (!bce->emit1(JSOP_UNDEFINED)) {        
         return false;
-    if (!bce->emit1(JSOP_STRICTNE))           
+    }
+    if (!bce->emit1(JSOP_STRICTNE)) {         
         return false;
+    }
 
     InternalIfEmitter ifIteratorIsNotClosed(bce);
-    if (!ifIteratorIsNotClosed.emitThen())    
+    if (!ifIteratorIsNotClosed.emitThen()) {  
         return false;
+    }
 
     MOZ_ASSERT(slotFromTop == unsigned(bce->stackDepth - iterDepth_));
-    if (!bce->emitDupAt(slotFromTop))         
+    if (!bce->emitDupAt(slotFromTop)) {       
         return false;
-    if (!emitIteratorCloseInInnermostScope(bce, CompletionKind::Throw))
+    }
+    if (!emitIteratorCloseInInnermostScope(bce, CompletionKind::Throw)) {
         return false;                         
+    }
 
-    if (!ifIteratorIsNotClosed.emitEnd())     
+    if (!ifIteratorIsNotClosed.emitEnd()) {   
         return false;
+    }
 
-    if (!bce->emit1(JSOP_THROW))              
+    if (!bce->emit1(JSOP_THROW)) {            
         return false;
+    }
 
     
     
     
     uint32_t numYieldsEmitted = bce->yieldAndAwaitOffsetList.numYields;
     if (numYieldsEmitted > numYieldsAtBeginCodeNeedingIterClose_) {
-        if (!tryCatch_->emitFinally())
+        if (!tryCatch_->emitFinally()) {
             return false;
+        }
 
         InternalIfEmitter ifGeneratorClosing(bce);
-        if (!bce->emit1(JSOP_ISGENCLOSING))   
+        if (!bce->emit1(JSOP_ISGENCLOSING)) { 
             return false;
-        if (!ifGeneratorClosing.emitThen())   
+        }
+        if (!ifGeneratorClosing.emitThen()) { 
             return false;
-        if (!bce->emitDupAt(slotFromTop + 1)) 
+        }
+        if (!bce->emitDupAt(slotFromTop + 1)) { 
             return false;
-        if (!emitIteratorCloseInInnermostScope(bce, CompletionKind::Normal))
+        }
+        if (!emitIteratorCloseInInnermostScope(bce, CompletionKind::Normal)) {
             return false;                     
-        if (!ifGeneratorClosing.emitEnd())    
+        }
+        if (!ifGeneratorClosing.emitEnd()) {  
             return false;
+        }
     }
 
-    if (!tryCatch_->emitEnd())
+    if (!tryCatch_->emitEnd()) {
         return false;
+    }
 
     tryCatch_.reset();
     numYieldsAtBeginCodeNeedingIterClose_ = UINT32_MAX;
@@ -142,36 +160,45 @@ ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(BytecodeEmitter* bce,
     
     
     
-    if (!bce->emit1(JSOP_POP))                        
+    if (!bce->emit1(JSOP_POP)) {                      
         return false;
+    }
 
     
-    if (!bce->emit1(JSOP_SWAP))                       
+    if (!bce->emit1(JSOP_SWAP)) {                     
         return false;
-    if (!bce->emit1(JSOP_POP))                        
+    }
+    if (!bce->emit1(JSOP_POP)) {                      
         return false;
+    }
 
     
     
-    if (!bce->emit1(JSOP_UNDEFINED))                  
+    if (!bce->emit1(JSOP_UNDEFINED)) {                
         return false;
-    if (!bce->emit1(JSOP_SWAP))                       
+    }
+    if (!bce->emit1(JSOP_SWAP)) {                     
         return false;
+    }
 
-    if (!emitIteratorCloseInScope(bce, currentScope, CompletionKind::Normal)) 
+    if (!emitIteratorCloseInScope(bce, currentScope, CompletionKind::Normal)) { 
         return false;
+    }
 
     if (isTarget) {
         
         
         
-        if (!bce->emit1(JSOP_UNDEFINED))              
+        if (!bce->emit1(JSOP_UNDEFINED)) {            
             return false;
-        if (!bce->emit1(JSOP_UNDEFINED))              
+        }
+        if (!bce->emit1(JSOP_UNDEFINED)) {            
             return false;
+        }
     } else {
-        if (!bce->emit1(JSOP_POP))                    
+        if (!bce->emit1(JSOP_POP)) {                  
             return false;
+        }
     }
 
     return true;
