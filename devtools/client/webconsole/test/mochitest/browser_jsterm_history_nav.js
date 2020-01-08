@@ -13,7 +13,6 @@ const TEST_URI = "data:text/html;charset=utf-8,<p>bug 660806 - history " +
 
 add_task(async function() {
   
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
   await testHistory();
   
   await pushPref("devtools.webconsole.jsterm.codeMirror", true);
