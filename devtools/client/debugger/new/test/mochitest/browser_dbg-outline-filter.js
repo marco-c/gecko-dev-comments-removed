@@ -71,10 +71,6 @@ add_task(async function() {
   is(getItems(dbg).length, 9, "9 items in the list after escape pressed");
 
   
-  pressKey(dbg, "Enter");
-  is(getItems(dbg).length, 9, "9 items in the list after enter pressed");
-
-  
   type(dbg, "todo");
   is(getItems(dbg).length, 2, "2 items in the list after 'todo' filter");
   ok(getItems(dbg)[0].textContent.includes("TodoModel(key)"), "item TodoModel");
