@@ -915,8 +915,19 @@ HttpBaseChannel::EnsureUploadStreamIsCloneable(nsIRunnable* aCallback)
   NS_ENSURE_FALSE(mUploadCloneableCallback, NS_ERROR_UNEXPECTED);
 
   
+  if (!mUploadStream) {
+    aCallback->Run();
+    return NS_OK;
+  }
+
   
-  if (!mUploadStream || NS_InputStreamIsCloneable(mUploadStream)) {
+  
+  
+  
+  nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(mUploadStream);
+  if (seekable &&
+      NS_SUCCEEDED(seekable->Seek(nsISeekableStream::NS_SEEK_SET, 0)) &&
+      NS_InputStreamIsCloneable(mUploadStream)) {
     aCallback->Run();
     return NS_OK;
   }
