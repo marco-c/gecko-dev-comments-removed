@@ -325,12 +325,14 @@ JitcodeGlobalEntry::createScriptString(JSContext* cx, JSScript* script, size_t* 
     size_t filenameLength = strlen(filenameStr);
 
     
-    bool hasLineno = false;
-    size_t linenoLength = 0;
-    char linenoStr[15];
+    bool hasLineAndColumn = false;
+    size_t lineAndColumnLength = 0;
+    char lineAndColumnStr[30];
     if (hasName || (script->functionNonDelazifying() || script->isForEval())) {
-        linenoLength = SprintfLiteral(linenoStr, "%u", script->lineno());
-        hasLineno = true;
+        lineAndColumnLength =
+            SprintfLiteral(lineAndColumnStr, "%u:%u",
+                           script->lineno(), script->column());
+        hasLineAndColumn = true;
     }
 
     
@@ -343,10 +345,10 @@ JitcodeGlobalEntry::createScriptString(JSContext* cx, JSScript* script, size_t* 
     
     size_t fullLength = 0;
     if (hasName) {
-        MOZ_ASSERT(hasLineno);
-        fullLength = nameLength + 2 + filenameLength + 1 + linenoLength + 1;
-    } else if (hasLineno) {
-        fullLength = filenameLength + 1 + linenoLength;
+        MOZ_ASSERT(hasLineAndColumn);
+        fullLength = nameLength + 2 + filenameLength + 1 + lineAndColumnLength + 1;
+    } else if (hasLineAndColumn) {
+        fullLength = filenameLength + 1 + lineAndColumnLength;
     } else {
         fullLength = filenameLength;
     }
@@ -371,10 +373,10 @@ JitcodeGlobalEntry::createScriptString(JSContext* cx, JSScript* script, size_t* 
     cur += filenameLength;
 
     
-    if (hasLineno) {
+    if (hasLineAndColumn) {
         str[cur++] = ':';
-        memcpy(str + cur, linenoStr, linenoLength);
-        cur += linenoLength;
+        memcpy(str + cur, lineAndColumnStr, lineAndColumnLength);
+        cur += lineAndColumnLength;
     }
 
     
