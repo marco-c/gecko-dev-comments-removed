@@ -223,18 +223,6 @@ public:
 
     const java::GeckoEditableChild::Ref& GetJavaEditable() { return mEditable; }
 
-    void TransferParent(jni::Object::Param aEditableParent) {
-        mEditable->SetParent(aEditableParent);
-
-        
-        
-        if (mIMEFocusCount > 0) {
-            mEditable->NotifyIME(EditableListener::NOTIFY_IME_OF_TOKEN);
-            NotifyIMEContext(mInputContext, InputContextAction());
-            mEditable->NotifyIME(EditableListener::NOTIFY_IME_OF_FOCUS);
-        }
-    }
-
     void OnDetach(already_AddRefed<Runnable> aDisposer)
     {
         RefPtr<GeckoEditableSupport> self(this);
@@ -244,6 +232,9 @@ public:
             disposer->Run();
         });
     }
+
+    
+    void TransferParent(jni::Object::Param aEditableParent);
 
     
     void OnKeyEvent(int32_t aAction, int32_t aKeyCode, int32_t aScanCode,

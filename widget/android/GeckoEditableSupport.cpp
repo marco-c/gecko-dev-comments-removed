@@ -1384,7 +1384,7 @@ GeckoEditableSupport::OnRemovedFrom(TextEventDispatcher* aTextEventDispatcher)
 {
     mDispatcher = nullptr;
 
-    if (mIsRemote) {
+    if (mIsRemote && mEditable->HasEditableParent()) {
         
         OnDetach(NS_NewRunnableFunction("GeckoEditableSupport::OnRemovedFrom",
                  [editable = java::GeckoEditableChild::GlobalRef(mEditable)] {
@@ -1465,6 +1465,25 @@ GeckoEditableSupport::GetInputContext()
 }
 
 void
+GeckoEditableSupport::TransferParent(jni::Object::Param aEditableParent)
+{
+    mEditable->SetParent(aEditableParent);
+
+    
+    
+    if (mIMEFocusCount > 0) {
+        mEditable->NotifyIME(EditableListener::NOTIFY_IME_OF_TOKEN);
+        NotifyIMEContext(mInputContext, InputContextAction());
+        mEditable->NotifyIME(EditableListener::NOTIFY_IME_OF_FOCUS);
+    }
+
+    if (mIsRemote && !mDispatcher) {
+        
+        OnRemovedFrom( nullptr);
+    }
+}
+
+void
 GeckoEditableSupport::SetOnTabChild(dom::TabChild* aTabChild)
 {
     MOZ_ASSERT(!XRE_IsParentProcess());
@@ -1482,23 +1501,27 @@ GeckoEditableSupport::SetOnTabChild(dom::TabChild* aTabChild)
     const uint64_t tabId = aTabChild->GetTabId();
     NS_ENSURE_TRUE_VOID(contentId && tabId);
 
-    auto editableParent = java::GeckoServiceChildProcess::GetEditableParent(
-            contentId, tabId);
-    NS_ENSURE_TRUE_VOID(editableParent);
-
     RefPtr<widget::TextEventDispatcherListener> listener =
             widget->GetNativeTextEventDispatcherListener();
 
     if (!listener || listener.get() ==
             static_cast<widget::TextEventDispatcherListener*>(widget)) {
         
-        auto editableChild = java::GeckoEditableChild::New(editableParent,
-                                                            false);
+        const auto editableChild = java::GeckoEditableChild::New(
+                 nullptr,  false);
         RefPtr<widget::GeckoEditableSupport> editableSupport =
                 new widget::GeckoEditableSupport(editableChild);
 
         
         widget->SetNativeTextEventDispatcherListener(editableSupport);
+
+        
+        AttachNative(editableChild, editableSupport);
+        editableSupport->mEditableAttached = true;
+
+        
+        java::GeckoServiceChildProcess::GetEditableParent(
+                editableChild, contentId, tabId);
         return;
     }
 
@@ -1507,13 +1530,22 @@ GeckoEditableSupport::SetOnTabChild(dom::TabChild* aTabChild)
     
     
     
-    RefPtr<widget::GeckoEditableSupport> dummy =
+    const RefPtr<widget::GeckoEditableSupport> dummy =
             new widget::GeckoEditableSupport( nullptr);
     NS_ENSURE_TRUE_VOID(*reinterpret_cast<const uintptr_t*>(listener.get()) ==
             *reinterpret_cast<const uintptr_t*>(dummy.get()));
 
-    static_cast<widget::GeckoEditableSupport*>(
-            listener.get())->TransferParent(editableParent);
+    const auto support =
+            static_cast<widget::GeckoEditableSupport*>(listener.get());
+    if (!support->mEditableAttached) {
+        
+        AttachNative(support->GetJavaEditable(), support);
+        support->mEditableAttached = true;
+    }
+
+    
+    java::GeckoServiceChildProcess::GetEditableParent(
+            support->GetJavaEditable(), contentId, tabId);
 }
 
 } 
