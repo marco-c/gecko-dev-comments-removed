@@ -4,7 +4,6 @@
 
 
 
-#include "CubebDeviceEnumerator.h"
 #include "CubebUtils.h"
 
 #include "MediaInfo.h"
@@ -607,9 +606,6 @@ void ShutdownLibrary()
 {
   Preferences::UnregisterCallbacks(PrefChanged, gInitCallbackPrefs);
   Preferences::UnregisterCallbacks(PrefChanged, gCallbackPrefs);
-
-  
-  CubebDeviceEnumerator::Shutdown();
 
   StaticMutexAutoLock lock(sMutex);
   if (sCubebContext) {
