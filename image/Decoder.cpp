@@ -361,25 +361,10 @@ Decoder::AllocateFrameInternal(const gfx::IntSize& aOutputSize,
   if (frameNum == 1) {
     MOZ_ASSERT(aPreviousFrame, "Must provide a previous frame when animated");
     aPreviousFrame->SetRawAccessOnly();
-
-    
-    
-    
-    DisposalMethod prevDisposal = aPreviousFrame->GetDisposalMethod();
-    if (prevDisposal == DisposalMethod::CLEAR ||
-        prevDisposal == DisposalMethod::CLEAR_ALL ||
-        prevDisposal == DisposalMethod::RESTORE_PREVIOUS) {
-      mFirstFrameRefreshArea = aPreviousFrame->GetRect();
-    }
   }
 
   if (frameNum > 0) {
     ref->SetRawAccessOnly();
-
-    
-    
-    mFirstFrameRefreshArea.UnionRect(mFirstFrameRefreshArea,
-                                     ref->GetBoundedBlendRect());
 
     if (ShouldBlendAnimation()) {
       if (aPreviousFrame->GetDisposalMethod() !=
@@ -495,11 +480,34 @@ Decoder::PostFrameStop(Opacity aFrameOpacity)
 
   mLoopLength += mCurrentFrame->GetTimeout();
 
-  
-  
-  if (!ShouldSendPartialInvalidations() && mFrameCount == 1) {
-    mInvalidRect.UnionRect(mInvalidRect,
-                           IntRect(IntPoint(), Size()));
+  if (mFrameCount == 1) {
+    
+    
+    if (!ShouldSendPartialInvalidations()) {
+      mInvalidRect.UnionRect(mInvalidRect,
+                             IntRect(IntPoint(), Size()));
+    }
+
+    
+    
+    
+    switch (mCurrentFrame->GetDisposalMethod()) {
+      default:
+        MOZ_FALLTHROUGH_ASSERT("Unexpected DisposalMethod");
+      case DisposalMethod::CLEAR:
+      case DisposalMethod::CLEAR_ALL:
+      case DisposalMethod::RESTORE_PREVIOUS:
+        mFirstFrameRefreshArea = IntRect(IntPoint(), Size());
+        break;
+      case DisposalMethod::KEEP:
+      case DisposalMethod::NOT_SPECIFIED:
+        break;
+    }
+  } else {
+    
+    
+    mFirstFrameRefreshArea.UnionRect(mFirstFrameRefreshArea,
+                                     mCurrentFrame->GetBoundedBlendRect());
   }
 }
 
