@@ -3307,6 +3307,40 @@ Nursery::requestMinorGC(JS::gcreason::Reason reason) const
     runtime()->mainContextFromOwnThread()->requestInterrupt(InterruptReason::GC);
 }
 
+
+
+
+
+
+
+
+
+
+static bool
+RecordReplayCheckCanGC(JS::gcreason::Reason reason)
+{
+    if (!mozilla::recordreplay::IsRecordingOrReplaying())
+        return true;
+
+    switch (reason) {
+      case JS::gcreason::EAGER_ALLOC_TRIGGER:
+      case JS::gcreason::LAST_DITCH:
+      case JS::gcreason::TOO_MUCH_MALLOC:
+      case JS::gcreason::ALLOC_TRIGGER:
+      case JS::gcreason::DELAYED_ATOMS_GC:
+      case JS::gcreason::TOO_MUCH_WASM_MEMORY:
+        return false;
+
+      default:
+        break;
+    }
+
+    
+    
+    mozilla::recordreplay::RecordReplayAssert("RecordReplayCheckCanGC %d", (int) reason);
+    return true;
+}
+
 bool
 GCRuntime::triggerGC(JS::gcreason::Reason reason)
 {
@@ -3319,6 +3353,10 @@ GCRuntime::triggerGC(JS::gcreason::Reason reason)
 
     
     if (JS::RuntimeHeapIsCollecting())
+        return false;
+
+    
+    if (!RecordReplayCheckCanGC(reason))
         return false;
 
     JS::PrepareForFullGC(rt->mainContextFromOwnThread());
@@ -3383,6 +3421,10 @@ GCRuntime::triggerZoneGC(Zone* zone, JS::gcreason::Reason reason, size_t used, s
 
     
     if (JS::RuntimeHeapIsBusy())
+        return false;
+
+    
+    if (!RecordReplayCheckCanGC(reason))
         return false;
 
 #ifdef JS_GC_ZEAL
@@ -5903,6 +5945,10 @@ IncrementalProgress
 GCRuntime::drainMarkStack(SliceBudget& sliceBudget, gcstats::PhaseKind phase)
 {
     
+    
+    mozilla::recordreplay::AutoDisallowThreadEvents disallow;
+
+    
     gcstats::AutoPhase ap(stats(), phase);
     return marker.drainMarkStack(sliceBudget) ? Finished : NotFinished;
 }
@@ -6569,6 +6615,10 @@ GCRuntime::initSweepActions()
 IncrementalProgress
 GCRuntime::performSweepActions(SliceBudget& budget)
 {
+    
+    
+    mozilla::recordreplay::AutoDisallowThreadEvents disallow;
+
     AutoSetThreadIsSweeping threadIsSweeping;
 
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP);
@@ -7750,8 +7800,8 @@ void
 GCRuntime::gc(JSGCInvocationKind gckind, JS::gcreason::Reason reason)
 {
     
-    
-    mozilla::recordreplay::AutoDisallowThreadEvents d;
+    if (!RecordReplayCheckCanGC(reason))
+        return;
 
     invocationKind = gckind;
     collect(true, SliceBudget::unlimited(), reason);
