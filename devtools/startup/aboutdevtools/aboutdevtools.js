@@ -31,9 +31,6 @@ const GA_PARAMETERS = [
   ["utm_medium", "onboarding"],
 ];
 
-const ABOUTDEVTOOLS_STRINGS = "chrome://devtools-startup/locale/aboutdevtools.properties";
-const aboutDevtoolsBundle = Services.strings.createBundle(ABOUTDEVTOOLS_STRINGS);
-
 const KEY_SHORTCUTS_STRINGS = "chrome://devtools-startup/locale/key-shortcuts.properties";
 const keyShortcutsBundle = Services.strings.createBundle(KEY_SHORTCUTS_STRINGS);
 
@@ -90,48 +87,48 @@ function updatePage() {
 const features = [
   {
     icon: "chrome://devtools-startup/content/aboutdevtools/images/feature-inspector.svg",
-    title: "features.inspector.title",
-    desc: "features.inspector.desc",
+    title: "features-inspector-title",
+    desc: "features-inspector-desc",
     link: "https://developer.mozilla.org/docs/Tools/Page_Inspector",
   }, {
     icon: "chrome://devtools-startup/content/aboutdevtools/images/feature-console.svg",
-    title: "features.console.title",
-    desc: "features.console.desc",
+    title: "features-console-title",
+    desc: "features-console-desc",
     link: "https://developer.mozilla.org/docs/Tools/Web_Console",
   }, {
     icon: "chrome://devtools-startup/content/aboutdevtools/images/feature-debugger.svg",
-    title: "features.debugger.title",
-    desc: "features.debugger.desc",
+    title: "features-debugger-title",
+    desc: "features-debugger-desc",
     link: "https://developer.mozilla.org/docs/Tools/Debugger",
   }, {
     icon: "chrome://devtools-startup/content/aboutdevtools/images/feature-network.svg",
-    title: "features.network.title",
-    desc: "features.network.desc",
+    title: "features-network-title",
+    desc: "features-network-desc",
     link: "https://developer.mozilla.org/docs/Tools/Network_Monitor",
   }, {
     icon: "chrome://devtools-startup/content/aboutdevtools/images/feature-storage.svg",
-    title: "features.storage.title",
-    desc: "features.storage.desc",
+    title: "features-storage-title",
+    desc: "features-storage-desc",
     link: "https://developer.mozilla.org/docs/Tools/Storage_Inspector",
   }, {
     icon: "chrome://devtools-startup/content/aboutdevtools/images/feature-responsive.svg",
-    title: "features.responsive.title",
-    desc: "features.responsive.desc",
+    title: "features-responsive-title",
+    desc: "features-responsive-desc",
     link: "https://developer.mozilla.org/docs/Tools/Responsive_Design_Mode",
   }, {
     icon: "chrome://devtools-startup/content/aboutdevtools/images/feature-visualediting.svg",
-    title: "features.visualediting.title",
-    desc: "features.visualediting.desc",
+    title: "features-visual-editing-title",
+    desc: "features-visual-editing-desc",
     link: "https://developer.mozilla.org/docs/Tools/Style_Editor",
   }, {
     icon: "chrome://devtools-startup/content/aboutdevtools/images/feature-performance.svg",
-    title: "features.performance.title",
-    desc: "features.performance.desc",
+    title: "features-performance-title",
+    desc: "features-performance-desc",
     link: "https://developer.mozilla.org/docs/Tools/Performance",
   }, {
     icon: "chrome://devtools-startup/content/aboutdevtools/images/feature-memory.svg",
-    title: "features.memory.title",
-    desc: "features.memory.desc",
+    title: "features-memory-title",
+    desc: "features-memory-desc",
     link: "https://developer.mozilla.org/docs/Tools/Memory",
   },
 ];
@@ -142,20 +139,17 @@ const features = [
 function createFeatureEl(feature) {
   const li = document.createElement("li");
   li.classList.add("feature");
-  const learnMore = aboutDevtoolsBundle.GetStringFromName("features.learnMore");
 
-  let {icon, link, title, desc} = feature;
-  title = aboutDevtoolsBundle.GetStringFromName(title);
-  desc = aboutDevtoolsBundle.GetStringFromName(desc);
+  const {icon, link, title, desc} = feature;
   
   li.innerHTML =
     `<a class="feature-link" href="${link}" target="_blank">
        <img class="feature-icon" src="${icon}"/>
      </a>
-     <h3 class="feature-name">${title}</h3>
-     <p class="feature-desc">
-       ${desc}
-       <a class="external feature-link" href="${link}" target="_blank">${learnMore}</a>
+     <h3 class="feature-name" data-l10n-id="${title}"></h3>
+     <p class="feature-desc" data-l10n-id="${desc}">
+       <a class="external feature-link" href="${link}"
+          target="_blank" data-l10n-name="learn-more"></a>
      </p>`;
 
   return li;
@@ -167,8 +161,8 @@ window.addEventListener("load", function() {
 
   
   
-  welcomeMessage.textContent = aboutDevtoolsBundle.formatStringFromName("welcome.message",
-    [inspectorShortcut], 1);
+  document.l10n.setAttributes(welcomeMessage, "welcome-message",
+                             { shortcut: inspectorShortcut });
 
   
   if (reason == "ContextMenu") {
