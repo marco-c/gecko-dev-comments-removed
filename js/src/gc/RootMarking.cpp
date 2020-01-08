@@ -116,6 +116,10 @@ JS_FOR_EACH_TRACEKIND(TRACE_ROOTS)
 #undef TRACE_ROOTS
     TracePersistentRootedList<jsid>(trc, heapRoots.ref()[JS::RootKind::Id], "persistent-id");
     TracePersistentRootedList<Value>(trc, heapRoots.ref()[JS::RootKind::Value], "persistent-value");
+
+    
+    JS::AutoSuppressGCAnalysis nogc;
+
     TracePersistentRootedList<ConcreteTraceable>(
         trc, heapRoots.ref()[JS::RootKind::Traceable], "persistent-traceable");
 }
@@ -390,6 +394,9 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
     
     if (!JS::RuntimeHeapIsMinorCollecting()) {
         gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK_EMBEDDING);
+
+        
+        JS::AutoSuppressGCAnalysis nogc;
 
         
 
