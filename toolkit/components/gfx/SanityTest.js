@@ -72,12 +72,20 @@ function reportTestReason(val) {
   histogram.add(val);
 }
 
-function annotateCrashReport(value) {
+function annotateCrashReport() {
   try {
-    
     var crashReporter = Cc["@mozilla.org/toolkit/crash-reporter;1"].
                           getService(Ci.nsICrashReporter);
-    crashReporter.annotateCrashReport("GraphicsSanityTest", value ? "1" : "");
+    crashReporter.annotateCrashReport("GraphicsSanityTest", "1");
+  } catch (e) {
+  }
+}
+
+function removeCrashReportAnnotation(value) {
+  try {
+    var crashReporter = Cc["@mozilla.org/toolkit/crash-reporter;1"].
+                          getService(Ci.nsICrashReporter);
+    crashReporter.removeCrashReportAnnotation("GraphicsSanityTest");
   } catch (e) {
   }
 }
@@ -242,7 +250,7 @@ var listener = {
 
     
     
-    annotateCrashReport(false);
+    removeCrashReportAnnotation();
   }
 };
 
@@ -330,7 +338,7 @@ SanityTest.prototype = {
 
     if (!this.shouldRunTest()) return;
 
-    annotateCrashReport(true);
+    annotateCrashReport();
 
     
     var sanityTest = Services.ww.openWindow(null,

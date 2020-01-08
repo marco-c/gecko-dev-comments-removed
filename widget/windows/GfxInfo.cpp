@@ -893,34 +893,23 @@ GfxInfo::AddCrashReportAnnotations()
   GetAdapterSubsysID(subsysID);
   CopyUTF16toUTF8(subsysID, narrowSubsysID);
 
-  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("AdapterVendorID"),
+  CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::AdapterVendorID,
                                      narrowVendorID);
-  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("AdapterDeviceID"),
+  CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::AdapterDeviceID,
                                      narrowDeviceID);
-  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("AdapterDriverVersion"),
-                                     narrowDriverVersion);
-  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("AdapterSubsysID"),
+  CrashReporter::AnnotateCrashReport(
+    CrashReporter::Annotation::AdapterDriverVersion, narrowDriverVersion);
+  CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::AdapterSubsysID,
                                      narrowSubsysID);
 
   
-
   nsAutoCString note;
-  
-  note.AppendLiteral("AdapterVendorID: ");
-  note.Append(narrowVendorID);
-  note.AppendLiteral(", AdapterDeviceID: ");
-  note.Append(narrowDeviceID);
-  note.AppendLiteral(", AdapterSubsysID: ");
-  note.Append(narrowSubsysID);
-  note.AppendLiteral(", AdapterDriverVersion: ");
-  note.Append(NS_LossyConvertUTF16toASCII(driverVersion));
 
+  
   if (vendorID == GfxDriverInfo::GetDeviceVendor(VendorAll)) {
     
-    note.AppendLiteral(", ");
     LossyAppendUTF16toASCII(mDeviceID[mActiveGPUIndex], note);
     note.AppendLiteral(", ");
-    LossyAppendUTF16toASCII(mDeviceKeyDebug, note);
     LossyAppendUTF16toASCII(mDeviceKeyDebug, note);
   }
   note.AppendLiteral("\n");

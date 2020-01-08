@@ -690,8 +690,8 @@ var TelemetrySendImpl = {
 
         if (!this.sendingEnabled() || !TelemetryReportingPolicy.canUpload()) {
           
-          crs.annotateCrashReport("TelemetryClientId", "");
-          crs.annotateCrashReport("TelemetryServerURL", "");
+          crs.removeCrashReportAnnotation("TelemetryClientId");
+          crs.removeCrashReportAnnotation("TelemetryServerURL");
         } else {
           crs.annotateCrashReport("TelemetryClientId", clientId);
           crs.annotateCrashReport("TelemetryServerURL", server);
