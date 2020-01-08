@@ -5535,8 +5535,8 @@ nsLayoutUtils::MinSizeContributionForAxis(PhysicalAxis       aAxis,
         
         fixedMinSize = &minSize;
       } else if (::IsReplacedBoxResolvedAgainstZero(aFrame, *style,
-                     eAxisHorizontal ? stylePos->mMaxWidth
-                                     : stylePos->mMaxHeight)) {
+                     aAxis == eAxisHorizontal ? stylePos->mMaxWidth
+                                              : stylePos->mMaxHeight)) {
         
         minSize = 0;
         fixedMinSize = &minSize;
