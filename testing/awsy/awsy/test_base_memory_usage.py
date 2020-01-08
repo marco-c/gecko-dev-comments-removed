@@ -17,7 +17,7 @@ CHECKPOINTS = [
         'name': "After tabs open [+30s, forced GC]",
         'path': "memory-report-TabsOpenForceGC-4.json.gz",
         'name_filter': 'Web Content', 
-        'count': 1 
+        'median': True, 
     },
 ]
 
