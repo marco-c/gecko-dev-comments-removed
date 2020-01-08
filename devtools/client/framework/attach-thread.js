@@ -42,9 +42,16 @@ function attachThread(toolbox) {
   
   
   
-  const useSourceMaps = false;
-  const autoBlackBox = false;
-  const ignoreFrameEnvironment = true;
+  let useSourceMaps = false;
+  let autoBlackBox = false;
+  let ignoreFrameEnvironment = false;
+  const newDebuggerEnabled = Services.prefs.getBoolPref("devtools.debugger.new-debugger-frontend");
+  if (!newDebuggerEnabled) {
+    useSourceMaps = Services.prefs.getBoolPref("devtools.debugger.source-maps-enabled");
+    autoBlackBox = Services.prefs.getBoolPref("devtools.debugger.auto-black-box");
+  } else {
+    ignoreFrameEnvironment = true;
+  }
 
   const threadOptions = { useSourceMaps, autoBlackBox, ignoreFrameEnvironment };
 

@@ -8,11 +8,6 @@ Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/debugger/new/test/mochitest/helpers.js",
   this);
 
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/debugger/new/test/mochitest/helpers/context.js",
-  this);
-
 const TAB_URL = URL_ROOT + "service-workers/debug.html";
 
 add_task(async function() {
