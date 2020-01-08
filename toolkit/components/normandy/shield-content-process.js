@@ -1,0 +1,26 @@
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://normandy-content/AboutPages.jsm");
+
+
+
+
+
+function AboutStudies() {
+  return AboutStudies.prototype;
+}
+AboutStudies.prototype = AboutPages.aboutStudies;
+
+var NSGetFactory = XPCOMUtils.generateNSGetFactory([AboutStudies]);

@@ -3,7 +3,6 @@
 
 "use strict";
 
-const Cm = Components.manager;
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -21,8 +20,6 @@ var EXPORTED_SYMBOLS = ["AboutPages"];
 
 const SHIELD_LEARN_MORE_URL_PREF = "app.normandy.shieldLearnMoreUrl";
 
-const PROCESS_SCRIPT = "resource://normandy-content/shield-content-process.js";
-
 
 
 
@@ -31,10 +28,10 @@ const PROCESS_SCRIPT = "resource://normandy-content/shield-content-process.js";
 
 
 class AboutPage {
-  constructor({chromeUrl, aboutHost, classId, description, uriFlags}) {
+  constructor({chromeUrl, aboutHost, classID, description, uriFlags}) {
     this.chromeUrl = chromeUrl;
     this.aboutHost = aboutHost;
-    this.classId = Components.ID(classId);
+    this.classID = Components.ID(classID);
     this.description = description;
     this.uriFlags = uriFlags;
   }
@@ -54,34 +51,6 @@ class AboutPage {
     }
     return channel;
   }
-
-  createInstance(outer, iid) {
-    if (outer !== null) {
-      throw Cr.NS_ERROR_NO_AGGREGATION;
-    }
-    return this.QueryInterface(iid);
-  }
-
-  
-
-
-
-  register() {
-    Cm.QueryInterface(Ci.nsIComponentRegistrar).registerFactory(
-      this.classId,
-      this.description,
-      `@mozilla.org/network/protocol/about;1?what=${this.aboutHost}`,
-      this,
-    );
-  }
-
-  
-
-
-
-  unregister() {
-    Cm.QueryInterface(Ci.nsIComponentRegistrar).unregisterFactory(this.classId, this);
-  }
 }
 AboutPage.prototype.QueryInterface = ChromeUtils.generateQI([Ci.nsIAboutModule]);
 
@@ -91,21 +60,17 @@ AboutPage.prototype.QueryInterface = ChromeUtils.generateQI([Ci.nsIAboutModule])
 var AboutPages = {
   async init() {
     
-    Services.ppmm.loadProcessScript(PROCESS_SCRIPT, true);
 
     
-    this.aboutStudies.register();
     this.aboutStudies.registerParentListeners();
 
     CleanupManager.addCleanupHandler(() => {
       
-      Services.ppmm.removeDelayedProcessScript(PROCESS_SCRIPT);
       Services.ppmm.broadcastAsyncMessage("Shield:ShuttingDown");
       Services.mm.broadcastAsyncMessage("Shield:ShuttingDown");
 
       
       this.aboutStudies.unregisterParentListeners();
-      this.aboutStudies.unregister();
     });
   },
 };
@@ -119,7 +84,7 @@ XPCOMUtils.defineLazyGetter(this.AboutPages, "aboutStudies", () => {
   const aboutStudies = new AboutPage({
     chromeUrl: "resource://normandy-content/about-studies/about-studies.html",
     aboutHost: "studies",
-    classId: "{6ab96943-a163-482c-9622-4faedc0e827f}",
+    classID: "{6ab96943-a163-482c-9622-4faedc0e827f}",
     description: "Shield Study Listing",
     uriFlags: (
       Ci.nsIAboutModule.ALLOW_SCRIPT
