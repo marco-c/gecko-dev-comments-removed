@@ -2723,8 +2723,7 @@ public:
 
 
   bool RecomputeVisibility(nsDisplayListBuilder* aBuilder,
-                           nsRegion* aVisibleRegion,
-                           bool aUseClipBounds = true);
+                           nsRegion* aVisibleRegion);
 
   
 
