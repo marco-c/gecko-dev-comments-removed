@@ -9,7 +9,8 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Unused.h"
-#include "nsISupports.h"
+#include "nsIChannel.h"
+#include "nsIDocument.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
@@ -165,6 +166,58 @@ void ChannelEventQueue::ResumeInternal() {
     Unused << NS_WARN_IF(
         NS_FAILED(target->Dispatch(event.forget(), NS_DISPATCH_NORMAL)));
   }
+}
+
+bool
+ChannelEventQueue::MaybeSuspendIfEventsAreSuppressed() {
+  
+  
+  if (!NS_IsMainThread()) {
+    return false;
+  }
+
+  
+  
+  if (mHasCheckedForXMLHttpRequest && !mForXMLHttpRequest) {
+    return false;
+  }
+
+  nsCOMPtr<nsIChannel> channel(do_QueryInterface(mOwner));
+  if (!channel) {
+    return false;
+  }
+
+  nsCOMPtr<nsILoadInfo> loadInfo = channel->GetLoadInfo();
+  if (!loadInfo) {
+    return false;
+  }
+
+  
+  if (!mHasCheckedForXMLHttpRequest) {
+    nsContentPolicyType contentType = loadInfo->InternalContentPolicyType();
+    mForXMLHttpRequest =
+      (contentType == nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST);
+    mHasCheckedForXMLHttpRequest = true;
+
+    if (!mForXMLHttpRequest) {
+      return false;
+    }
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIDocument> document;
+  loadInfo->GetLoadingDocument(getter_AddRefs(document));
+  if (document &&
+      document->EventHandlingSuppressed() &&
+      !document->IsInSyncOperation()) {
+    document->AddSuspendedChannelEventQueue(this);
+    SuspendInternal();
+    return true;
+  }
+
+  return false;
 }
 
 }  
