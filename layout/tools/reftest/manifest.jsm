@@ -547,6 +547,9 @@ sandbox.compareRetainedDisplayLists = g.compareRetainedDisplayLists;
     
     sandbox.verify = prefs.getBoolPref("reftest.verify", false);
 
+    
+    sandbox.serviceWorkerE10s = prefs.getBoolPref("dom.serviceWorkers.parent_intercept", false);
+
     if (!g.dumpedConditionSandbox) {
         g.logger.info("Dumping JSON representation of sandbox");
         g.logger.info(JSON.stringify(Cu.waiveXrays(sandbox)));
