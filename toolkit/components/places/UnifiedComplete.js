@@ -279,8 +279,11 @@ const QUERYINDEX_URL_STRIPPED_URL = 2;
 const QUERYINDEX_URL_FRECENCY = 3;
 
 function urlQuery(conditions1, conditions2) {
+  
+  
+  
+  
   return `/* do not warn (bug no): cannot use an index to sort */
-          ${SQL_AUTOFILL_WITH}
           SELECT :query_type,
                  url,
                  :strippedURL,
@@ -289,11 +292,7 @@ function urlQuery(conditions1, conditions2) {
                  id
           FROM moz_places
           WHERE rev_host = :revHost
-                AND (
-                  MAX(frecency, 0) >= ${SQL_AUTOFILL_FRECENCY_THRESHOLD}
-                  OR bookmarked
-                )
-                AND hidden = 0
+                AND (bookmarked OR frecency > 20)
                 ${conditions1}
           UNION ALL
           SELECT :query_type,
@@ -304,11 +303,7 @@ function urlQuery(conditions1, conditions2) {
                  id
           FROM moz_places
           WHERE rev_host = :revHost || 'www.'
-                AND (
-                  MAX(frecency, 0) >= ${SQL_AUTOFILL_FRECENCY_THRESHOLD}
-                  OR bookmarked
-                )
-                AND hidden = 0
+                AND (bookmarked OR frecency > 20)
                 ${conditions2}
           ORDER BY frecency DESC, id DESC
           LIMIT 1 `;
@@ -2204,7 +2199,6 @@ Search.prototype = {
       query_type: QUERYTYPE_AUTOFILL_URL,
       revHost,
       strippedURL,
-      stddevMultiplier: UrlbarPrefs.get("autoFill.stddevMultiplier"),
     };
 
     let bookmarked = this.hasBehavior("bookmark") &&

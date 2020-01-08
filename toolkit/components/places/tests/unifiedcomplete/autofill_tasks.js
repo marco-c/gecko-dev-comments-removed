@@ -548,25 +548,44 @@ function addAutofillTasks(origins) {
     
     
     
-    await check_autocomplete({
-      search,
-      searchParam: "enable-actions",
-      matches: [
-        origins ?
-          makeSearchMatch(search, { style: ["heuristic"] }) :
-          makeVisitMatch(search, "http://" + search, { heuristic: true }),
-        {
-          value: "https://not-" + url,
-          comment: "test visit for https://not-" + url,
-          style: ["favicon"],
-        },
-        {
-          value: "https://" + url,
-          comment: "test visit for https://" + url,
-          style: ["favicon"],
-        },
-      ],
-    });
+    if (origins) {
+      await check_autocomplete({
+        search,
+        searchParam: "enable-actions",
+        matches: [
+          makeSearchMatch(search, { style: ["heuristic"] }),
+          {
+            value: "https://not-" + url,
+            comment: "test visit for https://not-" + url,
+            style: ["favicon"],
+          },
+          {
+            value: "https://" + url,
+            comment: "test visit for https://" + url,
+            style: ["favicon"],
+          },
+        ],
+      });
+    } else {
+      await check_autocomplete({
+        search,
+        searchParam: "enable-actions",
+        autofilled: url,
+        completed: "https://" + url,
+        matches: [
+          {
+            value: url,
+            comment: "https://" + comment,
+            style: ["autofill", "heuristic"],
+          },
+          {
+            value: "https://not-" + url,
+            comment: "test visit for https://not-" + url,
+            style: ["favicon"],
+          },
+        ],
+      });
+    }
 
     
     await PlacesUtils.history.remove([
