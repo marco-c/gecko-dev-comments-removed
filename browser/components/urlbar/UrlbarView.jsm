@@ -31,16 +31,8 @@ class UrlbarView {
 
     
     
-    this._rows.addEventListener("overflow", event => {
-      if (event.target.classList.contains("urlbarView-row-inner")) {
-        event.target.toggleAttribute("overflow", true);
-      }
-    });
-    this._rows.addEventListener("underflow", event => {
-      if (event.target.classList.contains("urlbarView-row-inner")) {
-        event.target.toggleAttribute("overflow", false);
-      }
-    });
+    this._rows.addEventListener("overflow", this);
+    this._rows.addEventListener("underflow", this);
 
     this.controller.addQueryListener(this);
   }
@@ -219,5 +211,17 @@ class UrlbarView {
       this.urlbar.resultSelected(event, result);
     }
     this.close();
+  }
+
+  _on_overflow(event) {
+    if (event.target.classList.contains("urlbarView-row-inner")) {
+      event.target.toggleAttribute("overflow", true);
+    }
+  }
+
+  _on_underflow(event) {
+    if (event.target.classList.contains("urlbarView-row-inner")) {
+      event.target.toggleAttribute("overflow", false);
+    }
   }
 }
