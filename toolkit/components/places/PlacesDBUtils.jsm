@@ -979,9 +979,6 @@ var PlacesDBUtils = {
 
   async telemetry() {
     
-    await this._telemetryForFeeds();
-
-    
     
     let probeValues = {};
 
@@ -1126,16 +1123,6 @@ var PlacesDBUtils = {
       probeValues[probe.histogram] = val;
       Services.telemetry.getHistogramById(probe.histogram).add(val);
     }
-  },
-
-  async _telemetryForFeeds() {
-    let db = await PlacesUtils.promiseDBConnection();
-    let livebookmarkCount = await db.execute(
-      `SELECT count(*) FROM moz_items_annos a
-                       JOIN moz_anno_attributes aa ON a.anno_attribute_id = aa.id
-                       WHERE aa.name = 'livemark/feedURI'`);
-    livebookmarkCount = livebookmarkCount[0].getResultByIndex(0);
-    Services.telemetry.scalarSet("browser.feeds.livebookmark_count", livebookmarkCount);
   },
 
   
