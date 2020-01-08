@@ -594,12 +594,6 @@ GetBlur(gfxContext* aDestinationCtx,
   if (useDestRect) {
     minSize = aRectSize;
   }
-
-  int32_t maxTextureSize = gfxPlatform::MaxTextureSize();
-  if (minSize.width > maxTextureSize || minSize.height > maxTextureSize) {
-    return nullptr;
-  }
-
   aOutMinSize = minSize;
 
   DrawTarget* destDT = aDestinationCtx->GetDrawTarget();
@@ -961,7 +955,13 @@ gfxAlphaBoxBlur::BlurRectangle(gfxContext* aDestinationCtx,
                                const gfxRect& aDirtyRect,
                                const gfxRect& aSkipRect)
 {
-  if (!RectIsInt32Safe(ToRect(aRect))) {
+  const double maxSize = (double)gfxPlatform::MaxTextureSize();
+  const double maxPos = (double)std::numeric_limits<std::int16_t>::max();
+  if (aRect.width > maxSize || aRect.height > maxSize ||
+      std::abs(aRect.x) > maxPos || std::abs(aRect.y) > maxPos) {
+    
+    
+    
     return;
   }
 
@@ -1015,6 +1015,11 @@ gfxAlphaBoxBlur::BlurRectangle(gfxContext* aDestinationCtx,
     }
   }
 
+  
+  
+  
+  
+  
   
   
   
