@@ -152,6 +152,8 @@ nsXPConnect::InitStatics()
 
     
     gSelf->mRuntime->InitSingletonScopes();
+
+    mozJSComponentLoader::InitStatics();
 }
 
 
@@ -163,6 +165,8 @@ nsXPConnect::ReleaseXPConnectSingleton()
         nsrefcnt cnt;
         NS_RELEASE2(xpc, cnt);
     }
+
+    mozJSComponentLoader::Shutdown();
 }
 
 
