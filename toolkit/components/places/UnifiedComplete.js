@@ -48,6 +48,9 @@ const REGEXP_USER_CONTEXT_ID = /(?:^| )user-context-id:(\d+)/;
 const REGEXP_MAX_RESULTS = /(?:^| )max-results:(\d+)/;
 
 
+const REGEXP_INSERT_METHOD = /(?:^| )insert-method:(\d+)/;
+
+
 const REGEXP_SPACES = /\s+/;
 
 
@@ -628,6 +631,7 @@ function Search(searchString, searchParam, autocompleteListener,
   
   
   
+  this._leadingRestrictionToken = null;
   if (unfilteredTokens.length > 1 &&
       this._trimmedOriginalSearchString.startsWith(unfilteredTokens[0]) &&
       Object.values(UrlbarTokenizer.RESTRICT).includes(unfilteredTokens[0])) {
@@ -2626,8 +2630,13 @@ UnifiedComplete.prototype = {
     
     
     
+
+    
+    let insertMethod = searchParam.match(REGEXP_INSERT_METHOD);
+    insertMethod = insertMethod ? parseInt(insertMethod[1])
+                                : UrlbarPrefs.get("insertMethod");
+
     let previousResult = null;
-    let insertMethod = UrlbarPrefs.get("insertMethod");
     if (this._currentSearch && insertMethod != UrlbarUtils.INSERTMETHOD.APPEND) {
       let result = this._currentSearch._result;
       

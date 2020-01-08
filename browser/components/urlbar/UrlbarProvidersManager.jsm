@@ -304,6 +304,9 @@ class Query {
 
 
   add(provider, match) {
+    if (!(provider instanceof UrlbarProvider)) {
+      throw new Error("Invalid provider passed to the add callback");
+    }
     
     if (this.canceled || !this.acceptableSources.includes(match.source)) {
       return;
@@ -325,8 +328,9 @@ class Query {
         delete this._chunkTimer;
       }
       this.muxer.sort(this.context);
+
       
-      logger.debug(`Cropping ${this.context.results.length} matches to ${this.context.maxResults.length}`);
+      logger.debug(`Cropping ${this.context.results.length} matches to ${this.context.maxResults}`);
       this.context.results = this.context.results.slice(0, this.context.maxResults);
       this.controller.receiveResults(this.context);
     };
@@ -460,13 +464,15 @@ function getAcceptableMatchSources(context) {
         }
         break;
       case UrlbarUtils.MATCH_SOURCE.OTHER_NETWORK:
-        if (!context.isPrivate) {
+        if (!context.isPrivate && !restrictTokenType) {
           acceptedSources.push(source);
         }
         break;
       case UrlbarUtils.MATCH_SOURCE.OTHER_LOCAL:
       default:
-        acceptedSources.push(source);
+        if (!restrictTokenType) {
+          acceptedSources.push(source);
+        }
         break;
     }
   }
