@@ -67,14 +67,6 @@ def get_type(type, calltype, iid_is=None, size_is=None):
         
         return {
             'tag': 'TD_ARRAY',
-            'element': get_type(type.type, calltype, iid_is),
-        }
-
-    if isinstance(type, xpidl.LegacyArray):
-        
-        
-        return {
-            'tag': 'TD_LEGACY_ARRAY',
             'size_is': size_is,
             'element': get_type(type.type, calltype, iid_is),
         }

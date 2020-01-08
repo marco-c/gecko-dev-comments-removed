@@ -530,10 +530,7 @@ xpc::CleanupValue(const nsXPTType& aType,
     
     
     
-    
-    
-    
-    if (aType.IsArithmetic() || (aType.IsPointer() && !*(void**)aValue)) {
+    if (aType.IsArithmetic() || (aType.HasPointerRepr() && !*(void**)aValue)) {
         return;
     }
     xpc::InnerCleanupValue(aType, aValue, aArrayLen);
