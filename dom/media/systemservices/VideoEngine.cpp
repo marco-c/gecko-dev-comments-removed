@@ -5,7 +5,8 @@
 
 
 #include "VideoEngine.h"
-#include "webrtc/video_engine/browser_capture_impl.h"
+#include "video_engine/browser_capture_impl.h"
+#include "video_engine/desktop_capture_impl.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #ifdef WEBRTC_ANDROID
 #include "webrtc/modules/video_capture/video_capture.h"
