@@ -822,9 +822,7 @@ var gMainPane = {
   onBrowserLanguageChange(event) {
     let locale = event.target.value;
 
-    
-    
-    if (!locale) {
+    if (locale == "search") {
       return;
     } else if (locale == Services.locale.requestedLocale) {
       this.hideConfirmLanguageChangeMessageBar();

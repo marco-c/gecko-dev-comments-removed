@@ -311,6 +311,9 @@ add_task(async function testInstallFromAMO() {
   
   let {dialogDoc, available, requested} = await openDialog(doc, true);
 
+  
+  is(messageBar.hidden, true, "The message bar is still hidden after searching");
+
   let dropdown = dialogDoc.getElementById("availableLocales");
   if (dropdown.itemCount == 1) {
     await waitForMutation(
