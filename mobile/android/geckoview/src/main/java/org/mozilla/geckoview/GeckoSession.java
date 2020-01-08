@@ -2593,14 +2593,6 @@ public class GeckoSession implements Parcelable {
 
 
         void onCrash(GeckoSession session);
-
-        
-
-
-
-
-
-        default void onFirstComposite(GeckoSession session) {}
     }
 
     public interface SelectionActionDelegate {
@@ -4122,10 +4114,6 @@ public class GeckoSession implements Parcelable {
             case FIRST_PAINT: {
                 if (mController != null) {
                     mController.onFirstPaint();
-                }
-                ContentDelegate delegate = mContentHandler.getDelegate();
-                if (delegate != null) {
-                    delegate.onFirstComposite(this);
                 }
                 break;
             }
