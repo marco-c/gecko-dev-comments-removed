@@ -97,6 +97,8 @@ class Output(object):
                     subtests, vals = self.parseWebaudioOutput(test)
                 elif 'unity-webgl' in test.measurements:
                     subtests, vals = self.parseUnityWebGLOutput(test)
+                elif 'assorted-dom' in test.measurements:
+                    subtests, vals = self.parseAssortedDomOutput(test)
                 suite['subtests'] = subtests
 
             else:
@@ -342,6 +344,47 @@ class Output(object):
 
         return subtests, vals
 
+    def parseAssortedDomOutput(self, test):
+        
+        
+
+        
+        
+
+        
+        
+        
+
+        
+        
+
+        _subtests = {}
+        data = test.measurements['assorted-dom']
+        for pagecycle in data:
+            for _sub, _value in pagecycle[0].iteritems():
+                
+                if _sub not in _subtests.keys():
+                    
+                    _subtests[_sub] = {'unit': test.unit,
+                                       'alertThreshold': float(test.alert_threshold),
+                                       'lowerIsBetter': test.lower_is_better,
+                                       'name': _sub,
+                                       'replicates': []}
+                _subtests[_sub]['replicates'].extend([_value])
+
+        vals = []
+        subtests = []
+        names = _subtests.keys()
+        names.sort(reverse=True)
+        for name in names:
+            _subtests[name]['value'] = round(filter.median(_subtests[name]['replicates']), 2)
+            subtests.append(_subtests[name])
+            
+            if name == 'total':
+                vals.append([_subtests[name]['value'], name])
+
+        return subtests, vals
+
     def output(self):
         """output to file and perfherder data json """
         if self.summarized_results == {}:
@@ -477,6 +520,11 @@ class Output(object):
         results = [i for i, j in val_list]
         return sum(results)
 
+    @classmethod
+    def assorted_dom_score(cls, val_list):
+        results = [i for i, j in val_list]
+        return round(filter.geometric_mean(results), 2)
+
     def construct_summary(self, vals, testname):
         if testname.startswith('raptor-v8_7'):
             return self.v8_Metric(vals)
@@ -494,6 +542,8 @@ class Output(object):
             return self.unity_webgl_score(vals)
         elif testname.startswith('raptor-webaudio'):
             return self.webaudio_score(vals)
+        elif testname.startswith('raptor-assorted-dom'):
+            return self.assorted_dom_score(vals)
         elif len(vals) > 1:
             return round(filter.geometric_mean([i for i, j in vals]), 2)
         else:
