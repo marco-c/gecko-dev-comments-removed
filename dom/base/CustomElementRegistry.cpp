@@ -773,12 +773,6 @@ CustomElementRegistry::Define(JSContext* aCx,
   
   JS::Rooted<JSObject*> constructor(aCx, aFunctionConstructor.CallableOrNull());
 
-  
-
-
-
-  
-  
   JS::Rooted<JSObject*> constructorUnwrapped(aCx, js::CheckedUnwrap(constructor));
   if (!constructorUnwrapped) {
     
@@ -786,6 +780,10 @@ CustomElementRegistry::Define(JSContext* aCx,
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return;
   }
+
+  
+
+
 
   if (!JS::IsConstructor(constructorUnwrapped)) {
     aRv.ThrowTypeError<MSG_NOT_CONSTRUCTOR>(NS_LITERAL_STRING("Argument 2 of CustomElementRegistry.define"));
