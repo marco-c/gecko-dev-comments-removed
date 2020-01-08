@@ -1619,7 +1619,7 @@ protected:
   
 
 
-  nsresult HideInlineTableEditingUI();
+  void HideInlineTableEditingUI();
 
   
 
