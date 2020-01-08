@@ -747,10 +747,10 @@ HttpChannelChild::DoOnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
   }
 
   bool isTracker;
-  if (NS_SUCCEEDED(mLoadInfo->GetIsTracker(&isTracker)) && isTracker) {
+  MOZ_ALWAYS_SUCCEEDS(mLoadInfo->GetIsTracker(&isTracker));
+  if (isTracker) {
     bool isTrackerBlocked;
-    Unused << mLoadInfo->GetIsTrackerBlocked(&isTrackerBlocked);
-
+    MOZ_ALWAYS_SUCCEEDS(mLoadInfo->GetIsTrackerBlocked(&isTrackerBlocked));
     LOG(("HttpChannelChild::DoOnStartRequest FastBlock %d [this=%p]\n",
          isTrackerBlocked,
          this));
@@ -758,8 +758,10 @@ HttpChannelChild::DoOnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
     nsCOMPtr<nsIDocument> doc;
     if (!NS_WARN_IF(NS_FAILED(GetTopDocument(this,
                                              getter_AddRefs(doc))))) {
-
-      doc->IncrementTrackerCount(isTrackerBlocked);
+      doc->IncrementTrackerCount();
+      if (isTrackerBlocked) {
+        doc->IncrementTrackerBlockedCount();
+      }
     }
   }
 
@@ -2041,7 +2043,7 @@ HttpChannelChild::ProcessNotifyTrackingProtectionDisabled()
 }
 
 void
-HttpChannelChild::ProcessNotifyTrackingCookieBlocked(uint32_t aRejectedReason)
+HttpChannelChild::ProcessNotifyTrackingCookieBlocked()
 {
   LOG(("HttpChannelChild::ProcessNotifyTrackingCookieBlocked [this=%p]\n", this));
   MOZ_ASSERT(OnSocketThread());
@@ -2051,8 +2053,8 @@ HttpChannelChild::ProcessNotifyTrackingCookieBlocked(uint32_t aRejectedReason)
   neckoTarget->Dispatch(
     NS_NewRunnableFunction(
       "nsChannelClassifier::NotifyTrackingCookieBlocked",
-      [self, aRejectedReason]() {
-        AntiTrackingCommon::NotifyRejection(self, aRejectedReason);
+      [self]() {
+        AntiTrackingCommon::NotifyRejection(self);
       }),
     NS_DISPATCH_NORMAL);
 }
