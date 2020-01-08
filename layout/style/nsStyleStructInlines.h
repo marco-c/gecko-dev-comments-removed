@@ -154,7 +154,7 @@ nsStyleDisplay::HasPerspective(const nsIFrame* aContextFrame) const
 }
 
 bool
-nsStyleDisplay::HasFixedPosContainingBlockStyleInternal(
+nsStyleDisplay::IsFixedPosContainingBlockForNonSVGTextFrames(
   mozilla::ComputedStyle& aStyle) const
 {
   
@@ -173,29 +173,31 @@ nsStyleDisplay::HasFixedPosContainingBlockStyleInternal(
 }
 
 bool
-nsStyleDisplay::IsFixedPosContainingBlockForAppropriateFrame(
-  mozilla::ComputedStyle& aStyle) const
+nsStyleDisplay::IsFixedPosContainingBlockForTransformSupportingFrames() const
 {
   
   
-  return HasFixedPosContainingBlockStyleInternal(aStyle) ||
-         HasTransformStyle() || HasPerspectiveStyle();
+  return HasTransformStyle() || HasPerspectiveStyle();
 }
 
 bool
 nsStyleDisplay::IsFixedPosContainingBlock(const nsIFrame* aContextFrame) const
 {
+  mozilla::ComputedStyle* style = aContextFrame->Style();
+  NS_ASSERTION(style->ThreadsafeStyleDisplay() == this,
+               "unexpected aContextFrame");
   
   
-  if (!HasFixedPosContainingBlockStyleInternal(*aContextFrame->Style()) &&
-      !HasTransform(aContextFrame) && !HasPerspective(aContextFrame)) {
+  if (!IsFixedPosContainingBlockForNonSVGTextFrames(*style) &&
+      (!IsFixedPosContainingBlockForTransformSupportingFrames() ||
+       !aContextFrame->IsFrameOfType(nsIFrame::eSupportsCSSTransforms))) {
     return false;
   }
   return !nsSVGUtils::IsInSVGTextSubtree(aContextFrame);
 }
 
 bool
-nsStyleDisplay::HasAbsPosContainingBlockStyleInternal() const
+nsStyleDisplay::IsAbsPosContainingBlockForNonSVGTextFrames() const
 {
   
   
@@ -205,27 +207,17 @@ nsStyleDisplay::HasAbsPosContainingBlockStyleInternal() const
 }
 
 bool
-nsStyleDisplay::IsAbsPosContainingBlockForAppropriateFrame(
-  mozilla::ComputedStyle& aStyle) const
-{
-  NS_ASSERTION(aStyle.ThreadsafeStyleDisplay() == this, "unexpected aStyle");
-  
-  
-  return HasAbsPosContainingBlockStyleInternal() ||
-         IsFixedPosContainingBlockForAppropriateFrame(aStyle);
-}
-
-bool
 nsStyleDisplay::IsAbsPosContainingBlock(const nsIFrame* aContextFrame) const
 {
-  NS_ASSERTION(aContextFrame->Style()->ThreadsafeStyleDisplay() == this,
+  mozilla::ComputedStyle *style = aContextFrame->Style();
+  NS_ASSERTION(style->ThreadsafeStyleDisplay() == this,
                "unexpected aContextFrame");
   
   
-  if (!HasAbsPosContainingBlockStyleInternal() &&
-      !HasFixedPosContainingBlockStyleInternal(*aContextFrame->Style()) &&
-      !HasTransform(aContextFrame) &&
-      !HasPerspective(aContextFrame)) {
+  if (!IsAbsPosContainingBlockForNonSVGTextFrames() &&
+      !IsFixedPosContainingBlockForNonSVGTextFrames(*style) &&
+      (!IsFixedPosContainingBlockForTransformSupportingFrames() ||
+       !aContextFrame->IsFrameOfType(nsIFrame::eSupportsCSSTransforms))) {
     return false;
   }
   return !nsSVGUtils::IsInSVGTextSubtree(aContextFrame);

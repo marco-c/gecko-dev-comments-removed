@@ -239,12 +239,21 @@ ComputedStyle::CalcStyleDifference(ComputedStyle* aNewContext,
     
     
     
-    if (ThreadsafeStyleDisplay()->IsAbsPosContainingBlockForAppropriateFrame(*this) ==
-        aNewContext->ThreadsafeStyleDisplay()->
-          IsAbsPosContainingBlockForAppropriateFrame(*aNewContext) &&
-        ThreadsafeStyleDisplay()->IsFixedPosContainingBlockForAppropriateFrame(*this) ==
-        aNewContext->ThreadsafeStyleDisplay()->
-          IsFixedPosContainingBlockForAppropriateFrame(*aNewContext)) {
+    const nsStyleDisplay* oldDisp = ThreadsafeStyleDisplay();
+    const nsStyleDisplay* newDisp = aNewContext->ThreadsafeStyleDisplay();
+    bool isFixedCB;
+    if (oldDisp->IsAbsPosContainingBlockForNonSVGTextFrames() ==
+        newDisp->IsAbsPosContainingBlockForNonSVGTextFrames() &&
+        (isFixedCB =
+           oldDisp->IsFixedPosContainingBlockForNonSVGTextFrames(*this)) ==
+        newDisp->IsFixedPosContainingBlockForNonSVGTextFrames(*aNewContext) &&
+        
+        
+        
+        (isFixedCB ||
+         oldDisp->IsFixedPosContainingBlockForTransformSupportingFrames() ==
+         newDisp->IsFixedPosContainingBlockForTransformSupportingFrames())) {
+      
       
       
       hint &= ~nsChangeHint_UpdateContainingBlock;

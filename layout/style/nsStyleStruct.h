@@ -1973,11 +1973,13 @@ private:
 
 struct StyleShapeSource final
 {
-  StyleShapeSource();
+  StyleShapeSource() = default;
 
   StyleShapeSource(const StyleShapeSource& aSource);
 
-  ~StyleShapeSource();
+  ~StyleShapeSource()
+  {
+  }
 
   StyleShapeSource& operator=(const StyleShapeSource& aOther);
 
@@ -2039,14 +2041,9 @@ private:
   void* operator new(size_t) = delete;
 
   void DoCopy(const StyleShapeSource& aOther);
-  void DoDestroy();
 
-  union {
-    mozilla::UniquePtr<StyleBasicShape> mBasicShape;
-    mozilla::UniquePtr<nsStyleImage> mShapeImage;
-    
-    
-  };
+  mozilla::UniquePtr<StyleBasicShape> mBasicShape;
+  mozilla::UniquePtr<nsStyleImage> mShapeImage;
   StyleShapeSourceType mType = StyleShapeSourceType::None;
   StyleGeometryBox mReferenceBox = StyleGeometryBox::NoBox;
 };
@@ -2404,21 +2401,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 
 
 
-  inline bool IsAbsPosContainingBlock(const nsIFrame* aContextFrame) const;
-
-  
-
-
-
-
-  inline bool IsAbsPosContainingBlockForAppropriateFrame(
-    mozilla::ComputedStyle&) const;
-
-  
-
-
-
-
   inline bool HasTransform(const nsIFrame* aContextFrame) const;
 
   
@@ -2433,6 +2415,25 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 
 
 
+  inline bool IsAbsPosContainingBlock(const nsIFrame* aContextFrame) const;
+
+  
+
+
+
+
+
+
+
+
+
+  inline bool IsAbsPosContainingBlockForNonSVGTextFrames() const;
+
+  
+
+
+
+
   inline bool IsFixedPosContainingBlock(const nsIFrame* aContextFrame) const;
 
   
@@ -2440,8 +2441,13 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 
 
 
-  inline bool IsFixedPosContainingBlockForAppropriateFrame(
+
+
+
+
+  inline bool IsFixedPosContainingBlockForNonSVGTextFrames(
     mozilla::ComputedStyle&) const;
+  inline bool IsFixedPosContainingBlockForTransformSupportingFrames() const;
 
   
 
@@ -2458,9 +2464,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 private:
   
   
-  inline bool HasAbsPosContainingBlockStyleInternal() const;
-  inline bool HasFixedPosContainingBlockStyleInternal(
-    mozilla::ComputedStyle&) const;
   void GenerateCombinedTransform();
 };
 
