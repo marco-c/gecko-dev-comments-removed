@@ -584,7 +584,8 @@ public:
 
 
   WritingMode GetWritingMode() const { return mWM; }
-  uint8_t GetAlignSelf() const     { return mAlignSelf; }
+  uint8_t GetAlignSelf() const { return mAlignSelf; }
+  uint8_t GetAlignSelfFlags() const { return mAlignSelfFlags; }
 
   
   
@@ -878,6 +879,7 @@ protected:
   uint8_t mAlignSelf; 
                       
                       
+  uint8_t mAlignSelfFlags; 
 };
 
 
@@ -1942,6 +1944,7 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput,
     }
 
     
+    mAlignSelfFlags = mAlignSelf & NS_STYLE_ALIGN_FLAG_BITS;
     mAlignSelf &= ~NS_STYLE_ALIGN_FLAG_BITS;
   }
 
@@ -2924,15 +2927,16 @@ MainAxisPositionTracker::
     mJustifyContent(aJustifyContent)
 {
   
+  uint8_t justifyContentFlags = mJustifyContent & NS_STYLE_JUSTIFY_FLAG_BITS;
+  mJustifyContent &= ~NS_STYLE_JUSTIFY_FLAG_BITS;
+
+  
   
   
   if (mJustifyContent == NS_STYLE_JUSTIFY_NORMAL ||
       mJustifyContent == NS_STYLE_JUSTIFY_STRETCH) {
     mJustifyContent = NS_STYLE_JUSTIFY_FLEX_START;
   }
-
-  
-  mJustifyContent &= ~NS_STYLE_JUSTIFY_FLAG_BITS;
 
   
   
@@ -2949,6 +2953,11 @@ MainAxisPositionTracker::
   if (mPackingSpaceRemaining <= 0) {
     
     mNumAutoMarginsInMainAxis = 0;
+    
+    
+    if (justifyContentFlags & NS_STYLE_JUSTIFY_SAFE) {
+      mJustifyContent = NS_STYLE_JUSTIFY_START;
+    }
   }
 
   
@@ -3105,12 +3114,13 @@ CrossAxisPositionTracker::
   MOZ_ASSERT(aFirstLine, "null first line pointer");
 
   
+  uint8_t alignContentFlags = mAlignContent & NS_STYLE_ALIGN_FLAG_BITS;
+  mAlignContent &= ~NS_STYLE_ALIGN_FLAG_BITS;
+
+  
   if (mAlignContent == NS_STYLE_ALIGN_NORMAL) {
     mAlignContent = NS_STYLE_ALIGN_STRETCH;
   }
-
-  
-  mAlignContent &= ~NS_STYLE_ALIGN_FLAG_BITS;
 
   const bool isSingleLine =
     NS_STYLE_FLEX_WRAP_NOWRAP == aReflowInput.mStylePosition->mFlexWrap;
@@ -3157,6 +3167,13 @@ CrossAxisPositionTracker::
   MOZ_ASSERT(numLines >= 1,
              "GenerateFlexLines should've produced at least 1 line");
   mPackingSpaceRemaining -= aCrossGapSize * (numLines - 1);
+
+  
+  
+  if ((alignContentFlags & NS_STYLE_ALIGN_SAFE) &&
+      mPackingSpaceRemaining < 0) {
+    mAlignContent = NS_STYLE_ALIGN_START;
+  }
 
   
   
@@ -3514,6 +3531,14 @@ SingleLineCrossAxisPositionTracker::
     } else if (alignSelf == NS_STYLE_ALIGN_FLEX_END) {
       alignSelf = NS_STYLE_ALIGN_FLEX_START;
     }
+  }
+
+  
+  
+  
+  if (aLine.GetLineCrossSize() < aItem.GetOuterCrossSize(mAxis) &&
+      (aItem.GetAlignSelfFlags() & NS_STYLE_ALIGN_SAFE)) {
+    alignSelf = NS_STYLE_ALIGN_FLEX_START;
   }
 
   switch (alignSelf) {
