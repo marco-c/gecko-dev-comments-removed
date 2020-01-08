@@ -149,7 +149,10 @@ class nsPipeInputStream final
   , public nsIBufferedInputStream
 {
 public:
-  NS_DECL_THREADSAFE_ISUPPORTS
+  
+  
+  
+  NS_DECL_THREADSAFE_ISUPPORTS_WITH_RECORDING(recordreplay::Behavior::Preserve)
   NS_DECL_NSIINPUTSTREAM
   NS_DECL_NSIASYNCINPUTSTREAM
   NS_DECL_NSISEEKABLESTREAM
@@ -300,7 +303,9 @@ public:
   friend class nsPipeOutputStream;
   friend class AutoReadSegment;
 
-  NS_DECL_THREADSAFE_ISUPPORTS
+  
+  
+  NS_DECL_THREADSAFE_ISUPPORTS_WITH_RECORDING(recordreplay::Behavior::Preserve)
   NS_DECL_NSIPIPE
 
   
