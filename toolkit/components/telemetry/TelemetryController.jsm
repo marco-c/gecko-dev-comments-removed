@@ -40,7 +40,7 @@ const NEWPROFILE_PING_DEFAULT_DELAY = 30 * 60 * 1000;
 
 
 const PING_TYPE_MAIN = "main";
-const PING_TYPE_DELETION = "deletion";
+const PING_TYPE_OPTOUT = "optout";
 
 
 const REASON_GATHER_PAYLOAD = "gather-payload";
@@ -846,23 +846,44 @@ var Impl = {
   _onUploadPrefChange() {
     const uploadEnabled = Services.prefs.getBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, false);
     if (uploadEnabled) {
+      this._log.trace("_onUploadPrefChange - upload was enabled again. Resetting client ID");
+
       
+      this._clientID = null;
+
+      
+      let p = ClientID.resetClientID().then(id => {
+        this._clientID = id;
+        Telemetry.scalarSet("telemetry.data_upload_optin", true);
+      });
+
+      this._shutdownBarrier.client.addBlocker(
+        "TelemetryController: resetting client ID after data upload was enabled", p);
+
       return;
     }
 
     let p = (async () => {
       try {
         
+        
         await TelemetrySend.clearCurrentPings();
 
         
+        await TelemetryStorage.removeAppDataPings();
         await TelemetryStorage.runRemovePendingPingsTask();
       } catch (e) {
         this._log.error("_onUploadPrefChange - error clearing pending pings", e);
       } finally {
         
-        this._log.trace("_onUploadPrefChange - Sending deletion ping.");
-        this.submitExternalPing(PING_TYPE_DELETION, {}, { addClientId: true });
+        TelemetrySession.resetSubsessionCounter();
+
+        
+        this._clientID = await ClientID.setClientID(TelemetryUtils.knownClientID);
+
+        
+        this._log.trace("_onUploadPrefChange - Sending optout ping.");
+        this.submitExternalPing(PING_TYPE_OPTOUT, {}, { addClientId: false });
       }
     })();
 

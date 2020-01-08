@@ -18,9 +18,10 @@ ChromeUtils.import("resource://gre/modules/TelemetrySend.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetryArchive.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetryUtils.jsm", this);
 ChromeUtils.import("resource://gre/modules/Preferences.jsm");
+ChromeUtils.import("resource://testing-common/ContentTaskUtils.jsm", this);
 
 const PING_FORMAT_VERSION = 4;
-const DELETION_PING_TYPE = "deletion";
+const OPTOUT_PING_TYPE = "optout";
 const TEST_PING_TYPE = "test-ping-type";
 
 const PLATFORM_VERSION = "1.9.2";
@@ -137,6 +138,7 @@ add_task(async function test_simplePing() {
 });
 
 add_task(async function test_disableDataUpload() {
+  const OPTIN_PROBE = "telemetry.data_upload_optin";
   const isUnified = Preferences.get(TelemetryUtils.Preferences.Unified, false);
   if (!isUnified) {
     
@@ -145,15 +147,41 @@ add_task(async function test_disableDataUpload() {
   }
 
   
+  let snapshot = Telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false).parent;
+  Assert.ok(!(OPTIN_PROBE in snapshot), "Data optin scalar should not be set at start");
+
+  
+  await sendPing(true, false);
+  let ping = await PingServer.promiseNextPing();
+  checkPingFormat(ping, TEST_PING_TYPE, true, false);
+  let firstClientId = ping.clientId;
+  Assert.ok(firstClientId, "Test ping needs a client ID");
+  Assert.notEqual(TelemetryUtils.knownClientID, firstClientId, "Client ID should be valid and random");
+
+  
   Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, false);
 
-  let ping = await PingServer.promiseNextPing();
-  checkPingFormat(ping, DELETION_PING_TYPE, true, false);
+  ping = await PingServer.promiseNextPing();
+  checkPingFormat(ping, OPTOUT_PING_TYPE, false, false);
   
   await TelemetrySend.testWaitOnOutgoingPings();
 
+  snapshot = Telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false).parent;
+  Assert.ok(!(OPTIN_PROBE in snapshot), "Data optin scalar should not be set after optout");
+
   
   Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, true);
+
+  
+  await ContentTaskUtils.waitForCondition(() => {
+    const scalarSnapshot =
+      Telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
+    return Object.keys(scalarSnapshot).includes("parent") &&
+           OPTIN_PROBE in scalarSnapshot.parent;
+  });
+
+  snapshot = Telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false).parent;
+  Assert.ok(snapshot[OPTIN_PROBE], "Enabling data upload should set optin probe");
 
   
   await PingServer.stop();
@@ -174,8 +202,8 @@ add_task(async function test_disableDataUpload() {
 
   
   let pendingPings = await TelemetryStorage.loadPendingPingList();
-  Assert.equal(pendingPings.length, 1,
-               "All the pending pings but the deletion ping should have been deleted");
+  Assert.equal(pendingPings.length, 0,
+               "All the pending pings should have been deleted, including the optout ping");
 
   
   PingServer.start();
@@ -187,8 +215,20 @@ add_task(async function test_disableDataUpload() {
   await TelemetrySend.shutdown();
   
   await TelemetryController.testReset();
+
+  
+  Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, true);
+
+  
+  await sendPing(true, false);
+
+  
   ping = await PingServer.promiseNextPing();
-  checkPingFormat(ping, DELETION_PING_TYPE, true, false);
+  checkPingFormat(ping, TEST_PING_TYPE, true, false);
+
+  
+  Assert.notEqual(TelemetryUtils.knownClientID, ping.clientId, "Client ID should be reset to a random value");
+  Assert.notEqual(firstClientId, ping.clientId, "Client ID should be different from the previous value");
 
   
   
@@ -196,8 +236,6 @@ add_task(async function test_disableDataUpload() {
   
   
   await TelemetrySend.testWaitOnOutgoingPings();
-  
-  Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, true);
 });
 
 add_task(async function test_pingHasClientId() {
@@ -297,7 +335,7 @@ add_task(async function test_archivePings() {
   
   if (isUnified) {
     let ping = await PingServer.promiseNextPing();
-    checkPingFormat(ping, DELETION_PING_TYPE, true, false);
+    checkPingFormat(ping, OPTOUT_PING_TYPE, false, false);
   }
 
   
