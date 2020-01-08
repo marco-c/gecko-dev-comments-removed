@@ -363,11 +363,29 @@ function hasFocus(node) {
 
 
 
-function jstermSetValueAndComplete(jsterm, value, caretIndexOffset = 0, completionType) {
-  const {inputNode} = jsterm;
-  inputNode.value = value;
-  const index = value.length + caretIndexOffset;
-  inputNode.setSelectionRange(index, index);
+function jstermSetValueAndComplete(
+  jsterm,
+  value,
+  caretPosition = value.length,
+  completionType
+) {
+  jsterm.setInputValue(value);
+
+  if (caretPosition < 0) {
+    caretPosition = value.length + caretPosition;
+  }
+
+  if (Number.isInteger(caretPosition)) {
+    if (jsterm.inputNode) {
+      const {inputNode} = jsterm;
+      inputNode.value = value;
+      inputNode.setSelectionRange(caretPosition, caretPosition);
+    }
+
+    if (jsterm.editor) {
+      jsterm.editor.setCursor(jsterm.editor.getPosition(caretPosition));
+    }
+  }
 
   return jstermComplete(jsterm, completionType);
 }
@@ -389,6 +407,120 @@ function jstermComplete(jsterm, completionType = jsterm.COMPLETE_HINT_ONLY) {
   const updated = jsterm.once("autocomplete-updated");
   jsterm.complete(completionType);
   return updated;
+}
+
+
+
+
+
+
+
+
+function checkJsTermCompletionValue(jsterm, expectedValue, assertionInfo) {
+  const completionValue = getJsTermCompletionValue(jsterm);
+  if (completionValue === null) {
+    ok(false, "Couldn't retrieve the completion value");
+  }
+
+  info(`Expects "${expectedValue}", is "${completionValue}"`);
+
+  if (jsterm.completeNode) {
+    is(completionValue, expectedValue, assertionInfo);
+  } else {
+    
+    is(completionValue, expectedValue.trim(), assertionInfo);
+  }
+}
+
+
+
+
+
+
+
+
+function checkJsTermCursor(jsterm, expectedCursorIndex, assertionInfo) {
+  if (jsterm.inputNode) {
+    const {selectionStart, selectionEnd} = jsterm.inputNode;
+    is(selectionStart, expectedCursorIndex, assertionInfo);
+    ok(selectionStart === selectionEnd);
+  } else {
+    is(jsterm.editor.getCursor().ch, expectedCursorIndex, assertionInfo);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function checkJsTermValueAndCursor(jsterm, expectedStringWithCursor, assertionInfo) {
+  info(`Checking jsterm state: \n${expectedStringWithCursor}`);
+  if (!expectedStringWithCursor.includes("|")) {
+    ok(false,
+      `expectedStringWithCursor must contain a "|" char to indicate cursor position`);
+  }
+
+  const inputValue = expectedStringWithCursor.replace("|", "");
+  is(jsterm.getInputValue(), inputValue, "jsterm has expected value");
+  if (jsterm.inputNode) {
+    is(jsterm.inputNode.selectionStart, jsterm.inputNode.selectionEnd);
+    is(jsterm.inputNode.selectionStart, expectedStringWithCursor.indexOf("|"),
+      assertionInfo);
+  } else {
+    const lines = expectedStringWithCursor.split("\n");
+    const lineWithCursor = lines.findIndex(line => line.includes("|"));
+    const {ch, line} = jsterm.editor.getCursor();
+    is(line, lineWithCursor, assertionInfo + " - correct line");
+    is(ch, lines[lineWithCursor].indexOf("|"), assertionInfo + " - correct ch");
+  }
+}
+
+
+
+
+
+
+
+function getJsTermCompletionValue(jsterm) {
+  if (jsterm.completeNode) {
+    return jsterm.completeNode.value;
+  }
+
+  if (jsterm.editor) {
+    return jsterm.editor.getAutoCompletionText();
+  }
+
+  return null;
+}
+
+
+
+
+
+
+
+
+function isJstermFocused(jsterm) {
+  const document = jsterm.outputNode.ownerDocument;
+  const documentIsFocused = document.hasFocus();
+
+  if (jsterm.inputNode) {
+    return document.activeElement == jsterm.inputNode && documentIsFocused;
+  }
+
+  if (jsterm.editor) {
+    return documentIsFocused && jsterm.editor.hasFocus();
+  }
+
+  return false;
 }
 
 
