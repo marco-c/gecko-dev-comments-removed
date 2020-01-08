@@ -233,9 +233,17 @@ const initCssProperties = async function(toolbox) {
     return cachedCssProperties.get(client);
   }
 
+  let db, front;
+
   
-  const front = toolbox.target.getFront("cssProperties");
-  const db = await front.getCSSDatabase();
+  if (toolbox.target.hasActor("cssProperties")) {
+    front = toolbox.target.getFront("cssProperties");
+    db = await front.getCSSDatabase();
+  } else {
+    
+    
+    db = CSS_PROPERTIES_DB;
+  }
 
   const cssProperties = new CssProperties(normalizeCssData(db));
   cachedCssProperties.set(client, {cssProperties, front});
