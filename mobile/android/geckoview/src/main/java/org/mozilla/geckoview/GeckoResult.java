@@ -13,6 +13,132 @@ import java.util.ArrayList;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 public class GeckoResult<T> {
     private static final String LOGTAG = "GeckoResult";
 
@@ -53,6 +179,7 @@ public class GeckoResult<T> {
 
 
 
+
     public static @NonNull <U> GeckoResult<U> fromValue(@Nullable final U value) {
         final GeckoResult<U> result = new GeckoResult<>();
         result.complete(value);
@@ -60,6 +187,7 @@ public class GeckoResult<T> {
     }
 
     
+
 
 
 
@@ -123,6 +251,7 @@ public class GeckoResult<T> {
     }
 
     
+
 
 
 
@@ -295,7 +424,7 @@ public class GeckoResult<T> {
 
 
 
-        GeckoResult<U> onValue(T value) throws Throwable;
+        @Nullable GeckoResult<U> onValue(@Nullable T value) throws Throwable;
     }
 
     
@@ -304,7 +433,15 @@ public class GeckoResult<T> {
 
 
     public interface OnExceptionListener<V> {
-        GeckoResult<V> onException(Throwable exception) throws Throwable;
+        
+
+
+
+
+
+
+
+        @Nullable GeckoResult<V> onException(@NonNull Throwable exception) throws Throwable;
     }
 
     private boolean haveValue() {

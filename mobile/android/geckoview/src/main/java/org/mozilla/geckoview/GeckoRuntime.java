@@ -242,7 +242,9 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
-    public File getProfileDir() {
+
+
+    @NonNull public File getProfileDir() {
         return GeckoThread.getActiveProfile().getDir();
     }
 
