@@ -50,13 +50,12 @@ add_task(async function test_nsNavHistory_invalidateFrecencies_allPages() {
 });
 
 
-add_task(async function test_nsNavHistory_DecayFrecency_and_nsNavHistory_FixInvalidFrecencies() {
-  
+add_task(async function test_nsNavHistory_FixAndDecayFrecency() {
   
   
   PlacesUtils.history.QueryInterface(Ci.nsIObserver).
     observe(null, "idle-daily", "");
-  await Promise.all([onManyFrecenciesChanged(), onManyFrecenciesChanged()]);
+  await Promise.all([onManyFrecenciesChanged()]);
 });
 
 function onFrecencyChanged(expectedURI) {

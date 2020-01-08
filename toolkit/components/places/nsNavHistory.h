@@ -55,9 +55,6 @@
 #endif
 
 
-#define TOPIC_FRECENCY_UPDATED "places-frecency-updated"
-
-
 
 #define MOBILE_BOOKMARKS_PREF "browser.bookmarks.showMobileBookmarks"
 
@@ -75,7 +72,6 @@ class nsIAutoCompleteController;
 class nsIEffectiveTLDService;
 class nsIIDNService;
 class nsNavHistory;
-class PlacesDecayFrecencyCallback;
 class PlacesSQLQueryBuilder;
 
 
@@ -85,7 +81,6 @@ class nsNavHistory final : public nsSupportsWeakReference
                          , public nsIObserver
                          , public mozIStorageVacuumParticipant
 {
-  friend class PlacesDecayFrecencyCallback;
   friend class PlacesSQLQueryBuilder;
 
 public:
@@ -176,15 +171,6 @@ public:
 
 
   nsresult UpdateFrecency(int64_t aPlaceId);
-
-  
-
-
-
-
-
-
-  nsresult FixInvalidFrecencies();
 
   
 
@@ -507,6 +493,8 @@ public:
                                   const RefPtr<nsNavHistoryQuery>& aQuery,
                                   nsNavHistoryQueryOptions* aOptions);
 
+  void DecayFrecencyCompleted(uint16_t reason);
+
 private:
   ~nsNavHistory();
 
@@ -521,7 +509,12 @@ protected:
   
 
 
-  nsresult DecayFrecency();
+
+
+
+
+
+  nsresult FixAndDecayFrecency();
 
   
 
@@ -634,7 +627,6 @@ protected:
   int32_t mUnvisitedTypedBonus;
   int32_t mReloadVisitBonus;
 
-  void DecayFrecencyCompleted(uint16_t reason);
   uint32_t mDecayFrecencyPendingCount;
 
   nsresult RecalculateOriginFrecencyStatsInternal();
