@@ -3,9 +3,6 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "Blocklist",
-                               "resource://gre/modules/Blocklist.jsm");
-
 var gPluginHandler = {
   PREF_SESSION_PERSIST_MINUTES: "plugin.sessionPermissionNow.intervalInMinutes",
   PREF_PERSISTENT_DAYS: "plugin.persistentPermissionAlways.intervalInDays",
@@ -85,6 +82,7 @@ var gPluginHandler = {
   
   
   async openPluginUpdatePage(pluginTag) {
+    let { Blocklist } = ChromeUtils.import("resource://gre/modules/Blocklist.jsm", {});
     let url = await Blocklist.getPluginBlockURL(pluginTag);
     openTrustedLinkIn(url, "tab");
   },
