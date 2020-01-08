@@ -314,6 +314,9 @@ pref("devtools.responsive.reloadConditions.userAgent", false);
 pref("devtools.responsive.reloadNotification.enabled", true);
 
 
+pref("devtools.aboutdebugging.new-enabled", false);
+
+
 #ifdef MOZILLA_OFFICIAL
   pref("devtools.aboutdebugging.showSystemAddons", false);
 #else
