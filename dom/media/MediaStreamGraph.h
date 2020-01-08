@@ -153,7 +153,6 @@ class AudioDataListener : public AudioDataListenerInterface {
 
 
 
-
 class MainThreadMediaStreamListener {
  public:
   virtual void NotifyMainThreadStreamFinished() = 0;
@@ -1294,8 +1293,7 @@ class MediaStreamGraph {
 
 
 
-  void DispatchToMainThreadAfterStreamStateUpdate(
-      already_AddRefed<nsIRunnable> aRunnable);
+  void DispatchToMainThreadStableState(already_AddRefed<nsIRunnable> aRunnable);
 
   
 

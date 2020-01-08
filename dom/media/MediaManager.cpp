@@ -1152,7 +1152,7 @@ class GetUserMediaStreamRunnable : public Runnable {
       
       
       
-      mGraph->DispatchToMainThreadAfterStreamStateUpdate(NS_NewRunnableFunction(
+      mGraph->DispatchToMainThreadStableState(NS_NewRunnableFunction(
           "TracksCreatedListener::NotifyOutput Stable State Notifier",
           [graph = mGraph, r = std::move(r)]() mutable {
             graph->Dispatch(r.forget());
