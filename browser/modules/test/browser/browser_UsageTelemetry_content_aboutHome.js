@@ -28,6 +28,10 @@ add_task(async function setup() {
   Services.search.moveEngine(engineOneOff, 0);
 
   
+  let oldCanRecord = Services.telemetry.canRecordExtended;
+  Services.telemetry.canRecordExtended = true;
+
+  
   Services.telemetry.setEventRecordingEnabled("navigation", true);
 
   
@@ -37,6 +41,7 @@ add_task(async function setup() {
     Services.search.removeEngine(engineOneOff);
     await PlacesUtils.history.clear();
     Services.telemetry.setEventRecordingEnabled("navigation", false);
+    Services.telemetry.canRecordExtended = oldCanRecord;
   });
 });
 
