@@ -379,10 +379,10 @@ const TEST_DATA = [
     parseComments: true,
     input: "<!-- color: red; --> color: blue;",
     expected: [
-      {name: "color", value: "red", priority: "",
-       offsets: [5, 16]},
-      {name: "color", value: "blue", priority: "",
-       offsets: [21, 33]}]
+      {name: "<!-- color", value: "red", priority: "",
+       offsets: [0, 16]},
+      {name: "--> color", value: "blue", priority: "",
+       offsets: [17, 33]}]
   },
 
   

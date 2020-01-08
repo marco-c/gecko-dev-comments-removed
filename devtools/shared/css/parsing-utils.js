@@ -320,12 +320,6 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
 
     
     
-    if (token.tokenType === "htmlcomment") {
-      continue;
-    }
-
-    
-    
     if (token.tokenType !== "whitespace" && token.tokenType !== "comment") {
       if (lastProp.offsets[0] === undefined) {
         lastProp.offsets[0] = token.startOffset;
