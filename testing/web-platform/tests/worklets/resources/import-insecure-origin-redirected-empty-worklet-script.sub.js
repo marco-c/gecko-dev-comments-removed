@@ -1,0 +1,5 @@
+
+
+
+
+import '/common/redirect.py?location=http://{{host}}:{{ports[https][0]}}/worklets/resources/empty-worklet-script-with-cors-header.js';

@@ -2,4 +2,4 @@
 
 
 
-import 'http://{{host}}:{{ports[https][0]}}/worklets/resources/empty-worklet-script.js';
+import 'http://{{host}}:{{ports[https][0]}}/worklets/resources/empty-worklet-script-with-cors-header.js';
