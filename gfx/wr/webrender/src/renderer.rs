@@ -2478,7 +2478,6 @@ impl Renderer {
     
     
     
-    
     pub fn render(
         &mut self,
         framebuffer_size: DeviceIntSize,
