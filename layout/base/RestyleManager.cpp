@@ -776,7 +776,7 @@ static bool RecomputePosition(nsIFrame* aFrame) {
 
     if (aFrame->IsInScrollAnchorChain()) {
       ScrollAnchorContainer* container = ScrollAnchorContainer::FindFor(aFrame);
-      container->ApplyAdjustments();
+      aFrame->PresShell()->PostPendingScrollAnchorAdjustment(container);
     }
     return true;
   }
@@ -885,7 +885,7 @@ static bool RecomputePosition(nsIFrame* aFrame) {
 
     if (aFrame->IsInScrollAnchorChain()) {
       ScrollAnchorContainer* container = ScrollAnchorContainer::FindFor(aFrame);
-      container->ApplyAdjustments();
+      aFrame->PresShell()->PostPendingScrollAnchorAdjustment(container);
     }
     return true;
   }
@@ -2972,7 +2972,7 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
   
   
   
-  presContext->PresShell()->FlushDirtyScrollAnchorContainers();
+  presContext->PresShell()->FlushPendingScrollAnchorSelections();
 
   
   
