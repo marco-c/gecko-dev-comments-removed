@@ -851,6 +851,11 @@ private:
 
   
   
+  
+  bool mHasSiblings;
+
+  
+  
   Maybe<mozilla::layers::CompositorOptions> mCompositorOptions;
 
   friend class ContentChild;
