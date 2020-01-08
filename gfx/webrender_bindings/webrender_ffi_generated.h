@@ -715,8 +715,7 @@ union GlyphRasterSpace {
     float _0;
 
     bool operator==(const Local_Body& aOther) const {
-      return tag == aOther.tag &&
-             _0 == aOther._0;
+      return _0 == aOther._0;
     }
   };
 
@@ -744,6 +743,16 @@ union GlyphRasterSpace {
 
   bool IsScreen() const {
     return tag == Tag::Screen;
+  }
+
+  bool operator==(const GlyphRasterSpace& aOther) const {
+    if (tag != aOther.tag) {
+      return false;
+    }
+    switch (tag) {
+      case Tag::Local: return local == aOther.local;
+      default: return true;
+    }
   }
 };
 
@@ -971,13 +980,6 @@ struct WrOpacityProperty {
 };
 
 extern "C" {
-
-
-
-
-
-
-
 
 extern void AddFontData(WrFontKey aKey,
                         const uint8_t *aData,
@@ -1296,7 +1298,7 @@ void wr_dp_push_image(WrState *aState,
                       ImageRendering aImageRendering,
                       WrImageKey aKey,
                       bool aPremultipliedAlpha,
-                      ColorF color)
+                      ColorF aColor)
 WR_FUNC;
 
 WR_INLINE
@@ -1763,10 +1765,3 @@ WR_FUNC;
 
 } 
 } 
-
-
-
-
-
-
-
