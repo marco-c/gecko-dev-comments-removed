@@ -666,6 +666,8 @@ public:
 
   
   
+  
+  
   static nsIPrincipal* ObjectPrincipal(JSObject* aObj);
 
   static nsresult GenerateStateKey(nsIContent* aContent,
