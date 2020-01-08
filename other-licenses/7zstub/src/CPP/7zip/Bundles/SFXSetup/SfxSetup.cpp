@@ -125,6 +125,179 @@ static void ShowErrorMessageSpec(const UString &name)
   ShowErrorMessage(NULL, message);
 }
 
+
+
+static char const *
+FindStrInBuf(char const * buf, size_t bufLen, char const * str)
+{
+  size_t index = 0;
+  while (index < bufLen) {
+    char const * result = strstr(buf + index, str);
+    if (result) {
+      return result;
+    }
+    while ((buf[index] != '\0') && (index < bufLen)) {
+      index++;
+    }
+    index++;
+  }
+  return NULL;
+}
+
+static bool
+ReadPostSigningDataFromView(char const * view, DWORD size, AString& data)
+{
+  
+  
+  if (size < (0x3c + sizeof(UInt32))) {
+    return false;
+  }
+  UInt32 PEHeaderOffset = *(UInt32*)(view + 0x3c);
+  UInt32 optionalHeaderOffset = PEHeaderOffset + 24;
+  UInt32 certDirEntryOffset = 0;
+  if (size < (optionalHeaderOffset + sizeof(UInt16))) {
+    return false;
+  }
+  UInt16 magic = *(UInt16*)(view + optionalHeaderOffset);
+  if (magic == 0x010b) {
+    
+    certDirEntryOffset = optionalHeaderOffset + 128;
+  } else if (magic == 0x020b) {
+    
+    certDirEntryOffset = optionalHeaderOffset + 144;
+  } else {
+    
+    return false;
+  }
+  if (size < certDirEntryOffset + 8) {
+    return false;
+  }
+  UInt32 certTableOffset = *(UInt32*)(view + certDirEntryOffset);
+  UInt32 certTableLen = *(UInt32*)(view + certDirEntryOffset + sizeof(UInt32));
+  if (certTableOffset == 0 || certTableLen == 0 ||
+      size < (certTableOffset + certTableLen)) {
+    return false;
+  }
+
+  char const token[] = "__MOZCUSTOM__:";
+  
+  
+  char const * tokenPos = FindStrInBuf(view + certTableOffset,
+                                       certTableLen, token);
+  if (tokenPos) {
+    size_t tokenLen = (sizeof(token) / sizeof(token[0])) - 1;
+    data = AString(tokenPos + tokenLen);
+    return true;
+  }
+  return false;
+}
+
+static bool
+ReadPostSigningData(UString exePath, AString& data)
+{
+  bool retval = false;
+  HANDLE exeFile = CreateFileW(exePath, GENERIC_READ, FILE_SHARE_READ, NULL,
+                               OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+  if (exeFile != INVALID_HANDLE_VALUE) {
+    HANDLE mapping = CreateFileMapping(exeFile, NULL, PAGE_READONLY, 0, 0, NULL);
+    if (mapping != INVALID_HANDLE_VALUE) {
+      
+      
+      if (mapping || GetLastError() == ERROR_SUCCESS) {
+        char * view = (char*)MapViewOfFile(mapping, FILE_MAP_READ, 0, 0, 0);
+        if (view) {
+          DWORD fileSize = GetFileSize(exeFile, NULL);
+          retval = ReadPostSigningDataFromView(view, fileSize, data);
+        }
+        CloseHandle(mapping);
+      }
+    }
+    CloseHandle(exeFile);
+  }
+  return retval;
+}
+
+
+
+
+struct AutoLoadSystemDependencies
+{
+  AutoLoadSystemDependencies()
+  {
+    HMODULE module = ::GetModuleHandleW(L"kernel32.dll");
+    if (module) {
+      
+      
+      
+      typedef BOOL (WINAPI *SetDefaultDllDirectoriesType)(DWORD);
+      SetDefaultDllDirectoriesType setDefaultDllDirectories =
+        (SetDefaultDllDirectoriesType) GetProcAddress(module, "SetDefaultDllDirectories");
+      if (setDefaultDllDirectories) {
+        setDefaultDllDirectories(0x0800  );
+        return;
+      }
+    }
+
+    static LPCWSTR delayDLLs[] = { L"uxtheme.dll", L"userenv.dll",
+                                   L"setupapi.dll", L"apphelp.dll",
+                                   L"propsys.dll", L"dwmapi.dll",
+                                   L"cryptbase.dll", L"oleacc.dll",
+                                   L"clbcatq.dll" };
+    WCHAR systemDirectory[MAX_PATH + 1] = { L'\0' };
+    
+    
+    GetSystemDirectoryW(systemDirectory, MAX_PATH + 1);
+    size_t systemDirLen = wcslen(systemDirectory);
+
+    
+    if (systemDirectory[systemDirLen - 1] != L'\\' && systemDirLen) {
+      systemDirectory[systemDirLen] = L'\\';
+      ++systemDirLen;
+      
+    }
+
+    
+    for (size_t i = 0; i < sizeof(delayDLLs) / sizeof(delayDLLs[0]); ++i) {
+      size_t fileLen = wcslen(delayDLLs[i]);
+      wcsncpy(systemDirectory + systemDirLen, delayDLLs[i],
+      MAX_PATH - systemDirLen);
+      if (systemDirLen + fileLen <= MAX_PATH) {
+        systemDirectory[systemDirLen + fileLen] = L'\0';
+      } else {
+        systemDirectory[MAX_PATH] = L'\0';
+      }
+      LPCWSTR fullModulePath = systemDirectory; 
+      LoadLibraryW(fullModulePath);
+    }
+  }
+} loadDLLs;
+
+BOOL
+RemoveCurrentDirFromSearchPath()
+{
+  
+  HMODULE kernel32 = LoadLibraryW(L"kernel32.dll");
+  if (!kernel32) {
+    return FALSE;
+  }
+
+  typedef BOOL (WINAPI *SetDllDirectoryType)(LPCWSTR);
+  SetDllDirectoryType SetDllDirectoryFn =
+    (SetDllDirectoryType)GetProcAddress(kernel32, "SetDllDirectoryW");
+  if (!SetDllDirectoryFn) {
+    FreeLibrary(kernel32);
+    return FALSE;
+  }
+
+  
+  
+  SetDllDirectoryFn(L"");
+  FreeLibrary(kernel32);
+  return TRUE;
+}
+
+
+
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE ,
     #ifdef UNDER_CE
     LPWSTR
@@ -133,13 +306,35 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE ,
     #endif
 ,int /* nCmdShow */)
 {
+  
+  
+  
+  if (!RemoveCurrentDirFromSearchPath()) {
+    WCHAR minOSTitle[512] = { '\0' };
+    WCHAR minOSText[512] = { '\0' };
+    LoadStringW(NULL, IDS_MIN_OS_TITLE, minOSTitle,
+                sizeof(minOSTitle) / sizeof(minOSTitle[0]));
+    LoadStringW(NULL, IDS_MIN_OS_TEXT, minOSText,
+                sizeof(minOSText) / sizeof(minOSText[0]));
+    MessageBoxW(NULL, minOSText, minOSTitle, MB_OK | MB_ICONERROR);
+    return 1;
+  }
+  
+
   g_hInstance = (HINSTANCE)hInstance;
 
   NT_CHECK
 
-  #ifdef _WIN32
-  LoadSecurityDlls();
-  #endif
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
 
@@ -172,6 +367,20 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE ,
   UString dirPrefix ("." STRING_PATH_SEPARATOR);
   UString appLaunched;
   bool showProgress = true;
+
+  
+  bool extractOnly = false;
+  if (switches.IsPrefixedBy_NoCase(L"-ms") ||
+      switches.IsPrefixedBy_NoCase(L"/ini") ||
+      switches.IsPrefixedBy_NoCase(L"/s")) {
+    showProgress = false;
+  } else if (switches.IsPrefixedBy_NoCase(L"/extractdir=")) {
+    assumeYes = true;
+    showProgress = false;
+    extractOnly = true;
+  }
+  
+
   if (!config.IsEmpty())
   {
     CObjectVector<CTextConfigPair> pairs;
@@ -204,7 +413,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE ,
   }
 
   CTempDir tempDir;
-  if (!tempDir.Create(kTempDirPrefix))
+  
+  if (!extractOnly && !tempDir.Create(kTempDirPrefix))
   {
     if (!assumeYes)
       ShowErrorMessage(L"Can not create temp folder archive");
@@ -222,7 +432,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE ,
     }
   }
 
-  const FString tempDirPath = tempDir.GetPath();
+  
+  const FString tempDirPath = extractOnly ? switches.Ptr(12) : GetUnicodeString(tempDir.GetPath());
+  
   
   {
     bool isCorrupt = false;
@@ -249,6 +461,28 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE ,
       return 1;
     }
   }
+
+  
+  
+  {
+    AString postSigningData;
+    if (ReadPostSigningData(fullPath, postSigningData)) {
+      FString postSigningDataFilePath(tempDirPath);
+      NFile::NName::NormalizeDirPathPrefix(postSigningDataFilePath);
+      postSigningDataFilePath += L"postSigningData";
+
+      NFile::NIO::COutFile postSigningDataFile;
+      postSigningDataFile.Create(postSigningDataFilePath, true);
+
+      UInt32 written = 0;
+      postSigningDataFile.Write(postSigningData, postSigningData.Len(), written);
+    }
+  }
+
+  if (extractOnly) {
+    return 0;
+  }
+  
 
   #ifndef UNDER_CE
   CCurrentDirRestorer currentDirRestorer;
