@@ -27,7 +27,6 @@
 #include "mozilla/dom/DOMPrefs.h"
 #include "mozilla/dom/Exceptions.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/dom/ResolveSystemBinding.h"
 
 #include "nsDOMMutationObserver.h"
 #include "nsICycleCollectorListener.h"
@@ -579,10 +578,6 @@ InitClassesWithNewWrappedGlobal(JSContext* aJSContext,
     
     
     MOZ_ASSERT(aPrincipal);
-
-    if (!SystemBindingInitIds(aJSContext)) {
-      return NS_ERROR_FAILURE;
-    }
 
     InitGlobalObjectOptions(aOptions, aPrincipal);
 

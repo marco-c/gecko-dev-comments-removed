@@ -64,6 +64,17 @@ public:
                        NameType aNameType,
                        JS::AutoIdVector& aNames);
 
+  
+  
+  
+  static bool ResolveForSystemGlobal(JSContext* aCx, JS::Handle<JSObject*> aObj,
+                                     JS::Handle<jsid> aId, bool* aResolvedp);
+
+  static bool NewEnumerateSystemGlobal(JSContext* aCx,
+                                       JS::Handle<JSObject*> aObj,
+                                       JS::AutoIdVector& aProperties,
+                                       bool aEnumerableOnly);
+
 private:
   friend struct WebIDLNameTableEntry;
 
