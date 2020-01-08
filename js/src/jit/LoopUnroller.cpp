@@ -88,21 +88,24 @@ LoopUnroller::makeReplacementInstruction(MInstruction* ins)
     for (size_t i = 0; i < ins->numOperands(); i++) {
         MDefinition* old = ins->getOperand(i);
         MDefinition* replacement = getReplacementDefinition(old);
-        if (!inputs.append(replacement))
+        if (!inputs.append(replacement)) {
             return false;
+        }
     }
 
     MInstruction* clone = ins->clone(alloc, inputs);
 
     unrolledBackedge->add(clone);
 
-    if (!unrolledDefinitions.putNew(ins, clone))
+    if (!unrolledDefinitions.putNew(ins, clone)) {
         return false;
+    }
 
     if (MResumePoint* old = ins->resumePoint()) {
         MResumePoint* rp = makeReplacementResumePoint(unrolledBackedge, old);
-        if (!rp)
+        if (!rp) {
             return false;
+        }
         clone->setResumePoint(rp);
     }
 
@@ -116,13 +119,15 @@ LoopUnroller::makeReplacementResumePoint(MBasicBlock* block, MResumePoint* rp)
     for (size_t i = 0; i < rp->numOperands(); i++) {
         MDefinition* old = rp->getOperand(i);
         MDefinition* replacement = old->isUnused() ? old : getReplacementDefinition(old);
-        if (!inputs.append(replacement))
+        if (!inputs.append(replacement)) {
             return nullptr;
+        }
     }
 
     MResumePoint* clone = MResumePoint::New(alloc, block, rp, inputs);
-    if (!clone)
+    if (!clone) {
         return nullptr;
+    }
 
     return clone;
 }
@@ -138,8 +143,9 @@ LoopUnroller::go(LoopIterationBound* bound)
     header = bound->header;
 
     
-    if (!header->isLoopHeader())
+    if (!header->isLoopHeader()) {
         return true;
+    }
 
     backedge = header->backedge();
     oldPreheader = header->loopPredecessor();
@@ -149,19 +155,23 @@ LoopUnroller::go(LoopIterationBound* bound)
     
     
     MTest* test = bound->test;
-    if (header->lastIns() != test)
+    if (header->lastIns() != test) {
         return true;
+    }
     if (test->ifTrue() == backedge) {
-        if (test->ifFalse()->id() <= backedge->id())
+        if (test->ifFalse()->id() <= backedge->id()) {
             return true;
+        }
     } else if (test->ifFalse() == backedge) {
-        if (test->ifTrue()->id() <= backedge->id())
+        if (test->ifTrue()->id() <= backedge->id()) {
             return true;
+        }
     } else {
         return true;
     }
-    if (backedge->numPredecessors() != 1 || backedge->numSuccessors() != 1)
+    if (backedge->numPredecessors() != 1 || backedge->numSuccessors() != 1) {
         return true;
+    }
     MOZ_ASSERT(backedge->phisEmpty());
 
     MBasicBlock* bodyBlocks[] = { header, backedge };
@@ -171,10 +181,12 @@ LoopUnroller::go(LoopIterationBound* bound)
         MBasicBlock* block = bodyBlocks[i];
         for (MInstructionIterator iter(block->begin()); iter != block->end(); iter++) {
             MInstruction* ins = *iter;
-            if (ins->canClone())
+            if (ins->canClone()) {
                 continue;
-            if (ins->isTest() || ins->isGoto() || ins->isInterruptCheck())
+            }
+            if (ins->isTest() || ins->isGoto() || ins->isInterruptCheck()) {
                 continue;
+            }
 #ifdef JS_JITSPEW
             JitSpew(JitSpew_Unrolling, "Aborting: can't clone instruction %s", ins->opName());
 #endif
@@ -187,21 +199,26 @@ LoopUnroller::go(LoopIterationBound* bound)
     
     
     LinearSum remainingIterationsInequality(bound->boundSum);
-    if (!remainingIterationsInequality.add(bound->currentSum, -1))
+    if (!remainingIterationsInequality.add(bound->currentSum, -1)) {
         return true;
-    if (!remainingIterationsInequality.add(-int32_t(UnrollCount)))
+    }
+    if (!remainingIterationsInequality.add(-int32_t(UnrollCount))) {
         return true;
+    }
 
     
     
     for (size_t i = 0; i < remainingIterationsInequality.numTerms(); i++) {
         MDefinition* def = remainingIterationsInequality.term(i).term;
-        if (def->isDiscarded())
+        if (def->isDiscarded()) {
             return true;
-        if (def->block()->id() < header->id())
+        }
+        if (def->block()->id() < header->id()) {
             continue;
-        if (def->block() == header && def->isPhi())
+        }
+        if (def->block() == header && def->isPhi()) {
             continue;
+        }
         return true;
     }
 
@@ -216,28 +233,34 @@ LoopUnroller::go(LoopIterationBound* bound)
         unrolledHeader =
             MBasicBlock::New(graph, oldPreheader->stackDepth(), info,
                              oldPreheader, header->trackedSite(), MBasicBlock::LOOP_HEADER);
-        if (!unrolledHeader)
+        if (!unrolledHeader) {
             return false;
+        }
         unrolledBackedge =
             MBasicBlock::New(graph, unrolledHeader->stackDepth(), info,
                              unrolledHeader, backedge->trackedSite(), MBasicBlock::NORMAL);
-        if (!unrolledBackedge)
+        if (!unrolledBackedge) {
             return false;
+        }
         newPreheader =
             MBasicBlock::New(graph, unrolledHeader->stackDepth(), info,
                              unrolledHeader, oldPreheader->trackedSite(), MBasicBlock::NORMAL);
-        if (!newPreheader)
+        if (!newPreheader) {
             return false;
+        }
     } else {
         unrolledHeader = MBasicBlock::New(graph, info, oldPreheader, MBasicBlock::LOOP_HEADER);
-        if (!unrolledHeader)
+        if (!unrolledHeader) {
             return false;
+        }
         unrolledBackedge = MBasicBlock::New(graph, info, unrolledHeader, MBasicBlock::NORMAL);
-        if (!unrolledBackedge)
+        if (!unrolledBackedge) {
             return false;
+        }
         newPreheader = MBasicBlock::New(graph, info, unrolledHeader, MBasicBlock::NORMAL);
-        if (!newPreheader)
+        if (!newPreheader) {
             return false;
+        }
     }
 
     unrolledHeader->discardAllResumePoints();
@@ -263,8 +286,9 @@ LoopUnroller::go(LoopIterationBound* bound)
 
         unrolledHeader->addPhi(phi);
 
-        if (!phi->reserveLength(2))
+        if (!phi->reserveLength(2)) {
             return false;
+        }
 
         
         
@@ -273,8 +297,9 @@ LoopUnroller::go(LoopIterationBound* bound)
         
         old->replaceOperand(0, phi);
 
-        if (!unrolledDefinitions.putNew(old, phi))
+        if (!unrolledDefinitions.putNew(old, phi)) {
             return false;
+        }
     }
 
     
@@ -282,8 +307,9 @@ LoopUnroller::go(LoopIterationBound* bound)
     MResumePoint* headerResumePoint = header->entryResumePoint();
     if (headerResumePoint) {
         MResumePoint* rp = makeReplacementResumePoint(unrolledHeader, headerResumePoint);
-        if (!rp)
+        if (!rp) {
             return false;
+        }
         unrolledHeader->setEntryResumePoint(rp);
 
         
@@ -305,8 +331,9 @@ LoopUnroller::go(LoopIterationBound* bound)
     
     if (headerResumePoint) {
         MResumePoint* rp = makeReplacementResumePoint(unrolledBackedge, headerResumePoint);
-        if (!rp)
+        if (!rp) {
             return false;
+        }
         unrolledBackedge->setEntryResumePoint(rp);
     }
 
@@ -314,8 +341,9 @@ LoopUnroller::go(LoopIterationBound* bound)
     
     if (headerResumePoint) {
         MResumePoint* rp = makeReplacementResumePoint(newPreheader, headerResumePoint);
-        if (!rp)
+        if (!rp) {
             return false;
+        }
         newPreheader->setEntryResumePoint(rp);
     }
 
@@ -329,8 +357,9 @@ LoopUnroller::go(LoopIterationBound* bound)
             for (MInstructionIterator iter(block->begin()); iter != block->end(); iter++) {
                 MInstruction* ins = *iter;
                 if (ins->canClone()) {
-                    if (!makeReplacementInstruction(*iter))
+                    if (!makeReplacementInstruction(*iter)) {
                         return false;
+                    }
                 } else {
                     
                     MOZ_ASSERT(ins->isTest() || ins->isGoto() || ins->isInterruptCheck());
@@ -345,8 +374,9 @@ LoopUnroller::go(LoopIterationBound* bound)
         for (MPhiIterator iter(header->phisBegin()); iter != header->phisEnd(); iter++) {
             MPhi* old = *iter;
             MDefinition* oldInput = old->getOperand(1);
-            if (!phiValues.append(getReplacementDefinition(oldInput)))
+            if (!phiValues.append(getReplacementDefinition(oldInput))) {
                 return false;
+            }
         }
 
         unrolledDefinitions.clear();
@@ -367,8 +397,9 @@ LoopUnroller::go(LoopIterationBound* bound)
         size_t phiIndex = 0;
         for (MPhiIterator iter(header->phisBegin()); iter != header->phisEnd(); iter++) {
             MPhi* old = *iter;
-            if (!unrolledDefinitions.putNew(old, phiValues[phiIndex++]))
+            if (!unrolledDefinitions.putNew(old, phiValues[phiIndex++])) {
                 return false;
+            }
         }
         MOZ_ASSERT(phiIndex == phiValues.length());
 
@@ -387,8 +418,9 @@ LoopUnroller::go(LoopIterationBound* bound)
     newPreheader->end(MGoto::New(alloc, header));
 
     
-    if (!unrolledHeader->addPredecessorWithoutPhis(unrolledBackedge))
+    if (!unrolledHeader->addPredecessorWithoutPhis(unrolledBackedge)) {
         return false;
+    }
     header->replacePredecessor(oldPreheader, newPreheader);
     oldPreheader->setSuccessorWithPhis(unrolledHeader, 0);
     newPreheader->setSuccessorWithPhis(header, 0);
@@ -399,26 +431,30 @@ LoopUnroller::go(LoopIterationBound* bound)
 bool
 jit::UnrollLoops(MIRGraph& graph, const LoopIterationBoundVector& bounds)
 {
-    if (bounds.empty())
+    if (bounds.empty()) {
         return true;
+    }
 
     
     
-    if (graph.entryBlock()->info().script()->trackRecordReplayProgress())
+    if (graph.entryBlock()->info().script()->trackRecordReplayProgress()) {
         return true;
+    }
 
     for (size_t i = 0; i < bounds.length(); i++) {
         LoopUnroller unroller(graph);
-        if (!unroller.go(bounds[i]))
+        if (!unroller.go(bounds[i])) {
             return false;
+        }
     }
 
     
     
     
     ClearDominatorTree(graph);
-    if (!BuildDominatorTree(graph))
+    if (!BuildDominatorTree(graph)) {
         return false;
+    }
 
     return true;
 }
