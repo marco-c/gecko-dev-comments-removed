@@ -424,12 +424,7 @@ void BrowsingContext::Blur(ErrorResult& aError) {
 Nullable<WindowProxyHolder> BrowsingContext::GetTop(ErrorResult& aError) {
   
   
-  BrowsingContext* bc = this;
-  BrowsingContext* parent;
-  while ((parent = bc->mParent)) {
-    bc = parent;
-  }
-  return WindowProxyHolder(bc);
+  return WindowProxyHolder(TopLevelBrowsingContext());
 }
 
 void BrowsingContext::GetOpener(JSContext* aCx,
