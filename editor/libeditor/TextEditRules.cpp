@@ -1545,7 +1545,7 @@ TextEditRules::CreateBogusNodeIfNeeded()
   }
 
   
-  if (!TextEditorRef().IsModifiableNode(rootElement)) {
+  if (!TextEditorRef().IsModifiableNode(*rootElement)) {
     return NS_OK;
   }
 

@@ -1441,10 +1441,12 @@ protected:
 
   bool IsEditable(nsINode* aNode)
   {
-    NS_ENSURE_TRUE(aNode, false);
+    if (NS_WARN_IF(!aNode)) {
+      return false;
+    }
 
     if (!aNode->IsContent() || IsMozEditorBogusNode(aNode) ||
-        !IsModifiableNode(aNode)) {
+        !IsModifiableNode(*aNode)) {
       return false;
     }
 
@@ -1511,7 +1513,10 @@ protected:
     return aNode->NodeType() == nsINode::TEXT_NODE;
   }
 
-  virtual bool IsModifiableNode(nsINode* aNode);
+  
+
+
+  bool IsModifiableNode(const nsINode& aNode) const;
 
   
 

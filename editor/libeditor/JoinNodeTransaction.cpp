@@ -11,7 +11,6 @@
 #include "nsDebug.h"                    
 #include "nsError.h"                    
 #include "nsIContent.h"                 
-#include "nsIEditor.h"                  
 #include "nsISupportsImpl.h"            
 
 namespace mozilla {
@@ -60,7 +59,7 @@ JoinNodeTransaction::CanDoIt() const
       !mLeftNode->GetParentNode()) {
     return false;
   }
-  return mEditorBase->IsModifiableNode(mLeftNode->GetParentNode());
+  return mEditorBase->IsModifiableNode(*mLeftNode->GetParentNode());
 }
 
 

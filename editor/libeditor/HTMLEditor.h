@@ -447,8 +447,6 @@ protected:
   nsresult RelativeChangeElementZIndex(Element& aElement, int32_t aChange,
                                        int32_t* aReturn);
 
-  virtual bool IsModifiableNode(nsINode* aNode) override;
-
   virtual bool IsBlockNode(nsINode *aNode) override;
   using EditorBase::IsBlockNode;
 

@@ -3190,7 +3190,7 @@ HTMLEditor::DeleteNodeWithTransaction(nsINode& aNode)
   
   
   
-  if (NS_WARN_IF(!IsModifiableNode(aNode.AsContent()) &&
+  if (NS_WARN_IF(!IsModifiableNode(*aNode.AsContent()) &&
                  !IsMozEditorBogusNode(aNode.AsContent()))) {
     return NS_ERROR_FAILURE;
   }
@@ -3220,7 +3220,7 @@ HTMLEditor::DeleteTextWithTransaction(CharacterData& aCharData,
                                       uint32_t aLength)
 {
   
-  if (!IsModifiableNode(&aCharData)) {
+  if (!IsModifiableNode(aCharData)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -3239,7 +3239,7 @@ HTMLEditor::InsertTextWithTransaction(
   }
 
   
-  if (!IsModifiableNode(aPointToInsert.GetContainer())) {
+  if (!IsModifiableNode(*aPointToInsert.GetContainer())) {
     return NS_ERROR_FAILURE;
   }
 
@@ -3356,12 +3356,6 @@ HTMLEditor::ContentRemoved(nsIContent* aChild,
     RefPtr<TextEditRules> rules(mRules);
     rules->DocumentModified();
   }
-}
-
-bool
-HTMLEditor::IsModifiableNode(nsINode* aNode)
-{
-  return !aNode || aNode->IsEditable();
 }
 
 NS_IMETHODIMP
