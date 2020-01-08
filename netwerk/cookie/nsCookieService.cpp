@@ -4284,10 +4284,7 @@ nsCookieService::CheckPrefs(nsICookiePermission    *aPermissionService,
   }
 
   
-  
-  
-  if (aCookieBehavior == nsICookieService::BEHAVIOR_REJECT &&
-      !aFirstPartyStorageAccessGranted) {
+  if (aCookieBehavior == nsICookieService::BEHAVIOR_REJECT) {
     COOKIE_LOGFAILURE(aCookieHeader ? SET_COOKIE : GET_COOKIE, aHostURI, aCookieHeader, "cookies are disabled");
     *aRejectedReason = nsIWebProgressListener::STATE_COOKIES_BLOCKED_ALL;
     return STATUS_REJECTED;
@@ -4295,6 +4292,8 @@ nsCookieService::CheckPrefs(nsICookiePermission    *aPermissionService,
 
   
   if (aIsForeign) {
+    
+    
     if (aCookieBehavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN &&
         !aFirstPartyStorageAccessGranted) {
       COOKIE_LOGFAILURE(aCookieHeader ? SET_COOKIE : GET_COOKIE, aHostURI, aCookieHeader, "context is third party");
@@ -4302,11 +4301,12 @@ nsCookieService::CheckPrefs(nsICookiePermission    *aPermissionService,
       return STATUS_REJECTED;
     }
 
-    if (aCookieBehavior == nsICookieService::BEHAVIOR_LIMIT_FOREIGN &&
-        !aFirstPartyStorageAccessGranted && aNumOfCookies == 0) {
-      COOKIE_LOGFAILURE(aCookieHeader ? SET_COOKIE : GET_COOKIE, aHostURI, aCookieHeader, "context is third party");
-      *aRejectedReason = nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN;
-      return STATUS_REJECTED;
+    if (aCookieBehavior == nsICookieService::BEHAVIOR_LIMIT_FOREIGN) {
+      if (aNumOfCookies == 0) {
+        COOKIE_LOGFAILURE(aCookieHeader ? SET_COOKIE : GET_COOKIE, aHostURI, aCookieHeader, "context is third party");
+        *aRejectedReason = nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN;
+        return STATUS_REJECTED;
+      }
     }
 
     MOZ_ASSERT(aCookieBehavior == nsICookieService::BEHAVIOR_ACCEPT ||
