@@ -6,6 +6,11 @@
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+ChromeUtils.defineModuleGetter(this, "AddonManager",
+                               "resource://gre/modules/AddonManager.jsm");
+ChromeUtils.defineModuleGetter(this, "AddonRepository",
+                               "resource://gre/modules/addons/AddonRepository.jsm");
+
 class OrderedListBox {
   constructor({richlistbox, upButton, downButton, removeButton, onRemove}) {
     this.richlistbox = richlistbox;
@@ -133,6 +138,7 @@ class SortedItemSelectList {
   constructor({menulist, button, onSelect}) {
     this.menulist = menulist;
     this.popup = menulist.firstElementChild;
+    this.button = button;
     this.items = [];
 
     menulist.addEventListener("command", () => {
@@ -194,6 +200,28 @@ class SortedItemSelectList {
     item.setAttribute("label", label);
     return item;
   }
+
+  
+
+
+
+  disableWithMessageId(messageId) {
+    this.menulist.setAttribute("data-l10n-id", messageId);
+    this.menulist.setAttribute("image", "chrome://browser/skin/tabbrowser/tab-connecting.png");
+    this.menulist.disabled = true;
+    this.button.disabled = true;
+  }
+
+  
+
+
+
+  enableWithMessageId(messageId) {
+    this.menulist.setAttribute("data-l10n-id", messageId);
+    this.menulist.removeAttribute("image");
+    this.menulist.disabled = this.menulist.itemCount == 0;
+    this.button.disabled = !this.menulist.selectedItem;
+  }
 }
 
 function getLocaleDisplayInfo(localeCodes) {
@@ -219,9 +247,10 @@ var gBrowserLanguagesDialog = {
     return true;
   },
 
-  onLoad() {
+  async onLoad() {
     
-    this.requestedLocales = window.arguments[0];
+    let {requesting, search} = window.arguments[0] || {};
+    this.requestedLocales = requesting;
 
     let requested = this.requestedLocales || Services.locale.requestedLocales;
     let requestedSet = new Set(requested);
@@ -229,7 +258,7 @@ var gBrowserLanguagesDialog = {
       .filter(locale => !requestedSet.has(locale));
 
     this.initRequestedLocales(requested);
-    this.initAvailableLocales(available);
+    await this.initAvailableLocales(available, search);
     this.initialized = true;
   },
 
@@ -244,12 +273,113 @@ var gBrowserLanguagesDialog = {
     this._requestedLocales.setItems(getLocaleDisplayInfo(requested));
   },
 
-  initAvailableLocales(available) {
+  async initAvailableLocales(available, search) {
     this._availableLocales = new SortedItemSelectList({
       menulist: document.getElementById("availableLocales"),
       button: document.getElementById("add"),
-      onSelect: (item) => this._requestedLocales.addItem(item),
+      onSelect: (item) => this.availableLanguageSelected(item),
     });
-    this._availableLocales.setItems(getLocaleDisplayInfo(available));
+
+    
+    
+    await this.loadLocalesFromInstalled(available);
+
+    
+    
+    if (search) {
+      return this.loadLocalesFromAMO();
+    }
+
+    return undefined;
+  },
+
+  async loadLocalesFromAMO() {
+    
+    this._availableLocales.disableWithMessageId("browser-languages-searching");
+
+    
+    let availableLangpacks;
+    try {
+      availableLangpacks = await AddonRepository.getAvailableLangpacks();
+    } catch (e) {
+      this.showError();
+      return;
+    }
+
+    
+    this.availableLangpacks = new Map();
+    for (let {target_locale, url, hash} of availableLangpacks) {
+      this.availableLangpacks.set(target_locale, {url, hash});
+    }
+
+    
+    let installedLocales = new Set([
+      ...Services.locale.requestedLocales,
+      ...Services.locale.availableLocales,
+    ]);
+
+    let availableLocales = availableLangpacks
+      .filter(({target_locale}) => !installedLocales.has(target_locale))
+      .map(lang => lang.target_locale);
+    let availableItems = getLocaleDisplayInfo(availableLocales);
+    let items = this._availableLocales.items;
+    items = items.concat(availableItems);
+
+    
+    this._availableLocales.setItems(items);
+    this._availableLocales.enableWithMessageId("browser-languages-select-language");
+  },
+
+  async loadLocalesFromInstalled(available) {
+    let items;
+    if (available.length > 0) {
+      items = getLocaleDisplayInfo(available);
+    } else {
+      items = [];
+    }
+    this._availableLocales.setItems(items);
+  },
+
+  async availableLanguageSelected(item) {
+    let available = new Set(Services.locale.availableLocales);
+
+    if (available.has(item.value)) {
+      this._requestedLocales.addItem(item);
+      if (available.size == this._requestedLocales.items.length) {
+        this._availableLocales.setItems(this._availableLocales.items);
+      }
+    } else if (this.availableLangpacks.has(item.value)) {
+      this._availableLocales.disableWithMessageId("browser-languages-downloading");
+
+      let {url, hash} = this.availableLangpacks.get(item.value);
+      let install = await AddonManager.getInstallForURL(
+        url, "application/x-xpinstall", hash);
+
+      try {
+        await install.install();
+      } catch (e) {
+        this.showError();
+        return;
+      }
+
+      item.installed = true;
+      this._requestedLocales.addItem(item);
+      this._availableLocales.enableWithMessageId("browser-languages-select-language");
+    } else {
+      this.showError();
+    }
+  },
+
+  showError() {
+    document.querySelectorAll(".warning-message-separator")
+      .forEach(separator => separator.classList.add("thin"));
+    document.getElementById("warning-message").hidden = false;
+    this._availableLocales.enableWithMessageId("browser-languages-select-language");
+  },
+
+  hideError() {
+    document.querySelectorAll(".warning-message-separator")
+      .forEach(separator => separator.classList.remove("thin"));
+    document.getElementById("warning-message").hidden = true;
   },
 };
