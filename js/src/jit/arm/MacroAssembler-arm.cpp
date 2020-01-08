@@ -6629,6 +6629,7 @@ MacroAssemblerARM::emitUnalignedLoad(const wasm::MemoryAccessDesc* access,
     
     
     
+    
 
     ScratchRegisterScope scratch(asMasm());
 

@@ -144,6 +144,7 @@ class Simulator
 
     
     
+    
     void disasm(SimInstruction* instr, size_t m, size_t n);
 
     uintptr_t* addressOfStackLimit();

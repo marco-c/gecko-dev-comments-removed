@@ -25,6 +25,7 @@ using namespace js::jit;
 
 
 
+
 void
 JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm)
 {

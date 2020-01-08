@@ -36,6 +36,8 @@ class PCMappingSlotInfo
     
     
     
+    
+    
     enum SlotLocation { SlotInR0 = 0, SlotInR1 = 1, SlotIgnore = 3 };
 
     PCMappingSlotInfo()

@@ -5129,6 +5129,7 @@ IonBuilder::createThisScripted(MDefinition* callee, MDefinition* newTarget)
     
     
     
+    
     MInstruction* getProto;
     if (!invalidatedIdempotentCache()) {
         MConstant* id = constant(StringValue(names().prototype));

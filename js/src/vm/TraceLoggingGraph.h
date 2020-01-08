@@ -63,6 +63,7 @@
 
 
 
+
 namespace js {
 void DestroyTraceLoggerGraphState();
 size_t SizeOfTraceLogGraphState(mozilla::MallocSizeOf mallocSizeOf);

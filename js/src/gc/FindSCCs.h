@@ -71,6 +71,7 @@ struct GraphNodeBase
 
 
 
+
 template <typename Node, typename Derived>
 class ComponentFinder
 {

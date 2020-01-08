@@ -4337,6 +4337,8 @@ ICCallScriptedCompiler::generateStubCode(MacroAssembler& masm)
         
         
         
+        
+        
         if (isSpread_) {
             masm.storeValue(R0, Address(masm.getStackPointer(),
                                         (1 + isConstructing_) * sizeof(Value) + STUB_FRAME_SIZE));

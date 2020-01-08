@@ -49,6 +49,7 @@ InitIntlClass(JSContext* cx, JS::Handle<GlobalObject*> global);
 
 
 
+
 extern MOZ_MUST_USE bool
 intl_GetCalendarInfo(JSContext* cx, unsigned argc, JS::Value* vp);
 

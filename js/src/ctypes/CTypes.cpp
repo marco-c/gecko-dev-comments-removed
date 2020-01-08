@@ -2305,6 +2305,7 @@ InitTypeClasses(JSContext* cx, HandleObject ctypesObj)
   
   
   
+  
   protos[SLOT_INT64PROTO].set(InitInt64Class(cx, ctypesObj, &sInt64ProtoClass,
     Int64::Construct, sInt64Functions, sInt64StaticFunctions));
   if (!protos[SLOT_INT64PROTO]) {

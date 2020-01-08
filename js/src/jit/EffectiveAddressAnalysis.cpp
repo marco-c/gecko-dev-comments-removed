@@ -227,6 +227,8 @@ EffectiveAddressAnalysis::analyzeAsmJSHeapAccess(AsmJSMemoryAccess* ins)
 
 
 
+
+
 bool
 EffectiveAddressAnalysis::analyze()
 {

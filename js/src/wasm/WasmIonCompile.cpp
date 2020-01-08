@@ -1031,6 +1031,7 @@ class FunctionCompiler
             }
 
             
+            
             if (call->instanceArg_.kind() == ABIArg::Stack) {
                 call->instanceArg_ = ABIArg(call->instanceArg_.offsetFromArgBase() +
                                             call->spIncrement_);

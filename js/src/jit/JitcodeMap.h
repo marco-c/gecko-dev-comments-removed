@@ -1338,6 +1338,7 @@ class JitcodeRegionEntry
     
     
     
+    
     static const uint32_t ENC4_MASK = 0x7;
     static const uint32_t ENC4_MASK_VAL = 0x7;
 

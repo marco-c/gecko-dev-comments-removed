@@ -3616,6 +3616,7 @@ SafelyCoercesToDouble(MDefinition* op)
 {
     
     
+    
     return SimpleArithOperand(op) && !op->mightBeType(MIRType::Null);
 }
 

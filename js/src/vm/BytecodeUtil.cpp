@@ -2527,6 +2527,7 @@ extern bool
 js::IsValidBytecodeOffset(JSContext* cx, JSScript* script, size_t offset)
 {
     
+    
     for (BytecodeRange r(cx, script); !r.empty(); r.popFront()) {
         size_t here = r.frontOffset();
         if (here >= offset) {

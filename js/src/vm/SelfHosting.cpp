@@ -640,6 +640,7 @@ static bool
 intrinsic_DefineProperty(JSContext* cx, unsigned argc, Value* vp)
 {
     
+    
     CallArgs args = CallArgsFromVp(argc, vp);
     MOZ_ASSERT(args.length() == 6);
     MOZ_ASSERT(args[0].isObject());
