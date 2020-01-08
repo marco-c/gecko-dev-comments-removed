@@ -1174,6 +1174,7 @@ class GeneratedFile(ContextDerived):
             '.rs',
             'node.stub', 
             'android_apks', 
+            '.profdata',
         )
         self.required_for_compile = [f for f in self.outputs if f.endswith(suffixes) or 'stl_wrappers/' in f]
 

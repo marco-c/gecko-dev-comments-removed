@@ -1,0 +1,11 @@
+
+
+
+
+import subprocess
+import buildconfig
+
+
+def main(_, profile_file):
+    subprocess.check_call([buildconfig.substs['LLVM_PROFDATA'], 'merge',
+                           '-o', 'merged.profdata', profile_file])
