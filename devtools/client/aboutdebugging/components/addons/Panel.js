@@ -54,8 +54,6 @@ class AddonsPanel extends Component {
     this.onUninstalled = this.onUninstalled.bind(this);
     this.onEnabled = this.onEnabled.bind(this);
     this.onDisabled = this.onDisabled.bind(this);
-    this.onUninstalling = this.onUninstalling.bind(this);
-    this.onOperationCancelled = this.onOperationCancelled.bind(this);
   }
 
   componentDidMount() {
@@ -151,20 +149,6 @@ class AddonsPanel extends Component {
 
 
   onDisabled() {
-    this.updateAddonsList();
-  }
-
-  
-
-
-  onUninstalling() {
-    this.updateAddonsList();
-  }
-
-  
-
-
-  onOperationCancelled() {
     this.updateAddonsList();
   }
 
