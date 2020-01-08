@@ -201,12 +201,6 @@ pub enum CoordDataValue {
     
     Degree(f32),
     
-    Grad(f32),
-    
-    Radian(f32),
-    
-    Turn(f32),
-    
     FlexFraction(f32),
     
     Coord(nscoord),
@@ -317,18 +311,6 @@ pub unsafe trait CoordDataMut: CoordData {
                     *unit = eStyleUnit_Degree;
                     *union.mFloat.as_mut() = f;
                 },
-                Grad(f) => {
-                    *unit = eStyleUnit_Grad;
-                    *union.mFloat.as_mut() = f;
-                },
-                Radian(f) => {
-                    *unit = eStyleUnit_Radian;
-                    *union.mFloat.as_mut() = f;
-                },
-                Turn(f) => {
-                    *unit = eStyleUnit_Turn;
-                    *union.mFloat.as_mut() = f;
-                },
                 FlexFraction(f) => {
                     *unit = eStyleUnit_FlexFraction;
                     *union.mFloat.as_mut() = f;
@@ -393,9 +375,6 @@ pub unsafe trait CoordData {
                 eStyleUnit_Percent => Percent(self.get_float()),
                 eStyleUnit_Factor => Factor(self.get_float()),
                 eStyleUnit_Degree => Degree(self.get_float()),
-                eStyleUnit_Grad => Grad(self.get_float()),
-                eStyleUnit_Radian => Radian(self.get_float()),
-                eStyleUnit_Turn => Turn(self.get_float()),
                 eStyleUnit_FlexFraction => FlexFraction(self.get_float()),
                 eStyleUnit_Coord => Coord(self.get_integer()),
                 eStyleUnit_Integer => Integer(self.get_integer()),
@@ -413,9 +392,6 @@ pub unsafe trait CoordData {
             self.unit() == eStyleUnit_Percent ||
                 self.unit() == eStyleUnit_Factor ||
                 self.unit() == eStyleUnit_Degree ||
-                self.unit() == eStyleUnit_Grad ||
-                self.unit() == eStyleUnit_Radian ||
-                self.unit() == eStyleUnit_Turn ||
                 self.unit() == eStyleUnit_FlexFraction
         );
         *self.union().mFloat.as_ref()

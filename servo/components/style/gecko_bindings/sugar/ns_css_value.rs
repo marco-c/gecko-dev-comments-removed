@@ -199,18 +199,18 @@ impl nsCSSValue {
     
     
     
-    
+    #[inline]
     pub fn get_angle(&self) -> Angle {
-        Angle::from_gecko_values(self.float_unchecked(), self.mUnit)
+        debug_assert_eq!(self.mUnit, nsCSSUnit::eCSSUnit_Degree);
+        Angle::from_degrees(self.float_unchecked())
     }
 
     
     pub fn set_angle(&mut self, angle: Angle) {
         debug_assert_eq!(self.mUnit, nsCSSUnit::eCSSUnit_Null);
-        let (value, unit) = angle.to_gecko_values();
-        self.mUnit = unit;
+        self.mUnit = nsCSSUnit::eCSSUnit_Degree;
         unsafe {
-            *self.mValue.mFloat.as_mut() = value;
+            *self.mValue.mFloat.as_mut() = angle.degrees();
         }
     }
 
