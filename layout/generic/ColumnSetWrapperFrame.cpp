@@ -33,6 +33,24 @@ ColumnSetWrapperFrame::ColumnSetWrapperFrame(ComputedStyle* aStyle)
 {
 }
 
+nsContainerFrame*
+ColumnSetWrapperFrame::GetContentInsertionFrame()
+{
+  nsIFrame* columnSet = PrincipalChildList().OnlyChild();
+  if (columnSet) {
+    
+    
+    
+    MOZ_ASSERT(columnSet->IsColumnSetFrame());
+    return columnSet->GetContentInsertionFrame();
+  }
+
+  
+  
+  
+  return this;
+}
+
 void
 ColumnSetWrapperFrame::AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult)
 {

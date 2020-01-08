@@ -611,6 +611,22 @@ GetIBContainingBlockFor(nsIFrame* aFrame)
   return parentFrame;
 }
 
+static nsIFrame*
+GetMultiColumnContainingBlockFor(nsIFrame* aFrame)
+{
+  MOZ_ASSERT(aFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR),
+             "Should only be called if the frame has a multi-column ancestor!");
+
+  nsIFrame* current = aFrame->GetParent();
+  while (current && !current->IsColumnSetWrapperFrame()) {
+    current = current->GetParent();
+  }
+
+  MOZ_ASSERT(current, "No ColumnSetWrapperFrame in a valid column hierarchy?");
+
+  return current;
+}
+
 
 static bool
 ParentIsWrapperAnonBox(nsIFrame* aParent)
@@ -8719,6 +8735,50 @@ nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame)
   MOZ_ASSERT(aFrame == aFrame->FirstContinuation(),
              "aFrame not the result of GetPrimaryFrame()?");
 
+  if (aFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
+    nsIFrame* parent = aFrame->GetParent();
+    bool needsReframe =
+      
+      
+      aFrame->IsColumnSpan() ||
+      
+      
+      
+      
+      
+      
+      
+      (parent->Style()->GetPseudo() == nsCSSAnonBoxes::columnContent() &&
+       
+       
+       !aFrame->GetPrevSibling() && !aFrame->GetNextSibling() &&
+       
+       !parent->GetPrevInFlow() &&
+       
+       
+       parent->GetPrevContinuation());
+
+    if (needsReframe) {
+      nsIFrame* containingBlock = GetMultiColumnContainingBlockFor(aFrame);
+
+#ifdef DEBUG
+      if (IsFramePartOfIBSplit(aFrame)) {
+        nsIFrame* ibContainingBlock = GetIBContainingBlockFor(aFrame);
+        MOZ_ASSERT(containingBlock == ibContainingBlock ||
+                   nsLayoutUtils::IsProperAncestorFrame(containingBlock,
+                                                        ibContainingBlock),
+                   "Multi-column containing block should be equal to or be the "
+                   "ancestor of the IB containing block!");
+      }
+#endif
+
+      TRACE("Multi-column");
+      RecreateFramesForContent(containingBlock->GetContent(),
+                               InsertionKind::Async);
+      return true;
+    }
+  }
+
   if (IsFramePartOfIBSplit(aFrame)) {
     
     
@@ -12018,6 +12078,46 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
   }
 
   
+  if (aFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
+    if (aFrame->IsColumnSetWrapperFrame()) {
+      
+      
+      TRACE("Multi-column");
+      RecreateFramesForContent(aFrame->GetContent(), InsertionKind::Async);
+      return true;
+    }
+
+    bool anyColumnSpanItems = false;
+    for (FCItemIterator iter(aItems); !iter.IsDone(); iter.Next()) {
+      if (iter.item().mComputedStyle->StyleColumn()->IsColumnSpanStyle()) {
+        anyColumnSpanItems = true;
+        break;
+      }
+    }
+
+    bool needsReframe =
+      
+      anyColumnSpanItems ||
+      
+      
+      
+      aFrame->Style()->GetPseudo() == nsCSSAnonBoxes::columnSpanWrapper() ||
+      
+      
+      IsFramePartOfIBSplit(aFrame);
+
+    if (needsReframe) {
+      TRACE("Multi-column");
+      RecreateFramesForContent(
+        GetMultiColumnContainingBlockFor(aFrame)->GetContent(),
+        InsertionKind::Async);
+      return true;
+    }
+
+    return false;
+  }
+
+  
   
   do {
     if (IsInlineFrame(aFrame)) {
@@ -12132,7 +12232,7 @@ nsCSSFrameConstructor::ReframeContainingBlock(nsIFrame* aFrame)
         printf("  ==> blockContent=%p\n", blockContent);
       }
 #endif
-      RecreateFramesForContent(blockContent->AsElement(), InsertionKind::Async);
+      RecreateFramesForContent(blockContent, InsertionKind::Async);
       return;
     }
   }
