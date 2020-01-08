@@ -12,7 +12,8 @@
 #define MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_
 
 
-#define _USE_MATH_DEFINES
+
+
 
 #include <math.h>
 #include <stddef.h>  
