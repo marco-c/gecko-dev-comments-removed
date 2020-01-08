@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "StructuredCloneData.h"
 
@@ -58,6 +58,7 @@ StructuredCloneData::~StructuredCloneData()
 StructuredCloneData&
 StructuredCloneData::operator=(StructuredCloneData&& aOther)
 {
+  mBlobImplArray = std::move(aOther.mBlobImplArray);
   mExternalData = std::move(aOther.mExternalData);
   mSharedData = std::move(aOther.mSharedData);
   mIPCStreams = std::move(aOther.mIPCStreams);
@@ -243,7 +244,7 @@ StructuredCloneData::BuildClonedMessageDataForBackgroundChild(
   return BuildClonedMessageData(aChild, *this, aClonedData);
 }
 
-// See the StructuredCloneData class block comment for the meanings of each val.
+
 enum MemoryFlavorEnum {
   BorrowMemory = 0,
   CopyMemory,
@@ -283,7 +284,7 @@ struct MemoryTraits<CopyMemory>
 template<>
 struct MemoryTraits<StealMemory>
 {
-  // note: not const!
+  
   typedef mozilla::dom::ClonedMessageData ClonedMessageType;
 
   static void ProvideBuffer(ClonedMessageData& aClonedData,
@@ -294,10 +295,10 @@ struct MemoryTraits<StealMemory>
   }
 };
 
-// Note that there isn't actually a difference between Parent/BackgroundParent
-// and Child/BackgroundChild in this implementation.  The calling methods,
-// however, do maintain the distinction for code-reading purposes and are backed
-// by assertions to enforce there is no misuse.
+
+
+
+
 template<MemoryFlavorEnum MemoryFlavor, ActorFlavorEnum Flavor>
 static void
 UnpackClonedMessageData(typename MemoryTraits<MemoryFlavor>::ClonedMessageType& aClonedData,
@@ -337,8 +338,8 @@ UnpackClonedMessageData(typename MemoryTraits<MemoryFlavor>::ClonedMessageType& 
 void
 StructuredCloneData::BorrowFromClonedMessageDataForParent(const ClonedMessageData& aClonedData)
 {
-  // PContent parent is always main thread and actor constraints demand we're
-  // likewise on that thread.
+  
+  
   MOZ_ASSERT(NS_IsMainThread());
   UnpackClonedMessageData<BorrowMemory, Parent>(aClonedData, *this);
 }
@@ -346,8 +347,8 @@ StructuredCloneData::BorrowFromClonedMessageDataForParent(const ClonedMessageDat
 void
 StructuredCloneData::BorrowFromClonedMessageDataForChild(const ClonedMessageData& aClonedData)
 {
-  // PContent child is always main thread and actor constraints demand we're
-  // likewise on that thread.
+  
+  
   MOZ_ASSERT(NS_IsMainThread());
   UnpackClonedMessageData<BorrowMemory, Child>(aClonedData, *this);
 }
@@ -362,7 +363,7 @@ StructuredCloneData::BorrowFromClonedMessageDataForBackgroundParent(const Cloned
 void
 StructuredCloneData::BorrowFromClonedMessageDataForBackgroundChild(const ClonedMessageData& aClonedData)
 {
-  // No thread assertion; BackgroundChild can happen on any thread.
+  
   UnpackClonedMessageData<BorrowMemory, Child>(aClonedData, *this);
 }
 
@@ -478,6 +479,6 @@ StructuredCloneData::TakeSharedData()
   return mSharedData.forget();
 }
 
-} // namespace ipc
-} // namespace dom
-} // namespace mozilla
+} 
+} 
+} 
