@@ -203,6 +203,9 @@ class Classifier {
                                   const nsACString& aFailedTableName);
 
   
+  bool ShouldAbort() const;
+
+  
   nsCOMPtr<nsIFile> mCacheDirectory;
   
   nsCOMPtr<nsIFile> mRootStoreDirectory;
@@ -225,7 +228,11 @@ class Classifier {
   
   LookupCacheArray mNewLookupCaches;
 
+  
   bool mUpdateInterrupted;
+
+  
+  bool mIsClosed;
 
   nsCOMPtr<nsIThread> mUpdateThread;  
 
@@ -234,8 +241,6 @@ class Classifier {
   
   
   nsCOMPtr<nsIFile> mRootStoreDirectoryForUpdate;
-
-  bool mIsClosed;  
 };
 
 }  
