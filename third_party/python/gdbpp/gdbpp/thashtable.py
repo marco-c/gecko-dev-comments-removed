@@ -106,7 +106,9 @@ class thashtable_printer(object):
         
         
         
-        capacity = 1 << (table['kHashBits'] - table['mHashShift'])
+        hashType = gdb.lookup_type('mozilla::HashNumber')
+        hashBits = hashType.sizeof * 8
+        capacity = 1 << (hashBits - table['mHashShift'])
 
         
         
