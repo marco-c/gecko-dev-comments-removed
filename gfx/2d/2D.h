@@ -1638,6 +1638,18 @@ public:
 
 
 
+
+
+
+  static already_AddRefed<DrawTargetCapture>
+    CreateCaptureDrawTargetForTarget(gfx::DrawTarget* aTarget, size_t aFlushBytes = 0);
+
+  
+
+
+
+
+
   static already_AddRefed<DrawTargetCapture>
     CreateCaptureDrawTarget(BackendType aBackend, const IntSize &aSize, SurfaceFormat aFormat);
 
