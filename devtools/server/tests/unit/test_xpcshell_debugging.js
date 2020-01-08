@@ -7,7 +7,7 @@
 
 
 
-function run_test() {
+add_task(async function() {
   const testFile = do_get_file("xpcshell_debugging_script.js");
 
   
@@ -18,37 +18,37 @@ function run_test() {
   });
   const transport = DebuggerServer.connectPipe();
   const client = new DebuggerClient(transport);
-  client.connect().then(() => {
-    
-    client.getProcess().then(response => {
-      const actor = response.form.actor;
-      client.attachTab(actor).then(([response, tabClient]) => {
-        tabClient.attachThread(null).then(([response, threadClient]) => {
-          threadClient.addOneTimeListener("paused", (event, packet) => {
-            equal(packet.why.type, "breakpoint",
-                "yay - hit the breakpoint at the first line in our script");
-            
-            threadClient.addOneTimeListener("paused", (event, packet) => {
-              equal(packet.why.type, "debuggerStatement",
-                    "yay - hit the 'debugger' statement in our script");
-              threadClient.resume(() => {
-                finishClient(client);
-              });
-            });
-            threadClient.resume();
-          });
-          
-          
-          threadClient.resume(response => {
-            
-            ok(testResumed);
-            
-            load(testFile.path);
-            
-          });
-        });
+  await client.connect();
+  
+  const response = await client.getProcess();
+  const actor = response.form.actor;
+  const [, tabClient] = await client.attachTab(actor);
+  const [, threadClient] = await tabClient.attachThread(null);
+  const onResumed = new Promise(resolve => {
+    threadClient.addOneTimeListener("paused", (event, packet) => {
+      equal(packet.why.type, "breakpoint",
+          "yay - hit the breakpoint at the first line in our script");
+      
+      threadClient.addOneTimeListener("paused", (event, packet) => {
+        equal(packet.why.type, "debuggerStatement",
+              "yay - hit the 'debugger' statement in our script");
+        threadClient.resume(resolve);
       });
+      threadClient.resume();
     });
   });
-  do_test_pending();
-}
+
+  
+  
+  threadClient.resume(() => {
+    
+    ok(testResumed);
+    
+    load(testFile.path);
+    
+  });
+
+  await onResumed;
+
+  finishClient(client);
+});
