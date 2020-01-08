@@ -16,6 +16,10 @@ const gcovPrefixPath = env.get("GCOV_PREFIX");
 
 const gcovResultsPath = env.get("GCOV_RESULTS_DIR");
 
+const jsvmPrefixPath = env.get("JS_CODE_COVERAGE_OUTPUT_DIR");
+
+const jsvmResultsPath = env.get("JSVM_RESULTS_DIR");
+
 const gcovPrefixDir = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
 if (gcovPrefixPath) {
   gcovPrefixDir.initWithPath(gcovPrefixPath);
@@ -24,6 +28,16 @@ if (gcovPrefixPath) {
 let gcovResultsDir = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
 if (gcovResultsPath) {
   gcovResultsDir.initWithPath(gcovResultsPath);
+}
+
+const jsvmPrefixDir = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+if (jsvmPrefixPath) {
+  jsvmPrefixDir.initWithPath(jsvmPrefixPath);
+}
+
+let jsvmResultsDir = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+if (jsvmResultsPath) {
+  jsvmResultsDir.initWithPath(jsvmResultsPath);
 }
 
 function awaitPromise(promise) {
@@ -68,9 +82,11 @@ var PerTestCoverageUtils = class PerTestCoverageUtilsClass {
 
     
     removeDirectoryContents(gcovPrefixDir);
+    removeDirectoryContents(jsvmPrefixDir);
 
     
     moveDirectoryContents(gcovResultsDir, gcovPrefixDir);
+    moveDirectoryContents(jsvmResultsDir, jsvmPrefixDir);
   }
 
   static beforeTestSync() {
@@ -89,6 +105,7 @@ var PerTestCoverageUtils = class PerTestCoverageUtilsClass {
 
     
     moveDirectoryContents(gcovPrefixDir, gcovResultsDir);
+    moveDirectoryContents(jsvmPrefixDir, jsvmResultsDir);
   }
 
   static afterTestSync() {
