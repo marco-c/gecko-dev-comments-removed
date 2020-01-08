@@ -58,9 +58,8 @@ class StringBuilder {
   
   bool handle(bool result) {
     MOZ_ASSERT(!finished);
-    if (!result) {
+    if (!result)
       errored = true;
-    }
     return result;
   }
 
@@ -120,13 +119,11 @@ AppendString(JSContext* cx, StringBuilder<T, N>& v, const char (&array)[ArrayLen
   
   size_t alen = ArrayLength - 1;
   size_t vlen = v.length();
-  if (!v.resize(vlen + alen)) {
+  if (!v.resize(vlen + alen))
     return;
-  }
 
-  for (size_t i = 0; i < alen; ++i) {
+  for (size_t i = 0; i < alen; ++i)
     v[i + vlen] = array[i];
-  }
 }
 
 template <class T, size_t N>
@@ -134,13 +131,11 @@ void
 AppendChars(StringBuilder<T, N>& v, const char c, size_t count)
 {
   size_t vlen = v.length();
-  if (!v.resize(vlen + count)) {
+  if (!v.resize(vlen + count))
     return;
-  }
 
-  for (size_t i = 0; i < count; ++i) {
+  for (size_t i = 0; i < count; ++i)
     v[i + vlen] = c;
-  }
 }
 
 template <class T, size_t N>
@@ -150,22 +145,19 @@ AppendUInt(StringBuilder<T, N>& v, unsigned n)
   char array[16];
   size_t alen = SprintfLiteral(array, "%u", n);
   size_t vlen = v.length();
-  if (!v.resize(vlen + alen)) {
+  if (!v.resize(vlen + alen))
     return;
-  }
 
-  for (size_t i = 0; i < alen; ++i) {
+  for (size_t i = 0; i < alen; ++i)
     v[i + vlen] = array[i];
-  }
 }
 
 template <class T, size_t N, size_t M, class AP>
 void
 AppendString(JSContext* cx, StringBuilder<T, N>& v, mozilla::Vector<T, M, AP>& w)
 {
-  if (!v.append(w.begin(), w.length())) {
+  if (!v.append(w.begin(), w.length()))
     return;
-  }
 }
 
 template <size_t N>
@@ -174,18 +166,15 @@ AppendString(JSContext* cx, StringBuilder<char16_t, N>& v, JSString* str)
 {
   MOZ_ASSERT(str);
   JSLinearString* linear = str->ensureLinear(cx);
-  if (!linear) {
+  if (!linear)
     return;
-  }
   JS::AutoCheckCannotGC nogc;
   if (linear->hasLatin1Chars()) {
-    if (!v.append(linear->latin1Chars(nogc), linear->length())) {
+    if (!v.append(linear->latin1Chars(nogc), linear->length()))
       return;
-    }
   } else {
-    if (!v.append(linear->twoByteChars(nogc), linear->length())) {
+    if (!v.append(linear->twoByteChars(nogc), linear->length()))
       return;
-    }
   }
 }
 
@@ -196,26 +185,22 @@ AppendString(JSContext* cx, StringBuilder<char, N>& v, JSString* str)
   MOZ_ASSERT(str);
   size_t vlen = v.length();
   size_t alen = str->length();
-  if (!v.resize(vlen + alen)) {
+  if (!v.resize(vlen + alen))
     return;
-  }
 
   JSLinearString* linear = str->ensureLinear(cx);
-  if (!linear) {
+  if (!linear)
     return;
-  }
 
   JS::AutoCheckCannotGC nogc;
   if (linear->hasLatin1Chars()) {
     const Latin1Char* chars = linear->latin1Chars(nogc);
-    for (size_t i = 0; i < alen; ++i) {
+    for (size_t i = 0; i < alen; ++i)
       v[i + vlen] = char(chars[i]);
-    }
   } else {
     const char16_t* chars = linear->twoByteChars(nogc);
-    for (size_t i = 0; i < alen; ++i) {
+    for (size_t i = 0; i < alen; ++i)
       v[i + vlen] = char(chars[i]);
-    }
   }
 }
 
@@ -226,17 +211,15 @@ PrependString(JSContext* cx, StringBuilder<T, N>& v, const char (&array)[ArrayLe
   
   size_t alen = ArrayLength - 1;
   size_t vlen = v.length();
-  if (!v.resize(vlen + alen)) {
+  if (!v.resize(vlen + alen))
     return;
-  }
 
   
   memmove(v.begin() + alen, v.begin(), vlen * sizeof(T));
 
   
-  for (size_t i = 0; i < alen; ++i) {
+  for (size_t i = 0; i < alen; ++i)
     v[i] = array[i];
-  }
 }
 
 template <size_t N>
@@ -246,14 +229,12 @@ PrependString(JSContext* cx, StringBuilder<char16_t, N>& v, JSString* str)
   MOZ_ASSERT(str);
   size_t vlen = v.length();
   size_t alen = str->length();
-  if (!v.resize(vlen + alen)) {
+  if (!v.resize(vlen + alen))
     return;
-  }
 
   JSLinearString* linear = str->ensureLinear(cx);
-  if (!linear) {
+  if (!linear)
     return;
-  }
 
   
   memmove(v.begin() + alen, v.begin(), vlen * sizeof(char16_t));
@@ -262,23 +243,15 @@ PrependString(JSContext* cx, StringBuilder<char16_t, N>& v, JSString* str)
   JS::AutoCheckCannotGC nogc;
   if (linear->hasLatin1Chars()) {
     const Latin1Char* chars = linear->latin1Chars(nogc);
-    for (size_t i = 0; i < alen; i++) {
+    for (size_t i = 0; i < alen; i++)
       v[i] = chars[i];
-    }
   } else {
     memcpy(v.begin(), linear->twoByteChars(nogc), alen * sizeof(char16_t));
   }
 }
 
-template <typename CharT>
-extern size_t
-GetDeflatedUTF8StringLength(JSContext* maybecx, const CharT* chars,
-                            size_t charsLength);
-
-template <typename CharT>
 MOZ_MUST_USE bool
-DeflateStringToUTF8Buffer(JSContext* maybecx, const CharT* src, size_t srclen,
-                          char* dst, size_t* dstlenp);
+ReportErrorIfUnpairedSurrogatePresent(JSContext* cx, JSLinearString* str);
 
 MOZ_MUST_USE JSObject*
 GetThisObject(JSContext* cx, const CallArgs& args, const char* msg);
@@ -286,12 +259,6 @@ GetThisObject(JSContext* cx, const CallArgs& args, const char* msg);
 
 
 
-
-MOZ_ALWAYS_INLINE void
-ASSERT_OK(bool ok)
-{
-  MOZ_ASSERT(ok);
-}
 
 
 enum ErrorNum {
@@ -359,9 +326,8 @@ struct FieldHashPolicy : DefaultHasher<JSFlatString*>
   template <typename CharT>
   static uint32_t hash(const CharT* s, size_t n) {
     uint32_t hash = 0;
-    for (; n > 0; s++, n--) {
+    for (; n > 0; s++, n--)
       hash = hash * 33 + *s;
-    }
     return hash;
   }
 
@@ -373,13 +339,11 @@ struct FieldHashPolicy : DefaultHasher<JSFlatString*>
   }
 
   static bool match(const Key& k, const Lookup& l) {
-    if (k == l) {
+    if (k == l)
       return true;
-    }
 
-    if (k->length() != l->length()) {
+    if (k->length() != l->length())
       return false;
-    }
 
     return EqualChars(k, l);
   }
@@ -438,9 +402,8 @@ struct ClosureInfo
   {}
 
   ~ClosureInfo() {
-    if (closure) {
+    if (closure)
       ffi_closure_free(closure);
-    }
     js_free(errResult);
   }
 };
