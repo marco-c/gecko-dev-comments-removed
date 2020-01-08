@@ -4,6 +4,7 @@
 
 #if defined(XP_WIN)
 #include <windows.h>
+#include <winioctl.h> 
 #endif
 
 
@@ -13,6 +14,44 @@
 #include <stdarg.h>
 
 #include "updatecommon.h"
+#ifdef XP_WIN
+#include "updatehelper.h"
+#include "nsWindowsHelpers.h"
+#include "mozilla/UniquePtr.h"
+
+
+
+typedef struct _REPARSE_DATA_BUFFER
+{
+  ULONG  ReparseTag;
+  USHORT ReparseDataLength;
+  USHORT Reserved;
+  union
+  {
+    struct
+    {
+      USHORT SubstituteNameOffset;
+      USHORT SubstituteNameLength;
+      USHORT PrintNameOffset;
+      USHORT PrintNameLength;
+      ULONG  Flags;
+      WCHAR  PathBuffer[1];
+    } SymbolicLinkReparseBuffer;
+    struct
+    {
+      USHORT SubstituteNameOffset;
+      USHORT SubstituteNameLength;
+      USHORT PrintNameOffset;
+      USHORT PrintNameLength;
+      WCHAR  PathBuffer[1];
+    } MountPointReparseBuffer;
+    struct
+    {
+      UCHAR DataBuffer[1];
+    } GenericReparseBuffer;
+  } DUMMYUNIONNAME;
+} REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
+#endif
 
 UpdateLog::UpdateLog() : logFP(nullptr)
 {
@@ -147,6 +186,78 @@ void UpdateLog::WarnPrintf(const char *fmt, ... )
   va_end(ap);
 }
 
+#ifdef XP_WIN
+
+
+
+
+
+
+
+bool
+PathContainsInvalidLinks(wchar_t * const fullPath)
+{
+  wchar_t pathCopy[MAXPATHLEN + 1] = L"";
+  wcsncpy(pathCopy, fullPath, MAXPATHLEN);
+  wchar_t* remainingPath = nullptr;
+  wchar_t* nextToken = wcstok(pathCopy, L"\\", &remainingPath);
+  wchar_t* partialPath = nextToken;
+
+  while (nextToken) {
+    if ((GetFileAttributesW(partialPath) & FILE_ATTRIBUTE_REPARSE_POINT) != 0) {
+      nsAutoHandle h(CreateFileW(partialPath, 0,
+                                 FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                 nullptr, OPEN_EXISTING,
+                                 FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
+                                 nullptr));
+      if (h == INVALID_HANDLE_VALUE) {
+        if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+          
+          return false;
+        } else {
+          return true;
+        }
+      }
+
+      mozilla::UniquePtr<UINT8> byteBuffer =
+        mozilla::MakeUnique<UINT8>(MAXIMUM_REPARSE_DATA_BUFFER_SIZE);
+      if (!byteBuffer) {
+        return true;
+      }
+      ZeroMemory(byteBuffer.get(), MAXIMUM_REPARSE_DATA_BUFFER_SIZE);
+      REPARSE_DATA_BUFFER* buffer = (REPARSE_DATA_BUFFER*)byteBuffer.get();
+      DWORD bytes = 0;
+      if (!DeviceIoControl(h, FSCTL_GET_REPARSE_POINT, nullptr, 0, buffer,
+                           MAXIMUM_REPARSE_DATA_BUFFER_SIZE, &bytes, nullptr)) {
+        return true;
+      }
+
+      wchar_t* reparseTarget = nullptr;
+      switch (buffer->ReparseTag) {
+        case IO_REPARSE_TAG_MOUNT_POINT:
+          reparseTarget = buffer->MountPointReparseBuffer.PathBuffer;
+          break;
+        case IO_REPARSE_TAG_SYMLINK:
+          reparseTarget = buffer->SymbolicLinkReparseBuffer.PathBuffer;
+          break;
+        default:
+          return true;
+          break;
+      }
+
+      if (wcsncmp(reparseTarget, L"\\??\\", ARRAYSIZE(L"\\??\\") - 1) != 0) {
+        return true;
+      }
+    }
+
+    nextToken = wcstok(nullptr, L"\\", &remainingPath);
+    PathAppendW(partialPath, nextToken);
+  }
+
+  return false;
+}
+#endif
+
 
 
 
@@ -196,6 +307,10 @@ IsValidFullPath(NS_tchar* origFullPath)
     if (!PathIsUNCServerShareW(testPath)) {
       return false;
     }
+  }
+
+  if (PathContainsInvalidLinks(canonicalPath)) {
+    return false;
   }
 #else
   
