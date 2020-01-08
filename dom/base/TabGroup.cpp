@@ -120,6 +120,11 @@ TabGroup::GetFromActor(TabChild* aTabChild)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
+  
+  if (recordreplay::IsMiddleman()) {
+    return GetChromeTabGroup();
+  }
+
   nsCOMPtr<nsIEventTarget> target = aTabChild->Manager()->GetEventTargetFor(aTabChild);
   if (!target) {
     return nullptr;
