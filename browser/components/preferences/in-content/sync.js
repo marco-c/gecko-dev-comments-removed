@@ -358,9 +358,7 @@ var gSyncPane = {
     
     let browser = window.docShell.chromeEventHandler;
     
-    browser.loadURI(url, {
-      triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}),
-    });
+    browser.loadURI(url);
   },
 
   async signIn() {

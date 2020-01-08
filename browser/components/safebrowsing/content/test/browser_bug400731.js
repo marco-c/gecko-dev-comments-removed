@@ -40,7 +40,7 @@ function testMalware(data) {
 
   
   onDOMContentLoaded(testUnwanted);
-  BrowserTestUtils.loadURI(gBrowser, "http://www.itisatrap.org/firefox/unwanted.html");
+  gBrowser.loadURI("http://www.itisatrap.org/firefox/unwanted.html");
 }
 
 function testUnwanted(data) {
@@ -51,7 +51,7 @@ function testUnwanted(data) {
 
   
   onDOMContentLoaded(testPhishing);
-  BrowserTestUtils.loadURI(gBrowser, "http://www.itisatrap.org/firefox/its-a-trap.html");
+  gBrowser.loadURI("http://www.itisatrap.org/firefox/its-a-trap.html");
 }
 
 function testPhishing(data) {

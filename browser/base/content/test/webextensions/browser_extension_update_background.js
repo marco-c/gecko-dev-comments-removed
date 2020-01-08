@@ -41,12 +41,12 @@ add_task(async function setup() {
 
   
   
-  BrowserTestUtils.loadURI(gBrowser.selectedBrowser, "about:robots");
+  gBrowser.selectedBrowser.loadURI("about:robots");
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
   registerCleanupFunction(async function() {
     
-    BrowserTestUtils.loadURI(gBrowser.selectedBrowser, "about:blank");
+    gBrowser.selectedBrowser.loadURI("about:blank");
     await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
   });
 });

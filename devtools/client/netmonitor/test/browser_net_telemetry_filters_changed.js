@@ -31,7 +31,7 @@ add_task(async function() {
 
   
   const wait = waitForNetworkEvents(monitor, 1);
-  BrowserTestUtils.loadURI(tab.linkedBrowser, SIMPLE_URL);
+  tab.linkedBrowser.loadURI(SIMPLE_URL);
   await wait;
 
   info("Click on the 'HTML' filter");

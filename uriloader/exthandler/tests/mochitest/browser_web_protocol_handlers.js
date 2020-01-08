@@ -4,7 +4,7 @@ let testURL = "https://example.com/browser/" +
 add_task(async function() {
   
   let browser = gBrowser.selectedBrowser;
-  BrowserTestUtils.loadURI(browser, testURL);
+  browser.loadURI(testURL);
   await BrowserTestUtils.browserLoaded(browser, false, testURL);
 
   
