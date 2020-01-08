@@ -943,7 +943,6 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
     bool success;
     bool readyToDoTheCall = false;
     nsID  param_iid;
-    const char* name = info->GetName();
     bool foundDependentParam;
 
     
@@ -961,6 +960,19 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
 
     if (!cx || !IsReflectable(methodIndex))
         return NS_ERROR_FAILURE;
+
+    JS::RootedId id(cx);
+    const char* name;
+    nsAutoCString symbolName;
+    if (info->IsSymbol()) {
+        info->GetSymbolDescription(cx, symbolName);
+        name = symbolName.get();
+        id = SYMBOL_TO_JSID(info->GetSymbol(cx));
+    } else {
+        name = info->GetName();
+        if (!AtomizeAndPinJSString(cx, id.get(), name))
+            return NS_ERROR_FAILURE;
+    }
 
     
     
@@ -1030,7 +1042,7 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
 
         fval = ObjectValue(*obj);
         if (!isFunction || JS_TypeOfValue(ccx, fval) != JSTYPE_FUNCTION) {
-            if (!JS_GetProperty(cx, obj, name, &fval))
+            if (!JS_GetPropertyById(cx, obj, id, &fval))
                 goto pre_call_clean_up;
             
             
