@@ -53,38 +53,38 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
 
-    public static final Key<String> CHROME_URI =
+    private static final Key<String> CHROME_URI =
         new Key<String>("chromeUri",  true,  null);
     
 
 
 
-    public static final Key<Integer> SCREEN_ID =
+    private static final Key<Integer> SCREEN_ID =
         new Key<Integer>("screenId",  true,  null);
 
     
 
 
-    public static final Key<Boolean> USE_TRACKING_PROTECTION =
+    private static final Key<Boolean> USE_TRACKING_PROTECTION =
         new Key<Boolean>("useTrackingProtection");
     
 
 
 
-    public static final Key<Boolean> USE_PRIVATE_MODE =
+    private static final Key<Boolean> USE_PRIVATE_MODE =
         new Key<Boolean>("usePrivateMode",  true,  null);
 
     
 
 
 
-    public static final Key<Boolean> USE_MULTIPROCESS =
+    private static final Key<Boolean> USE_MULTIPROCESS =
         new Key<Boolean>("useMultiprocess",  true,  null);
 
     
 
 
-    public static final Key<Integer> USER_AGENT_MODE =
+    private static final Key<Integer> USER_AGENT_MODE =
         new Key<Integer>("userAgentMode",  false,
                          Arrays.asList(USER_AGENT_MODE_MOBILE, USER_AGENT_MODE_DESKTOP, USER_AGENT_MODE_VR));
 
@@ -92,13 +92,13 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
 
-    public static final Key<String> USER_AGENT_OVERRIDE =
+    private static final Key<String> USER_AGENT_OVERRIDE =
         new Key<String>("userAgentOverride",  false,  null);
 
     
 
 
-    public static final Key<Integer> DISPLAY_MODE =
+    private static final Key<Integer> DISPLAY_MODE =
         new Key<Integer>("displayMode",  false,
                          Arrays.asList(DISPLAY_MODE_BROWSER, DISPLAY_MODE_MINIMAL_UI,
                                        DISPLAY_MODE_STANDALONE, DISPLAY_MODE_FULLSCREEN));
@@ -106,18 +106,18 @@ public final class GeckoSessionSettings implements Parcelable {
     
 
 
-    public static final Key<Boolean> SUSPEND_MEDIA_WHEN_INACTIVE =
+    private static final Key<Boolean> SUSPEND_MEDIA_WHEN_INACTIVE =
         new Key<Boolean>("suspendMediaWhenInactive",  false,  null);
 
     
 
 
-    public static final Key<Boolean> ALLOW_JAVASCRIPT =
+    private static final Key<Boolean> ALLOW_JAVASCRIPT =
             new Key<Boolean>("allowJavascript",  false,  null);
     
 
 
-    public static final Key<Boolean> FULL_ACCESSIBILITY_TREE =
+    private static final Key<Boolean> FULL_ACCESSIBILITY_TREE =
             new Key<Boolean>("fullAccessibilityTree",  false,  null);
 
     private final GeckoSession mSession;
@@ -178,7 +178,7 @@ public final class GeckoSessionSettings implements Parcelable {
         setBoolean(FULL_ACCESSIBILITY_TREE, value);
     }
 
-    public void setBoolean(final Key<Boolean> key, final boolean value) {
+    private void setBoolean(final Key<Boolean> key, final boolean value) {
         synchronized (mBundle) {
             if (valueChangedLocked(key, value)) {
                 mBundle.putBoolean(key.name, value);
@@ -211,7 +211,7 @@ public final class GeckoSessionSettings implements Parcelable {
         return getBoolean(FULL_ACCESSIBILITY_TREE);
     }
 
-    public boolean getBoolean(final Key<Boolean> key) {
+    private boolean getBoolean(final Key<Boolean> key) {
         synchronized (mBundle) {
             return mBundle.getBoolean(key.name);
         }
@@ -229,7 +229,7 @@ public final class GeckoSessionSettings implements Parcelable {
         setInt(DISPLAY_MODE, value);
     }
 
-    public void setInt(final Key<Integer> key, final int value) {
+    private void setInt(final Key<Integer> key, final int value) {
         synchronized (mBundle) {
             if (valueChangedLocked(key, value)) {
                 mBundle.putInt(key.name, value);
@@ -242,7 +242,7 @@ public final class GeckoSessionSettings implements Parcelable {
         return getInt(SCREEN_ID);
     }
 
-    public int getUseAgentMode() {
+    public int getUserAgentMode() {
         return getInt(USER_AGENT_MODE);
     }
 
@@ -250,7 +250,7 @@ public final class GeckoSessionSettings implements Parcelable {
         return getInt(DISPLAY_MODE);
     }
 
-    public int getInt(final Key<Integer> key) {
+    private int getInt(final Key<Integer> key) {
         synchronized (mBundle) {
             return mBundle.getInt(key.name);
         }
@@ -264,7 +264,7 @@ public final class GeckoSessionSettings implements Parcelable {
         setString(USER_AGENT_OVERRIDE, value);
     }
 
-    public void setString(final Key<String> key, final String value) {
+    private void setString(final Key<String> key, final String value) {
         synchronized (mBundle) {
             if (valueChangedLocked(key, value)) {
                 mBundle.putString(key.name, value);
@@ -281,7 +281,7 @@ public final class GeckoSessionSettings implements Parcelable {
         return getString(USER_AGENT_OVERRIDE);
     }
 
-    public String getString(final Key<String> key) {
+    private String getString(final Key<String> key) {
         synchronized (mBundle) {
             return mBundle.getString(key.name);
         }
