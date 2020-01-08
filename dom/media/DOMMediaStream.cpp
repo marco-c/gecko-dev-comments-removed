@@ -338,28 +338,37 @@ already_AddRefed<Promise> DOMMediaStream::CountUnderlyingStreams(
   class Counter : public ControlMessage {
    public:
     Counter(MediaStreamGraphImpl* aGraph, const RefPtr<Promise>& aPromise)
-        : ControlMessage(nullptr),
-          mGraph(aGraph),
-          mPromise(MakeAndAddRef<nsMainThreadPtrHolder<Promise>>(
-              "DOMMediaStream::Counter::mPromise", aPromise)) {
+        : ControlMessage(nullptr), mGraph(aGraph), mPromise(aPromise) {
       MOZ_ASSERT(NS_IsMainThread());
     }
 
     void Run() override {
-      nsMainThreadPtrHandle<Promise>& promise = mPromise;
       uint32_t streams =
           mGraph->mStreams.Length() + mGraph->mSuspendedStreams.Length();
-      mGraph->DispatchToMainThreadAfterStreamStateUpdate(
-          NewRunnableFrom([promise, streams]() mutable {
-            promise->MaybeResolve(streams);
-            return NS_OK;
+      mGraph->DispatchToMainThreadAfterStreamStateUpdate(NS_NewRunnableFunction(
+          "DOMMediaStream::CountUnderlyingStreams (stable state)",
+          [promise = std::move(mPromise), streams]() mutable {
+            NS_DispatchToMainThread(NS_NewRunnableFunction(
+                "DOMMediaStream::CountUnderlyingStreams",
+                [promise = std::move(promise), streams]() {
+                  promise->MaybeResolve(streams);
+                }));
           }));
+    }
+
+    
+    
+    
+    void RunDuringShutdown() override {
+      NS_ReleaseOnMainThreadSystemGroup(
+          "DOMMediaStream::CountUnderlyingStreams::Counter::RunDuringShutdown",
+          mPromise.forget());
     }
 
    private:
     
     MediaStreamGraphImpl* mGraph;
-    nsMainThreadPtrHandle<Promise> mPromise;
+    RefPtr<Promise> mPromise;
   };
   graphImpl->AppendMessage(MakeUnique<Counter>(graphImpl, p));
 
