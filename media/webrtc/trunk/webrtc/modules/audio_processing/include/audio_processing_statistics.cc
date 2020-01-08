@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+#include "modules/audio_processing/include/audio_processing_statistics.h"
+
+namespace webrtc {
+
+AudioProcessingStats::AudioProcessingStats() = default;
+
+AudioProcessingStats::AudioProcessingStats(const AudioProcessingStats& other) =
+    default;
+
+AudioProcessingStats::~AudioProcessingStats() = default;
+
+}  

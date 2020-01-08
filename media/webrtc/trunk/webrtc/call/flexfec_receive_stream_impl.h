@@ -8,13 +8,13 @@
 
 
 
-#ifndef WEBRTC_CALL_FLEXFEC_RECEIVE_STREAM_IMPL_H_
-#define WEBRTC_CALL_FLEXFEC_RECEIVE_STREAM_IMPL_H_
+#ifndef CALL_FLEXFEC_RECEIVE_STREAM_IMPL_H_
+#define CALL_FLEXFEC_RECEIVE_STREAM_IMPL_H_
 
 #include <memory>
 
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/call/flexfec_receive_stream.h"
+#include "call/flexfec_receive_stream.h"
+#include "call/rtp_packet_sink_interface.h"
 
 namespace webrtc {
 
@@ -25,29 +25,28 @@ class RecoveredPacketReceiver;
 class RtcpRttStats;
 class RtpPacketReceived;
 class RtpRtcp;
+class RtpStreamReceiverControllerInterface;
+class RtpStreamReceiverInterface;
 
 class FlexfecReceiveStreamImpl : public FlexfecReceiveStream {
  public:
-  FlexfecReceiveStreamImpl(const Config& config,
-                           RecoveredPacketReceiver* recovered_packet_receiver,
-                           RtcpRttStats* rtt_stats,
-                           ProcessThread* process_thread);
+  FlexfecReceiveStreamImpl(
+      RtpStreamReceiverControllerInterface* receiver_controller,
+      const Config& config,
+      RecoveredPacketReceiver* recovered_packet_receiver,
+      RtcpRttStats* rtt_stats,
+      ProcessThread* process_thread);
   ~FlexfecReceiveStreamImpl() override;
 
-  const Config& GetConfig() const { return config_; }
-
-  bool AddAndProcessReceivedPacket(const RtpPacketReceived& packet);
-
   
-  void Start() override;
-  void Stop() override;
+  void OnRtpPacket(const RtpPacketReceived& packet) override;
+
   Stats GetStats() const override;
+  const Config& GetConfig() const override;
 
  private:
   
   const Config config_;
-  bool started_ GUARDED_BY(crit_);
-  rtc::CriticalSection crit_;
 
   
   const std::unique_ptr<FlexfecReceiver> receiver_;
@@ -56,6 +55,8 @@ class FlexfecReceiveStreamImpl : public FlexfecReceiveStream {
   const std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
   const std::unique_ptr<RtpRtcp> rtp_rtcp_;
   ProcessThread* process_thread_;
+
+  std::unique_ptr<RtpStreamReceiverInterface> rtp_stream_receiver_;
 };
 
 }  

@@ -8,14 +8,14 @@
 
 
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_FULL_SCREEN_CHROME_WINDOW_DETECTOR_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_FULL_SCREEN_CHROME_WINDOW_DETECTOR_H_
+#ifndef MODULES_DESKTOP_CAPTURE_MAC_FULL_SCREEN_CHROME_WINDOW_DETECTOR_H_
+#define MODULES_DESKTOP_CAPTURE_MAC_FULL_SCREEN_CHROME_WINDOW_DETECTOR_H_
 
 #include <ApplicationServices/ApplicationServices.h>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/desktop_capture/desktop_capturer.h"
-#include "webrtc/system_wrappers/include/atomic32.h"
+#include "api/refcountedbase.h"
+#include "modules/desktop_capture/desktop_capturer.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 
@@ -30,15 +30,9 @@ namespace webrtc {
 
 
 
-class FullScreenChromeWindowDetector {
+class FullScreenChromeWindowDetector : public rtc::RefCountedBase {
  public:
   FullScreenChromeWindowDetector();
-
-  void AddRef() { ++ref_count_; }
-  void Release() {
-    if (--ref_count_ == 0)
-      delete this;
-  }
 
   
   
@@ -48,11 +42,10 @@ class FullScreenChromeWindowDetector {
   
   void UpdateWindowListIfNeeded(CGWindowID original_window);
 
+ protected:
+  ~FullScreenChromeWindowDetector() override;
+
  private:
-  ~FullScreenChromeWindowDetector();
-
-  Atomic32 ref_count_;
-
   
   
   

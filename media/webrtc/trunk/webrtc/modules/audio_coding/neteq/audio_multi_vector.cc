@@ -8,14 +8,14 @@
 
 
 
-#include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
+#include "modules/audio_coding/neteq/audio_multi_vector.h"
 
 #include <assert.h>
 
 #include <algorithm>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/typedefs.h"
+#include "rtc_base/checks.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 

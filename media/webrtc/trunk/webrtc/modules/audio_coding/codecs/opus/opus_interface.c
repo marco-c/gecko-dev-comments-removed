@@ -8,17 +8,21 @@
 
 
 
-#include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
+#include "modules/audio_coding/codecs/opus/opus_interface.h"
 
-#include "webrtc/base/checks.h"
-#include "webrtc/modules/audio_coding/codecs/opus/opus_inst.h"
+#include "rtc_base/checks.h"
 
 #include <stdlib.h>
 #include <string.h>
 
 enum {
+#if WEBRTC_OPUS_SUPPORT_120MS_PTIME
+  
+  kWebRtcOpusMaxEncodeFrameSizeMs = 120,
+#else
   
   kWebRtcOpusMaxEncodeFrameSizeMs = 60,
+#endif
 
   
 
@@ -108,7 +112,7 @@ int WebRtcOpus_Encode(OpusEncInst* inst,
       return 0;
     } else {
       inst->in_dtx_mode = 1;
-      return 1;
+      return res;
     }
   }
 
@@ -118,9 +122,6 @@ int WebRtcOpus_Encode(OpusEncInst* inst,
 
 int16_t WebRtcOpus_SetBitRate(OpusEncInst* inst, int32_t rate) {
   if (inst) {
-#if defined(OPUS_COMPLEXITY) && (OPUS_COMPLEXITY != 0)
-    opus_encoder_ctl(inst->encoder, OPUS_SET_COMPLEXITY(OPUS_COMPLEXITY));
-#endif
     return opus_encoder_ctl(inst->encoder, OPUS_SET_BITRATE(rate));
   } else {
     return -1;
@@ -203,9 +204,46 @@ int16_t WebRtcOpus_DisableDtx(OpusEncInst* inst) {
   }
 }
 
+int16_t WebRtcOpus_EnableCbr(OpusEncInst* inst) {
+  if (inst) {
+    return opus_encoder_ctl(inst->encoder, OPUS_SET_VBR(0));
+  } else {
+    return -1;
+  }
+}
+
+int16_t WebRtcOpus_DisableCbr(OpusEncInst* inst) {
+  if (inst) {
+    return opus_encoder_ctl(inst->encoder, OPUS_SET_VBR(1));
+  } else {
+    return -1;
+  }
+}
+
 int16_t WebRtcOpus_SetComplexity(OpusEncInst* inst, int32_t complexity) {
   if (inst) {
     return opus_encoder_ctl(inst->encoder, OPUS_SET_COMPLEXITY(complexity));
+  } else {
+    return -1;
+  }
+}
+
+int32_t WebRtcOpus_GetBandwidth(OpusEncInst* inst) {
+  if (!inst) {
+    return -1;
+  }
+  int32_t bandwidth;
+  if (opus_encoder_ctl(inst->encoder, OPUS_GET_BANDWIDTH(&bandwidth)) == 0) {
+    return bandwidth;
+  } else {
+    return -1;
+  }
+
+}
+
+int16_t WebRtcOpus_SetBandwidth(OpusEncInst* inst, int32_t bandwidth) {
+  if (inst) {
+    return opus_encoder_ctl(inst->encoder, OPUS_SET_BANDWIDTH(bandwidth));
   } else {
     return -1;
   }
@@ -281,7 +319,11 @@ static int16_t DetermineAudioType(OpusDecInst* inst, size_t encoded_bytes) {
   
   if (encoded_bytes == 0 && inst->in_dtx_mode) {
     return 2;  
-  } else if (encoded_bytes == 1) {
+  } else if (encoded_bytes == 1 || encoded_bytes == 2) {
+    
+    
+    
+    
     inst->in_dtx_mode = 1;
     return 2;  
   } else {

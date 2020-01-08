@@ -8,15 +8,15 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_OUTPUT_AUDIO_FILE_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_OUTPUT_AUDIO_FILE_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_TOOLS_OUTPUT_AUDIO_FILE_H_
+#define MODULES_AUDIO_CODING_NETEQ_TOOLS_OUTPUT_AUDIO_FILE_H_
 
 #include <assert.h>
 #include <stdio.h>
 #include <string>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_coding/neteq/tools/audio_sink.h"
+#include "modules/audio_coding/neteq/tools/audio_sink.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 namespace test {

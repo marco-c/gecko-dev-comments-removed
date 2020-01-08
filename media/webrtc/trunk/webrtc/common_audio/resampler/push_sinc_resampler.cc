@@ -8,12 +8,12 @@
 
 
 
-#include "webrtc/common_audio/resampler/push_sinc_resampler.h"
+#include "common_audio/resampler/push_sinc_resampler.h"
 
 #include <cstring>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/common_audio/include/audio_util.h"
+#include "common_audio/include/audio_util.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

@@ -10,14 +10,14 @@
 
 
 
-#ifndef WEBRTC_MEDIA_BASE_VIDEOCOMMON_H_  
-#define WEBRTC_MEDIA_BASE_VIDEOCOMMON_H_
+#ifndef MEDIA_BASE_VIDEOCOMMON_H_
+#define MEDIA_BASE_VIDEOCOMMON_H_
 
 #include <stdint.h>
 
 #include <string>
 
-#include "webrtc/base/timeutils.h"
+#include "rtc_base/timeutils.h"
 
 namespace cricket {
 

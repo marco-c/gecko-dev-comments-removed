@@ -8,14 +8,14 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_LEGACY_DIGITAL_AGC_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_LEGACY_DIGITAL_AGC_H_
+#ifndef MODULES_AUDIO_PROCESSING_AGC_LEGACY_DIGITAL_AGC_H_
+#define MODULES_AUDIO_PROCESSING_AGC_LEGACY_DIGITAL_AGC_H_
 
 #ifdef WEBRTC_AGC_DEBUG_DUMP
 #include <stdio.h>
 #endif
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/typedefs.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "typedefs.h"  
 
 
 #define AGC_MUL32(A, B) (((B) >> 13) * (A) + (((0x00001FFF & (B)) * (A)) >> 13))

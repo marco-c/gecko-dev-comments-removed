@@ -8,14 +8,14 @@
 
 
 
-#ifndef WEBRTC_MEDIA_BASE_VIDEOSOURCEBASE_H_
-#define WEBRTC_MEDIA_BASE_VIDEOSOURCEBASE_H_
+#ifndef MEDIA_BASE_VIDEOSOURCEBASE_H_
+#define MEDIA_BASE_VIDEOSOURCEBASE_H_
 
 #include <vector>
 
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/base/thread_checker.h"
-#include "webrtc/media/base/videosourceinterface.h"
+#include "api/video/video_frame.h"
+#include "media/base/videosourceinterface.h"
+#include "rtc_base/thread_checker.h"
 
 namespace rtc {
 

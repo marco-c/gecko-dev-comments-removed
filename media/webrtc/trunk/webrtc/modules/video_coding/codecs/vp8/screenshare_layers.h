@@ -6,16 +6,16 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SCREENSHARE_LAYERS_H_
-#define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SCREENSHARE_LAYERS_H_
+#ifndef MODULES_VIDEO_CODING_CODECS_VP8_SCREENSHARE_LAYERS_H_
+#define MODULES_VIDEO_CODING_CODECS_VP8_SCREENSHARE_LAYERS_H_
 
 #include <vector>
 
-#include "webrtc/base/rate_statistics.h"
-#include "webrtc/base/timeutils.h"
-#include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
-#include "webrtc/modules/video_coding/utility/frame_dropper.h"
-#include "webrtc/typedefs.h"
+#include "modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "modules/video_coding/utility/frame_dropper.h"
+#include "rtc_base/rate_statistics.h"
+#include "rtc_base/timeutils.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
@@ -26,9 +26,6 @@ class ScreenshareLayers : public TemporalLayers {
  public:
   static const double kMaxTL0FpsReduction;
   static const double kAcceptableTargetOvershoot;
-  static const int kTl0Flags;
-  static const int kTl1Flags;
-  static const int kTl1SyncFlags;
   static const int kMaxFrameIntervalMs;
 
   ScreenshareLayers(int num_temporal_layers,
@@ -38,7 +35,7 @@ class ScreenshareLayers : public TemporalLayers {
 
   
   
-  int EncodeFlags(uint32_t timestamp) override;
+  TemporalLayers::FrameConfig UpdateLayerConfig(uint32_t timestamp) override;
 
   
   
@@ -51,14 +48,17 @@ class ScreenshareLayers : public TemporalLayers {
   bool UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) override;
 
   void PopulateCodecSpecific(bool base_layer_sync,
+                             const TemporalLayers::FrameConfig& tl_config,
                              CodecSpecificInfoVP8* vp8_info,
                              uint32_t timestamp) override;
 
-  void FrameEncoded(unsigned int size, uint32_t timestamp, int qp) override;
+  void FrameEncoded(unsigned int size, int qp) override;
 
-  int CurrentLayerId() const override;
+  uint8_t Tl0PicIdx() const override;
 
  private:
+  enum class TemporalLayerState : int { kDrop, kTl0, kTl1, kTl1Sync };
+
   bool TimeToSync(int64_t timestamp) const;
   uint32_t GetCodecTargetBitrateKbps() const;
 

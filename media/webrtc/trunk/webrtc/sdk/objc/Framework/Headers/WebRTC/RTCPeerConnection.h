@@ -123,6 +123,7 @@ RTC_EXPORT
 @property(nonatomic, readonly) RTCSignalingState signalingState;
 @property(nonatomic, readonly) RTCIceConnectionState iceConnectionState;
 @property(nonatomic, readonly) RTCIceGatheringState iceGatheringState;
+@property(nonatomic, readonly, copy) RTCConfiguration *configuration;
 
 
 
@@ -184,6 +185,15 @@ RTC_EXPORT
     (nullable void (^)(NSError * _Nullable error))completionHandler;
 
 
+
+
+
+
+- (BOOL)setBweMinBitrateBps:(nullable NSNumber *)minBitrateBps
+          currentBitrateBps:(nullable NSNumber *)currentBitrateBps
+              maxBitrateBps:(nullable NSNumber *)maxBitrateBps;
+
+
 - (BOOL)startRtcEventLogWithFilePath:(NSString *)filePath
                       maxSizeInBytes:(int64_t)maxSizeInBytes;
 - (void)stopRtcEventLog;
@@ -191,7 +201,6 @@ RTC_EXPORT
 @end
 
 @interface RTCPeerConnection (Media)
-
 
 
 

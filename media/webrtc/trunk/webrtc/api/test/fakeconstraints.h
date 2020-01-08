@@ -8,14 +8,14 @@
 
 
 
-#ifndef WEBRTC_API_TEST_FAKECONSTRAINTS_H_
-#define WEBRTC_API_TEST_FAKECONSTRAINTS_H_
+#ifndef API_TEST_FAKECONSTRAINTS_H_
+#define API_TEST_FAKECONSTRAINTS_H_
 
 #include <string>
 #include <vector>
 
-#include "webrtc/api/mediaconstraintsinterface.h"
-#include "webrtc/base/stringencode.h"
+#include "api/mediaconstraintsinterface.h"
+#include "rtc_base/stringencode.h"
 
 namespace webrtc {
 

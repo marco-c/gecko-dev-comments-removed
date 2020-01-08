@@ -8,19 +8,20 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_PACKET_BUFFER_H_
-#define WEBRTC_MODULES_VIDEO_CODING_PACKET_BUFFER_H_
+#ifndef MODULES_VIDEO_CODING_PACKET_BUFFER_H_
+#define MODULES_VIDEO_CODING_PACKET_BUFFER_H_
 
-#include <vector>
 #include <memory>
+#include <set>
+#include <vector>
 
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/thread_annotations.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/video_coding/packet.h"
-#include "webrtc/modules/video_coding/rtp_frame_reference_finder.h"
-#include "webrtc/modules/video_coding/sequence_number_util.h"
+#include "modules/include/module_common_types.h"
+#include "modules/video_coding/packet.h"
+#include "modules/video_coding/rtp_frame_reference_finder.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/numerics/sequence_number_util.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 
@@ -54,6 +55,11 @@ class PacketBuffer {
   virtual bool InsertPacket(VCMPacket* packet);
   void ClearTo(uint16_t seq_num);
   void Clear();
+  void PaddingReceived(uint16_t seq_num);
+
+  
+  rtc::Optional<int64_t> LastReceivedPacketMs() const;
+  rtc::Optional<int64_t> LastReceivedKeyframePacketMs() const;
 
   int AddRef() const;
   int Release() const;
@@ -93,16 +99,16 @@ class PacketBuffer {
   Clock* const clock_;
 
   
-  bool ExpandBufferSize() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  bool ExpandBufferSize() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   
   bool PotentialNewFrame(uint16_t seq_num) const
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   
   
   std::vector<std::unique_ptr<RtpFrameObject>> FindFrames(uint16_t seq_num)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   
   
@@ -111,36 +117,52 @@ class PacketBuffer {
   
   
   virtual VCMPacket* GetPacket(uint16_t seq_num)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   
   
   virtual void ReturnFrame(RtpFrameObject* frame);
 
+  void UpdateMissingPackets(uint16_t seq_num)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
   rtc::CriticalSection crit_;
 
   
-  size_t size_ GUARDED_BY(crit_);
+  size_t size_ RTC_GUARDED_BY(crit_);
   const size_t max_size_;
 
   
-  uint16_t first_seq_num_ GUARDED_BY(crit_);
+  uint16_t first_seq_num_ RTC_GUARDED_BY(crit_);
 
   
-  bool first_packet_received_ GUARDED_BY(crit_);
+  bool first_packet_received_ RTC_GUARDED_BY(crit_);
 
   
-  bool is_cleared_to_first_seq_num_ GUARDED_BY(crit_);
+  bool is_cleared_to_first_seq_num_ RTC_GUARDED_BY(crit_);
 
   
-  std::vector<VCMPacket> data_buffer_ GUARDED_BY(crit_);
+  std::vector<VCMPacket> data_buffer_ RTC_GUARDED_BY(crit_);
 
   
   
-  std::vector<ContinuityInfo> sequence_buffer_ GUARDED_BY(crit_);
+  std::vector<ContinuityInfo> sequence_buffer_ RTC_GUARDED_BY(crit_);
 
   
   OnReceivedFrameCallback* const received_frame_callback_;
+
+  
+  rtc::Optional<int64_t> last_received_packet_ms_ RTC_GUARDED_BY(crit_);
+  rtc::Optional<int64_t> last_received_keyframe_packet_ms_
+      RTC_GUARDED_BY(crit_);
+
+  rtc::Optional<uint16_t> newest_inserted_seq_num_ RTC_GUARDED_BY(crit_);
+  std::set<uint16_t, DescendingSeqNumComp<uint16_t>> missing_packets_
+      RTC_GUARDED_BY(crit_);
+
+  
+  
+  const bool sps_pps_idr_is_h264_keyframe_;
 
   mutable volatile int ref_count_ = 0;
 };

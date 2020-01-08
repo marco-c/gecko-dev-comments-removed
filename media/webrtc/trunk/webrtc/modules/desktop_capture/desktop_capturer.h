@@ -8,8 +8,8 @@
 
 
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURER_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURER_H_
+#ifndef MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURER_H_
+#define MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURER_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -19,9 +19,9 @@
 #include <type_traits>
 #include <vector>
 
-#include "webrtc/modules/desktop_capture/desktop_frame.h"
-#include "webrtc/modules/desktop_capture/desktop_capture_types.h"
-#include "webrtc/modules/desktop_capture/shared_memory.h"
+#include "modules/desktop_capture/desktop_frame.h"
+#include "modules/desktop_capture/desktop_capture_types.h"
+#include "modules/desktop_capture/shared_memory.h"
 
 namespace webrtc {
 
@@ -66,7 +66,6 @@ class DesktopCapturer {
   struct Source {
     
     SourceId id;
-    pid_t pid;
 
     
     
@@ -80,7 +79,6 @@ class DesktopCapturer {
   
   
   virtual void Start(Callback* callback) = 0;
-  virtual void Stop() = 0;
 
   
   
@@ -106,6 +104,10 @@ class DesktopCapturer {
 
   
   
+  
+  
+  
+  
   virtual bool GetSourceList(SourceList* sources);
 
   
@@ -118,15 +120,18 @@ class DesktopCapturer {
   virtual bool FocusOnSelectedSource();
 
   
+  
+  
+  
+  
+  virtual bool IsOccluded(const DesktopVector& pos);
+
+  
   static std::unique_ptr<DesktopCapturer> CreateWindowCapturer(
       const DesktopCaptureOptions& options);
 
   
   static std::unique_ptr<DesktopCapturer> CreateScreenCapturer(
-      const DesktopCaptureOptions& options);
-
-  
-  static std::unique_ptr<DesktopCapturer> CreateAppCapturer(
       const DesktopCaptureOptions& options);
 
  protected:
@@ -141,11 +146,6 @@ class DesktopCapturer {
   
   
   static std::unique_ptr<DesktopCapturer> CreateRawScreenCapturer(
-      const DesktopCaptureOptions& options);
-
-  
-  
-  static std::unique_ptr<DesktopCapturer> CreateRawAppCapturer(
       const DesktopCaptureOptions& options);
 };
 

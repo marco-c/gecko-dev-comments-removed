@@ -8,13 +8,13 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_UTILITY_FRAME_DROPPER_H_
-#define WEBRTC_MODULES_VIDEO_CODING_UTILITY_FRAME_DROPPER_H_
+#ifndef MODULES_VIDEO_CODING_UTILITY_FRAME_DROPPER_H_
+#define MODULES_VIDEO_CODING_UTILITY_FRAME_DROPPER_H_
 
 #include <cstddef>
 
-#include "webrtc/base/numerics/exp_filter.h"
-#include "webrtc/typedefs.h"
+#include "rtc_base/numerics/exp_filter.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
@@ -24,41 +24,36 @@ namespace webrtc {
 class FrameDropper {
  public:
   FrameDropper();
-  explicit FrameDropper(float max_time_drops);
   virtual ~FrameDropper() {}
 
-  
-  
   
   virtual void Reset();
 
   virtual void Enable(bool enable);
-  
+
   
   
   
   
   virtual bool DropFrame();
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual void Fill(size_t frameSizeBytes, bool deltaFrame);
-
-  virtual void Leak(uint32_t inputFrameRate);
 
   
   
   
   
   
-  virtual void SetRates(float bitRate, float incoming_frame_rate);
+  
+  
+  
+  virtual void Fill(size_t framesize_bytes, bool delta_frame);
+
+  virtual void Leak(uint32_t input_framerate);
+
+  
+  
+  
+  
+  virtual void SetRates(float bitrate, float incoming_frame_rate);
 
  private:
   void UpdateRatio();

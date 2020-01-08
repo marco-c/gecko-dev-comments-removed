@@ -8,27 +8,28 @@
 
 
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_H_
-#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_H_
+#ifndef MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_H_
+#define MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_H_
 
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/deprecation.h"
-#include "webrtc/base/optional.h"
-#include "webrtc/modules/include/module.h"
-#include "webrtc/modules/rtp_rtcp/include/flexfec_sender.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "api/optional.h"
+#include "common_types.h"  
+#include "modules/include/module.h"
+#include "modules/rtp_rtcp/include/flexfec_sender.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/deprecation.h"
 
 namespace webrtc {
 
 
 class OverheadObserver;
 class RateLimiter;
-class ReceiveStatistics;
+class ReceiveStatisticsProvider;
 class RemoteBitrateEstimator;
 class RtcEventLog;
 class RtpReceiver;
@@ -54,7 +55,7 @@ class RtpRtcp : public Module {
     
     Clock* clock = nullptr;
 
-    ReceiveStatistics* receive_statistics;
+    ReceiveStatisticsProvider* receive_statistics = nullptr;
 
     
     
@@ -92,6 +93,7 @@ class RtpRtcp : public Module {
     SendPacketObserver* send_packet_observer = nullptr;
     RateLimiter* retransmission_rate_limiter = nullptr;
     OverheadObserver* overhead_observer = nullptr;
+    RtpKeepAliveConfig keepalive_config;
 
    private:
     RTC_DISALLOW_COPY_AND_ASSIGN(Configuration);
@@ -105,8 +107,8 @@ class RtpRtcp : public Module {
   
   
 
-  virtual int32_t IncomingRtcpPacket(const uint8_t* incoming_packet,
-                                     size_t incoming_packet_length) = 0;
+  virtual void IncomingRtcpPacket(const uint8_t* incoming_packet,
+                                  size_t incoming_packet_length) = 0;
 
   virtual void SetRemoteSSRC(uint32_t ssrc) = 0;
 
@@ -115,20 +117,7 @@ class RtpRtcp : public Module {
   
 
   
-  
-  
-  virtual int32_t SetMaxTransferUnit(uint16_t size) {
-    SetMaxRtpPacketSize(size);
-    return 0;
-  }
-
-  
   virtual void SetMaxRtpPacketSize(size_t size) = 0;
-
-  
-  
-  
-  virtual size_t MaxPayloadSize() const = 0;
 
   
   
@@ -155,6 +144,8 @@ class RtpRtcp : public Module {
 
   virtual int32_t DeregisterSendRtpHeaderExtension(RTPExtensionType type) = 0;
 
+  virtual bool HasBweExtensions() const = 0;
+
   
   virtual uint32_t StartTimestamp() const = 0;
 
@@ -175,11 +166,6 @@ class RtpRtcp : public Module {
 
   
   virtual uint32_t SSRC() const = 0;
-
-  
-  virtual int32_t SetRID(const char *rid) = 0;
-  
-  virtual int32_t SetMID(const char *mid) = 0;
 
   
   virtual void SetSSRC(uint32_t ssrc) = 0;
@@ -252,9 +238,10 @@ class RtpRtcp : public Module {
                                 uint16_t sequence_number,
                                 int64_t capture_time_ms,
                                 bool retransmission,
-                                int probe_cluster_id) = 0;
+                                const PacedPacketInfo& pacing_info) = 0;
 
-  virtual size_t TimeToSendPadding(size_t bytes, int probe_cluster_id) = 0;
+  virtual size_t TimeToSendPadding(size_t bytes,
+                                   const PacedPacketInfo& pacing_info) = 0;
 
   
   virtual void RegisterSendChannelRtpStatisticsCallback(
@@ -316,13 +303,6 @@ class RtpRtcp : public Module {
       const std::set<RTCPPacketType>& rtcp_packet_types) = 0;
 
   
-  virtual int32_t SendRTCPReferencePictureSelection(uint64_t picture_id) = 0;
-
-  
-  
-  virtual int32_t SendRTCPSliceLossIndication(uint8_t picture_id) = 0;
-
-  
   
   virtual int32_t DataCountersRTP(size_t* bytes_sent,
                                   uint32_t* packets_sent) const = 0;
@@ -337,10 +317,6 @@ class RtpRtcp : public Module {
       bool outgoing,
       uint32_t ssrc,
       struct RtpPacketLossStats* loss_stats) const = 0;
-
-  
-  
-  virtual int32_t RemoteRTCPStat(RTCPSenderInfo* sender_info) = 0;
 
   
   
@@ -364,12 +340,11 @@ class RtpRtcp : public Module {
   virtual bool RtcpXrRrtrStatus() const = 0;
 
   
-  virtual bool REMB() const = 0;
-
-  virtual void SetREMBStatus(bool enable) = 0;
-
-  virtual void SetREMBData(uint32_t bitrate,
-                           const std::vector<uint32_t>& ssrcs) = 0;
+  
+  virtual void SetRemb(uint32_t bitrate_bps,
+                       const std::vector<uint32_t>& ssrcs) = 0;
+  
+  virtual void UnsetRemb() = 0;
 
   
   virtual bool TMMBR() const = 0;
@@ -424,12 +399,6 @@ class RtpRtcp : public Module {
   
   
   
-
-  
-  
-  
-  RTC_DEPRECATED virtual int32_t SetAudioPacketSize(
-      uint16_t packet_size_samples) = 0;
 
   
   

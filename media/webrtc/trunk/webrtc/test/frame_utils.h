@@ -7,12 +7,12 @@
 
 
 
-#ifndef WEBRTC_TEST_FRAME_UTILS_H_
-#define WEBRTC_TEST_FRAME_UTILS_H_
+#ifndef TEST_FRAME_UTILS_H_
+#define TEST_FRAME_UTILS_H_
 
 #include <stdint.h>
 
-#include "webrtc/base/scoped_ref_ptr.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 class I420Buffer;

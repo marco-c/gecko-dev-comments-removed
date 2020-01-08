@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+#import <Foundation/Foundation.h>
+
+#import <WebRTC/RTCMacros.h>
+#import <WebRTC/RTCVideoCodec.h>
+
+RTC_EXPORT
+@interface RTCVideoDecoderVP9 : NSObject
+
+
+
+
+
++ (id<RTCVideoDecoder>)vp9Decoder;
+
+@end

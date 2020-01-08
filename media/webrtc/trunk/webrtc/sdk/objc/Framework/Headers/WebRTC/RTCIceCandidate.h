@@ -32,6 +32,9 @@ RTC_EXPORT
 
 @property(nonatomic, readonly) NSString *sdp;
 
+
+@property(nonatomic, readonly, nullable) NSString *serverUrl;
+
 - (instancetype)init NS_UNAVAILABLE;
 
 

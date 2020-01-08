@@ -8,12 +8,12 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_BLOCK_MEAN_CALCULATOR_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_BLOCK_MEAN_CALCULATOR_H_
+#ifndef MODULES_AUDIO_PROCESSING_UTILITY_BLOCK_MEAN_CALCULATOR_H_
+#define MODULES_AUDIO_PROCESSING_UTILITY_BLOCK_MEAN_CALCULATOR_H_
 
 #include <stddef.h>
 
-#include "webrtc/base/constructormagic.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 

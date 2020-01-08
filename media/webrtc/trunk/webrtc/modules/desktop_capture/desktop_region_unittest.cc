@@ -8,11 +8,11 @@
 
 
 
-#include "webrtc/modules/desktop_capture/desktop_region.h"
+#include "modules/desktop_capture/desktop_region.h"
 
 #include <algorithm>
 
-#include "webrtc/test/gtest.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

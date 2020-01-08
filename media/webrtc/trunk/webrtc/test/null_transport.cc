@@ -7,7 +7,7 @@
 
 
 
-#include "webrtc/test/null_transport.h"
+#include "test/null_transport.h"
 
 namespace webrtc {
 namespace test {

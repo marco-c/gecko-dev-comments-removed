@@ -7,9 +7,9 @@
 
 
 
-#include "webrtc/modules/audio_processing/include/config.h"
+#include "modules/audio_processing/include/config.h"
 
-#include "webrtc/test/gtest.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace {

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+#if defined(WEBRTC_IOS)
+
+#import <Foundation/Foundation.h>
+
+@interface RTCUIApplicationStatusObserver : NSObject
+
++ (instancetype)sharedInstance;
++ (void)prepareForUse;
+
+- (BOOL)isApplicationActive;
+
+@end
+
+#endif  

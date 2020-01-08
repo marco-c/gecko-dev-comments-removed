@@ -7,29 +7,32 @@
 
 
 
-#ifndef WEBRTC_CALL_CALL_H_
-#define WEBRTC_CALL_CALL_H_
+#ifndef CALL_CALL_H_
+#define CALL_CALL_H_
 
+#include <algorithm>
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/base/networkroute.h"
-#include "webrtc/base/platform_file.h"
-#include "webrtc/base/socket.h"
-#include "webrtc/call/audio_receive_stream.h"
-#include "webrtc/call/audio_send_stream.h"
-#include "webrtc/call/audio_state.h"
-#include "webrtc/call/flexfec_receive_stream.h"
-#include "webrtc/common_types.h"
-#include "webrtc/video_receive_stream.h"
-#include "webrtc/video_send_stream.h"
+#include "api/rtcerror.h"
+#include "call/audio_receive_stream.h"
+#include "call/audio_send_stream.h"
+#include "call/audio_state.h"
+#include "call/flexfec_receive_stream.h"
+#include "call/rtp_transport_controller_send_interface.h"
+#include "call/video_receive_stream.h"
+#include "call/video_send_stream.h"
+#include "common_types.h"  
+#include "rtc_base/bitrateallocationstrategy.h"
+#include "rtc_base/networkroute.h"
+#include "rtc_base/platform_file.h"
+#include "rtc_base/socket.h"
 
 namespace webrtc {
 
 class AudioProcessing;
 class RtcEventLog;
-
-const char* Version();
 
 enum class MediaType {
   ANY,
@@ -37,6 +40,19 @@ enum class MediaType {
   VIDEO,
   DATA
 };
+
+
+
+template <typename T>
+static T MinPositive(T a, T b) {
+  if (a <= 0) {
+    return b;
+  }
+  if (b <= 0) {
+    return a;
+  }
+  return std::min(a, b);
+}
 
 class PacketReceiver {
  public:
@@ -65,7 +81,7 @@ class Call {
       RTC_DCHECK(event_log);
     }
 
-    static const int kDefaultStartBitrateBps;
+    static constexpr int kDefaultStartBitrateBps = 300000;
 
     
     
@@ -74,6 +90,17 @@ class Call {
       int start_bitrate_bps = kDefaultStartBitrateBps;
       int max_bitrate_bps = -1;
     } bitrate_config;
+
+    
+    
+    
+    
+    
+    struct BitrateConfigMask {
+      rtc::Optional<int> min_bitrate_bps;
+      rtc::Optional<int> start_bitrate_bps;
+      rtc::Optional<int> max_bitrate_bps;
+    };
 
     
     
@@ -100,6 +127,11 @@ class Call {
 
   static Call* Create(const Call::Config& config);
 
+  
+  static Call* Create(
+      const Call::Config& config,
+      std::unique_ptr<RtpTransportControllerSendInterface> transport_send);
+
   virtual AudioSendStream* CreateAudioSendStream(
       const AudioSendStream::Config& config) = 0;
   virtual void DestroyAudioSendStream(AudioSendStream* send_stream) = 0;
@@ -119,6 +151,9 @@ class Call {
   virtual void DestroyVideoReceiveStream(
       VideoReceiveStream* receive_stream) = 0;
 
+  
+  
+  
   virtual FlexfecReceiveStream* CreateFlexfecReceiveStream(
       const FlexfecReceiveStream::Config& config) = 0;
   virtual void DestroyFlexfecReceiveStream(
@@ -138,8 +173,20 @@ class Call {
   
   
   
+  
   virtual void SetBitrateConfig(
       const Config::BitrateConfig& bitrate_config) = 0;
+
+  
+  
+  
+  
+  virtual void SetBitrateConfigMask(
+      const Config::BitrateConfigMask& bitrate_mask) = 0;
+
+  virtual void SetBitrateAllocationStrategy(
+      std::unique_ptr<rtc::BitrateAllocationStrategy>
+          bitrate_allocation_strategy) = 0;
 
   
   
@@ -156,8 +203,6 @@ class Call {
       const rtc::NetworkRoute& network_route) = 0;
 
   virtual void OnSentPacket(const rtc::SentPacket& sent_packet) = 0;
-
-  virtual VoiceEngine* voice_engine() = 0;
 
   virtual ~Call() {}
 };

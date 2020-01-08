@@ -8,17 +8,17 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_VAD_VOICE_ACTIVITY_DETECTOR_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_VAD_VOICE_ACTIVITY_DETECTOR_H_
+#ifndef MODULES_AUDIO_PROCESSING_VAD_VOICE_ACTIVITY_DETECTOR_H_
+#define MODULES_AUDIO_PROCESSING_VAD_VOICE_ACTIVITY_DETECTOR_H_
 
 #include <memory>
 #include <vector>
 
-#include "webrtc/common_audio/resampler/include/resampler.h"
-#include "webrtc/modules/audio_processing/vad/vad_audio_proc.h"
-#include "webrtc/modules/audio_processing/vad/common.h"
-#include "webrtc/modules/audio_processing/vad/pitch_based_vad.h"
-#include "webrtc/modules/audio_processing/vad/standalone_vad.h"
+#include "common_audio/resampler/include/resampler.h"
+#include "modules/audio_processing/vad/vad_audio_proc.h"
+#include "modules/audio_processing/vad/common.h"
+#include "modules/audio_processing/vad/pitch_based_vad.h"
+#include "modules/audio_processing/vad/standalone_vad.h"
 
 namespace webrtc {
 
@@ -29,8 +29,6 @@ class VoiceActivityDetector {
   VoiceActivityDetector();
   ~VoiceActivityDetector();
 
-  
-  
   
   void ProcessChunk(const int16_t* audio, size_t length, int sample_rate_hz);
 

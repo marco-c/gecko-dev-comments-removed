@@ -21,13 +21,13 @@
 
 
 
-#include "webrtc/modules/audio_processing/utility/ooura_fft.h"
+#include "modules/audio_processing//utility/ooura_fft.h"
 
 #include <math.h>
 
-#include "webrtc/modules/audio_processing/utility/ooura_fft_tables_common.h"
-#include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
-#include "webrtc/typedefs.h"
+#include "modules/audio_processing/utility/ooura_fft_tables_common.h"
+#include "system_wrappers/include/cpu_features_wrapper.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 

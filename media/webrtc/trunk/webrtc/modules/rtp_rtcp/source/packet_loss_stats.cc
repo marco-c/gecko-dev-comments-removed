@@ -8,11 +8,11 @@
 
 
 
-#include "webrtc/modules/rtp_rtcp/source/packet_loss_stats.h"
+#include "modules/rtp_rtcp/source/packet_loss_stats.h"
 
 #include <vector>
 
-#include "webrtc/base/checks.h"
+#include "rtc_base/checks.h"
 
 
 

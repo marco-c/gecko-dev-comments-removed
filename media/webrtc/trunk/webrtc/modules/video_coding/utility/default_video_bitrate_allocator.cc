@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/video_coding/utility/default_video_bitrate_allocator.h"
+#include "modules/video_coding/utility/default_video_bitrate_allocator.h"
 
 #include <stdint.h>
 
@@ -35,7 +35,6 @@ BitrateAllocation DefaultVideoBitrateAllocator::GetAllocation(
   } else {
     allocation.SetBitrate(0, 0, total_bitrate_bps);
   }
-
   return allocation;
 }
 

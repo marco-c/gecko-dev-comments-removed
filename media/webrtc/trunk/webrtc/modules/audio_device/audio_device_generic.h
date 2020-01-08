@@ -8,11 +8,11 @@
 
 
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_GENERIC_H
-#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_GENERIC_H
+#ifndef AUDIO_DEVICE_AUDIO_DEVICE_GENERIC_H_
+#define AUDIO_DEVICE_AUDIO_DEVICE_GENERIC_H_
 
-#include "webrtc/modules/audio_device/audio_device_buffer.h"
-#include "webrtc/modules/audio_device/include/audio_device.h"
+#include "modules/audio_device/audio_device_buffer.h"
+#include "modules/audio_device/include/audio_device.h"
 
 namespace webrtc {
 
@@ -76,12 +76,6 @@ class AudioDeviceGeneric {
   virtual bool AGC() const = 0;
 
   
-  virtual int32_t SetWaveOutVolume(uint16_t volumeLeft,
-                                   uint16_t volumeRight) = 0;
-  virtual int32_t WaveOutVolume(uint16_t& volumeLeft,
-                                uint16_t& volumeRight) const = 0;
-
-  
   virtual int32_t InitSpeaker() = 0;
   virtual bool SpeakerIsInitialized() const = 0;
   virtual int32_t InitMicrophone() = 0;
@@ -93,7 +87,6 @@ class AudioDeviceGeneric {
   virtual int32_t SpeakerVolume(uint32_t& volume) const = 0;
   virtual int32_t MaxSpeakerVolume(uint32_t& maxVolume) const = 0;
   virtual int32_t MinSpeakerVolume(uint32_t& minVolume) const = 0;
-  virtual int32_t SpeakerVolumeStepSize(uint16_t& stepSize) const = 0;
 
   
   virtual int32_t MicrophoneVolumeIsAvailable(bool& available) = 0;
@@ -101,7 +94,6 @@ class AudioDeviceGeneric {
   virtual int32_t MicrophoneVolume(uint32_t& volume) const = 0;
   virtual int32_t MaxMicrophoneVolume(uint32_t& maxVolume) const = 0;
   virtual int32_t MinMicrophoneVolume(uint32_t& minVolume) const = 0;
-  virtual int32_t MicrophoneVolumeStepSize(uint16_t& stepSize) const = 0;
 
   
   virtual int32_t SpeakerMuteIsAvailable(bool& available) = 0;
@@ -114,11 +106,6 @@ class AudioDeviceGeneric {
   virtual int32_t MicrophoneMute(bool& enabled) const = 0;
 
   
-  virtual int32_t MicrophoneBoostIsAvailable(bool& available) = 0;
-  virtual int32_t SetMicrophoneBoost(bool enable) = 0;
-  virtual int32_t MicrophoneBoost(bool& enabled) const = 0;
-
-  
   virtual int32_t StereoPlayoutIsAvailable(bool& available) = 0;
   virtual int32_t SetStereoPlayout(bool enable) = 0;
   virtual int32_t StereoPlayout(bool& enabled) const = 0;
@@ -127,32 +114,7 @@ class AudioDeviceGeneric {
   virtual int32_t StereoRecording(bool& enabled) const = 0;
 
   
-  virtual int32_t SetPlayoutBuffer(const AudioDeviceModule::BufferType type,
-                                   uint16_t sizeMS = 0) = 0;
-  virtual int32_t PlayoutBuffer(AudioDeviceModule::BufferType& type,
-                                uint16_t& sizeMS) const = 0;
   virtual int32_t PlayoutDelay(uint16_t& delayMS) const = 0;
-  virtual int32_t RecordingDelay(uint16_t& delayMS) const = 0;
-
-  
-  virtual int32_t CPULoad(uint16_t& load) const = 0;
-
-  
-  virtual int32_t SetRecordingSampleRate(const uint32_t samplesPerSec);
-  virtual int32_t SetPlayoutSampleRate(const uint32_t samplesPerSec);
-
-  
-  virtual int32_t SetLoudspeakerStatus(bool enable);
-  virtual int32_t GetLoudspeakerStatus(bool& enable) const;
-
-  
-  virtual int32_t ResetAudioDevice();
-
-  
-  virtual int32_t SoundDeviceControl(unsigned int par1 = 0,
-                                     unsigned int par2 = 0,
-                                     unsigned int par3 = 0,
-                                     unsigned int par4 = 0);
 
   
   virtual bool BuiltInAECIsAvailable() const;
@@ -170,15 +132,6 @@ class AudioDeviceGeneric {
   virtual int GetPlayoutAudioParameters(AudioParameters* params) const;
   virtual int GetRecordAudioParameters(AudioParameters* params) const;
 #endif  
-
-  virtual bool PlayoutWarning() const = 0;
-  virtual bool PlayoutError() const = 0;
-  virtual bool RecordingWarning() const = 0;
-  virtual bool RecordingError() const = 0;
-  virtual void ClearPlayoutWarning() = 0;
-  virtual void ClearPlayoutError() = 0;
-  virtual void ClearRecordingWarning() = 0;
-  virtual void ClearRecordingError() = 0;
 
   virtual void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) = 0;
 

@@ -8,40 +8,42 @@
 
 
 
-#include "webrtc/common_audio/smoothing_filter.h"
+#include "common_audio/smoothing_filter.h"
 
 #include <cmath>
 
+#include "rtc_base/timeutils.h"
+
 namespace webrtc {
 
-SmoothingFilterImpl::SmoothingFilterImpl(int init_time_ms, const Clock* clock)
+SmoothingFilterImpl::SmoothingFilterImpl(int init_time_ms)
     : init_time_ms_(init_time_ms),
       
       
       
       
-      init_factor_(init_time_ms_ == 0 ? 0.0f : powf(init_time_ms_,
-                                                    -1.0f / init_time_ms_)),
+      init_factor_(init_time_ms_ == 0
+                       ? 0.0f
+                       : powf(init_time_ms_, -1.0f / init_time_ms_)),
       
       
       init_const_(init_time_ms_ == 0
                       ? 0.0f
                       : init_time_ms_ -
-                            powf(init_time_ms_, 1.0f - 1.0f / init_time_ms_)),
-      clock_(clock) {
+                            powf(init_time_ms_, 1.0f - 1.0f / init_time_ms_)) {
   UpdateAlpha(init_time_ms_);
 }
 
 SmoothingFilterImpl::~SmoothingFilterImpl() = default;
 
 void SmoothingFilterImpl::AddSample(float sample) {
-  const int64_t now_ms = clock_->TimeInMilliseconds();
+  const int64_t now_ms = rtc::TimeMillis();
 
   if (!init_end_time_ms_) {
     
     
     state_ = last_sample_ = sample;
-    init_end_time_ms_ = rtc::Optional<int64_t>(now_ms + init_time_ms_);
+    init_end_time_ms_ = now_ms + init_time_ms_;
     last_state_time_ms_ = now_ms;
     return;
   }
@@ -53,10 +55,10 @@ void SmoothingFilterImpl::AddSample(float sample) {
 rtc::Optional<float> SmoothingFilterImpl::GetAverage() {
   if (!init_end_time_ms_) {
     
-    return rtc::Optional<float>();
+    return rtc::nullopt;
   }
-  ExtrapolateLastSample(clock_->TimeInMilliseconds());
-  return rtc::Optional<float>(state_);
+  ExtrapolateLastSample(rtc::TimeMillis());
+  return state_;
 }
 
 bool SmoothingFilterImpl::SetTimeConstantMs(int time_constant_ms) {

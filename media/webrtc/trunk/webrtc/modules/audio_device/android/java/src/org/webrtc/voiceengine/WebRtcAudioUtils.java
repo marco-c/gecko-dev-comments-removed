@@ -10,16 +10,14 @@
 
 package org.webrtc.voiceengine;
 
-import android.util.Log;
-
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Process;
-
 import java.lang.Thread;
 import java.util.Arrays;
 import java.util.List;
+import org.webrtc.Logging;
 
 public final class WebRtcAudioUtils {
   private static final String TAG = "WebRtcAudioUtils";
@@ -29,19 +27,23 @@ public final class WebRtcAudioUtils {
   
   private static final String[] BLACKLISTED_OPEN_SL_ES_MODELS = new String[] {
       
+      
+      
+      
   };
 
   
   
   
   private static final String[] BLACKLISTED_AEC_MODELS = new String[] {
-      "D6503", 
-      "ONE A2005", 
-      "MotoG3", 
+      
+      
+      
   };
   private static final String[] BLACKLISTED_NS_MODELS = new String[] {
-      "Nexus 10", "Nexus 9",
-      "ONE A2005", 
+    
+    
+    
   };
 
   
@@ -58,30 +60,46 @@ public final class WebRtcAudioUtils {
 
   
   
+  
+  @SuppressWarnings("NoSynchronizedMethodCheck")
   public static synchronized void setWebRtcBasedAcousticEchoCanceler(boolean enable) {
     useWebRtcBasedAcousticEchoCanceler = enable;
   }
+
+    
+  @SuppressWarnings("NoSynchronizedMethodCheck")
   public static synchronized void setWebRtcBasedNoiseSuppressor(boolean enable) {
     useWebRtcBasedNoiseSuppressor = enable;
   }
+
+  
+  @SuppressWarnings("NoSynchronizedMethodCheck")
   public static synchronized void setWebRtcBasedAutomaticGainControl(boolean enable) {
     
-    Log.w(TAG, "setWebRtcBasedAutomaticGainControl() is deprecated");
+    Logging.w(TAG, "setWebRtcBasedAutomaticGainControl() is deprecated");
   }
 
+  
+  @SuppressWarnings("NoSynchronizedMethodCheck")
   public static synchronized boolean useWebRtcBasedAcousticEchoCanceler() {
     if (useWebRtcBasedAcousticEchoCanceler) {
-      Log.w(TAG, "Overriding default behavior; now using WebRTC AEC!");
+      Logging.w(TAG, "Overriding default behavior; now using WebRTC AEC!");
     }
     return useWebRtcBasedAcousticEchoCanceler;
   }
+
+  
+  @SuppressWarnings("NoSynchronizedMethodCheck")
   public static synchronized boolean useWebRtcBasedNoiseSuppressor() {
     if (useWebRtcBasedNoiseSuppressor) {
-      Log.w(TAG, "Overriding default behavior; now using WebRTC NS!");
+      Logging.w(TAG, "Overriding default behavior; now using WebRTC NS!");
     }
     return useWebRtcBasedNoiseSuppressor;
   }
+
   
+  
+  @SuppressWarnings("NoSynchronizedMethodCheck")
   public static synchronized boolean useWebRtcBasedAutomaticGainControl() {
     
     return true;
@@ -108,15 +126,21 @@ public final class WebRtcAudioUtils {
   
   
   
+  
+  @SuppressWarnings("NoSynchronizedMethodCheck")
   public static synchronized void setDefaultSampleRateHz(int sampleRateHz) {
     isDefaultSampleRateOverridden = true;
     defaultSampleRateHz = sampleRateHz;
   }
 
+  
+  @SuppressWarnings("NoSynchronizedMethodCheck")
   public static synchronized boolean isDefaultSampleRateOverridden() {
     return isDefaultSampleRateOverridden;
   }
 
+  
+  @SuppressWarnings("NoSynchronizedMethodCheck")
   public static synchronized int getDefaultSampleRateHz() {
     return defaultSampleRateHz;
   }
@@ -127,16 +151,6 @@ public final class WebRtcAudioUtils {
 
   public static List<String> getBlackListedModelsForNsUsage() {
     return Arrays.asList(WebRtcAudioUtils.BLACKLISTED_NS_MODELS);
-  }
-
-  public static boolean runningOnGingerBreadOrHigher() {
-    
-    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD;
-  }
-
-  public static boolean runningOnJellyBeanOrHigher() {
-    
-    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN;
   }
 
   public static boolean runningOnJellyBeanMR1OrHigher() {
@@ -161,10 +175,7 @@ public final class WebRtcAudioUtils {
 
   public static boolean runningOnNougatOrHigher() {
     
-
-
-
-    return false;
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.N;
   }
 
   
@@ -186,7 +197,7 @@ public final class WebRtcAudioUtils {
 
   
   public static void logDeviceInfo(String tag) {
-    Log.d(tag, "Android SDK: " + Build.VERSION.SDK_INT + ", "
+    Logging.d(tag, "Android SDK: " + Build.VERSION.SDK_INT + ", "
             + "Release: " + Build.VERSION.RELEASE + ", "
             + "Brand: " + Build.BRAND + ", "
             + "Device: " + Build.DEVICE + ", "
@@ -195,11 +206,5 @@ public final class WebRtcAudioUtils {
             + "Manufacturer: " + Build.MANUFACTURER + ", "
             + "Model: " + Build.MODEL + ", "
             + "Product: " + Build.PRODUCT);
-  }
-
-  
-  public static boolean hasPermission(Context context, String permission) {
-    return context.checkPermission(permission, Process.myPid(), Process.myUid())
-        == PackageManager.PERMISSION_GRANTED;
   }
 }

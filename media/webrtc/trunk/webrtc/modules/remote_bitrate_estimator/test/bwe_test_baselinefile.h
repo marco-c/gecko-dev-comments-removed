@@ -8,11 +8,11 @@
 
 
 
-#ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_BASELINEFILE_H_
-#define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_BASELINEFILE_H_
+#ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_BASELINEFILE_H_
+#define MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_BASELINEFILE_H_
 
 #include <string>
-#include "webrtc/modules/include/module_common_types.h"
+#include "modules/include/module_common_types.h"
 
 namespace webrtc {
 namespace testing {

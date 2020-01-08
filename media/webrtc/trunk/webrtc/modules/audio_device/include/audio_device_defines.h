@@ -8,12 +8,12 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_DEFINES_H_
-#define WEBRTC_MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_DEFINES_H_
+#ifndef MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_DEFINES_H_
+#define MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_DEFINES_H_
 
 #include <stddef.h>
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
@@ -23,22 +23,6 @@ static const int kAdmMaxGuidSize = 128;
 
 static const int kAdmMinPlayoutBufferSizeMs = 10;
 static const int kAdmMaxPlayoutBufferSizeMs = 250;
-
-
-
-
-
-class AudioDeviceObserver {
- public:
-  enum ErrorCode { kRecordingError = 0, kPlayoutError = 1 };
-  enum WarningCode { kRecordingWarning = 0, kPlayoutWarning = 1 };
-
-  virtual void OnErrorIsReported(const ErrorCode error) = 0;
-  virtual void OnWarningIsReported(const WarningCode warning) = 0;
-
- protected:
-  virtual ~AudioDeviceObserver() {}
-};
 
 
 

@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/audio_coding/neteq/post_decode_vad.h"
+#include "modules/audio_coding/neteq/post_decode_vad.h"
 
 namespace webrtc {
 

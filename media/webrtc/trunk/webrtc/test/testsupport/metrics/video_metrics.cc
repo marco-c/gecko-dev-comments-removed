@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/test/testsupport/metrics/video_metrics.h"
+#include "test/testsupport/metrics/video_metrics.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -16,10 +16,10 @@
 #include <algorithm>  
 #include <memory>
 
-#include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/test/frame_utils.h"
+#include "api/video/i420_buffer.h"
+#include "api/video/video_frame.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "test/frame_utils.h"
 #include "libyuv/convert.h"
 
 namespace webrtc {
@@ -38,8 +38,8 @@ enum VideoMetricsType { kPSNR, kSSIM, kBoth };
 
 
 void CalculateFrame(VideoMetricsType video_metrics_type,
-                    const VideoFrameBuffer& ref,
-                    const VideoFrameBuffer& test,
+                    const I420BufferInterface& ref,
+                    const I420BufferInterface& test,
                     int frame_number,
                     QualityMetricsResult* result) {
   FrameResult frame_result = {0, 0};

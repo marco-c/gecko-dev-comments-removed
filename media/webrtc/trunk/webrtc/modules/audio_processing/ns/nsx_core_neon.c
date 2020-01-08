@@ -8,11 +8,11 @@
 
 
 
-#include "webrtc/modules/audio_processing/ns/nsx_core.h"
+#include "modules/audio_processing/ns/nsx_core.h"
 
 #include <arm_neon.h>
 
-#include "webrtc/base/checks.h"
+#include "rtc_base/checks.h"
 
 
 const int16_t WebRtcNsx_kLogTable[9] = {

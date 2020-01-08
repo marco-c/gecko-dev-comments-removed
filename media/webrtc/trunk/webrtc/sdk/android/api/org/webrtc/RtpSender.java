@@ -17,18 +17,32 @@ public class RtpSender {
   private MediaStreamTrack cachedTrack;
   private boolean ownsTrack = true;
 
+  private final DtmfSender dtmfSender;
+
   public RtpSender(long nativeRtpSender) {
     this.nativeRtpSender = nativeRtpSender;
     long track = nativeGetTrack(nativeRtpSender);
     
-    cachedTrack = (track == 0) ? null : new MediaStreamTrack(track);
+    cachedTrack = (track != 0) ? new MediaStreamTrack(track) : null;
+
+    long nativeDtmfSender = nativeGetDtmfSender(nativeRtpSender);
+    dtmfSender = (nativeDtmfSender != 0) ? new DtmfSender(nativeDtmfSender) : null;
   }
 
   
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
   public boolean setTrack(MediaStreamTrack track, boolean takeOwnership) {
     if (!nativeSetTrack(nativeRtpSender, (track == null) ? 0 : track.nativeTrack)) {
       return false;
@@ -57,11 +71,18 @@ public class RtpSender {
     return nativeId(nativeRtpSender);
   }
 
+  public DtmfSender dtmf() {
+    return dtmfSender;
+  }
+
   public void dispose() {
+    if (dtmfSender != null) {
+      dtmfSender.dispose();
+    }
     if (cachedTrack != null && ownsTrack) {
       cachedTrack.dispose();
     }
-    free(nativeRtpSender);
+    JniCommon.nativeReleaseRef(nativeRtpSender);
   }
 
   private static native boolean nativeSetTrack(long nativeRtpSender, long nativeTrack);
@@ -70,11 +91,13 @@ public class RtpSender {
   
   private static native long nativeGetTrack(long nativeRtpSender);
 
+  
+  
+  private static native long nativeGetDtmfSender(long nativeRtpSender);
+
   private static native boolean nativeSetParameters(long nativeRtpSender, RtpParameters parameters);
 
   private static native RtpParameters nativeGetParameters(long nativeRtpSender);
 
   private static native String nativeId(long nativeRtpSender);
-
-  private static native void free(long nativeRtpSender);
 };

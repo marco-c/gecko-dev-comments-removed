@@ -9,14 +9,15 @@
 
 
 #include <stdio.h>
+#include <algorithm>
+#include <string>
 
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/common.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/media/base/streamparams.h"
-#include "webrtc/media/engine/constants.h"
-#include "webrtc/media/engine/simulcast.h"
-#include "webrtc/system_wrappers/include/field_trial.h"
+#include "media/base/streamparams.h"
+#include "media/engine/constants.h"
+#include "media/engine/simulcast.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/logging.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace cricket {
 
@@ -50,7 +51,7 @@ const SimulcastFormat kSimulcastFormats[] = {
   {0, 0, 1, 200, 150, 30}
 };
 
-const int kDefaultScreenshareSimulcastStreams = 2;
+const int kMaxScreenshareSimulcastStreams = 2;
 
 
 
@@ -148,14 +149,14 @@ int FindSimulcastMinBitrateBps(int width, int height) {
 bool SlotSimulcastMaxResolution(size_t max_layers, int* width, int* height) {
   int index = FindSimulcastFormatIndex(*width, *height, max_layers);
   if (index == -1) {
-    LOG(LS_ERROR) << "SlotSimulcastMaxResolution";
+    RTC_LOG(LS_ERROR) << "SlotSimulcastMaxResolution";
     return false;
   }
 
   *width = kSimulcastFormats[index].width;
   *height = kSimulcastFormats[index].height;
-  LOG(LS_INFO) << "SlotSimulcastMaxResolution to width:" << *width
-               << " height:" << *height;
+  RTC_LOG(LS_INFO) << "SlotSimulcastMaxResolution to width:" << *width
+                   << " height:" << *height;
   return true;
 }
 
@@ -177,8 +178,12 @@ std::vector<webrtc::VideoStream> GetSimulcastConfig(size_t max_streams,
                                                     bool is_screencast) {
   size_t num_simulcast_layers;
   if (is_screencast) {
-    num_simulcast_layers =
-        UseSimulcastScreenshare() ? kDefaultScreenshareSimulcastStreams : 1;
+    if (UseSimulcastScreenshare()) {
+      num_simulcast_layers =
+          std::min<int>(max_streams, kMaxScreenshareSimulcastStreams);
+    } else {
+      num_simulcast_layers = 1;
+    }
   } else {
     num_simulcast_layers = FindSimulcastMaxLayers(width, height);
   }
@@ -195,33 +200,60 @@ std::vector<webrtc::VideoStream> GetSimulcastConfig(size_t max_streams,
   std::vector<webrtc::VideoStream> streams;
   streams.resize(num_simulcast_layers);
 
-  if (!is_screencast) {
+  if (is_screencast) {
+    ScreenshareLayerConfig config = ScreenshareLayerConfig::GetDefault();
+    
+    
+    
+    streams[0].width = width;
+    streams[0].height = height;
+    streams[0].max_qp = max_qp;
+    streams[0].max_framerate = 5;
+    streams[0].min_bitrate_bps = kMinVideoBitrateBps;
+    streams[0].target_bitrate_bps = config.tl0_bitrate_kbps * 1000;
+    streams[0].max_bitrate_bps = config.tl1_bitrate_kbps * 1000;
+    streams[0].temporal_layer_thresholds_bps.clear();
+    streams[0].temporal_layer_thresholds_bps.push_back(config.tl0_bitrate_kbps *
+                                                       1000);
+
+    
+    
+    
+    if (num_simulcast_layers == kMaxScreenshareSimulcastStreams) {
+      
+      
+      
+      
+      
+      
+      int max_bitrate_bps = 2 * ((streams[0].target_bitrate_bps * 10) / 4);
+      
+      max_bitrate_bps = std::min<int>(
+          max_bitrate_bps, FindSimulcastMaxBitrateBps(width, height));
+
+      streams[1].width = width;
+      streams[1].height = height;
+      streams[1].max_qp = max_qp;
+      streams[1].max_framerate = max_framerate;
+      
+      streams[1].temporal_layer_thresholds_bps.resize(2);
+      streams[1].min_bitrate_bps = streams[0].target_bitrate_bps * 2;
+      streams[1].target_bitrate_bps = max_bitrate_bps;
+      streams[1].max_bitrate_bps = max_bitrate_bps;
+    }
+  } else {
     
     width = NormalizeSimulcastSize(width, num_simulcast_layers);
     height = NormalizeSimulcastSize(height, num_simulcast_layers);
-  }
 
-  
-  
-  
-  for (size_t s = num_simulcast_layers - 1;; --s) {
-    streams[s].width = width;
-    streams[s].height = height;
     
-    streams[s].max_qp = max_qp;
-    if (is_screencast && s == 0) {
-      ScreenshareLayerConfig config = ScreenshareLayerConfig::GetDefault();
+    
+    
+    for (size_t s = num_simulcast_layers - 1;; --s) {
+      streams[s].width = width;
+      streams[s].height = height;
       
-      
-      
-      streams[s].min_bitrate_bps = kMinVideoBitrateKbps * 1000;
-      streams[s].target_bitrate_bps = config.tl0_bitrate_kbps * 1000;
-      streams[s].max_bitrate_bps = config.tl1_bitrate_kbps * 1000;
-      streams[s].temporal_layer_thresholds_bps.clear();
-      streams[s].temporal_layer_thresholds_bps.push_back(
-          config.tl0_bitrate_kbps * 1000);
-      streams[s].max_framerate = 5;
-    } else {
+      streams[s].max_qp = max_qp;
       streams[s].temporal_layer_thresholds_bps.resize(
           kDefaultConferenceNumberOfTemporalLayers[s] - 1);
       streams[s].max_bitrate_bps = FindSimulcastMaxBitrateBps(width, height);
@@ -229,20 +261,19 @@ std::vector<webrtc::VideoStream> GetSimulcastConfig(size_t max_streams,
           FindSimulcastTargetBitrateBps(width, height);
       streams[s].min_bitrate_bps = FindSimulcastMinBitrateBps(width, height);
       streams[s].max_framerate = max_framerate;
-    }
 
-    if (!is_screencast) {
       width /= 2;
       height /= 2;
-    }
-    if (s == 0)
-      break;
-  }
 
-  
-  int bitrate_left_bps = max_bitrate_bps - GetTotalMaxBitrateBps(streams);
-  if (bitrate_left_bps > 0) {
-    streams.back().max_bitrate_bps += bitrate_left_bps;
+      if (s == 0)
+        break;
+    }
+
+    
+    int bitrate_left_bps = max_bitrate_bps - GetTotalMaxBitrateBps(streams);
+    if (bitrate_left_bps > 0) {
+      streams.back().max_bitrate_bps += bitrate_left_bps;
+    }
   }
 
   return streams;
@@ -269,8 +300,9 @@ ScreenshareLayerConfig ScreenshareLayerConfig::GetDefault() {
   ScreenshareLayerConfig config(kScreenshareDefaultTl0BitrateKbps,
                                 kScreenshareDefaultTl1BitrateKbps);
   if (!group.empty() && !FromFieldTrialGroup(group, &config)) {
-    LOG(LS_WARNING) << "Unable to parse WebRTC-ScreenshareLayerRates"
-                       " field trial group: '" << group << "'.";
+    RTC_LOG(LS_WARNING) << "Unable to parse WebRTC-ScreenshareLayerRates"
+                           " field trial group: '"
+                        << group << "'.";
   }
   return config;
 }
@@ -300,8 +332,7 @@ bool ScreenshareLayerConfig::FromFieldTrialGroup(
 }
 
 bool UseSimulcastScreenshare() {
-  return webrtc::field_trial::FindFullName(
-             kSimulcastScreenshareFieldTrialName) == "Enabled";
+  return webrtc::field_trial::IsEnabled(kSimulcastScreenshareFieldTrialName);
 }
 
 }  

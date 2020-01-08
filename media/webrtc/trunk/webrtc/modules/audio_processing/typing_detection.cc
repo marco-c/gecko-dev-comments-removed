@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/audio_processing/typing_detection.h"
+#include "modules/audio_processing/typing_detection.h"
 
 namespace webrtc {
 

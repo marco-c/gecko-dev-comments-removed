@@ -8,13 +8,13 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_H264_SPROP_PARAMETER_SETS_H_
-#define WEBRTC_MODULES_VIDEO_CODING_H264_SPROP_PARAMETER_SETS_H_
+#ifndef MODULES_VIDEO_CODING_H264_SPROP_PARAMETER_SETS_H_
+#define MODULES_VIDEO_CODING_H264_SPROP_PARAMETER_SETS_H_
 
 #include <string>
 #include <vector>
 
-#include "webrtc/base/common.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 

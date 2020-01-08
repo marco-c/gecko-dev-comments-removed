@@ -8,17 +8,21 @@
 
 
 
-#ifndef WEBRTC_MEDIA_BASE_VIDEOSOURCEINTERFACE_H_
-#define WEBRTC_MEDIA_BASE_VIDEOSOURCEINTERFACE_H_
+#ifndef MEDIA_BASE_VIDEOSOURCEINTERFACE_H_
+#define MEDIA_BASE_VIDEOSOURCEINTERFACE_H_
 
-#include "webrtc/media/base/videosinkinterface.h"
-#include "webrtc/base/optional.h"
+#include <limits>
+
+#include "api/optional.h"
+#include "media/base/videosinkinterface.h"
 
 namespace rtc {
 
 
 
 struct VideoSinkWants {
+  VideoSinkWants();
+  ~VideoSinkWants();
   
   
   bool rotation_applied = false;
@@ -27,13 +31,15 @@ struct VideoSinkWants {
   bool black_frames = false;
 
   
-  rtc::Optional<int> max_pixel_count;
+  int max_pixel_count = std::numeric_limits<int>::max();
   
   
   
   
   
-  rtc::Optional<int> max_pixel_count_step_up;
+  rtc::Optional<int> target_pixel_count;
+  
+  int max_framerate_fps = std::numeric_limits<int>::max();
 };
 
 template <typename VideoFrameT>

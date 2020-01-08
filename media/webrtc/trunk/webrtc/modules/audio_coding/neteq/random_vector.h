@@ -8,13 +8,13 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_RANDOM_VECTOR_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_RANDOM_VECTOR_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_RANDOM_VECTOR_H_
+#define MODULES_AUDIO_CODING_NETEQ_RANDOM_VECTOR_H_
 
 #include <string.h>  
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/typedefs.h"
+#include "rtc_base/constructormagic.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 

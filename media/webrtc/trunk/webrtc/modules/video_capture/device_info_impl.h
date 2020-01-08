@@ -8,14 +8,13 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_DEVICE_INFO_IMPL_H_
-#define WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_DEVICE_INFO_IMPL_H_
+#ifndef MODULES_VIDEO_CAPTURE_MAIN_SOURCE_DEVICE_INFO_IMPL_H_
+#define MODULES_VIDEO_CAPTURE_MAIN_SOURCE_DEVICE_INFO_IMPL_H_
 
 #include <vector>
 
-#include "webrtc/modules/video_capture/video_capture.h"
-#include "webrtc/modules/video_capture/video_capture_delay.h"
-#include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
+#include "modules/video_capture/video_capture.h"
+#include "system_wrappers/include/rw_lock_wrapper.h"
 
 namespace webrtc
 {
@@ -43,18 +42,11 @@ protected:
     
 
     virtual int32_t Init()=0;
-    virtual int32_t Refresh() { return 0; }
     
 
 
     virtual int32_t CreateCapabilityMap(const char* deviceUniqueIdUTF8)=0;
 
-    
-    int32_t GetExpectedCaptureDelay(const DelayValues delayValues[],
-                                    const uint32_t sizeOfDelayValues,
-                                    const char* productId,
-                                    const uint32_t width,
-                                    const uint32_t height);
 protected:
     
     typedef std::vector<VideoCaptureCapability> VideoCaptureCapabilities;

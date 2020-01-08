@@ -8,10 +8,10 @@
 
 
 
-#ifndef WEBRTC_MEDIA_BASE_RTPUTILS_H_
-#define WEBRTC_MEDIA_BASE_RTPUTILS_H_
+#ifndef MEDIA_BASE_RTPUTILS_H_
+#define MEDIA_BASE_RTPUTILS_H_
 
-#include "webrtc/base/byteorder.h"
+#include "rtc_base/byteorder.h"
 
 namespace rtc {
 struct PacketTimeUpdateParams;
@@ -57,6 +57,14 @@ bool IsRtpPacket(const void* data, size_t len);
 
 
 bool IsValidRtpPayloadType(int payload_type);
+
+
+bool IsValidRtpRtcpPacketSize(bool rtcp, size_t size);
+
+
+
+
+const char* RtpRtcpStringLiteral(bool rtcp);
 
 
 bool ValidateRtpHeader(const uint8_t* rtp,

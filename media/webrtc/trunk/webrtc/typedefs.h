@@ -11,8 +11,8 @@
 
 
 
-#ifndef WEBRTC_TYPEDEFS_H_
-#define WEBRTC_TYPEDEFS_H_
+#ifndef TYPEDEFS_H_
+#define TYPEDEFS_H_
 
 
 
@@ -36,90 +36,14 @@
 #define WEBRTC_ARCH_ARM_FAMILY
 #define WEBRTC_ARCH_32_BITS
 #define WEBRTC_ARCH_LITTLE_ENDIAN
-#elif defined(__powerpc64__)
-#define WEBRTC_ARCH_PPC64 1
-#define WEBRTC_ARCH_64_BITS 1
-#ifdef __LITTLE_ENDIAN__
-#define WEBRTC_ARCH_LITTLE_ENDIAN
-#define WEBRTC_LITTLE_ENDIAN
+#elif defined(__MIPSEL__)
+#define WEBRTC_ARCH_MIPS_FAMILY
+#if defined(__LP64__)
+#define WEBRTC_ARCH_64_BITS
 #else
-#define WEBRTC_ARCH_BIG_ENDIAN
-#define WEBRTC_BIG_ENDIAN
+#define WEBRTC_ARCH_32_BITS
 #endif
-#elif defined(__ppc__) || defined(__powerpc__)
-#define WEBRTC_ARCH_PPC 1
-#define WEBRTC_ARCH_32_BITS 1
-#ifdef __LITTLE_ENDIAN__
 #define WEBRTC_ARCH_LITTLE_ENDIAN
-#define WEBRTC_LITTLE_ENDIAN
-#else
-#define WEBRTC_ARCH_BIG_ENDIAN
-#define WEBRTC_BIG_ENDIAN
-#endif
-#elif defined(__sparc__) && defined(__arch64__)
-#define WEBRTC_ARCH_SPARC 1
-#define WEBRTC_ARCH_64_BITS 1
-#define WEBRTC_ARCH_BIG_ENDIAN
-#define WEBRTC_BIG_ENDIAN
-#elif defined(__sparc__)
-#define WEBRTC_ARCH_SPARC 1
-#define WEBRTC_ARCH_32_BITS 1
-#define WEBRTC_ARCH_BIG_ENDIAN
-#define WEBRTC_BIG_ENDIAN
-#elif defined(__mips__)
-#define WEBRTC_ARCH_MIPS 1
-#if defined(_ABI64) && _MIPS_SIM == _ABI64
-#define WEBRTC_ARCH_64_BITS 1
-#else
-#define WEBRTC_ARCH_32_BITS 1
-#endif
-#if defined(__MIPSEB__)
-#define WEBRTC_ARCH_BIG_ENDIAN
-#define WEBRTC_BIG_ENDIAN
-#else
-#define WEBRTC_ARCH_LITTLE_ENDIAN
-#define WEBRTC_LITTLE_ENDIAN
-#endif
-#elif defined(__hppa__)
-#define WEBRTC_ARCH_HPPA 1
-#define WEBRTC_ARCH_32_BITS 1
-#define WEBRTC_ARCH_BIG_ENDIAN
-#define WEBRTC_BIG_ENDIAN
-#elif defined(__ia64__)
-#define WEBRTC_ARCH_IA64 1
-#define WEBRTC_ARCH_64_BITS 1
-#define WEBRTC_ARCH_LITTLE_ENDIAN
-#define WEBRTC_LITTLE_ENDIAN
-#elif defined(__s390x__)
-#define WEBRTC_ARCH_S390X 1
-#define WEBRTC_ARCH_64_BITS 1
-#define WEBRTC_ARCH_BIG_ENDIAN
-#define WEBRTC_BIG_ENDIAN
-#elif defined(__s390__)
-#define WEBRTC_ARCH_S390 1
-#define WEBRTC_ARCH_32_BITS 1
-#define WEBRTC_ARCH_BIG_ENDIAN
-#define WEBRTC_BIG_ENDIAN
-#elif defined(__aarch64__) || defined(_M_ARM64)
-#define WEBRTC_ARCH_AARCH64 1
-#define WEBRTC_ARCH_64_BITS 1
-#if defined(__AARCH64EL__) || defined(_M_ARM64)
-#define WEBRTC_ARCH_LITTLE_ENDIAN
-#define WEBRTC_LITTLE_ENDIAN
-#elif defined(__AARCH64EB__)
-#define WEBRTC_ARCH_BIG_ENDIAN
-#define WEBRTC_BIG_ENDIAN
-#endif
-#elif defined(__alpha__)
-#define WEBRTC_ARCH_ALPHA 1
-#define WEBRTC_ARCH_64_BITS 1
-#define WEBRTC_ARCH_LITTLE_ENDIAN
-#define WEBRTC_LITTLE_ENDIAN
-#elif defined(__avr32__)
-#define WEBRTC_ARCH_AVR32 1
-#define WEBRTC_ARCH_32_BITS 1
-#define WEBRTC_ARCH_BIG_ENDIAN
-#define WEBRTC_BIG_ENDIAN
 #elif defined(__pnacl__)
 #define WEBRTC_ARCH_32_BITS
 #define WEBRTC_ARCH_LITTLE_ENDIAN
@@ -133,8 +57,7 @@
 
 
 
-#if (defined(WEBRTC_ARCH_X86_FAMILY) && !defined(__SSE2__)) || \
-    defined(WEBRTC_DETECT_NEON)
+#if (defined(WEBRTC_ARCH_X86_FAMILY) && !defined(__SSE2__))
 #define WEBRTC_CPU_DETECTION
 #endif
 
@@ -145,14 +68,17 @@
 
 
 
+#if defined(__clang__)
+#define RTC_WARN_UNUSED_RESULT __attribute__((__warn_unused_result__))
+#elif defined(__GNUC__)
 
-#if !defined(WARN_UNUSED_RESULT)
-#if defined(__GNUC__) || defined(__clang__)
-#define WARN_UNUSED_RESULT __attribute__ ((__warn_unused_result__))
+
+#define RTC_WARN_UNUSED_RESULT
 #else
-#define WARN_UNUSED_RESULT
+#define RTC_WARN_UNUSED_RESULT
 #endif
-#endif  
+
+
 
 
 
@@ -175,6 +101,7 @@
 #endif
 #endif
 
+#ifndef NO_RETURN
 
 #if defined(_MSC_VER)
 #define NO_RETURN __declspec(noreturn)
@@ -183,5 +110,16 @@
 #else
 #define NO_RETURN
 #endif
+#endif
+
+
+
+
+
+
+
+#ifndef RTC_UNUSED
+#define RTC_UNUSED(x) static_cast<void>(x)
+#endif  
 
 #endif  

@@ -8,11 +8,11 @@
 
 
 
-#include "webrtc/common_audio/vad/include/vad.h"
+#include "common_audio/vad/include/vad.h"
 
 #include <memory>
 
-#include "webrtc/base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

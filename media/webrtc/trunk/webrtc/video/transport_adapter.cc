@@ -8,41 +8,41 @@
 
 
 
-#include "webrtc/video/transport_adapter.h"
+#include "video/transport_adapter.h"
 
-#include "webrtc/base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 namespace internal {
 
 TransportAdapter::TransportAdapter(Transport* transport)
-    : transport_(transport), enabled_(0) {
+    : transport_(transport), enabled_(false) {
   RTC_DCHECK(nullptr != transport);
 }
 
 bool TransportAdapter::SendRtp(const uint8_t* packet,
                                size_t length,
                                const PacketOptions& options) {
-  if (enabled_.Value() == 0)
+  if (!enabled_.load())
     return false;
 
   return transport_->SendRtp(packet, length, options);
 }
 
 bool TransportAdapter::SendRtcp(const uint8_t* packet, size_t length) {
-  if (enabled_.Value() == 0)
+  if (!enabled_.load())
     return false;
 
   return transport_->SendRtcp(packet, length);
 }
 
 void TransportAdapter::Enable() {
-  
-  
-  enabled_.CompareExchange(1, 0);
+  enabled_.store(true);
 }
 
-void TransportAdapter::Disable() { enabled_.CompareExchange(0, 1); }
+void TransportAdapter::Disable() {
+  enabled_.store(false);
+}
 
 }  
 }  

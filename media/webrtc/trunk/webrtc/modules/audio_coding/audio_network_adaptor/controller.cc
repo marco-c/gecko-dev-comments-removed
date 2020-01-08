@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/audio_coding/audio_network_adaptor/controller.h"
+#include "modules/audio_coding/audio_network_adaptor/controller.h"
 
 namespace webrtc {
 

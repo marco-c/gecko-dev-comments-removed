@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/audio_coding/neteq/random_vector.h"
+#include "modules/audio_coding/neteq/random_vector.h"
 
 namespace webrtc {
 

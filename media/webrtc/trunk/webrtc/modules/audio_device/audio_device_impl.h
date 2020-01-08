@@ -8,22 +8,22 @@
 
 
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_IMPL_H
-#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_IMPL_H
+#ifndef MODULES_AUDIO_DEVICE_AUDIO_DEVICE_IMPL_H_
+#define MODULES_AUDIO_DEVICE_AUDIO_DEVICE_IMPL_H_
 
 #if defined(WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE)
 
 #include <memory>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/modules/audio_device/audio_device_buffer.h"
-#include "webrtc/modules/audio_device/include/audio_device.h"
+#include "modules/audio_device/audio_device_buffer.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/criticalsection.h"
 
 namespace webrtc {
 
 class AudioDeviceGeneric;
 class AudioManager;
-class CriticalSectionWrapper;
 
 class AudioDeviceModuleImpl : public AudioDeviceModule {
  public:
@@ -34,26 +34,18 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
     kPlatformLinux = 3,
     kPlatformMac = 4,
     kPlatformAndroid = 5,
-    kPlatformIOS = 6,
-    kPlatformSndio = 7
+    kPlatformIOS = 6
   };
 
   int32_t CheckPlatform();
   int32_t CreatePlatformSpecificObjects();
   int32_t AttachAudioBuffer();
 
-  AudioDeviceModuleImpl(const int32_t id, const AudioLayer audioLayer);
+  AudioDeviceModuleImpl(const AudioLayer audioLayer);
   ~AudioDeviceModuleImpl() override;
-
-  int64_t TimeUntilNextProcess() override;
-  void Process() override;
 
   
   int32_t ActiveAudioLayer(AudioLayer* audioLayer) const override;
-
-  
-  ErrorCode LastError() const override;
-  int32_t RegisterEventObserver(AudioDeviceObserver* eventCallback) override;
 
   
   int32_t RegisterAudioCallback(AudioTransport* audioCallback) override;
@@ -100,11 +92,6 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
   bool AGC() const override;
 
   
-  int32_t SetWaveOutVolume(uint16_t volumeLeft, uint16_t volumeRight) override;
-  int32_t WaveOutVolume(uint16_t* volumeLeft,
-                        uint16_t* volumeRight) const override;
-
-  
   int32_t InitSpeaker() override;
   bool SpeakerIsInitialized() const override;
   int32_t InitMicrophone() override;
@@ -116,7 +103,6 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
   int32_t SpeakerVolume(uint32_t* volume) const override;
   int32_t MaxSpeakerVolume(uint32_t* maxVolume) const override;
   int32_t MinSpeakerVolume(uint32_t* minVolume) const override;
-  int32_t SpeakerVolumeStepSize(uint16_t* stepSize) const override;
 
   
   int32_t MicrophoneVolumeIsAvailable(bool* available) override;
@@ -124,7 +110,6 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
   int32_t MicrophoneVolume(uint32_t* volume) const override;
   int32_t MaxMicrophoneVolume(uint32_t* maxVolume) const override;
   int32_t MinMicrophoneVolume(uint32_t* minVolume) const override;
-  int32_t MicrophoneVolumeStepSize(uint16_t* stepSize) const override;
 
   
   int32_t SpeakerMuteIsAvailable(bool* available) override;
@@ -137,47 +122,15 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
   int32_t MicrophoneMute(bool* enabled) const override;
 
   
-  int32_t MicrophoneBoostIsAvailable(bool* available) override;
-  int32_t SetMicrophoneBoost(bool enable) override;
-  int32_t MicrophoneBoost(bool* enabled) const override;
-
-  
   int32_t StereoPlayoutIsAvailable(bool* available) const override;
   int32_t SetStereoPlayout(bool enable) override;
   int32_t StereoPlayout(bool* enabled) const override;
   int32_t StereoRecordingIsAvailable(bool* available) const override;
   int32_t SetStereoRecording(bool enable) override;
   int32_t StereoRecording(bool* enabled) const override;
-  int32_t SetRecordingChannel(const ChannelType channel) override;
-  int32_t RecordingChannel(ChannelType* channel) const override;
 
   
-  int32_t SetPlayoutBuffer(const BufferType type, uint16_t sizeMS = 0) override;
-  int32_t PlayoutBuffer(BufferType* type, uint16_t* sizeMS) const override;
   int32_t PlayoutDelay(uint16_t* delayMS) const override;
-  int32_t RecordingDelay(uint16_t* delayMS) const override;
-
-  
-  int32_t CPULoad(uint16_t* load) const override;
-
-  
-  int32_t StartRawOutputFileRecording(
-      const char pcmFileNameUTF8[kAdmMaxFileNameSize]) override;
-  int32_t StopRawOutputFileRecording() override;
-  int32_t StartRawInputFileRecording(
-      const char pcmFileNameUTF8[kAdmMaxFileNameSize]) override;
-  int32_t StopRawInputFileRecording() override;
-
-  
-  int32_t SetRecordingSampleRate(const uint32_t samplesPerSec) override;
-  int32_t RecordingSampleRate(uint32_t* samplesPerSec) const override;
-  int32_t SetPlayoutSampleRate(const uint32_t samplesPerSec) override;
-  int32_t PlayoutSampleRate(uint32_t* samplesPerSec) const override;
-
-  
-  int32_t ResetAudioDevice() override;
-  int32_t SetLoudspeakerStatus(bool enable) override;
-  int32_t GetLoudspeakerStatus(bool* enabled) const override;
 
   bool BuiltInAECIsAvailable() const override;
   int32_t EnableBuiltInAEC(bool enable) override;
@@ -191,37 +144,27 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
   int GetRecordAudioParameters(AudioParameters* params) const override;
 #endif  
 
-  int32_t Id() { return _id; }
 #if defined(WEBRTC_ANDROID)
   
   AudioManager* GetAndroidAudioManagerForTest() {
-    return _audioManagerAndroid.get();
+    return audio_manager_android_.get();
   }
 #endif
-  AudioDeviceBuffer* GetAudioDeviceBuffer() { return &_audioDeviceBuffer; }
+  AudioDeviceBuffer* GetAudioDeviceBuffer() { return &audio_device_buffer_; }
 
  private:
   PlatformType Platform() const;
   AudioLayer PlatformAudioLayer() const;
 
-  CriticalSectionWrapper& _critSect;
-  CriticalSectionWrapper& _critSectEventCb;
-  CriticalSectionWrapper& _critSectAudioCb;
-
-  AudioDeviceObserver* _ptrCbAudioDeviceObserver;
-
-  AudioDeviceGeneric* _ptrAudioDevice;
-
-  AudioDeviceBuffer _audioDeviceBuffer;
+  AudioLayer audio_layer_;
+  PlatformType platform_type_ = kPlatformNotSupported;
+  bool initialized_ = false;
 #if defined(WEBRTC_ANDROID)
-  std::unique_ptr<AudioManager> _audioManagerAndroid;
+  
+  std::unique_ptr<AudioManager> audio_manager_android_;
 #endif
-  int32_t _id;
-  AudioLayer _platformAudioLayer;
-  int64_t _lastProcessTime;
-  PlatformType _platformType;
-  bool _initialized;
-  mutable ErrorCode _lastError;
+  AudioDeviceBuffer audio_device_buffer_;
+  std::unique_ptr<AudioDeviceGeneric> audio_device_;
 };
 
 }  

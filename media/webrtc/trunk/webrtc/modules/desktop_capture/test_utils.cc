@@ -8,11 +8,11 @@
 
 
 
-#include "webrtc/modules/desktop_capture/test_utils.h"
+#include "modules/desktop_capture/test_utils.h"
 
 #include <string.h>
 
-#include "webrtc/base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

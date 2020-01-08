@@ -8,10 +8,10 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_WINDOWS_DEVICE_INFO_MF_H_
-#define WEBRTC_MODULES_VIDEO_CAPTURE_WINDOWS_DEVICE_INFO_MF_H_
+#ifndef MODULES_VIDEO_CAPTURE_WINDOWS_DEVICE_INFO_MF_H_
+#define MODULES_VIDEO_CAPTURE_WINDOWS_DEVICE_INFO_MF_H_
 
-#include "webrtc/modules/video_capture/device_info_impl.h"
+#include "modules/video_capture/device_info_impl.h"
 
 namespace webrtc {
 namespace videocapturemodule {
@@ -19,7 +19,7 @@ namespace videocapturemodule {
 
 class DeviceInfoMF : public DeviceInfoImpl {
  public:
-  explicit DeviceInfoMF();
+  DeviceInfoMF();
   virtual ~DeviceInfoMF();
 
   int32_t Init();

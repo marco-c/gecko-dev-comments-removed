@@ -8,10 +8,10 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_INTERNAL_DEFINES_H_
-#define WEBRTC_MODULES_VIDEO_CODING_INTERNAL_DEFINES_H_
+#ifndef MODULES_VIDEO_CODING_INTERNAL_DEFINES_H_
+#define MODULES_VIDEO_CODING_INTERNAL_DEFINES_H_
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 

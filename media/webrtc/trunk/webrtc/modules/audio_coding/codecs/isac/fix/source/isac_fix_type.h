@@ -8,11 +8,11 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_ISAC_FIX_TYPE_H_
-#define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_ISAC_FIX_TYPE_H_
+#ifndef MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_ISAC_FIX_TYPE_H_
+#define MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_ISAC_FIX_TYPE_H_
 
-#include "webrtc/base/checks.h"
-#include "webrtc/modules/audio_coding/codecs/isac/fix/include/isacfix.h"
+#include "modules/audio_coding/codecs/isac/fix/include/isacfix.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

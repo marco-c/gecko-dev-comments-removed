@@ -8,11 +8,11 @@
 
 
 
-#include "webrtc/modules/audio_processing/transient/moving_moments.h"
+#include "modules/audio_processing/transient/moving_moments.h"
 
 #include <memory>
 
-#include "webrtc/test/gtest.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

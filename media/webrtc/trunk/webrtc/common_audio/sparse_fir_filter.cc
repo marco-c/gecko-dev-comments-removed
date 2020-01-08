@@ -8,9 +8,9 @@
 
 
 
-#include "webrtc/common_audio/sparse_fir_filter.h"
+#include "common_audio/sparse_fir_filter.h"
 
-#include "webrtc/base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

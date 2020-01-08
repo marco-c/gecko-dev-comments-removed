@@ -8,9 +8,9 @@
 
 
 
-#include "webrtc/media/base/videosourcebase.h"
+#include "media/base/videosourcebase.h"
 
-#include "webrtc/base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace rtc {
 

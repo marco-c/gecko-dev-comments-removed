@@ -8,21 +8,25 @@
 
 
 
-#ifndef WEBRTC_CALL_FLEXFEC_RECEIVE_STREAM_H_
-#define WEBRTC_CALL_FLEXFEC_RECEIVE_STREAM_H_
+#ifndef CALL_FLEXFEC_RECEIVE_STREAM_H_
+#define CALL_FLEXFEC_RECEIVE_STREAM_H_
 
 #include <stdint.h>
 
 #include <string>
 #include <vector>
 
-#include "webrtc/api/call/transport.h"
-#include "webrtc/config.h"
+#include "api/call/transport.h"
+#include "api/rtpparameters.h"
+#include "call/rtp_packet_sink_interface.h"
+#include "common_types.h"  
 
 namespace webrtc {
 
-class FlexfecReceiveStream {
+class FlexfecReceiveStream : public RtpPacketSinkInterface {
  public:
+  ~FlexfecReceiveStream() override = default;
+
   struct Stats {
     std::string ToString(int64_t time_ms) const;
 
@@ -73,17 +77,9 @@ class FlexfecReceiveStream {
     std::vector<RtpExtension> rtp_header_extensions;
   };
 
-  
-  
-  virtual void Start() = 0;
-  
-  
-  virtual void Stop() = 0;
-
   virtual Stats GetStats() const = 0;
 
- protected:
-  virtual ~FlexfecReceiveStream() = default;
+  virtual const Config& GetConfig() const = 0;
 };
 
 }  

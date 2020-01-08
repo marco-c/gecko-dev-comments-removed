@@ -8,17 +8,17 @@
 
 
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_PACKET_HISTORY_H_
-#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_PACKET_HISTORY_H_
+#ifndef MODULES_RTP_RTCP_SOURCE_RTP_PACKET_HISTORY_H_
+#define MODULES_RTP_RTCP_SOURCE_RTP_PACKET_HISTORY_H_
 
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/thread_annotations.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/typedefs.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/thread_annotations.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
@@ -65,19 +65,19 @@ class RtpPacketHistory {
   };
 
   std::unique_ptr<RtpPacketToSend> GetPacket(int index) const
-      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  void Allocate(size_t number_to_store) EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  void Free() EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  void Allocate(size_t number_to_store) RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  void Free() RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   bool FindSeqNum(uint16_t sequence_number, int* index) const
-      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   int FindBestFittingPacket(size_t size) const
-      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   Clock* clock_;
   rtc::CriticalSection critsect_;
-  bool store_ GUARDED_BY(critsect_);
-  uint32_t prev_index_ GUARDED_BY(critsect_);
-  std::vector<StoredPacket> stored_packets_ GUARDED_BY(critsect_);
+  bool store_ RTC_GUARDED_BY(critsect_);
+  uint32_t prev_index_ RTC_GUARDED_BY(critsect_);
+  std::vector<StoredPacket> stored_packets_ RTC_GUARDED_BY(critsect_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RtpPacketHistory);
 };

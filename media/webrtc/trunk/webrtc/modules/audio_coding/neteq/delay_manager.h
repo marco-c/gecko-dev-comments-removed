@@ -8,18 +8,17 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_DELAY_MANAGER_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_DELAY_MANAGER_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_DELAY_MANAGER_H_
+#define MODULES_AUDIO_CODING_NETEQ_DELAY_MANAGER_H_
 
 #include <string.h>  
 
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
-#include "webrtc/modules/audio_coding/neteq/tick_timer.h"
-#include "webrtc/typedefs.h"
+#include "modules/audio_coding/neteq/tick_timer.h"
+#include "rtc_base/constructormagic.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
@@ -97,6 +96,18 @@ class DelayManager {
 
   
   
+  
+  virtual void RegisterEmptyPacket();
+
+  
+  
+  
+  static IATVector ScaleHistogram(const IATVector& histogram,
+                                  int old_packet_length,
+                                  int new_packet_length);
+
+  
+  
   virtual bool SetMinimumDelay(int delay_ms);
   virtual bool SetMaximumDelay(int delay_ms);
   virtual int least_required_delay_ms() const;
@@ -161,6 +172,7 @@ class DelayManager {
   std::unique_ptr<TickTimer::Stopwatch> max_iat_stopwatch_;
   DelayPeakDetector& peak_detector_;
   int last_pack_cng_or_dtmf_;
+  const bool frame_length_change_experiment_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DelayManager);
 };

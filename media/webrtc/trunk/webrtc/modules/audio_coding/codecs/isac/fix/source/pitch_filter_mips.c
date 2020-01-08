@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/audio_coding/codecs/isac/fix/source/pitch_estimator.h"
+#include "modules/audio_coding/codecs/isac/fix/source/pitch_estimator.h"
 
 void WebRtcIsacfix_PitchFilterCore(int loopNumber,
                                    int16_t gain,

@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/desktop_capture/shared_memory.h"
+#include "modules/desktop_capture/shared_memory.h"
 
 namespace webrtc {
 

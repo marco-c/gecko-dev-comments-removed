@@ -8,16 +8,16 @@
 
 
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_SCREEN_CAPTURE_FRAME_QUEUE_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_SCREEN_CAPTURE_FRAME_QUEUE_H_
+#ifndef MODULES_DESKTOP_CAPTURE_SCREEN_CAPTURE_FRAME_QUEUE_H_
+#define MODULES_DESKTOP_CAPTURE_SCREEN_CAPTURE_FRAME_QUEUE_H_
 
 #include <memory>
 
-#include "webrtc/base/constructormagic.h"
+#include "rtc_base/constructormagic.h"
 
 
-#include "webrtc/modules/desktop_capture/desktop_frame.h"  
-#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"  
+#include "modules/desktop_capture/desktop_frame.h"  
+#include "modules/desktop_capture/shared_desktop_frame.h"  
 
 
 namespace webrtc {

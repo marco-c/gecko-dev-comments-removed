@@ -8,15 +8,14 @@
 
 
 
-#include "webrtc/modules/audio_coding/neteq/nack_tracker.h"
+#include "modules/audio_coding/neteq/nack_tracker.h"
 
 #include <assert.h>  
 
 #include <algorithm>  
 
-#include "webrtc/base/checks.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/system_wrappers/include/logging.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 namespace {

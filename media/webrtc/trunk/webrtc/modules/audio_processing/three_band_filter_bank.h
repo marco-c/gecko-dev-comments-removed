@@ -8,14 +8,14 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_THREE_BAND_FILTER_BANK_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_THREE_BAND_FILTER_BANK_H_
+#ifndef MODULES_AUDIO_PROCESSING_THREE_BAND_FILTER_BANK_H_
+#define MODULES_AUDIO_PROCESSING_THREE_BAND_FILTER_BANK_H_
 
 #include <cstring>
 #include <memory>
 #include <vector>
 
-#include "webrtc/common_audio/sparse_fir_filter.h"
+#include "common_audio/sparse_fir_filter.h"
 
 namespace webrtc {
 

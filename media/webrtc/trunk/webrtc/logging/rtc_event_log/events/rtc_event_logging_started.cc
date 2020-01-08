@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+#include "logging/rtc_event_log/events/rtc_event_logging_started.h"
+
+namespace webrtc {
+
+RtcEvent::Type RtcEventLoggingStarted::GetType() const {
+  return RtcEvent::Type::LoggingStarted;
+}
+
+bool RtcEventLoggingStarted::IsConfigEvent() const {
+  return false;
+}
+
+}  

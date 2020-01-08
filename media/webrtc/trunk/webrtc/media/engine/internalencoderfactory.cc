@@ -8,87 +8,52 @@
 
 
 
-#include "webrtc/media/engine/internalencoderfactory.h"
+#include "media/engine/internalencoderfactory.h"
 
 #include <utility>
 
-#include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
-#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
-#include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
-#include "webrtc/system_wrappers/include/field_trial.h"
+#include "modules/video_coding/codecs/h264/include/h264.h"
+#include "modules/video_coding/codecs/vp8/include/vp8.h"
+#include "modules/video_coding/codecs/vp9/include/vp9.h"
+#include "rtc_base/logging.h"
 
-namespace cricket {
+namespace webrtc {
 
-namespace {
-
-const char kFlexfecFieldTrialName[] = "WebRTC-FlexFEC-03";
-
-bool IsFlexfecFieldTrialEnabled() {
-  return webrtc::field_trial::FindFullName(kFlexfecFieldTrialName) == "Enabled";
-}
-
-}  
-
-InternalEncoderFactory::InternalEncoderFactory() {
-  supported_codecs_.push_back(cricket::VideoCodec(kVp8CodecName));
+std::vector<SdpVideoFormat> InternalEncoderFactory::GetSupportedFormats()
+    const {
+  std::vector<SdpVideoFormat> supported_codecs;
+  supported_codecs.push_back(SdpVideoFormat(cricket::kVp8CodecName));
   if (webrtc::VP9Encoder::IsSupported())
-    supported_codecs_.push_back(cricket::VideoCodec(kVp9CodecName));
-  if (webrtc::H264Encoder::IsSupported()) {
-    cricket::VideoCodec codec(kH264CodecName);
-    
-    
-    codec.SetParam(kH264FmtpProfileLevelId,
-                   kH264ProfileLevelConstrainedBaseline);
-    codec.SetParam(kH264FmtpLevelAsymmetryAllowed, "1");
-    supported_codecs_.push_back(std::move(codec));
-  }
+    supported_codecs.push_back(SdpVideoFormat(cricket::kVp9CodecName));
 
-  supported_codecs_.push_back(cricket::VideoCodec(kRedCodecName));
-  supported_codecs_.push_back(cricket::VideoCodec(kUlpfecCodecName));
+  for (const webrtc::SdpVideoFormat& format : webrtc::SupportedH264Codecs())
+    supported_codecs.push_back(format);
 
-  if (IsFlexfecFieldTrialEnabled()) {
-    cricket::VideoCodec flexfec_codec(kFlexfecCodecName);
-    
-    
-    
-    
-    flexfec_codec.SetParam(kFlexfecFmtpRepairWindow, "10000000");
-    flexfec_codec.AddFeedbackParam(
-        FeedbackParam(kRtcpFbParamTransportCc, kParamValueEmpty));
-    flexfec_codec.AddFeedbackParam(
-        FeedbackParam(kRtcpFbParamRemb, kParamValueEmpty));
-    supported_codecs_.push_back(flexfec_codec);
-  }
+  return supported_codecs;
 }
 
-InternalEncoderFactory::~InternalEncoderFactory() {}
-
-
-webrtc::VideoEncoder* InternalEncoderFactory::CreateVideoEncoder(
-    const cricket::VideoCodec& codec) {
-  const webrtc::VideoCodecType codec_type =
-      webrtc::PayloadNameToCodecType(codec.name)
-          .value_or(webrtc::kVideoCodecUnknown);
-  switch (codec_type) {
-    case webrtc::kVideoCodecH264:
-      return webrtc::H264Encoder::Create(codec);
-    case webrtc::kVideoCodecVP8:
-      return webrtc::VP8Encoder::Create();
-    case webrtc::kVideoCodecVP9:
-      return webrtc::VP9Encoder::Create();
-    default:
-      return nullptr;
-  }
+VideoEncoderFactory::CodecInfo InternalEncoderFactory::QueryVideoEncoder(
+    const SdpVideoFormat& format) const {
+  CodecInfo info;
+  info.is_hardware_accelerated = false;
+  info.has_internal_source = false;
+  return info;
 }
 
-const std::vector<cricket::VideoCodec>&
-InternalEncoderFactory::supported_codecs() const {
-  return supported_codecs_;
-}
+std::unique_ptr<VideoEncoder> InternalEncoderFactory::CreateVideoEncoder(
+    const SdpVideoFormat& format) {
+  if (cricket::CodecNamesEq(format.name, cricket::kVp8CodecName))
+    return VP8Encoder::Create();
 
-void InternalEncoderFactory::DestroyVideoEncoder(
-    webrtc::VideoEncoder* encoder) {
-  delete encoder;
+  if (cricket::CodecNamesEq(format.name, cricket::kVp9CodecName))
+    return VP9Encoder::Create();
+
+  if (cricket::CodecNamesEq(format.name, cricket::kH264CodecName))
+    return H264Encoder::Create(cricket::VideoCodec(format));
+
+  RTC_LOG(LS_ERROR) << "Trying to created encoder of unsupported format "
+                    << format.name;
+  return nullptr;
 }
 
 }  

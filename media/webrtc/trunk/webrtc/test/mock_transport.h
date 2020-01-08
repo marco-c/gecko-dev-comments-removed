@@ -8,11 +8,11 @@
 
 
 
-#ifndef WEBRTC_TEST_MOCK_TRANSPORT_H_
-#define WEBRTC_TEST_MOCK_TRANSPORT_H_
+#ifndef TEST_MOCK_TRANSPORT_H_
+#define TEST_MOCK_TRANSPORT_H_
 
-#include "webrtc/api/call/transport.h"
-#include "webrtc/test/gmock.h"
+#include "api/call/transport.h"
+#include "test/gmock.h"
 
 namespace webrtc {
 

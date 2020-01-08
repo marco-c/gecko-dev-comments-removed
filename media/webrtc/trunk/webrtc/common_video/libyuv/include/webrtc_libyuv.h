@@ -12,46 +12,25 @@
 
 
 
-#ifndef WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_
-#define WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_
+#ifndef COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_
+#define COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_
 
 #include <stdio.h>
 #include <vector>
 
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/common_types.h"  
-#include "webrtc/typedefs.h"
+#include "api/video/video_frame.h"
+#include "common_types.h"  
+#include "typedefs.h"  
 
 namespace webrtc {
 
-class I420Buffer;
-
-
-enum VideoType {
-  kUnknown,
-  kI420,
-  kIYUV,
-  kRGB24,
-  kABGR,
-  kARGB,
-  kARGB4444,
-  kRGB565,
-  kARGB1555,
-  kYUY2,
-  kYV12,
-  kUYVY,
-  kMJPG,
-  kNV21,
-  kNV12,
-  kBGRA,
-};
 
 
 const double kPerfectPSNR = 48.0f;
 
 
 
-VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type);
+const VideoType kI420 = VideoType::kI420;
 
 
 
@@ -70,7 +49,7 @@ size_t CalcBufferSize(VideoType type, int width, int height);
 
 
 int PrintVideoFrame(const VideoFrame& frame, FILE* file);
-int PrintVideoFrame(const VideoFrameBuffer& frame, FILE* file);
+int PrintVideoFrame(const I420BufferInterface& frame, FILE* file);
 
 
 
@@ -80,38 +59,10 @@ int PrintVideoFrame(const VideoFrameBuffer& frame, FILE* file);
 
 
 
-int ExtractBuffer(const rtc::scoped_refptr<VideoFrameBuffer>& input_frame,
+int ExtractBuffer(const rtc::scoped_refptr<I420BufferInterface>& input_frame,
                   size_t size,
                   uint8_t* buffer);
 int ExtractBuffer(const VideoFrame& input_frame, size_t size, uint8_t* buffer);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int ConvertToI420(VideoType src_video_type,
-                  const uint8_t* src_frame,
-                  int crop_x,
-                  int crop_y,
-                  int src_width,
-                  int src_height,
-                  size_t sample_size,
-                  VideoRotation rotation,
-                  I420Buffer* dst_buffer);
-
 
 
 
@@ -128,16 +79,20 @@ int ConvertFromI420(const VideoFrame& src_frame,
 
 
 double I420PSNR(const VideoFrame* ref_frame, const VideoFrame* test_frame);
-double I420PSNR(const VideoFrameBuffer& ref_buffer,
-                const VideoFrameBuffer& test_buffer);
+double I420PSNR(const I420BufferInterface& ref_buffer,
+                const I420BufferInterface& test_buffer);
 
 
 double I420SSIM(const VideoFrame* ref_frame, const VideoFrame* test_frame);
-double I420SSIM(const VideoFrameBuffer& ref_buffer,
-                const VideoFrameBuffer& test_buffer);
+double I420SSIM(const I420BufferInterface& ref_buffer,
+                const I420BufferInterface& test_buffer);
 
 
-void NV12Scale(std::vector<uint8_t>* tmp_buffer,
+
+
+
+
+void NV12Scale(uint8_t* tmp_buffer,
                const uint8_t* src_y, int src_stride_y,
                const uint8_t* src_uv, int src_stride_uv,
                int src_width, int src_height,
@@ -150,6 +105,8 @@ void NV12Scale(std::vector<uint8_t>* tmp_buffer,
 
 class NV12ToI420Scaler {
  public:
+  NV12ToI420Scaler();
+  ~NV12ToI420Scaler();
   void NV12ToI420Scale(const uint8_t* src_y, int src_stride_y,
                        const uint8_t* src_uv, int src_stride_uv,
                        int src_width, int src_height,
@@ -160,6 +117,9 @@ class NV12ToI420Scaler {
  private:
   std::vector<uint8_t> tmp_uv_planes_;
 };
+
+
+int ConvertVideoType(VideoType video_type);
 
 }  
 

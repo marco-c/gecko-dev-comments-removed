@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+#include "media/base/videosourceinterface.h"
+namespace rtc {
+
+VideoSinkWants::VideoSinkWants() = default;
+VideoSinkWants::~VideoSinkWants() = default;
+
+}  

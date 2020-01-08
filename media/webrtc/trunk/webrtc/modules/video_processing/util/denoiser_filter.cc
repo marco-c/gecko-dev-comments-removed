@@ -8,12 +8,12 @@
 
 
 
-#include "webrtc/base/checks.h"
-#include "webrtc/modules/video_processing/util/denoiser_filter.h"
-#include "webrtc/modules/video_processing/util/denoiser_filter_c.h"
-#include "webrtc/modules/video_processing/util/denoiser_filter_neon.h"
-#include "webrtc/modules/video_processing/util/denoiser_filter_sse2.h"
-#include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
+#include "modules/video_processing/util/denoiser_filter.h"
+#include "modules/video_processing/util/denoiser_filter_c.h"
+#include "modules/video_processing/util/denoiser_filter_neon.h"
+#include "modules/video_processing/util/denoiser_filter_sse2.h"
+#include "rtc_base/checks.h"
+#include "system_wrappers/include/cpu_features_wrapper.h"
 
 namespace webrtc {
 

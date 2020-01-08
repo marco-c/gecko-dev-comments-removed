@@ -26,17 +26,34 @@ public class DataChannel {
     
     public int id = -1;
 
-    public Init() {}
+    @CalledByNative("Init")
+    boolean getOrdered() {
+      return ordered;
+    }
 
-    
-    private Init(boolean ordered, int maxRetransmitTimeMs, int maxRetransmits, String protocol,
-        boolean negotiated, int id) {
-      this.ordered = ordered;
-      this.maxRetransmitTimeMs = maxRetransmitTimeMs;
-      this.maxRetransmits = maxRetransmits;
-      this.protocol = protocol;
-      this.negotiated = negotiated;
-      this.id = id;
+    @CalledByNative("Init")
+    int getMaxRetransmitTimeMs() {
+      return maxRetransmitTimeMs;
+    }
+
+    @CalledByNative("Init")
+    int getMaxRetransmits() {
+      return maxRetransmits;
+    }
+
+    @CalledByNative("Init")
+    String getProtocol() {
+      return protocol;
+    }
+
+    @CalledByNative("Init")
+    boolean getNegotiated() {
+      return negotiated;
+    }
+
+    @CalledByNative("Init")
+    int getId() {
+      return id;
     }
   }
 
@@ -51,6 +68,7 @@ public class DataChannel {
 
     public final boolean binary;
 
+    @CalledByNative("Buffer")
     public Buffer(ByteBuffer data, boolean binary) {
       this.data = data;
       this.binary = binary;
@@ -60,23 +78,34 @@ public class DataChannel {
   
   public interface Observer {
     
-    public void onBufferedAmountChange(long previousAmount);
+    @CalledByNative("Observer") public void onBufferedAmountChange(long previousAmount);
     
-    public void onStateChange();
+    @CalledByNative("Observer") public void onStateChange();
     
 
 
 
 
-    public void onMessage(Buffer buffer);
+    @CalledByNative("Observer") public void onMessage(Buffer buffer);
   }
 
   
-  public enum State { CONNECTING, OPEN, CLOSING, CLOSED }
+  public enum State {
+    CONNECTING,
+    OPEN,
+    CLOSING,
+    CLOSED;
+
+    @CalledByNative("State")
+    static State fromNativeIndex(int nativeIndex) {
+      return values()[nativeIndex];
+    }
+  }
 
   private final long nativeDataChannel;
   private long nativeObserver;
 
+  @CalledByNative
   public DataChannel(long nativeDataChannel) {
     this.nativeDataChannel = nativeDataChannel;
   }
@@ -123,5 +152,12 @@ public class DataChannel {
   private native boolean sendNative(byte[] data, boolean binary);
 
   
-  public native void dispose();
+  public void dispose() {
+    JniCommon.nativeReleaseRef(nativeDataChannel);
+  }
+
+  @CalledByNative
+  long getNativeDataChannel() {
+    return nativeDataChannel;
+  }
 };

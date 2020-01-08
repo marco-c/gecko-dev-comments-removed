@@ -11,11 +11,8 @@
 package org.webrtc;
 
 import android.graphics.Point;
-import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.view.View;
-
-import java.nio.ByteBuffer;
 
 
 
@@ -52,56 +49,6 @@ public class RendererCommon {
 
 
     void release();
-  }
-
-  
-
-
-
-  public static class YuvUploader {
-    
-    
-    
-    private ByteBuffer copyBuffer;
-
-    
-
-
-
-    public void uploadYuvData(
-        int[] outputYuvTextures, int width, int height, int[] strides, ByteBuffer[] planes) {
-      final int[] planeWidths = new int[] {width, width / 2, width / 2};
-      final int[] planeHeights = new int[] {height, height / 2, height / 2};
-      
-      int copyCapacityNeeded = 0;
-      for (int i = 0; i < 3; ++i) {
-        if (strides[i] > planeWidths[i]) {
-          copyCapacityNeeded = Math.max(copyCapacityNeeded, planeWidths[i] * planeHeights[i]);
-        }
-      }
-      
-      if (copyCapacityNeeded > 0
-          && (copyBuffer == null || copyBuffer.capacity() < copyCapacityNeeded)) {
-        copyBuffer = ByteBuffer.allocateDirect(copyCapacityNeeded);
-      }
-      
-      for (int i = 0; i < 3; ++i) {
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0 + i);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, outputYuvTextures[i]);
-        
-        final ByteBuffer packedByteBuffer;
-        if (strides[i] == planeWidths[i]) {
-          
-          packedByteBuffer = planes[i];
-        } else {
-          VideoRenderer.nativeCopyPlane(
-              planes[i], planeWidths[i], planeHeights[i], strides[i], copyBuffer, planeWidths[i]);
-          packedByteBuffer = copyBuffer;
-        }
-        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, planeWidths[i],
-            planeHeights[i], 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, packedByteBuffer);
-      }
-    }
   }
 
   
@@ -236,6 +183,51 @@ public class RendererCommon {
     Matrix.scaleM(matrix, 0, scaleX, scaleY, 1);
     adjustOrigin(matrix);
     return matrix;
+  }
+
+  
+  public static android.graphics.Matrix convertMatrixToAndroidGraphicsMatrix(float[] matrix4x4) {
+    
+    float[] values = {
+        matrix4x4[0 * 4 + 0], matrix4x4[1 * 4 + 0], matrix4x4[3 * 4 + 0],
+        matrix4x4[0 * 4 + 1], matrix4x4[1 * 4 + 1], matrix4x4[3 * 4 + 1],
+        matrix4x4[0 * 4 + 3], matrix4x4[1 * 4 + 3], matrix4x4[3 * 4 + 3],
+    };
+    
+
+    android.graphics.Matrix matrix = new android.graphics.Matrix();
+    matrix.setValues(values);
+    return matrix;
+  }
+
+  
+  public static float[] convertMatrixFromAndroidGraphicsMatrix(android.graphics.Matrix matrix) {
+    float[] values = new float[9];
+    matrix.getValues(values);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    float[] matrix4x4 = {
+        values[0 * 3 + 0],  values[1 * 3 + 0], 0,  values[2 * 3 + 0],
+        values[0 * 3 + 1],  values[1 * 3 + 1], 0,  values[2 * 3 + 1],
+        0,                  0,                 1,  0,
+        values[0 * 3 + 2],  values[1 * 3 + 2], 0,  values[2 * 3 + 2],
+    };
+    
+    return matrix4x4;
   }
 
   

@@ -7,13 +7,13 @@
 
 
 
-#ifndef WEBRTC_TEST_RTP_FILE_READER_H_
-#define WEBRTC_TEST_RTP_FILE_READER_H_
+#ifndef TEST_RTP_FILE_READER_H_
+#define TEST_RTP_FILE_READER_H_
 
 #include <set>
 #include <string>
 
-#include "webrtc/common_types.h"
+#include "common_types.h"  
 
 namespace webrtc {
 namespace test {

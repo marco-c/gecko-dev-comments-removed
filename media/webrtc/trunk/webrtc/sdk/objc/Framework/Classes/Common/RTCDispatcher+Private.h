@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+#import "WebRTC/RTCDispatcher.h"
+
+@interface RTCDispatcher ()
+
++ (dispatch_queue_t)dispatchQueueForType:(RTCDispatcherQueueType)dispatchType;
+
+@end

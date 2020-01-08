@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
+#include "modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
 
 namespace webrtc {
 

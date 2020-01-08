@@ -8,12 +8,12 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_PEAK_LEVEL_ESTIMATOR_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_PEAK_LEVEL_ESTIMATOR_H_
+#ifndef MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_PEAK_LEVEL_ESTIMATOR_H_
+#define MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_PEAK_LEVEL_ESTIMATOR_H_
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_processing/level_controller/level_controller_constants.h"
-#include "webrtc/modules/audio_processing/level_controller/signal_classifier.h"
+#include "modules/audio_processing/level_controller/level_controller_constants.h"
+#include "modules/audio_processing/level_controller/signal_classifier.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 

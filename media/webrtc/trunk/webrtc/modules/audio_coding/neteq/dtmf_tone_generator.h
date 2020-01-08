@@ -8,24 +8,14 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_DTMF_TONE_GENERATOR_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_DTMF_TONE_GENERATOR_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_DTMF_TONE_GENERATOR_H_
+#define MODULES_AUDIO_CODING_NETEQ_DTMF_TONE_GENERATOR_H_
 
-
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
-#include "webrtc/typedefs.h"
+#include "modules/audio_coding/neteq/audio_multi_vector.h"
+#include "rtc_base/constructormagic.h"
+#include "typedefs.h"  
 
 namespace webrtc {
-
-const int NumDtmfSampleRates = 5;
-const int DtmfSampleRates[NumDtmfSampleRates] = {
-  8000,
-  16000,
-  32000,
-  44100,
-  48000
-};
 
 
 class DtmfToneGenerator {
@@ -43,10 +33,10 @@ class DtmfToneGenerator {
   virtual bool initialized() const;
 
  private:
-  static const int kCoeff1[NumDtmfSampleRates][16];  
-  static const int kCoeff2[NumDtmfSampleRates][16];  
-  static const int kInitValue1[NumDtmfSampleRates][16];  
-  static const int kInitValue2[NumDtmfSampleRates][16];  
+  static const int kCoeff1[4][16];  
+  static const int kCoeff2[4][16];  
+  static const int kInitValue1[4][16];  
+  static const int kInitValue2[4][16];  
   static const int kAmplitude[64];  
   static const int16_t kAmpMultiplier = 23171;  
 

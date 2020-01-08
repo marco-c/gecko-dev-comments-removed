@@ -8,9 +8,9 @@
 
 
 
-#include "webrtc/common_video/include/i420_buffer_pool.h"
+#include "common_video/include/i420_buffer_pool.h"
 
-#include "webrtc/base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

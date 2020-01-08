@@ -7,10 +7,10 @@
 
 
 
-#ifndef WEBRTC_TEST_STATISTICS_H_
-#define WEBRTC_TEST_STATISTICS_H_
+#ifndef TEST_STATISTICS_H_
+#define TEST_STATISTICS_H_
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 namespace test {

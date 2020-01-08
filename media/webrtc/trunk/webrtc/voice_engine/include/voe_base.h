@@ -31,31 +31,22 @@
 
 
 
-#ifndef WEBRTC_VOICE_ENGINE_VOE_BASE_H
-#define WEBRTC_VOICE_ENGINE_VOE_BASE_H
+#ifndef VOICE_ENGINE_VOE_BASE_H_
+#define VOICE_ENGINE_VOE_BASE_H_
 
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
-#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
-#include "webrtc/common_types.h"
+#include "api/audio_codecs/audio_decoder_factory.h"
+#include "common_types.h"  
+#include "modules/audio_coding/include/audio_coding_module.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 
 class AudioDeviceModule;
 class AudioProcessing;
 class AudioTransport;
-
-
-class WEBRTC_DLLEXPORT VoiceEngineObserver {
- public:
-  
-  
-  
-  virtual void CallbackOnError(int channel, int errCode) = 0;
-
- protected:
-  virtual ~VoiceEngineObserver() {}
-};
+namespace voe {
+class TransmitMixer;
+}  
 
 
 class WEBRTC_DLLEXPORT VoiceEngine {
@@ -70,35 +61,9 @@ class WEBRTC_DLLEXPORT VoiceEngine {
   
   static bool Delete(VoiceEngine*& voiceEngine);
 
-  
-  
-  static int SetTraceFilter(unsigned int filter);
-
-  
-  static int SetTraceFile(const char* fileNameUTF8,
-                          bool addFileCounter = false);
-
-  
-  
-  static int SetTraceCallback(TraceCallback* callback);
-
-#if !defined(WEBRTC_CHROMIUM_BUILD)
-  static int SetAndroidObjects(void* javaVM, void* context);
-#endif
-
-  static std::string GetVersionString();
-
  protected:
   VoiceEngine() {}
   ~VoiceEngine() {}
-
- private:
-  
-  
-  
-
-  
-  virtual void DummyVS2015BugFix() {};
 };
 
 
@@ -121,39 +86,23 @@ class WEBRTC_DLLEXPORT VoEBase {
 
   
   
-  virtual int RegisterVoiceEngineObserver(VoiceEngineObserver& observer) = 0;
+  
+  
+  
+  
+  
+  
+  virtual int Init(
+      AudioDeviceModule* audio_device,
+      AudioProcessing* audio_processing,
+      const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) = 0;
 
   
   
-  virtual int DeRegisterVoiceEngineObserver() = 0;
+  virtual voe::TransmitMixer* transmit_mixer() = 0;
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual int Init(AudioDeviceModule* external_adm = NULL,
-                   AudioProcessing* audioproc = NULL,
-                   const rtc::scoped_refptr<AudioDecoderFactory>&
-                       decoder_factory = nullptr) = 0;
-
-  
-  virtual AudioProcessing* audio_processing() = 0;
-
-  
-  
-  virtual AudioDeviceModule* audio_device_module() = 0;
-
-  
-  
-  virtual int Terminate() = 0;
+  virtual void Terminate() = 0;
 
   
   
@@ -167,13 +116,6 @@ class WEBRTC_DLLEXPORT VoEBase {
   
   
   virtual int DeleteChannel(int channel) = 0;
-
-  
-  
-  virtual int StartReceive(int channel) = 0;
-
-  
-  virtual int StopReceive(int channel)  { return 0; }
 
   
   
@@ -191,20 +133,23 @@ class WEBRTC_DLLEXPORT VoEBase {
   virtual int StopSend(int channel) = 0;
 
   
-  virtual int GetVersion(char version[1024]) = 0;
+  
+  
+  
+  
+  virtual int SetPlayout(bool enabled) = 0;
 
   
-  virtual int LastError() = 0;
+  
+  
+  
+  
+  
+  virtual int SetRecording(bool enabled) = 0;
 
   
   
   virtual AudioTransport* audio_transport() { return NULL; }
-
-  
-  
-  
-  
-  virtual int AssociateSendChannel(int channel, int accociate_send_channel) = 0;
 
  protected:
   VoEBase() {}

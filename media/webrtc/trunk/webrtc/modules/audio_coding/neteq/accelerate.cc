@@ -8,9 +8,9 @@
 
 
 
-#include "webrtc/modules/audio_coding/neteq/accelerate.h"
+#include "modules/audio_coding/neteq/accelerate.h"
 
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
 
 namespace webrtc {
 

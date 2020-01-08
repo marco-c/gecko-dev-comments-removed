@@ -10,9 +10,9 @@
 
 
 
-#include "webrtc/modules/audio_coding/neteq/tools/packet.h"
+#include "modules/audio_coding/neteq/tools/packet.h"
 
-#include "webrtc/test/gtest.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace test {

@@ -8,20 +8,24 @@
 
 
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_DUPLICATOR_CONTROLLER_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_DUPLICATOR_CONTROLLER_H_
+#ifndef MODULES_DESKTOP_CAPTURE_WIN_DXGI_DUPLICATOR_CONTROLLER_H_
+#define MODULES_DESKTOP_CAPTURE_WIN_DXGI_DUPLICATOR_CONTROLLER_H_
 
 #include <D3DCommon.h>
 
-#include <memory>
+#include <atomic>
+#include <string>
 #include <vector>
 
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/modules/desktop_capture/desktop_geometry.h"
-#include "webrtc/modules/desktop_capture/desktop_region.h"
-#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
-#include "webrtc/modules/desktop_capture/win/d3d_device.h"
-#include "webrtc/modules/desktop_capture/win/dxgi_adapter_duplicator.h"
+#include "modules/desktop_capture/desktop_geometry.h"
+#include "modules/desktop_capture/shared_desktop_frame.h"
+#include "modules/desktop_capture/win/d3d_device.h"
+#include "modules/desktop_capture/win/display_configuration_monitor.h"
+#include "modules/desktop_capture/win/dxgi_adapter_duplicator.h"
+#include "modules/desktop_capture/win/dxgi_context.h"
+#include "modules/desktop_capture/win/dxgi_frame.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 
@@ -38,26 +42,7 @@ namespace webrtc {
 
 class DxgiDuplicatorController {
  public:
-  
-  
-  class Context {
-   public:
-    Context();
-    
-    
-    ~Context();
-
-   private:
-    friend class DxgiDuplicatorController;
-
-    
-    
-    
-    int identity_ = 0;
-
-    
-    std::vector<DxgiAdapterDuplicator::Context> contexts_;
-  };
+  using Context = DxgiFrameContext;
 
   
   
@@ -74,19 +59,32 @@ class DxgiDuplicatorController {
     
   };
 
-  
-  static DxgiDuplicatorController* Instance();
+  enum class Result {
+    SUCCEEDED,
+    UNSUPPORTED_SESSION,
+    FRAME_PREPARE_FAILED,
+    INITIALIZATION_FAILED,
+    DUPLICATION_FAILED,
+    INVALID_MONITOR_ID,
+  };
 
   
   
-  ~DxgiDuplicatorController();
+  static std::string ResultName(Result result);
 
   
+  static rtc::scoped_refptr<DxgiDuplicatorController> Instance();
+
+  
+  static bool IsCurrentSessionSupported();
+
   
 
   
   bool IsSupported();
 
+  
+  
   
   bool RetrieveD3dInfo(D3dInfo* info);
 
@@ -95,17 +93,12 @@ class DxgiDuplicatorController {
   
   
   
-  
-  
-  
-  bool Duplicate(Context* context, SharedDesktopFrame* target);
+  Result Duplicate(DxgiFrame* frame);
 
   
   
   
-  bool DuplicateMonitor(Context* context,
-                        int monitor_id,
-                        SharedDesktopFrame* target);
+  Result DuplicateMonitor(DxgiFrame* frame, int monitor_id);
 
   
   
@@ -113,28 +106,22 @@ class DxgiDuplicatorController {
 
   
   
-  DesktopRect desktop_rect();
-
-  
-  
-  
-  DesktopSize desktop_size();
-
-  
-  
-  
-  
-  DesktopRect ScreenRect(int id);
-
-  
-  
   
   int ScreenCount();
 
+  
+  
+  
+  
+  bool GetDeviceNames(std::vector<std::string>* output);
+
  private:
   
+  friend void DxgiFrameContext::Reset();
+
   
-  friend class Context;
+  
+  friend class rtc::scoped_refptr<DxgiDuplicatorController>;
 
   
   
@@ -142,14 +129,36 @@ class DxgiDuplicatorController {
 
   
   
+  ~DxgiDuplicatorController();
+
+  
+  void AddRef();
+  void Release();
+
+  
+  
+  
+  
+  Result DoDuplicate(DxgiFrame* frame, int monitor_id);
+
+  
+  
+  void Unload();
+
+  
+  
   void Unregister(const Context* const context);
 
   
+  
 
+  
   
   
   bool Initialize();
 
+  
+  
   bool DoInitialize();
 
   
@@ -162,10 +171,52 @@ class DxgiDuplicatorController {
   
   void Setup(Context* context);
 
+  bool DoDuplicateUnlocked(Context* context,
+                           int monitor_id,
+                           SharedDesktopFrame* target);
+
   
-  bool DoDuplicate(Context* context,
-                   int monitor_id,
-                   SharedDesktopFrame* target);
+  bool DoDuplicateAll(Context* context, SharedDesktopFrame* target);
+
+  
+  bool DoDuplicateOne(Context* context,
+                      int monitor_id,
+                      SharedDesktopFrame* target);
+
+  
+  int64_t GetNumFramesCaptured() const;
+
+  
+  DesktopSize desktop_size() const;
+
+  
+  
+  
+  DesktopRect ScreenRect(int id) const;
+
+  int ScreenCountUnlocked() const;
+
+  void GetDeviceNamesUnlocked(std::vector<std::string>* output) const;
+
+  
+  
+  DesktopSize SelectedDesktopSize(int monitor_id) const;
+
+  
+  
+  
+  
+  
+  bool EnsureFrameCaptured(Context* context, SharedDesktopFrame* target);
+
+  
+  
+  
+  
+  void TranslateRect();
+
+  
+  std::atomic_int refcount_;
 
   
   rtc::CriticalSection lock_;
@@ -177,6 +228,9 @@ class DxgiDuplicatorController {
   DesktopVector dpi_;
   std::vector<DxgiAdapterDuplicator> duplicators_;
   D3dInfo d3d_info_;
+  DisplayConfigurationMonitor display_configuration_monitor_;
+  
+  uint32_t succeeded_duplications_ = 0;
 };
 
 }  

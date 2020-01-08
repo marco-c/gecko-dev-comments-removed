@@ -7,9 +7,9 @@
 
 
 
+#include "modules/video_coding/codecs/vp9/screenshare_layers.h"
 #include <algorithm>
-#include "webrtc/modules/video_coding/codecs/vp9/screenshare_layers.h"
-#include "webrtc/base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

@@ -8,12 +8,12 @@
 
 
 
-#ifndef WEBRTC_API_TEST_MOCK_AUDIO_MIXER_H_
-#define WEBRTC_API_TEST_MOCK_AUDIO_MIXER_H_
+#ifndef API_TEST_MOCK_AUDIO_MIXER_H_
+#define API_TEST_MOCK_AUDIO_MIXER_H_
 
-#include "webrtc/api/audio/audio_mixer.h"
+#include "api/audio/audio_mixer.h"
 
-#include "webrtc/test/gmock.h"
+#include "test/gmock.h"
 
 namespace webrtc {
 namespace test {

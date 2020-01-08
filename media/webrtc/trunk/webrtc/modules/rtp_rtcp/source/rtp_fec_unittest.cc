@@ -12,14 +12,14 @@
 #include <list>
 #include <memory>
 
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/random.h"
-#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/modules/rtp_rtcp/source/fec_test_helper.h"
-#include "webrtc/modules/rtp_rtcp/source/flexfec_header_reader_writer.h"
-#include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
-#include "webrtc/modules/rtp_rtcp/source/ulpfec_header_reader_writer.h"
-#include "webrtc/test/gtest.h"
+#include "modules/rtp_rtcp/source/byte_io.h"
+#include "modules/rtp_rtcp/source/fec_test_helper.h"
+#include "modules/rtp_rtcp/source/flexfec_header_reader_writer.h"
+#include "modules/rtp_rtcp/source/forward_error_correction.h"
+#include "modules/rtp_rtcp/source/ulpfec_header_reader_writer.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/random.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 
@@ -86,7 +86,8 @@ class RtpFecTest : public ::testing::Test {
 
   ForwardErrorCorrection::PacketList media_packets_;
   std::list<ForwardErrorCorrection::Packet*> generated_fec_packets_;
-  ForwardErrorCorrection::ReceivedPacketList received_packets_;
+  std::vector<std::unique_ptr<ForwardErrorCorrection::ReceivedPacket>>
+      received_packets_;
   ForwardErrorCorrection::RecoveredPacketList recovered_packets_;
 
   int media_loss_mask_[kUlpfecMaxMediaPackets];
@@ -98,6 +99,7 @@ void RtpFecTest<ForwardErrorCorrectionType>::NetworkReceivedPackets(
     int* media_loss_mask,
     int* fec_loss_mask) {
   constexpr bool kFecPacket = true;
+  this->received_packets_.clear();
   ReceivedPackets(media_packets_, media_loss_mask, !kFecPacket);
   ReceivedPackets(generated_fec_packets_, fec_loss_mask, kFecPacket);
 }
@@ -108,7 +110,8 @@ void RtpFecTest<ForwardErrorCorrectionType>::ReceivedPackets(
     const PacketListType& packet_list,
     int* loss_mask,
     bool is_fec) {
-  uint16_t fec_seq_num = media_packet_generator_.GetFecSeqNum();
+  uint16_t fec_seq_num = ForwardErrorCorrectionType::GetFirstFecSeqNum(
+      media_packet_generator_.GetNextSeqNum());
   int packet_idx = 0;
 
   for (const auto& packet : packet_list) {
@@ -120,19 +123,17 @@ void RtpFecTest<ForwardErrorCorrectionType>::ReceivedPackets(
       memcpy(received_packet->pkt->data, packet->data, packet->length);
       received_packet->is_fec = is_fec;
       if (!is_fec) {
+        received_packet->ssrc = kMediaSsrc;
         
         
         received_packet->seq_num =
             ByteReader<uint16_t>::ReadBigEndian(&packet->data[2]);
       } else {
-        
+        received_packet->ssrc = ForwardErrorCorrectionType::kFecSsrc;
         
         
         
         received_packet->seq_num = fec_seq_num;
-        
-        
-        received_packet->ssrc = kMediaSsrc;
       }
       received_packets_.push_back(std::move(received_packet));
     }
@@ -177,18 +178,39 @@ bool RtpFecTest<ForwardErrorCorrectionType>::IsRecoveryComplete() {
 
 class FlexfecForwardErrorCorrection : public ForwardErrorCorrection {
  public:
+  static const uint32_t kFecSsrc = kFlexfecSsrc;
+
   FlexfecForwardErrorCorrection()
       : ForwardErrorCorrection(
             std::unique_ptr<FecHeaderReader>(new FlexfecHeaderReader()),
-            std::unique_ptr<FecHeaderWriter>(new FlexfecHeaderWriter())) {}
+            std::unique_ptr<FecHeaderWriter>(new FlexfecHeaderWriter()),
+            kFecSsrc,
+            kMediaSsrc) {}
+
+  
+  
+  static uint16_t GetFirstFecSeqNum(uint16_t next_media_seq_num) {
+    Random random(0xbe110);
+    return random.Rand<uint16_t>();
+  }
 };
 
 class UlpfecForwardErrorCorrection : public ForwardErrorCorrection {
  public:
+  static const uint32_t kFecSsrc = kMediaSsrc;
+
   UlpfecForwardErrorCorrection()
       : ForwardErrorCorrection(
             std::unique_ptr<FecHeaderReader>(new UlpfecHeaderReader()),
-            std::unique_ptr<FecHeaderWriter>(new UlpfecHeaderWriter())) {}
+            std::unique_ptr<FecHeaderWriter>(new UlpfecHeaderWriter()),
+            kFecSsrc,
+            kMediaSsrc) {}
+
+  
+  
+  static uint16_t GetFirstFecSeqNum(uint16_t next_media_seq_num) {
+    return next_media_seq_num;
+  }
 };
 
 using FecTypes =
@@ -217,8 +239,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryNoLoss) {
   memset(this->fec_loss_mask_, 0, sizeof(this->fec_loss_mask_));
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_TRUE(this->IsRecoveryComplete());
@@ -247,8 +271,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithLoss) {
   this->media_loss_mask_[3] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_TRUE(this->IsRecoveryComplete());
@@ -261,19 +287,23 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithLoss) {
   this->media_loss_mask_[3] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_FALSE(this->IsRecoveryComplete());
 }
 
 
-TYPED_TEST(RtpFecTest, FecRecoveryWithSeqNumGapTwoFrames) {
+TYPED_TEST(RtpFecTest, NoFecRecoveryWithOldFecPacket) {
   constexpr int kNumImportantPackets = 0;
   constexpr bool kUseUnequalProtection = false;
   constexpr uint8_t kProtectionFactor = 20;
 
+  
+  
   
   
   
@@ -299,6 +329,17 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithSeqNumGapTwoFrames) {
 
   
   this->media_packets_ =
+      this->media_packet_generator_.ConstructMediaPackets(3, 32767);
+
+  
+  EXPECT_EQ(3u, this->media_packets_.size());
+
+  
+  memset(this->media_loss_mask_, 0, sizeof(this->media_loss_mask_));
+  this->ReceivedPackets(this->media_packets_, this->media_loss_mask_, false);
+
+  
+  this->media_packets_ =
       this->media_packet_generator_.ConstructMediaPackets(3, 65535);
 
   
@@ -310,13 +351,16 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithSeqNumGapTwoFrames) {
   
   this->ReceivedPackets(this->media_packets_, this->media_loss_mask_, false);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   
   
-  EXPECT_EQ(2u, this->recovered_packets_.size());
+  
+  EXPECT_EQ(5u, this->recovered_packets_.size());
   EXPECT_TRUE(this->recovered_packets_.size() != this->media_packets_.size());
 }
 
@@ -350,8 +394,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithSeqNumGapOneFrameRecovery) {
   this->ReceivedPackets(this->generated_fec_packets_, this->fec_loss_mask_,
                         true);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   
@@ -365,7 +411,13 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithSeqNumGapOneFrameRecovery) {
 
 
 
-TYPED_TEST(RtpFecTest, FecRecoveryWithSeqNumGapOneFrameNoRecovery) {
+
+
+
+
+
+using RtpFecTestUlpfecOnly = RtpFecTest<UlpfecForwardErrorCorrection>;
+TEST_F(RtpFecTestUlpfecOnly, FecRecoveryWithSeqNumGapOneFrameRecovery) {
   constexpr int kNumImportantPackets = 0;
   constexpr bool kUseUnequalProtection = false;
   constexpr uint8_t kProtectionFactor = 200;
@@ -394,8 +446,69 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithSeqNumGapOneFrameNoRecovery) {
   this->ReceivedPackets(this->generated_fec_packets_, this->fec_loss_mask_,
                         true);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
+
+  
+  
+  
+  
+  EXPECT_EQ(3u, this->recovered_packets_.size());
+  EXPECT_EQ(this->recovered_packets_.size(), this->media_packets_.size());
+  EXPECT_TRUE(this->IsRecoveryComplete());
+}
+
+
+
+
+
+
+
+
+
+using RtpFecTestFlexfecOnly = RtpFecTest<FlexfecForwardErrorCorrection>;
+TEST_F(RtpFecTestFlexfecOnly, FecRecoveryWithSeqNumGapOneFrameNoRecovery) {
+  constexpr int kNumImportantPackets = 0;
+  constexpr bool kUseUnequalProtection = false;
+  constexpr uint8_t kProtectionFactor = 200;
+
+  
+  
+  
+  
+  this->media_packets_ =
+      this->media_packet_generator_.ConstructMediaPackets(3, 65532);
+
+  EXPECT_EQ(
+      0, this->fec_.EncodeFec(this->media_packets_, kProtectionFactor,
+                              kNumImportantPackets, kUseUnequalProtection,
+                              kFecMaskBursty, &this->generated_fec_packets_));
+
+  
+  EXPECT_EQ(2u, this->generated_fec_packets_.size());
+
+  
+  
+  auto it = this->generated_fec_packets_.begin();
+  ByteWriter<uint16_t>::WriteBigEndian(&(*it)->data[2], 65535);
+  ++it;
+  ByteWriter<uint16_t>::WriteBigEndian(&(*it)->data[2], 0);
+
+  
+  memset(this->media_loss_mask_, 0, sizeof(this->media_loss_mask_));
+  memset(this->fec_loss_mask_, 0, sizeof(this->fec_loss_mask_));
+  this->media_loss_mask_[1] = 1;
+  this->media_loss_mask_[2] = 1;
+  this->ReceivedPackets(this->media_packets_, this->media_loss_mask_, false);
+  this->ReceivedPackets(this->generated_fec_packets_, this->fec_loss_mask_,
+                        true);
+
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   
@@ -434,12 +547,14 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithMediaOutOfOrder) {
 
   
   auto it0 = this->received_packets_.begin();
-  auto it2 = this->received_packets_.begin();
-  it2++;
-  std::swap(*it0, *it2);
+  auto it1 = this->received_packets_.begin();
+  it1++;
+  std::swap(*it0, *it1);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_EQ(3u, this->recovered_packets_.size());
@@ -476,8 +591,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithFecOutOfOrder) {
   
   this->ReceivedPackets(this->media_packets_, this->media_loss_mask_, false);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_EQ(3u, this->recovered_packets_.size());
@@ -523,8 +640,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithLoss50percRandomMask) {
   this->media_loss_mask_[3] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_TRUE(this->IsRecoveryComplete());
@@ -539,8 +658,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithLoss50percRandomMask) {
   this->media_loss_mask_[3] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_FALSE(this->IsRecoveryComplete());
@@ -585,8 +706,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithLoss50percBurstyMask) {
   this->media_loss_mask_[3] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_TRUE(this->IsRecoveryComplete());
@@ -601,8 +724,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithLoss50percBurstyMask) {
   this->media_loss_mask_[3] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_TRUE(this->IsRecoveryComplete());
@@ -617,8 +742,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithLoss50percBurstyMask) {
   this->media_loss_mask_[3] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_FALSE(this->IsRecoveryComplete());
@@ -646,8 +773,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryNoLossUep) {
   memset(this->fec_loss_mask_, 0, sizeof(this->fec_loss_mask_));
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_TRUE(this->IsRecoveryComplete());
@@ -676,8 +805,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithLossUep) {
   this->media_loss_mask_[3] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_TRUE(this->IsRecoveryComplete());
@@ -690,8 +821,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithLossUep) {
   this->media_loss_mask_[3] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_FALSE(this->IsRecoveryComplete());
@@ -734,8 +867,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithLoss50percUepRandomMask) {
   this->media_loss_mask_[3] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_TRUE(this->IsRecoveryComplete());
@@ -751,8 +886,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithLoss50percUepRandomMask) {
   this->media_loss_mask_[3] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_FALSE(this->IsRecoveryComplete());
@@ -786,8 +923,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryNonConsecutivePackets) {
   this->media_loss_mask_[2] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_TRUE(this->IsRecoveryComplete());
@@ -799,8 +938,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryNonConsecutivePackets) {
   this->media_loss_mask_[1] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_FALSE(this->IsRecoveryComplete());
@@ -813,8 +954,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryNonConsecutivePackets) {
   this->media_loss_mask_[2] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_FALSE(this->IsRecoveryComplete());
@@ -851,8 +994,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryNonConsecutivePacketsExtension) {
   this->media_loss_mask_[kNumMediaPackets - 1] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_TRUE(this->IsRecoveryComplete());
@@ -864,8 +1009,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryNonConsecutivePacketsExtension) {
   this->media_loss_mask_[kNumMediaPackets - 2] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_FALSE(this->IsRecoveryComplete());
@@ -882,8 +1029,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryNonConsecutivePacketsExtension) {
   this->media_loss_mask_[kNumMediaPackets - 1] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_FALSE(this->IsRecoveryComplete());
@@ -920,8 +1069,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryNonConsecutivePacketsWrap) {
   this->media_loss_mask_[kNumMediaPackets - 1] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_TRUE(this->IsRecoveryComplete());
@@ -933,8 +1084,10 @@ TYPED_TEST(RtpFecTest, FecRecoveryNonConsecutivePacketsWrap) {
   this->media_loss_mask_[kNumMediaPackets - 2] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_FALSE(this->IsRecoveryComplete());
@@ -951,49 +1104,13 @@ TYPED_TEST(RtpFecTest, FecRecoveryNonConsecutivePacketsWrap) {
   this->media_loss_mask_[kNumMediaPackets - 1] = 1;
   this->NetworkReceivedPackets(this->media_loss_mask_, this->fec_loss_mask_);
 
-  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
-                                    &this->recovered_packets_));
+  for (const auto& received_packet : this->received_packets_) {
+    this->fec_.DecodeFec(*received_packet,
+                         &this->recovered_packets_);
+  }
 
   
   EXPECT_FALSE(this->IsRecoveryComplete());
-}
-
-
-using RtpFecTestWithFlexfec = RtpFecTest<FlexfecForwardErrorCorrection>;
-TEST_F(RtpFecTestWithFlexfec,
-       FecRecoveryWithLossAndDifferentMediaAndFlexfecSsrcs) {
-  constexpr int kNumImportantPackets = 0;
-  constexpr bool kUseUnequalProtection = false;
-  constexpr int kNumMediaPackets = 4;
-  constexpr uint8_t kProtectionFactor = 60;
-
-  media_packets_ =
-      media_packet_generator_.ConstructMediaPackets(kNumMediaPackets);
-
-  EXPECT_EQ(0, fec_.EncodeFec(media_packets_, kProtectionFactor,
-                              kNumImportantPackets, kUseUnequalProtection,
-                              kFecMaskBursty, &generated_fec_packets_));
-
-  
-  EXPECT_EQ(1u, generated_fec_packets_.size());
-
-  
-  memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
-  memset(fec_loss_mask_, 0, sizeof(fec_loss_mask_));
-  media_loss_mask_[3] = 1;
-  NetworkReceivedPackets(media_loss_mask_, fec_loss_mask_);
-
-  
-  auto it = received_packets_.begin();
-  ++it;
-  ++it;
-  ++it;  
-  (*it)->ssrc = kFlexfecSsrc;
-
-  EXPECT_EQ(0, fec_.DecodeFec(&received_packets_, &recovered_packets_));
-
-  
-  EXPECT_TRUE(IsRecoveryComplete());
 }
 
 }  

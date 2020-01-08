@@ -8,14 +8,14 @@
 
 
 
-#include "webrtc/modules/audio_processing/ns/noise_suppression.h"
+#include "modules/audio_processing/ns/noise_suppression.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/modules/audio_processing/ns/defines.h"
-#include "webrtc/modules/audio_processing/ns/ns_core.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "modules/audio_processing/ns/defines.h"
+#include "modules/audio_processing/ns/ns_core.h"
 
 NsHandle* WebRtcNs_Create() {
   NoiseSuppressionC* self = malloc(sizeof(NoiseSuppressionC));

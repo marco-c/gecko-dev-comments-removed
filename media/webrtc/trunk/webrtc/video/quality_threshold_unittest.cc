@@ -8,9 +8,9 @@
 
 
 
-#include "webrtc/video/quality_threshold.h"
+#include "video/quality_threshold.h"
 
-#include "webrtc/test/gtest.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

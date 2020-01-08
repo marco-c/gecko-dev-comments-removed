@@ -7,14 +7,14 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_UTILITY_MOCK_MOCK_FRAME_DROPPER_H_
-#define WEBRTC_MODULES_VIDEO_CODING_UTILITY_MOCK_MOCK_FRAME_DROPPER_H_
+#ifndef MODULES_VIDEO_CODING_UTILITY_MOCK_MOCK_FRAME_DROPPER_H_
+#define MODULES_VIDEO_CODING_UTILITY_MOCK_MOCK_FRAME_DROPPER_H_
 
 #include <string>
 
-#include "webrtc/modules/video_coding/utility/frame_dropper.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/typedefs.h"
+#include "modules/video_coding/utility/frame_dropper.h"
+#include "test/gmock.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 

@@ -8,13 +8,13 @@
 
 
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_CROPPING_WINDOW_CAPTURER_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_CROPPING_WINDOW_CAPTURER_H_
+#ifndef MODULES_DESKTOP_CAPTURE_CROPPING_WINDOW_CAPTURER_H_
+#define MODULES_DESKTOP_CAPTURE_CROPPING_WINDOW_CAPTURER_H_
 
 #include <memory>
 
-#include "webrtc/modules/desktop_capture/desktop_capturer.h"
-#include "webrtc/modules/desktop_capture/desktop_capture_options.h"
+#include "modules/desktop_capture/desktop_capturer.h"
+#include "modules/desktop_capture/desktop_capture_options.h"
 
 namespace webrtc {
 
@@ -31,7 +31,6 @@ class CroppingWindowCapturer : public DesktopCapturer,
 
   
   void Start(DesktopCapturer::Callback* callback) override;
-  void Stop() override;
   void SetSharedMemoryFactory(
       std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override;
   void CaptureFrame() override;
@@ -39,6 +38,7 @@ class CroppingWindowCapturer : public DesktopCapturer,
   bool GetSourceList(SourceList* sources) override;
   bool SelectSource(SourceId id) override;
   bool FocusOnSelectedSource() override;
+  bool IsOccluded(const DesktopVector& pos) override;
 
   
   
@@ -55,6 +55,8 @@ class CroppingWindowCapturer : public DesktopCapturer,
   
   virtual bool ShouldUseScreenCapturer() = 0;
 
+  
+  
   
   
   virtual DesktopRect GetWindowRectInVirtualScreen() = 0;

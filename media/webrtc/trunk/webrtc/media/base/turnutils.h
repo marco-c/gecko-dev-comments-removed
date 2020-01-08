@@ -8,8 +8,8 @@
 
 
 
-#ifndef WEBRTC_MEDIA_BASE_TURNUTILS_H_
-#define WEBRTC_MEDIA_BASE_TURNUTILS_H_
+#ifndef MEDIA_BASE_TURNUTILS_H_
+#define MEDIA_BASE_TURNUTILS_H_
 
 #include <cstddef>
 #include <cstdint>

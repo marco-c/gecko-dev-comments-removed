@@ -8,12 +8,12 @@
 
 
 
-#ifndef WEBRTC_AUDIO_UTILITY_AUDIO_FRAME_OPERATIONS_H_
-#define WEBRTC_AUDIO_UTILITY_AUDIO_FRAME_OPERATIONS_H_
+#ifndef AUDIO_UTILITY_AUDIO_FRAME_OPERATIONS_H_
+#define AUDIO_UTILITY_AUDIO_FRAME_OPERATIONS_H_
 
 #include <stddef.h>
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
@@ -40,6 +40,7 @@ class AudioFrameOperations {
   static void MonoToStereo(const int16_t* src_audio,
                            size_t samples_per_channel,
                            int16_t* dst_audio);
+
   
   
   static int MonoToStereo(AudioFrame* frame);
@@ -50,9 +51,48 @@ class AudioFrameOperations {
   static void StereoToMono(const int16_t* src_audio,
                            size_t samples_per_channel,
                            int16_t* dst_audio);
+
   
   
   static int StereoToMono(AudioFrame* frame);
+
+  
+  
+  
+  static void QuadToStereo(const int16_t* src_audio,
+                           size_t samples_per_channel,
+                           int16_t* dst_audio);
+
+  
+  
+  static int QuadToStereo(AudioFrame* frame);
+
+  
+  
+  
+  static void QuadToMono(const int16_t* src_audio,
+                         size_t samples_per_channel,
+                         int16_t* dst_audio);
+
+  
+  
+  static int QuadToMono(AudioFrame* frame);
+
+  
+  
+  
+  
+  static void DownmixChannels(const int16_t* src_audio,
+                              size_t src_channels,
+                              size_t samples_per_channel,
+                              size_t dst_channels,
+                              int16_t* dst_audio);
+
+  
+  
+  
+  
+  static int DownmixChannels(size_t dst_channels, AudioFrame* frame);
 
   
   
@@ -73,9 +113,9 @@ class AudioFrameOperations {
   
   static void ApplyHalfGain(AudioFrame* frame);
 
-  static int Scale(float left, float right, AudioFrame& frame);
+  static int Scale(float left, float right, AudioFrame* frame);
 
-  static int ScaleWithSat(float scale, AudioFrame& frame);
+  static int ScaleWithSat(float scale, AudioFrame* frame);
 };
 
 }  

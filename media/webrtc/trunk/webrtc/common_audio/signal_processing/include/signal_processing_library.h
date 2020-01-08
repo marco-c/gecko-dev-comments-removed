@@ -15,11 +15,12 @@
 
 
 
-#ifndef WEBRTC_SPL_SIGNAL_PROCESSING_LIBRARY_H_
-#define WEBRTC_SPL_SIGNAL_PROCESSING_LIBRARY_H_
+#ifndef COMMON_AUDIO_SIGNAL_PROCESSING_INCLUDE_SIGNAL_PROCESSING_LIBRARY_H_
+#define COMMON_AUDIO_SIGNAL_PROCESSING_INCLUDE_SIGNAL_PROCESSING_LIBRARY_H_
 
 #include <string.h>
-#include "webrtc/typedefs.h"
+#include "common_audio/signal_processing/dot_product_with_scale.h"
+#include "typedefs.h"  
 
 
 #define WEBRTC_SPL_WORD16_MAX       32767
@@ -59,13 +60,13 @@
 
 #define WEBRTC_SPL_MUL_16_32_RSFT11(a, b)          \
   (WEBRTC_SPL_MUL_16_16(a, (b) >> 16) * (1 << 5) + \
-   (((WEBRTC_SPL_MUL_16_U16(a, (uint16_t)(b)) >> 1) + 0x0200) >> 10))
+    (((WEBRTC_SPL_MUL_16_U16(a, (uint16_t)(b)) >> 1) + 0x0200) >> 10))
 #define WEBRTC_SPL_MUL_16_32_RSFT14(a, b)          \
   (WEBRTC_SPL_MUL_16_16(a, (b) >> 16) * (1 << 2) + \
-   (((WEBRTC_SPL_MUL_16_U16(a, (uint16_t)(b)) >> 1) + 0x1000) >> 13))
+    (((WEBRTC_SPL_MUL_16_U16(a, (uint16_t)(b)) >> 1) + 0x1000) >> 13))
 #define WEBRTC_SPL_MUL_16_32_RSFT15(a, b)            \
   ((WEBRTC_SPL_MUL_16_16(a, (b) >> 16) * (1 << 1)) + \
-   (((WEBRTC_SPL_MUL_16_U16(a, (uint16_t)(b)) >> 1) + 0x2000) >> 14))
+    (((WEBRTC_SPL_MUL_16_U16(a, (uint16_t)(b)) >> 1) + 0x2000) >> 14))
 
 #define WEBRTC_SPL_MUL_16_16_RSFT(a, b, c) \
     (WEBRTC_SPL_MUL_16_16(a, b) >> (c))
@@ -76,7 +77,7 @@
 
 
 #define WEBRTC_SPL_SCALEDIFF32(A, B, C) \
-    (C + (B >> 16) * A + (((uint32_t)(0x0000FFFF & B) * A) >> 16))
+    (C + (B >> 16) * A + (((uint32_t)(B & 0x0000FFFF) * A) >> 16))
 
 #define WEBRTC_SPL_SAT(a, b, c)         (b > a ? a : b < c ? c : b)
 
@@ -101,7 +102,7 @@ extern "C" {
   memcpy(v1, v2, (length) * sizeof(int16_t))
 
 
-#include "webrtc/common_audio/signal_processing/include/spl_inl.h"
+#include "common_audio/signal_processing/include/spl_inl.h"
 
 
 
@@ -596,22 +597,6 @@ int32_t WebRtcSpl_DivW32HiLow(int32_t num, int16_t den_hi, int16_t den_low);
 int32_t WebRtcSpl_Energy(int16_t* vector,
                          size_t vector_length,
                          int* scale_factor);
-
-
-
-
-
-
-
-
-
-
-
-
-int32_t WebRtcSpl_DotProductWithScale(const int16_t* vector1,
-                                      const int16_t* vector2,
-                                      size_t length,
-                                      int scaling);
 
 
 size_t WebRtcSpl_FilterAR(const int16_t* ar_coef,

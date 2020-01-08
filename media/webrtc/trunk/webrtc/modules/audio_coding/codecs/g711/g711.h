@@ -49,7 +49,7 @@
 extern "C" {
 #endif
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"  
 
 #if defined(__i386__)
 

@@ -8,16 +8,16 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_BACKGROUND_NOISE_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_BACKGROUND_NOISE_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_BACKGROUND_NOISE_H_
+#define MODULES_AUDIO_CODING_NETEQ_BACKGROUND_NOISE_H_
 
 #include <string.h>  
 #include <memory>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
-#include "webrtc/modules/audio_coding/neteq/include/neteq.h"
-#include "webrtc/typedefs.h"
+#include "modules/audio_coding/neteq/audio_multi_vector.h"
+#include "modules/audio_coding/neteq/include/neteq.h"
+#include "rtc_base/constructormagic.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 

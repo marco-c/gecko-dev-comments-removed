@@ -8,14 +8,14 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_DTMF_BUFFER_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_DTMF_BUFFER_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_DTMF_BUFFER_H_
+#define MODULES_AUDIO_CODING_NETEQ_DTMF_BUFFER_H_
 
 #include <list>
 #include <string>  
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/typedefs.h"
+#include "rtc_base/constructormagic.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 

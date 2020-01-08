@@ -10,18 +10,18 @@
 
 package org.webrtc;
 
+import android.annotation.TargetApi;
+import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.SystemClock;
-
 import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
+import org.webrtc.EglBase;
+import org.webrtc.VideoFrame.TextureBuffer;
 
 
 
@@ -40,8 +40,6 @@ public class SurfaceTextureHelper {
 
 
 
-
-
   public interface OnTextureFrameAvailableListener {
     abstract void onTextureFrameAvailable(
         int oesTextureId, float[] transformMatrix, long timestampNs);
@@ -52,6 +50,7 @@ public class SurfaceTextureHelper {
 
 
 
+  @CalledByNative
   public static SurfaceTextureHelper create(
       final String threadName, final EglBase.Context sharedContext) {
     final HandlerThread thread = new HandlerThread(threadName);
@@ -125,13 +124,24 @@ public class SurfaceTextureHelper {
 
     oesTextureId = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
     surfaceTexture = new SurfaceTexture(oesTextureId);
-    surfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
-      @Override
-      public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-        hasPendingTexture = true;
-        tryDeliverTextureFrame();
-      }
-    });
+    setOnFrameAvailableListener(surfaceTexture, (SurfaceTexture st) -> {
+      hasPendingTexture = true;
+      tryDeliverTextureFrame();
+    }, handler);
+  }
+
+  @TargetApi(21)
+  private static void setOnFrameAvailableListener(SurfaceTexture surfaceTexture,
+      SurfaceTexture.OnFrameAvailableListener listener, Handler handler) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      surfaceTexture.setOnFrameAvailableListener(listener, handler);
+    } else {
+      
+      
+      
+      
+      surfaceTexture.setOnFrameAvailableListener(listener);
+    }
   }
 
   
@@ -183,6 +193,7 @@ public class SurfaceTextureHelper {
 
 
 
+  @CalledByNative
   public void returnTextureFrame() {
     handler.post(new Runnable() {
       @Override
@@ -206,6 +217,7 @@ public class SurfaceTextureHelper {
 
 
 
+  @CalledByNative
   public void dispose() {
     Logging.d(TAG, "dispose()");
     ThreadUtils.invokeAtFrontUninterruptibly(handler, new Runnable() {
@@ -219,8 +231,11 @@ public class SurfaceTextureHelper {
     });
   }
 
-  public void textureToYUV(final ByteBuffer buf, final int width, final int height,
-      final int stride, final int textureId, final float[] transformMatrix) {
+  
+  @Deprecated
+  @SuppressWarnings("deprecation") 
+  void textureToYUV(final ByteBuffer buf, final int width, final int height, final int stride,
+      final int textureId, final float[] transformMatrix) {
     if (textureId != oesTextureId) {
       throw new IllegalStateException("textureToByteBuffer called with unexpected textureId");
     }
@@ -234,6 +249,20 @@ public class SurfaceTextureHelper {
         yuvConverter.convert(buf, width, height, stride, textureId, transformMatrix);
       }
     });
+  }
+
+  
+
+
+  public VideoFrame.I420Buffer textureToYuv(final TextureBuffer textureBuffer) {
+    final VideoFrame.I420Buffer[] result = new VideoFrame.I420Buffer[1];
+    ThreadUtils.invokeAtFrontUninterruptibly(handler, () -> {
+      if (yuvConverter == null) {
+        yuvConverter = new YuvConverter();
+      }
+      result[0] = yuvConverter.convert(textureBuffer);
+    });
+    return result[0];
   }
 
   private void updateTexImage() {
@@ -259,9 +288,7 @@ public class SurfaceTextureHelper {
 
     final float[] transformMatrix = new float[16];
     surfaceTexture.getTransformMatrix(transformMatrix);
-    final long timestampNs = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-        ? surfaceTexture.getTimestamp()
-        : TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime());
+    final long timestampNs = surfaceTexture.getTimestamp();
     listener.onTextureFrameAvailable(oesTextureId, transformMatrix, timestampNs);
   }
 
@@ -279,5 +306,23 @@ public class SurfaceTextureHelper {
     surfaceTexture.release();
     eglBase.release();
     handler.getLooper().quit();
+  }
+
+  
+
+
+
+
+
+
+
+  public TextureBuffer createTextureBuffer(int width, int height, Matrix transformMatrix) {
+    return new TextureBufferImpl(
+        width, height, TextureBuffer.Type.OES, oesTextureId, transformMatrix, this, new Runnable() {
+          @Override
+          public void run() {
+            returnTextureFrame();
+          }
+        });
   }
 }

@@ -8,14 +8,15 @@
 
 
 
-#ifndef WEBRTC_TEST_TESTSUPPORT_FRAME_WRITER_H_
-#define WEBRTC_TEST_TESTSUPPORT_FRAME_WRITER_H_
+#ifndef TEST_TESTSUPPORT_FRAME_WRITER_H_
+#define TEST_TESTSUPPORT_FRAME_WRITER_H_
 
 #include <stdio.h>
 
 #include <string>
 
-#include "webrtc/typedefs.h"
+#include "api/video/video_frame.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 namespace test {
@@ -42,7 +43,8 @@ class FrameWriter {
   virtual size_t FrameLength() = 0;
 };
 
-class FrameWriterImpl : public FrameWriter {
+
+class YuvFrameWriterImpl : public FrameWriter {
  public:
   
   
@@ -50,18 +52,51 @@ class FrameWriterImpl : public FrameWriter {
   
   
   
-  
-  FrameWriterImpl(std::string output_filename, size_t frame_length_in_bytes);
-  ~FrameWriterImpl() override;
+  YuvFrameWriterImpl(std::string output_filename, int width, int height);
+  ~YuvFrameWriterImpl() override;
   bool Init() override;
   bool WriteFrame(uint8_t* frame_buffer) override;
   void Close() override;
   size_t FrameLength() override;
 
- private:
-  std::string output_filename_;
+ protected:
+  const std::string output_filename_;
   size_t frame_length_in_bytes_;
+  const int width_;
+  const int height_;
   FILE* output_file_;
+};
+
+
+
+class Y4mFrameWriterImpl : public YuvFrameWriterImpl {
+ public:
+  Y4mFrameWriterImpl(std::string output_filename,
+                     int width,
+                     int height,
+                     int frame_rate);
+  ~Y4mFrameWriterImpl() override;
+  bool Init() override;
+  bool WriteFrame(uint8_t* frame_buffer) override;
+
+ private:
+  const int frame_rate_;
+};
+
+
+class JpegFrameWriter {
+ public:
+  JpegFrameWriter(const std::string &output_filename);
+  
+  
+  bool WriteFrame(const VideoFrame& input_frame, int quality);
+
+#if !defined(WEBRTC_IOS)
+ private:
+  bool frame_written_;
+  const std::string output_filename_;
+  FILE* output_file_;
+#endif
 };
 
 }  

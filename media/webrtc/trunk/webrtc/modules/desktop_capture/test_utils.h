@@ -8,10 +8,10 @@
 
 
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_TEST_UTILS_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_TEST_UTILS_H_
+#ifndef MODULES_DESKTOP_CAPTURE_TEST_UTILS_H_
+#define MODULES_DESKTOP_CAPTURE_TEST_UTILS_H_
 
-#include "webrtc/modules/desktop_capture/desktop_frame.h"
+#include "modules/desktop_capture/desktop_frame.h"
 
 namespace webrtc {
 

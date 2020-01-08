@@ -13,13 +13,12 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_ACM2_ACM_CODEC_DATABASE_H_
-#define WEBRTC_MODULES_AUDIO_CODING_ACM2_ACM_CODEC_DATABASE_H_
+#ifndef MODULES_AUDIO_CODING_ACM2_ACM_CODEC_DATABASE_H_
+#define MODULES_AUDIO_CODING_ACM2_ACM_CODEC_DATABASE_H_
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
-#include "webrtc/modules/audio_coding/neteq/include/neteq.h"
-#include "webrtc/typedefs.h"
+#include "common_types.h"  
+#include "modules/audio_coding/acm2/rent_a_codec.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 

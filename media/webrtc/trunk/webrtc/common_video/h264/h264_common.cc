@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/common_video/h264/h264_common.h"
+#include "common_video/h264/h264_common.h"
 
 namespace webrtc {
 namespace H264 {
@@ -60,26 +60,27 @@ NaluType ParseNaluType(uint8_t data) {
   return static_cast<NaluType>(data & kNaluTypeMask);
 }
 
-std::unique_ptr<rtc::Buffer> ParseRbsp(const uint8_t* data, size_t length) {
-  std::unique_ptr<rtc::Buffer> rbsp_buffer(new rtc::Buffer(0, length));
-  const char* sps_bytes = reinterpret_cast<const char*>(data);
+std::vector<uint8_t> ParseRbsp(const uint8_t* data, size_t length) {
+  std::vector<uint8_t> out;
+  out.reserve(length);
+
   for (size_t i = 0; i < length;) {
     
     
     
     
-    if (length - i >= 3 && data[i] == 0 && data[i + 1] == 0 &&
-        data[i + 2] == 3) {
+    if (length - i >= 3 && !data[i] && !data[i + 1] && data[i + 2] == 3) {
       
-      rbsp_buffer->AppendData(sps_bytes + i, 2);
-      i += 3;
+      out.push_back(data[i++]);
+      out.push_back(data[i++]);
+      
+      i++;
     } else {
       
-      rbsp_buffer->AppendData(sps_bytes[i]);
-      ++i;
+      out.push_back(data[i++]);
     }
   }
-  return rbsp_buffer;
+  return out;
 }
 
 void WriteRbsp(const uint8_t* bytes, size_t length, rtc::Buffer* destination) {

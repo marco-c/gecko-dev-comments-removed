@@ -8,18 +8,19 @@
 
 
 
-#ifndef WEBRTC_SDK_ANDROID_SRC_JNI_SURFACETEXTUREHELPER_JNI_H_
-#define WEBRTC_SDK_ANDROID_SRC_JNI_SURFACETEXTUREHELPER_JNI_H_
+#ifndef SDK_ANDROID_SRC_JNI_SURFACETEXTUREHELPER_JNI_H_
+#define SDK_ANDROID_SRC_JNI_SURFACETEXTUREHELPER_JNI_H_
 
 #include <jni.h>
 
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
-#include "webrtc/sdk/android/src/jni/native_handle_impl.h"
-#include "webrtc/api/video/video_frame_buffer.h"
-#include "webrtc/base/refcount.h"
-#include "webrtc/base/scoped_ref_ptr.h"
+#include "api/video/video_frame_buffer.h"
+#include "rtc_base/refcount.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/src/jni/videoframe.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 
 
@@ -46,7 +47,7 @@ class SurfaceTextureHelper : public rtc::RefCountInterface {
 
   jobject GetJavaSurfaceTextureHelper() const;
 
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> CreateTextureFrame(
+  rtc::scoped_refptr<VideoFrameBuffer> CreateTextureFrame(
       int width,
       int height,
       const NativeHandleImpl& native_handle);
@@ -60,9 +61,9 @@ class SurfaceTextureHelper : public rtc::RefCountInterface {
 
  private:
   const ScopedGlobalRef<jobject> j_surface_texture_helper_;
-  const jmethodID j_return_texture_method_;
 };
 
+}  
 }  
 
 #endif  

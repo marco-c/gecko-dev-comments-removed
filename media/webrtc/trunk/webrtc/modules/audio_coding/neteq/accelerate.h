@@ -8,15 +8,15 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_ACCELERATE_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_ACCELERATE_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_ACCELERATE_H_
+#define MODULES_AUDIO_CODING_NETEQ_ACCELERATE_H_
 
 #include <assert.h>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
-#include "webrtc/modules/audio_coding/neteq/time_stretch.h"
-#include "webrtc/typedefs.h"
+#include "modules/audio_coding/neteq/audio_multi_vector.h"
+#include "modules/audio_coding/neteq/time_stretch.h"
+#include "rtc_base/constructormagic.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 

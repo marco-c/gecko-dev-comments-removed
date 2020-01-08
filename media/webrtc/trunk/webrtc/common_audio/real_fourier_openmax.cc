@@ -8,12 +8,12 @@
 
 
 
-#include "webrtc/common_audio/real_fourier_openmax.h"
+#include "common_audio/real_fourier_openmax.h"
 
 #include <cstdlib>
 
 #include "dl/sp/api/omxSP.h"
-#include "webrtc/base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

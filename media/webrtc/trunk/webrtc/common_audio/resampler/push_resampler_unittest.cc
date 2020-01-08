@@ -8,9 +8,9 @@
 
 
 
-#include "webrtc/base/checks.h"  
-#include "webrtc/common_audio/resampler/include/push_resampler.h"
-#include "webrtc/test/gtest.h"
+#include "common_audio/resampler/include/push_resampler.h"
+#include "rtc_base/checks.h"  
+#include "test/gtest.h"
 
 
 

@@ -8,20 +8,20 @@
 
 
 
-#include "webrtc/modules/audio_coding/codecs/ilbc/audio_decoder_ilbc.h"
-#include "webrtc/modules/audio_coding/codecs/ilbc/audio_encoder_ilbc.h"
-#include "webrtc/modules/audio_coding/codecs/legacy_encoded_audio_frame.h"
-#include "webrtc/test/gtest.h"
+#include "modules/audio_coding/codecs/ilbc/audio_decoder_ilbc.h"
+#include "modules/audio_coding/codecs/ilbc/audio_encoder_ilbc.h"
+#include "modules/audio_coding/codecs/legacy_encoded_audio_frame.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 
 TEST(IlbcTest, BadPacket) {
   
-  AudioEncoderIlbc::Config config;
+  AudioEncoderIlbcConfig config;
   config.frame_size_ms = 20;  
                               
                               
-  AudioEncoderIlbc encoder(config);
+  AudioEncoderIlbcImpl encoder(config, 102);
   std::vector<int16_t> samples(encoder.SampleRateHz() / 100, 4711);
   rtc::Buffer packet;
   int num_10ms_chunks = 0;
@@ -39,7 +39,7 @@ TEST(IlbcTest, BadPacket) {
   bad_packet[30] |= 0x80;  
 
   
-  AudioDecoderIlbc decoder;
+  AudioDecoderIlbcImpl decoder;
   std::vector<int16_t> decoded_samples(num_10ms_chunks * samples.size());
   AudioDecoder::SpeechType speech_type;
   EXPECT_EQ(-1, decoder.Decode(bad_packet.data(), bad_packet.size(),
@@ -69,7 +69,7 @@ class SplitIlbcTest : public ::testing::TestWithParam<std::pair<int, int> > {
 };
 
 TEST_P(SplitIlbcTest, NumFrames) {
-  AudioDecoderIlbc decoder;
+  AudioDecoderIlbcImpl decoder;
   const size_t frame_length_samples = frame_length_ms_ * 8;
   const auto generate_payload = [] (size_t payload_length_bytes) {
     rtc::Buffer payload(payload_length_bytes);
@@ -120,7 +120,7 @@ INSTANTIATE_TEST_CASE_P(
 
 
 TEST(IlbcTest, SplitTooLargePayload) {
-  AudioDecoderIlbc decoder;
+  AudioDecoderIlbcImpl decoder;
   constexpr size_t kPayloadLengthBytes = 950;
   const auto results =
       decoder.ParsePayload(rtc::Buffer(kPayloadLengthBytes), 0);
@@ -129,7 +129,7 @@ TEST(IlbcTest, SplitTooLargePayload) {
 
 
 TEST(IlbcTest, SplitUnevenPayload) {
-  AudioDecoderIlbc decoder;
+  AudioDecoderIlbcImpl decoder;
   constexpr size_t kPayloadLengthBytes = 39;  
   const auto results =
       decoder.ParsePayload(rtc::Buffer(kPayloadLengthBytes), 0);

@@ -8,12 +8,12 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_SINK_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_SINK_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_SINK_H_
+#define MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_SINK_H_
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/typedefs.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/constructormagic.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 namespace test {
@@ -33,7 +33,7 @@ class AudioSink {
   
   bool WriteAudioFrame(const AudioFrame& audio_frame) {
     return WriteArray(
-        audio_frame.data_,
+        audio_frame.data(),
         audio_frame.samples_per_channel_ * audio_frame.num_channels_);
   }
 
@@ -54,6 +54,16 @@ class AudioSinkFork : public AudioSink {
   AudioSink* right_sink_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioSinkFork);
+};
+
+
+class VoidAudioSink : public AudioSink {
+ public:
+  VoidAudioSink() = default;
+  bool WriteArray(const int16_t* audio, size_t num_samples) override;
+
+ private:
+  RTC_DISALLOW_COPY_AND_ASSIGN(VoidAudioSink);
 };
 
 }  

@@ -8,10 +8,10 @@
 
 
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_ASM_DEFINES_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_ASM_DEFINES_H_
+#ifndef SYSTEM_WRAPPERS_INCLUDE_ASM_DEFINES_H_
+#define SYSTEM_WRAPPERS_INCLUDE_ASM_DEFINES_H_
 
-#if (defined(__linux__) || defined(__FreeBSD__)) && defined(__ELF__)
+#if defined(__linux__) && defined(__ELF__)
 .section .note.GNU-stack,"",%progbits
 #endif
 

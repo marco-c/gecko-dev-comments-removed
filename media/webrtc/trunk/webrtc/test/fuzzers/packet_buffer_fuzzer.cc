@@ -8,8 +8,8 @@
 
 
 
-#include "webrtc/modules/video_coding/packet_buffer.h"
-#include "webrtc/system_wrappers/include/clock.h"
+#include "modules/video_coding/packet_buffer.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 

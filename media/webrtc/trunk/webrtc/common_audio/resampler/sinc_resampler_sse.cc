@@ -11,7 +11,7 @@
 
 
 
-#include "webrtc/common_audio/resampler/sinc_resampler.h"
+#include "common_audio/resampler/sinc_resampler.h"
 
 #include <xmmintrin.h>
 

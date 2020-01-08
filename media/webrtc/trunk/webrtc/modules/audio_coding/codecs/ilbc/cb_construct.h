@@ -16,8 +16,8 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_CB_CONSTRUCT_H_
-#define WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_CB_CONSTRUCT_H_
+#ifndef MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_CB_CONSTRUCT_H_
+#define MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_CB_CONSTRUCT_H_
 
 #include <stdbool.h>
 #include "defines.h"
@@ -34,6 +34,6 @@ bool WebRtcIlbcfix_CbConstruct(
     int16_t* mem,              
     size_t lMem,               
     size_t veclen              
-    ) WARN_UNUSED_RESULT;
+    ) RTC_WARN_UNUSED_RESULT;
 
 #endif

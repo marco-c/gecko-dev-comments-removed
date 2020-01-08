@@ -8,11 +8,11 @@
 
 
 
-#ifndef WEBRTC_TEST_TESTSUPPORT_PACKET_READER_H_
-#define WEBRTC_TEST_TESTSUPPORT_PACKET_READER_H_
+#ifndef TEST_TESTSUPPORT_PACKET_READER_H_
+#define TEST_TESTSUPPORT_PACKET_READER_H_
 
 #include <cstddef>
-#include "webrtc/typedefs.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 namespace test {

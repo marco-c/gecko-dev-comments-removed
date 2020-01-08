@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/audio_processing/vad/pitch_internal.h"
+#include "modules/audio_processing/vad/pitch_internal.h"
 
 #include <cmath>
 

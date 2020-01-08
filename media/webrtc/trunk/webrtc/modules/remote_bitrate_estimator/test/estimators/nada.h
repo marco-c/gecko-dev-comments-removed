@@ -14,17 +14,17 @@
 
 
 
-#ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_NADA_H_
-#define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_NADA_H_
+#ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_NADA_H_
+#define MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_NADA_H_
 
 #include <list>
 #include <map>
 #include <memory>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
-#include "webrtc/voice_engine/channel.h"
+#include "modules/include/module_common_types.h"
+#include "modules/remote_bitrate_estimator/test/bwe.h"
+#include "rtc_base/constructormagic.h"
+#include "voice_engine/channel.h"
 
 namespace webrtc {
 

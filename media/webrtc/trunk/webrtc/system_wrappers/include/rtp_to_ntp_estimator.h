@@ -8,13 +8,16 @@
 
 
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_RTP_TO_NTP_ESTIMATOR_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_RTP_TO_NTP_ESTIMATOR_H_
+#ifndef SYSTEM_WRAPPERS_INCLUDE_RTP_TO_NTP_ESTIMATOR_H_
+#define SYSTEM_WRAPPERS_INCLUDE_RTP_TO_NTP_ESTIMATOR_H_
 
 #include <list>
 
-#include "webrtc/system_wrappers/include/ntp_time.h"
-#include "webrtc/typedefs.h"
+#include "api/optional.h"
+#include "modules/include/module_common_types_public.h"
+#include "rtc_base/numerics/moving_median_filter.h"
+#include "system_wrappers/include/ntp_time.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
@@ -27,18 +30,34 @@ class RtpToNtpEstimator {
 
   
   struct RtcpMeasurement {
-    RtcpMeasurement(uint32_t ntp_secs, uint32_t ntp_frac, uint32_t timestamp);
+    RtcpMeasurement(uint32_t ntp_secs,
+                    uint32_t ntp_frac,
+                    int64_t unwrapped_timestamp);
     bool IsEqual(const RtcpMeasurement& other) const;
 
     NtpTime ntp_time;
-    uint32_t rtp_timestamp;
+    int64_t unwrapped_rtp_timestamp;
   };
 
   
   struct Parameters {
-    double frequency_khz = 0.0;
-    double offset_ms = 0.0;
-    bool calculated = false;
+    
+    
+    
+    
+    Parameters(const int& value) {  
+      RTC_NOTREACHED();
+    }
+    Parameters() : frequency_khz(0.0), offset_ms(0.0) {}
+
+    double frequency_khz;
+    double offset_ms;
+
+    
+    bool operator<(const Parameters& other) const;
+    bool operator==(const Parameters& other) const;
+    bool operator<=(const Parameters& other) const;
+    bool operator!=(const Parameters& other) const;
   };
 
   
@@ -52,21 +71,20 @@ class RtpToNtpEstimator {
   
   bool Estimate(int64_t rtp_timestamp, int64_t* rtp_timestamp_ms) const;
 
-  const Parameters& params() const { return params_; }
+  
+  const rtc::Optional<Parameters> params() const;
+
+  static const int kMaxInvalidSamples = 3;
 
  private:
   void UpdateParameters();
 
+  int consecutive_invalid_samples_;
   std::list<RtcpMeasurement> measurements_;
-  Parameters params_;
+  MovingMedianFilter<Parameters> smoothing_filter_;
+  bool params_calculated_;
+  mutable TimestampUnwrapper unwrapper_;
 };
-
-
-
-
-
-int CheckForWrapArounds(uint32_t new_timestamp, uint32_t old_timestamp);
-
 }  
 
 #endif  

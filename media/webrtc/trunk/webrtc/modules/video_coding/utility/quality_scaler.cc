@@ -8,16 +8,16 @@
 
 
 
-#include "webrtc/modules/video_coding/utility/quality_scaler.h"
+#include "modules/video_coding/utility/quality_scaler.h"
 
 #include <math.h>
 
 #include <algorithm>
 #include <memory>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/task_queue.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/task_queue.h"
 
 
 
@@ -39,8 +39,12 @@ static const int kHighH264QpThreshold = 37;
 
 static const int kLowVp8QpThreshold = 29;
 static const int kHighVp8QpThreshold = 95;
-const ScalingObserverInterface::ScaleReason scale_reason_ =
-    ScalingObserverInterface::ScaleReason::kQuality;
+
+
+
+static const int kLowVp9QpThreshold = 96;
+static const int kHighVp9QpThreshold = 185;
+static const int kMinFramesNeededToScale = 2 * 30;
 
 static VideoEncoder::QpThresholds CodecTypeToDefaultThresholds(
     VideoCodecType codec_type) {
@@ -55,6 +59,10 @@ static VideoEncoder::QpThresholds CodecTypeToDefaultThresholds(
       low = kLowVp8QpThreshold;
       high = kHighVp8QpThreshold;
       break;
+    case kVideoCodecVP9:
+      low = kLowVp9QpThreshold;
+      high = kHighVp9QpThreshold;
+      break;
     default:
       RTC_NOTREACHED() << "Invalid codec type for QualityScaler.";
   }
@@ -65,13 +73,13 @@ static VideoEncoder::QpThresholds CodecTypeToDefaultThresholds(
 class QualityScaler::CheckQPTask : public rtc::QueuedTask {
  public:
   explicit CheckQPTask(QualityScaler* scaler) : scaler_(scaler) {
-    LOG(LS_INFO) << "Created CheckQPTask. Scheduling on queue...";
+    RTC_LOG(LS_INFO) << "Created CheckQPTask. Scheduling on queue...";
     rtc::TaskQueue::Current()->PostDelayedTask(
         std::unique_ptr<rtc::QueuedTask>(this), scaler_->GetSamplingPeriodMs());
   }
   void Stop() {
     RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
-    LOG(LS_INFO) << "Stopping QP Check task.";
+    RTC_LOG(LS_INFO) << "Stopping QP Check task.";
     stop_ = true;
   }
 
@@ -91,16 +99,16 @@ class QualityScaler::CheckQPTask : public rtc::QueuedTask {
   rtc::SequencedTaskChecker task_checker_;
 };
 
-QualityScaler::QualityScaler(ScalingObserverInterface* observer,
+QualityScaler::QualityScaler(AdaptationObserverInterface* observer,
                              VideoCodecType codec_type)
     : QualityScaler(observer, CodecTypeToDefaultThresholds(codec_type)) {}
 
-QualityScaler::QualityScaler(ScalingObserverInterface* observer,
+QualityScaler::QualityScaler(AdaptationObserverInterface* observer,
                              VideoEncoder::QpThresholds thresholds)
     : QualityScaler(observer, thresholds, kMeasureMs) {}
 
 
-QualityScaler::QualityScaler(ScalingObserverInterface* observer,
+QualityScaler::QualityScaler(AdaptationObserverInterface* observer,
                              VideoEncoder::QpThresholds thresholds,
                              int64_t sampling_period)
     : check_qp_task_(nullptr),
@@ -114,6 +122,8 @@ QualityScaler::QualityScaler(ScalingObserverInterface* observer,
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
   RTC_DCHECK(observer_ != nullptr);
   check_qp_task_ = new CheckQPTask(this);
+  RTC_LOG(LS_INFO) << "QP thresholds: low: " << thresholds_.low
+                   << ", high: " << thresholds_.high;
 }
 
 QualityScaler::~QualityScaler() {
@@ -142,7 +152,12 @@ void QualityScaler::CheckQP() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
   
   RTC_DCHECK_GE(thresholds_.low, 0);
-  LOG(LS_INFO) << "Checking if average QP exceeds threshold";
+
+  
+  
+  if (framedrop_percent_.size() < kMinFramesNeededToScale)
+    return;
+
   
   const rtc::Optional<int> drop_rate = framedrop_percent_.GetAverage();
   if (drop_rate && *drop_rate >= kFramedropPercentThreshold) {
@@ -152,29 +167,30 @@ void QualityScaler::CheckQP() {
 
   
   const rtc::Optional<int> avg_qp = average_qp_.GetAverage();
-  if (avg_qp && *avg_qp > thresholds_.high) {
-    ReportQPHigh();
-    return;
-  }
-  if (avg_qp && *avg_qp <= thresholds_.low) {
-    
-    ReportQPLow();
-    return;
+  if (avg_qp) {
+    RTC_LOG(LS_INFO) << "Checking average QP " << *avg_qp;
+    if (*avg_qp > thresholds_.high) {
+      ReportQPHigh();
+      return;
+    }
+    if (*avg_qp <= thresholds_.low) {
+      
+      ReportQPLow();
+      return;
+    }
   }
 }
 
 void QualityScaler::ReportQPLow() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
-  LOG(LS_INFO) << "QP has been low, asking for higher resolution.";
   ClearSamples();
-  observer_->ScaleUp(scale_reason_);
+  observer_->AdaptUp(AdaptationObserverInterface::AdaptReason::kQuality);
 }
 
 void QualityScaler::ReportQPHigh() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
-  LOG(LS_INFO) << "QP has been high , asking for lower resolution.";
   ClearSamples();
-  observer_->ScaleDown(scale_reason_);
+  observer_->AdaptDown(AdaptationObserverInterface::AdaptReason::kQuality);
   
   if (fast_rampup_) {
     fast_rampup_ = false;

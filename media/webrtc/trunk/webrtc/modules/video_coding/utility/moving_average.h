@@ -8,12 +8,12 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_UTILITY_MOVING_AVERAGE_H_
-#define WEBRTC_MODULES_VIDEO_CODING_UTILITY_MOVING_AVERAGE_H_
+#ifndef MODULES_VIDEO_CODING_UTILITY_MOVING_AVERAGE_H_
+#define MODULES_VIDEO_CODING_UTILITY_MOVING_AVERAGE_H_
 
 #include <vector>
 
-#include "webrtc/base/optional.h"
+#include "api/optional.h"
 
 namespace webrtc {
 class MovingAverage {

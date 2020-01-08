@@ -8,25 +8,22 @@
 
 
 
-#ifndef WEBRTC_MEDIA_ENGINE_FAKEWEBRTCVIDEOCAPTUREMODULE_H_
-#define WEBRTC_MEDIA_ENGINE_FAKEWEBRTCVIDEOCAPTUREMODULE_H_
+#ifndef MEDIA_ENGINE_FAKEWEBRTCVIDEOCAPTUREMODULE_H_
+#define MEDIA_ENGINE_FAKEWEBRTCVIDEOCAPTUREMODULE_H_
 
 #include <vector>
 
-#include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/media/base/testutils.h"
-#include "webrtc/media/engine/webrtcvideocapturer.h"
+#include "api/video/i420_buffer.h"
+#include "media/base/testutils.h"
+#include "media/engine/webrtcvideocapturer.h"
 
 class FakeWebRtcVcmFactory;
 
 
 class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
  public:
-  FakeWebRtcVideoCaptureModule(FakeWebRtcVcmFactory* factory)
-      : factory_(factory),
-        callback_(NULL),
-        running_(false) {
-  }
+  explicit FakeWebRtcVideoCaptureModule(FakeWebRtcVcmFactory* factory)
+      : factory_(factory), callback_(NULL), running_(false) {}
   ~FakeWebRtcVideoCaptureModule();
   void RegisterCaptureDataCallback(
       rtc::VideoSinkInterface<webrtc::VideoFrame>* callback) override {

@@ -7,12 +7,12 @@
 
 
 
-#ifndef WEBRTC_TEST_VIDEO_RENDERER_H_
-#define WEBRTC_TEST_VIDEO_RENDERER_H_
+#ifndef TEST_VIDEO_RENDERER_H_
+#define TEST_VIDEO_RENDERER_H_
 
 #include <stddef.h>
 
-#include "webrtc/media/base/videosinkinterface.h"
+#include "media/base/videosinkinterface.h"
 
 namespace webrtc {
 class VideoFrame;

@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include "webrtc/modules/audio_coding/codecs/ilbc/ilbc.h"
+#include "modules/audio_coding/codecs/ilbc/ilbc.h"
 
 
 #ifdef JUNK_DATA

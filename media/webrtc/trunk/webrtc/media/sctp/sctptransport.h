@@ -8,8 +8,8 @@
 
 
 
-#ifndef WEBRTC_MEDIA_SCTP_SCTPTRANSPORT_H_
-#define WEBRTC_MEDIA_SCTP_SCTPTRANSPORT_H_
+#ifndef MEDIA_SCTP_SCTPTRANSPORT_H_
+#define MEDIA_SCTP_SCTPTRANSPORT_H_
 
 #include <errno.h>
 
@@ -18,15 +18,14 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/asyncinvoker.h"
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/copyonwritebuffer.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/thread.h"
+#include "rtc_base/asyncinvoker.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/sigslot.h"
+#include "rtc_base/thread.h"
 
-#include "webrtc/media/base/mediachannel.h"
-#include "webrtc/media/sctp/sctptransportinternal.h"
-#include "webrtc/p2p/base/transportchannel.h"
+#include "media/base/mediachannel.h"
+#include "media/sctp/sctptransportinternal.h"
 
 
 struct sockaddr_conn;
@@ -59,6 +58,7 @@ struct SctpInboundPacket;
 
 
 
+
 class SctpTransport : public SctpTransportInternal,
                       public sigslot::has_slots<> {
  public:
@@ -67,11 +67,11 @@ class SctpTransport : public SctpTransportInternal,
   
   
   SctpTransport(rtc::Thread* network_thread,
-                cricket::TransportChannel* channel);
+                rtc::PacketTransportInternal* channel);
   ~SctpTransport() override;
 
   
-  void SetTransportChannel(cricket::TransportChannel* channel) override;
+  void SetTransportChannel(rtc::PacketTransportInternal* channel) override;
   bool Start(int local_port, int remote_port) override;
   bool OpenStream(int sid) override;
   bool ResetStream(int sid) override;
@@ -108,8 +108,8 @@ class SctpTransport : public SctpTransportInternal,
   void SetReadyToSendData();
 
   
-  void OnWritableState(rtc::PacketTransportInterface* transport);
-  virtual void OnPacketRead(rtc::PacketTransportInterface* transport,
+  void OnWritableState(rtc::PacketTransportInternal* transport);
+  virtual void OnPacketRead(rtc::PacketTransportInternal* transport,
                             const char* data,
                             size_t len,
                             const rtc::PacketTime& packet_time,
@@ -140,7 +140,7 @@ class SctpTransport : public SctpTransportInternal,
   
   rtc::AsyncInvoker invoker_;
   
-  TransportChannel* transport_channel_;
+  rtc::PacketTransportInternal* transport_channel_;
   bool was_ever_writable_ = false;
   int local_port_ = kSctpDefaultPort;
   int remote_port_ = kSctpDefaultPort;
@@ -179,7 +179,7 @@ class SctpTransportFactory : public SctpTransportInternalFactory {
       : network_thread_(network_thread) {}
 
   std::unique_ptr<SctpTransportInternal> CreateSctpTransport(
-      TransportChannel* channel) override {
+      rtc::PacketTransportInternal* channel) override {
     return std::unique_ptr<SctpTransportInternal>(
         new SctpTransport(network_thread_, channel));
   }

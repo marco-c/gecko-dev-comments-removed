@@ -26,6 +26,7 @@
 #include "lpc_tables.h"
 #include "settings.h"
 #include "signal_processing_library.h"
+#include "rtc_base/sanitizer.h"
 
 
 
@@ -190,6 +191,22 @@ static void CalcCorrelation(int32_t *PSpecQ12, int32_t *CorrQ7)
 
 
 
+
+
+static inline int32_t RTC_NO_SANITIZE("signed-integer-overflow")
+    OverflowingMulS16S32ToS32(int16_t a, int32_t b) {
+  return a * b;
+}
+static inline int32_t RTC_NO_SANITIZE("signed-integer-overflow")
+    OverflowingAddS32S32ToS32(int32_t a, int32_t b) {
+  return a + b;
+}
+static inline int32_t RTC_NO_SANITIZE("signed-integer-overflow")
+    OverflowingSubS32S32ToS32(int32_t a, int32_t b) {
+  return a - b;
+}
+
+
 static void CalcInvArSpec(const int16_t *ARCoefQ12,
                           const int32_t gainQ10,
                           int32_t *CurveQ16)
@@ -231,7 +248,10 @@ static void CalcInvArSpec(const int16_t *ARCoefQ12,
 
   for (k = 1; k < AR_ORDER; k += 2) {
     for (n = 0; n < FRAMESAMPLES/8; n++)
-      CurveQ16[n] += (WebRtcIsacfix_kCos[k][n] * CorrQ11[k + 1] + 2) >> 2;
+      CurveQ16[n] +=
+          (OverflowingMulS16S32ToS32(WebRtcIsacfix_kCos[k][n], CorrQ11[k + 1]) +
+           2) >>
+          2;
   }
 
   CS_ptrQ9 = WebRtcIsacfix_kCos[0];
@@ -256,8 +276,9 @@ static void CalcInvArSpec(const int16_t *ARCoefQ12,
 
   for (k=0; k<FRAMESAMPLES/8; k++) {
     int32_t diff_q16 = diffQ16[k] * (1 << shftVal);
-    CurveQ16[FRAMESAMPLES / 4 - 1 - k] = CurveQ16[k] - diff_q16;
-    CurveQ16[k] += diff_q16;
+    CurveQ16[FRAMESAMPLES / 4 - 1 - k] =
+        OverflowingSubS32S32ToS32(CurveQ16[k], diff_q16);
+    CurveQ16[k] = OverflowingAddS32S32ToS32(CurveQ16[k], diff_q16);
   }
 }
 
@@ -1864,7 +1885,7 @@ const uint16_t kFrameLenCdf[4] = {
   0, 21845, 43690, 65535};
 
 
-const uint16_t *kFrameLenCdfPtr[1] = {kFrameLenCdf};
+const uint16_t * const kFrameLenCdfPtr[1] = {kFrameLenCdf};
 
 
 const uint16_t kFrameLenInitIndex[1] = {1};
@@ -1932,7 +1953,7 @@ const uint16_t kBwCdf[25] = {
   62804, 65535};
 
 
-const uint16_t *kBwCdfPtr[1] = {kBwCdf};
+const uint16_t * const kBwCdfPtr[1] = {kBwCdf};
 
 
 const uint16_t kBwInitIndex[1] = {7};

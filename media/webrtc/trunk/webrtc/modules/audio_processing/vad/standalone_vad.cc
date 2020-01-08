@@ -8,12 +8,12 @@
 
 
 
-#include "webrtc/modules/audio_processing/vad/standalone_vad.h"
+#include "modules/audio_processing/vad/standalone_vad.h"
 
-#include "webrtc/audio/utility/audio_frame_operations.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/typedefs.h"
+#include "audio/utility/audio_frame_operations.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/checks.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 

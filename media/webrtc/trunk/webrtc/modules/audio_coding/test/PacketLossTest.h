@@ -8,12 +8,12 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_TEST_PACKETLOSSTEST_H_
-#define WEBRTC_MODULES_AUDIO_CODING_TEST_PACKETLOSSTEST_H_
+#ifndef MODULES_AUDIO_CODING_TEST_PACKETLOSSTEST_H_
+#define MODULES_AUDIO_CODING_TEST_PACKETLOSSTEST_H_
 
 #include <memory>
 #include <string>
-#include "webrtc/modules/audio_coding/test/EncodeDecodeTest.h"
+#include "modules/audio_coding/test/EncodeDecodeTest.h"
 
 namespace webrtc {
 

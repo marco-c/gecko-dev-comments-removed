@@ -12,21 +12,19 @@
 
 
 
-#ifndef WEBRTC_MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_CONTROLLER_H_
-#define WEBRTC_MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_CONTROLLER_H_
+#ifndef MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_CONTROLLER_H_
+#define MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_CONTROLLER_H_
 
 #include <map>
 
-#include "webrtc/modules/congestion_controller/delay_based_bwe.h"
-#include "webrtc/modules/include/module.h"
-#include "webrtc/modules/pacing/paced_sender.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/congestion_controller/delay_based_bwe.h"
+#include "modules/include/module.h"
+#include "modules/pacing/paced_sender.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
 
-class CriticalSectionWrapper;
 class RtcEventLog;
-struct PacketInfo;
 
 
 
@@ -40,11 +38,18 @@ class BitrateObserver {
   virtual void OnNetworkChanged(uint32_t bitrate_bps,
                                 uint8_t fraction_loss,  
                                 int64_t rtt_ms) = 0;
-
+  
+  virtual void OnNetworkChanged(uint32_t bitrate_for_encoder_bps,
+                                uint32_t bitrate_for_pacer_bps,
+                                bool in_probe_rtt,
+                                int64_t target_set_time,
+                                uint64_t congestion_window) {}
+  virtual void OnBytesAcked(size_t bytes) {}
+  virtual size_t pacer_queue_size_in_bytes() { return 0; }
   virtual ~BitrateObserver() {}
 };
 
-class BitrateController : public Module {
+class BitrateController : public Module, public RtcpBandwidthObserver {
   
   
   
@@ -55,16 +60,19 @@ class BitrateController : public Module {
   
   
   
-  static BitrateController* CreateBitrateController(Clock* clock,
+  static BitrateController* CreateBitrateController(const Clock* clock,
                                                     BitrateObserver* observer,
                                                     RtcEventLog* event_log);
 
-  static BitrateController* CreateBitrateController(Clock* clock,
+  static BitrateController* CreateBitrateController(const Clock* clock,
                                                     RtcEventLog* event_log);
 
   virtual ~BitrateController() {}
 
-  virtual RtcpBandwidthObserver* CreateRtcpBandwidthObserver() = 0;
+  
+  
+  RTC_DEPRECATED virtual RtcpBandwidthObserver*
+  CreateRtcpBandwidthObserver() = 0;
 
   
   virtual void SetStartBitrate(int start_bitrate_bps) = 0;

@@ -8,29 +8,34 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_
+#ifndef MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_
+#define MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_
 
 
-#ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES
-#endif
 
 #include <math.h>
 #include <stddef.h>  
 #include <stdio.h>  
+#include <string.h>
 #include <vector>
 
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/platform_file.h"
-#include "webrtc/modules/audio_processing/beamformer/array_util.h"
-#include "webrtc/modules/audio_processing/include/config.h"
-#include "webrtc/typedefs.h"
+#include "api/optional.h"
+#include "modules/audio_processing/beamformer/array_util.h"
+#include "modules/audio_processing/include/audio_processing_statistics.h"
+#include "modules/audio_processing/include/config.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/deprecation.h"
+#include "rtc_base/platform_file.h"
+#include "rtc_base/refcount.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
 struct AecCore;
 
+class AecDump;
+class AudioBuffer;
 class AudioFrame;
 
 class NonlinearBeamformer;
@@ -40,10 +45,12 @@ class ProcessingConfig;
 
 class EchoCancellation;
 class EchoControlMobile;
+class EchoControlFactory;
 class GainControl;
 class HighPassFilter;
 class LevelEstimator;
 class NoiseSuppression;
+class PostProcessing;
 class VoiceDetection;
 
 
@@ -105,7 +112,7 @@ static const int kAgcStartupMinVolume = 85;
 #else
 static const int kAgcStartupMinVolume = 0;
 #endif  
-static constexpr int kClippedLevelMin = 170;
+static constexpr int kClippedLevelMin = 70;
 struct ExperimentalAgc {
   ExperimentalAgc() = default;
   explicit ExperimentalAgc(bool enabled) : enabled(enabled) {}
@@ -234,7 +241,7 @@ struct Intelligibility {
 
 
 
-class AudioProcessing {
+class AudioProcessing : public rtc::RefCountInterface {
  public:
   
   
@@ -264,11 +271,29 @@ class AudioProcessing {
 
     
     
-    
-    
     struct EchoCanceller3 {
       bool enabled = false;
     } echo_canceller3;
+
+    
+    
+    
+    
+    struct GainController2 {
+      bool enabled = false;
+      float fixed_gain_db = 0.f;
+    } gain_controller2;
+
+    
+    
+    
+    
+    Config& operator=(const Config& config) {
+      if (this != &config) {
+        memcpy(this, &config, sizeof(*this));
+      }
+      return *this;
+    }
   };
 
   
@@ -291,9 +316,16 @@ class AudioProcessing {
   
   static AudioProcessing* Create(const webrtc::Config& config);
   
+  RTC_DEPRECATED
   static AudioProcessing* Create(const webrtc::Config& config,
                                  NonlinearBeamformer* beamformer);
-  virtual ~AudioProcessing() {}
+  
+  static AudioProcessing* Create(
+      const webrtc::Config& config,
+      std::unique_ptr<PostProcessing> capture_post_processor,
+      std::unique_ptr<EchoControlFactory> echo_control_factory,
+      NonlinearBeamformer* beamformer);
+  ~AudioProcessing() override {}
 
   
   
@@ -456,25 +488,12 @@ class AudioProcessing {
   
   
   
-  static const size_t kMaxFilenameSize = 1024;
-  virtual int StartDebugRecording(const char filename[kMaxFilenameSize],
-                                  int64_t max_log_size_bytes) = 0;
-
-  
-  
-  virtual int StartDebugRecording(FILE* handle, int64_t max_log_size_bytes) = 0;
-
-  
-  virtual int StartDebugRecording(FILE* handle) = 0;
+  virtual void AttachAecDump(std::unique_ptr<AecDump> aec_dump) = 0;
 
   
   
   
-  virtual int StartDebugRecordingForPlatformFile(rtc::PlatformFile handle) = 0;
-
-  
-  
-  virtual int StopDebugRecording() = 0;
+  virtual void DetachAecDump() = 0;
 
   
   
@@ -551,6 +570,10 @@ class AudioProcessing {
 
   
   
+  virtual AudioProcessingStats GetStatistics(bool has_remote_tracks) const;
+
+  
+  
   
   virtual EchoCancellation* echo_cancellation() const = 0;
   virtual EchoControlMobile* echo_control_mobile() const = 0;
@@ -560,6 +583,9 @@ class AudioProcessing {
   virtual LevelEstimator* level_estimator() const = 0;
   virtual NoiseSuppression* noise_suppression() const = 0;
   virtual VoiceDetection* voice_detection() const = 0;
+
+  
+  virtual AudioProcessing::Config GetConfig() const = 0;
 
   enum Error {
     
@@ -587,7 +613,6 @@ class AudioProcessing {
     kSampleRate8kHz = 8000,
     kSampleRate16kHz = 16000,
     kSampleRate32kHz = 32000,
-    kSampleRate44_1kHz = 44100,
     kSampleRate48kHz = 48000
   };
 
@@ -873,6 +898,37 @@ class EchoControlMobile {
 };
 
 
+class EchoControl {
+ public:
+  
+  virtual void AnalyzeRender(AudioBuffer* render) = 0;
+
+  
+  virtual void AnalyzeCapture(AudioBuffer* capture) = 0;
+
+  
+  virtual void ProcessCapture(AudioBuffer* capture, bool echo_path_change) = 0;
+
+  struct Metrics {
+    double echo_return_loss;
+    double echo_return_loss_enhancement;
+    int delay_ms;
+  };
+
+  
+  virtual Metrics GetMetrics() const = 0;
+
+  virtual ~EchoControl() {}
+};
+
+
+class EchoControlFactory {
+ public:
+  virtual std::unique_ptr<EchoControl> Create(int sample_rate_hz) = 0;
+  virtual ~EchoControlFactory() = default;
+};
+
+
 
 
 
@@ -1030,6 +1086,19 @@ class NoiseSuppression {
 };
 
 
+class PostProcessing {
+ public:
+  
+  virtual void Initialize(int sample_rate_hz, int num_channels) = 0;
+  
+  virtual void Process(AudioBuffer* audio) = 0;
+  
+  virtual std::string ToString() const = 0;
+
+  virtual ~PostProcessing() {}
+};
+
+
 
 
 
@@ -1077,6 +1146,80 @@ class VoiceDetection {
 
  protected:
   virtual ~VoiceDetection() {}
+};
+
+
+struct EchoCanceller3Config {
+  struct Delay {
+    size_t default_delay = 5;
+    size_t down_sampling_factor = 4;
+    size_t num_filters = 4;
+  } delay;
+
+  struct Erle {
+    float min = 1.f;
+    float max_l = 8.f;
+    float max_h = 1.5f;
+  } erle;
+
+  struct EpStrength {
+    float lf = 10.f;
+    float mf = 10.f;
+    float hf = 10.f;
+    float default_len = 0.f;
+    bool echo_can_saturate = true;
+    bool bounded_erl = false;
+  } ep_strength;
+
+  struct Mask {
+    float m1 = 0.01f;
+    float m2 = 0.0001f;
+    float m3 = 0.01f;
+    float m4 = 0.1f;
+    float m5 = 0.3f;
+    float m6 = 0.0001f;
+    float m7 = 0.01f;
+    float m8 = 0.0001f;
+    float m9 = 0.1f;
+  } gain_mask;
+
+  struct EchoAudibility {
+    float low_render_limit = 4 * 64.f;
+    float normal_render_limit = 64.f;
+  } echo_audibility;
+
+  struct RenderLevels {
+    float active_render_limit = 100.f;
+    float poor_excitation_render_limit = 150.f;
+  } render_levels;
+
+  struct GainUpdates {
+    struct GainChanges {
+      float max_inc;
+      float max_dec;
+      float rate_inc;
+      float rate_dec;
+      float min_inc;
+      float min_dec;
+    };
+
+    GainChanges low_noise = {3.f, 3.f, 1.5f, 1.5f, 1.5f, 1.5f};
+    GainChanges normal = {2.f, 2.f, 1.5f, 1.5f, 1.2f, 1.2f};
+    GainChanges saturation = {1.2f, 1.2f, 1.5f, 1.5f, 1.f, 1.f};
+    GainChanges nonlinear = {1.5f, 1.5f, 1.2f, 1.2f, 1.1f, 1.1f};
+
+    float floor_first_increase = 0.0001f;
+  } gain_updates;
+};
+
+class EchoCanceller3Factory : public EchoControlFactory {
+ public:
+  EchoCanceller3Factory();
+  EchoCanceller3Factory(const EchoCanceller3Config& config);
+  std::unique_ptr<EchoControl> Create(int sample_rate_hz) override;
+
+ private:
+  EchoCanceller3Config config_;
 };
 }  
 

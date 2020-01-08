@@ -8,11 +8,11 @@
 
 
 
-#include "webrtc/common_audio/signal_processing/include/real_fft.h"
+#include "common_audio/signal_processing/include/real_fft.h"
 
 #include <stdlib.h>
 
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
 
 struct RealFFT {
   int order;

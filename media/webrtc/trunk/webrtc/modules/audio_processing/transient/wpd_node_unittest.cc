@@ -8,11 +8,11 @@
 
 
 
-#include "webrtc/modules/audio_processing/transient/wpd_node.h"
+#include "modules/audio_processing/transient/wpd_node.h"
 
 #include <string.h>
 
-#include "webrtc/test/gtest.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

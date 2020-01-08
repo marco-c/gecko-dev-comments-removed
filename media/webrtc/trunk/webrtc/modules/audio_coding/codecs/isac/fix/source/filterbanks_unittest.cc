@@ -8,19 +8,21 @@
 
 
 
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/modules/audio_coding/codecs/isac/fix/source/filterbank_internal.h"
-#include "webrtc/modules/audio_coding/codecs/isac/fix/source/filterbank_tables.h"
-#include "webrtc/modules/audio_coding/codecs/isac/fix/source/settings.h"
-#include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/typedefs.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "modules/audio_coding/codecs/isac/fix/source/filterbank_internal.h"
+#include "modules/audio_coding/codecs/isac/fix/source/filterbank_tables.h"
+#include "modules/audio_coding/codecs/isac/fix/source/settings.h"
+#include "rtc_base/sanitizer.h"
+#include "system_wrappers/include/cpu_features_wrapper.h"
+#include "test/gtest.h"
+#include "typedefs.h"  
 
 class FilterBanksTest : public testing::Test {
  protected:
   
-  void CalculateResidualEnergyTester(AllpassFilter2FixDec16
-                                     AllpassFilter2FixDec16Function) {
+  void RTC_NO_SANITIZE("signed-integer-overflow")  
+  CalculateResidualEnergyTester(AllpassFilter2FixDec16
+                                AllpassFilter2FixDec16Function) {
     const int kSamples = QLOOKAHEAD;
     const int kState = 2;
     int16_t data_ch1[kSamples] = {0};
@@ -41,6 +43,7 @@ class FilterBanksTest : public testing::Test {
       sign *= -1;
       data_ch1[i] = sign * WEBRTC_SPL_WORD32_MAX / (i * i + 1);
       data_ch2[i] = sign * WEBRTC_SPL_WORD32_MIN / (i * i + 1);
+      
     };
 
     AllpassFilter2FixDec16Function(data_ch1,

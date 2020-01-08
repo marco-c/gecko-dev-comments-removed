@@ -7,13 +7,13 @@
 
 
 
-#include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_unittest_helper.h"
+#include "modules/remote_bitrate_estimator/remote_bitrate_estimator_unittest_helper.h"
 
 #include <algorithm>
 #include <limits>
 #include <utility>
 
-#include "webrtc/base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 
@@ -270,7 +270,8 @@ bool RemoteBitrateEstimatorTest::GenerateAndProcessFrame(uint32_t ssrc,
     delete packet;
     packets.pop_front();
   }
-  bitrate_estimator_->Process();
+  if (bitrate_estimator_->TimeUntilNextProcess() <= 0)
+    bitrate_estimator_->Process();
   clock_.AdvanceTimeMicroseconds(next_time_us - clock_.TimeInMicroseconds());
   return overuse;
 }

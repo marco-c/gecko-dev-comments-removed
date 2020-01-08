@@ -8,8 +8,8 @@
 
 
 
-#ifndef WEBRTC_AUDIO_CONVERSION_H_
-#define WEBRTC_AUDIO_CONVERSION_H_
+#ifndef AUDIO_CONVERSION_H_
+#define AUDIO_CONVERSION_H_
 
 namespace webrtc {
 

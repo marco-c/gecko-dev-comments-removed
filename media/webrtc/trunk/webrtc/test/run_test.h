@@ -7,8 +7,8 @@
 
 
 
-#ifndef WEBRTC_TEST_RUN_TEST_H
-#define WEBRTC_TEST_RUN_TEST_H
+#ifndef TEST_RUN_TEST_H_
+#define TEST_RUN_TEST_H_
 
 namespace webrtc {
 namespace test {

@@ -8,12 +8,12 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_DTMF_TONE_GENERATOR_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_DTMF_TONE_GENERATOR_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_DTMF_TONE_GENERATOR_H_
+#define MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_DTMF_TONE_GENERATOR_H_
 
-#include "webrtc/modules/audio_coding/neteq/dtmf_tone_generator.h"
+#include "modules/audio_coding/neteq/dtmf_tone_generator.h"
 
-#include "webrtc/test/gmock.h"
+#include "test/gmock.h"
 
 namespace webrtc {
 
