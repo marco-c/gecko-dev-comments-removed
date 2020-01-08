@@ -748,6 +748,10 @@ static PlainObject* MakeReplacementTemplateObject(JSContext* cx,
   const UnboxedLayout& layout = obj->as<UnboxedPlainObject>().layout();
   UnboxedExpandoObject* expando = obj->as<UnboxedPlainObject>().maybeExpando();
 
+  
+  
+  AutoRealm ar(cx, obj);
+
   if (!layout.nativeGroup()) {
     if (!UnboxedLayout::makeNativeGroup(cx, obj->group())) {
       return nullptr;
