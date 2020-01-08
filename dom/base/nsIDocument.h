@@ -1115,15 +1115,19 @@ public:
 
   bool GetHasTrackingContentLoaded()
   {
-    return mHasTrackingContentLoaded;
+    return mContentBlockingLog.HasBlockedAnyOfType(
+        nsIWebProgressListener::STATE_LOADED_TRACKING_CONTENT);
   }
 
   
 
 
-  void SetHasTrackingContentLoaded(bool aHasTrackingContentLoaded)
+  void SetHasTrackingContentLoaded(bool aHasTrackingContentLoaded,
+                                   const nsAString& aOriginBlocked)
   {
-    mHasTrackingContentLoaded = aHasTrackingContentLoaded;
+    RecordContentBlockingLog(aOriginBlocked,
+                             nsIWebProgressListener::STATE_LOADED_TRACKING_CONTENT,
+                             aHasTrackingContentLoaded);
   }
 
   
@@ -4212,9 +4216,6 @@ protected:
 
   
   bool mHasUnsafeInlineCSP : 1;
-
-  
-  bool mHasTrackingContentLoaded : 1;
 
   
   bool mBFCacheDisallowed : 1;
