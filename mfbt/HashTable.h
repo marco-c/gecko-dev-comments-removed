@@ -1444,7 +1444,7 @@ public:
     {
       if (mRekeyed) {
         mTable.mGen++;
-        mTable.checkOverRemoved();
+        mTable.rehashIfOverRemoved();
       }
 
       if (mRemoved) {
@@ -1870,7 +1870,7 @@ private:
     return Rehashed;
   }
 
-  bool shouldCompressTable()
+  bool overRemoved()
   {
     
     
@@ -1879,23 +1879,24 @@ private:
     return mRemovedCount >= (capacity() >> 2);
   }
 
-  RebuildStatus checkOverloaded(FailureBehavior aReportFailure = ReportFailure)
+  RebuildStatus rehashIfOverloaded(
+    FailureBehavior aReportFailure = ReportFailure)
   {
     if (!overloaded()) {
       return NotOverloaded;
     }
 
-    uint32_t newCapacity = shouldCompressTable()
+    uint32_t newCapacity = overRemoved()
                          ? rawCapacity()
                          : rawCapacity() * 2;
     return changeTableSize(newCapacity, aReportFailure);
   }
 
   
-  void checkOverRemoved()
+  void rehashIfOverRemoved()
   {
     if (overloaded()) {
-      if (checkOverloaded(DontReportFailure) == RehashFailed) {
+      if (rehashIfOverloaded(DontReportFailure) == RehashFailed) {
         rehashTableInPlace();
       }
     }
@@ -1917,7 +1918,7 @@ private:
 #endif
   }
 
-  void checkUnderloaded()
+  void shrinkIfUnderloaded()
   {
     if (underloaded()) {
       (void)changeTableSize(capacity() / 2, DontReportFailure);
@@ -2169,7 +2170,7 @@ public:
       aPtr.mKeyHash |= sCollisionBit;
     } else {
       
-      RebuildStatus status = checkOverloaded();
+      RebuildStatus status = rehashIfOverloaded();
       if (status == RehashFailed) {
         return false;
       }
@@ -2212,7 +2213,7 @@ public:
     if (!EnsureHash<HashPolicy>(aLookup)) {
       return false;
     }
-    if (checkOverloaded() == RehashFailed) {
+    if (rehashIfOverloaded() == RehashFailed) {
       return false;
     }
     putNewInfallible(aLookup, std::forward<Args>(aArgs)...);
@@ -2250,7 +2251,7 @@ public:
     MOZ_ASSERT(aPtr.found());
     MOZ_ASSERT(aPtr.mGeneration == generation());
     remove(*aPtr.mEntry);
-    checkUnderloaded();
+    shrinkIfUnderloaded();
   }
 
   void rekeyWithoutRehash(Ptr aPtr, const Lookup& aLookup, const Key& aKey)
@@ -2268,7 +2269,7 @@ public:
   void rekeyAndMaybeRehash(Ptr aPtr, const Lookup& aLookup, const Key& aKey)
   {
     rekeyWithoutRehash(aPtr, aLookup, aKey);
-    checkOverRemoved();
+    rehashIfOverRemoved();
   }
 };
 
