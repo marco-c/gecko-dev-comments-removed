@@ -6,22 +6,47 @@
 
 'use strict';
 
-idl_test(
-  ['performance-timeline'],
-  ['hr-time', 'dom'],
-  idl_array => {
+promise_test(async t => {
+  const observe = new Promise((resolve, reject) => {
     try {
-      const callback = (e, o) => {};
-      self.observerEntry = new ResizeObserverEntry(callback);
+      self.observer = new PerformanceObserver((entries, observer) => {
+        self.entryList = entries;
+        self.mark = entries.getEntries()[0];
+        resolve();
+      });
+      observer.observe({ entryTypes: ['mark'] });
+      performance.mark('test');
     } catch (e) {
-      
+      reject(e);
     }
+  });
+  const timeout = new Promise((_, reject) => {
+    t.step_timeout(() => reject('Timed out waiting for observation'), 3000);
+  });
+  const user = await fetch('/interfaces/user-timing.idl').then(r => r.text());
+  const execute_test = () => {
+    idl_test(
+      ['performance-timeline'],
+      ['hr-time', 'dom'],
+      idl_array => {
+        idl_array.add_idls(user, {only: ['PerformanceMark']});
+        idl_array.add_objects({
+          Performance: ['performance'],
+          
+          PerformanceMark: ['mark'],
+          PerformanceObserver: ['observer'],
+          PerformanceObserverEntryList: ['entryList'],
+        });
+      },
+      'Test IDL implementation of performance-timeline API'
+    );
+  };
 
-    idl_array.add_objects({
-      Performance: ['performance'],
-      
-      ResizeObserverEntry: ['observerEntry'],
-    });
-  },
-  'Test IDL implementation of performance-timeline API'
-);
+  return Promise.race([observe, timeout]).then(
+    execute_test,
+    reason => {
+      execute_test();
+      return Promise.reject(reason);
+    }
+  );
+})
