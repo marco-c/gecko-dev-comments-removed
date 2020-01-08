@@ -148,9 +148,7 @@ public:
   
 
 
-
-
-  bool AddIdElement(Element* aElement);
+  void AddIdElement(Element* aElement);
   
 
 
