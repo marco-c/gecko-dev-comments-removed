@@ -339,9 +339,6 @@ public:
 
   nsresult PostHandleEvent(mozilla::EventChainPostVisitor& aVisitor) override;
 
-  
-  virtual bool IsTopLevelWindowActive() override;
-
   virtual PopupControlState GetPopupControlState() const override;
 
   void Suspend();
