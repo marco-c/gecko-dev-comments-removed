@@ -34,7 +34,7 @@ window.addEventListener("DOMContentLoaded", () => {
 const gXULDOMParser = new DOMParser();
 gXULDOMParser.forceEnableXULXBL();
 
-class MozXULElement extends XULElement {
+const MozElementMixin = Base => class MozElement extends Base {
   
 
 
@@ -179,7 +179,9 @@ class MozXULElement extends XULElement {
       return null;
     };
   }
-}
+};
+
+const MozXULElement = MozElementMixin(XULElement);
 
 
 
@@ -235,6 +237,7 @@ class MozBaseControl extends MozXULElement {
 MozXULElement.implementCustomInterface(MozBaseControl, [Ci.nsIDOMXULControlElement]);
 
 
+window.MozElementMixin = MozElementMixin;
 window.MozXULElement = MozXULElement;
 window.MozBaseControl = MozBaseControl;
 
