@@ -12,10 +12,16 @@
 namespace mozilla {
 namespace dom {
 
-WindowGlobalChild::WindowGlobalChild(nsGlobalWindowInner* aWindow, dom::BrowsingContext* aBrowsingContext)
+typedef nsRefPtrHashtable<nsUint64HashKey, WindowGlobalChild> WGCByIdMap;
+static StaticAutoPtr<WGCByIdMap> gWindowGlobalChildById;
+
+WindowGlobalChild::WindowGlobalChild(nsGlobalWindowInner* aWindow,
+                                     dom::BrowsingContext* aBrowsingContext)
   : mWindowGlobal(aWindow)
   , mBrowsingContext(aBrowsingContext)
-  , mIPCClosed(false)
+  , mInnerWindowId(aWindow->WindowID())
+  , mOuterWindowId(aWindow->GetOuterWindow()->WindowID())
+  , mIPCClosed(true)
 {
 }
 
@@ -32,7 +38,10 @@ WindowGlobalChild::Create(nsGlobalWindowInner* aWindow)
   RefPtr<dom::BrowsingContext> bc = docshell->GetBrowsingContext();
   RefPtr<WindowGlobalChild> wgc = new WindowGlobalChild(aWindow, bc);
 
-  WindowGlobalInit init(principal, BrowsingContextId(wgc->BrowsingContext()->Id()));
+  WindowGlobalInit init(principal,
+                        BrowsingContextId(wgc->BrowsingContext()->Id()),
+                        wgc->mInnerWindowId,
+                        wgc->mOuterWindowId);
 
   
   if (XRE_IsParentProcess()) {
@@ -50,8 +59,27 @@ WindowGlobalChild::Create(nsGlobalWindowInner* aWindow)
     
     tabChild->SendPWindowGlobalConstructor(do_AddRef(wgc).take(), init);
   }
+  wgc->mIPCClosed = false;
+
+  
+  if (!gWindowGlobalChildById) {
+    gWindowGlobalChildById = new WGCByIdMap();
+    ClearOnShutdown(&gWindowGlobalChildById);
+  }
+  auto entry = gWindowGlobalChildById->LookupForAdd(wgc->mInnerWindowId);
+  MOZ_RELEASE_ASSERT(!entry, "Duplicate WindowGlobalChild entry for ID!");
+  entry.OrInsert([&] { return wgc; });
 
   return wgc.forget();
+}
+
+ already_AddRefed<WindowGlobalChild>
+WindowGlobalChild::GetByInnerWindowId(uint64_t aInnerWindowId)
+{
+  if (!gWindowGlobalChildById) {
+    return nullptr;
+  }
+  return gWindowGlobalChildById->Get(aInnerWindowId);
 }
 
 already_AddRefed<WindowGlobalParent>
@@ -68,10 +96,13 @@ void
 WindowGlobalChild::ActorDestroy(ActorDestroyReason aWhy)
 {
   mIPCClosed = true;
+  gWindowGlobalChildById->Remove(mInnerWindowId);
 }
 
 WindowGlobalChild::~WindowGlobalChild()
 {
+  MOZ_ASSERT(!gWindowGlobalChildById ||
+             !gWindowGlobalChildById->Contains(mInnerWindowId));
 }
 
 JSObject*
