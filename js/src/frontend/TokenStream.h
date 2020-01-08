@@ -949,6 +949,26 @@ CodeUnitValue(mozilla::Utf8Unit unit)
 template<typename CharT>
 class TokenStreamCharsBase;
 
+template<typename T>
+inline bool
+IsLineTerminator(T) = delete;
+
+inline bool
+IsLineTerminator(char32_t codePoint)
+{
+    return codePoint == '\n' ||
+           codePoint == '\r' ||
+           codePoint == unicode::LINE_SEPARATOR ||
+           codePoint == unicode::PARA_SEPARATOR;
+}
+
+inline bool
+IsLineTerminator(char16_t unit)
+{
+    
+    return IsLineTerminator(static_cast<char32_t>(unit));
+}
+
 
 
 
@@ -1130,13 +1150,6 @@ class SourceUnits
 #ifdef DEBUG
         ptr = nullptr;
 #endif
-    }
-
-    static bool isRawEOLChar(int32_t c) {
-        return c == '\n' ||
-               c == '\r' ||
-               c == unicode::LINE_SEPARATOR ||
-               c == unicode::PARA_SEPARATOR;
     }
 
     

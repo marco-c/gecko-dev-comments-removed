@@ -583,7 +583,7 @@ TokenStreamChars<char16_t, AnyCharsAccess>::getNonAsciiCodePoint(int32_t lead, i
 
             *codePoint = '\n';
         } else {
-            MOZ_ASSERT(!SourceUnits::isRawEOLChar(*codePoint));
+            MOZ_ASSERT(!IsLineTerminator(AssertedCast<char32_t>(*codePoint)));
         }
 
         return true;
@@ -593,13 +593,13 @@ TokenStreamChars<char16_t, AnyCharsAccess>::getNonAsciiCodePoint(int32_t lead, i
     if (MOZ_UNLIKELY(this->sourceUnits.atEnd() ||
                      !unicode::IsTrailSurrogate(this->sourceUnits.peekCodeUnit())))
     {
-        MOZ_ASSERT(!SourceUnits::isRawEOLChar(*codePoint));
+        MOZ_ASSERT(!IsLineTerminator(AssertedCast<char32_t>(*codePoint)));
         return true;
     }
 
     
     *codePoint = unicode::UTF16Decode(lead, this->sourceUnits.getCodeUnit());
-    MOZ_ASSERT(!SourceUnits::isRawEOLChar(*codePoint));
+    MOZ_ASSERT(!IsLineTerminator(AssertedCast<char32_t>(*codePoint)));
     return true;
 }
 
@@ -644,7 +644,7 @@ SourceUnits<char16_t>::findWindowStart(size_t offset)
         
         
         
-        if (isRawEOLChar(c))
+        if (IsLineTerminator(c))
             break;
 
         
@@ -697,7 +697,7 @@ SourceUnits<char16_t>::findWindowEnd(size_t offset)
         
         
         
-        if (isRawEOLChar(c))
+        if (IsLineTerminator(c))
             break;
 
         
@@ -1601,7 +1601,7 @@ SpecializedTokenStreamCharsBase<char16_t>::infallibleConsumeRestOfSingleLineComm
 {
     while (MOZ_LIKELY(!this->sourceUnits.atEnd())) {
         char16_t unit = this->sourceUnits.peekCodeUnit();
-        if (SourceUnits::isRawEOLChar(unit))
+        if (IsLineTerminator(unit))
             return;
 
         this->sourceUnits.consumeKnownCodeUnit(unit);
@@ -1777,17 +1777,14 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::regexpLiteral(TokenStart start, Toke
             break;
         }
 
+        
+        
         if (unit == '\r' || unit == '\n') {
             ReportUnterminatedRegExp(unit);
             return badToken();
         }
 
-        
-        
-        
-        
-        MOZ_ASSERT(!SourceUnits::isRawEOLChar(unit));
-
+        MOZ_ASSERT(!IsLineTerminator(AssertedCast<char32_t>(unit)));
         if (!this->charBuffer.append(unit))
             return badToken();
     } while (true);
