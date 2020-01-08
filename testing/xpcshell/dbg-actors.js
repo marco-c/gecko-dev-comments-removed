@@ -2,18 +2,14 @@
 
 
 
+
+
 "use strict";
 
-
-
-
-
-const Cu = Components.utils; 
-const { Promise } = Cu.import("resource://gre/modules/Promise.jsm", {});
-var { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
-const { devtools } = Cu.import("resource://devtools/shared/Loader.jsm", {});
-const { RootActor } = devtools.require("devtools/server/actors/root");
-const { BrowserTabList } = devtools.require("devtools/server/actors/webbrowser");
+const DebuggerServer = require("devtools/server/main");
+const { RootActor } = require("devtools/server/actors/root");
+const { BrowserTabList } = require("devtools/server/actors/webbrowser");
+const Services = require("Services");
 
 
 
@@ -36,6 +32,7 @@ function createRootActor(connection) {
   };
   return new RootActor(connection, parameters);
 }
+exports.createRootActor = createRootActor;
 
 
 

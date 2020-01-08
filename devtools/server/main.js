@@ -29,30 +29,8 @@ loader.lazyGetter(this, "generateUUID", () => {
   return generateUUID;
 });
 
-
-
-
-Object.defineProperty(this, "Components", {
-  get() {
-    return require("chrome").components;
-  }
-});
-
 const CONTENT_PROCESS_SERVER_STARTUP_SCRIPT =
   "resource://devtools/server/startup/content-process.js";
-
-function loadSubScript(url) {
-  try {
-    Services.scriptloader.loadSubScript(url, this);
-  } catch (e) {
-    const errorStr = "Error loading: " + url + ":\n" +
-                   (e.fileName ? "at " + e.fileName + " : " + e.lineNumber + "\n" : "") +
-                   e + " - " + e.stack + "\n";
-    dump(errorStr);
-    reportError(errorStr);
-    throw e;
-  }
-}
 
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
@@ -156,7 +134,7 @@ var DebuggerServer = {
     }
 
     if (!this.rootlessServer && !this.createRootActor) {
-      throw new Error("Use DebuggerServer.addActors() to add a root actor " +
+      throw new Error("Use DebuggerServer.setRootActor() to add a root actor " +
                       "implementation.");
     }
   },
@@ -195,18 +173,6 @@ var DebuggerServer = {
 
   registerAllActors() {
     this.registerActors({ root: true, browser: true, target: true });
-  },
-
-  
-
-
-
-
-
-
-
-  addActors(url) {
-    loadSubScript.call(this, url);
   },
 
   
@@ -1343,15 +1309,6 @@ if (this.exports) {
 this.DebuggerServer = DebuggerServer;
 this.ActorPool = ActorPool;
 this.OriginalLocation = OriginalLocation;
-
-
-
-
-var includes = ["Components", "Ci", "Cu", "require", "Services", "DebuggerServer",
-                "ActorPool", "DevToolsUtils"];
-includes.forEach(name => {
-  DebuggerServer[name] = this[name];
-});
 
 
 
