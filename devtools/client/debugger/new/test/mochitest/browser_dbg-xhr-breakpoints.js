@@ -46,7 +46,8 @@ async function clickPauseOnAny(dbg, expectedEvent) {
 
 
 add_task(async function() {
-  const dbg = await initDebugger("doc-xhr.html", "fetch.js");
+  const dbg = await initDebugger("doc-xhr.html");
+  await waitForSources(dbg, "fetch.js");
   await dbg.actions.setXHRBreakpoint("doc", "GET");
   invokeInTab("main", "doc-xhr.html");
   await waitForPaused(dbg);
@@ -64,7 +65,10 @@ add_task(async function() {
 
 
 add_task(async function() {
-  const dbg = await initDebugger("doc-xhr.html", "fetch.js");
+  const dbg = await initDebugger("doc-xhr.html");
+  await waitForSources(dbg, "fetch.js");
+
+  info("HERE 1");
 
   
   await clickPauseOnAny(dbg, "SET_XHR_BREAKPOINT");
@@ -83,6 +87,7 @@ add_task(async function() {
 
   
   await clickPauseOnAny(dbg, "DISABLE_XHR_BREAKPOINT");
+  info("HERE 4");
   invokeInTab("main", "README.md");
   assertNotPaused(dbg);
 
@@ -108,7 +113,7 @@ add_task(async function() {
   const listItems = getXHRBreakpointsElements(dbg);
   is(listItems.length, 3, "3 XHR breakpoints display in list");
   is(
-    pauseOnAnyCheckbox.checked, true,
+    pauseOnAnyCheckbox.checked, true, 
     "The pause on any is still checked"
   );
   is(

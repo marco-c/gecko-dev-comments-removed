@@ -5,7 +5,7 @@
 
 
 
-import type { Frame, Source, SourceLocation } from "../../types";
+import type { Frame, Source, Location } from "../../types";
 import type {
   PausedPacket,
   FramesResponse,
@@ -78,9 +78,9 @@ export function createPause(
 
 
 export function createBreakpointLocation(
-  location: SourceLocation,
+  location: Location,
   actualLocation?: Object
-): SourceLocation {
+): Location {
   if (!actualLocation) {
     return location;
   }

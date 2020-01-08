@@ -1008,8 +1008,10 @@ exports.isYieldExpression = isYieldExpression;
 exports.isObjectShorthand = isObjectShorthand;
 exports.getObjectExpressionValue = getObjectExpressionValue;
 exports.getCode = getCode;
+exports.getVariableNames = getVariableNames;
 exports.getComments = getComments;
 exports.getSpecifiers = getSpecifiers;
+exports.isVariable = isVariable;
 exports.isComputedExpression = isComputedExpression;
 exports.getMemberExpression = getMemberExpression;
 exports.getVariables = getVariables;
@@ -1024,17 +1026,19 @@ var _generator = __webpack_require__(2365);
 
 var _generator2 = _interopRequireDefault(_generator);
 
+var _flatten = __webpack_require__(706);
+
+var _flatten2 = _interopRequireDefault(_flatten);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
-
-
-
-
 function isFunction(node) {
   return t.isFunction(node) || t.isArrowFunctionExpression(node) || t.isObjectMethod(node) || t.isClassMethod(node);
-}
+} 
+
+
 
 function isAwaitExpression(path) {
   const { node, parent } = path;
@@ -1070,6 +1074,37 @@ function getCode(node) {
   return (0, _generator2.default)(node).code;
 }
 
+function getVariableNames(path) {
+  if (t.isObjectProperty(path.node) && !isFunction(path.node.value)) {
+    if (path.node.key.type === "StringLiteral") {
+      return [{
+        name: path.node.key.value,
+        location: path.node.loc
+      }];
+    } else if (path.node.value.type === "Identifier") {
+      return [{ name: path.node.value.name, location: path.node.loc }];
+    } else if (path.node.value.type === "AssignmentPattern") {
+      return [{ name: path.node.value.left.name, location: path.node.loc }];
+    }
+
+    return [{
+      name: path.node.key.name,
+      location: path.node.loc
+    }];
+  }
+
+  if (!path.node.declarations) {
+    return path.node.params.map(dec => ({
+      name: dec.name,
+      location: dec.loc
+    }));
+  }
+
+  const declarations = path.node.declarations.filter(dec => dec.id.type !== "ObjectPattern").map(getVariables);
+
+  return (0, _flatten2.default)(declarations);
+}
+
 function getComments(ast) {
   if (!ast || !ast.comments) {
     return [];
@@ -1086,6 +1121,11 @@ function getSpecifiers(specifiers) {
   }
 
   return specifiers.map(specifier => specifier.local && specifier.local.name);
+}
+
+function isVariable(path) {
+  const node = path.node;
+  return t.isVariableDeclaration(node) || isFunction(path) && path.node.params != null && path.node.params.length || t.isObjectProperty(node) && !isFunction(path.node.value);
 }
 
 function isComputedExpression(expression) {
@@ -1340,6 +1380,10 @@ function getFunctionParameterNames(path) {
 
 
 function extractSymbol(path, symbols) {
+  if ((0, _helpers.isVariable)(path)) {
+    symbols.variables.push(...(0, _helpers.getVariableNames)(path));
+  }
+
   if ((0, _helpers.isFunction)(path)) {
     symbols.functions.push({
       name: (0, _getFunctionName2.default)(path.node, path.parent),
@@ -1488,6 +1532,7 @@ function extractSymbol(path, symbols) {
 function extractSymbols(sourceId) {
   const symbols = {
     functions: [],
+    variables: [],
     callExpressions: [],
     memberExpressions: [],
     objectProperties: [],
@@ -22927,17 +22972,15 @@ function hasPoint(state, { line, column }) {
   return state[line] && state[line][column];
 }
 
-function addPoint(state, location, types) {
+function addPoint(state, { line, column }, types) {
   if (typeof types === "boolean") {
     types = { step: types, break: types };
   }
 
-  const { line, column } = location;
-
   if (!state[line]) {
     state[line] = {};
   }
-  state[line][column] = { types, location };
+  state[line][column] = types;
   return state;
 }
 
@@ -46541,6 +46584,107 @@ module.exports = Symbol;
 var isArray = Array.isArray;
 
 module.exports = isArray;
+
+
+ }),
+
+ 706:
+ (function(module, exports, __webpack_require__) {
+
+var baseFlatten = __webpack_require__(707);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function flatten(array) {
+  var length = array == null ? 0 : array.length;
+  return length ? baseFlatten(array, 1) : [];
+}
+
+module.exports = flatten;
+
+
+ }),
+
+ 707:
+ (function(module, exports, __webpack_require__) {
+
+var arrayPush = __webpack_require__(287),
+    isFlattenable = __webpack_require__(708);
+
+
+
+
+
+
+
+
+
+
+
+
+function baseFlatten(array, depth, predicate, isStrict, result) {
+  var index = -1,
+      length = array.length;
+
+  predicate || (predicate = isFlattenable);
+  result || (result = []);
+
+  while (++index < length) {
+    var value = array[index];
+    if (depth > 0 && predicate(value)) {
+      if (depth > 1) {
+        
+        baseFlatten(value, depth - 1, predicate, isStrict, result);
+      } else {
+        arrayPush(result, value);
+      }
+    } else if (!isStrict) {
+      result[result.length] = value;
+    }
+  }
+  return result;
+}
+
+module.exports = baseFlatten;
+
+
+ }),
+
+ 708:
+ (function(module, exports, __webpack_require__) {
+
+var Symbol = __webpack_require__(7),
+    isArguments = __webpack_require__(208),
+    isArray = __webpack_require__(70);
+
+
+var spreadableSymbol = Symbol ? Symbol.isConcatSpreadable : undefined;
+
+
+
+
+
+
+
+
+function isFlattenable(value) {
+  return isArray(value) || isArguments(value) ||
+    !!(spreadableSymbol && value && value[spreadableSymbol]);
+}
+
+module.exports = isFlattenable;
 
 
  }),

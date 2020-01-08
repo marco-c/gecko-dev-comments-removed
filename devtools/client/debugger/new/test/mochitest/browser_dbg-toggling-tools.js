@@ -6,7 +6,7 @@
 
 
 add_task(async function() {
-  const dbg = await initDebugger("doc-scripts.html", "long");
+  const dbg = await initDebugger("doc-scripts.html");
 
   await selectSource(dbg, "long");
   getCM(dbg).scrollTo(0, 284);

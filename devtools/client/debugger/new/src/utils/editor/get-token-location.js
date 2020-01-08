@@ -3,12 +3,12 @@
 
 
 
-import type { Position } from "../../types";
+import type { ColumnPosition } from "../../types";
 
 export function getTokenLocation(
   codeMirror: any,
   tokenEl: HTMLElement
-): Position {
+): ColumnPosition {
   const { left, top, width, height } = tokenEl.getBoundingClientRect();
   const { line, ch } = codeMirror.coordsChar({
     left: left + width / 2,

@@ -4,9 +4,9 @@
 
 
 
-import type { PartialPosition } from "../../../types";
+import type { Position } from "../../../types";
 
-export function locColumn(loc: PartialPosition): number {
+export function locColumn(loc: Position): number {
   if (typeof loc.column !== "number") {
     
     

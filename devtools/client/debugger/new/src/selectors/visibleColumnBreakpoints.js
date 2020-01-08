@@ -2,18 +2,17 @@
 
 
 
-import { groupBy, hasIn, sortedUniqBy } from "lodash";
+import { groupBy, hasIn } from "lodash";
 import { createSelector } from "reselect";
 
 import { getViewport } from "../selectors";
 import { getVisibleBreakpoints } from "./visibleBreakpoints";
 import { getVisiblePausePoints } from "./visiblePausePoints";
-import { makeLocationId } from "../utils/breakpoint";
 
-import type { SourceLocation } from "../types";
+import type { Location } from "../types";
 
 export type ColumnBreakpoint = {|
-  +location: SourceLocation,
+  +location: Location,
   +enabled: boolean
 |};
 
@@ -40,19 +39,6 @@ function isEnabled(location, breakpointMap) {
   return hasIn(breakpointMap, [line, column]);
 }
 
-function getLineCount(columnBreakpoints) {
-  const lineCount = {};
-  columnBreakpoints.forEach(({ location: { line } }) => {
-    if (!lineCount[line]) {
-      lineCount[line] = 0;
-    }
-
-    lineCount[line] = lineCount[line] + 1;
-  });
-
-  return lineCount;
-}
-
 export function formatColumnBreakpoints(columnBreakpoints) {
   console.log(
     "Column Breakpoints\n\n",
@@ -71,35 +57,10 @@ export function getColumnBreakpoints(pausePoints, breakpoints, viewport) {
   }
 
   const breakpointMap = groupBreakpoints(breakpoints);
-
-  
-  
-  
-  
-  
-  
-
-  let columnBreakpoints = pausePoints.filter(
-    ({ types, location }) =>
-      
-      types.break &&
-      
-      breakpointMap[location.line] &&
-      
-      viewport &&
-      contains(location, viewport)
-  );
-
-  
-  columnBreakpoints = sortedUniqBy(columnBreakpoints, ({ generatedLocation }) =>
-    makeLocationId(generatedLocation)
-  );
-
-  
-  const lineCount = getLineCount(columnBreakpoints);
-  columnBreakpoints = columnBreakpoints.filter(
-    ({ location: { line } }) => lineCount[line] > 1
-  );
+  const columnBreakpoints = pausePoints
+    .filter(({ types }) => types.break)
+    .filter(({ location }) => breakpointMap[location.line])
+    .filter(({ location }) => viewport && contains(location, viewport));
 
   return columnBreakpoints.map(({ location }) => ({
     location,
