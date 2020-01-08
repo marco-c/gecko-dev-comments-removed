@@ -249,12 +249,15 @@ browser.Context = class {
 
 
 
+
   get rect() {
     return {
+      height: this.window.outerHeight,
+      width: this.window.outerWidth,
       x: this.window.screenX,
       y: this.window.screenY,
-      width: this.window.outerWidth,
-      height: this.window.outerHeight,
+
+      
       state: WindowState.from(this.window.windowState),
     };
   }
