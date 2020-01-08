@@ -567,7 +567,7 @@ class Marionette(object):
     CONTEXT_CHROME = "chrome"  
     CONTEXT_CONTENT = "content"  
     DEFAULT_STARTUP_TIMEOUT = 120
-    DEFAULT_SHUTDOWN_TIMEOUT = 120  
+    DEFAULT_SHUTDOWN_TIMEOUT = 70  
 
     
     
@@ -625,6 +625,8 @@ class Marionette(object):
             self.startup_timeout = self.DEFAULT_STARTUP_TIMEOUT
         else:
             self.startup_timeout = int(startup_timeout)
+
+        self.shutdown_timeout = self.DEFAULT_SHUTDOWN_TIMEOUT
 
         if self.bin:
             self.instance = GeckoInstance.create(
@@ -816,7 +818,7 @@ class Marionette(object):
         else:
             
             
-            returncode = self.instance.runner.wait(timeout=self.DEFAULT_SHUTDOWN_TIMEOUT)
+            returncode = self.instance.runner.wait(timeout=self.shutdown_timeout)
 
             if returncode is None:
                 message = ('Process killed because the connection to Marionette server is '
@@ -1117,13 +1119,13 @@ class Marionette(object):
                 
                 pass
 
-            returncode = self.instance.runner.wait(timeout=self.DEFAULT_SHUTDOWN_TIMEOUT)
+            returncode = self.instance.runner.wait(timeout=self.shutdown_timeout)
             if returncode is None:
                 
                 self.cleanup()
 
                 message = "Process still running {}s after quit request"
-                raise IOError(message.format(self.DEFAULT_SHUTDOWN_TIMEOUT))
+                raise IOError(message.format(self.shutdown_timeout))
 
             self.is_shutting_down = False
             self.delete_session(send_request=False)
@@ -1185,7 +1187,7 @@ class Marionette(object):
             try:
                 
                 
-                self.raise_for_port(timeout=self.DEFAULT_SHUTDOWN_TIMEOUT,
+                self.raise_for_port(timeout=self.shutdown_timeout,
                                     check_process_status=False)
             except socket.timeout:
                 exc, val, tb = sys.exc_info()
@@ -1197,7 +1199,7 @@ class Marionette(object):
                     self._send_message("acceptConnections", {"value": True})
 
                     message = "Process still running {}s after restart request"
-                    reraise(exc, message.format(self.DEFAULT_SHUTDOWN_TIMEOUT), tb)
+                    reraise(exc, message.format(self.shutdown_timeout), tb)
 
                 else:
                     
