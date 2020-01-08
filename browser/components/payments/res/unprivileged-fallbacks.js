@@ -30,6 +30,22 @@ var PaymentDialogUtils = {
     }
     return `${address.name} (${address.guid})`;
   },
+
+  getCreditCardNetworks(address) {
+    
+    
+    return [
+      "amex",
+      "cartebancaire",
+      "diners",
+      "discover",
+      "jcb",
+      "mastercard",
+      "mir",
+      "unionpay",
+      "visa",
+    ];
+  },
   isCCNumber(str) {
     return !!str.replace(/[-\s]/g, "").match(/^\d{9,}$/);
   },

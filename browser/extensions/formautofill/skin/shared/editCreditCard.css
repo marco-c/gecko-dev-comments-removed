@@ -41,7 +41,6 @@
 
 #cc-type-container {
   grid-area: cc-type;
-  visibility: hidden; 
 }
 
 #billingAddressGUID-container {

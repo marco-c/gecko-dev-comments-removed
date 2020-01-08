@@ -84,6 +84,7 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(PaymentRe
       }, record, addresses, {
         isCCNumber: PaymentDialogUtils.isCCNumber,
         getAddressLabel: PaymentDialogUtils.getAddressLabel,
+        getSupportedNetworks: PaymentDialogUtils.getCreditCardNetworks,
       });
 
       

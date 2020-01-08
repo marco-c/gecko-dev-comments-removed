@@ -465,6 +465,11 @@ FormAutofillParent.prototype = {
     };
 
     
+    if (creditCard.record["cc-type"] && !CreditCard.isValidNetwork(creditCard.record["cc-type"])) {
+      delete creditCard.record["cc-type"];
+    }
+
+    
     
     
     if (creditCard.guid) {
@@ -528,6 +533,7 @@ FormAutofillParent.prototype = {
         number: creditCard.record["cc-number"] || creditCard.record["cc-number-decrypted"],
         encryptedNumber: creditCard.record["cc-number-encrypted"],
         name: creditCard.record["cc-name"],
+        network: creditCard.record["cc-type"],
       });
       const description = await card.getLabel();
       const state = await FormAutofillDoorhanger.show(target,

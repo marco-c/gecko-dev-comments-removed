@@ -120,6 +120,7 @@
 
 
 
+
 "use strict";
 
 
@@ -198,6 +199,7 @@ const VALID_CREDIT_CARD_FIELDS = [
   "cc-number",
   "cc-exp-month",
   "cc-exp-year",
+  "cc-type",
 ];
 
 const VALID_CREDIT_CARD_COMPUTED_FIELDS = [
