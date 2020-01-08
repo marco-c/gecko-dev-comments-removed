@@ -282,6 +282,8 @@ pref("browser.urlbar.speculativeConnect.enabled", true);
 
 
 
+
+pref("browser.urlbar.matchBehavior", 1);
 pref("browser.urlbar.filter.javascript", true);
 
 
@@ -467,6 +469,11 @@ pref("browser.tabs.selectOwnerOnClose", true);
 pref("browser.tabs.showAudioPlayingIcon", true);
 
 pref("browser.tabs.delayHidingAudioPlayingIconMS", 3000);
+
+
+#ifdef NIGHTLY_BUILD
+pref("browser.tabs.remote.separatePrivilegedContentProcess", true);
+#endif
 
 pref("browser.ctrlTab.recentlyUsedOrder", true);
 
@@ -1142,6 +1149,7 @@ pref("services.sync.prefs.sync.addons.ignoreUserEnabledChanges", true);
 
 
 
+pref("services.sync.prefs.sync.browser.contentblocking.enabled", true);
 pref("services.sync.prefs.sync.browser.ctrlTab.recentlyUsedOrder", true);
 pref("services.sync.prefs.sync.browser.download.useDownloadDir", true);
 pref("services.sync.prefs.sync.browser.formfill.enable", true);
