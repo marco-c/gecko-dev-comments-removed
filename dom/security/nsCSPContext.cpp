@@ -493,13 +493,6 @@ nsCSPContext::reportInlineViolation(nsContentPolicyType aContentType,
     mSelfURI->GetSpec(sourceFile);
   }
 
-  nsAutoString codeSample(aContent);
-  
-  if (codeSample.Length() > ScriptSampleMaxLength()) {
-    codeSample.Truncate(ScriptSampleMaxLength());
-    codeSample.AppendLiteral("...");
-  }
-
   AsyncReportViolation(aTriggeringElement,
                        selfISupports,                      
                        mSelfURI,                           
@@ -507,7 +500,7 @@ nsCSPContext::reportInlineViolation(nsContentPolicyType aContentType,
                        aViolatedPolicyIndex,               
                        observerSubject,                    
                        NS_ConvertUTF8toUTF16(sourceFile),  
-                       codeSample,                         
+                       aContent,                           
                        aLineNumber,                        
                        aColumnNumber);                     
 }
@@ -948,6 +941,17 @@ nsCSPContext::GatherSecurityPolicyViolationEventData(
 
   
   aViolationEventInit.mSample = aScriptSample;
+  uint32_t length = aViolationEventInit.mSample.Length();
+  if (length > ScriptSampleMaxLength()) {
+    uint32_t desiredLength = ScriptSampleMaxLength();
+    
+    if (NS_IS_LOW_SURROGATE(aViolationEventInit.mSample[desiredLength])) {
+      desiredLength++;
+    }
+    aViolationEventInit.mSample.Replace(ScriptSampleMaxLength(),
+                                        length - desiredLength,
+                                        nsContentUtils::GetLocalizedEllipsis());
+  }
 
   
   aViolationEventInit.mDisposition = mPolicies[aViolatedPolicyIndex]->getReportOnlyFlag()
@@ -1311,12 +1315,13 @@ class CSPReportSenderRunnable final : public Runnable
 
       if (blockedURI) {
         blockedURI->GetSpec(blockedDataStr);
-        if (blockedDataStr.Length() > 40) {
+        if (blockedDataStr.Length() > nsCSPContext::ScriptSampleMaxLength()) {
           bool isData = false;
           rv = blockedURI->SchemeIs("data", &isData);
-          if (NS_SUCCEEDED(rv) && isData) {
-            blockedDataStr.Truncate(40);
-            blockedDataStr.AppendASCII("…");
+          if (NS_SUCCEEDED(rv) && isData &&
+              blockedDataStr.Length() > nsCSPContext::ScriptSampleMaxLength()) {
+            blockedDataStr.Truncate(nsCSPContext::ScriptSampleMaxLength());
+            blockedDataStr.Append(NS_ConvertUTF16toUTF8(nsContentUtils::GetLocalizedEllipsis()));
           }
         }
       } else if (blockedString) {

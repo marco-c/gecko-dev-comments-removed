@@ -679,7 +679,8 @@ GlobalObject::initSelfHostingBuiltins(JSContext* cx, Handle<GlobalObject*> globa
 }
 
  bool
-GlobalObject::isRuntimeCodeGenEnabled(JSContext* cx, Handle<GlobalObject*> global)
+GlobalObject::isRuntimeCodeGenEnabled(JSContext* cx, HandleValue code,
+                                      Handle<GlobalObject*> global)
 {
     HeapSlot& v = global->getSlotRef(RUNTIME_CODEGEN_ENABLED);
     if (v.isUndefined()) {
@@ -688,8 +689,13 @@ GlobalObject::isRuntimeCodeGenEnabled(JSContext* cx, Handle<GlobalObject*> globa
 
 
         JSCSPEvalChecker allows = cx->runtime()->securityCallbacks->contentSecurityPolicyAllows;
-        Value boolValue = BooleanValue(!allows || allows(cx));
-        v.set(global, HeapSlot::Slot, RUNTIME_CODEGEN_ENABLED, boolValue);
+        if (allows)
+          return allows(cx, code);
+
+        
+        
+        
+        v.set(global, HeapSlot::Slot, RUNTIME_CODEGEN_ENABLED, JS::TrueValue());
     }
     return !v.isFalse();
 }

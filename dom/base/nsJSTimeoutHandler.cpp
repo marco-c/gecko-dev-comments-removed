@@ -164,7 +164,8 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(nsJSScriptTimeoutHandler)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsJSScriptTimeoutHandler)
 
 static bool
-CheckCSPForEval(JSContext* aCx, nsGlobalWindowInner* aWindow, ErrorResult& aError)
+CheckCSPForEval(JSContext* aCx, nsGlobalWindowInner* aWindow,
+                const nsAString& aExpression, ErrorResult& aError)
 {
   
   
@@ -193,10 +194,6 @@ CheckCSPForEval(JSContext* aCx, nsGlobalWindowInner* aWindow, ErrorResult& aErro
 
   if (reportViolation) {
     
-    NS_NAMED_LITERAL_STRING(scriptSample,
-                            "call to eval() or related function blocked by CSP");
-
-    
     uint32_t lineNum = 0;
     uint32_t columnNum = 0;
     nsAutoString fileNameString;
@@ -207,7 +204,7 @@ CheckCSPForEval(JSContext* aCx, nsGlobalWindowInner* aWindow, ErrorResult& aErro
 
     csp->LogViolationDetails(nsIContentSecurityPolicy::VIOLATION_TYPE_EVAL,
                              nullptr, 
-                             fileNameString, scriptSample, lineNum, columnNum,
+                             fileNameString, aExpression, lineNum, columnNum,
                              EmptyString(), EmptyString());
   }
 
@@ -255,7 +252,7 @@ nsJSScriptTimeoutHandler::nsJSScriptTimeoutHandler(JSContext* aCx,
     return;
   }
 
-  *aAllowEval = CheckCSPForEval(aCx, aWindow, aError);
+  *aAllowEval = CheckCSPForEval(aCx, aWindow, aExpression, aError);
   if (aError.Failed() || !*aAllowEval) {
     return;
   }

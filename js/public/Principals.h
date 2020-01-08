@@ -68,7 +68,7 @@ typedef bool
 
 
 typedef bool
-(* JSCSPEvalChecker)(JSContext* cx);
+(* JSCSPEvalChecker)(JSContext* cx, JS::HandleValue value);
 
 struct JSSecurityCallbacks {
     JSCSPEvalChecker           contentSecurityPolicyAllows;

@@ -88,7 +88,7 @@ private:
 
     
     static bool
-    ContentSecurityPolicyPermitsJSAction(JSContext *cx);
+    ContentSecurityPolicyPermitsJSAction(JSContext *cx, JS::HandleValue aValue);
 
     static bool
     JSPrincipalsSubsume(JSPrincipals *first, JSPrincipals *second);

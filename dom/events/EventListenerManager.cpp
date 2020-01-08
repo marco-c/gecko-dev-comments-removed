@@ -858,30 +858,23 @@ EventListenerManager::SetEventHandler(nsAtom* aName,
     rv = doc->NodePrincipal()->GetCsp(getter_AddRefs(csp));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    if (csp) {
-      
-      
-      
-      nsAutoString scriptSample, attr, tagName(NS_LITERAL_STRING("UNKNOWN"));
-      aName->ToString(attr);
-      nsCOMPtr<nsINode> domNode(do_QueryInterface(mTarget));
-      if (domNode) {
-        tagName = domNode->NodeName();
-      }
-      
-      scriptSample.Assign(attr);
-      scriptSample.AppendLiteral(" attribute on ");
-      scriptSample.Append(tagName);
-      scriptSample.AppendLiteral(" element");
+    unsigned lineNum = 0;
+    unsigned columnNum = 0;
 
+    JSContext* cx = nsContentUtils::GetCurrentJSContext();
+    if (cx && !JS::DescribeScriptedCaller(cx, nullptr, &lineNum, &columnNum)) {
+      JS_ClearPendingException(cx);
+    }
+
+    if (csp) {
       bool allowsInlineScript = true;
       rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_SCRIPT,
                                 EmptyString(), 
                                 true, 
                                 aElement,
-                                scriptSample,
-                                0,             
-                                0,             
+                                aBody,
+                                lineNum,
+                                columnNum,
                                 &allowsInlineScript);
       NS_ENSURE_SUCCESS(rv, rv);
 
