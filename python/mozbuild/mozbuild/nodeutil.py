@@ -54,7 +54,7 @@ def check_executable_version(exe, wrap_call_with_node=False):
     """
     out = None
     
-    if wrap_call_with_node:
+    if wrap_call_with_node and platform.system() != "Windows":
         binary, _ = find_node_executable()
         if binary:
             out = subprocess.check_output([binary, exe, "--version"]).lstrip('v').rstrip()
