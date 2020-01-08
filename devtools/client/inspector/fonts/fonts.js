@@ -956,7 +956,7 @@ class FontInspector {
       fontsUsed = otherVarFonts.length ? otherVarFonts : fonts;
     }
 
-    this.store.dispatch(updateFontEditor(fontsUsed, families, properties));
+    this.store.dispatch(updateFontEditor(fontsUsed, families, properties, node.actorID));
     this.inspector.emit("fonteditor-updated");
     
     this.ruleView.on("property-value-updated", this.onRulePropertyUpdated);
