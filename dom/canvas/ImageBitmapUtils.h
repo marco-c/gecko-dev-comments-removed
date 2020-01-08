@@ -52,14 +52,6 @@ GetChannelCountOfImageFormat(ImageBitmapFormat aFormat);
 
 
 
-uint32_t
-CalculateImageBufferSize(ImageBitmapFormat aFormat,
-                         uint32_t aWidth, uint32_t aHeight);
-
-
-
-
-
 
 
 
