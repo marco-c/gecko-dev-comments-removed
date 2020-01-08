@@ -166,9 +166,7 @@ dbg.onNewScript = function(script) {
   
   RecordReplayControl.advanceProgressCounter();
 
-  if (gHasNewScriptHandler) {
-    RecordReplayControl.positionHit({ kind: "NewScript" });
-  }
+  hitGlobalHandler("NewScript");
 
   
   
@@ -180,10 +178,7 @@ dbg.onNewScript = function(script) {
 
 
 
-let gHasNewScriptHandler = false;
-
-
-let gHasEnterFrameHandler = false;
+let gPositionHandlerKinds = Object.create(null);
 
 
 
@@ -204,8 +199,7 @@ function ClearPositionHandlers() {
   dbg.clearAllBreakpoints();
   dbg.onEnterFrame = undefined;
 
-  gHasNewScriptHandler = false;
-  gHasEnterFrameHandler = false;
+  gPositionHandlerKinds = Object.create(null);
   gPendingPcHandlers.length = 0;
   gInstalledPcHandlers.length = 0;
   gOnPopFilters.length = 0;
@@ -216,6 +210,14 @@ function installPendingHandlers() {
   gPendingPcHandlers.length = 0;
 
   pending.forEach(EnsurePositionHandler);
+}
+
+
+
+function hitGlobalHandler(kind) {
+  if (gPositionHandlerKinds[kind]) {
+    RecordReplayControl.positionHit({ kind });
+  }
 }
 
 
@@ -232,9 +234,7 @@ function onPopFrame(completion) {
 }
 
 function onEnterFrame(frame) {
-  if (gHasEnterFrameHandler) {
-    RecordReplayControl.positionHit({ kind: "EnterFrame" });
-  }
+  hitGlobalHandler("EnterFrame");
 
   if (considerScript(frame.script)) {
     gOnPopFilters.forEach(filter => {
@@ -259,6 +259,8 @@ function addOnPopFilter(filter) {
 }
 
 function EnsurePositionHandler(position) {
+  gPositionHandlerKinds[position.kind] = true;
+
   switch (position.kind) {
   case "Break":
   case "OnStep":
@@ -301,11 +303,7 @@ function EnsurePositionHandler(position) {
     }
     break;
   case "EnterFrame":
-    gHasEnterFrameHandler = true;
     dbg.onEnterFrame = onEnterFrame;
-    break;
-  case "NewScript":
-    gHasNewScriptHandler = true;
     break;
   }
 }
