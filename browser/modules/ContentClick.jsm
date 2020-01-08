@@ -47,6 +47,13 @@ var ContentClick = {
     
     
     
+    if (window.openLinkIn === undefined) {
+      return;
+    }
+
+    
+    
+    
     
     try {
       if (!PrivateBrowsingUtils.isWindowPrivate(window))
