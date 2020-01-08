@@ -2331,6 +2331,11 @@ MediaStream::AddListenerImpl(already_AddRefed<MediaStreamListener> aListener)
       
       
       inputStream = ps->GetInputStreamFor(it->GetID());
+      if (!inputStream && it->IsEnded()) {
+        
+        
+        continue;
+      }
       MOZ_ASSERT(inputStream);
       inputTrackID = ps->GetInputTrackIDFor(it->GetID());
       MOZ_ASSERT(IsTrackIDExplicit(inputTrackID));
