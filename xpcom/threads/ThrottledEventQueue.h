@@ -65,7 +65,6 @@ class ThrottledEventQueue final : public nsISerialEventTarget
 
 public:
   
-  
   static already_AddRefed<ThrottledEventQueue>
   Create(nsISerialEventTarget* aBaseTarget);
 
