@@ -44,14 +44,6 @@ class MediaElementAudioSourceNode final : public MediaStreamAudioSourceNode {
 
  private:
   explicit MediaElementAudioSourceNode(AudioContext* aContext);
-
-  void Destroy() override;
-
-  
-  
-  void ListenForAllowedToPlay(const MediaElementAudioSourceOptions& aOptions);
-
-  MozPromiseRequestHolder<GenericNonExclusivePromise> mAllowedToPlayRequest;
 };
 
 }  

@@ -43,34 +43,12 @@ MediaElementAudioSourceNode::Create(
     return nullptr;
   }
 
-  node->ListenForAllowedToPlay(aOptions);
   return node.forget();
 }
 
 JSObject* MediaElementAudioSourceNode::WrapObject(
     JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
   return MediaElementAudioSourceNode_Binding::Wrap(aCx, this, aGivenProto);
-}
-
-void MediaElementAudioSourceNode::ListenForAllowedToPlay(
-    const MediaElementAudioSourceOptions& aOptions) {
-  aOptions.mMediaElement->GetAllowedToPlayPromise()
-      ->Then(
-          AbstractMainThread(), __func__,
-          
-          
-          
-          
-          [& self = *this]() {
-            self.Context()->StartBlockedAudioContextIfAllowed();
-            self.mAllowedToPlayRequest.Complete();
-          })
-      ->Track(mAllowedToPlayRequest);
-}
-
-void MediaElementAudioSourceNode::Destroy() {
-  mAllowedToPlayRequest.DisconnectIfExists();
-  MediaStreamAudioSourceNode::Destroy();
 }
 
 }  

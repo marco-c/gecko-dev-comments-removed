@@ -180,7 +180,7 @@ AudioContext::AudioContext(nsPIDOMWindowInner* aWindow, bool aIsOffline,
   FFTBlock::MainThreadInit();
 }
 
-void AudioContext::StartBlockedAudioContextIfAllowed() {
+void AudioContext::NotifyScheduledSourceNodeStarted() {
   MOZ_ASSERT(NS_IsMainThread());
   
   if (mWasAllowedToStart) {

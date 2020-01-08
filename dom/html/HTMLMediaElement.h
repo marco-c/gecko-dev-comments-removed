@@ -723,11 +723,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
     aSinkId = mSink.first();
   }
 
-  
-  
-  
-  RefPtr<GenericNonExclusivePromise> GetAllowedToPlayPromise();
-
  protected:
   virtual ~HTMLMediaElement();
 
@@ -1662,11 +1657,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   bool mBlockedAsWithoutMetadata = false;
-
-  
-  
-  
-  MozPromiseHolder<GenericNonExclusivePromise> mAllowedToPlayPromise;
 
  public:
   
