@@ -1487,9 +1487,6 @@ class GeneralTokenStreamChars
     using SpecializedCharsBase = SpecializedTokenStreamCharsBase<CharT>;
 
   private:
-    
-
-  private:
     Token* newTokenInternal(TokenKind kind, TokenStart start, TokenKind* out);
 
     
@@ -1519,6 +1516,10 @@ class GeneralTokenStreamChars
     using CharsBase::addLineOfContext;
     using TokenStreamCharsShared::drainCharBufferIntoAtom;
     using CharsBase::fillCharBufferFromSourceNormalizingAsciiLineBreaks;
+    using TokenStreamCharsShared::isAsciiCodePoint;
+    using CharsBase::matchLineTerminator;
+    
+    using CharsBase::toCharT;
 
     using typename CharsBase::SourceUnits;
 
@@ -1603,6 +1604,40 @@ class GeneralTokenStreamChars
         MOZ_ASSERT_IF(c == EOF, anyCharsAccess().flags.isEOF);
 
         CharsBase::ungetCodeUnit(c);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    MOZ_MUST_USE bool getFullAsciiCodePoint(int32_t lead, int32_t* codePoint) {
+        MOZ_ASSERT(isAsciiCodePoint(lead),
+                   "non-ASCII code units must be handled separately");
+        MOZ_ASSERT(toCharT(lead) == this->sourceUnits.previousCodeUnit(),
+                   "getFullAsciiCodePoint called incorrectly");
+
+        if (MOZ_UNLIKELY(lead == '\r')) {
+            matchLineTerminator('\n');
+        } else if (MOZ_LIKELY(lead != '\n')) {
+            *codePoint = lead;
+            return true;
+        }
+
+        *codePoint = '\n';
+        bool ok = updateLineInfoForEOL();
+        if (!ok) {
+#ifdef DEBUG
+            *codePoint = EOF; 
+#endif
+            MOZ_MAKE_MEM_UNDEFINED(codePoint, sizeof(*codePoint));
+        }
+        return ok;
     }
 
     MOZ_MUST_USE MOZ_ALWAYS_INLINE bool updateLineInfoForEOL() {
@@ -1707,41 +1742,6 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
 
 
     MOZ_MUST_USE bool getCodePoint(int32_t* cp);
-
-    
-
-
-
-
-
-
-
-
-
-    MOZ_MUST_USE bool getFullAsciiCodePoint(int32_t lead, int32_t* codePoint) {
-        MOZ_ASSERT(isAsciiCodePoint(lead),
-                   "non-ASCII code units must be handled separately");
-        
-        MOZ_ASSERT(lead == this->sourceUnits.previousCodeUnit(),
-                   "getFullAsciiCodePoint called incorrectly");
-
-        if (MOZ_UNLIKELY(lead == '\r')) {
-            matchLineTerminator('\n');
-        } else if (MOZ_LIKELY(lead != '\n')) {
-            *codePoint = lead;
-            return true;
-        }
-
-        *codePoint = '\n';
-        bool ok = updateLineInfoForEOL();
-        if (!ok) {
-#ifdef DEBUG
-            *codePoint = EOF; 
-#endif
-            MOZ_MAKE_MEM_UNDEFINED(codePoint, sizeof(*codePoint));
-        }
-        return ok;
-    }
 
     
 
@@ -1898,7 +1898,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using CharsBase::fillCharBufferFromSourceNormalizingAsciiLineBreaks;
     using SpecializedChars::getCodePoint;
     using GeneralCharsBase::getCodeUnit;
-    using SpecializedChars::getFullAsciiCodePoint;
+    using GeneralCharsBase::getFullAsciiCodePoint;
     using SpecializedChars::getNonAsciiCodePoint;
     using SpecializedChars::getNonAsciiCodePointDontNormalize;
     using GeneralCharsBase::internalComputeLineOfContext;
