@@ -149,6 +149,7 @@ function removeRule(ruleId, rules) {
 
 
 
+
 const INITIAL_STATE = {};
 
 const reducers = {
@@ -166,7 +167,7 @@ const reducers = {
     state = cloneState(state);
 
     const { type, href, index } = change.source;
-    const { selector, ancestors, ruleIndex } = change;
+    const { selector, ancestors, ruleIndex, type: changeType } = change;
     const sourceId = getSourceHash(change.source);
     const ruleId = getRuleHash({ selector, ancestors, ruleIndex });
     
@@ -181,6 +182,9 @@ const reducers = {
     let rule = rules[ruleId];
     if (!rule) {
       rule = createRule({ selector, ancestors, ruleIndex }, rules);
+      if (changeType.startsWith("rule-")) {
+        rule.changeType = changeType;
+      }
     }
     
     const add = Object.assign({}, rule.add);
