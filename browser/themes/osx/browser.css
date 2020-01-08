@@ -112,7 +112,7 @@
 
 
 @media (-moz-mac-yosemite-theme: 0) {
-  .titlebar-placeholder[type="fullscreen-button"] {
+  .titlebar-spacer[type="fullscreen-button"] {
     margin-right: 4px;
   }
 }
