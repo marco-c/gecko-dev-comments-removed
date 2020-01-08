@@ -4,10 +4,6 @@
 
 
 
-#downloadsListBox > richlistitem {
-  -moz-binding: url('chrome://browser/content/downloads/download.xml#download');
-}
-
 #downloadsListBox > richlistitem:not([selected]) button {
   
   -moz-user-focus: none;
@@ -44,12 +40,8 @@
 
 
 
-#downloadsRichListBox > richlistitem {
+#downloadsRichListBox > richlistitem:not([active]) {
   -moz-binding: none;
-}
-
-#downloadsRichListBox > richlistitem[active] {
-  -moz-binding: url("chrome://browser/content/downloads/download.xml#download");
 }
 
 #downloadsRichListBox > richlistitem button {

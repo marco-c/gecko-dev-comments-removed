@@ -422,13 +422,41 @@ DownloadsSubview.Button = class extends DownloadsViewUI.DownloadElementShell {
   }
 
   
+  connect() {}
 
+  
+  showDisplayNameAndIcon(displayName, icon) {
+    this.element.setAttribute("label", displayName);
+    this.element.setAttribute("image", icon);
+  }
 
+  
+  showProgress() {}
 
+  
+  showStatus(status) {
+    this.element.setAttribute("status", status);
+    this.element.setAttribute("tooltiptext", status);
+  }
+
+  
+  showButton() {}
+
+  
+  hideButton() {}
+
+  
   _updateState() {
+    
+    let state = DownloadsCommon.stateOfDownload(this.download);
+    let shouldDisplay = state == DownloadsCommon.DOWNLOAD_FINISHED ||
+                        state == DownloadsCommon.DOWNLOAD_FAILED;
+    this.element.hidden = !shouldDisplay;
+    if (!shouldDisplay) {
+      return;
+    }
+
     super._updateState();
-    this.element.setAttribute("label", this.element.getAttribute("displayName"));
-    this.element.setAttribute("tooltiptext", this.element.getAttribute("status"));
 
     if (this.isCommandEnabled("downloadsCmd_show")) {
       this.element.setAttribute("openLabel", kButtonLabels.open);
@@ -443,15 +471,13 @@ DownloadsSubview.Button = class extends DownloadsViewUI.DownloadElementShell {
       this.element.removeAttribute("retryLabel");
       this.element.removeAttribute("showLabel");
     }
-
-    this._updateVisibility();
   }
 
-  _updateVisibility() {
-    let state = this.element.getAttribute("state");
-    
-    this.element.hidden = !(state == DownloadsCommon.DOWNLOAD_FINISHED ||
-      state == DownloadsCommon.DOWNLOAD_FAILED);
+  
+  _updateStateInner() {
+    if (!this.element.hidden) {
+      super._updateStateInner();
+    }
   }
 
   

@@ -52,22 +52,6 @@ HistoryDownloadElementShell.prototype = {
 
 
 
-
-  ensureActive() {
-    if (!this._active) {
-      this._active = true;
-      this.element.setAttribute("active", true);
-      this.onChanged();
-    }
-  },
-  get active() {
-    return !!this._active;
-  },
-
-  
-
-
-
   get download() {
     return this._download;
   },
