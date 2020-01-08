@@ -50,8 +50,10 @@ class TestEVCertificate(PuppeteerMixin, MarionetteTestCase):
         self.assertEqual(self.identity_popup.element.get_attribute('connection'), 'secure-ev')
 
         
-        self.assertEqual(self.identity_popup.view.main.host.get_property('textContent'),
-                         cert['organization'])
+        l10n_header = self.browser.localize_property('identity.headerWithHost')
+        l10n_header = l10n_header.replace('%S', cert['organization'])
+        self.assertEqual(self.identity_popup.view.main.header.get_property('textContent'),
+                         l10n_header)
 
         
         secure_label = self.identity_popup.view.main.secure_connection_label
