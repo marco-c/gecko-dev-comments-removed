@@ -77,6 +77,7 @@
 #include <wtsapi32.h>
 #include <process.h>
 #include <commctrl.h>
+#include <dbt.h>
 #include <unknwn.h>
 #include <psapi.h>
 
@@ -143,6 +144,7 @@
 #include "nsStyleConsts.h"
 #include "gfxConfig.h"
 #include "InProcessWinCompositorWidget.h"
+#include "InputDeviceUtils.h"
 #include "ScreenHelperWin.h"
 
 #include "nsIGfxInfo.h"
@@ -604,6 +606,7 @@ nsWindow::nsWindow(bool aIsChildWindow)
   mPaintDC              = nullptr;
   mPrevWndProc          = nullptr;
   mNativeDragTarget     = nullptr;
+  mDeviceNotifyHandle   = nullptr;
   mInDtor               = false;
   mIsVisible            = false;
   mIsTopWidgetWindow    = false;
@@ -848,6 +851,9 @@ nsWindow::Create(nsIWidget* aParent,
     NS_WARNING("nsWindow CreateWindowEx failed.");
     return NS_ERROR_FAILURE;
   }
+
+  mDeviceNotifyHandle = InputDeviceUtils::RegisterNotification(mWnd);
+
   
   
   
@@ -980,6 +986,9 @@ void nsWindow::Destroy()
   
 
   ClearCachedResources();
+
+  InputDeviceUtils::UnregisterNotification(mDeviceNotifyHandle);
+  mDeviceNotifyHandle = nullptr;
 
   
   
@@ -5339,6 +5348,22 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
               uiUtils->UpdateTabletModeState();
             }
           }
+        }
+      }
+    }
+    break;
+
+    case WM_DEVICECHANGE:
+    {
+      if (wParam == DBT_DEVICEARRIVAL ||
+          wParam == DBT_DEVICEREMOVECOMPLETE) {
+        DEV_BROADCAST_HDR* hdr = reinterpret_cast<DEV_BROADCAST_HDR*>(lParam);
+        
+        
+        
+        
+        if (hdr->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE) {
+          NotifyThemeChanged();
         }
       }
     }
