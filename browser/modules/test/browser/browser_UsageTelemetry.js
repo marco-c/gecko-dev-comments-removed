@@ -119,8 +119,7 @@ add_task(async function test_subsessionSplit() {
 
   
   
-  Services.telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
-                                     true );
+  Services.telemetry.getSnapshotForScalars("main", true );
   Services.obs.notifyObservers(null, TELEMETRY_SUBSESSION_TOPIC);
 
   
