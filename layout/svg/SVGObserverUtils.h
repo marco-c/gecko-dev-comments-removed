@@ -805,20 +805,9 @@ public:
   static void
   RemoveTemplateObserver(nsIFrame* aFrame);
 
-  
-
-
-  static nsSVGPaintingProperty*
-  GetPaintingProperty(URLAndReferrerInfo* aURI, nsIFrame* aFrame,
-      const mozilla::FramePropertyDescriptor<nsSVGPaintingProperty>* aProperty);
-  
-
-
-
-  static nsSVGPaintingProperty*
-  GetPaintingPropertyForURI(URLAndReferrerInfo* aURI,
-                            nsIFrame* aFrame,
-                            URIObserverHashtablePropertyDescriptor aProp);
+  static Element*
+  GetAndObserveBackgroundImage(nsIFrame* aFrame,
+                               const nsAtom* aHref);
 
   
 

@@ -170,34 +170,16 @@ nsImageRenderer::PrepareImage()
       mPrepareResult = ImgDrawResult::SUCCESS;
       break;
     case eStyleImageType_Element: {
-      nsAutoString elementId =
-        NS_LITERAL_STRING("#") + nsDependentAtomString(mImage->GetElementId());
-      nsCOMPtr<nsIURI> targetURI;
-      nsCOMPtr<nsIURI> base = mForFrame->GetContent()->GetBaseURI();
-      nsContentUtils::NewURIWithDocumentCharset(
-        getter_AddRefs(targetURI),
-        elementId,
-        mForFrame->GetContent()->GetUncomposedDoc(),
-        base);
-      RefPtr<URLAndReferrerInfo> url = new URLAndReferrerInfo(
-        targetURI,
-        mForFrame->GetContent()->OwnerDoc()->GetDocumentURI(),
-        mForFrame->GetContent()->OwnerDoc()->GetReferrerPolicy());
-
-      nsSVGPaintingProperty* property = SVGObserverUtils::GetPaintingPropertyForURI(
-          url, mForFrame->FirstContinuation(),
-          SVGObserverUtils::BackgroundImageProperty());
-      if (!property) {
-        mPrepareResult = ImgDrawResult::BAD_IMAGE;
-        return false;
-      }
-
+      Element* paintElement = 
+        SVGObserverUtils::GetAndObserveBackgroundImage(
+          mForFrame->FirstContinuation(), mImage->GetElementId());
       
       
-      mImageElementSurface = nsLayoutUtils::SurfaceFromElement(
-                               property->GetAndObserveReferencedElement());
+      mImageElementSurface = nsLayoutUtils::SurfaceFromElement(paintElement);
+
       if (!mImageElementSurface.GetSourceSurface()) {
-        nsIFrame* paintServerFrame = property->GetAndObserveReferencedFrame();
+        nsIFrame* paintServerFrame =
+          paintElement ? paintElement->GetPrimaryFrame() : nullptr;
         
         
         if (!paintServerFrame ||
