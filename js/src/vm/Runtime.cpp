@@ -413,6 +413,13 @@ HandleInterrupt(JSContext* cx, bool invokeCallback)
     MOZ_ASSERT(cx->requestDepth >= 1);
     MOZ_ASSERT(!cx->zone()->isAtomsZone());
 
+    
+    
+    
+    
+    
+    mozilla::recordreplay::AutoDisallowThreadEvents d;
+
     cx->runtime()->gc.gcIfRequested();
 
     
@@ -447,15 +454,18 @@ HandleInterrupt(JSContext* cx, bool invokeCallback)
                 RootedValue rval(cx);
                 switch (Debugger::onSingleStep(cx, &rval)) {
                   case ResumeMode::Terminate:
+                    mozilla::recordreplay::InvalidateRecording("Debugger single-step produced an error");
                     return false;
                   case ResumeMode::Continue:
                     return true;
                   case ResumeMode::Return:
                     
                     Debugger::propagateForcedReturn(cx, iter.abstractFramePtr(), rval);
+                    mozilla::recordreplay::InvalidateRecording("Debugger single-step forced return");
                     return false;
                   case ResumeMode::Throw:
                     cx->setPendingException(rval);
+                    mozilla::recordreplay::InvalidateRecording("Debugger single-step threw an exception");
                     return false;
                   default:;
                 }
@@ -479,6 +489,7 @@ HandleInterrupt(JSContext* cx, bool invokeCallback)
     JS_ReportErrorFlagsAndNumberUC(cx, JSREPORT_WARNING, GetErrorMessage, nullptr,
                                    JSMSG_TERMINATED, chars);
 
+    mozilla::recordreplay::InvalidateRecording("Interrupt callback forced return");
     return false;
 }
 

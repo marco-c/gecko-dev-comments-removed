@@ -3499,6 +3499,10 @@ UnmarkGrayGCThing(JSRuntime* rt, JS::GCCellPtr thing)
 {
     MOZ_ASSERT(thing);
 
+    
+    
+    mozilla::recordreplay::AutoDisallowThreadEvents d;
+
     UnmarkGrayTracer unmarker(rt);
     gcstats::AutoPhase innerPhase(rt->gc.stats(), gcstats::PhaseKind::UNMARK_GRAY);
     unmarker.unmark(thing);

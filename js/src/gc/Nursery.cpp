@@ -703,6 +703,8 @@ js::Nursery::collect(JS::gcreason::Reason reason)
     JSRuntime* rt = runtime();
     MOZ_ASSERT(!rt->mainContextFromOwnThread()->suppressGC);
 
+    mozilla::recordreplay::AutoDisallowThreadEvents disallow;
+
     if (!isEnabled() || isEmpty()) {
         
         

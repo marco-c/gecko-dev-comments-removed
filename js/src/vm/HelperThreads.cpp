@@ -1888,6 +1888,11 @@ HelperThread::ThreadMain(void* arg)
 {
     ThisThread::SetName("JS Helper");
 
+    
+    
+    
+    mozilla::recordreplay::AutoDisallowThreadEvents d;
+
     static_cast<HelperThread*>(arg)->threadLoop();
     Mutex::ShutDown();
 }
