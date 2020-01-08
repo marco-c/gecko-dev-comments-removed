@@ -28,6 +28,8 @@ var macOSPoliciesParser = {
       return null;
     }
 
+    nativePolicies = this.removeUnknownPolicies(nativePolicies);
+
     
     
     if (log.maxLogLevel == "debug") {
@@ -36,4 +38,18 @@ var macOSPoliciesParser = {
 
     return nativePolicies;
   },
+
+  removeUnknownPolicies(policies) {
+    let { schema } = ChromeUtils.import("resource:///modules/policies/schema.jsm", {});
+
+    for (let policyName of Object.keys(policies)) {
+      if (!schema.properties.hasOwnProperty(policyName)) {
+        log.debug(`Removing unknown policy: ${policyName}`);
+        delete policies[policyName];
+      }
+    }
+
+    return policies;
+  },
+
 };
