@@ -34,6 +34,8 @@ class nsPrefBranch;
 
 namespace mozilla {
 
+class PreferenceServiceReporter;
+
 namespace dom {
 class Pref;
 class PrefValue;
@@ -355,6 +357,43 @@ public:
     return UnregisterCallback(aCallback, aPref, aClosure, PrefixMatch);
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static nsresult RegisterCallbacks(PrefChangedFunc aCallback,
+                                    const char** aPrefs,
+                                    void* aClosure = nullptr)
+  {
+    return RegisterCallbacks(aCallback, aPrefs, aClosure, ExactMatch);
+  }
+  static nsresult RegisterCallbacksAndCall(PrefChangedFunc aCallback,
+                                           const char** aPrefs,
+                                           void* aClosure = nullptr);
+  static nsresult UnregisterCallbacks(PrefChangedFunc aCallback,
+                                      const char** aPrefs,
+                                      void* aClosure = nullptr)
+  {
+    return UnregisterCallbacks(aCallback, aPrefs, aClosure, ExactMatch);
+  }
+  static nsresult RegisterPrefixCallbacks(PrefChangedFunc aCallback,
+                                          const char** aPrefs,
+                                          void* aClosure = nullptr)
+  {
+    return RegisterCallbacks(aCallback, aPrefs, aClosure, PrefixMatch);
+  }
+  static nsresult UnregisterPrefixCallbacks(PrefChangedFunc aCallback,
+                                            const char** aPrefs,
+                                            void* aClosure = nullptr)
+  {
+    return UnregisterCallbacks(aCallback, aPrefs, aClosure, PrefixMatch);
+  }
+
   template<int N>
   static nsresult RegisterCallback(PrefChangedFunc aCallback,
                                    const char (&aPref)[N],
@@ -594,6 +633,27 @@ private:
                                           const nsACString& aPref,
                                           void* aClosure,
                                           MatchKind aMatchKind);
+
+  static nsresult RegisterCallbacks(PrefChangedFunc aCallback,
+                                    const char** aPrefs,
+                                    void* aClosure,
+                                    MatchKind aMatchKind);
+  static nsresult UnregisterCallbacks(PrefChangedFunc aCallback,
+                                      const char** aPrefs,
+                                      void* aClosure,
+                                      MatchKind aMatchKind);
+
+  template<typename T>
+  static nsresult RegisterCallbackImpl(PrefChangedFunc aCallback,
+                                       T& aPref,
+                                       void* aClosure,
+                                       MatchKind aMatchKind,
+                                       bool aIsPriority = false);
+  template<typename T>
+  static nsresult UnregisterCallbackImpl(PrefChangedFunc aCallback,
+                                         T& aPref,
+                                         void* aClosure,
+                                         MatchKind aMatchKind);
 
   static nsresult RegisterCallback(PrefChangedFunc aCallback,
                                    const char* aPref,

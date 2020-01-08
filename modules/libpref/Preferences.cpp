@@ -1185,7 +1185,18 @@ public:
                PrefChangedFunc aFunc,
                void* aData,
                Preferences::MatchKind aMatchKind)
-    : mDomain(aDomain)
+    : mDomain(AsVariant(nsCString(aDomain)))
+    , mFunc(aFunc)
+    , mData(aData)
+    , mNextAndMatchKind(aMatchKind)
+  {
+  }
+
+  CallbackNode(const char** aDomains,
+               PrefChangedFunc aFunc,
+               void* aData,
+               Preferences::MatchKind aMatchKind)
+    : mDomain(AsVariant(aDomains))
     , mFunc(aFunc)
     , mData(aData)
     , mNextAndMatchKind(aMatchKind)
@@ -1194,7 +1205,7 @@ public:
 
   
   
-  const nsCString& Domain() const { return mDomain; }
+  const Variant<nsCString, const char**>& Domain() const { return mDomain; }
 
   PrefChangedFunc Func() const { return mFunc; }
   void ClearFunc() { mFunc = nullptr; }
@@ -1205,6 +1216,35 @@ public:
   {
     return static_cast<Preferences::MatchKind>(mNextAndMatchKind &
                                                kMatchKindMask);
+  }
+
+  bool DomainIs(const nsACString& aDomain) const
+  {
+    return mDomain.is<nsCString>() && mDomain.as<nsCString>() == aDomain;
+  }
+
+  bool DomainIs(const char** aPrefs) const
+  {
+    return mDomain == AsVariant(aPrefs);
+  }
+
+  bool Matches(const nsACString& aPrefName) const
+  {
+    auto match = [&](const nsACString& aStr) {
+      return MatchKind() == Preferences::ExactMatch
+               ? aPrefName == aStr
+               : StringBeginsWith(aPrefName, aStr);
+    };
+
+    if (mDomain.is<nsCString>()) {
+      return match(mDomain.as<nsCString>());
+    }
+    for (const char** ptr = mDomain.as<const char**>(); *ptr; ptr++) {
+      if (match(nsDependentCString(*ptr))) {
+        return true;
+      }
+    }
+    return false;
   }
 
   CallbackNode* Next() const
@@ -1223,15 +1263,17 @@ public:
   void AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf, PrefsSizes& aSizes)
   {
     aSizes.mCallbacksObjects += aMallocSizeOf(this);
-    aSizes.mCallbacksDomains +=
-      mDomain.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+    if (mDomain.is<nsCString>()) {
+      aSizes.mCallbacksDomains +=
+        mDomain.as<nsCString>().SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+    }
   }
 
 private:
   static const uintptr_t kMatchKindMask = uintptr_t(0x1);
   static const uintptr_t kNextMask = ~kMatchKindMask;
 
-  nsCString mDomain;
+  Variant<nsCString, const char**> mDomain;
 
   
   
@@ -1782,10 +1824,7 @@ NotifyCallbacks(const char* aPrefName, const PrefWrapper* aPref)
 
   for (CallbackNode* node = gFirstCallback; node; node = node->Next()) {
     if (node->Func()) {
-      bool matches = node->MatchKind() == Preferences::ExactMatch
-                       ? node->Domain() == prefName
-                       : StringBeginsWith(prefName, node->Domain());
-      if (matches) {
+      if (node->Matches(prefName)) {
         (node->Func())(aPrefName, node->Data());
       }
     }
@@ -5330,12 +5369,13 @@ Preferences::RemoveObservers(nsIObserver* aObserver, const char** aPrefs)
   return NS_OK;
 }
 
+template<typename T>
  nsresult
-Preferences::RegisterCallback(PrefChangedFunc aCallback,
-                              const nsACString& aPrefNode,
-                              void* aData,
-                              MatchKind aMatchKind,
-                              bool aIsPriority)
+Preferences::RegisterCallbackImpl(PrefChangedFunc aCallback,
+                                  T& aPrefNode,
+                                  void* aData,
+                                  MatchKind aMatchKind,
+                                  bool aIsPriority)
 {
   NS_ENSURE_ARG(aCallback);
 
@@ -5365,6 +5405,26 @@ Preferences::RegisterCallback(PrefChangedFunc aCallback,
 }
 
  nsresult
+Preferences::RegisterCallback(PrefChangedFunc aCallback,
+                              const nsACString& aPrefNode,
+                              void* aData,
+                              MatchKind aMatchKind,
+                              bool aIsPriority)
+{
+  return RegisterCallbackImpl(
+    aCallback, aPrefNode, aData, aMatchKind, aIsPriority);
+}
+
+ nsresult
+Preferences::RegisterCallbacks(PrefChangedFunc aCallback,
+                               const char** aPrefs,
+                               void* aData,
+                               MatchKind aMatchKind)
+{
+  return RegisterCallbackImpl(aCallback, aPrefs, aData, aMatchKind);
+}
+
+ nsresult
 Preferences::RegisterCallbackAndCall(PrefChangedFunc aCallback,
                                      const nsACString& aPref,
                                      void* aClosure,
@@ -5379,10 +5439,28 @@ Preferences::RegisterCallbackAndCall(PrefChangedFunc aCallback,
 }
 
  nsresult
-Preferences::UnregisterCallback(PrefChangedFunc aCallback,
-                                const nsACString& aPrefNode,
-                                void* aData,
-                                MatchKind aMatchKind)
+Preferences::RegisterCallbacksAndCall(PrefChangedFunc aCallback,
+                                      const char** aPrefs,
+                                      void* aClosure)
+{
+  MOZ_ASSERT(aCallback);
+
+  nsresult rv =
+    RegisterCallbacks(aCallback, aPrefs, aClosure, MatchKind::ExactMatch);
+  if (NS_SUCCEEDED(rv)) {
+    for (const char** ptr = aPrefs; *ptr; ptr++) {
+      (*aCallback)(*ptr, aClosure);
+    }
+  }
+  return rv;
+}
+
+template<typename T>
+ nsresult
+Preferences::UnregisterCallbackImpl(PrefChangedFunc aCallback,
+                                    T& aPrefNode,
+                                    void* aData,
+                                    MatchKind aMatchKind)
 {
   MOZ_ASSERT(aCallback);
   if (sShutdown) {
@@ -5397,7 +5475,7 @@ Preferences::UnregisterCallback(PrefChangedFunc aCallback,
 
   while (node) {
     if (node->Func() == aCallback && node->Data() == aData &&
-        node->MatchKind() == aMatchKind && node->Domain() == aPrefNode) {
+        node->MatchKind() == aMatchKind && node->DomainIs(aPrefNode)) {
       if (gCallbacksInProgress) {
         
         
@@ -5415,6 +5493,25 @@ Preferences::UnregisterCallback(PrefChangedFunc aCallback,
     }
   }
   return rv;
+}
+
+ nsresult
+Preferences::UnregisterCallback(PrefChangedFunc aCallback,
+                                const nsACString& aPrefNode,
+                                void* aData,
+                                MatchKind aMatchKind)
+{
+  return UnregisterCallbackImpl<const nsACString&>(
+    aCallback, aPrefNode, aData, aMatchKind);
+}
+
+ nsresult
+Preferences::UnregisterCallbacks(PrefChangedFunc aCallback,
+                                 const char** aPrefs,
+                                 void* aData,
+                                 MatchKind aMatchKind)
+{
+  return UnregisterCallbackImpl(aCallback, aPrefs, aData, aMatchKind);
 }
 
 static void
