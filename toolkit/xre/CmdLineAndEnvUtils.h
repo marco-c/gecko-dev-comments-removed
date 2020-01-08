@@ -23,8 +23,10 @@
 #include "mozilla/Vector.h"
 
 #include <wchar.h>
+#include <windows.h>
 #endif 
 
+#include "mozilla/MemoryChecking.h"
 #include "mozilla/TypedEnumBits.h"
 
 #include <ctype.h>
@@ -345,6 +347,48 @@ MakeCommandLine(int argc, wchar_t **argv)
   *c = '\0';
 
   return std::move(s);
+}
+
+inline bool
+SetArgv0ToFullBinaryPath(wchar_t* aArgv[])
+{
+  if (!aArgv) {
+    return false;
+  }
+
+  DWORD bufLen = MAX_PATH;
+  mozilla::UniquePtr<wchar_t[]> buf;
+  DWORD retLen;
+
+  while (true) {
+    buf = mozilla::MakeUnique<wchar_t[]>(bufLen);
+    retLen = ::GetModuleFileNameW(nullptr, buf.get(), bufLen);
+    if (!retLen) {
+      return false;
+    }
+
+    if (retLen == bufLen && ::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+      bufLen *= 2;
+      continue;
+    }
+
+    break;
+  }
+
+  
+  ++retLen;
+
+  
+  
+  auto newArgv_0 = mozilla::MakeUnique<wchar_t[]>(retLen);
+  if (wcscpy_s(newArgv_0.get(), retLen, buf.get())) {
+    return false;
+  }
+
+  
+  aArgv[0] = newArgv_0.release();
+  MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(aArgv[0]);
+  return true;
 }
 
 #endif 
