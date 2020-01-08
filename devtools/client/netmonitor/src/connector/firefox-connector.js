@@ -14,7 +14,6 @@ loader.lazyRequireGetter(this, "TimelineFront", "devtools/shared/fronts/timeline
 
 
 loader.lazyRequireGetter(this, "throttlingProfiles", "devtools/client/shared/components/throttling/profiles");
-loader.lazyRequireGetter(this, "EmulationFront", "devtools/shared/fronts/emulation", true);
 
 
 
@@ -80,8 +79,7 @@ class FirefoxConnector {
       this.tabTarget.on("navigate", this.navigate);
 
       
-      const { tab } = await this.tabTarget.client.getTab();
-      this.emulationFront = EmulationFront(this.tabTarget.client, tab);
+      this.emulationFront = this.tabTarget.getFront("emulation");
     }
 
     

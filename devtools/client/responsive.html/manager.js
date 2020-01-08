@@ -460,6 +460,10 @@ ResponsiveUI.prototype = {
   },
 
   async connectToServer() {
+    
+    
+    
+    
     DebuggerServer.init();
     DebuggerServer.registerAllActors();
     this.client = new DebuggerClient(DebuggerServer.connectPipe());
