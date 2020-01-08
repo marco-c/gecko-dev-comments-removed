@@ -454,7 +454,10 @@ protected:
 
 
 
-  int32_t HostOrSlotTabIndexValue(nsIContent* aContent);
+
+
+  int32_t HostOrSlotTabIndexValue(nsIContent* aContent,
+                                  bool* aIsFocusable = nullptr);
 
   
 
