@@ -21,14 +21,7 @@ var EXPORTED_SYMBOLS = ["AboutPages"];
 
 const SHIELD_LEARN_MORE_URL_PREF = "app.normandy.shieldLearnMoreUrl";
 
-
-
-const PROCESS_SCRIPT = (
-  `resource://normandy-content/shield-content-process.js?${Math.random()}`
-);
-const FRAME_SCRIPT = (
-  `resource://normandy-content/shield-content-frame.js?${Math.random()}`
-);
+const PROCESS_SCRIPT = "resource://normandy-content/shield-content-process.js";
 
 
 
@@ -99,7 +92,6 @@ var AboutPages = {
   async init() {
     
     Services.ppmm.loadProcessScript(PROCESS_SCRIPT, true);
-    Services.mm.loadFrameScript(FRAME_SCRIPT, true);
 
     
     this.aboutStudies.register();
@@ -109,7 +101,6 @@ var AboutPages = {
       
       Services.ppmm.removeDelayedProcessScript(PROCESS_SCRIPT);
       Services.ppmm.broadcastAsyncMessage("Shield:ShuttingDown");
-      Services.mm.removeDelayedFrameScript(FRAME_SCRIPT);
       Services.mm.broadcastAsyncMessage("Shield:ShuttingDown");
 
       
