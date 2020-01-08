@@ -30,18 +30,6 @@ enum ReaderType {
 
 
 
-enum DefaultControllerSlots {
-    DefaultControllerSlot_StrategySize = ReadableStreamController::SlotCount,
-    DefaultControllerSlotCount
-};
-
-
-
-
-
-
-
-
 
 
 enum ByteControllerSlots {
@@ -2301,7 +2289,7 @@ CreateReadableStreamDefaultController(JSContext* cx, Handle<ReadableStream*> str
 
     
     
-    controller->setFixedSlot(DefaultControllerSlot_StrategySize, size);
+    controller->setStrategySize(size);
     controller->setStrategyHWM(highWaterMark);
 
     
@@ -2581,7 +2569,7 @@ const Class ReadableStreamController::class_ = {
     "ReadableStreamController"
 };
 
-CLASS_SPEC(ReadableStreamDefaultController, 4, 7, ClassSpec::DontDefineConstructor, 0,
+CLASS_SPEC(ReadableStreamDefaultController, 4, SlotCount, ClassSpec::DontDefineConstructor, 0,
            JS_NULL_CLASS_OPS);
 
 
@@ -3031,8 +3019,7 @@ ReadableStreamDefaultControllerEnqueue(JSContext* cx,
         bool success = true;
 
         
-        RootedValue strategySize(cx);
-        strategySize = controller->getFixedSlot(DefaultControllerSlot_StrategySize);
+        RootedValue strategySize(cx, controller->strategySize());
         if (!strategySize.isUndefined()) {
             
             if (!cx->compartment()->wrap(cx, &strategySize)) {
