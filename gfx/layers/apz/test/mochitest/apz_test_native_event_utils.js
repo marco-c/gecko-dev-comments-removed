@@ -86,6 +86,16 @@ function windowForTarget(aTarget) {
   return aTarget.ownerDocument.defaultView;
 }
 
+function getBoundingClientRectRelativeToVisualViewport(aElement) {
+  let utils = SpecialPowers.getDOMWindowUtils(window);
+  var rect = aElement.getBoundingClientRect();
+  var offsetX = {}, offsetY = {};
+  utils.getVisualViewportOffsetRelativeToLayoutViewport(offsetX, offsetY);
+  rect.x -= offsetX.value;
+  rect.y -= offsetY.value;
+  return rect;
+}
+
 
 
 
@@ -100,7 +110,7 @@ function coordinatesRelativeToScreen(aX, aY, aTarget) {
   var scale = targetWindow.devicePixelRatio;
   var rect = (aTarget instanceof Window)
     ? {left: 0, top: 0} 
-    : aTarget.getBoundingClientRect();
+    : getBoundingClientRectRelativeToVisualViewport(aTarget);
   return {
     x: (targetWindow.mozInnerScreenX + rect.left + aX) * scale,
     y: (targetWindow.mozInnerScreenY + rect.top + aY) * scale
