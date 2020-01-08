@@ -839,7 +839,6 @@ SelectAllCommand::IsCommandEnabled(const char* aCommandName,
   
   
   *aIsEnabled = true;
-  bool docIsEmpty;
 
   nsCOMPtr<nsIEditor> editor = do_QueryInterface(aCommandRefCon);
   if (!editor) {
@@ -849,11 +848,12 @@ SelectAllCommand::IsCommandEnabled(const char* aCommandName,
   
   TextEditor* textEditor = editor->AsTextEditor();
   MOZ_ASSERT(textEditor);
-  rv = textEditor->GetDocumentIsEmpty(&docIsEmpty);
+  bool isEmpty = false;
+  rv = textEditor->IsEmpty(&isEmpty);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-  *aIsEnabled = !docIsEmpty;
+  *aIsEnabled = !isEmpty;
   return NS_OK;
 }
 
