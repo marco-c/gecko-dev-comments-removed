@@ -83,12 +83,6 @@ public:
     return mShutdownRequired;
   }
 
-  
-  void ClearObservers()
-  {
-    mEventObservers.Clear();
-  }
-
   void
   SetScriptObserver(mozilla::CycleCollectedJSContext* aScriptObserver);
 
@@ -174,9 +168,6 @@ protected:
   RefPtr<mozilla::ThreadEventTarget> mEventTarget;
 
   mozilla::CycleCollectedJSContext* mScriptObserver;
-
-  
-  nsAutoTObserverArray<NotNull<nsCOMPtr<nsIThreadObserver>>, 2> mEventObservers;
 
   int32_t   mPriority;
   uint32_t  mThreadId;

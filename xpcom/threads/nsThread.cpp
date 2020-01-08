@@ -868,11 +868,6 @@ nsThread::ShutdownComplete(NotNull<nsThreadShutdownContext*> aContext)
   PR_JoinThread(mThread);
   mThread = nullptr;
 
-  
-  
-  
-  ClearObservers();
-
 #ifdef DEBUG
   nsCOMPtr<nsIThreadObserver> obs = mEvents->GetObserver();
   MOZ_ASSERT(!obs, "Should have been cleared at shutdown!");

@@ -354,7 +354,6 @@ nsThreadManager::Shutdown()
   
   
   mMainThread->SetObserver(nullptr);
-  mMainThread->ClearObservers();
 
   
   mMainThread = nullptr;
