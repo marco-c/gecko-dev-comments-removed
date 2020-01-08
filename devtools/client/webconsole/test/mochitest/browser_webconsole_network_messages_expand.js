@@ -8,17 +8,10 @@ const TEST_PATH = "https://example.com/browser/devtools/client/webconsole/" +
                   "test/mochitest/";
 const TEST_URI = TEST_PATH + TEST_FILE;
 
-const NET_PREF = "devtools.webconsole.filter.net";
-const XHR_PREF = "devtools.webconsole.filter.netxhr";
-
 requestLongerTimeout(2);
 
-Services.prefs.setBoolPref(NET_PREF, false);
-Services.prefs.setBoolPref(XHR_PREF, true);
-registerCleanupFunction(() => {
-  Services.prefs.clearUserPref(NET_PREF);
-  Services.prefs.clearUserPref(XHR_PREF);
-});
+pushPref("devtools.webconsole.filter.net", false);
+pushPref("devtools.webconsole.filter.netxhr", true);
 
 const tabs = [{
   id: "headers",
@@ -55,6 +48,7 @@ const tabs = [{
 
 add_task(async function task() {
   const hud = await openNewTabAndConsole(TEST_URI);
+
   const currentTab = gBrowser.selectedTab;
   const target = await TargetFactory.forTab(currentTab);
 
@@ -79,29 +73,27 @@ async function openRequestAfterUpdates(target, hud) {
   const toolbox = gDevTools.getToolbox(target);
 
   const xhrUrl = TEST_PATH + "sjs_slow-response-test-server.sjs";
-  const message = waitForMessage(hud, xhrUrl);
+  const onMessage = waitForMessage(hud, xhrUrl);
+  const onRequestUpdates = waitForRequestUpdates(hud);
+  const onPayloadReady = waitForPayloadReady(hud);
 
   
   ContentTask.spawn(gBrowser.selectedBrowser, null, function() {
     content.wrappedJSObject.testXhrPostSlowResponse();
   });
 
-  const { node: messageNode } = await message;
+  const { node: messageNode } = await onMessage;
+  ok(messageNode, "Network message found.");
 
-  info("Network message found.");
-
-  await waitForRequestUpdates(toolbox);
-
-  const payload = waitForPayloadReady(toolbox);
+  await onRequestUpdates;
 
   
-  const urlNode = messageNode.querySelector(".url");
-  urlNode.click();
+  await expandXhrMessage(messageNode);
 
   const toggleButtonNode = messageNode.querySelector(".sidebar-toggle");
   ok(!toggleButtonNode, "Sidebar toggle button shouldn't be shown");
 
-  await payload;
+  await onPayloadReady;
   await testNetworkMessage(toolbox, messageNode);
 }
 
@@ -111,27 +103,23 @@ async function openRequestBeforeUpdates(target, hud, tab) {
   hud.ui.clearOutput(true);
 
   const xhrUrl = TEST_PATH + "sjs_slow-response-test-server.sjs";
-  const message = waitForMessage(hud, xhrUrl);
+  const onMessage = waitForMessage(hud, xhrUrl);
+  const onRequestUpdates = waitForRequestUpdates(hud);
+  const onPayloadReady = waitForPayloadReady(hud);
 
   
   ContentTask.spawn(gBrowser.selectedBrowser, null, function() {
     content.wrappedJSObject.testXhrPostSlowResponse();
   });
-
-  const { node: messageNode } = await message;
-
-  info("Network message found.");
-
-  const updates = waitForRequestUpdates(toolbox);
-  const payload = waitForPayloadReady(toolbox);
+  const { node: messageNode } = await onMessage;
+  ok(messageNode, "Network message found.");
 
   
   const state = hud.ui.consoleOutput.getStore().getState();
   state.ui.networkMessageActiveTabId = tab.id;
 
   
-  const urlNode = messageNode.querySelector(".url");
-  urlNode.click();
+  await expandXhrMessage(messageNode);
 
   
   
@@ -147,8 +135,8 @@ async function openRequestBeforeUpdates(target, hud, tab) {
   }
 
   
-  await updates;
-  await payload;
+  await onRequestUpdates;
+  await onPayloadReady;
 
   
   await tab.testContent(messageNode);
@@ -191,9 +179,7 @@ async function testHeaders(messageNode) {
 
   
   headersTab.click();
-  await waitUntil(() => {
-    return !!messageNode.querySelector("#headers-panel .headers-overview");
-  });
+  await waitFor(() => messageNode.querySelector("#headers-panel .headers-overview"));
 }
 
 
@@ -209,9 +195,7 @@ async function testCookies(messageNode) {
 
   
   cookiesTab.click();
-  await waitUntil(() => {
-    return !!messageNode.querySelector("#cookies-panel .treeValueCell");
-  });
+  await waitFor(() => messageNode.querySelector("#cookies-panel .treeValueCell"));
 }
 
 
@@ -271,10 +255,8 @@ async function testTimings(messageNode) {
 
   
   timingsTab.click();
-  await waitUntil(() => {
-    return !!messageNode.querySelector(
-      "#timings-panel .timings-container .timings-label");
-  });
+  await waitFor(() =>
+    messageNode.querySelector("#timings-panel .timings-container .timings-label"));
   const timingsContent = messageNode.querySelector(
     "#timings-panel .timings-container .timings-label");
   ok(timingsContent, "Timings content is available");
@@ -294,9 +276,7 @@ async function testStackTrace(messageNode) {
 
   
   stackTraceTab.click();
-  await waitUntil(() => {
-    return !!messageNode.querySelector("#stack-trace-panel .frame-link");
-  });
+  await waitFor(() => messageNode.querySelector("#stack-trace-panel .frame-link"));
 }
 
 
@@ -312,21 +292,13 @@ async function testSecurity(messageNode) {
 
   
   securityTab.click();
-  await waitUntil(() => {
-    return !!messageNode.querySelector("#security-panel .treeTable .treeRow");
-  });
+  await waitFor(() => messageNode.querySelector("#security-panel .treeTable .treeRow"));
 }
 
 
 
-async function waitForPayloadReady(toolbox) {
-  const {ui} = toolbox.getCurrentPanel().hud;
-  return new Promise(resolve => {
-    ui.jsterm.hud.on("network-request-payload-ready", () => {
-      info("network-request-payload-ready received");
-      resolve();
-    });
-  });
+async function waitForPayloadReady(hud) {
+  return hud.ui.once("network-request-payload-ready");
 }
 
 async function waitForSourceEditor(panel) {
@@ -335,14 +307,14 @@ async function waitForSourceEditor(panel) {
   });
 }
 
-async function waitForRequestUpdates(toolbox) {
-  const {ui} = toolbox.getCurrentPanel().hud;
-  return new Promise(resolve => {
-    ui.jsterm.hud.on("network-message-updated", () => {
-      info("network-message-updated received");
-      resolve();
-    });
-  });
+async function waitForRequestUpdates(hud) {
+  return hud.ui.once("network-message-updated");
+}
+
+function expandXhrMessage(node) {
+  info("Click on XHR message and wait for the network detail panel to be displayed");
+  node.querySelector(".url").click();
+  return waitFor(() => node.querySelector(".network-info"));
 }
 
 
