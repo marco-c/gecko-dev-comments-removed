@@ -53,8 +53,6 @@ pref("devtools.inspector.showUserAgentShadowRoots", false);
 
 pref("devtools.inspector.shapesHighlighter.enabled", true);
 
-pref("devtools.inspector.fonteditor.enabled", true);
-
 pref("devtools.inspector.fonthighlighter.enabled", true);
 
 pref("devtools.inspector.changes.enabled", false);

@@ -8,10 +8,6 @@
 const TEST_URI = URL_ROOT + "doc_browser_fontinspector.html";
 
 add_task(async function() {
-  await pushPref("devtools.inspector.fonteditor.enabled", true);
-  
-  await pushPref("devtools.inspector.fonthighlighter.enabled", true);
-
   
   
   await pushPref("devtools.toolbox.footer.height", 500);
