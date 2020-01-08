@@ -24,6 +24,11 @@
 #error "Using XPCOM strings is limited to code linked into libxul."
 #endif
 
+
+
+
+const size_t kNsStringBufferMaxPoison = 16;
+
 template <typename T> class nsTSubstringSplitter;
 template <typename T> class nsTString;
 template <typename T> class nsTSubstring;
@@ -1393,7 +1398,9 @@ private:
     
     
     
-    char_traits::uninitialize(base_string_type::mData + aLength + 1, Capacity() - aLength);
+    char_traits::uninitialize(
+      base_string_type::mData + aLength + 1,
+      XPCOM_MIN(size_t(Capacity() - aLength), kNsStringBufferMaxPoison));
 #endif
   }
 
