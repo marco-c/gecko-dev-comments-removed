@@ -1287,9 +1287,6 @@ nsStyleSVGReset::CalcDifference(const nsStyleSVGReset& aNewData) const
   if (mClipPath != aNewData.mClipPath) {
     hint |= nsChangeHint_UpdateEffects |
             nsChangeHint_RepaintFrame;
-    
-    
-    hint |= nsChangeHint_UpdateOverflow;
   }
 
   if (mDominantBaseline != aNewData.mDominantBaseline) {
@@ -3245,14 +3242,6 @@ nsStyleImageLayers::Layer::CalcDifference(const nsStyleImageLayers::Layer& aNewL
 
     if (!maybeSVGMask && aNewLayer.mImage.GetURLValue()) {
       maybeSVGMask = aNewLayer.mImage.GetURLValue()->MightHaveRef();
-    }
-
-    
-    
-    if (maybeSVGMask) {
-      
-      
-      hint |= nsChangeHint_UpdateOverflow;
     }
   } else if (mAttachment != aNewLayer.mAttachment ||
              mClip != aNewLayer.mClip ||

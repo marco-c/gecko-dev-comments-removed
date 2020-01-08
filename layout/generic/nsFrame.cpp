@@ -7346,7 +7346,7 @@ ComputeEffectsRect(nsIFrame* aFrame, const nsRect& aOverflowRect,
   
   
 
-  if (nsSVGIntegrationUtils::UsingEffectsForFrame(aFrame)) {
+  if (nsSVGIntegrationUtils::UsingOverflowAffectingEffects(aFrame)) {
     aFrame->SetProperty
       (nsIFrame::PreEffectsBBoxProperty(), new nsRect(r));
     r = nsSVGIntegrationUtils::ComputePostEffectsVisualOverflowRect(aFrame, r);

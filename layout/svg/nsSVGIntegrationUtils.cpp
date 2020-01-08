@@ -96,7 +96,8 @@ private:
     
     
     
-    if (nsSVGIntegrationUtils::UsingEffectsForFrame(aFrame) && !aInReflow) {
+    if (nsSVGIntegrationUtils::UsingOverflowAffectingEffects(aFrame) &&
+        !aInReflow) {
       nsOverflowAreas* preTransformOverflows =
         aFrame->GetProperty(aFrame->PreTransformOverflowAreasProperty());
 
@@ -155,6 +156,14 @@ GetPreEffectsVisualOverflow(nsIFrame* aFirstContinuation,
   nsLayoutUtils::AddBoxesForFrame(aCurrentFrame, &collector);
   
   return collector.GetResult() + aFirstContinuationToUserSpace;
+}
+
+bool
+nsSVGIntegrationUtils::UsingOverflowAffectingEffects(const nsIFrame* aFrame)
+{
+  
+  
+  return aFrame->StyleEffects()->HasFilters();
 }
 
 bool
