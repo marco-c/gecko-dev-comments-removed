@@ -17,6 +17,10 @@
 
 namespace mozilla {
 namespace recordreplay {
+
+struct Message;
+struct HitExecutionPointMessage;
+
 namespace js {
 
 
@@ -192,15 +196,21 @@ typedef InfallibleVector<char16_t> CharBuffer;
 
 
 
-
-bool DebuggerOnPause();
-
-
-void DebuggerOnSwitchChild();
-
-
-
 void SetupDevtoolsSandbox();
+
+
+
+
+
+void SetupMiddlemanControl(const Maybe<size_t>& aRecordingChildId);
+
+
+void ForwardHitExecutionPointMessage(size_t aId,
+                                     const HitExecutionPointMessage& aMsg);
+
+
+void BeforeSaveRecording();
+void AfterSaveRecording();
 
 
 
@@ -223,6 +233,9 @@ void ClearPausedState();
 
 
 Maybe<BreakpointPosition> GetEntryPosition(const BreakpointPosition& aPosition);
+
+
+void OnDebuggerResponse(const Message& aMsg);
 
 }  
 }  
