@@ -175,19 +175,16 @@ class Module::Tier2GeneratorTaskImpl : public Tier2GeneratorTask
     SharedModule            module_;
     SharedCompileArgs       compileArgs_;
     Atomic<bool>            cancelled_;
-    bool                    finished_;
 
   public:
     Tier2GeneratorTaskImpl(Module& module, const CompileArgs& compileArgs)
       : module_(&module),
         compileArgs_(&compileArgs),
-        cancelled_(false),
-        finished_(false)
+        cancelled_(false)
     {}
 
     ~Tier2GeneratorTaskImpl() override {
-        if (!finished_)
-            module_->notifyCompilationListeners();
+        module_->testingTier2Active_ = false;
     }
 
     void cancel() override {
@@ -195,51 +192,24 @@ class Module::Tier2GeneratorTaskImpl : public Tier2GeneratorTask
     }
 
     void execute() override {
-        MOZ_ASSERT(!finished_);
-        finished_ = CompileTier2(*compileArgs_, *module_, &cancelled_);
+        CompileTier2(*compileArgs_, *module_, &cancelled_);
     }
 };
 
 void
 Module::startTier2(const CompileArgs& args)
 {
-    MOZ_ASSERT(!tiering_.lock()->active);
-
-    
-    
-    
-    
-    
+    MOZ_ASSERT(!testingTier2Active_);
 
     auto task = MakeUnique<Tier2GeneratorTaskImpl>(*this, args);
     if (!task)
         return;
 
-    tiering_.lock()->active = true;
+    
+    
+    testingTier2Active_ = true;
 
     StartOffThreadWasmTier2Generator(std::move(task));
-}
-
-void
-Module::notifyCompilationListeners()
-{
-    
-    
-
-    Tiering::ListenerVector listeners;
-    {
-        auto tiering = tiering_.lock();
-
-        MOZ_ASSERT(tiering->active);
-        tiering->active = false;
-
-        Swap(listeners, tiering->listeners);
-
-        tiering.notify_all();
-    }
-
-    for (RefPtr<JS::WasmModuleListener>& listener : listeners)
-        listener->onCompilationComplete();
 }
 
 bool
@@ -296,14 +266,8 @@ Module::finishTier2(UniqueLinkDataTier linkData2, UniqueCodeTier tier2Arg, Modul
         MOZ_ASSERT(!code().hasTier2());
         code().commitTier2();
 
-        
-        
-        
-        
-
         stubs2->setJitEntries(stub2Index, code());
     }
-    notifyCompilationListeners();
 
     
 
@@ -323,65 +287,16 @@ Module::finishTier2(UniqueLinkDataTier linkData2, UniqueCodeTier tier2Arg, Modul
 }
 
 void
-Module::blockOnTier2Complete() const
+Module::testingBlockOnTier2Complete() const
 {
-    auto tiering = tiering_.lock();
-    while (tiering->active)
-        tiering.wait();
-}
-
- size_t
-Module::bytecodeSerializedSize() const
-{
-    return bytecode_->bytes.length();
-}
-
- void
-Module::bytecodeSerialize(uint8_t* bytecodeBegin, size_t bytecodeSize) const
-{
-    MOZ_ASSERT(!!bytecodeBegin == !!bytecodeSize);
-
-    
-    
-    
-
-    const Bytes& bytes = bytecode_->bytes;
-    uint8_t* bytecodeEnd = WriteBytes(bytecodeBegin, bytes.begin(), bytes.length());
-    MOZ_RELEASE_ASSERT(bytecodeEnd == bytecodeBegin + bytecodeSize);
-}
-
- bool
-Module::compilationComplete() const
-{
-    
-    
-    
-    
-    
-    
-    
-    return !tiering_.lock()->active;
-}
-
- bool
-Module::notifyWhenCompilationComplete(JS::WasmModuleListener* listener)
-{
-    {
-        auto tiering = tiering_.lock();
-        if (tiering->active)
-            return tiering->listeners.append(listener);
-    }
-
-    
-    
-    listener->onCompilationComplete();
-    return true;
+    while (testingTier2Active_)
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
  size_t
 Module::compiledSerializedSize() const
 {
-    MOZ_ASSERT(!tiering_.lock()->active);
+    MOZ_ASSERT(!testingTier2Active_);
 
     
     
@@ -405,7 +320,7 @@ Module::compiledSerializedSize() const
  void
 Module::compiledSerialize(uint8_t* compiledBegin, size_t compiledSize) const
 {
-    MOZ_ASSERT(!tiering_.lock()->active);
+    MOZ_ASSERT(!testingTier2Active_);
 
     if (metadata().debugEnabled) {
         MOZ_RELEASE_ASSERT(compiledSize == 0);
@@ -632,7 +547,7 @@ Module::extractCode(JSContext* cx, Tier tier, MutableHandleValue vp) const
 
     
     
-    blockOnTier2Complete();
+    testingBlockOnTier2Complete();
 
     if (!code_->hasTier(tier)) {
         vp.setNull();
@@ -1304,7 +1219,7 @@ Module::instantiate(JSContext* cx,
     cx->runtime()->setUseCounter(instance, useCounter);
 
     if (cx->options().testWasmAwaitTier2())
-        blockOnTier2Complete();
+        testingBlockOnTier2Complete();
 
     return true;
 }

@@ -99,23 +99,6 @@ class LinkData
 
 
 
-struct Tiering
-{
-    typedef Vector<RefPtr<JS::WasmModuleListener>, 0, SystemAllocPolicy> ListenerVector;
-
-    Tiering() : active(false) {}
-    ~Tiering() { MOZ_ASSERT(listeners.empty()); MOZ_ASSERT(!active); }
-
-    ListenerVector listeners;
-    bool active;
-};
-
-typedef ExclusiveWaitableData<Tiering> ExclusiveTiering;
-
-
-
-
-
 
 
 
@@ -137,7 +120,11 @@ class Module : public JS::WasmModule
     const ElemSegmentVector elemSegments_;
     const StructTypeVector  structTypes_;
     const SharedBytes       bytecode_;
-    ExclusiveTiering        tiering_;
+
+    
+    
+
+    mutable Atomic<bool>    testingTier2Active_;
 
     
     
@@ -160,7 +147,6 @@ class Module : public JS::WasmModule
                       HandleValVector globalImportValues) const;
 
     class Tier2GeneratorTaskImpl;
-    void notifyCompilationListeners();
 
   public:
     Module(Assumptions&& assumptions,
@@ -183,7 +169,7 @@ class Module : public JS::WasmModule
         elemSegments_(std::move(elemSegments)),
         structTypes_(std::move(structTypes)),
         bytecode_(&bytecode),
-        tiering_(mutexid::WasmModuleTieringLock),
+        testingTier2Active_(false),
         codeIsBusy_(false)
     {
         MOZ_ASSERT_IF(metadata().debugEnabled, unlinkedCodeForDebugging_);
@@ -216,19 +202,16 @@ class Module : public JS::WasmModule
     
     
     
-    
 
     void startTier2(const CompileArgs& args);
     bool finishTier2(UniqueLinkDataTier linkData2, UniqueCodeTier tier2, ModuleEnvironment* env2);
-    void blockOnTier2Complete() const;
+
+    void testingBlockOnTier2Complete() const;
+    bool testingTier2Active() const { return testingTier2Active_; }
 
     
     
 
-    size_t bytecodeSerializedSize() const;
-    void bytecodeSerialize(uint8_t* bytecodeBegin, size_t bytecodeSize) const;
-    bool compilationComplete() const;
-    bool notifyWhenCompilationComplete(JS::WasmModuleListener* listener);
     size_t compiledSerializedSize() const;
     void compiledSerialize(uint8_t* compiledBegin, size_t compiledSize) const;
 
