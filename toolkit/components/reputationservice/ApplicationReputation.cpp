@@ -850,11 +850,7 @@ PendingLookup::LookupNext()
   
 
   
-  
-  if (mBlocklistCount > 0) {
-    return OnComplete(true, NS_OK,
-                      nsIApplicationReputationService::VERDICT_DANGEROUS);
-  }
+  MOZ_ASSERT(mBlocklistCount == 0);
 
   int index = mAnylistSpecs.Length() - 1;
   nsCString spec;
