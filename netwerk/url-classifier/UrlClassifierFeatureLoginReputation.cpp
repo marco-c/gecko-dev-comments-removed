@@ -13,6 +13,8 @@ namespace net {
 
 namespace {
 
+#define LOGIN_REPUTATION_FEATURE_NAME "login-reputation"
+
 #define PREF_PASSWORD_ALLOW_TABLE "urlclassifier.passwordAllowTable"
 
 StaticRefPtr<UrlClassifierFeatureLoginReputation> gFeatureLoginReputation;
@@ -20,14 +22,15 @@ StaticRefPtr<UrlClassifierFeatureLoginReputation> gFeatureLoginReputation;
 }  
 
 UrlClassifierFeatureLoginReputation::UrlClassifierFeatureLoginReputation()
-    : UrlClassifierFeatureBase(NS_LITERAL_CSTRING("login-reputation"),
-                               EmptyCString(),  
-                               NS_LITERAL_CSTRING(PREF_PASSWORD_ALLOW_TABLE),
-                               EmptyCString(),  
-                               EmptyCString(),  
-                               EmptyCString(),  
-                               EmptyCString(),  
-                               EmptyCString())  
+    : UrlClassifierFeatureBase(
+          NS_LITERAL_CSTRING(LOGIN_REPUTATION_FEATURE_NAME),
+          EmptyCString(),  
+          NS_LITERAL_CSTRING(PREF_PASSWORD_ALLOW_TABLE),
+          EmptyCString(),  
+          EmptyCString(),  
+          EmptyCString(),  
+          EmptyCString(),  
+          EmptyCString())  
 {}
 
  void UrlClassifierFeatureLoginReputation::MaybeShutdown() {
@@ -51,6 +54,16 @@ UrlClassifierFeatureLoginReputation::MaybeGetOrCreate() {
   }
 
   return gFeatureLoginReputation;
+}
+
+ already_AddRefed<nsIUrlClassifierFeature>
+UrlClassifierFeatureLoginReputation::GetIfNameMatches(const nsACString& aName) {
+  if (!aName.EqualsLiteral(LOGIN_REPUTATION_FEATURE_NAME)) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIUrlClassifierFeature> self = MaybeGetOrCreate();
+  return self.forget();
 }
 
 NS_IMETHODIMP
