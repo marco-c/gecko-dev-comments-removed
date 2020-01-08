@@ -84,7 +84,9 @@ function installAdbAddon() {
     dispatch({ type: ADB_ADDON_INSTALL_START });
 
     try {
-      await adbAddon.install();
+      
+      
+      await adbAddon.install("about:debugging");
       dispatch({ type: ADB_ADDON_INSTALL_SUCCESS });
     } catch (e) {
       dispatch({ type: ADB_ADDON_INSTALL_FAILURE, error: e });
