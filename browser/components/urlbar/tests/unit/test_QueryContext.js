@@ -1,0 +1,10 @@
+
+
+
+"use strict";
+
+
+
+add_task(function test_constructor() {
+  Assert.ok(true);
+});
