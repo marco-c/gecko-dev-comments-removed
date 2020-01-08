@@ -20,13 +20,12 @@ namespace Common {
 
 typedef nsTHashtable<nsCStringHashKey> StringHashSet;
 
-enum class RecordedProcessType : uint16_t {
+enum class RecordedProcessType : uint8_t {
   Main = (1 << GeckoProcessType_Default),  
   Content = (1 << GeckoProcessType_Content),
   Gpu = (1 << GeckoProcessType_GPU),
-  Socket = (1 << GeckoProcessType_Socket),
-  AllChildren = 0xFFFF - 1,  
-  All = 0xFFFF               
+  AllChildren = 0xFF - 1,  
+  All = 0xFF               
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(RecordedProcessType);
 

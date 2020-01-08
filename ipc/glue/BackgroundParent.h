@@ -15,13 +15,6 @@ template <class>
 struct already_AddRefed;
 
 namespace mozilla {
-
-namespace net {
-
-class SocketProcessBridgeParent;
-
-}  
-
 namespace dom {
 
 class BlobImpl;
@@ -45,7 +38,6 @@ class BackgroundParent final {
   typedef mozilla::dom::BlobImpl BlobImpl;
   typedef mozilla::dom::ContentParent ContentParent;
   typedef mozilla::ipc::Transport Transport;
-  friend class mozilla::net::SocketProcessBridgeParent;
 
  public:
   
@@ -81,9 +73,6 @@ class BackgroundParent final {
   
   static bool Alloc(ContentParent* aContent,
                     Endpoint<PBackgroundParent>&& aEndpoint);
-
-  
-  static bool Alloc(Endpoint<PBackgroundParent>&& aEndpoint);
 };
 
 
@@ -101,10 +90,6 @@ inline void AssertIsOnBackgroundThread() {}
 #endif  
 
 inline void AssertIsInMainProcess() { MOZ_ASSERT(XRE_IsParentProcess()); }
-
-inline void AssertIsInMainOrSocketProcess() {
-  MOZ_ASSERT(XRE_IsParentProcess() || XRE_IsSocketProcess());
-}
 
 }  
 }  
