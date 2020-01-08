@@ -278,6 +278,14 @@ impl FrameBuilder {
             &mut retained_tiles,
         );
 
+        
+        
+        
+        
+        for (_, handle) in retained_tiles.drain() {
+            resource_cache.texture_cache.mark_unused(&handle);
+        }
+
         let mut frame_state = FrameBuildingState {
             render_tasks,
             profile_counters,

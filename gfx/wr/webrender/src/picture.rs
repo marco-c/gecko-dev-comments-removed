@@ -857,14 +857,6 @@ impl TileCache {
             }
         }
 
-        
-        
-        
-        
-        for (_, handle) in retained_tiles.drain() {
-            resource_cache.texture_cache.mark_unused(&handle);
-        }
-
         self.dirty_region = if dirty_rect.is_empty() {
             None
         } else {
