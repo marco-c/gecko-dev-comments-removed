@@ -61,15 +61,6 @@ impl PseudoElement {
     
     
     
-    #[inline]
-    pub fn inherits_all(&self) -> bool {
-        false
-    }
-
-    
-    
-    
-    
     
     pub fn inherits_from_default_values(&self) -> bool {
         matches!(*self, PseudoElement::Backdrop)

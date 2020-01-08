@@ -223,43 +223,6 @@ impl PseudoElement {
 
     
     
-    
-    
-    
-    
-    
-    
-    pub fn inherits_all(&self) -> bool {
-        match *self {
-            PseudoElement::After |
-            PseudoElement::Before |
-            PseudoElement::Selection |
-            PseudoElement::DetailsContent |
-            PseudoElement::DetailsSummary |
-            
-            
-            PseudoElement::ServoAnonymousTableCell |
-            PseudoElement::ServoAnonymousTableRow |
-            PseudoElement::ServoText |
-            PseudoElement::ServoInputText => false,
-
-            
-            
-            
-            
-            
-            
-            PseudoElement::ServoAnonymousTable |
-            PseudoElement::ServoAnonymousTableWrapper |
-            PseudoElement::ServoTableWrapper |
-            PseudoElement::ServoAnonymousBlock |
-            PseudoElement::ServoInlineBlockWrapper |
-            PseudoElement::ServoInlineAbsolute => true,
-        }
-    }
-
-    
-    
     pub fn canonical(&self) -> PseudoElement {
         self.clone()
     }

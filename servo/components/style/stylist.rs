@@ -614,14 +614,6 @@ impl Stylist {
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
     pub fn precomputed_values_for_pseudo<E>(
         &self,
         guards: &StylesheetGuards,
