@@ -208,6 +208,33 @@ const EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
 
   
 
+  _previousMetaViewportOverride: undefined,
+
+  setMetaViewportOverride(flag) {
+    if (this.getMetaViewportOverride() == flag) {
+      return false;
+    }
+    if (this._previousMetaViewportOverride === undefined) {
+      this._previousMetaViewportOverride = this.getMetaViewportOverride();
+    }
+
+    this.docShell.metaViewportOverride = flag;
+    return true;
+  },
+
+  getMetaViewportOverride() {
+    return this.docShell.metaViewportOverride;
+  },
+
+  clearMetaViewportOverride() {
+    if (this._previousMetaViewportOverride !== undefined) {
+      return this.setMetaViewportOverride(this._previousMetaViewportOverride);
+    }
+    return false;
+  },
+
+  
+
   _previousUserAgentOverride: undefined,
 
   setUserAgentOverride(userAgent) {
