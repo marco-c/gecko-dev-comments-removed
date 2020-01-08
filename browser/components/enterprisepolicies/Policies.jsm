@@ -146,6 +146,8 @@ var Policies = {
             dirs = [
               
               Services.dirsvc.get("XREUSysExt", Ci.nsIFile).parent,
+              
+              Services.dirsvc.get("DefProfLRt", Ci.nsIFile).parent.parent,
             ];
           } else if (platform == "macosx" || platform == "linux") {
             dirs = [
