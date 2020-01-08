@@ -228,14 +228,26 @@ async function fetchLatestChanges(url, lastEtag, expectedTimestamp) {
 
 
 
-async function loadDumpFile(bucket, collection) {
+
+
+async function loadDumpFile(bucket, collection, { ignoreMissing = true } = {}) {
   const fileURI = `resource://app/defaults/settings/${bucket}/${collection}.json`;
-  const response = await fetch(fileURI);
-  if (!response.ok) {
-    throw new Error(`Could not read from '${fileURI}'`);
+  let response;
+  try {
+    
+    response = await fetch(fileURI);
+    if (!response.ok) {
+      throw new Error(`Could not read from '${fileURI}'`);
+    }
+    
+    return response.json();
+  } catch (e) {
+    
+    if (!ignoreMissing || !/NetworkError/.test(e.message)) {
+      throw e;
+    }
   }
-  
-  return response.json();
+  return { data: [] };
 }
 
 
@@ -616,7 +628,7 @@ async function hasLocalData(client) {
 
 async function hasLocalDump(bucket, collection) {
   try {
-    await loadDumpFile(bucket, collection);
+    await loadDumpFile(bucket, collection, {ignoreMissing: false});
     return true;
   } catch (e) {
     return false;
