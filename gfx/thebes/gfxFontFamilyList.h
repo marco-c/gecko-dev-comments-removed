@@ -6,6 +6,7 @@
 #ifndef GFX_FONT_FAMILY_LIST_H
 #define GFX_FONT_FAMILY_LIST_H
 
+#include "nsAtom.h"
 #include "nsDebug.h"
 #include "nsISupportsImpl.h"
 #include "nsString.h"
@@ -60,7 +61,7 @@ struct FontFamilyName final {
     {}
 
     
-    explicit FontFamilyName(const nsAString& aFamilyName,
+    explicit FontFamilyName(nsAtom* aFamilyName,
                             QuotedName aQuoted = eUnquotedName) {
         mType = (aQuoted == eQuotedName) ? eFamily_named_quoted : eFamily_named;
         mName = aFamilyName;
@@ -69,7 +70,7 @@ struct FontFamilyName final {
     explicit FontFamilyName(const nsACString& aFamilyName,
                             QuotedName aQuoted = eUnquotedName) {
         mType = (aQuoted == eQuotedName) ? eFamily_named_quoted : eFamily_named;
-        mName.Append(NS_ConvertUTF8toUTF16(aFamilyName));
+        mName = NS_Atomize(aFamilyName);
     }
 
     
@@ -78,7 +79,7 @@ struct FontFamilyName final {
                      aType != eFamily_named_quoted &&
                      aType != eFamily_none,
                      "expected a generic font type");
-        mName.Truncate();
+        mName = nullptr;
         mType = aType;
     }
 
@@ -95,16 +96,16 @@ struct FontFamilyName final {
         return !IsNamed();
     }
 
-    void AppendToString(nsAString& aFamilyList, bool aQuotes = true) const {
+    void AppendToString(nsACString& aFamilyList, bool aQuotes = true) const {
         switch (mType) {
             case eFamily_named:
-                aFamilyList.Append(mName);
+                aFamilyList.Append(nsAtomCString(mName));
                 break;
             case eFamily_named_quoted:
                 if (aQuotes) {
                     aFamilyList.Append('"');
                 }
-                aFamilyList.Append(mName);
+                aFamilyList.Append(nsAtomCString(mName));
                 if (aQuotes) {
                     aFamilyList.Append('"');
                 }
@@ -134,7 +135,7 @@ struct FontFamilyName final {
 
     
     static FontFamilyName
-    Convert(const nsAString& aFamilyOrGenericName) {
+    Convert(const nsACString& aFamilyOrGenericName) {
         
         
         
@@ -161,13 +162,8 @@ struct FontFamilyName final {
         return FontFamilyName(genericType);
     }
 
-    
-    size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
-        return mName.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
-    }
-
     FontFamilyType mType;
-    nsString       mName; 
+    RefPtr<nsAtom> mName; 
 };
 
 inline bool
@@ -194,7 +190,7 @@ public:
     {
     }
 
-    SharedFontList(const nsAString& aFamilyName, QuotedName aQuoted)
+    SharedFontList(nsAtom* aFamilyName, QuotedName aQuoted)
         : mNames { FontFamilyName(aFamilyName, aQuoted) }
     {
     }
@@ -234,9 +230,6 @@ public:
       size_t n = 0;
       n += aMallocSizeOf(this);
       n += mNames.ShallowSizeOfExcludingThis(aMallocSizeOf);
-      for (const FontFamilyName& name : mNames) {
-          n += name.SizeOfExcludingThis(aMallocSizeOf);
-      }
       return n;
     }
 
@@ -278,7 +271,7 @@ public:
     {
     }
 
-    FontFamilyList(const nsAString& aFamilyName,
+    FontFamilyList(nsAtom* aFamilyName,
                    QuotedName aQuoted)
         : mFontlist(MakeNotNull<SharedFontList*>(aFamilyName, aQuoted))
         , mDefaultFontType(eFamily_none)
@@ -394,7 +387,7 @@ public:
         SetFontlist(std::move(names));
     }
 
-    void ToString(nsAString& aFamilyList,
+    void ToString(nsACString& aFamilyList,
                   bool aQuotes = true,
                   bool aIncludeDefault = false) const {
         const nsTArray<FontFamilyName>& names = mFontlist->mNames;
@@ -420,15 +413,14 @@ public:
     }
 
     
-    bool Contains(const nsAString& aFamilyName) const {
-        nsAutoString fam(aFamilyName);
+    bool Contains(const nsACString& aFamilyName) const {
+        NS_ConvertUTF8toUTF16 fam(aFamilyName);
         ToLowerCase(fam);
         for (const FontFamilyName& name : mFontlist->mNames) {
-            if (name.mType != eFamily_named &&
-                name.mType != eFamily_named_quoted) {
+            if (!name.IsNamed()) {
                 continue;
             }
-            nsAutoString listname(name.mName);
+            nsAtomString listname(name.mName);
             ToLowerCase(listname);
             if (listname.Equals(fam)) {
                 return true;

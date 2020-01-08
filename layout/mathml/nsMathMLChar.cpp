@@ -162,25 +162,26 @@ Clean(nsString& aValue)
 
 
 static nsresult
-LoadProperties(const nsString& aName,
+LoadProperties(const nsACString& aName,
                nsCOMPtr<nsIPersistentProperties>& aProperties)
 {
-  nsAutoString uriStr;
+  nsAutoCString uriStr;
   uriStr.AssignLiteral("resource://gre/res/fonts/mathfont");
   uriStr.Append(aName);
   uriStr.StripWhitespace(); 
   uriStr.AppendLiteral(".properties");
   return NS_LoadPersistentPropertiesFromURISpec(getter_AddRefs(aProperties),
-                                                NS_ConvertUTF16toUTF8(uriStr));
+                                                uriStr);
 }
 
 class nsPropertiesTable final : public nsGlyphTable {
 public:
-  explicit nsPropertiesTable(const nsString& aPrimaryFontName)
+  explicit nsPropertiesTable(const nsACString& aPrimaryFontName)
     : mState(NS_TABLE_STATE_EMPTY)
   {
     MOZ_COUNT_CTOR(nsPropertiesTable);
-    mGlyphCodeFonts.AppendElement(FontFamilyName(aPrimaryFontName, eUnquotedName));
+    mGlyphCodeFonts.AppendElement(FontFamilyName(aPrimaryFontName,
+                                                 eUnquotedName));
   }
 
   ~nsPropertiesTable()
@@ -286,13 +287,13 @@ nsPropertiesTable::ElementAt(DrawTarget*   ,
   if (mState == NS_TABLE_STATE_ERROR) return kNullGlyph;
   
   if (mState == NS_TABLE_STATE_EMPTY) {
-    nsAutoString primaryFontName;
+    nsAutoCString primaryFontName;
     mGlyphCodeFonts[0].AppendToString(primaryFontName);
     nsresult rv = LoadProperties(primaryFontName, mGlyphProperties);
 #ifdef DEBUG
     nsAutoCString uriStr;
     uriStr.AssignLiteral("resource://gre/res/fonts/mathfont");
-    LossyAppendUTF16toASCII(primaryFontName, uriStr);
+    uriStr.Append(primaryFontName);
     uriStr.StripWhitespace(); 
     uriStr.AppendLiteral(".properties");
     printf("Loading %s ... %s\n",
@@ -314,7 +315,8 @@ nsPropertiesTable::ElementAt(DrawTarget*   ,
       rv = mGlyphProperties->GetStringProperty(key, value);
       if (NS_FAILED(rv)) break;
       Clean(value);
-      mGlyphCodeFonts.AppendElement(FontFamilyName(value, eUnquotedName)); 
+      mGlyphCodeFonts.AppendElement(FontFamilyName(NS_ConvertUTF16toUTF8(value),
+                                    eUnquotedName)); 
     }
   }
 
@@ -366,7 +368,7 @@ nsPropertiesTable::ElementAt(DrawTarget*   ,
           return kNullGlyph;
         }
         
-        if (!mGlyphCodeFonts[font].mName.Length()) {
+        if (!mGlyphCodeFonts[font].mName) {
           return kNullGlyph;
         }
       }
@@ -613,7 +615,7 @@ public:
   nsPropertiesTable mUnicodeTable;
 
   nsGlyphTableList()
-    : mUnicodeTable(NS_LITERAL_STRING("Unicode"))
+    : mUnicodeTable(NS_LITERAL_CSTRING("Unicode"))
   {
   }
 
@@ -622,11 +624,11 @@ public:
 
   
   nsGlyphTable*
-  AddGlyphTable(const nsString& aPrimaryFontName);
+  AddGlyphTable(const nsACString& aPrimaryFontName);
 
   
   nsGlyphTable*
-  GetGlyphTableFor(const nsAString& aFamily);
+  GetGlyphTableFor(const nsACString& aFamily);
 
 private:
   ~nsGlyphTableList()
@@ -694,7 +696,7 @@ nsGlyphTableList::Finalize()
 }
 
 nsGlyphTable*
-nsGlyphTableList::AddGlyphTable(const nsString& aPrimaryFontName)
+nsGlyphTableList::AddGlyphTable(const nsACString& aPrimaryFontName)
 {
   
   nsGlyphTable* glyphTable = GetGlyphTableFor(aPrimaryFontName);
@@ -707,15 +709,15 @@ nsGlyphTableList::AddGlyphTable(const nsString& aPrimaryFontName)
 }
 
 nsGlyphTable*
-nsGlyphTableList::GetGlyphTableFor(const nsAString& aFamily)
+nsGlyphTableList::GetGlyphTableFor(const nsACString& aFamily)
 {
   for (int32_t i = 0; i < PropertiesTableCount(); i++) {
     nsPropertiesTable* glyphTable = PropertiesTableAt(i);
     const FontFamilyName& primaryFontName = glyphTable->PrimaryFontName();
-    nsAutoString primaryFontNameStr;
+    nsAutoCString primaryFontNameStr;
     primaryFontName.AppendToString(primaryFontNameStr);
     
-    if (primaryFontNameStr.Equals(aFamily, nsCaseInsensitiveStringComparator())) {
+    if (primaryFontNameStr.Equals(aFamily, nsCaseInsensitiveCStringComparator())) {
       return glyphTable;
     }
   }
@@ -744,7 +746,7 @@ InitCharGlobals()
   
   
   
-  if (!glyphTableList->AddGlyphTable(NS_LITERAL_STRING("STIXGeneral"))) {
+  if (!glyphTableList->AddGlyphTable(NS_LITERAL_CSTRING("STIXGeneral"))) {
     rv = NS_ERROR_OUT_OF_MEMORY;
   }
 
@@ -1445,7 +1447,7 @@ nsMathMLChar::StretchEnumContext::EnumCallback(const FontFamilyName& aFamily,
     } else {
       
       
-      nsAutoString familyName;
+      nsAutoCString familyName;
       unquotedFamilyName.AppendToString(familyName);
       glyphTable = gGlyphTableList->GetGlyphTableFor(familyName);
     }
@@ -1480,7 +1482,8 @@ AppendFallbacks(nsTArray<FontFamilyName>& aNames,
                 const nsTArray<nsString>& aFallbacks)
 {
   for (const nsString& fallback : aFallbacks) {
-    aNames.AppendElement(FontFamilyName(fallback, eUnquotedName));
+    aNames.AppendElement(FontFamilyName(NS_ConvertUTF16toUTF8(fallback),
+                                        eUnquotedName));
   }
 }
 

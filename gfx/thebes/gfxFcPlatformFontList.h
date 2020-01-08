@@ -360,7 +360,7 @@ protected:
 
     
     
-    PrefFontList* FindGenericFamilies(const nsAString& aGeneric,
+    PrefFontList* FindGenericFamilies(const nsCString& aGeneric,
                                       nsAtom* aLanguage);
 
     

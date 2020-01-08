@@ -17,17 +17,9 @@
 #include "mozilla/RefPtr.h"             
 #include "nsColor.h"                    
 #include "nsCoord.h"                    
-#include "nsStringFwd.h"                
-#include "nsString.h"               
 #include "nsTArray.h"                   
 
 struct gfxFontStyle;
-
-
-
-
-
-typedef bool (*nsFontFamilyEnumFunc)(const nsString& aFamily, bool aGeneric, void *aData);
 
 
 

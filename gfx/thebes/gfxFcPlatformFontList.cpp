@@ -1865,7 +1865,7 @@ gfxFcPlatformFontList::GetDefaultFontForPlatform(const gfxFontStyle* aStyle)
     
     
     PrefFontList* prefFonts =
-        FindGenericFamilies(NS_LITERAL_STRING("-moz-default"), aStyle->language);
+        FindGenericFamilies(NS_LITERAL_CSTRING("-moz-default"), aStyle->language);
     NS_ASSERTION(prefFonts, "null list of generic fonts");
     if (prefFonts && !prefFonts->IsEmpty()) {
         return (*prefFonts)[0];
@@ -1944,10 +1944,9 @@ gfxFcPlatformFontList::FindAndAddFamilies(const nsACString& aFamily,
     }
 
     
-    NS_ConvertUTF8toUTF16 family16(familyName);
     if (isDeprecatedGeneric ||
-        mozilla::FontFamilyName::Convert(family16).IsGeneric()) {
-        PrefFontList* prefFonts = FindGenericFamilies(family16, language);
+        mozilla::FontFamilyName::Convert(familyName).IsGeneric()) {
+        PrefFontList* prefFonts = FindGenericFamilies(familyName, language);
         if (prefFonts && !prefFonts->IsEmpty()) {
             aOutput->AppendElements(*prefFonts);
             return true;
@@ -2137,7 +2136,7 @@ gfxFcPlatformFontList::AddGenericFonts(mozilla::FontFamilyType aGenericType,
     
     
     
-    NS_ConvertASCIItoUTF16 genericToLookup(generic);
+    nsAutoCString genericToLookup(generic);
     if ((!mAlwaysUseFontconfigGenerics && aLanguage) ||
         aLanguage == nsGkAtoms::x_math) {
         nsAtom* langGroup = GetLangGroup(aLanguage);
@@ -2162,7 +2161,8 @@ gfxFcPlatformFontList::AddGenericFonts(mozilla::FontFamilyType aGenericType,
                 usePrefFontList = true;
             } else {
                 
-                genericToLookup.Assign(fontlistValue);
+                genericToLookup.Truncate();
+                AppendUTF16toUTF8(fontlistValue, genericToLookup);
             }
         }
     }
@@ -2230,17 +2230,15 @@ gfxFcPlatformFontList::GetFTLibrary()
 }
 
 gfxPlatformFontList::PrefFontList*
-gfxFcPlatformFontList::FindGenericFamilies(const nsAString& aGeneric,
+gfxFcPlatformFontList::FindGenericFamilies(const nsCString& aGeneric,
                                            nsAtom* aLanguage)
 {
     
-    NS_ConvertUTF16toUTF8 generic(aGeneric);
-
     nsAutoCString fcLang;
     GetSampleLangForGroup(aLanguage, fcLang);
     ToLowerCase(fcLang);
 
-    nsAutoCString genericLang(generic);
+    nsAutoCString genericLang(aGeneric);
     if (fcLang.Length() > 0) {
         genericLang.Append('-');
     }
@@ -2255,7 +2253,7 @@ gfxFcPlatformFontList::FindGenericFamilies(const nsAString& aGeneric,
     
     nsAutoRef<FcPattern> genericPattern(FcPatternCreate());
     FcPatternAddString(genericPattern, FC_FAMILY,
-                       ToFcChar8Ptr(generic.get()));
+                       ToFcChar8Ptr(aGeneric.get()));
 
     
     FcPatternAddBool(genericPattern, FC_SCALABLE, FcTrue);
