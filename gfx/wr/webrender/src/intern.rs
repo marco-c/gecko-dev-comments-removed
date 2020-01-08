@@ -2,7 +2,7 @@
 
 
 
-use api::LayoutPrimitiveInfo;
+use api::{LayoutPrimitiveInfo, LayoutRect};
 use internal_types::FastHashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -388,5 +388,9 @@ pub trait Internable {
     type InternData;
 
     
-    fn build_key(self, info: &LayoutPrimitiveInfo) -> Self::Source;
+    fn build_key(
+        self,
+        info: &LayoutPrimitiveInfo,
+        prim_relative_clip_rect: LayoutRect,
+    ) -> Self::Source;
 }

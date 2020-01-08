@@ -617,11 +617,19 @@ impl TileCache {
 
         let prim_data = &resources.as_common_data(&prim_instance);
 
+        let prim_rect = LayoutRect::new(
+            prim_instance.prim_origin,
+            prim_data.prim_size,
+        );
+        let clip_rect = prim_data
+            .prim_relative_clip_rect
+            .translate(&prim_instance.prim_origin.to_vector());
+
         
         
         
         
-        let culling_rect = match prim_data.prim_rect.intersection(&prim_data.clip_rect) {
+        let culling_rect = match prim_rect.intersection(&clip_rect) {
             Some(rect) => rect,
             None => return,
         };
@@ -1328,7 +1336,18 @@ impl PrimitiveList {
             
             let cluster = &mut clusters[cluster_index];
             if !is_pic {
-                cluster.bounding_rect = cluster.bounding_rect.union(&prim_data.culling_rect);
+                let prim_rect = LayoutRect::new(
+                    prim_instance.prim_origin,
+                    prim_data.prim_size,
+                );
+                let clip_rect = prim_data
+                    .prim_relative_clip_rect
+                    .translate(&prim_instance.prim_origin.to_vector());
+                let culling_rect = clip_rect
+                    .intersection(&prim_rect)
+                    .unwrap_or(LayoutRect::zero());
+
+                cluster.bounding_rect = cluster.bounding_rect.union(&culling_rect);
             }
 
             
