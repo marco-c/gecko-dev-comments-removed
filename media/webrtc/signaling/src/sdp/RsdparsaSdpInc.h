@@ -230,10 +230,9 @@ struct RustSdpAttributeRemoteCandidate {
   uint32_t port;
 };
 
-
-
 struct RustSdpAttributeExtmap {
   uint16_t id;
+  bool direction_specified;
   RustDirection direction;
   StringView url;
   StringView extensionAttributes;
