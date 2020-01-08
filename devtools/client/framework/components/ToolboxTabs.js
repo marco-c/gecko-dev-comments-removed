@@ -3,10 +3,9 @@
 
 "use strict";
 
-const { Component, createFactory } = require("devtools/client/shared/vendor/react");
+const { Component, createFactory, createRef } = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { findDOMNode } = require("devtools/client/shared/vendor/react-dom");
 const { ToolboxTabsOrderManager } = require("devtools/client/framework/toolbox-tabs-order-manager");
 
 const { div } = dom;
@@ -50,6 +49,8 @@ class ToolboxTabs extends Component {
       
       overflowedTabIds: [],
     };
+
+    this.wrapperEl = createRef();
 
     
     
@@ -122,12 +123,11 @@ class ToolboxTabs extends Component {
 
 
   updateCachedToolTabsWidthMap() {
-    const thisNode = findDOMNode(this);
     const utils = window.windowUtils;
     
-    thisNode.clientWidth;
+    this.wrapperEl.current.clientWidth;
 
-    for (const tab of thisNode.querySelectorAll(".devtools-tab")) {
+    for (const tab of this.wrapperEl.current.querySelectorAll(".devtools-tab")) {
       const tabId = tab.id.replace("toolbox-tab-", "");
       if (!this._cachedToolTabsWidthMap.has(tabId)) {
         const rect = utils.getBoundsWithoutFlushing(tab);
@@ -142,8 +142,7 @@ class ToolboxTabs extends Component {
 
 
   updateOverflowedTabs() {
-    const node = findDOMNode(this);
-    const toolboxWidth = parseInt(getComputedStyle(node).width, 10);
+    const toolboxWidth = parseInt(getComputedStyle(this.wrapperEl.current).width, 10);
     const { currentToolId } = this.props;
     const enabledTabs = this.props.panelDefinitions.map(def => def.id);
     let sumWidth = 0;
@@ -276,7 +275,8 @@ class ToolboxTabs extends Component {
 
     return div(
       {
-        className: "toolbox-tabs-wrapper"
+        className: "toolbox-tabs-wrapper",
+        ref: this.wrapperEl,
       },
       div(
         {

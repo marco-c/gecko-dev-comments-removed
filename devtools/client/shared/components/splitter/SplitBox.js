@@ -7,7 +7,7 @@
 const { Component, createFactory } = require("devtools/client/shared/vendor/react");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
-const ReactDOM = require("devtools/client/shared/vendor/react-dom");
+
 const Draggable = createFactory(require("devtools/client/shared/components/splitter/Draggable"));
 
 
@@ -139,12 +139,11 @@ class SplitBox extends Component {
 
 
   onStartMove() {
-    const splitBox = ReactDOM.findDOMNode(this);
-    const doc = splitBox.ownerDocument;
+    const doc = this.splitBox.ownerDocument;
     const defaultCursor = doc.documentElement.style.cursor;
     doc.documentElement.style.cursor = (this.state.vert ? "ew-resize" : "ns-resize");
 
-    splitBox.classList.add("dragging");
+    this.splitBox.classList.add("dragging");
 
     this.setState({
       defaultCursor: defaultCursor
@@ -152,11 +151,10 @@ class SplitBox extends Component {
   }
 
   onStopMove() {
-    const splitBox = ReactDOM.findDOMNode(this);
-    const doc = splitBox.ownerDocument;
+    const doc = this.splitBox.ownerDocument;
     doc.documentElement.style.cursor = this.state.defaultCursor;
 
-    splitBox.classList.remove("dragging");
+    this.splitBox.classList.remove("dragging");
   }
 
   
@@ -165,8 +163,7 @@ class SplitBox extends Component {
 
 
   onMove(x, y) {
-    const node = ReactDOM.findDOMNode(this);
-    const nodeBounds = node.getBoundingClientRect();
+    const nodeBounds = this.splitBox.getBoundingClientRect();
 
     let size;
     let { endPanelControl, vert } = this.state;
@@ -174,7 +171,7 @@ class SplitBox extends Component {
     if (vert) {
       
       
-      const doc = node.ownerDocument;
+      const doc = this.splitBox.ownerDocument;
 
       
       
@@ -249,9 +246,13 @@ class SplitBox extends Component {
     };
 
     return (
-      dom.div({
-        className: classNames.join(" "),
-        style: style },
+      dom.div(
+        {
+          className: classNames.join(" "),
+          ref: div => {
+            this.splitBox = div;
+          },
+          style },
         startPanel ?
           dom.div({
             className: endPanelControl ? "uncontrolled" : "controlled",
