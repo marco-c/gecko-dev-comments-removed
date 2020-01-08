@@ -93,16 +93,32 @@ class AboutConfigTest {
   async setupNewTab(options) {
     await this.document.l10n.ready;
     if (!options.dontBypassWarning) {
-      this.document.querySelector("button").click();
+      this.bypassWarningButton.click();
+      this.search();
     }
+  }
+
+  get showWarningNextTimeInput() {
+    return this.document.getElementById("showWarningNextTime");
+  }
+
+  get bypassWarningButton() {
+    return this.document.querySelector("button.primary");
+  }
+
+  get searchInput() {
+    return this.document.getElementById("search");
+  }
+
+  get prefsTable() {
+    return this.document.getElementById("prefs");
   }
 
   
 
 
   get rows() {
-    let elements = this.document.getElementById("prefs")
-                                .getElementsByTagName("tr");
+    let elements = this.prefsTable.getElementsByTagName("tr");
     return Array.map(elements, element => new AboutConfigRowTest(element));
   }
 
@@ -119,9 +135,18 @@ class AboutConfigTest {
 
 
   search(value = "") {
-    let search = this.document.getElementById("search");
-    search.value = value;
-    search.focus();
+    this.searchInput.value = value;
+    this.searchInput.focus();
     EventUtils.sendKey("return");
+  }
+
+  
+
+
+  assertWarningPage(expected) {
+    Assert.equal(!!this.showWarningNextTimeInput, expected);
+    Assert.equal(!!this.bypassWarningButton, expected);
+    Assert.equal(!this.searchInput, expected);
+    Assert.equal(!this.prefsTable, expected);
   }
 }

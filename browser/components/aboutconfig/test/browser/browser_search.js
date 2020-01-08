@@ -62,8 +62,6 @@ add_task(async function test_search() {
 
 add_task(async function test_search_delayed() {
   await AboutConfigTest.withNewTab(async function() {
-    let prefs = this.document.getElementById("prefs");
-
     
     this.search("test.aboutconfig.a");
     Assert.equal(this.rows.length, 2);
@@ -75,7 +73,7 @@ add_task(async function test_search_delayed() {
         observer.disconnect();
         resolve();
       });
-      observer.observe(prefs, { childList: true });
+      observer.observe(this.prefsTable, { childList: true });
     });
 
     
