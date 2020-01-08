@@ -4,7 +4,6 @@
 
 
 #include "gtest/gtest.h"
-#include "mozilla/Services.h"
 #include "nsCollationCID.h"
 #include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"

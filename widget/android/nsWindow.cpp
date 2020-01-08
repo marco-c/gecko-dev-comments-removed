@@ -101,7 +101,6 @@ using namespace mozilla::ipc;
 #include "mozilla/layers/CompositorSession.h"
 #include "mozilla/layers/LayerTransactionParent.h"
 #include "mozilla/layers/UiCompositorControllerChild.h"
-#include "mozilla/Services.h"
 #include "nsThreadUtils.h"
 
 
