@@ -172,7 +172,7 @@ impl<T> PerPseudoElementMap<T> {
 }
 
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq)]
 pub enum Direction {
     
     Ltr,

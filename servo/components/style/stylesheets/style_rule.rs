@@ -6,7 +6,7 @@
 
 use cssparser::SourceLocation;
 #[cfg(feature = "gecko")]
-use malloc_size_of::{MallocShallowSizeOf, MallocSizeOf, MallocSizeOfOps};
+use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 #[cfg(feature = "gecko")]
 use malloc_size_of::MallocUnconditionalShallowSizeOf;
 use properties::PropertyDeclarationBlock;
@@ -50,20 +50,9 @@ impl StyleRule {
     #[cfg(feature = "gecko")]
     pub fn size_of(&self, guard: &SharedRwLockReadGuard, ops: &mut MallocSizeOfOps) -> usize {
         let mut n = 0;
-
-        
-        
-        n += self.selectors.0.shallow_size_of(ops);
-        for selector in self.selectors.0.iter() {
-            
-            
-            
-            n += unsafe { ops.malloc_size_of(selector.thin_arc_heap_ptr()) };
-        }
-
+        n += self.selectors.0.size_of(ops);
         n += self.block.unconditional_shallow_size_of(ops) +
             self.block.read_with(guard).size_of(ops);
-
         n
     }
 }
