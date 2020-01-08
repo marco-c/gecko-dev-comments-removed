@@ -103,7 +103,7 @@ getSiteKey(const nsACString& hostName, uint16_t port,
             nsACString& key)
 {
   key = hostName;
-  key.AppendASCII(":");
+  key.AppendLiteral(":");
   key.AppendInt(port);
 }
 
