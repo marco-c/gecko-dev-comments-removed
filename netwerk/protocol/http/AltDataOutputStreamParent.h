@@ -33,7 +33,6 @@ public:
   
   
   virtual mozilla::ipc::IPCResult RecvClose() override;
-  virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
   
   void SetError(nsresult status) { mStatus = status; }
@@ -45,7 +44,6 @@ private:
   
   
   nsresult mStatus;
-  bool     mIPCOpen;
 };
 
 } 

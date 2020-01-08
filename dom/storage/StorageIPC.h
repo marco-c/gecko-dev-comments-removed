@@ -178,8 +178,6 @@ private:
 
   
   nsresult mStatus;
-
-  bool mIPCOpen;
 };
 
 class LocalStorageCacheParent final
@@ -238,8 +236,6 @@ public:
 
   void AddIPDLReference();
   void ReleaseIPDLReference();
-
-  bool IPCOpen() { return mIPCOpen; }
 
 public:
   
@@ -367,9 +363,6 @@ private:
 
   ThreadSafeAutoRefCnt mRefCnt;
   NS_DECL_OWNINGTHREAD
-
-  
-  bool mIPCOpen;
 };
 
 PBackgroundLocalStorageCacheParent*

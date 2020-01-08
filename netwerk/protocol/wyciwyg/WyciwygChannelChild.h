@@ -104,7 +104,6 @@ private:
   
   enum WyciwygChannelChildState mState;
 
-  bool mIPCOpen;
   bool mSentAppData;
   RefPtr<ChannelEventQueue> mEventQ;
 

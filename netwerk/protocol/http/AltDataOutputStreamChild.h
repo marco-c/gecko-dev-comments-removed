@@ -34,7 +34,6 @@ private:
   
   bool WriteDataInChunks(const nsDependentCSubstring& data);
 
-  bool mIPCOpen;
   
   
   
