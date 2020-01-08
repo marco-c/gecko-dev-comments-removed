@@ -759,7 +759,6 @@ def findTestMediaDevices(log):
     info['video'] = name
 
     pactl = spawn.find_executable("pactl")
-    pacmd = spawn.find_executable("pacmd")
 
     
     def null_sink_loaded():
@@ -775,9 +774,6 @@ def findTestMediaDevices(log):
     if not null_sink_loaded():
         log.error('Couldn\'t load module-null-sink')
         return None
-
-    
-    subprocess.check_call([pacmd, 'set-default-sink', 'null'])
 
     
     info['audio'] = 'Monitor of Null Output'
@@ -1930,6 +1926,7 @@ toolbar#nav-bar {
         if options.useTestMediaDevices:
             prefs['media.audio_loopback_dev'] = self.mediaDevices['audio']
             prefs['media.video_loopback_dev'] = self.mediaDevices['video']
+            prefs['media.cubeb.output_device'] = "Null Output"
 
         
         if options.recordingPath:
