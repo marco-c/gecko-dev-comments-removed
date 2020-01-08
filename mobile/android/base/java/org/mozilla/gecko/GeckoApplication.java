@@ -392,11 +392,8 @@ public class GeckoApplication extends Application
 
         
         
-        final boolean isMultidexLibNeeded = BuildConfig.FLAVOR_minApi.equals("noMinApi");
-
-        if (isMultidexLibNeeded) {
-            MultiDex.install(this);
-        }
+        
+        MultiDex.install(this);
     }
 
     
