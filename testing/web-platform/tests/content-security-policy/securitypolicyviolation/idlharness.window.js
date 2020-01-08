@@ -1,0 +1,19 @@
+
+
+
+
+
+'use strict';
+
+idl_test(
+  ['CSP'],
+  ['dom'],
+  idl_array => {
+    idl_array.add_objects({
+      SecurityPolicyViolationEvent: [
+        'new SecurityPolicyViolationEvent("securitypolicyviolation")'
+      ]
+    })
+  },
+  'Test Content Security Policy IDL implementation'
+);
