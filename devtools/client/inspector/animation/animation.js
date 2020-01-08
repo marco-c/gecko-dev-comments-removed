@@ -662,6 +662,14 @@ class AnimationInspector {
 
     this.stopAnimationsCurrentTimeTimer();
 
+    
+    
+    
+    
+    
+    animations = animations.filter(anim => anim.state.delay !== Infinity &&
+                                           anim.state.endDelay !== Infinity);
+
     this.inspector.store.dispatch(updateAnimations(animations));
 
     if (hasRunningAnimation(animations)) {
