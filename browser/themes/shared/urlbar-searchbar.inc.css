@@ -288,7 +288,7 @@
 }
 
 
-.urlbar-history-dropmarker[open] {
+#urlbar:not([quantumbar]) > .urlbar-history-dropmarker[open] {
   pointer-events: none;
 }
 
