@@ -204,11 +204,7 @@ nsViewSourceChannel::BuildViewSourceURI(nsIURI * aURI, nsIURI ** aResult)
         return rv;
     }
 
-    return NS_NewURI(aResult,
-                     
-
-                     nsAutoCString(NS_LITERAL_CSTRING("view-source:") + spec),
-                     nullptr);
+    return NS_NewURI(aResult, NS_LITERAL_CSTRING("view-source:") + spec);
 }
 
 
