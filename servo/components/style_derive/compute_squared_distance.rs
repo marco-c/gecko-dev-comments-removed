@@ -2,7 +2,7 @@
 
 
 
-use animate::{AnimationInputAttrs, AnimationVariantAttrs, AnimationFieldAttrs};
+use animate::{AnimationInputAttrs, AnimationVariantAttrs};
 use cg;
 use quote::Tokens;
 use syn::{DeriveInput, Path};
@@ -47,23 +47,8 @@ pub fn derive(mut input: DeriveInput) -> Tokens {
                             parse_quote!(#ty: ::values::distance::ComputeSquaredDistance),
                         );
                     }
-
-                    let animation_field_attrs =
-                        cg::parse_field_attrs::<AnimationFieldAttrs>(&this.ast());
-
-                    if animation_field_attrs.constant {
-                        quote! {
-                            {
-                                if #this != #other {
-                                    return Err(());
-                                }
-                                ::values::distance::SquaredDistance::from_sqrt(0.)
-                            }
-                        }
-                    } else {
-                        quote! {
-                            ::values::distance::ComputeSquaredDistance::compute_squared_distance(#this, #other)?
-                        }
+                    quote! {
+                        ::values::distance::ComputeSquaredDistance::compute_squared_distance(#this, #other)?
                     }
                 }), quote!(+));
                 sum
