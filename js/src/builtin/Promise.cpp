@@ -607,8 +607,15 @@ ResolvePromiseInternal(JSContext* cx, HandleObject promise, HandleValue resoluti
 
     
     
-    if (IsNativeFunction(thenVal, Promise_then))
+    
+    
+    if (resolution->is<PromiseObject>() &&
+        resolution->as<PromiseObject>().compartment() == cx->compartment() &&
+        IsNativeFunction(thenVal, Promise_then) &&
+        thenVal.toObject().as<JSFunction>().realm() == cx->realm())
+    {
         thenVal = UndefinedValue();
+    }
 
     
     RootedValue promiseVal(cx, ObjectValue(*promise));
@@ -1333,8 +1340,13 @@ PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp)
         RootedValue rejectVal(cx, ObjectValue(*rejectFn));
 
         
-        if (Promise_then_impl(cx, thenable, resolveVal, rejectVal, &rval,  false))
+        Rooted<PromiseObject*> thenablePromise(cx, &thenable.toObject().as<PromiseObject>());
+        RootedObject resultPromise(cx);
+        if (OriginalPromiseThen(cx, thenablePromise, resolveVal, rejectVal, &resultPromise,
+                                CreateDependentPromise::SkipIfCtorUnobservable))
+        {
             return true;
+        }
     }
 
     if (!MaybeGetAndClearException(cx, &rval))
