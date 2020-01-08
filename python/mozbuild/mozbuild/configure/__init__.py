@@ -346,6 +346,8 @@ class ConfigureSandbox(dict):
             def queue_debug():
                 yield
 
+        self._logger = logger
+
         
         
         
@@ -446,7 +448,11 @@ class ConfigureSandbox(dict):
         
         for arg in self._helper:
             without_value = arg.split('=', 1)[0]
-            raise InvalidOptionError('Unknown option: %s' % without_value)
+            msg = 'Unknown option: %s' % without_value
+            if self._help:
+                self._logger.warning(msg)
+            else:
+                raise InvalidOptionError(msg)
 
         
         for func, args in self._execution_queue:
