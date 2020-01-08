@@ -1025,7 +1025,19 @@ enum Role {
 
   BLOCKQUOTE = 175,
 
-  LAST_ROLE = BLOCKQUOTE
+  
+
+
+
+  CONTENT_DELETION = 176,
+
+  
+
+
+
+  CONTENT_INSERTION = 177,
+
+  LAST_ROLE = CONTENT_INSERTION
 };
 
 } 
