@@ -834,14 +834,6 @@ exports.removeSheet = removeSheet;
 
 
 function getUntransformedQuad(node, region = "border") {
-  if (node.nodeType === node.TEXT_NODE) {
-    
-    
-    
-
-    return null;
-  }
-
   
   const matrix = node.getTransformToViewport();
   const inverse = matrix.inverse();
