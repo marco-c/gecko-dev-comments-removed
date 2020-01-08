@@ -1,0 +1,26 @@
+
+
+
+
+"use strict";
+
+const {
+  UPDATE_RULES,
+} = require("./index");
+
+module.exports = {
+
+  
+
+
+
+
+
+  updateRules(rules) {
+    return {
+      type: UPDATE_RULES,
+      rules,
+    };
+  },
+
+};

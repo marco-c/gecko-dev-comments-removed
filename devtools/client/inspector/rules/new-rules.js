@@ -4,8 +4,12 @@
 
 "use strict";
 
+const Services = require("Services");
+const ElementStyle = require("devtools/client/inspector/rules/models/element-style");
 const { createFactory, createElement } = require("devtools/client/shared/vendor/react");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
+
+const { updateRules } = require("./actions/rules");
 
 const RulesApp = createFactory(require("./components/RulesApp"));
 
@@ -13,11 +17,25 @@ const { LocalizationHelper } = require("devtools/shared/l10n");
 const INSPECTOR_L10N =
   new LocalizationHelper("devtools/client/locales/inspector.properties");
 
+const PREF_UA_STYLES = "devtools.inspector.showUserAgentStyles";
+
 class RulesView {
   constructor(inspector, window) {
-    this.document = window.document;
+    this.cssProperties = inspector.cssProperties;
+    this.doc = window.document;
     this.inspector = inspector;
+    this.pageStyle = inspector.pageStyle;
+    this.selection = inspector.selection;
     this.store = inspector.store;
+    this.toolbox = inspector.toolbox;
+
+    this.showUserAgentStyles = Services.prefs.getBoolPref(PREF_UA_STYLES);
+
+    this.onSelection = this.onSelection.bind(this);
+
+    this.inspector.sidebar.on("select", this.onSelection);
+    this.selection.on("detached-front", this.onSelection);
+    this.selection.on("new-node-front", this.onSelection);
 
     this.init();
   }
@@ -41,9 +59,90 @@ class RulesView {
   }
 
   destroy() {
-    this.document = null;
+    this.inspector.sidebar.off("select", this.onSelection);
+    this.selection.off("detached-front", this.onSelection);
+    this.selection.off("new-node-front", this.onSelection);
+
+    if (this.elementStyle) {
+      this.elementStyle.destroy();
+    }
+
+    this._dummyElement = null;
+    this.cssProperties = null;
+    this.doc = null;
+    this.elementStyle = null;
     this.inspector = null;
+    this.pageStyle = null;
+    this.selection = null;
+    this.showUserAgentStyles = null;
     this.store = null;
+    this.toolbox = null;
+  }
+
+  
+
+
+
+
+
+  get dummyElement() {
+    
+    
+    
+    if (!this._dummyElement) {
+      this._dummyElement = this.doc.createElement("div");
+    }
+
+    return this._dummyElement;
+  }
+
+  
+
+
+  isPanelVisible() {
+    return this.inspector && this.inspector.toolbox && this.inspector.sidebar &&
+           this.inspector.toolbox.currentToolId === "inspector" &&
+           this.inspector.sidebar.getCurrentTabID() === "newruleview";
+  }
+
+  
+
+
+
+
+  onSelection() {
+    if (!this.isPanelVisible()) {
+      return;
+    }
+
+    if (!this.selection.isConnected() ||
+        !this.selection.isElementNode()) {
+      this.update();
+      return;
+    }
+
+    this.update(this.selection.nodeFront);
+  }
+
+  
+
+
+
+
+
+
+
+  async update(element) {
+    if (!element) {
+      this.store.dispatch(updateRules([]));
+      return;
+    }
+
+    this.elementStyle = new ElementStyle(element, this, {}, this.pageStyle,
+      this.showUserAgentStyles);
+    await this.elementStyle.populate();
+
+    this.store.dispatch(updateRules(this.elementStyle.rules));
   }
 }
 
