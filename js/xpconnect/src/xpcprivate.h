@@ -2915,11 +2915,19 @@ class RealmPrivate {
     locationURI = aLocationURI;
   }
 
+  
+  
+  void RegisterStackFrame(JSStackFrameBase* aFrame);
+  void UnregisterStackFrame(JSStackFrameBase* aFrame);
+  void NukeJSStackFrames();
+
  private:
   nsCString location;
   nsCOMPtr<nsIURI> locationURI;
 
   bool TryParseLocationURI(LocationHint aType, nsIURI** aURI);
+
+  nsTHashtable<nsPtrHashKey<JSStackFrameBase>> mJSStackFrames;
 };
 
 inline XPCWrappedNativeScope* ObjectScope(JSObject* obj) {
