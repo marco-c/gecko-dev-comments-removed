@@ -25,7 +25,8 @@ public:
 
   virtual AudioBlockBuffer* AsAudioBlockBuffer() override { return this; };
 
-  float* ChannelData(uint32_t aChannel)
+  uint32_t ChannelsAllocated() const { return mChannelsAllocated; }
+  float* ChannelData(uint32_t aChannel) const
   {
     float* base = reinterpret_cast<float*>(((uintptr_t)(this + 1) + 15) & ~0x0F);
     ASSERT_ALIGNED16(base);
@@ -44,7 +45,7 @@ public:
     }
 
     void* m = operator new(size.value());
-    RefPtr<AudioBlockBuffer> p = new (m) AudioBlockBuffer();
+    RefPtr<AudioBlockBuffer> p = new (m) AudioBlockBuffer(aChannelCount);
     NS_ASSERTION((reinterpret_cast<char*>(p.get() + 1) - reinterpret_cast<char*>(p.get())) % 4 == 0,
                  "AudioBlockBuffers should be at least 4-byte aligned");
     return p.forget();
@@ -59,7 +60,7 @@ public:
   
   
   
-  bool HasLastingShares()
+  bool HasLastingShares() const
   {
     
     
@@ -86,10 +87,12 @@ public:
   }
 
 private:
-  AudioBlockBuffer() {}
+  explicit AudioBlockBuffer(uint32_t aChannelsAllocated)
+    : mChannelsAllocated(aChannelsAllocated) {}
   ~AudioBlockBuffer() override { MOZ_ASSERT(mDownstreamRefCount == 0); }
 
   nsAutoRefCnt mDownstreamRefCount;
+  const uint32_t mChannelsAllocated;
 };
 
 AudioBlock::~AudioBlock()
@@ -143,11 +146,17 @@ AudioBlock::AllocateChannels(uint32_t aChannelCount)
   if (mBufferIsDownstreamRef) {
     
     ClearDownstreamMark();
-  } else if (mBuffer && ChannelCount() == aChannelCount) {
+  } else if (mBuffer) {
     AudioBlockBuffer* buffer = mBuffer->AsAudioBlockBuffer();
-    if (buffer && !buffer->HasLastingShares()) {
+    if (buffer && !buffer->HasLastingShares() &&
+        buffer->ChannelsAllocated() >= aChannelCount) {
       MOZ_ASSERT(mBufferFormat == AUDIO_FORMAT_FLOAT32);
       
+      uint32_t previousChannelCount = ChannelCount();
+      mChannelData.SetLength(aChannelCount);
+      for (uint32_t i = previousChannelCount; i < aChannelCount; ++i) {
+        mChannelData[i] = buffer->ChannelData(i);
+      }
       mVolume = 1.0f;
       return;
     }
