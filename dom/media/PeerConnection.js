@@ -501,8 +501,8 @@ class RTCPeerConnection {
                       "See http://w3c.github.io/webrtc-pc/#getstats-example for usage.") };
 
     this._warnDeprecatedStatsRemoteAccessNullable = { warn: () =>
-      this.logWarning("Detected soon-to-break getStats() use! stat.isRemote goes away in Firefox 58, but won't warn there!\
- - See https://blog.mozilla.org/webrtc/getstats-firefox-58/") };
+      this.logWarning("Detected soon-to-break getStats() use! stat.isRemote goes away in Firefox 65, but won't warn there!\
+ - See https://blog.mozilla.org/webrtc/getstats-isremote-65/") };
 
     
     _globalPCList.addPC(this);
