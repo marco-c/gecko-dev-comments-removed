@@ -11,6 +11,11 @@
 #include "mozilla/StaticPtr.h"
 
 namespace mozilla {
+namespace dom {
+class PWindowGlobalParent;
+class PWindowGlobalChild;
+} 
+
 namespace ipc {
 
 class InProcessChild;
@@ -39,6 +44,17 @@ public:
   
   
   static IProtocol* ChildActorFor(IProtocol* aActor);
+
+protected:
+  virtual mozilla::dom::PWindowGlobalParent*
+  AllocPWindowGlobalParent(const WindowGlobalInit& aInit) override;
+
+  virtual bool
+  DeallocPWindowGlobalParent(mozilla::dom::PWindowGlobalParent* aActor) override;
+
+  virtual IPCResult
+  RecvPWindowGlobalConstructor(mozilla::dom::PWindowGlobalParent* aActor,
+                               const WindowGlobalInit& aInit) override;
 
 private:
   
