@@ -1516,11 +1516,17 @@ pref("browser.ping-centre.production.endpoint", "https://tiles.services.mozilla.
 pref("media.gmp-provider.enabled", true);
 
 
+
+#ifdef EARLY_BETA_OR_EARLIER
 pref("network.cookie.cookieBehavior", 4 );
+#endif
 
 pref("browser.contentblocking.allowlist.storage.enabled", true);
 
+#ifdef NIGHTLY_BUILD
+
 pref("dom.storage_access.enabled", true);
+#endif
 
 pref("dom.storage_access.auto_grants", true);
 pref("dom.storage_access.max_concurrent_auto_grants", 5);
