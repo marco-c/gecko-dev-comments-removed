@@ -1460,9 +1460,7 @@ private:
   
   
   
-  
-  
-  bool mIsSecureContext;
+  const bool mIsSecureContext;
 
   bool mDebuggerRegistered;
 
