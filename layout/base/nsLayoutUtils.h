@@ -2289,8 +2289,16 @@ public:
 
   static bool NeedsPrintPreviewBackground(nsPresContext* aPresContext);
 
-  typedef nsClassHashtable<nsPtrHashKey<gfxFontEntry>,
-                           mozilla::dom::InspectorFontFace> UsedFontFaceTable;
+  
+
+
+
+
+
+
+  typedef nsTArray<nsAutoPtr<mozilla::dom::InspectorFontFace>> UsedFontFaceList;
+  typedef nsDataHashtable<nsPtrHashKey<gfxFontEntry>,
+                          mozilla::dom::InspectorFontFace*> UsedFontFaceTable;
 
   
 
@@ -2298,7 +2306,8 @@ public:
 
 
   static nsresult GetFontFacesForFrames(nsIFrame* aFrame,
-                                        UsedFontFaceTable& aResult,
+                                        UsedFontFaceList& aResult,
+                                        UsedFontFaceTable& aFontFaces,
                                         uint32_t aMaxRanges,
                                         bool aSkipCollapsedWhitespace);
 
@@ -2313,7 +2322,8 @@ public:
                                   int32_t aStartOffset,
                                   int32_t aEndOffset,
                                   bool aFollowContinuations,
-                                  UsedFontFaceTable& aResult,
+                                  UsedFontFaceList& aResult,
+                                  UsedFontFaceTable& aFontFaces,
                                   uint32_t aMaxRanges,
                                   bool aSkipCollapsedWhitespace);
 
