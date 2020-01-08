@@ -5,10 +5,10 @@
 "use strict";
 
 const Services = require("Services");
-const {Devices} = require("resource://devtools/shared/apps/Devices.jsm");
 const {DebuggerServer} = require("devtools/server/main");
 const discovery = require("devtools/shared/discovery/discovery");
 const EventEmitter = require("devtools/shared/event-emitter");
+const {ADBScanner} = require("devtools/shared/adb/adb-scanner");
 const {RuntimeTypes} = require("devtools/client/webide/modules/runtime-types");
 const promise = require("promise");
 loader.lazyRequireGetter(this, "AuthenticationResult",
@@ -193,34 +193,7 @@ exports.RuntimeScanners = RuntimeScanners;
 
 
 
-
-
-
-
-
-
-var LazyAdbScanner = {
-
-  enable() {
-    Devices.emit("adb-start-polling");
-  },
-
-  disable() {
-    Devices.emit("adb-stop-polling");
-  },
-
-  scan() {
-    return promise.resolve();
-  },
-
-  listRuntimes: function() {
-    return [];
-  }
-
-};
-
-EventEmitter.decorate(LazyAdbScanner);
-RuntimeScanners.add(LazyAdbScanner);
+RuntimeScanners.add(ADBScanner);
 
 var WiFiScanner = {
 
