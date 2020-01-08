@@ -126,7 +126,7 @@ var gCloseWindowTimeoutCounter = 0;
 
 
 
-var gAppUpdateEnabled; 
+var gAppUpdateDisabled; 
 var gAppUpdateServiceEnabled; 
 var gAppUpdateStagingEnabled; 
 var gAppUpdateURLDefault; 
@@ -783,12 +783,12 @@ function setupPrefs() {
   Services.prefs.setIntPref(PREF_APP_UPDATE_LASTUPDATETIME, now);
   Services.prefs.setIntPref(PREF_APP_UPDATE_INTERVAL, 43200);
 
-  if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_ENABLED)) {
-    gAppUpdateEnabled = Services.prefs.getBoolPref(PREF_APP_UPDATE_ENABLED);
+  if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_DISABLEDFORTESTING)) {
+    gAppUpdateDisabled = Services.prefs.getBoolPref(PREF_APP_UPDATE_DISABLEDFORTESTING);
   }
-  Services.prefs.setBoolPref(PREF_APP_UPDATE_ENABLED, true);
+  Services.prefs.setBoolPref(PREF_APP_UPDATE_DISABLEDFORTESTING, false);
 
-  if (!Services.prefs.getBoolPref(PREF_APP_UPDATE_AUTO), false) {
+  if (!Services.prefs.getBoolPref(PREF_APP_UPDATE_AUTO, false)) {
     Services.prefs.setBoolPref(PREF_APP_UPDATE_AUTO, true);
   }
 
@@ -850,10 +850,10 @@ function resetPrefs() {
     gDefaultPrefBranch.setCharPref(PREF_APP_UPDATE_URL, gAppUpdateURLDefault);
   }
 
-  if (gAppUpdateEnabled !== undefined) {
-    Services.prefs.setBoolPref(PREF_APP_UPDATE_ENABLED, gAppUpdateEnabled);
-  } else if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_ENABLED)) {
-    Services.prefs.clearUserPref(PREF_APP_UPDATE_ENABLED);
+  if (gAppUpdateDisabled !== undefined) {
+    Services.prefs.setBoolPref(PREF_APP_UPDATE_DISABLEDFORTESTING, gAppUpdateDisabled);
+  } else if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_DISABLEDFORTESTING)) {
+    Services.prefs.clearUserPref(PREF_APP_UPDATE_DISABLEDFORTESTING);
   }
 
   if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_AUTO)) {
