@@ -3815,7 +3815,7 @@ protected:
       if (AtEndOfNestedList()) {
         
         mNext = mStack.LastElement();
-        EndNested(mNext);
+        ExitChildList(mNext);
         mStack.RemoveElementAt(mStack.Length() - 1);
         
         mNext = mNext->GetAbove();
@@ -3823,7 +3823,7 @@ protected:
         
         
         mStack.AppendElement(mNext);
-        StartNested(mNext);
+        EnterChildList(mNext);
 
         nsDisplayList* childItems =
           mNext->GetType() != DisplayItemType::TYPE_TRANSFORM
@@ -3835,8 +3835,8 @@ protected:
     }
   }
 
-  virtual void EndNested(nsDisplayItem* aItem) {}
-  virtual void StartNested(nsDisplayItem* aItem) {}
+  virtual void ExitChildList(nsDisplayItem* aItem) {}
+  virtual void EnterChildList(nsDisplayItem* aItem) {}
 
   nsDisplayListBuilder* mBuilder;
   nsDisplayItem* mNext;
