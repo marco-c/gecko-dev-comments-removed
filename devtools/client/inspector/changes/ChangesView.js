@@ -25,18 +25,18 @@ class ChangesView {
 
     this.onAddChange = this.onAddChange.bind(this);
     this.onClearChanges = this.onClearChanges.bind(this);
+    this.onChangesFront = this.onChangesFront.bind(this);
     this.destroy = this.destroy.bind(this);
-
-    
-    this.changesFront = this.toolbox.target.getFront("changes");
-    this.changesFront.on("add-change", this.onAddChange);
-    this.changesFront.on("clear-changes", this.onClearChanges);
 
     this.init();
   }
 
   init() {
     const changesApp = ChangesApp({});
+
+    
+    
+    this._getChangesFront();
 
     
     this.provider = createElement(Provider, {
@@ -46,19 +46,37 @@ class ChangesView {
     }, changesApp);
 
     this.inspector.target.on("will-navigate", this.onClearChanges);
+  }
 
-    
-    
-    this.changesFront.allChanges()
-      .then(changes => {
-        changes.forEach(change => {
-          this.onAddChange(change);
-        });
-      })
-      .catch(err => {
-        
-        
+  _getChangesFront() {
+    if (this.changesFrontPromise) {
+      return this.changesFrontPromise;
+    }
+    this.changesFrontPromise = new Promise(async resolve => {
+      const target = this.inspector.target;
+      const front = target.getFront("changes");
+      this.onChangesFront(front);
+      resolve(front);
+    });
+    return this.changesFrontPromise;
+  }
+
+  async onChangesFront(changesFront) {
+    changesFront.on("add-change", this.onAddChange);
+    changesFront.on("clear-changes", this.onClearChanges);
+    try {
+      
+      
+      const changes = await changesFront.allChanges();
+      changes.forEach(change => {
+        this.onAddChange(change);
       });
+    } catch (e) {
+      
+      
+      
+      
+    }
   }
 
   onAddChange(change) {
@@ -73,12 +91,13 @@ class ChangesView {
   
 
 
-  destroy() {
+  async destroy() {
     this.store.dispatch(resetChanges());
 
-    this.changesFront.off("add-change", this.onAddChange);
-    this.changesFront.off("clear-changes", this.onClearChanges);
-    this.changesFront = null;
+    
+    const changesFront = await this.changesFrontPromise;
+    changesFront.off("add-change", this.onAddChange);
+    changesFront.off("clear-changes", this.onClearChanges);
 
     this.document = null;
     this.inspector = null;
