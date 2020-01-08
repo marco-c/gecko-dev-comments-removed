@@ -137,6 +137,10 @@ async function getSystemInfo() {
 
     
     
+    deviceName: getDeviceName(),
+
+    
+    
     
     arch: processor,
     processor,
@@ -162,6 +166,15 @@ async function getSystemInfo() {
 
   CACHED_INFO = info;
   return info;
+}
+
+function getDeviceName() {
+  try {
+    
+    return Services.sysinfo.getProperty("device");
+  } catch (e) {
+    return null;
+  }
 }
 
 function getProfileLocation() {
