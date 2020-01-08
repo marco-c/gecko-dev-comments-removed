@@ -244,6 +244,10 @@ a:active {
   background: var(--box-background-hover)
 }
 
+.default-button:disabled {
+  opacity: 0.4;
+}
+
 
 .default-button--micro {
   padding-inline-start: calc(2 * var(--base-distance));
