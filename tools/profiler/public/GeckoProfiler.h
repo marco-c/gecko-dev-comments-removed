@@ -75,6 +75,8 @@
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
 #include "nscore.h"
+#include "nsID.h"
+#include "nsString.h"
 
 
 
@@ -293,6 +295,33 @@ void profiler_ensure_started(uint32_t aCapacity, double aInterval,
   profiler_unregister_thread()
 ProfilingStack* profiler_register_thread(const char* name, void* guessStackTop);
 void profiler_unregister_thread();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void profiler_register_page(const nsID& aDocShellId,
+                            uint32_t aHistoryId,
+                            const nsCString& aUrl,
+                            bool aIsSubFrame);
+
+
+
+void profiler_unregister_pages(const nsID& aRegisteredDocShellId);
 
 class BaseProfilerCount;
 void profiler_add_sampled_counter(BaseProfilerCount* aCounter);

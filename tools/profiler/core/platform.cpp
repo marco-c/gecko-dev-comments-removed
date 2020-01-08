@@ -264,6 +264,12 @@ public:
       aProfSize += registeredThread->SizeOfIncludingThis(aMallocSizeOf);
     }
 
+    for (auto& registeredPage : sInstance->mRegisteredPages) {
+      aProfSize += registeredPage->SizeOfIncludingThis(aMallocSizeOf);
+    }
+
+    
+    
     
     
     
@@ -294,6 +300,38 @@ public:
     
     sInstance->mRegisteredThreads.RemoveElementsBy(
       [&](UniquePtr<RegisteredThread>& rt) { return rt.get() == aRegisteredThread; });
+  }
+
+  PS_GET(nsTArray<RefPtr<PageInformation>>&, RegisteredPages)
+
+  static void AppendRegisteredPage(
+    PSLockRef,
+    RefPtr<PageInformation>&& aRegisteredPage)
+  {
+#ifdef DEBUG
+    struct RegisteredPageComparator
+    {
+      bool Equals(PageInformation* aA,
+                  PageInformation* aB) const
+      {
+        return aA->Equals(aB);
+      }
+    };
+    MOZ_ASSERT(!sInstance->mRegisteredPages.Contains(
+      aRegisteredPage, RegisteredPageComparator()));
+#endif
+    sInstance->mRegisteredPages.AppendElement(
+      std::move(aRegisteredPage));
+  }
+
+  static void RemoveRegisteredPages(PSLockRef,
+                                    const nsID& aRegisteredDocShellId)
+  {
+    
+    sInstance->mRegisteredPages.RemoveElementsBy(
+      [&](RefPtr<PageInformation>& rd) {
+        return rd->DocShellId().Equals(aRegisteredDocShellId);
+      });
   }
 
   PS_GET(const nsTArray<BaseProfilerCount*>&, Counters)
@@ -331,6 +369,10 @@ private:
   
   
   nsTArray<UniquePtr<RegisteredThread>> mRegisteredThreads;
+
+  
+  
+  nsTArray<RefPtr<PageInformation>> mRegisteredPages;
 
   
   nsTArray<BaseProfilerCount*> mCounters;
@@ -606,6 +648,20 @@ public:
     return array;
   }
 
+  static nsTArray<RefPtr<PageInformation>> ProfiledPages(PSLockRef aLock)
+  {
+    nsTArray<RefPtr<PageInformation>> array;
+    for (auto& d : CorePS::RegisteredPages(aLock)) {
+      array.AppendElement(d);
+    }
+    for (auto& d : sInstance->mDeadProfiledPages) {
+      array.AppendElement(d);
+    }
+    
+    
+    return array;
+  }
+
   
   
   static ProfiledThreadData* GetProfiledThreadData(PSLockRef,
@@ -669,6 +725,35 @@ public:
       });
   }
 
+  static void UnregisterPages(PSLockRef aLock,
+                              const nsID& aRegisteredDocShellId)
+  {
+    auto& registeredPages = CorePS::RegisteredPages(aLock);
+    for (size_t i = 0; i < registeredPages.Length(); i++) {
+      RefPtr<PageInformation>& page = registeredPages[i];
+      if (page->DocShellId().Equals(aRegisteredDocShellId)) {
+        page->NotifyUnregistered(sInstance->mBuffer->mRangeEnd);
+        sInstance->mDeadProfiledPages.AppendElement(std::move(page));
+        registeredPages.RemoveElementAt(i--);
+      }
+    }
+  }
+
+  static void DiscardExpiredPages(PSLockRef)
+  {
+    uint64_t bufferRangeStart = sInstance->mBuffer->mRangeStart;
+    
+    
+    sInstance->mDeadProfiledPages.RemoveElementsBy(
+      [bufferRangeStart](RefPtr<PageInformation>& aProfiledPage) {
+        Maybe<uint64_t> bufferPosition =
+          aProfiledPage->BufferPositionWhenUnregistered();
+        MOZ_RELEASE_ASSERT(bufferPosition,
+                           "should have unregistered this page");
+        return *bufferPosition < bufferRangeStart;
+      });
+  }
+
 private:
   
   static ActivePS* sInstance;
@@ -716,6 +801,12 @@ private:
   
   nsTArray<LiveProfiledThreadData> mLiveProfiledThreads;
   nsTArray<UniquePtr<ProfiledThreadData>> mDeadProfiledThreads;
+
+  
+  
+  
+  
+  nsTArray<RefPtr<PageInformation>> mDeadProfiledPages;
 
   
   
@@ -3439,6 +3530,60 @@ profiler_unregister_thread()
     
     
     MOZ_RELEASE_ASSERT(!TLSRegisteredThread::RegisteredThread(lock));
+  }
+}
+
+void
+profiler_register_page(const nsID& aDocShellId,
+                           uint32_t aHistoryId,
+                           const nsCString& aUrl,
+                           bool aIsSubFrame)
+{
+  DEBUG_LOG("profiler_register_page(%s, %u, %s, %d)",
+            aDocShellId.ToString(),
+            aHistoryId,
+            aUrl.get(),
+            aIsSubFrame);
+
+  MOZ_RELEASE_ASSERT(CorePS::Exists());
+
+  PSAutoLock lock(gPSMutex);
+
+  
+  
+  if (!ActivePS::Exists(lock)) {
+    CorePS::RemoveRegisteredPages(lock, aDocShellId);
+  }
+
+  RefPtr<PageInformation> pageInfo =
+    new PageInformation(aDocShellId, aHistoryId, aUrl, aIsSubFrame);
+  CorePS::AppendRegisteredPage(lock, std::move(pageInfo));
+
+  
+  
+  if (ActivePS::Exists(lock)) {
+    ActivePS::DiscardExpiredPages(lock);
+  }
+}
+
+void
+profiler_unregister_pages(const nsID& aRegisteredDocShellId)
+{
+  if (!CorePS::Exists()) {
+    
+    return;
+  }
+
+  PSAutoLock lock(gPSMutex);
+
+  
+  
+  
+  
+  if (ActivePS::Exists(lock)) {
+    ActivePS::UnregisterPages(lock, aRegisteredDocShellId);
+  } else {
+    CorePS::RemoveRegisteredPages(lock, aRegisteredDocShellId);
   }
 }
 
