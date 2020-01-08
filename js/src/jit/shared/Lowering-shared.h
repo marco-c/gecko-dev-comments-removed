@@ -267,7 +267,25 @@ class LIRGeneratorShared
     template <typename T> void add(T* ins, MInstruction* mir = nullptr);
 
     void lowerTypedPhiInput(MPhi* phi, uint32_t inputPosition, LBlock* block, size_t lirIndex);
-    void defineTypedPhi(MPhi* phi, size_t lirIndex);
+
+    void definePhiOneRegister(MPhi* phi, size_t lirIndex);
+#ifdef JS_NUNBOX32
+    void definePhiTwoRegisters(MPhi* phi, size_t lirIndex);
+#endif
+
+    void defineTypedPhi(MPhi* phi, size_t lirIndex) {
+        
+        definePhiOneRegister(phi, lirIndex);
+    }
+    void defineUntypedPhi(MPhi* phi, size_t lirIndex) {
+#ifdef JS_NUNBOX32
+        
+        definePhiTwoRegisters(phi, lirIndex);
+#else
+        
+        definePhiOneRegister(phi, lirIndex);
+#endif
+    }
 
     LOsiPoint* popOsiPoint() {
         LOsiPoint* tmp = osiPoint_;
