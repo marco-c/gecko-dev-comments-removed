@@ -8,10 +8,10 @@
 
 
 
-#ifndef MODULES_INCLUDE_MODULE_H_
-#define MODULES_INCLUDE_MODULE_H_
+#ifndef WEBRTC_MODULES_INCLUDE_MODULE_H_
+#define WEBRTC_MODULES_INCLUDE_MODULE_H_
 
-#include "typedefs.h"  
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
@@ -58,6 +58,24 @@ class Module {
  protected:
   virtual ~Module() {}
 };
+
+
+class RefCountedModule : public Module {
+ public:
+  
+  
+  virtual int32_t AddRef() const = 0;
+
+  
+  
+  
+  
+  virtual int32_t Release() const = 0;
+
+ protected:
+  ~RefCountedModule() override = default;
+};
+
 }  
 
 #endif  

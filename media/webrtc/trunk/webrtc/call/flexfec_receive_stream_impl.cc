@@ -8,20 +8,18 @@
 
 
 
-#include "call/flexfec_receive_stream_impl.h"
+#include "webrtc/call/flexfec_receive_stream_impl.h"
 
 #include <string>
 
-#include "call/rtp_stream_receiver_controller_interface.h"
-#include "modules/rtp_rtcp/include/flexfec_receiver.h"
-#include "modules/rtp_rtcp/include/receive_statistics.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
-#include "modules/rtp_rtcp/source/rtp_packet_received.h"
-#include "modules/utility/include/process_thread.h"
-#include "rtc_base/checks.h"
-#include "rtc_base/location.h"
-#include "rtc_base/logging.h"
-#include "system_wrappers/include/clock.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
+#include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "webrtc/modules/utility/include/process_thread.h"
+#include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
 
@@ -74,28 +72,25 @@ std::unique_ptr<FlexfecReceiver> MaybeCreateFlexfecReceiver(
     const FlexfecReceiveStream::Config& config,
     RecoveredPacketReceiver* recovered_packet_receiver) {
   if (config.payload_type < 0) {
-    RTC_LOG(LS_WARNING)
-        << "Invalid FlexFEC payload type given. "
-        << "This FlexfecReceiveStream will therefore be useless.";
+    LOG(LS_WARNING) << "Invalid FlexFEC payload type given. "
+                    << "This FlexfecReceiveStream will therefore be useless.";
     return nullptr;
   }
   RTC_DCHECK_GE(config.payload_type, 0);
   RTC_DCHECK_LE(config.payload_type, 127);
   if (config.remote_ssrc == 0) {
-    RTC_LOG(LS_WARNING)
-        << "Invalid FlexFEC SSRC given. "
-        << "This FlexfecReceiveStream will therefore be useless.";
+    LOG(LS_WARNING) << "Invalid FlexFEC SSRC given. "
+                    << "This FlexfecReceiveStream will therefore be useless.";
     return nullptr;
   }
   if (config.protected_media_ssrcs.empty()) {
-    RTC_LOG(LS_WARNING)
-        << "No protected media SSRC supplied. "
-        << "This FlexfecReceiveStream will therefore be useless.";
+    LOG(LS_WARNING) << "No protected media SSRC supplied. "
+                    << "This FlexfecReceiveStream will therefore be useless.";
     return nullptr;
   }
 
   if (config.protected_media_ssrcs.size() > 1) {
-    RTC_LOG(LS_WARNING)
+    LOG(LS_WARNING)
         << "The supplied FlexfecConfig contained multiple protected "
            "media streams, but our implementation currently only "
            "supports protecting a single media stream. "
@@ -126,12 +121,12 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
 }  
 
 FlexfecReceiveStreamImpl::FlexfecReceiveStreamImpl(
-    RtpStreamReceiverControllerInterface* receiver_controller,
     const Config& config,
     RecoveredPacketReceiver* recovered_packet_receiver,
     RtcpRttStats* rtt_stats,
     ProcessThread* process_thread)
     : config_(config),
+      started_(false),
       receiver_(MaybeCreateFlexfecReceiver(config_, recovered_packet_receiver)),
       rtp_receive_statistics_(
           ReceiveStatistics::Create(Clock::GetRealTimeClock())),
@@ -139,38 +134,34 @@ FlexfecReceiveStreamImpl::FlexfecReceiveStreamImpl(
                                     config_.rtcp_send_transport,
                                     rtt_stats)),
       process_thread_(process_thread) {
-  RTC_LOG(LS_INFO) << "FlexfecReceiveStreamImpl: " << config_.ToString();
+  LOG(LS_INFO) << "FlexfecReceiveStreamImpl: " << config_.ToString();
 
   
+  rtp_rtcp_->SetSendingMediaStatus(false);
   rtp_rtcp_->SetRTCPStatus(config_.rtcp_mode);
   rtp_rtcp_->SetSSRC(config_.local_ssrc);
-  process_thread_->RegisterModule(rtp_rtcp_.get(), RTC_FROM_HERE);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  rtp_stream_receiver_ =
-      receiver_controller->CreateReceiver(config_.remote_ssrc, this);
+  process_thread_->RegisterModule(rtp_rtcp_.get());
 }
 
 FlexfecReceiveStreamImpl::~FlexfecReceiveStreamImpl() {
-  RTC_LOG(LS_INFO) << "~FlexfecReceiveStreamImpl: " << config_.ToString();
+  LOG(LS_INFO) << "~FlexfecReceiveStreamImpl: " << config_.ToString();
+  Stop();
   process_thread_->DeRegisterModule(rtp_rtcp_.get());
 }
 
-void FlexfecReceiveStreamImpl::OnRtpPacket(const RtpPacketReceived& packet) {
-  if (!receiver_)
-    return;
+bool FlexfecReceiveStreamImpl::AddAndProcessReceivedPacket(
+    const RtpPacketReceived& packet) {
+  {
+    rtc::CritScope cs(&crit_);
+    if (!started_)
+      return false;
+  }
 
-  receiver_->OnRtpPacket(packet);
+  if (!receiver_)
+    return false;
+
+  if (!receiver_->AddAndProcessReceivedPacket(packet))
+    return false;
 
   
   if (packet.Ssrc() == config_.remote_ssrc) {
@@ -181,17 +172,24 @@ void FlexfecReceiveStreamImpl::OnRtpPacket(const RtpPacketReceived& packet) {
     rtp_receive_statistics_->IncomingPacket(header, packet.size(),
                                             kNotRetransmitted);
   }
+
+  return true;
+}
+
+void FlexfecReceiveStreamImpl::Start() {
+  rtc::CritScope cs(&crit_);
+  started_ = true;
+}
+
+void FlexfecReceiveStreamImpl::Stop() {
+  rtc::CritScope cs(&crit_);
+  started_ = false;
 }
 
 
 
 FlexfecReceiveStreamImpl::Stats FlexfecReceiveStreamImpl::GetStats() const {
   return FlexfecReceiveStream::Stats();
-}
-
-const FlexfecReceiveStream::Config& FlexfecReceiveStreamImpl::GetConfig()
-    const {
-  return config_;
 }
 
 }  

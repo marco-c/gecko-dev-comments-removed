@@ -8,21 +8,21 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_LEVEL_CONTROLLER_H_
-#define MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_LEVEL_CONTROLLER_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_LEVEL_CONTROLLER_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_LEVEL_CONTROLLER_H_
 
 #include <memory>
 #include <vector>
 
-#include "api/optional.h"
-#include "modules/audio_processing/include/audio_processing.h"
-#include "modules/audio_processing/level_controller/gain_applier.h"
-#include "modules/audio_processing/level_controller/gain_selector.h"
-#include "modules/audio_processing/level_controller/noise_level_estimator.h"
-#include "modules/audio_processing/level_controller/peak_level_estimator.h"
-#include "modules/audio_processing/level_controller/saturating_gain_estimator.h"
-#include "modules/audio_processing/level_controller/signal_classifier.h"
-#include "rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/modules/audio_processing/level_controller/gain_applier.h"
+#include "webrtc/modules/audio_processing/level_controller/gain_selector.h"
+#include "webrtc/modules/audio_processing/level_controller/noise_level_estimator.h"
+#include "webrtc/modules/audio_processing/level_controller/peak_level_estimator.h"
+#include "webrtc/modules/audio_processing/level_controller/saturating_gain_estimator.h"
+#include "webrtc/modules/audio_processing/level_controller/signal_classifier.h"
 
 namespace webrtc {
 

@@ -8,7 +8,7 @@
 
 
 
-#include "media/base/streamparams.h"
+#include "webrtc/media/base/streamparams.h"
 
 #include <list>
 #include <sstream>

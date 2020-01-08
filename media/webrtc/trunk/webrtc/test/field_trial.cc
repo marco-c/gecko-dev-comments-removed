@@ -8,7 +8,7 @@
 
 
 
-#include "test/field_trial.h"
+#include "webrtc/test/field_trial.h"
 
 #include <algorithm>
 #include <cassert>
@@ -17,8 +17,8 @@
 #include <map>
 #include <string>
 
-#include "system_wrappers/include/field_trial.h"
-#include "system_wrappers/include/field_trial_default.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
+#include "webrtc/system_wrappers/include/field_trial_default.h"
 
 namespace webrtc {
 namespace {

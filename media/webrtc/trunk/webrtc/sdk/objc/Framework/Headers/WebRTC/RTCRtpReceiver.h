@@ -16,35 +16,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-
-typedef NS_ENUM(NSInteger, RTCRtpMediaType) {
-  RTCRtpMediaTypeAudio,
-  RTCRtpMediaTypeVideo,
-  RTCRtpMediaTypeData,
-};
-
-@class RTCRtpReceiver;
-
-RTC_EXPORT
-@protocol RTCRtpReceiverDelegate <NSObject>
-
-
-
-
-
-
-
-
-
-
-
-
-
-- (void)rtpReceiver:(RTCRtpReceiver *)rtpReceiver
-    didReceiveFirstPacketForMediaType:(RTCRtpMediaType)mediaType;
-
-@end
-
 RTC_EXPORT
 @protocol RTCRtpReceiver <NSObject>
 
@@ -66,9 +37,6 @@ RTC_EXPORT
 
 
 @property(nonatomic, readonly) RTCMediaStreamTrack *track;
-
-
-@property(nonatomic, weak) id<RTCRtpReceiverDelegate> delegate;
 
 @end
 

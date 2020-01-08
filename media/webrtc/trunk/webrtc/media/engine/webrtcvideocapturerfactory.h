@@ -9,19 +9,17 @@
 
 
 
-#ifndef MEDIA_ENGINE_WEBRTCVIDEOCAPTURERFACTORY_H_
-#define MEDIA_ENGINE_WEBRTCVIDEOCAPTURERFACTORY_H_
+#ifndef WEBRTC_MEDIA_ENGINE_WEBRTCVIDEOCAPTURERFACTORY_H_
+#define WEBRTC_MEDIA_ENGINE_WEBRTCVIDEOCAPTURERFACTORY_H_
 
-#include <memory>
-
-#include "media/base/videocapturerfactory.h"
+#include "webrtc/media/base/videocapturerfactory.h"
 
 namespace cricket {
 
 
 class WebRtcVideoDeviceCapturerFactory : public VideoDeviceCapturerFactory {
  public:
-  std::unique_ptr<VideoCapturer> Create(const Device& device) override;
+  virtual VideoCapturer* Create(const Device& device);
 };
 
 }  

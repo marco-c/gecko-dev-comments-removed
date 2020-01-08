@@ -8,15 +8,15 @@
 
 
 
-#include "modules/audio_coding/neteq/audio_vector.h"
+#include "webrtc/modules/audio_coding/neteq/audio_vector.h"
 
 #include <assert.h>
 
 #include <algorithm>
 #include <memory>
 
-#include "rtc_base/checks.h"
-#include "typedefs.h"  
+#include "webrtc/base/checks.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
@@ -282,6 +282,14 @@ size_t AudioVector::Size() const {
 
 bool AudioVector::Empty() const {
   return begin_index_ == end_index_;
+}
+
+const int16_t& AudioVector::operator[](size_t index) const {
+  return array_[(begin_index_ + index) % capacity_];
+}
+
+int16_t& AudioVector::operator[](size_t index) {
+  return array_[(begin_index_ + index) % capacity_];
 }
 
 void AudioVector::Reserve(size_t n) {

@@ -8,13 +8,13 @@
 
 
 
-#include "modules/utility/source/process_thread_impl.h"
+#include "webrtc/modules/utility/source/process_thread_impl.h"
 
-#include "modules/include/module.h"
-#include "rtc_base/checks.h"
-#include "rtc_base/task_queue.h"
-#include "rtc_base/timeutils.h"
-#include "rtc_base/trace_event.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/task_queue.h"
+#include "webrtc/base/timeutils.h"
+#include "webrtc/modules/include/module.h"
+#include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
 namespace {
@@ -66,8 +66,15 @@ void ProcessThreadImpl::Start() {
 
   RTC_DCHECK(!stop_);
 
-  for (ModuleCallback& m : modules_)
-    m.module->ProcessThreadAttached(this);
+  {
+    
+    
+    
+    
+    rtc::CritScope lock(&lock_);
+    for (ModuleCallback& m : modules_)
+      m.module->ProcessThreadAttached(this);
+  }
 
   thread_.reset(
       new rtc::PlatformThread(&ProcessThreadImpl::Run, this, thread_name_));
@@ -89,6 +96,13 @@ void ProcessThreadImpl::Stop() {
   thread_->Stop();
   stop_ = false;
 
+  
+  
+  
+  
+  
+  
+  rtc::CritScope lock(&lock_);
   thread_.reset();
   for (ModuleCallback& m : modules_)
     m.module->ProcessThreadAttached(nullptr);
@@ -115,20 +129,16 @@ void ProcessThreadImpl::PostTask(std::unique_ptr<rtc::QueuedTask> task) {
   wake_up_->Set();
 }
 
-void ProcessThreadImpl::RegisterModule(Module* module,
-                                       const rtc::Location& from) {
+void ProcessThreadImpl::RegisterModule(Module* module) {
   
-  RTC_DCHECK(module) << from.ToString();
+  RTC_DCHECK(module);
 
 #if RTC_DCHECK_IS_ON
   {
     
     rtc::CritScope lock(&lock_);
-    for (const ModuleCallback& mc : modules_) {
-      RTC_DCHECK(mc.module != module)
-          << "Already registered here: " << mc.location.ToString() << "\n"
-          << "Now attempting from here: " << from.ToString();
-    }
+    for (const ModuleCallback& mc : modules_)
+      RTC_DCHECK(mc.module != module);
   }
 #endif
 
@@ -140,7 +150,7 @@ void ProcessThreadImpl::RegisterModule(Module* module,
 
   {
     rtc::CritScope lock(&lock_);
-    modules_.push_back(ModuleCallback(module, from));
+    modules_.push_back(ModuleCallback(module));
   }
 
   
@@ -150,7 +160,8 @@ void ProcessThreadImpl::RegisterModule(Module* module,
 }
 
 void ProcessThreadImpl::DeRegisterModule(Module* module) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  
+  
   RTC_DCHECK(module);
 
   {
@@ -158,10 +169,18 @@ void ProcessThreadImpl::DeRegisterModule(Module* module) {
     modules_.remove_if([&module](const ModuleCallback& m) {
         return m.module == module;
       });
-  }
 
-  
-  module->ProcessThreadAttached(nullptr);
+    
+    
+    
+    
+    
+    
+
+    
+    if (thread_.get())
+      module->ProcessThreadAttached(nullptr);
+  }
 }
 
 
@@ -170,7 +189,6 @@ bool ProcessThreadImpl::Run(void* obj) {
 }
 
 bool ProcessThreadImpl::Process() {
-  TRACE_EVENT1("webrtc", "ProcessThreadImpl", "name", thread_name_);
   int64_t now = rtc::TimeMillis();
   int64_t next_checkpoint = now + (1000 * 60);
 
@@ -188,12 +206,7 @@ bool ProcessThreadImpl::Process() {
 
       if (m.next_callback <= now ||
           m.next_callback == kCallProcessImmediately) {
-        {
-          TRACE_EVENT2("webrtc", "ModuleProcess", "function",
-                       m.location.function_name(), "file",
-                       m.location.file_and_line());
-          m.module->Process();
-        }
+        m.module->Process();
         
         
         

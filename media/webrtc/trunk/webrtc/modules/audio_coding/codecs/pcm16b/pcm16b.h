@@ -8,15 +8,15 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_CODECS_PCM16B_PCM16B_H_
-#define MODULES_AUDIO_CODING_CODECS_PCM16B_PCM16B_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_PCM16B_PCM16B_H_
+#define WEBRTC_MODULES_AUDIO_CODING_CODECS_PCM16B_PCM16B_H_
 
 
 
 
 #include <stddef.h>
 
-#include "typedefs.h"  
+#include "webrtc/typedefs.h"
 
 #ifdef __cplusplus
 extern "C" {

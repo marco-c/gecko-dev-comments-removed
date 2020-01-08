@@ -8,8 +8,8 @@
 
 
 
-#include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "modules/audio_coding/codecs/isac/fix/source/pitch_estimator.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/pitch_estimator.h"
 
 
 static const int16_t kDampFilter[PITCH_DAMPORDER] = {

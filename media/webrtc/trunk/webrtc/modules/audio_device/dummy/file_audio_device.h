@@ -8,18 +8,18 @@
 
 
 
-#ifndef AUDIO_DEVICE_FILE_AUDIO_DEVICE_H_
-#define AUDIO_DEVICE_FILE_AUDIO_DEVICE_H_
+#ifndef WEBRTC_AUDIO_DEVICE_FILE_AUDIO_DEVICE_H
+#define WEBRTC_AUDIO_DEVICE_FILE_AUDIO_DEVICE_H
 
 #include <stdio.h>
 
 #include <memory>
 #include <string>
 
-#include "modules/audio_device/audio_device_generic.h"
-#include "rtc_base/criticalsection.h"
-#include "rtc_base/timeutils.h"
-#include "system_wrappers/include/file_wrapper.h"
+#include "webrtc/base/timeutils.h"
+#include "webrtc/modules/audio_device/audio_device_generic.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/file_wrapper.h"
 
 namespace rtc {
 class PlatformThread;
@@ -38,7 +38,8 @@ class FileAudioDevice : public AudioDeviceGeneric {
   
   
   
-  FileAudioDevice(const char* inputFilename,
+  FileAudioDevice(const int32_t id,
+                  const char* inputFilename,
                   const char* outputFilename);
   virtual ~FileAudioDevice();
 
@@ -90,6 +91,11 @@ class FileAudioDevice : public AudioDeviceGeneric {
   bool AGC() const override;
 
   
+  int32_t SetWaveOutVolume(uint16_t volumeLeft, uint16_t volumeRight) override;
+  int32_t WaveOutVolume(uint16_t& volumeLeft,
+                        uint16_t& volumeRight) const override;
+
+  
   int32_t InitSpeaker() override;
   bool SpeakerIsInitialized() const override;
   int32_t InitMicrophone() override;
@@ -101,6 +107,7 @@ class FileAudioDevice : public AudioDeviceGeneric {
   int32_t SpeakerVolume(uint32_t& volume) const override;
   int32_t MaxSpeakerVolume(uint32_t& maxVolume) const override;
   int32_t MinSpeakerVolume(uint32_t& minVolume) const override;
+  int32_t SpeakerVolumeStepSize(uint16_t& stepSize) const override;
 
   
   int32_t MicrophoneVolumeIsAvailable(bool& available) override;
@@ -108,6 +115,7 @@ class FileAudioDevice : public AudioDeviceGeneric {
   int32_t MicrophoneVolume(uint32_t& volume) const override;
   int32_t MaxMicrophoneVolume(uint32_t& maxVolume) const override;
   int32_t MinMicrophoneVolume(uint32_t& minVolume) const override;
+  int32_t MicrophoneVolumeStepSize(uint16_t& stepSize) const override;
 
   
   int32_t SpeakerMuteIsAvailable(bool& available) override;
@@ -120,6 +128,11 @@ class FileAudioDevice : public AudioDeviceGeneric {
   int32_t MicrophoneMute(bool& enabled) const override;
 
   
+  int32_t MicrophoneBoostIsAvailable(bool& available) override;
+  int32_t SetMicrophoneBoost(bool enable) override;
+  int32_t MicrophoneBoost(bool& enabled) const override;
+
+  
   int32_t StereoPlayoutIsAvailable(bool& available) override;
   int32_t SetStereoPlayout(bool enable) override;
   int32_t StereoPlayout(bool& enabled) const override;
@@ -128,7 +141,24 @@ class FileAudioDevice : public AudioDeviceGeneric {
   int32_t StereoRecording(bool& enabled) const override;
 
   
+  int32_t SetPlayoutBuffer(const AudioDeviceModule::BufferType type,
+                           uint16_t sizeMS) override;
+  int32_t PlayoutBuffer(AudioDeviceModule::BufferType& type,
+                        uint16_t& sizeMS) const override;
   int32_t PlayoutDelay(uint16_t& delayMS) const override;
+  int32_t RecordingDelay(uint16_t& delayMS) const override;
+
+  
+  int32_t CPULoad(uint16_t& load) const override;
+
+  bool PlayoutWarning() const override;
+  bool PlayoutError() const override;
+  bool RecordingWarning() const override;
+  bool RecordingError() const override;
+  void ClearPlayoutWarning() override;
+  void ClearPlayoutError() override;
+  void ClearRecordingWarning() override;
+  void ClearRecordingError() override;
 
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 
@@ -140,12 +170,13 @@ class FileAudioDevice : public AudioDeviceGeneric {
 
   int32_t _playout_index;
   int32_t _record_index;
+  AudioDeviceModule::BufferType _playBufType;
   AudioDeviceBuffer* _ptrAudioBuffer;
   int8_t* _recordingBuffer;  
   int8_t* _playoutBuffer;  
   uint32_t _recordingFramesLeft;
   uint32_t _playoutFramesLeft;
-  rtc::CriticalSection _critSect;
+  CriticalSectionWrapper& _critSect;
 
   size_t _recordingBufferSizeIn10MS;
   size_t _recordingFramesIn10MS;

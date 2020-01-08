@@ -14,8 +14,8 @@
 
 
 
-#include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "system_wrappers/include/cpu_features_wrapper.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 
 
 MaxAbsValueW16 WebRtcSpl_MaxAbsValueW16;

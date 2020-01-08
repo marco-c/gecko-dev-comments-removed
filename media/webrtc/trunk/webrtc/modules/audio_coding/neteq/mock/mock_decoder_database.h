@@ -8,14 +8,14 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_DECODER_DATABASE_H_
-#define MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_DECODER_DATABASE_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_DECODER_DATABASE_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_DECODER_DATABASE_H_
 
 #include <string>
 
-#include "modules/audio_coding/neteq/decoder_database.h"
+#include "webrtc/modules/audio_coding/neteq/decoder_database.h"
 
-#include "test/gmock.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 

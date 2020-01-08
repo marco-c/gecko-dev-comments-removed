@@ -17,13 +17,11 @@
 
 #if defined(MIPS32_LE)
 
-#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
-#if !defined(MIPS_DSP_R2_LE)
 
 static const uint16_t kResampleAllpass1[3] = {3284, 24441, 49528};
 static const uint16_t kResampleAllpass2[3] = {12199, 37471, 60255};
-#endif
 
 
 #define MUL_ACCUM_1(a, b, c) WEBRTC_SPL_SCALEDIFF32(a, b, c)

@@ -8,14 +8,14 @@
 
 
 
-#include "modules/audio_processing/transient/wpd_tree.h"
+#include "webrtc/modules/audio_processing/transient/wpd_tree.h"
 
 #include <math.h>
 #include <string.h>
 
-#include "modules/audio_processing/transient/dyadic_decimator.h"
-#include "modules/audio_processing/transient/wpd_node.h"
-#include "rtc_base/checks.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/modules/audio_processing/transient/dyadic_decimator.h"
+#include "webrtc/modules/audio_processing/transient/wpd_node.h"
 
 namespace webrtc {
 

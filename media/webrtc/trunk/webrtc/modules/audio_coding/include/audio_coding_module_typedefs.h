@@ -8,13 +8,13 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_INCLUDE_AUDIO_CODING_MODULE_TYPEDEFS_H_
-#define MODULES_AUDIO_CODING_INCLUDE_AUDIO_CODING_MODULE_TYPEDEFS_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_INCLUDE_AUDIO_CODING_MODULE_TYPEDEFS_H_
+#define WEBRTC_MODULES_AUDIO_CODING_INCLUDE_AUDIO_CODING_MODULE_TYPEDEFS_H_
 
 #include <map>
 
-#include "modules/include/module_common_types.h"
-#include "typedefs.h"  
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

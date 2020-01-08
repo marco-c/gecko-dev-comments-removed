@@ -8,14 +8,14 @@
 
 
 
-#ifndef COMMON_AUDIO_VAD_INCLUDE_VAD_H_
-#define COMMON_AUDIO_VAD_INCLUDE_VAD_H_
+#ifndef WEBRTC_COMMON_AUDIO_VAD_INCLUDE_VAD_H_
+#define WEBRTC_COMMON_AUDIO_VAD_INCLUDE_VAD_H_
 
 #include <memory>
 
-#include "common_audio/vad/include/webrtc_vad.h"
-#include "rtc_base/checks.h"
-#include "typedefs.h"  
+#include "webrtc/base/checks.h"
+#include "webrtc/common_audio/vad/include/webrtc_vad.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

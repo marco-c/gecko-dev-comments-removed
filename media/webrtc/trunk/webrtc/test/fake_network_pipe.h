@@ -8,26 +8,24 @@
 
 
 
-#ifndef TEST_FAKE_NETWORK_PIPE_H_
-#define TEST_FAKE_NETWORK_PIPE_H_
+#ifndef WEBRTC_TEST_FAKE_NETWORK_PIPE_H_
+#define WEBRTC_TEST_FAKE_NETWORK_PIPE_H_
 
-#include <string.h>
-#include <map>
 #include <memory>
-#include <queue>
 #include <set>
+#include <string.h>
+#include <queue>
 
-#include "common_types.h"  
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/criticalsection.h"
-#include "rtc_base/random.h"
-#include "typedefs.h"  
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/random.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
 class Clock;
+class CriticalSectionWrapper;
 class PacketReceiver;
-enum class MediaType;
 
 class NetworkPacket {
  public:
@@ -61,28 +59,6 @@ class NetworkPacket {
   int64_t arrival_time_;
 };
 
-class Demuxer {
- public:
-  virtual ~Demuxer() = default;
-  virtual void SetReceiver(PacketReceiver* receiver) = 0;
-  virtual void DeliverPacket(const NetworkPacket* packet,
-                             const PacketTime& packet_time) = 0;
-};
-
-class DemuxerImpl final : public Demuxer {
- public:
-  explicit DemuxerImpl(const std::map<uint8_t, MediaType>& payload_type_map);
-
-  void SetReceiver(PacketReceiver* receiver) override;
-  void DeliverPacket(const NetworkPacket* packet,
-                     const PacketTime& packet_time) override;
-
- private:
-  PacketReceiver* packet_receiver_;
-  const std::map<uint8_t, MediaType> payload_type_map_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(DemuxerImpl);
-};
-
 
 
 
@@ -107,27 +83,24 @@ class FakeNetworkPipe {
     int avg_burst_loss_length = -1;
   };
 
+  FakeNetworkPipe(Clock* clock, const FakeNetworkPipe::Config& config);
   FakeNetworkPipe(Clock* clock,
                   const FakeNetworkPipe::Config& config,
-                  std::unique_ptr<Demuxer> demuxer);
-  FakeNetworkPipe(Clock* clock,
-                  const FakeNetworkPipe::Config& config,
-                  std::unique_ptr<Demuxer> demuxer,
                   uint64_t seed);
-  virtual ~FakeNetworkPipe();
-
-  
-  void SetConfig(const FakeNetworkPipe::Config& config);
-
-  
-  virtual void SendPacket(const uint8_t* packet, size_t packet_length);
+  ~FakeNetworkPipe();
 
   
   void SetReceiver(PacketReceiver* receiver);
 
   
+  void SetConfig(const FakeNetworkPipe::Config& config);
+
   
-  virtual void Process();
+  void SendPacket(const uint8_t* packet, size_t packet_length);
+
+  
+  
+  void Process();
   int64_t TimeUntilNextProcess() const;
 
   
@@ -136,10 +109,10 @@ class FakeNetworkPipe {
   size_t dropped_packets() { return dropped_packets_; }
   size_t sent_packets() { return sent_packets_; }
 
- protected:
+ private:
   Clock* const clock_;
   rtc::CriticalSection lock_;
-  const std::unique_ptr<Demuxer> demuxer_;
+  PacketReceiver* packet_receiver_;
   std::queue<NetworkPacket*> capacity_link_;
   Random random_;
 
@@ -172,10 +145,6 @@ class FakeNetworkPipe {
   double prob_start_bursting_;
 
   int64_t next_process_time_;
-
-  int64_t last_log_time_;
-
-  int64_t capacity_delay_error_bytes_ = 0;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(FakeNetworkPipe);
 };

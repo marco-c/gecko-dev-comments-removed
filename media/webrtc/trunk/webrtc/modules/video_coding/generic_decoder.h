@@ -8,18 +8,14 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_GENERIC_DECODER_H_
-#define MODULES_VIDEO_CODING_GENERIC_DECODER_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_GENERIC_DECODER_H_
+#define WEBRTC_MODULES_VIDEO_CODING_GENERIC_DECODER_H_
 
-#include <memory>
-
-#include "modules/include/module_common_types.h"
-#include "modules/video_coding/encoded_frame.h"
-#include "modules/video_coding/include/video_codec_interface.h"
-#include "modules/video_coding/timestamp_map.h"
-#include "modules/video_coding/timing.h"
-#include "rtc_base/criticalsection.h"
-#include "rtc_base/thread_checker.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
+#include "webrtc/modules/video_coding/encoded_frame.h"
+#include "webrtc/modules/video_coding/timestamp_map.h"
+#include "webrtc/modules/video_coding/timing.h"
 
 namespace webrtc {
 
@@ -32,51 +28,41 @@ struct VCMFrameInformation {
   int64_t decodeStartTimeMs;
   void* userData;
   VideoRotation rotation;
-  VideoContentType content_type;
-  EncodedImage::Timing timing;
 };
 
 class VCMDecodedFrameCallback : public DecodedImageCallback {
  public:
   VCMDecodedFrameCallback(VCMTiming* timing, Clock* clock);
-  ~VCMDecodedFrameCallback() override;
-  void SetUserReceiveCallback(VCMReceiveCallback* receiveCallback);
-  VCMReceiveCallback* UserReceiveCallback();
+    virtual ~VCMDecodedFrameCallback();
+    void SetUserReceiveCallback(VCMReceiveCallback* receiveCallback);
+    VCMReceiveCallback* UserReceiveCallback();
 
-  int32_t Decoded(VideoFrame& decodedImage) override;
-  int32_t Decoded(VideoFrame& decodedImage, int64_t decode_time_ms) override;
-  void Decoded(VideoFrame& decodedImage,
-               rtc::Optional<int32_t> decode_time_ms,
-               rtc::Optional<uint8_t> qp) override;
-  int32_t ReceivedDecodedReferenceFrame(const uint64_t pictureId) override;
-  int32_t ReceivedDecodedFrame(const uint64_t pictureId) override;
+    virtual int32_t Decoded(VideoFrame& decodedImage);  
+    virtual int32_t Decoded(VideoFrame& decodedImage,   
+                            int64_t decode_time_ms);
+    virtual int32_t ReceivedDecodedReferenceFrame(const uint64_t pictureId);
+    virtual int32_t ReceivedDecodedFrame(const uint64_t pictureId);
 
-  uint64_t LastReceivedPictureID() const;
-  void OnDecoderImplementationName(const char* implementation_name);
+    uint64_t LastReceivedPictureID() const;
+    void OnDecoderImplementationName(const char* implementation_name);
 
-  void Map(uint32_t timestamp, VCMFrameInformation* frameInfo);
-  int32_t Pop(uint32_t timestamp);
+    void Map(uint32_t timestamp, VCMFrameInformation* frameInfo);
+    int32_t Pop(uint32_t timestamp);
 
  private:
-  rtc::ThreadChecker construction_thread_;
-  
-  Clock* const _clock;
-  
-  
-  
-  
-  
-  VCMReceiveCallback* _receiveCallback = nullptr;
-  VCMTiming* _timing;
-  rtc::CriticalSection lock_;
-  VCMTimestampMap _timestampMap RTC_GUARDED_BY(lock_);
-  uint64_t _lastReceivedPictureID;
-  int64_t ntp_offset_;
+    
+    CriticalSectionWrapper* _critSect;
+    Clock* _clock;
+    VCMReceiveCallback* _receiveCallback GUARDED_BY(_critSect);
+    VCMTiming* _timing;
+    VCMTimestampMap _timestampMap GUARDED_BY(_critSect);
+    uint64_t _lastReceivedPictureID;
 };
 
 class VCMGenericDecoder {
+  friend class VCMCodecDataBase;
+
  public:
-  explicit VCMGenericDecoder(std::unique_ptr<VideoDecoder> decoder);
   explicit VCMGenericDecoder(VideoDecoder* decoder, bool isExternal = false);
   ~VCMGenericDecoder();
 
@@ -95,22 +81,24 @@ class VCMGenericDecoder {
   
 
 
+  int32_t Release();
+
+  
+
+
   int32_t RegisterDecodeCompleteCallback(VCMDecodedFrameCallback* callback);
 
   bool External() const;
   bool PrefersLateDecoding() const;
-  bool IsSameDecoder(VideoDecoder* decoder) const {
-    return decoder_.get() == decoder;
-  }
 
  private:
   VCMDecodedFrameCallback* _callback;
   VCMFrameInformation _frameInfos[kDecoderFrameMemoryLength];
   uint32_t _nextFrameInfoIdx;
-  std::unique_ptr<VideoDecoder> decoder_;
+  VideoDecoder* const _decoder;
   VideoCodecType _codecType;
-  const bool _isExternal;
-  VideoContentType _last_keyframe_content_type;
+  bool _isExternal;
+  bool _keyFrameDecoded;
 };
 
 }  

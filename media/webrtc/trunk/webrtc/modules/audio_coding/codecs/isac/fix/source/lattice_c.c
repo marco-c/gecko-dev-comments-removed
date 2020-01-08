@@ -16,7 +16,7 @@
 
 #include "settings.h"
 #include "signal_processing_library.h"
-#include "typedefs.h"  
+#include "webrtc/typedefs.h"
 
 
 

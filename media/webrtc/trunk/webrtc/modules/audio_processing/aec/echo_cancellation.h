@@ -8,18 +8,18 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_AEC_ECHO_CANCELLATION_H_
-#define MODULES_AUDIO_PROCESSING_AEC_ECHO_CANCELLATION_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC_ECHO_CANCELLATION_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_ECHO_CANCELLATION_H_
 
 #include <memory>
 
 #include <stddef.h>
 
 extern "C" {
-#include "common_audio/ring_buffer.h"
+#include "webrtc/common_audio/ring_buffer.h"
 }
-#include "modules/audio_processing/aec/aec_core.h"
-#include "typedefs.h"  
+#include "webrtc/modules/audio_processing/aec/aec_core.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

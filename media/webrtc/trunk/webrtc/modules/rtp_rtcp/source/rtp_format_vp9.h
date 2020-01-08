@@ -18,38 +18,42 @@
 
 
 
-#ifndef MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VP9_H_
-#define MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VP9_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VP9_H_
+#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VP9_H_
 
 #include <queue>
 #include <string>
 
-#include "modules/include/module_common_types.h"
-#include "modules/rtp_rtcp/source/rtp_format.h"
-#include "rtc_base/constructormagic.h"
-#include "typedefs.h"  
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
 class RtpPacketizerVp9 : public RtpPacketizer {
  public:
-  RtpPacketizerVp9(const RTPVideoHeaderVP9& hdr,
-                   size_t max_payload_length,
-                   size_t last_packet_reduction_len);
+  RtpPacketizerVp9(const RTPVideoHeaderVP9& hdr, size_t max_payload_length);
 
   virtual ~RtpPacketizerVp9();
+
+  ProtectionType GetProtectionType() override;
+
+  StorageType GetStorageType(uint32_t retransmission_settings) override;
 
   std::string ToString() override;
 
   
-  size_t SetPayloadData(const uint8_t* payload,
-                        size_t payload_size,
-                        const RTPFragmentationHeader* fragmentation) override;
+  void SetPayloadData(const uint8_t* payload,
+                      size_t payload_size,
+                      const RTPFragmentationHeader* fragmentation) override;
 
   
   
   
-  bool NextPacket(RtpPacketToSend* packet) override;
+  
+  
+  bool NextPacket(RtpPacketToSend* packet, bool* last_packet) override;
 
   typedef struct {
     size_t payload_start_pos;
@@ -68,8 +72,7 @@ class RtpPacketizerVp9 : public RtpPacketizer {
   
   
   bool WriteHeaderAndPayload(const PacketInfo& packet_info,
-                             RtpPacketToSend* packet,
-                             bool last) const;
+                             RtpPacketToSend* packet) const;
 
   
   
@@ -81,7 +84,6 @@ class RtpPacketizerVp9 : public RtpPacketizer {
   const size_t max_payload_length_;  
   const uint8_t* payload_;           
   size_t payload_size_;              
-  const size_t last_packet_reduction_len_;
   PacketInfoQueue packets_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpPacketizerVp9);

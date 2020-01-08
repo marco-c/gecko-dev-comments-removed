@@ -8,37 +8,106 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_H_
-#define MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_H_
+#define WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_H_
 
-#include <map>
 #include <memory>
 #include <string>
-#include <vector>
 
-#include "api/video/video_frame.h"
-#include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "modules/video_coding/codecs/h264/include/h264_globals.h"
-#include "modules/video_coding/codecs/test/packet_manipulator.h"
-#include "modules/video_coding/codecs/test/stats.h"
-#include "modules/video_coding/codecs/test/test_config.h"
-#include "modules/video_coding/include/video_codec_interface.h"
-#include "modules/video_coding/utility/ivf_file_writer.h"
-#include "modules/video_coding/utility/vp8_header_parser.h"
-#include "modules/video_coding/utility/vp9_uncompressed_header_parser.h"
-#include "rtc_base/buffer.h"
-#include "rtc_base/checks.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/sequenced_task_checker.h"
-#include "rtc_base/task_queue.h"
-#include "test/testsupport/frame_reader.h"
-#include "test/testsupport/frame_writer.h"
+#include "webrtc/api/video/video_frame.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
+#include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
+#include "webrtc/modules/video_coding/codecs/test/stats.h"
+#include "webrtc/test/testsupport/frame_reader.h"
+#include "webrtc/test/testsupport/frame_writer.h"
 
 namespace webrtc {
 
 class VideoBitrateAllocator;
 
 namespace test {
+
+
+enum ExcludeFrameTypes {
+  
+  
+  kExcludeOnlyFirstKeyFrame,
+  
+  
+  kExcludeAllKeyFrames
+};
+
+const char* ExcludeFrameTypesToStr(ExcludeFrameTypes e);
+
+
+struct TestConfig {
+  TestConfig();
+  ~TestConfig();
+
+  
+  
+  std::string name;
+
+  
+  
+  std::string description;
+
+  
+  
+  int test_number;
+
+  
+  std::string input_filename;
+
+  
+  
+  std::string output_filename;
+
+  
+  
+  std::string output_dir;
+
+  
+  NetworkingConfig networking_config;
+
+  
+  
+  ExcludeFrameTypes exclude_frame_types;
+
+  
+  
+  
+  size_t frame_length_in_bytes;
+
+  
+  
+  
+  
+  
+  
+  
+  bool use_single_core;
+
+  
+  
+  
+  
+  
+  
+  
+  int keyframe_interval;
+
+  
+  
+  
+  webrtc::VideoCodec* codec_settings;
+
+  
+  bool verbose;
+};
+
 
 
 
@@ -59,189 +128,132 @@ namespace test {
 
 class VideoProcessor {
  public:
-  VideoProcessor(webrtc::VideoEncoder* encoder,
-                 webrtc::VideoDecoder* decoder,
-                 FrameReader* analysis_frame_reader,
-                 PacketManipulator* packet_manipulator,
-                 const TestConfig& config,
-                 Stats* stats,
-                 IvfFileWriter* encoded_frame_writer,
-                 FrameWriter* decoded_frame_writer);
-  ~VideoProcessor();
+  virtual ~VideoProcessor() {}
+
+  
+  
+  virtual bool Init() = 0;
 
   
   
   
-  
-  void ProcessFrame();
+  virtual bool ProcessFrame(int frame_number) = 0;
 
   
-  void SetRates(int bitrate_kbps, int framerate_fps);
+  virtual void SetRates(int bit_rate, int frame_rate) = 0;
 
   
-  std::vector<int> NumberDroppedFramesPerRateUpdate() const;
+  
+  virtual size_t EncodedFrameSize() = 0;
 
   
-  std::vector<int> NumberSpatialResizesPerRateUpdate() const;
+  virtual FrameType EncodedFrameType() = 0;
+
+  
+  virtual int NumberDroppedFrames() = 0;
+
+  
+  virtual int NumberSpatialResizes() = 0;
+};
+
+class VideoProcessorImpl : public VideoProcessor {
+ public:
+  VideoProcessorImpl(webrtc::VideoEncoder* encoder,
+                     webrtc::VideoDecoder* decoder,
+                     FrameReader* frame_reader,
+                     FrameWriter* frame_writer,
+                     PacketManipulator* packet_manipulator,
+                     const TestConfig& config,
+                     Stats* stats);
+  virtual ~VideoProcessorImpl();
+  bool Init() override;
+  bool ProcessFrame(int frame_number) override;
 
  private:
+  
+  void FrameEncoded(webrtc::VideoCodecType codec,
+                    const webrtc::EncodedImage& encodedImage,
+                    const webrtc::RTPFragmentationHeader* fragmentation);
+  
+  void FrameDecoded(const webrtc::VideoFrame& image);
+  
+  
+  int GetElapsedTimeMicroseconds(int64_t start, int64_t stop);
+  
+  void SetRates(int bit_rate, int frame_rate) override;
+  
+  size_t EncodedFrameSize() override;
+  
+  FrameType EncodedFrameType() override;
+  
+  int NumberDroppedFrames() override;
+  
+  int NumberSpatialResizes() override;
+
+  webrtc::VideoEncoder* encoder_;
+  webrtc::VideoDecoder* decoder_;
+  std::unique_ptr<VideoBitrateAllocator> bitrate_allocator_;
+  FrameReader* frame_reader_;
+  FrameWriter* frame_writer_;
+  PacketManipulator* packet_manipulator_;
+  const TestConfig& config_;
+  Stats* stats_;
+
+  EncodedImageCallback* encode_callback_;
+  DecodedImageCallback* decode_callback_;
+  
+  
+  uint8_t* last_successful_frame_buffer_;
+  
+  bool first_key_frame_has_been_excluded_;
+  
+  bool last_frame_missing_;
+  
+  bool initialized_;
+  size_t encoded_frame_size_;
+  FrameType encoded_frame_type_;
+  int prev_time_stamp_;
+  int num_dropped_frames_;
+  int num_spatial_resizes_;
+  int last_encoder_frame_width_;
+  int last_encoder_frame_height_;
+
+  
+  double bit_rate_factor_;  
+  int64_t encode_start_ns_;
+  int64_t decode_start_ns_;
+
+  
   class VideoProcessorEncodeCompleteCallback
       : public webrtc::EncodedImageCallback {
    public:
-    explicit VideoProcessorEncodeCompleteCallback(
-        VideoProcessor* video_processor)
-        : video_processor_(video_processor),
-          task_queue_(rtc::TaskQueue::Current()) {}
-
+    explicit VideoProcessorEncodeCompleteCallback(VideoProcessorImpl* vp)
+        : video_processor_(vp) {}
     Result OnEncodedImage(
         const webrtc::EncodedImage& encoded_image,
         const webrtc::CodecSpecificInfo* codec_specific_info,
-        const webrtc::RTPFragmentationHeader* fragmentation) override {
-      RTC_CHECK(codec_specific_info);
-
-      if (task_queue_ && !task_queue_->IsCurrent()) {
-        task_queue_->PostTask(
-            std::unique_ptr<rtc::QueuedTask>(new EncodeCallbackTask(
-                video_processor_, encoded_image, codec_specific_info)));
-        return Result(Result::OK, 0);
-      }
-
-      video_processor_->FrameEncoded(codec_specific_info->codecType,
-                                     encoded_image);
-      return Result(Result::OK, 0);
-    }
+        const webrtc::RTPFragmentationHeader* fragmentation) override;
 
    private:
-    class EncodeCallbackTask : public rtc::QueuedTask {
-     public:
-      EncodeCallbackTask(VideoProcessor* video_processor,
-                         const webrtc::EncodedImage& encoded_image,
-                         const webrtc::CodecSpecificInfo* codec_specific_info)
-          : video_processor_(video_processor),
-            buffer_(encoded_image._buffer, encoded_image._length),
-            encoded_image_(encoded_image),
-            codec_specific_info_(*codec_specific_info) {
-        encoded_image_._buffer = buffer_.data();
-      }
-
-      bool Run() override {
-        video_processor_->FrameEncoded(codec_specific_info_.codecType,
-                                       encoded_image_);
-        return true;
-      }
-
-     private:
-      VideoProcessor* const video_processor_;
-      rtc::Buffer buffer_;
-      webrtc::EncodedImage encoded_image_;
-      const webrtc::CodecSpecificInfo codec_specific_info_;
-    };
-
-    VideoProcessor* const video_processor_;
-    rtc::TaskQueue* const task_queue_;
+    VideoProcessorImpl* video_processor_;
   };
 
+  
   class VideoProcessorDecodeCompleteCallback
       : public webrtc::DecodedImageCallback {
    public:
-    explicit VideoProcessorDecodeCompleteCallback(
-        VideoProcessor* video_processor)
-        : video_processor_(video_processor),
-          task_queue_(rtc::TaskQueue::Current()) {}
-
-    int32_t Decoded(webrtc::VideoFrame& image) override {
-      if (task_queue_ && !task_queue_->IsCurrent()) {
-        task_queue_->PostTask(
-            [this, image]() { video_processor_->FrameDecoded(image); });
-        return 0;
-      }
-      video_processor_->FrameDecoded(image);
-      return 0;
-    }
-
+    explicit VideoProcessorDecodeCompleteCallback(VideoProcessorImpl* vp)
+        : video_processor_(vp) {}
+    int32_t Decoded(webrtc::VideoFrame& image) override;
     int32_t Decoded(webrtc::VideoFrame& image,
                     int64_t decode_time_ms) override {
-      return Decoded(image);
-    }
-
-    void Decoded(webrtc::VideoFrame& image,
-                 rtc::Optional<int32_t> decode_time_ms,
-                 rtc::Optional<uint8_t> qp) override {
-      Decoded(image);
+      RTC_NOTREACHED();
+      return -1;
     }
 
    private:
-    VideoProcessor* const video_processor_;
-    rtc::TaskQueue* const task_queue_;
+    VideoProcessorImpl* video_processor_;
   };
-
-  
-  void FrameEncoded(webrtc::VideoCodecType codec,
-                    const webrtc::EncodedImage& encodedImage);
-
-  
-  void FrameDecoded(const webrtc::VideoFrame& image);
-
-  void WriteDecodedFrameToFile(rtc::Buffer* buffer);
-  bool ExcludeFrame(const EncodedImage& encoded_image);
-
-  TestConfig config_ RTC_GUARDED_BY(sequence_checker_);
-
-  webrtc::VideoEncoder* const encoder_;
-  webrtc::VideoDecoder* const decoder_;
-  const std::unique_ptr<VideoBitrateAllocator> bitrate_allocator_;
-
-  
-  VideoProcessorEncodeCompleteCallback encode_callback_;
-  VideoProcessorDecodeCompleteCallback decode_callback_;
-
-  
-  PacketManipulator* const packet_manipulator_;
-
-  
-  
-  
-  
-  std::map<int, std::unique_ptr<VideoFrame>> input_frames_
-      RTC_GUARDED_BY(sequence_checker_);
-
-  
-  
-  FrameReader* const analysis_frame_reader_;
-
-  
-  
-  
-  
-  IvfFileWriter* const encoded_frame_writer_;
-  FrameWriter* const decoded_frame_writer_;
-
-  
-  int last_inputed_frame_num_ RTC_GUARDED_BY(sequence_checker_);
-  int last_encoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
-  int last_decoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
-
-  
-  
-  std::map<uint32_t, int> rtp_timestamp_to_frame_num_
-      RTC_GUARDED_BY(sequence_checker_);
-
-  
-  bool first_key_frame_has_been_excluded_ RTC_GUARDED_BY(sequence_checker_);
-
-  
-  
-  rtc::Buffer last_decoded_frame_buffer_ RTC_GUARDED_BY(sequence_checker_);
-
-  
-  Stats* stats_;
-  std::vector<int> num_dropped_frames_ RTC_GUARDED_BY(sequence_checker_);
-  std::vector<int> num_spatial_resizes_ RTC_GUARDED_BY(sequence_checker_);
-  int rate_update_index_ RTC_GUARDED_BY(sequence_checker_);
-
-  rtc::SequencedTaskChecker sequence_checker_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(VideoProcessor);
 };
 
 }  

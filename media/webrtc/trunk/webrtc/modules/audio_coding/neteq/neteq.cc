@@ -8,12 +8,12 @@
 
 
 
-#include "modules/audio_coding/neteq/include/neteq.h"
+#include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 
 #include <memory>
 #include <sstream>
 
-#include "modules/audio_coding/neteq/neteq_impl.h"
+#include "webrtc/modules/audio_coding/neteq/neteq_impl.h"
 
 namespace webrtc {
 

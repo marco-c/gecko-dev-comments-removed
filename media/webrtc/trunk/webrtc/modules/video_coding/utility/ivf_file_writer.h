@@ -8,17 +8,17 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_UTILITY_IVF_FILE_WRITER_H_
-#define MODULES_VIDEO_CODING_UTILITY_IVF_FILE_WRITER_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_UTILITY_IVF_FILE_WRITER_H_
+#define WEBRTC_MODULES_VIDEO_CODING_UTILITY_IVF_FILE_WRITER_H_
 
 #include <memory>
 #include <string>
 
-#include "common_video/include/video_frame.h"
-#include "modules/include/module_common_types.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/file.h"
-#include "rtc_base/timeutils.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/file.h"
+#include "webrtc/base/timeutils.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/video_frame.h"
 
 namespace webrtc {
 

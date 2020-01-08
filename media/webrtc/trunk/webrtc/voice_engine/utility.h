@@ -12,11 +12,11 @@
 
 
 
-#ifndef VOICE_ENGINE_UTILITY_H_
-#define VOICE_ENGINE_UTILITY_H_
+#ifndef WEBRTC_VOICE_ENGINE_UTILITY_H_
+#define WEBRTC_VOICE_ENGINE_UTILITY_H_
 
-#include "common_audio/resampler/include/push_resampler.h"
-#include "typedefs.h"  
+#include "webrtc/common_audio/resampler/include/push_resampler.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
@@ -44,6 +44,12 @@ void RemixAndResample(const int16_t* src_data,
                       int sample_rate_hz,
                       PushResampler<int16_t>* resampler,
                       AudioFrame* dst_frame);
+
+void MixWithSat(int16_t target[],
+                size_t target_channel,
+                const int16_t source[],
+                size_t source_channel,
+                size_t source_len);
 
 }  
 }  

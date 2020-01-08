@@ -8,14 +8,14 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_SPLITTING_FILTER_H_
-#define MODULES_AUDIO_PROCESSING_SPLITTING_FILTER_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_SPLITTING_FILTER_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_SPLITTING_FILTER_H_
 
 #include <cstring>
 #include <memory>
 #include <vector>
 
-#include "modules/audio_processing/three_band_filter_bank.h"
+#include "webrtc/modules/audio_processing/three_band_filter_bank.h"
 
 namespace webrtc {
 

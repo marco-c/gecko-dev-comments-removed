@@ -8,8 +8,8 @@
 
 
 
-#include "common_audio/channel_buffer.h"
-#include "test/gtest.h"
+#include "webrtc/common_audio/channel_buffer.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

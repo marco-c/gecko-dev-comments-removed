@@ -8,18 +8,20 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_STATISTICS_CALCULATOR_H_
-#define MODULES_AUDIO_CODING_NETEQ_STATISTICS_CALCULATOR_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_STATISTICS_CALCULATOR_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_STATISTICS_CALCULATOR_H_
 
 #include <deque>
 #include <string>
 
-#include "modules/audio_coding/neteq/include/neteq.h"
-#include "rtc_base/constructormagic.h"
-#include "typedefs.h"  
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/audio_coding/neteq/include/neteq.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
+
+class DecisionLogic;
 class DelayManager;
 
 
@@ -37,19 +39,11 @@ class StatisticsCalculator {
 
   
   
-  void ExpandedVoiceSamples(size_t num_samples, bool is_new_concealment_event);
+  void ExpandedVoiceSamples(size_t num_samples);
 
   
   
-  void ExpandedNoiseSamples(size_t num_samples, bool is_new_concealment_event);
-
-  
-  
-  
-  void ExpandedVoiceSamplesCorrection(int num_samples);
-
-  
-  void ExpandedNoiseSamplesCorrection(int num_samples);
+  void ExpandedNoiseSamples(size_t num_samples);
 
   
   
@@ -62,10 +56,7 @@ class StatisticsCalculator {
   void AddZeros(size_t num_samples);
 
   
-  virtual void PacketsDiscarded(size_t num_packets);
-
-  
-  virtual void SecondaryPacketsDiscarded(size_t num_samples);
+  void PacketsDiscarded(size_t num_packets);
 
   
   void LostSamples(size_t num_samples);
@@ -74,9 +65,6 @@ class StatisticsCalculator {
   
   
   void IncreaseCounter(size_t num_samples, int fs_hz);
-
-  
-  void JitterBufferDelay(size_t num_samples, uint64_t waiting_time_ms);
 
   
   void StoreWaitingTime(int waiting_time_ms);
@@ -93,24 +81,12 @@ class StatisticsCalculator {
   
   
   
-  
-  
   void GetNetworkStatistics(int fs_hz,
                             size_t num_samples_in_buffers,
                             size_t samples_per_packet,
+                            const DelayManager& delay_manager,
+                            const DecisionLogic& decision_logic,
                             NetEqNetworkStatistics *stats);
-
-  
-  
-  
-  
-  static void PopulateDelayManagerStats(int ms_per_packet,
-                                        const DelayManager& delay_manager,
-                                        NetEqNetworkStatistics* stats);
-
-  
-  
-  NetEqLifetimeStatistics GetLifetimeStatistics() const;
 
  private:
   static const int kMaxReportPeriod = 60;  
@@ -169,17 +145,8 @@ class StatisticsCalculator {
   };
 
   
-  
-  
-  
-  
-  void ConcealedSamplesCorrection(int num_samples);
-
-  
   static uint16_t CalculateQ14Ratio(size_t numerator, uint32_t denominator);
 
-  NetEqLifetimeStatistics lifetime_stats_;
-  size_t concealed_samples_correction_ = 0;
   size_t preemptive_samples_;
   size_t accelerate_samples_;
   size_t added_zero_samples_;
@@ -190,7 +157,6 @@ class StatisticsCalculator {
   uint32_t timestamps_since_last_report_;
   std::deque<int> waiting_times_;
   uint32_t secondary_decoded_samples_;
-  size_t discarded_secondary_packets_;
   PeriodicUmaCount delayed_packet_outage_counter_;
   PeriodicUmaAverage excess_buffer_delay_;
 

@@ -8,13 +8,13 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_INCLUDE_ISAC_H_
-#define MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_INCLUDE_ISAC_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_INCLUDE_ISAC_H_
+#define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_INCLUDE_ISAC_H_
 
 #include <stddef.h>
 
-#include "modules/audio_coding/codecs/isac/bandwidth_info.h"
-#include "typedefs.h"  
+#include "webrtc/modules/audio_coding/codecs/isac/bandwidth_info.h"
+#include "webrtc/typedefs.h"
 
 typedef struct WebRtcISACStruct    ISACStruct;
 

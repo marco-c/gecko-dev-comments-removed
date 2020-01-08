@@ -8,19 +8,19 @@
 
 
 
-#ifndef SDK_ANDROID_SRC_JNI_ANDROIDMEDIACODECCOMMON_H_
-#define SDK_ANDROID_SRC_JNI_ANDROIDMEDIACODECCOMMON_H_
+#ifndef WEBRTC_SDK_ANDROID_SRC_JNI_ANDROIDMEDIACODECCOMMON_H_
+#define WEBRTC_SDK_ANDROID_SRC_JNI_ANDROIDMEDIACODECCOMMON_H_
 
 #include <android/log.h>
 #include <string>
 
-#include "rtc_base/logging.h"
-#include "rtc_base/thread.h"
-#include "sdk/android/src/jni/classreferenceholder.h"
-#include "sdk/android/src/jni/jni_helpers.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
+#include "webrtc/sdk/android/src/jni/jni_helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/thread.h"
 
-namespace webrtc {
-namespace jni {
+namespace webrtc_jni {
 
 
 
@@ -73,9 +73,18 @@ static inline void AllowBlockingCalls() {
 
 
 
+static inline jobject JavaEnumFromIndexAndClassName(
+    JNIEnv* jni, const std::string& state_class_fragment, int index) {
+  const std::string state_class = "org/webrtc/" + state_class_fragment;
+  return JavaEnumFromIndex(jni, FindClass(jni, state_class.c_str()),
+                           state_class, index);
+}
+
+
+
 static inline bool CheckException(JNIEnv* jni) {
   if (jni->ExceptionCheck()) {
-    RTC_LOG_TAG(rtc::LS_ERROR, TAG_COMMON) << "Java JNI exception.";
+    LOG_TAG(rtc::LS_ERROR, TAG_COMMON) << "Java JNI exception.";
     jni->ExceptionDescribe();
     jni->ExceptionClear();
     return true;
@@ -83,7 +92,6 @@ static inline bool CheckException(JNIEnv* jni) {
   return false;
 }
 
-}  
 }  
 
 #endif  

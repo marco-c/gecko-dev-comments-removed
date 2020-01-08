@@ -7,19 +7,19 @@
 
 
 
-#ifndef MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURE_OPTIONS_H_
-#define MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURE_OPTIONS_H_
+#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURE_OPTIONS_H_
+#define WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURE_OPTIONS_H_
 
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/scoped_ref_ptr.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 
 #if defined(USE_X11)
-#include "modules/desktop_capture/x11/shared_x_display.h"
+#include "webrtc/modules/desktop_capture/x11/shared_x_display.h"
 #endif
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
-#include "modules/desktop_capture/mac/desktop_configuration_monitor.h"
-#include "modules/desktop_capture/mac/full_screen_chrome_window_detector.h"
+#include "webrtc/modules/desktop_capture/mac/desktop_configuration_monitor.h"
+#include "webrtc/modules/desktop_capture/mac/full_screen_chrome_window_detector.h"
 #endif
 
 namespace webrtc {
@@ -49,22 +49,14 @@ class DesktopCaptureOptions {
 #endif
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
-  
-  
-  
   DesktopConfigurationMonitor* configuration_monitor() const {
     return configuration_monitor_;
   }
-  
-  
   void set_configuration_monitor(
       rtc::scoped_refptr<DesktopConfigurationMonitor> m) {
     configuration_monitor_ = m;
   }
 
-  
-  
-  
   FullScreenChromeWindowDetector* full_screen_chrome_window_detector() const {
     return full_screen_window_detector_;
   }
@@ -88,6 +80,8 @@ class DesktopCaptureOptions {
     disable_effects_ = disable_effects;
   }
 
+  
+  
   
   
   

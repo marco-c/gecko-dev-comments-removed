@@ -7,17 +7,16 @@
 
 
 
-#ifndef TEST_FRAME_GENERATOR_H_
-#define TEST_FRAME_GENERATOR_H_
+#ifndef WEBRTC_TEST_FRAME_GENERATOR_H_
+#define WEBRTC_TEST_FRAME_GENERATOR_H_
 
-#include <memory>
 #include <string>
 #include <vector>
 
-#include "api/video/video_frame.h"
-#include "media/base/videosourceinterface.h"
-#include "rtc_base/criticalsection.h"
-#include "typedefs.h"  
+#include "webrtc/api/video/video_frame.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/media/base/videosourceinterface.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 class Clock;
@@ -30,25 +29,25 @@ namespace test {
 class FrameForwarder : public rtc::VideoSourceInterface<VideoFrame> {
  public:
   FrameForwarder();
-  virtual ~FrameForwarder();
   
-  virtual void IncomingCapturedFrame(const VideoFrame& video_frame);
+  void IncomingCapturedFrame(const VideoFrame& video_frame);
   rtc::VideoSinkWants sink_wants() const;
   bool has_sinks() const;
 
- protected:
+ private:
   void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
                        const rtc::VideoSinkWants& wants) override;
   void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override;
 
   rtc::CriticalSection crit_;
-  rtc::VideoSinkInterface<VideoFrame>* sink_ RTC_GUARDED_BY(crit_);
-  rtc::VideoSinkWants sink_wants_ RTC_GUARDED_BY(crit_);
+  rtc::VideoSinkInterface<VideoFrame>* sink_ GUARDED_BY(crit_);
+  rtc::VideoSinkWants sink_wants_ GUARDED_BY(crit_);
 };
 
 class FrameGenerator {
  public:
-  virtual ~FrameGenerator() = default;
+  FrameGenerator() {}
+  virtual ~FrameGenerator() {}
 
   
   virtual VideoFrame* NextFrame() = 0;
@@ -60,20 +59,15 @@ class FrameGenerator {
 
   
   
-  static std::unique_ptr<FrameGenerator> CreateSquareGenerator(int width,
-                                                               int height);
-  static std::unique_ptr<FrameGenerator> CreateSquareGenerator(int width,
-                                                               int height,
-                                                               int num_squares);
+  static FrameGenerator* CreateChromaGenerator(size_t width, size_t height);
 
   
   
   
-  static std::unique_ptr<FrameGenerator> CreateFromYuvFile(
-      std::vector<std::string> files,
-      size_t width,
-      size_t height,
-      int frame_repeat_count);
+  static FrameGenerator* CreateFromYuvFile(std::vector<std::string> files,
+                                           size_t width,
+                                           size_t height,
+                                           int frame_repeat_count);
 
   
   
@@ -83,7 +77,7 @@ class FrameGenerator {
   
   
   
-  static std::unique_ptr<FrameGenerator> CreateScrollingInputFromYuvFiles(
+  static FrameGenerator* CreateScrollingInputFromYuvFiles(
       Clock* clock,
       std::vector<std::string> filenames,
       size_t source_width,
@@ -92,11 +86,6 @@ class FrameGenerator {
       size_t target_height,
       int64_t scroll_time_ms,
       int64_t pause_time_ms);
-
-  
-  
-  static std::unique_ptr<FrameGenerator> CreateSlideGenerator(
-      int width, int height, int frame_repeat_count);
 };
 }  
 }  

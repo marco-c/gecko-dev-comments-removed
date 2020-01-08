@@ -8,13 +8,14 @@
 
 
 
-#ifndef COMMON_VIDEO_H264_H264_COMMON_H_
-#define COMMON_VIDEO_H264_H264_COMMON_H_
+#ifndef WEBRTC_COMMON_VIDEO_H264_H264_COMMON_H_
+#define WEBRTC_COMMON_VIDEO_H264_H264_COMMON_H_
 
 #include <memory>
 #include <vector>
 
-#include "rtc_base/buffer.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/buffer.h"
 
 namespace webrtc {
 
@@ -30,18 +31,19 @@ const size_t kNaluShortStartSequenceSize = 3;
 
 const size_t kNaluTypeSize = 1;
 
-enum NaluType : uint8_t {
-  kSlice = 1,
-  kIdr = 5,
-  kSei = 6,
-  kSps = 7,
-  kPps = 8,
+enum NaluType : uint8_t { 
+  kSlice = 1, 
+  kIdr = 5, 
+  kSei = 6, 
+  kSps = 7, 
+  kPps = 8, 
   kAud = 9,
   kEndOfSequence = 10,
   kEndOfStream = 11,
   kFiller = 12,
-  kStapA = 24,
-  kFuA = 28
+  kPrefix = 14, 
+  kStapA = 24, 
+  kFuA = 28 
 };
 enum SeiType : uint8_t {
   kSeiRecPt = 6, 
@@ -79,7 +81,7 @@ NaluType ParseNaluType(uint8_t data);
 
 
 
-std::vector<uint8_t> ParseRbsp(const uint8_t* data, size_t length);
+std::unique_ptr<rtc::Buffer> ParseRbsp(const uint8_t* data, size_t length);
 
 
 

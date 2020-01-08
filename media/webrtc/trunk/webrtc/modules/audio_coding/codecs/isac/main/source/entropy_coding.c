@@ -42,7 +42,7 @@ static const uint16_t kOneBitEqualProbCdf[3] = {
     0, 32768, 65535 };
 
 
-static const uint16_t* const kOneBitEqualProbCdf_ptr[1] = {
+static const uint16_t* kOneBitEqualProbCdf_ptr[1] = {
     kOneBitEqualProbCdf };
 
 
@@ -1843,7 +1843,7 @@ static const uint16_t kBwCdf[25] = {
     62804, 65535 };
 
 
-static const uint16_t* const kBwCdfPtr[1] = { kBwCdf };
+static const uint16_t* kBwCdfPtr[1] = { kBwCdf };
 
 
 static const uint16_t kBwInitIndex[1] = { 7 };

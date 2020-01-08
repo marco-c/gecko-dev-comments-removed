@@ -8,12 +8,12 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_DELAY_PEAK_DETECTOR_H_
-#define MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_DELAY_PEAK_DETECTOR_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_DELAY_PEAK_DETECTOR_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_DELAY_PEAK_DETECTOR_H_
 
-#include "modules/audio_coding/neteq/delay_peak_detector.h"
+#include "webrtc/modules/audio_coding/neteq/delay_peak_detector.h"
 
-#include "test/gmock.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 

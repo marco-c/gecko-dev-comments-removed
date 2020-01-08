@@ -8,17 +8,17 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_FRAME_BUFFER_H_
-#define MODULES_VIDEO_CODING_FRAME_BUFFER_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_FRAME_BUFFER_H_
+#define WEBRTC_MODULES_VIDEO_CODING_FRAME_BUFFER_H_
 
 #include <vector>
 
-#include "modules/include/module_common_types.h"
-#include "modules/video_coding/include/video_coding.h"
-#include "modules/video_coding/encoded_frame.h"
-#include "modules/video_coding/jitter_buffer_common.h"
-#include "modules/video_coding/session_info.h"
-#include "typedefs.h"  
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/video_coding/include/video_coding.h"
+#include "webrtc/modules/video_coding/encoded_frame.h"
+#include "webrtc/modules/video_coding/jitter_buffer_common.h"
+#include "webrtc/modules/video_coding/session_info.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

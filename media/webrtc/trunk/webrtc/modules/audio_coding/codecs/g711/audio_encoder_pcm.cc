@@ -8,14 +8,13 @@
 
 
 
-#include "modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
+#include "webrtc/modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
 
-#include <algorithm>
 #include <limits>
 
-#include "common_types.h"  
-#include "modules/audio_coding/codecs/g711/g711_interface.h"
-#include "rtc_base/checks.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/codecs/g711/g711_interface.h"
 
 namespace webrtc {
 

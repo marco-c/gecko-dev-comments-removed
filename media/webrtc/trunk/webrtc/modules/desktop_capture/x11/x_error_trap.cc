@@ -8,28 +8,26 @@
 
 
 
-#include "modules/desktop_capture/x11/x_error_trap.h"
+#include "webrtc/modules/desktop_capture/x11/x_error_trap.h"
 
 #include <assert.h>
-
 #include <limits>
 
 namespace webrtc {
 
 
-static bool g_xserver_error_trap_enabled = false;
-static int g_last_xserver_error_code = 0;
-
 Bool XErrorTrap::XServerErrorHandler(Display* display, xReply* rep,
                                      char* , int ,
                                      XPointer data) {
   XErrorTrap* self = reinterpret_cast<XErrorTrap*>(data);
+
   if (rep->generic.type != X_Error ||
       
       
       self->last_ignored_request_ - display->last_request_read <
       std::numeric_limits<unsigned long>::max() >> 1)
     return False;
+
   self->last_xserver_error_code_ = rep->error.errorCode;
   return True;
 }

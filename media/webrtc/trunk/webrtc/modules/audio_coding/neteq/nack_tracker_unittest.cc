@@ -8,16 +8,16 @@
 
 
 
-#include "modules/audio_coding/neteq/nack_tracker.h"
+#include "webrtc/modules/audio_coding/neteq/nack_tracker.h"
 
 #include <stdint.h>
 
 #include <algorithm>
 #include <memory>
 
-#include "modules/audio_coding/include/audio_coding_module_typedefs.h"
-#include "test/gtest.h"
-#include "typedefs.h"  
+#include "webrtc/modules/audio_coding/include/audio_coding_module_typedefs.h"
+#include "webrtc/test/gtest.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 namespace {

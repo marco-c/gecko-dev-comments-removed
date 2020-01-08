@@ -8,13 +8,13 @@
 
 
 
-#ifndef COMMON_AUDIO_REAL_FOURIER_H_
-#define COMMON_AUDIO_REAL_FOURIER_H_
+#ifndef WEBRTC_COMMON_AUDIO_REAL_FOURIER_H_
+#define WEBRTC_COMMON_AUDIO_REAL_FOURIER_H_
 
 #include <complex>
 #include <memory>
 
-#include "system_wrappers/include/aligned_malloc.h"
+#include "webrtc/system_wrappers/include/aligned_malloc.h"
 
 
 
@@ -35,7 +35,7 @@ class RealFourier {
   
   
   static std::unique_ptr<RealFourier> Create(int fft_order);
-  virtual ~RealFourier() {}
+  virtual ~RealFourier() {};
 
   
   

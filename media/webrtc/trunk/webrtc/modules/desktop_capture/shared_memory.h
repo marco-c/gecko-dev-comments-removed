@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_DESKTOP_CAPTURE_SHARED_MEMORY_H_
-#define MODULES_DESKTOP_CAPTURE_SHARED_MEMORY_H_
+#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_SHARED_MEMORY_H_
+#define WEBRTC_MODULES_DESKTOP_CAPTURE_SHARED_MEMORY_H_
 
 #include <stddef.h>
 
@@ -19,9 +19,8 @@
 
 #include <memory>
 
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/thread_checker.h"
-#include "typedefs.h"  
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

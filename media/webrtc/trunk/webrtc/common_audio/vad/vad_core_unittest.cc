@@ -10,23 +10,22 @@
 
 #include <stdlib.h>
 
-#include "common_audio/vad/vad_unittest.h"
-#include "test/gtest.h"
-#include "typedefs.h"  
+#include "webrtc/common_audio/vad/vad_unittest.h"
+#include "webrtc/test/gtest.h"
+#include "webrtc/typedefs.h"
 
 extern "C" {
-#include "common_audio/vad/vad_core.h"
+#include "webrtc/common_audio/vad/vad_core.h"
 }
 
-namespace webrtc {
-namespace test {
+namespace {
 
 TEST_F(VadTest, InitCore) {
   
   VadInstT* self = reinterpret_cast<VadInstT*>(malloc(sizeof(VadInstT)));
 
   
-  EXPECT_EQ(-1, WebRtcVad_InitCore(nullptr));
+  EXPECT_EQ(-1, WebRtcVad_InitCore(NULL));
 
   
   EXPECT_EQ(0, WebRtcVad_InitCore(self));
@@ -103,5 +102,4 @@ TEST_F(VadTest, CalcVad) {
 
   free(self);
 }
-}  
 }  

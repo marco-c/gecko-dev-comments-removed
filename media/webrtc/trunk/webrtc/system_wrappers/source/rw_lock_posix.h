@@ -8,11 +8,11 @@
 
 
 
-#ifndef SYSTEM_WRAPPERS_SOURCE_RW_LOCK_POSIX_H_
-#define SYSTEM_WRAPPERS_SOURCE_RW_LOCK_POSIX_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_POSIX_H_
+#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_POSIX_H_
 
-#include "system_wrappers/include/rw_lock_wrapper.h"
-#include "typedefs.h"  
+#include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
+#include "webrtc/typedefs.h"
 
 #include <pthread.h>
 

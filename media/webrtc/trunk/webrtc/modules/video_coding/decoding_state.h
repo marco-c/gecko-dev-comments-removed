@@ -8,14 +8,14 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_DECODING_STATE_H_
-#define MODULES_VIDEO_CODING_DECODING_STATE_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_DECODING_STATE_H_
+#define WEBRTC_MODULES_VIDEO_CODING_DECODING_STATE_H_
 
 #include <map>
 #include <set>
 #include <vector>
 
-#include "typedefs.h"  
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

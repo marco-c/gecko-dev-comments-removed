@@ -9,15 +9,14 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_CODECS_VP8_DEFAULT_TEMPORAL_LAYERS_H_
-#define MODULES_VIDEO_CODING_CODECS_VP8_DEFAULT_TEMPORAL_LAYERS_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_DEFAULT_TEMPORAL_LAYERS_H_
+#define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_DEFAULT_TEMPORAL_LAYERS_H_
 
-#include <set>
 #include <vector>
 
-#include "modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 
-#include "api/optional.h"
+#include "webrtc/base/optional.h"
 
 namespace webrtc {
 
@@ -29,7 +28,7 @@ class DefaultTemporalLayers : public TemporalLayers {
 
   
   
-  TemporalLayers::FrameConfig UpdateLayerConfig(uint32_t timestamp) override;
+  int EncodeFlags(uint32_t timestamp) override;
 
   
   
@@ -39,51 +38,60 @@ class DefaultTemporalLayers : public TemporalLayers {
 
   bool UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) override;
 
-  void PopulateCodecSpecific(bool frame_is_keyframe,
-                             const TemporalLayers::FrameConfig& tl_config,
+  void PopulateCodecSpecific(bool base_layer_sync,
                              CodecSpecificInfoVP8* vp8_info,
                              uint32_t timestamp) override;
 
-  void FrameEncoded(unsigned int size, int qp) override {}
+  void FrameEncoded(unsigned int size, uint32_t timestamp, int qp) override {}
 
-  uint8_t Tl0PicIdx() const override;
+  int CurrentLayerId() const override;
 
  private:
-  const size_t num_layers_;
-  const std::vector<unsigned int> temporal_ids_;
-  const std::vector<bool> temporal_layer_sync_;
-  const std::vector<TemporalLayers::FrameConfig> temporal_pattern_;
+  enum TemporalReferences {
+    
+    
+    kTemporalUpdateLastRefAll = 12,
+    
+    
+    kTemporalUpdateLastAndGoldenRefAltRef = 11,
+    
+    kTemporalUpdateGoldenRefAltRef = 10,
+    
+    kTemporalUpdateGoldenWithoutDependencyRefAltRef = 9,
+    
+    kTemporalUpdateLastRefAltRef = 8,
+    
+    
+    kTemporalUpdateNoneNoRefGoldenRefAltRef = 7,
+    
+    kTemporalUpdateNoneNoRefAltref = 6,
+    
+    kTemporalUpdateNone = 5,
+    
+    kTemporalUpdateAltref = 4,
+    
+    
+    kTemporalUpdateAltrefWithoutDependency = 3,
+    
+    kTemporalUpdateGolden = 2,
+    
+    
+    kTemporalUpdateGoldenWithoutDependency = 1,
+    
+    kTemporalUpdateLast = 0,
+  };
+  enum { kMaxTemporalPattern = 16 };
 
+  const int number_of_temporal_layers_;
+  int temporal_ids_length_;
+  int temporal_ids_[kMaxTemporalPattern];
+  int temporal_pattern_length_;
+  TemporalReferences temporal_pattern_[kMaxTemporalPattern];
   uint8_t tl0_pic_idx_;
   uint8_t pattern_idx_;
+  uint32_t timestamp_;
   bool last_base_layer_sync_;
   rtc::Optional<std::vector<uint32_t>> new_bitrates_kbps_;
-};
-
-class DefaultTemporalLayersChecker : public TemporalLayersChecker {
- public:
-  DefaultTemporalLayersChecker(int number_of_temporal_layers,
-                               uint8_t initial_tl0_pic_idx);
-  bool CheckTemporalConfig(
-      bool frame_is_keyframe,
-      const TemporalLayers::FrameConfig& frame_config) override;
-
- private:
-  struct BufferState {
-    BufferState()
-        : is_updated_this_cycle(false), is_keyframe(true), pattern_idx(0) {}
-
-    bool is_updated_this_cycle;
-    bool is_keyframe;
-    uint8_t pattern_idx;
-  };
-  const size_t num_layers_;
-  std::vector<unsigned int> temporal_ids_;
-  const std::vector<std::set<uint8_t>> temporal_dependencies_;
-  BufferState last_;
-  BufferState arf_;
-  BufferState golden_;
-  uint8_t pattern_idx_;
 };
 
 }  

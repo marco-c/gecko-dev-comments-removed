@@ -8,8 +8,8 @@
 
 
 
-#ifndef API_CALL_AUDIO_SINK_H_
-#define API_CALL_AUDIO_SINK_H_
+#ifndef WEBRTC_API_CALL_AUDIO_SINK_H_
+#define WEBRTC_API_CALL_AUDIO_SINK_H_
 
 #if defined(WEBRTC_POSIX) && !defined(__STDC_FORMAT_MACROS)
 
@@ -27,7 +27,7 @@ class AudioSinkInterface {
   virtual ~AudioSinkInterface() {}
 
   struct Data {
-    Data(const int16_t* data,
+    Data(int16_t* data,
          size_t samples_per_channel,
          int sample_rate,
          size_t channels,
@@ -38,7 +38,7 @@ class AudioSinkInterface {
           channels(channels),
           timestamp(timestamp) {}
 
-    const int16_t* data;         
+    int16_t* data;               
     size_t samples_per_channel;  
     int sample_rate;             
     size_t channels;             

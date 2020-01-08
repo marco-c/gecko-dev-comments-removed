@@ -8,32 +8,15 @@
 
 
 
-#ifndef API_VIDEO_VIDEO_FRAME_BUFFER_H_
-#define API_VIDEO_VIDEO_FRAME_BUFFER_H_
+#ifndef WEBRTC_API_VIDEO_VIDEO_FRAME_BUFFER_H_
+#define WEBRTC_API_VIDEO_VIDEO_FRAME_BUFFER_H_
 
 #include <stdint.h>
 
-#include "rtc_base/refcount.h"
-#include "rtc_base/scoped_ref_ptr.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 
 namespace webrtc {
-
-class I420BufferInterface;
-class I420ABufferInterface;
-class I444BufferInterface;
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -41,48 +24,8 @@ class VideoFrameBuffer : public rtc::RefCountInterface {
  public:
   
   
-  
-  enum class Type {
-    kNative,
-    kI420,
-    kI420A,
-    kI444,
-  };
-
-  
-  virtual Type type() const = 0;
-
-  
-  
   virtual int width() const = 0;
   virtual int height() const = 0;
-
-  
-  
-  
-  
-  virtual rtc::scoped_refptr<I420BufferInterface> ToI420() = 0;
-
-  
-  
-  
-  
-  rtc::scoped_refptr<I420BufferInterface> GetI420();
-  rtc::scoped_refptr<const I420BufferInterface> GetI420() const;
-  I420ABufferInterface* GetI420A();
-  const I420ABufferInterface* GetI420A() const;
-  I444BufferInterface* GetI444();
-  const I444BufferInterface* GetI444() const;
-
- protected:
-  ~VideoFrameBuffer() override {}
-};
-
-
-class PlanarYuvBuffer : public VideoFrameBuffer {
- public:
-  virtual int ChromaWidth() const = 0;
-  virtual int ChromaHeight() const = 0;
 
   
   
@@ -95,42 +38,16 @@ class PlanarYuvBuffer : public VideoFrameBuffer {
   virtual int StrideU() const = 0;
   virtual int StrideV() const = 0;
 
- protected:
-  ~PlanarYuvBuffer() override {}
-};
+  
+  
+  virtual void* native_handle() const = 0;
 
-class I420BufferInterface : public PlanarYuvBuffer {
- public:
-  Type type() const override;
-
-  int ChromaWidth() const final;
-  int ChromaHeight() const final;
-
-  rtc::scoped_refptr<I420BufferInterface> ToI420() final;
+  
+  
+  virtual rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() = 0;
 
  protected:
-  ~I420BufferInterface() override {}
-};
-
-class I420ABufferInterface : public I420BufferInterface {
- public:
-  Type type() const final;
-  virtual const uint8_t* DataA() const = 0;
-  virtual int StrideA() const = 0;
-
- protected:
-  ~I420ABufferInterface() override {}
-};
-
-class I444BufferInterface : public PlanarYuvBuffer {
- public:
-  Type type() const final;
-
-  int ChromaWidth() const final;
-  int ChromaHeight() const final;
-
- protected:
-  ~I444BufferInterface() override {}
+  ~VideoFrameBuffer() override {}
 };
 
 }  

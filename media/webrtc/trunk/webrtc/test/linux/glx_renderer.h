@@ -8,14 +8,14 @@
 
 
 
-#ifndef TEST_LINUX_GLX_RENDERER_H_
-#define TEST_LINUX_GLX_RENDERER_H_
+#ifndef WEBRTC_TEST_LINUX_GLX_RENDERER_H_
+#define WEBRTC_TEST_LINUX_GLX_RENDERER_H_
 
 #include <GL/glx.h>
 #include <X11/Xlib.h>
 
-#include "test/gl/gl_renderer.h"
-#include "typedefs.h"  
+#include "webrtc/test/gl/gl_renderer.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 namespace test {

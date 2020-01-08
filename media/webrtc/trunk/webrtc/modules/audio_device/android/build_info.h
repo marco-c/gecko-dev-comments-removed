@@ -8,14 +8,14 @@
 
 
 
-#ifndef MODULES_AUDIO_DEVICE_ANDROID_BUILD_INFO_H_
-#define MODULES_AUDIO_DEVICE_ANDROID_BUILD_INFO_H_
+#ifndef WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_BUILD_INFO_H_
+#define WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_BUILD_INFO_H_
 
 #include <jni.h>
 #include <memory>
 #include <string>
 
-#include "modules/utility/include/jvm_android.h"
+#include "webrtc/modules/utility/include/jvm_android.h"
 
 namespace webrtc {
 

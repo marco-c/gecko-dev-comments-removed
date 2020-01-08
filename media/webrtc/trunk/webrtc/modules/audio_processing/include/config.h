@@ -8,13 +8,13 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_INCLUDE_CONFIG_H_
-#define MODULES_AUDIO_PROCESSING_INCLUDE_CONFIG_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_CONFIG_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_CONFIG_H_
 
 #include <map>
 
-#include "rtc_base/basictypes.h"
-#include "rtc_base/constructormagic.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace webrtc {
 

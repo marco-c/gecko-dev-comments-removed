@@ -43,10 +43,6 @@ public class VideoRenderer {
     public int rotationDegree;
 
     
-    
-    private final VideoFrame.Buffer backingBuffer;
-
-    
 
 
     public I420Frame(int width, int height, int rotationDegree, int[] yuvStrides,
@@ -58,7 +54,6 @@ public class VideoRenderer {
       this.yuvFrame = true;
       this.rotationDegree = rotationDegree;
       this.nativeFramePointer = nativeFramePointer;
-      backingBuffer = null;
       if (rotationDegree % 90 != 0) {
         throw new IllegalArgumentException("Rotation degree not multiple of 90: " + rotationDegree);
       }
@@ -66,7 +61,13 @@ public class VideoRenderer {
       
       
       
-      samplingMatrix = RendererCommon.verticalFlipMatrix();
+      
+      samplingMatrix = new float[] {
+          1,  0, 0, 0,
+          0, -1, 0, 0,
+          0,  0, 1, 0,
+          0,  1, 0, 1};
+      
     }
 
     
@@ -83,55 +84,9 @@ public class VideoRenderer {
       this.yuvFrame = false;
       this.rotationDegree = rotationDegree;
       this.nativeFramePointer = nativeFramePointer;
-      backingBuffer = null;
       if (rotationDegree % 90 != 0) {
         throw new IllegalArgumentException("Rotation degree not multiple of 90: " + rotationDegree);
       }
-    }
-
-    
-
-
-    public I420Frame(int rotationDegree, VideoFrame.Buffer buffer, long nativeFramePointer) {
-      this.width = buffer.getWidth();
-      this.height = buffer.getHeight();
-      this.rotationDegree = rotationDegree;
-      if (rotationDegree % 90 != 0) {
-        throw new IllegalArgumentException("Rotation degree not multiple of 90: " + rotationDegree);
-      }
-      if (buffer instanceof VideoFrame.TextureBuffer
-          && ((VideoFrame.TextureBuffer) buffer).getType() == VideoFrame.TextureBuffer.Type.OES) {
-        VideoFrame.TextureBuffer textureBuffer = (VideoFrame.TextureBuffer) buffer;
-        this.yuvFrame = false;
-        this.textureId = textureBuffer.getTextureId();
-        this.samplingMatrix = RendererCommon.convertMatrixFromAndroidGraphicsMatrix(
-            textureBuffer.getTransformMatrix());
-
-        this.yuvStrides = null;
-        this.yuvPlanes = null;
-      } else if (buffer instanceof VideoFrame.I420Buffer) {
-        VideoFrame.I420Buffer i420Buffer = (VideoFrame.I420Buffer) buffer;
-        this.yuvFrame = true;
-        this.yuvStrides =
-            new int[] {i420Buffer.getStrideY(), i420Buffer.getStrideU(), i420Buffer.getStrideV()};
-        this.yuvPlanes =
-            new ByteBuffer[] {i420Buffer.getDataY(), i420Buffer.getDataU(), i420Buffer.getDataV()};
-        
-        
-        
-        
-        this.samplingMatrix = RendererCommon.verticalFlipMatrix();
-
-        this.textureId = 0;
-      } else {
-        this.yuvFrame = false;
-        this.textureId = 0;
-        this.samplingMatrix = null;
-        this.yuvStrides = null;
-        this.yuvPlanes = null;
-      }
-      this.nativeFramePointer = nativeFramePointer;
-      backingBuffer = buffer;
     }
 
     public int rotatedWidth() {
@@ -144,35 +99,7 @@ public class VideoRenderer {
 
     @Override
     public String toString() {
-      final String type = yuvFrame
-          ? "Y: " + yuvStrides[0] + ", U: " + yuvStrides[1] + ", V: " + yuvStrides[2]
-          : "Texture: " + textureId;
-      return width + "x" + height + ", " + type;
-    }
-
-    
-
-
-
-    VideoFrame toVideoFrame() {
-      final VideoFrame.Buffer buffer;
-      if (backingBuffer != null) {
-        
-        
-        backingBuffer.retain();
-        VideoRenderer.renderFrameDone(this);
-        buffer = backingBuffer;
-      } else if (yuvFrame) {
-        buffer = JavaI420Buffer.wrap(width, height, yuvPlanes[0], yuvStrides[0], yuvPlanes[1],
-            yuvStrides[1], yuvPlanes[2], yuvStrides[2],
-            () -> { VideoRenderer.renderFrameDone(this); });
-      } else {
-        
-        buffer = new TextureBufferImpl(width, height, VideoFrame.TextureBuffer.Type.OES, textureId,
-            RendererCommon.convertMatrixToAndroidGraphicsMatrix(samplingMatrix),
-            null , () -> { VideoRenderer.renderFrameDone(this); });
-      }
-      return new VideoFrame(buffer, rotationDegree, 0 );
+      return width + "x" + height + ":" + yuvStrides[0] + ":" + yuvStrides[1] + ":" + yuvStrides[2];
     }
   }
 

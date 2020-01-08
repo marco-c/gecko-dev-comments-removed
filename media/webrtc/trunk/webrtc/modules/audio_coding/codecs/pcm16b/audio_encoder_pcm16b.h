@@ -8,11 +8,11 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_CODECS_PCM16B_AUDIO_ENCODER_PCM16B_H_
-#define MODULES_AUDIO_CODING_CODECS_PCM16B_AUDIO_ENCODER_PCM16B_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_PCM16B_AUDIO_ENCODER_PCM16B_H_
+#define WEBRTC_MODULES_AUDIO_CODING_CODECS_PCM16B_AUDIO_ENCODER_PCM16B_H_
 
-#include "modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
-#include "rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
 
 namespace webrtc {
 

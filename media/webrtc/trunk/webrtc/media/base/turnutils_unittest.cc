@@ -8,11 +8,11 @@
 
 
 
-#include "media/base/turnutils.h"
+#include "webrtc/media/base/turnutils.h"
 
 #include <stddef.h>
 
-#include "rtc_base/gunit.h"
+#include "webrtc/base/gunit.h"
 
 namespace cricket {
 

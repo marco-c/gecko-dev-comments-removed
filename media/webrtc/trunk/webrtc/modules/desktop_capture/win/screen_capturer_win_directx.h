@@ -8,21 +8,20 @@
 
 
 
-#ifndef MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURER_WIN_DIRECTX_H_
-#define MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURER_WIN_DIRECTX_H_
+#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURER_WIN_DIRECTX_H_
+#define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURER_WIN_DIRECTX_H_
 
 #include <D3DCommon.h>
 
 #include <memory>
 #include <vector>
 
-#include "modules/desktop_capture/desktop_capture_options.h"
-#include "modules/desktop_capture/desktop_capturer.h"
-#include "modules/desktop_capture/desktop_region.h"
-#include "modules/desktop_capture/screen_capture_frame_queue.h"
-#include "modules/desktop_capture/win/dxgi_duplicator_controller.h"
-#include "modules/desktop_capture/win/dxgi_frame.h"
-#include "rtc_base/scoped_ref_ptr.h"
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
+#include "webrtc/modules/desktop_capture/desktop_capture_options.h"
+#include "webrtc/modules/desktop_capture/desktop_region.h"
+#include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
+#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
+#include "webrtc/modules/desktop_capture/win/dxgi_duplicator_controller.h"
 
 namespace webrtc {
 
@@ -44,35 +43,10 @@ class ScreenCapturerWinDirectx : public DesktopCapturer {
   
   static bool RetrieveD3dInfo(D3dInfo* info);
 
-  
-  
-  
-  
-  
-  static bool IsCurrentSessionSupported();
-
-  
-  
-  
-  
-  
-  
-  static bool GetScreenListFromDeviceNames(
-      const std::vector<std::string>& device_names,
-      DesktopCapturer::SourceList* screens);
-
-  
-  
-  
-  
-  static int GetIndexFromScreenId(ScreenId id,
-                                  const std::vector<std::string>& device_names);
-
-  explicit ScreenCapturerWinDirectx();
+  explicit ScreenCapturerWinDirectx(const DesktopCaptureOptions& options);
 
   ~ScreenCapturerWinDirectx() override;
 
-  
   void Start(Callback* callback) override;
   void Stop() override;
   void SetSharedMemoryFactory(
@@ -82,10 +56,15 @@ class ScreenCapturerWinDirectx : public DesktopCapturer {
   bool SelectSource(SourceId id) override;
 
  private:
-  const rtc::scoped_refptr<DxgiDuplicatorController> controller_;
-  ScreenCaptureFrameQueue<DxgiFrame> frames_;
+  
+  DesktopSize SelectedDesktopSize() const;
+
+  ScreenCaptureFrameQueue<SharedDesktopFrame> frames_;
   std::unique_ptr<SharedMemoryFactory> shared_memory_factory_;
   Callback* callback_ = nullptr;
+
+  DxgiDuplicatorController::Context context_;
+
   SourceId current_screen_id_ = kFullDesktopScreenId;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerWinDirectx);

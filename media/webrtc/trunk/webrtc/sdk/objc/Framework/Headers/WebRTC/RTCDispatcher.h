@@ -37,9 +37,4 @@ RTC_EXPORT
 + (void)dispatchAsyncOnType:(RTCDispatcherQueueType)dispatchType
                       block:(dispatch_block_t)block;
 
-
-
-
-+ (BOOL)isOnQueueForType:(RTCDispatcherQueueType)dispatchType;
-
 @end

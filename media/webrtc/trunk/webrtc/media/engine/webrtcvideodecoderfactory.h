@@ -8,14 +8,11 @@
 
 
 
-#ifndef MEDIA_ENGINE_WEBRTCVIDEODECODERFACTORY_H_
-#define MEDIA_ENGINE_WEBRTCVIDEODECODERFACTORY_H_
+#ifndef WEBRTC_MEDIA_ENGINE_WEBRTCVIDEODECODERFACTORY_H_
+#define WEBRTC_MEDIA_ENGINE_WEBRTCVIDEODECODERFACTORY_H_
 
-#include <string>
-
-#include "common_types.h"  
-#include "media/base/codec.h"
-#include "rtc_base/refcount.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/common_types.h"
 
 namespace webrtc {
 class VideoDecoder;
@@ -27,25 +24,17 @@ struct VideoDecoderParams {
   std::string receive_stream_id;
 };
 
-
-
 class WebRtcVideoDecoderFactory {
  public:
   
   
-  virtual webrtc::VideoDecoder* CreateVideoDecoderWithParams(
-      const VideoCodec& codec,
-      VideoDecoderParams params);
-
-  
-  
-  
-  virtual webrtc::VideoDecoder* CreateVideoDecoder(webrtc::VideoCodecType type);
-
+  virtual webrtc::VideoDecoder* CreateVideoDecoder(
+      webrtc::VideoCodecType type) = 0;
   virtual webrtc::VideoDecoder* CreateVideoDecoderWithParams(
       webrtc::VideoCodecType type,
-      VideoDecoderParams params);
-
+      VideoDecoderParams params) {
+    return CreateVideoDecoder(type);
+  }
   virtual ~WebRtcVideoDecoderFactory() {}
 
   virtual void DestroyVideoDecoder(webrtc::VideoDecoder* decoder) = 0;

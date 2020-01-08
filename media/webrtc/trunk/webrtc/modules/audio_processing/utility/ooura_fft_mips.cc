@@ -8,10 +8,10 @@
 
 
 
-#include "modules/audio_processing/utility/ooura_fft.h"
+#include "webrtc/modules/audio_processing/utility/ooura_fft.h"
 
-#include "modules/audio_processing/utility/ooura_fft_tables_common.h"
-#include "typedefs.h"  
+#include "webrtc/modules/audio_processing/utility/ooura_fft_tables_common.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

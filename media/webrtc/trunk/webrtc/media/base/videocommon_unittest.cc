@@ -8,8 +8,8 @@
 
 
 
-#include "media/base/videocommon.h"
-#include "rtc_base/gunit.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/media/base/videocommon.h"
 
 namespace cricket {
 

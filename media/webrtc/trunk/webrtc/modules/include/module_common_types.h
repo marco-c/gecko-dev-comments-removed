@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_INCLUDE_MODULE_COMMON_TYPES_H_
-#define MODULES_INCLUDE_MODULE_COMMON_TYPES_H_
+#ifndef WEBRTC_MODULES_INCLUDE_MODULE_COMMON_TYPES_H_
+#define WEBRTC_MODULES_INCLUDE_MODULE_COMMON_TYPES_H_
 
 #include <assert.h>
 #include <string.h>  
@@ -17,18 +17,15 @@
 #include <algorithm>
 #include <limits>
 
-#include "api/optional.h"
-#include "api/video/video_rotation.h"
-#include "common_types.h"  
-#include "modules/include/module_common_types_public.h"
-#include "modules/video_coding/codecs/h264/include/h264_globals.h"
-#include "modules/video_coding/codecs/vp8/include/vp8_globals.h"
-#include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/deprecation.h"
-#include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/timeutils.h"
-#include "typedefs.h"  
+#include "webrtc/api/video/video_rotation.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/deprecation.h"
+#include "webrtc/base/safe_conversions.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/video_coding/codecs/vp8/include/vp8_globals.h"
+#include "webrtc/modules/video_coding/codecs/vp9/include/vp9_globals.h"
+#include "webrtc/modules/video_coding/codecs/h264/include/h264_globals.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
@@ -61,11 +58,10 @@ struct RTPVideoHeader {
 
   PlayoutDelay playout_delay;
 
-  VideoContentType content_type;
-
-  VideoSendTiming video_timing;
-
-  bool is_first_packet_in_frame;
+  union {
+    bool is_first_packet_in_frame;
+    RTC_DEPRECATED bool isFirstPacket;  
+  };
   uint8_t simulcastIdx;  
                          
   RtpVideoCodecTypes codec;
@@ -91,29 +87,13 @@ class RTPFragmentationHeader {
         fragmentationOffset(NULL),
         fragmentationLength(NULL),
         fragmentationTimeDiff(NULL),
-        fragmentationPlType(NULL) {}
-
-  RTPFragmentationHeader(RTPFragmentationHeader&& other)
-      : RTPFragmentationHeader() {
-    std::swap(*this, other);
-  }
+        fragmentationPlType(NULL) {};
 
   ~RTPFragmentationHeader() {
     delete[] fragmentationOffset;
     delete[] fragmentationLength;
     delete[] fragmentationTimeDiff;
     delete[] fragmentationPlType;
-  }
-
-  void operator=(RTPFragmentationHeader&& other) { std::swap(*this, other); }
-
-  friend void swap(RTPFragmentationHeader& a, RTPFragmentationHeader& b) {
-    using std::swap;
-    swap(a.fragmentationVectorSize, b.fragmentationVectorSize);
-    swap(a.fragmentationOffset, b.fragmentationOffset);
-    swap(a.fragmentationLength, b.fragmentationLength);
-    swap(a.fragmentationTimeDiff, b.fragmentationTimeDiff);
-    swap(a.fragmentationPlType, b.fragmentationPlType);
   }
 
   void CopyFrom(const RTPFragmentationHeader& src) {
@@ -294,18 +274,14 @@ class CallStatsObserver {
 
 
 
+
+
+
 class AudioFrame {
  public:
   
-  
-  
-  
-  
-  
   enum : size_t {
-    
-    kMaxDataSizeSamples = 3840,
-    kMaxDataSizeBytes = kMaxDataSizeSamples * sizeof(int16_t),
+    kMaxDataSizeSamples = 3840
   };
 
   enum VADActivity {
@@ -324,25 +300,10 @@ class AudioFrame {
   AudioFrame();
 
   
+  
   void Reset();
-  
-  
-  
-  
-  void ResetWithoutMuting();
 
-  
-  RTC_DEPRECATED
-      void UpdateFrame(int id, uint32_t timestamp, const int16_t* data,
-                       size_t samples_per_channel, int sample_rate_hz,
-                       SpeechType speech_type, VADActivity vad_activity,
-                       size_t num_channels = 1) {
-    RTC_UNUSED(id);
-    UpdateFrame(timestamp, data, samples_per_channel, sample_rate_hz,
-                speech_type, vad_activity, num_channels);
-  }
-
-  void UpdateFrame(uint32_t timestamp, const int16_t* data,
+  void UpdateFrame(int id, uint32_t timestamp, const int16_t* data,
                    size_t samples_per_channel, int sample_rate_hz,
                    SpeechType speech_type, VADActivity vad_activity,
                    size_t num_channels = 1);
@@ -353,31 +314,11 @@ class AudioFrame {
   
   
   
-  
-  void UpdateProfileTimeStamp();
-  
-  
-  
-  int64_t ElapsedProfileTimeMs() const;
-
-  
-  
-  
-  const int16_t* data() const;
-  int16_t* mutable_data();
-
-  
-  void Mute();
-  
-  bool muted() const;
-
-  
-  
-  
-  
+  RTC_DEPRECATED void Mute();
   RTC_DEPRECATED AudioFrame& operator>>=(const int rhs);
   RTC_DEPRECATED AudioFrame& operator+=(const AudioFrame& rhs);
 
+  int id_;
   
   uint32_t timestamp_ = 0;
   
@@ -386,45 +327,25 @@ class AudioFrame {
   
   
   int64_t ntp_time_ms_ = -1;
+  int16_t data_[kMaxDataSizeSamples];
   size_t samples_per_channel_ = 0;
   int sample_rate_hz_ = 0;
   size_t num_channels_ = 0;
   SpeechType speech_type_ = kUndefined;
   VADActivity vad_activity_ = kVadUnknown;
-  
-  
-  
-  
-  
-  int64_t profile_timestamp_ms_ = 0;
 
  private:
-  
-  
-  
-  static const int16_t* empty_data() {
-    static const int16_t kEmptyData[kMaxDataSizeSamples] = {0};
-    static_assert(sizeof(kEmptyData) == kMaxDataSizeBytes, "kMaxDataSizeBytes");
-    return kEmptyData;
-  }
-
-  int16_t data_[kMaxDataSizeSamples];
-  bool muted_ = true;
-
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioFrame);
 };
 
-inline AudioFrame::AudioFrame() {
-  
-  static_assert(sizeof(data_) == kMaxDataSizeBytes, "kMaxDataSizeBytes");
+
+
+inline AudioFrame::AudioFrame()
+    : data_() {
 }
 
 inline void AudioFrame::Reset() {
-  ResetWithoutMuting();
-  muted_ = true;
-}
-
-inline void AudioFrame::ResetWithoutMuting() {
+  id_ = -1;
   
   
   timestamp_ = 0;
@@ -435,16 +356,17 @@ inline void AudioFrame::ResetWithoutMuting() {
   num_channels_ = 0;
   speech_type_ = kUndefined;
   vad_activity_ = kVadUnknown;
-  profile_timestamp_ms_ = 0;
 }
 
-inline void AudioFrame::UpdateFrame(uint32_t timestamp,
+inline void AudioFrame::UpdateFrame(int id,
+                                    uint32_t timestamp,
                                     const int16_t* data,
                                     size_t samples_per_channel,
                                     int sample_rate_hz,
                                     SpeechType speech_type,
                                     VADActivity vad_activity,
                                     size_t num_channels) {
+  id_ = id;
   timestamp_ = timestamp;
   samples_per_channel_ = samples_per_channel;
   sample_rate_hz_ = sample_rate_hz;
@@ -454,21 +376,20 @@ inline void AudioFrame::UpdateFrame(uint32_t timestamp,
 
   const size_t length = samples_per_channel * num_channels;
   assert(length <= kMaxDataSizeSamples);
-  if (data != nullptr) {
+  if (data != NULL) {
     memcpy(data_, data, sizeof(int16_t) * length);
-    muted_ = false;
   } else {
-    muted_ = true;
+    memset(data_, 0, sizeof(int16_t) * length);
   }
 }
 
 inline void AudioFrame::CopyFrom(const AudioFrame& src) {
   if (this == &src) return;
 
+  id_ = src.id_;
   timestamp_ = src.timestamp_;
   elapsed_time_ms_ = src.elapsed_time_ms_;
   ntp_time_ms_ = src.ntp_time_ms_;
-  muted_ = src.muted();
   samples_per_channel_ = src.samples_per_channel_;
   sample_rate_hz_ = src.sample_rate_hz_;
   speech_type_ = src.speech_type_;
@@ -477,48 +398,16 @@ inline void AudioFrame::CopyFrom(const AudioFrame& src) {
 
   const size_t length = samples_per_channel_ * num_channels_;
   assert(length <= kMaxDataSizeSamples);
-  if (!src.muted()) {
-    memcpy(data_, src.data(), sizeof(int16_t) * length);
-    muted_ = false;
-  }
-}
-
-inline void AudioFrame::UpdateProfileTimeStamp() {
-  profile_timestamp_ms_ = rtc::TimeMillis();
-}
-
-inline int64_t AudioFrame::ElapsedProfileTimeMs() const {
-  if (profile_timestamp_ms_ == 0) {
-    
-    return -1;
-  }
-  return rtc::TimeSince(profile_timestamp_ms_);
-}
-
-inline const int16_t* AudioFrame::data() const {
-  return muted_ ? empty_data() : data_;
-}
-
-
-
-inline int16_t* AudioFrame::mutable_data() {
-  if (muted_) {
-    memset(data_, 0, kMaxDataSizeBytes);
-    muted_ = false;
-  }
-  return data_;
+  memcpy(data_, src.data_, sizeof(int16_t) * length);
 }
 
 inline void AudioFrame::Mute() {
-  muted_ = true;
+  memset(data_, 0, samples_per_channel_ * num_channels_ * sizeof(int16_t));
 }
-
-inline bool AudioFrame::muted() const { return muted_; }
 
 inline AudioFrame& AudioFrame::operator>>=(const int rhs) {
   assert((num_channels_ > 0) && (num_channels_ < 3));
   if ((num_channels_ > 2) || (num_channels_ < 1)) return *this;
-  if (muted_) return *this;
 
   for (size_t i = 0; i < samples_per_channel_ * num_channels_; i++) {
     data_[i] = static_cast<int16_t>(data_[i] >> rhs);
@@ -532,7 +421,7 @@ inline AudioFrame& AudioFrame::operator+=(const AudioFrame& rhs) {
   if ((num_channels_ > 2) || (num_channels_ < 1)) return *this;
   if (num_channels_ != rhs.num_channels_) return *this;
 
-  bool noPrevData = muted_;
+  bool noPrevData = false;
   if (samples_per_channel_ != rhs.samples_per_channel_) {
     if (samples_per_channel_ == 0) {
       
@@ -551,51 +440,99 @@ inline AudioFrame& AudioFrame::operator+=(const AudioFrame& rhs) {
 
   if (speech_type_ != rhs.speech_type_) speech_type_ = kUndefined;
 
-  if (!rhs.muted()) {
-    muted_ = false;
-    if (noPrevData) {
-      memcpy(data_, rhs.data(),
-             sizeof(int16_t) * rhs.samples_per_channel_ * num_channels_);
-    } else {
-      
-      for (size_t i = 0; i < samples_per_channel_ * num_channels_; i++) {
-        int32_t wrap_guard =
-            static_cast<int32_t>(data_[i]) + static_cast<int32_t>(rhs.data_[i]);
-        data_[i] = rtc::saturated_cast<int16_t>(wrap_guard);
-      }
+  if (noPrevData) {
+    memcpy(data_, rhs.data_,
+           sizeof(int16_t) * rhs.samples_per_channel_ * num_channels_);
+  } else {
+    
+    for (size_t i = 0; i < samples_per_channel_ * num_channels_; i++) {
+      int32_t wrap_guard =
+          static_cast<int32_t>(data_[i]) + static_cast<int32_t>(rhs.data_[i]);
+      data_[i] = rtc::saturated_cast<int16_t>(wrap_guard);
     }
   }
-
   return *this;
 }
 
-struct PacedPacketInfo {
-  PacedPacketInfo() {}
-  PacedPacketInfo(int probe_cluster_id,
-                  int probe_cluster_min_probes,
-                  int probe_cluster_min_bytes)
-      : probe_cluster_id(probe_cluster_id),
-        probe_cluster_min_probes(probe_cluster_min_probes),
-        probe_cluster_min_bytes(probe_cluster_min_bytes) {}
-
-  bool operator==(const PacedPacketInfo& rhs) const {
-    return send_bitrate_bps == rhs.send_bitrate_bps &&
-           probe_cluster_id == rhs.probe_cluster_id &&
-           probe_cluster_min_probes == rhs.probe_cluster_min_probes &&
-           probe_cluster_min_bytes == rhs.probe_cluster_min_bytes;
+inline bool IsNewerSequenceNumber(uint16_t sequence_number,
+                                  uint16_t prev_sequence_number) {
+  
+  
+  
+  if (static_cast<uint16_t>(sequence_number - prev_sequence_number) == 0x8000) {
+    return sequence_number > prev_sequence_number;
   }
+  return sequence_number != prev_sequence_number &&
+         static_cast<uint16_t>(sequence_number - prev_sequence_number) < 0x8000;
+}
 
-  static constexpr int kNotAProbe = -1;
-  int send_bitrate_bps = -1;
-  int probe_cluster_id = kNotAProbe;
-  int probe_cluster_min_probes = -1;
-  int probe_cluster_min_bytes = -1;
-};
-
+inline bool IsNewerTimestamp(uint32_t timestamp, uint32_t prev_timestamp) {
+  
+  
+  
+  
+  if (static_cast<uint32_t>(timestamp - prev_timestamp) == 0x80000000) {
+    return timestamp > prev_timestamp;
+  }
+  return timestamp != prev_timestamp &&
+         static_cast<uint32_t>(timestamp - prev_timestamp) < 0x80000000;
+}
+ 
 inline bool IsNewerOrSameTimestamp(uint32_t timestamp, uint32_t prev_timestamp) {
   return timestamp == prev_timestamp ||
       static_cast<uint32_t>(timestamp - prev_timestamp) < 0x80000000;
 }
+
+inline uint16_t LatestSequenceNumber(uint16_t sequence_number1,
+                                     uint16_t sequence_number2) {
+  return IsNewerSequenceNumber(sequence_number1, sequence_number2)
+             ? sequence_number1
+             : sequence_number2;
+}
+
+inline uint32_t LatestTimestamp(uint32_t timestamp1, uint32_t timestamp2) {
+  return IsNewerTimestamp(timestamp1, timestamp2) ? timestamp1 : timestamp2;
+}
+
+
+
+
+class SequenceNumberUnwrapper {
+ public:
+  SequenceNumberUnwrapper() : last_seq_(-1) {}
+
+  
+  int64_t UnwrapWithoutUpdate(uint16_t sequence_number) {
+    if (last_seq_ == -1)
+      return sequence_number;
+
+    uint16_t cropped_last = static_cast<uint16_t>(last_seq_);
+    int64_t delta = sequence_number - cropped_last;
+    if (IsNewerSequenceNumber(sequence_number, cropped_last)) {
+      if (delta < 0)
+        delta += (1 << 16);  
+    } else if (delta > 0 && (last_seq_ + delta - (1 << 16)) >= 0) {
+      
+      
+      delta -= (1 << 16);
+    }
+
+    return last_seq_ + delta;
+  }
+
+  
+  void UpdateLast(int64_t last_sequence) { last_seq_ = last_sequence; }
+
+  
+  int64_t Unwrap(uint16_t sequence_number) {
+    int64_t unwrapped = UnwrapWithoutUpdate(sequence_number);
+    UpdateLast(unwrapped);
+    return unwrapped;
+  }
+
+ private:
+  int64_t last_seq_;
+};
 
 }  
 

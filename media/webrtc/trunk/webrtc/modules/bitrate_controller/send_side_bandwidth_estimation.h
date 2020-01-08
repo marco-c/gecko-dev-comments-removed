@@ -10,14 +10,15 @@
 
 
 
-#ifndef MODULES_BITRATE_CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_
-#define MODULES_BITRATE_CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_
+#ifndef WEBRTC_MODULES_BITRATE_CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_
+#define WEBRTC_MODULES_BITRATE_CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_
 
 #include <deque>
 #include <utility>
 #include <vector>
 
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 namespace webrtc {
 
@@ -62,12 +63,12 @@ class SendSideBandwidthEstimation {
 
   
   
-  
-  void UpdateMinHistory(int64_t now_ms);
+  uint32_t CapBitrateToThresholds(int64_t now_ms, uint32_t bitrate);
 
   
   
-  void CapBitrateToThresholds(int64_t now_ms, uint32_t bitrate_bps);
+  
+  void UpdateMinHistory(int64_t now_ms);
 
   std::deque<std::pair<int64_t, uint32_t> > min_bitrate_history_;
 
@@ -75,7 +76,7 @@ class SendSideBandwidthEstimation {
   int lost_packets_since_last_loss_update_Q8_;
   int expected_packets_since_last_loss_update_;
 
-  uint32_t current_bitrate_bps_;
+  uint32_t bitrate_;
   uint32_t min_bitrate_configured_;
   uint32_t max_bitrate_configured_;
   int64_t last_low_bitrate_log_ms_;
@@ -99,9 +100,6 @@ class SendSideBandwidthEstimation {
   RtcEventLog* event_log_;
   int64_t last_rtc_event_log_ms_;
   bool in_timeout_experiment_;
-  float low_loss_threshold_;
-  float high_loss_threshold_;
-  uint32_t bitrate_threshold_bps_;
 };
 }  
 #endif  

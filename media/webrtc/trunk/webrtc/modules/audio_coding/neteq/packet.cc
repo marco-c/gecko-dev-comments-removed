@@ -8,7 +8,7 @@
 
 
 
-#include "modules/audio_coding/neteq/packet.h"
+#include "webrtc/modules/audio_coding/neteq/packet.h"
 
 namespace webrtc {
 

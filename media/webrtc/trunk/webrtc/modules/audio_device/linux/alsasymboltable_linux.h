@@ -25,13 +25,12 @@
 
 
 
-#ifndef AUDIO_DEVICE_ALSASYMBOLTABLE_LINUX_H_
-#define AUDIO_DEVICE_ALSASYMBOLTABLE_LINUX_H_
+#ifndef WEBRTC_AUDIO_DEVICE_ALSASYMBOLTABLE_LINUX_H
+#define WEBRTC_AUDIO_DEVICE_ALSASYMBOLTABLE_LINUX_H
 
-#include "modules/audio_device/linux/latebindingsymboltable_linux.h"
+#include "webrtc/modules/audio_device/linux/latebindingsymboltable_linux.h"
 
-namespace webrtc {
-namespace adm_linux_alsa {
+namespace webrtc_adm_linux_alsa {
 
 
 
@@ -143,7 +142,6 @@ ALSA_SYMBOLS_LIST
 #undef X
 LATE_BINDING_SYMBOL_TABLE_DECLARE_END(AlsaSymbolTable)
 
-}  
 }  
 
 #endif  

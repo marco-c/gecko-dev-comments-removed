@@ -8,26 +8,25 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_INCLUDE_NETEQ_H_
-#define MODULES_AUDIO_CODING_NETEQ_INCLUDE_NETEQ_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_INCLUDE_NETEQ_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_INCLUDE_NETEQ_H_
 
 #include <string.h>  
 
 #include <string>
-#include <vector>
 
-#include "api/audio_codecs/audio_decoder.h"
-#include "api/optional.h"
-#include "common_types.h"  
-#include "modules/audio_coding/neteq/neteq_decoder_enum.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/scoped_ref_ptr.h"
-#include "typedefs.h"  
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
 
 class AudioFrame;
+struct WebRtcRTPHeader;
 class AudioDecoderFactory;
 
 struct NetEqNetworkStatistics {
@@ -36,6 +35,7 @@ struct NetEqNetworkStatistics {
   uint16_t jitter_peaks_found;  
                                 
   uint16_t packet_loss_rate;  
+  uint16_t packet_discard_rate;  
   uint16_t expand_rate;  
                          
   uint16_t speech_expand_rate;  
@@ -46,8 +46,6 @@ struct NetEqNetworkStatistics {
                              
   uint16_t secondary_decoded_rate;  
                                     
-  uint16_t secondary_discarded_rate;  
-                                      
   int32_t clockdrift_ppm;  
                            
   size_t added_zero_samples;  
@@ -57,17 +55,6 @@ struct NetEqNetworkStatistics {
   int median_waiting_time_ms;
   int min_waiting_time_ms;
   int max_waiting_time_ms;
-};
-
-
-
-struct NetEqLifetimeStatistics {
-  
-  
-  uint64_t total_samples_received = 0;
-  uint64_t concealed_samples = 0;
-  uint64_t concealment_events = 0;
-  uint64_t jitter_buffer_delay_ms = 0;
 };
 
 enum NetEqPlayoutMode {
@@ -115,6 +102,32 @@ class NetEq {
     kNotImplemented = -2
   };
 
+  enum ErrorCodes {
+    kNoError = 0,
+    kOtherError,
+    kInvalidRtpPayloadType,
+    kUnknownRtpPayloadType,
+    kCodecNotSupported,
+    kDecoderExists,
+    kDecoderNotFound,
+    kInvalidSampleRate,
+    kInvalidPointer,
+    kAccelerateError,
+    kPreemptiveExpandError,
+    kComfortNoiseErrorCode,
+    kDecoderErrorCode,
+    kOtherDecoderError,
+    kInvalidOperation,
+    kDtmfParameterError,
+    kDtmfParsingError,
+    kDtmfInsertError,
+    kStereoNotSupported,
+    kSampleUnderrun,
+    kDecodedTooMuch,
+    kRedundancySplitError,
+    kPacketBufferCorruption
+  };
+
   
   
   
@@ -128,15 +141,9 @@ class NetEq {
   
   
   
-  virtual int InsertPacket(const RTPHeader& rtp_header,
+  virtual int InsertPacket(const WebRtcRTPHeader& rtp_header,
                            rtc::ArrayView<const uint8_t> payload,
                            uint32_t receive_timestamp) = 0;
-
-  
-  
-  
-  
-  virtual void InsertEmptyPacket(const RTPHeader& rtp_header) = 0;
 
   
   
@@ -149,9 +156,6 @@ class NetEq {
   
   
   virtual int GetAudio(AudioFrame* audio_frame, bool* muted) = 0;
-
-  
-  virtual void SetCodecs(const std::map<int, SdpAudioFormat>& codecs) = 0;
 
   
   
@@ -177,7 +181,6 @@ class NetEq {
   virtual bool RegisterPayloadType(int rtp_payload_type,
                                    const SdpAudioFormat& audio_format) = 0;
 
-  
   
   
   virtual int RemovePayloadType(uint8_t rtp_payload_type) = 0;
@@ -207,8 +210,7 @@ class NetEq {
   virtual int SetTargetDelay() = 0;
 
   
-  
-  virtual int TargetDelayMs() const = 0;
+  virtual int TargetDelay() = 0;
 
   
   virtual int CurrentDelayMs() const = 0;
@@ -231,10 +233,6 @@ class NetEq {
   
   
   virtual int NetworkStatistics(NetEqNetworkStatistics* stats) = 0;
-
-  
-  
-  virtual NetEqLifetimeStatistics GetLifetimeStatistics() const = 0;
 
   
   
@@ -275,6 +273,15 @@ class NetEq {
   virtual int SetTargetSampleRate() = 0;
 
   
+  
+  virtual int LastError() const = 0;
+
+  
+  
+  
+  virtual int LastDecoderError() = 0;
+
+  
   virtual void FlushBuffers() = 0;
 
   
@@ -292,16 +299,6 @@ class NetEq {
   
   virtual std::vector<uint16_t> GetNackList(
       int64_t round_trip_time_ms) const = 0;
-
-  
-  
-  
-  
-  virtual std::vector<uint32_t> LastDecodedTimestamps() const = 0;
-
-  
-  
-  virtual int SyncBufferSizeMs() const = 0;
 
  protected:
   NetEq() {}

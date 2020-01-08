@@ -8,19 +8,19 @@
 
 
 
-#include "modules/audio_coding/neteq/decision_logic_normal.h"
+#include "webrtc/modules/audio_coding/neteq/decision_logic_normal.h"
 
 #include <assert.h>
 
 #include <algorithm>
 
-#include "modules/audio_coding/neteq/buffer_level_filter.h"
-#include "modules/audio_coding/neteq/decoder_database.h"
-#include "modules/audio_coding/neteq/delay_manager.h"
-#include "modules/audio_coding/neteq/expand.h"
-#include "modules/audio_coding/neteq/packet_buffer.h"
-#include "modules/audio_coding/neteq/sync_buffer.h"
-#include "modules/include/module_common_types.h"
+#include "webrtc/modules/audio_coding/neteq/buffer_level_filter.h"
+#include "webrtc/modules/audio_coding/neteq/decoder_database.h"
+#include "webrtc/modules/audio_coding/neteq/delay_manager.h"
+#include "webrtc/modules/audio_coding/neteq/expand.h"
+#include "webrtc/modules/audio_coding/neteq/packet_buffer.h"
+#include "webrtc/modules/audio_coding/neteq/sync_buffer.h"
+#include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
 
@@ -97,17 +97,14 @@ Operations DecisionLogicNormal::CngOperation(Modes prev_mode,
       available_timestamp);
   int32_t optimal_level_samp = static_cast<int32_t>(
       (delay_manager_->TargetLevel() * packet_length_samples_) >> 8);
-  const int64_t excess_waiting_time_samp =
-      -static_cast<int64_t>(timestamp_diff) - optimal_level_samp;
+  int32_t excess_waiting_time_samp = -timestamp_diff - optimal_level_samp;
 
   if (excess_waiting_time_samp > optimal_level_samp / 2) {
     
     
     
-    noise_fast_forward_ = rtc::dchecked_cast<size_t>(noise_fast_forward_ +
-                                                     excess_waiting_time_samp);
-    timestamp_diff =
-        rtc::saturated_cast<int32_t>(timestamp_diff + excess_waiting_time_samp);
+    noise_fast_forward_ += excess_waiting_time_samp;
+    timestamp_diff += excess_waiting_time_samp;
   }
 
   if (timestamp_diff < 0 && prev_mode == kModeRfc3389Cng) {
@@ -189,6 +186,7 @@ Operations DecisionLogicNormal::FuturePacketAvailable(
   
   if (prev_mode == kModeRfc3389Cng ||
       prev_mode == kModeCodecInternalCng) {
+    
     
     
     

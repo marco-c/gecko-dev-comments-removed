@@ -8,13 +8,13 @@
 
 
 
-#ifndef MODULES_UTILITY_INCLUDE_AUDIO_FRAME_OPERATIONS_H_
-#define MODULES_UTILITY_INCLUDE_AUDIO_FRAME_OPERATIONS_H_
+#ifndef WEBRTC_MODULES_UTILITY_INCLUDE_AUDIO_FRAME_OPERATIONS_H_
+#define WEBRTC_MODULES_UTILITY_INCLUDE_AUDIO_FRAME_OPERATIONS_H_
 
 
 
 
 
-#include "audio/utility/audio_frame_operations.h"
+#include "webrtc/audio/utility/audio_frame_operations.h"
 
 #endif  

@@ -8,10 +8,10 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_AEC_AEC_COMMON_H_
-#define MODULES_AUDIO_PROCESSING_AEC_AEC_COMMON_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_COMMON_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_COMMON_H_
 
-#include "typedefs.h"  
+#include "webrtc/typedefs.h"
 
 #ifdef _MSC_VER 
 #define ALIGN16_BEG __declspec(align(16))

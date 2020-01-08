@@ -8,13 +8,13 @@
 
 
 
-#include "modules/desktop_capture/differ_block.h"
+#include "webrtc/modules/desktop_capture/differ_block.h"
 
 #include <string.h>
 
-#include "typedefs.h"  
-#include "modules/desktop_capture/differ_vector_sse2.h"
-#include "system_wrappers/include/cpu_features_wrapper.h"
+#include "webrtc/typedefs.h"
+#include "webrtc/modules/desktop_capture/differ_vector_sse2.h"
+#include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 
 namespace webrtc {
 

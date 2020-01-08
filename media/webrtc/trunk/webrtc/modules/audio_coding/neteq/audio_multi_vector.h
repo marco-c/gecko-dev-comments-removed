@@ -8,16 +8,16 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_AUDIO_MULTI_VECTOR_H_
-#define MODULES_AUDIO_CODING_NETEQ_AUDIO_MULTI_VECTOR_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_AUDIO_MULTI_VECTOR_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_AUDIO_MULTI_VECTOR_H_
 
 #include <string.h>  
 
 #include <vector>
 
-#include "modules/audio_coding/neteq/audio_vector.h"
-#include "rtc_base/constructormagic.h"
-#include "typedefs.h"  
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/audio_coding/neteq/audio_vector.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

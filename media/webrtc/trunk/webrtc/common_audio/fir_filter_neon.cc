@@ -8,18 +8,15 @@
 
 
 
-#include "common_audio/fir_filter_neon.h"
+#include "webrtc/common_audio/fir_filter_neon.h"
 
 #include <arm_neon.h>
 #include <string.h>
 
-#include "rtc_base/checks.h"
-#include "system_wrappers/include/aligned_malloc.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/system_wrappers/include/aligned_malloc.h"
 
 namespace webrtc {
-
-FIRFilterNEON::~FIRFilterNEON() {
-}
 
 FIRFilterNEON::FIRFilterNEON(const float* coefficients,
                              size_t coefficients_length,

@@ -10,15 +10,13 @@
 
 
 
-#include "modules/desktop_capture/screen_drawer.h"
-#include "modules/desktop_capture/screen_drawer_lock_posix.h"
-#include "rtc_base/ptr_util.h"
+#include "webrtc/modules/desktop_capture/screen_drawer.h"
 
 namespace webrtc {
 
 
 std::unique_ptr<ScreenDrawerLock> ScreenDrawerLock::Create() {
-  return rtc::MakeUnique<ScreenDrawerLockPosix>();
+  return nullptr;
 }
 
 

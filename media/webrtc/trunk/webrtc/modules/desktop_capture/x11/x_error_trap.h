@@ -8,14 +8,14 @@
 
 
 
-#ifndef MODULES_DESKTOP_CAPTURE_X11_X_ERROR_TRAP_H_
-#define MODULES_DESKTOP_CAPTURE_X11_X_ERROR_TRAP_H_
+#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_X11_X_ERROR_TRAP_H_
+#define WEBRTC_MODULES_DESKTOP_CAPTURE_X11_X_ERROR_TRAP_H_
 
 #include <X11/Xlibint.h>
 #undef max // Xlibint.h defines this and it breaks std::max
 #undef min // Xlibint.h defines this and it breaks std::min
 
-#include "rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace webrtc {
 

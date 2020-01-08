@@ -9,13 +9,13 @@
 
 
 
-#ifndef MODULES_MEDIA_FILE_MEDIA_FILE_UTILITY_H_
-#define MODULES_MEDIA_FILE_MEDIA_FILE_UTILITY_H_
+#ifndef WEBRTC_MODULES_MEDIA_FILE_MEDIA_FILE_UTILITY_H_
+#define WEBRTC_MODULES_MEDIA_FILE_MEDIA_FILE_UTILITY_H_
 
 #include <stdio.h>
 
-#include "common_types.h"  
-#include "modules/media_file/media_file_defines.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/media_file/media_file_defines.h"
 
 namespace webrtc {
 class InStream;
@@ -25,7 +25,7 @@ class ModuleFileUtility
 {
 public:
 
-    ModuleFileUtility();
+    ModuleFileUtility(const int32_t id);
     ~ModuleFileUtility();
 
     
@@ -228,7 +228,6 @@ private:
         kCodecL16_8Khz,
         kCodecL16_16kHz,
         kCodecL16_32Khz,
-        kCodecL16_48Khz,
         kCodecPcmu,
         kCodecPcma,
         kCodecIlbc20Ms,
@@ -247,7 +246,9 @@ private:
         kCodecG726_40,
         kCodecG726_32,
         kCodecG726_24,
-        kCodecG726_16
+        kCodecG726_16,
+        kCodecSpeex8Khz,
+        kCodecSpeex16Khz
     };
 
     
@@ -257,6 +258,8 @@ private:
     
     
     size_t _readSizeBytes;
+
+    int32_t _id;
 
     uint32_t _stopPointInMs;
     uint32_t _startPointInMs;

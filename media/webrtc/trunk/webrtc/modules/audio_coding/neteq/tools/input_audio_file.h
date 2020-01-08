@@ -8,15 +8,15 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_TOOLS_INPUT_AUDIO_FILE_H_
-#define MODULES_AUDIO_CODING_NETEQ_TOOLS_INPUT_AUDIO_FILE_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_INPUT_AUDIO_FILE_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_INPUT_AUDIO_FILE_H_
 
 #include <stdio.h>
 
 #include <string>
 
-#include "rtc_base/constructormagic.h"
-#include "typedefs.h"  
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 namespace test {
@@ -24,7 +24,7 @@ namespace test {
 
 class InputAudioFile {
  public:
-  explicit InputAudioFile(const std::string file_name, bool loop_at_end = true);
+  explicit InputAudioFile(const std::string file_name);
 
   virtual ~InputAudioFile();
 
@@ -50,7 +50,6 @@ class InputAudioFile {
 
  private:
   FILE* fp_;
-  const bool loop_at_end_;
   RTC_DISALLOW_COPY_AND_ASSIGN(InputAudioFile);
 };
 

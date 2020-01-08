@@ -8,13 +8,13 @@
 
 
 
-#ifndef COMMON_AUDIO_REAL_FOURIER_OOURA_H_
-#define COMMON_AUDIO_REAL_FOURIER_OOURA_H_
+#ifndef WEBRTC_COMMON_AUDIO_REAL_FOURIER_OOURA_H_
+#define WEBRTC_COMMON_AUDIO_REAL_FOURIER_OOURA_H_
 
 #include <complex>
 #include <memory>
 
-#include "common_audio/real_fourier.h"
+#include "webrtc/common_audio/real_fourier.h"
 
 namespace webrtc {
 

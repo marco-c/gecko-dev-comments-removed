@@ -21,8 +21,7 @@
 
 
 
-#include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "rtc_base/sanitizer.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
 uint32_t WebRtcSpl_DivU32U16(uint32_t num, uint16_t den)
 {
@@ -98,8 +97,7 @@ int32_t WebRtcSpl_DivResultInQ31(int32_t num, int32_t den)
     return div;
 }
 
-int32_t RTC_NO_SANITIZE("signed-integer-overflow")  
-WebRtcSpl_DivW32HiLow(int32_t num, int16_t den_hi, int16_t den_low)
+int32_t WebRtcSpl_DivW32HiLow(int32_t num, int16_t den_hi, int16_t den_low)
 {
     int16_t approx, tmp_hi, tmp_low, num_hi, num_low;
     int32_t tmpW32;
@@ -112,7 +110,6 @@ WebRtcSpl_DivW32HiLow(int32_t num, int16_t den_hi, int16_t den_low)
     
 
     tmpW32 = (int32_t)0x7fffffffL - tmpW32; 
-    
 
     
     tmp_hi = (int16_t)(tmpW32 >> 16);

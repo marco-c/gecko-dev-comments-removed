@@ -10,9 +10,9 @@
 
 
 
-#include "modules/audio_coding/neteq/background_noise.h"
+#include "webrtc/modules/audio_coding/neteq/background_noise.h"
 
-#include "test/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

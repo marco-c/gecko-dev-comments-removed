@@ -8,10 +8,10 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_UTILITY_DEFAULT_VIDEO_BITRATE_ALLOCATOR_H_
-#define MODULES_VIDEO_CODING_UTILITY_DEFAULT_VIDEO_BITRATE_ALLOCATOR_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_UTILITY_DEFAULT_VIDEO_BITRATE_ALLOCATOR_H_
+#define WEBRTC_MODULES_VIDEO_CODING_UTILITY_DEFAULT_VIDEO_BITRATE_ALLOCATOR_H_
 
-#include "common_video/include/video_bitrate_allocator.h"
+#include "webrtc/common_video/include/video_bitrate_allocator.h"
 
 namespace webrtc {
 

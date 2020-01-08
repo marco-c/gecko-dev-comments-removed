@@ -8,10 +8,10 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_NS_NS_CORE_H_
-#define MODULES_AUDIO_PROCESSING_NS_NS_CORE_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_NS_NS_CORE_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_NS_NS_CORE_H_
 
-#include "modules/audio_processing/ns/defines.h"
+#include "webrtc/modules/audio_processing/ns/defines.h"
 
 typedef struct NSParaExtract_ {
   

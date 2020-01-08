@@ -8,10 +8,12 @@
 
 
 
-#include "modules/desktop_capture/screen_capturer_helper.h"
+#include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
 
 #include <assert.h>
 #include <algorithm>
+
+#include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
 

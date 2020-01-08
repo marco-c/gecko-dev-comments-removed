@@ -8,99 +8,16 @@
 
 
 
-#include "modules/desktop_capture/mac/window_list_utils.h"
+#include "webrtc/modules/desktop_capture/mac/window_list_utils.h"
 
 #include <ApplicationServices/ApplicationServices.h>
 
-#include <algorithm>
-#include <iterator>
-
-#include "rtc_base/checks.h"
-#include "rtc_base/macutils.h"
-
-static_assert(
-    static_cast<webrtc::WindowId>(kCGNullWindowID) == webrtc::kNullWindowId,
-    "kNullWindowId needs to equal to kCGNullWindowID.");
+#include "webrtc/base/macutils.h"
 
 namespace webrtc {
 
-namespace {
-
-
-
-
-
-bool GetWindowRef(CGWindowID id,
-                  rtc::FunctionView<void(CFDictionaryRef)> on_window) {
-  RTC_DCHECK(on_window);
-
-  
-  
-  
-  
-  
-  CFArrayRef window_id_array =
-      CFArrayCreate(NULL, reinterpret_cast<const void**>(&id), 1, NULL);
-  CFArrayRef window_array =
-      CGWindowListCreateDescriptionFromArray(window_id_array);
-
-  bool result = false;
-  
-  
-  if (window_array && CFArrayGetCount(window_array)) {
-    on_window(reinterpret_cast<CFDictionaryRef>(
-        CFArrayGetValueAtIndex(window_array, 0)));
-    result = true;
-  }
-
-  if (window_array) {
-    CFRelease(window_array);
-  }
-  CFRelease(window_id_array);
-  return result;
-}
-
-
-
-
-
-
-DesktopRect ApplyScaleFactorOfRect(
-    const MacDesktopConfiguration& desktop_config,
-    DesktopRect rect) {
-  
-  
-  float scales[] = {
-      GetScaleFactorAtPosition(desktop_config, rect.top_left()),
-      GetScaleFactorAtPosition(desktop_config,
-          DesktopVector(rect.left() + rect.width() / 2,
-                        rect.top() + rect.height() / 2)),
-      GetScaleFactorAtPosition(
-            desktop_config, DesktopVector(rect.right(), rect.bottom())),
-  };
-  
-  
-  float scale = *std::max_element(std::begin(scales), std::end(scales));
-  if (scale == 1) {
-    scale = *std::min_element(std::begin(scales), std::end(scales));
-  }
-
-  return DesktopRect::MakeXYWH(rect.left() * scale,
-                               rect.top() * scale,
-                               rect.width() * scale,
-                               rect.height() * scale);
-}
-
-}  
-
-bool GetWindowList(rtc::FunctionView<bool(CFDictionaryRef)> on_window,
+bool GetWindowList(DesktopCapturer::SourceList* windows,
                    bool ignore_minimized) {
-  RTC_DCHECK(on_window);
-
-  
-  
-  
-  
   
   CFArrayRef window_array = CGWindowListCopyWindowInfo(
       kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements,
@@ -117,90 +34,60 @@ bool GetWindowList(rtc::FunctionView<bool(CFDictionaryRef)> on_window,
   
   
   CFIndex count = CFArrayGetCount(window_array);
-  for (CFIndex i = 0; i < count; i++) {
+  for (CFIndex i = 0; i < count; ++i) {
     CFDictionaryRef window = reinterpret_cast<CFDictionaryRef>(
         CFArrayGetValueAtIndex(window_array, i));
-    if (!window) {
-      continue;
-    }
-
     CFStringRef window_title = reinterpret_cast<CFStringRef>(
         CFDictionaryGetValue(window, kCGWindowName));
-    if (!window_title) {
-      continue;
-    }
-
-    
-    
-    if (CFStringCompare(window_title, CFSTR("Dock"), 0) == 0) {
-      continue;
-    }
-
     CFNumberRef window_id = reinterpret_cast<CFNumberRef>(
         CFDictionaryGetValue(window, kCGWindowNumber));
-    if (!window_id) {
-      continue;
-    }
-
+    CFNumberRef window_pid = reinterpret_cast<CFNumberRef>(
+        CFDictionaryGetValue(window, kCGWindowOwnerPID));
     CFNumberRef window_layer = reinterpret_cast<CFNumberRef>(
         CFDictionaryGetValue(window, kCGWindowLayer));
-    if (!window_layer) {
-      continue;
-    }
+    if (window_title && window_id && window_layer) {
+      
+      CFDictionaryRef bounds_ref = reinterpret_cast<CFDictionaryRef>(
+           CFDictionaryGetValue(window,kCGWindowBounds));
+      CGRect bounds_rect;
+      if(!(bounds_ref) ||
+        !(CGRectMakeWithDictionaryRepresentation(bounds_ref,&bounds_rect))){
+        continue;
+      }
+      bounds_rect = CGRectStandardize(bounds_rect);
+      if((bounds_rect.size.width <= 0) || (bounds_rect.size.height <= 0)){
+        continue;
+      }
+      
+      int layer;
+      CFNumberGetValue(window_layer, kCFNumberIntType, &layer);
+      if (layer != 0)
+        continue;
 
-    
-    CFDictionaryRef bounds_ref = reinterpret_cast<CFDictionaryRef>(
-         CFDictionaryGetValue(window, kCGWindowBounds));
-    CGRect bounds_rect;
-    if(!(bounds_ref) ||
-      !(CGRectMakeWithDictionaryRepresentation(bounds_ref, &bounds_rect))){
-      continue;
-    }
-    bounds_rect = CGRectStandardize(bounds_rect);
-    if((bounds_rect.size.width <= 0) || (bounds_rect.size.height <= 0)){
-      continue;
-    }
+      int id;
+      CFNumberGetValue(window_id, kCFNumberIntType, &id);
+      pid_t pid = 0;
+      CFNumberGetValue(window_pid, kCFNumberIntType, &pid);
 
-    
-    
-    
-    
-    int layer;
-    if (!CFNumberGetValue(window_layer, kCFNumberIntType, &layer)) {
-      continue;
-    }
-    if (layer != 0) {
-      continue;
-    }
+      
+      if (ignore_minimized && IsWindowMinimized(id) &&
+          !IsWindowFullScreen(desktop_config, window)) {
+        continue;
+      }
 
-    
-    if (ignore_minimized && !IsWindowOnScreen(window) &&
-        !IsWindowFullScreen(desktop_config, window)) {
-      continue;
-    }
-
-    if (!on_window(window)) {
-      break;
+      DesktopCapturer::Source window;
+      window.id = id;
+      window.pid = pid;
+      if (!rtc::ToUtf8(window_title, &(window.title)) ||
+          window.title.empty()) {
+        continue;
+      }
+      windows->push_back(window);
     }
   }
 
   CFRelease(window_array);
   return true;
-}
-
-bool GetWindowList(DesktopCapturer::SourceList* windows,
-                   bool ignore_minimized) {
-  return GetWindowList(
-      [windows](CFDictionaryRef window) {
-        WindowId id = GetWindowId(window);
-        int pid = GetWindowPID(window);
-        std::string title = GetWindowTitle(window);
-        if (id != kNullWindowId && !title.empty()) {
-          windows->push_back(DesktopCapturer::Source{ id, pid, title });
-        }
-        return true;
-      },
-      ignore_minimized);
 }
 
 
@@ -216,7 +103,7 @@ bool IsWindowFullScreen(
       CGRectMakeWithDictionaryRepresentation(bounds_ref, &bounds)) {
     for (MacDisplayConfigurations::const_iterator it =
              desktop_config.displays.begin();
-         it != desktop_config.displays.end(); it++) {
+         it != desktop_config.displays.end(); ++it) {
       if (it->bounds.equals(DesktopRect::MakeXYWH(bounds.origin.x,
                                                   bounds.origin.y,
                                                   bounds.size.width,
@@ -230,119 +117,29 @@ bool IsWindowFullScreen(
   return fullscreen;
 }
 
-bool IsWindowOnScreen(CFDictionaryRef window) {
-  CFBooleanRef on_screen = reinterpret_cast<CFBooleanRef>(
-      CFDictionaryGetValue(window, kCGWindowIsOnscreen));
-  return on_screen != NULL && CFBooleanGetValue(on_screen);
-}
 
-bool IsWindowOnScreen(CGWindowID id) {
-  bool on_screen;
-  if (GetWindowRef(id,
-                   [&on_screen](CFDictionaryRef window) {
-                     on_screen = IsWindowOnScreen(window);
-                   })) {
-    return on_screen;
-  }
-  return false;
-}
+bool IsWindowMinimized(CGWindowID id) {
+  CFArrayRef window_id_array =
+      CFArrayCreate(NULL, reinterpret_cast<const void **>(&id), 1, NULL);
+  CFArrayRef window_array =
+      CGWindowListCreateDescriptionFromArray(window_id_array);
+  bool minimized = false;
 
-std::string GetWindowTitle(CFDictionaryRef window) {
-  CFStringRef title = reinterpret_cast<CFStringRef>(
-      CFDictionaryGetValue(window, kCGWindowName));
-  std::string result;
-  if (title && rtc::ToUtf8(title, &result)) {
-    return result;
-  }
-  return std::string();
-}
+  if (window_array && CFArrayGetCount(window_array)) {
+    CFDictionaryRef window = reinterpret_cast<CFDictionaryRef>(
+        CFArrayGetValueAtIndex(window_array, 0));
+    CFBooleanRef on_screen =  reinterpret_cast<CFBooleanRef>(
+        CFDictionaryGetValue(window, kCGWindowIsOnscreen));
 
-WindowId GetWindowId(CFDictionaryRef window) {
-  CFNumberRef window_id = reinterpret_cast<CFNumberRef>(
-      CFDictionaryGetValue(window, kCGWindowNumber));
-  if (!window_id) {
-    return kNullWindowId;
+    minimized = !on_screen;
   }
 
-  
-  
-  
-  CGWindowID id;
-  if (!CFNumberGetValue(window_id, kCFNumberIntType, &id)) {
-    return kNullWindowId;
-  }
+  CFRelease(window_id_array);
+  CFRelease(window_array);
 
-  return id;
-}
-
-int GetWindowPID(CFDictionaryRef window) {
-  CFNumberRef window_pid = reinterpret_cast<CFNumberRef>(
-      CFDictionaryGetValue(window, kCGWindowOwnerPID));
-  if (!window_pid) {
-    return 0;
-  }
-
-  int pid;
-  if (!CFNumberGetValue(window_pid, kCFNumberIntType, &pid)) {
-    return 0;
-  }
-
-  return pid;
+  return minimized;
 }
 
 
-float GetScaleFactorAtPosition(const MacDesktopConfiguration& desktop_config,
-                               DesktopVector position) {
-  
-  
-  for (auto it = desktop_config.displays.begin();
-       it != desktop_config.displays.end(); ++it) {
-    if (it->bounds.Contains(position)) {
-      return it->dip_to_pixel_scale;
-    }
-  }
-  return 1;
-}
-
-DesktopRect GetWindowBounds(CFDictionaryRef window) {
-  CFDictionaryRef window_bounds = reinterpret_cast<CFDictionaryRef>(
-      CFDictionaryGetValue(window, kCGWindowBounds));
-  if (!window_bounds) {
-    return DesktopRect();
-  }
-
-  CGRect gc_window_rect;
-  if (!CGRectMakeWithDictionaryRepresentation(window_bounds, &gc_window_rect)) {
-    return DesktopRect();
-  }
-
-  return DesktopRect::MakeXYWH(gc_window_rect.origin.x,
-                               gc_window_rect.origin.y,
-                               gc_window_rect.size.width,
-                               gc_window_rect.size.height);
-}
-
-DesktopRect GetWindowBounds(const MacDesktopConfiguration& desktop_config,
-                            CFDictionaryRef window) {
-  DesktopRect rect = GetWindowBounds(window);
-  return ApplyScaleFactorOfRect(desktop_config, rect);
-}
-
-DesktopRect GetWindowBounds(CGWindowID id) {
-  DesktopRect result;
-  if (GetWindowRef(id,
-                   [&result](CFDictionaryRef window) {
-                     result = GetWindowBounds(window);
-                   })) {
-    return result;
-  }
-  return DesktopRect();
-}
-
-DesktopRect GetWindowBounds(const MacDesktopConfiguration& desktop_config,
-                            CGWindowID id) {
-  DesktopRect rect = GetWindowBounds(id);
-  return ApplyScaleFactorOfRect(desktop_config, rect);
-}
 
 }  

@@ -8,14 +8,14 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_TEST_WAV_BASED_SIMULATOR_H_
-#define MODULES_AUDIO_PROCESSING_TEST_WAV_BASED_SIMULATOR_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_TEST_WAV_BASED_SIMULATOR_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_TEST_WAV_BASED_SIMULATOR_H_
 
 #include <vector>
 
-#include "modules/audio_processing/test/audio_processing_simulator.h"
+#include "webrtc/modules/audio_processing/test/audio_processing_simulator.h"
 
-#include "rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace webrtc {
 namespace test {
@@ -45,6 +45,7 @@ class WavBasedSimulator final : public AudioProcessingSimulator {
       const std::string& filename);
 
   std::vector<SimulationEventType> call_chain_;
+  int last_specified_microphone_level_ = 100;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WavBasedSimulator);
 };

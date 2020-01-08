@@ -8,14 +8,15 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_EXTERNAL_DECODER_PCM16B_H_
-#define MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_EXTERNAL_DECODER_PCM16B_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_EXTERNAL_DECODER_PCM16B_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_EXTERNAL_DECODER_PCM16B_H_
 
-#include "api/audio_codecs/audio_decoder.h"
-#include "modules/audio_coding/codecs/pcm16b/pcm16b.h"
-#include "rtc_base/constructormagic.h"
-#include "test/gmock.h"
-#include "typedefs.h"  
+#include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
+
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

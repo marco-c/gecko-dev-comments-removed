@@ -8,7 +8,7 @@
 
 
 
-#include "system_wrappers/include/file_wrapper.h"
+#include "webrtc/system_wrappers/include/file_wrapper.h"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -17,7 +17,7 @@
 #include <string.h>
 #endif
 
-#include "rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 namespace {

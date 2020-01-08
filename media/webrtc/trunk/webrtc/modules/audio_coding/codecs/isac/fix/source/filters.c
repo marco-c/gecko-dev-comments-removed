@@ -8,8 +8,8 @@
 
 
 
-#include "rtc_base/checks.h"
-#include "modules/audio_coding/codecs/isac/fix/source/codec.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/codec.h"
 
 
 

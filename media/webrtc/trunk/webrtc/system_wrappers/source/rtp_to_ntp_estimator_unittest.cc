@@ -8,8 +8,8 @@
 
 
 
-#include "system_wrappers/include/rtp_to_ntp_estimator.h"
-#include "test/gtest.h"
+#include "webrtc/system_wrappers/include/rtp_to_ntp_estimator.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace {
@@ -17,33 +17,32 @@ const uint32_t kOneMsInNtpFrac = 4294967;
 const uint32_t kTimestampTicksPerMs = 90;
 }  
 
+TEST(WrapAroundTests, NoWrap) {
+  EXPECT_EQ(0, CheckForWrapArounds(0xFFFFFFFF, 0xFFFFFFFE));
+  EXPECT_EQ(0, CheckForWrapArounds(1, 0));
+  EXPECT_EQ(0, CheckForWrapArounds(0x00010000, 0x0000FFFF));
+}
+
+TEST(WrapAroundTests, ForwardWrap) {
+  EXPECT_EQ(1, CheckForWrapArounds(0, 0xFFFFFFFF));
+  EXPECT_EQ(1, CheckForWrapArounds(0, 0xFFFF0000));
+  EXPECT_EQ(1, CheckForWrapArounds(0x0000FFFF, 0xFFFFFFFF));
+  EXPECT_EQ(1, CheckForWrapArounds(0x0000FFFF, 0xFFFF0000));
+}
+
+TEST(WrapAroundTests, BackwardWrap) {
+  EXPECT_EQ(-1, CheckForWrapArounds(0xFFFFFFFF, 0));
+  EXPECT_EQ(-1, CheckForWrapArounds(0xFFFF0000, 0));
+  EXPECT_EQ(-1, CheckForWrapArounds(0xFFFFFFFF, 0x0000FFFF));
+  EXPECT_EQ(-1, CheckForWrapArounds(0xFFFF0000, 0x0000FFFF));
+}
+
 TEST(WrapAroundTests, OldRtcpWrapped_OldRtpTimestamp) {
   RtpToNtpEstimator estimator;
   bool new_sr;
   uint32_t ntp_sec = 0;
   uint32_t ntp_frac = 1;
   uint32_t timestamp = 0;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  ntp_frac += kOneMsInNtpFrac;
-  timestamp -= kTimestampTicksPerMs;
-  
-  
-  
-  EXPECT_FALSE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-}
-
-TEST(WrapAroundTests, OldRtcpWrapped_OldRtpTimestamp_Wraparound_Detected) {
-  RtpToNtpEstimator estimator;
-  bool new_sr;
-  uint32_t ntp_sec = 0;
-  uint32_t ntp_frac = 1;
-  uint32_t timestamp = 0xFFFFFFFE;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  ntp_frac += 2 * kOneMsInNtpFrac;
-  timestamp += 2 * kTimestampTicksPerMs;
   EXPECT_TRUE(
       estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   ntp_frac += kOneMsInNtpFrac;
@@ -87,8 +86,8 @@ TEST(WrapAroundTests, RtpWrapped) {
       estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
 
   int64_t timestamp_ms = -1;
-  EXPECT_TRUE(
-      estimator.Estimate(0xFFFFFFFF - 2 * kTimestampTicksPerMs, &timestamp_ms));
+  EXPECT_TRUE(estimator.Estimate(0xFFFFFFFF - 2 * kTimestampTicksPerMs,
+                                 &timestamp_ms));
   
   
   EXPECT_EQ(0, timestamp_ms);
@@ -107,7 +106,7 @@ TEST(WrapAroundTests, OldRtp_RtcpsWrapped) {
   bool new_sr;
   uint32_t ntp_sec = 0;
   uint32_t ntp_frac = 1;
-  uint32_t timestamp = 0xFFFFFFFF;
+  uint32_t timestamp = 0;
   EXPECT_TRUE(
       estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   ntp_frac += kOneMsInNtpFrac;
@@ -115,7 +114,7 @@ TEST(WrapAroundTests, OldRtp_RtcpsWrapped) {
   EXPECT_TRUE(
       estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   timestamp -= 2 * kTimestampTicksPerMs;
-  int64_t timestamp_ms = 0xFFFFFFFF;
+  int64_t timestamp_ms = -1;
   EXPECT_FALSE(estimator.Estimate(timestamp, &timestamp_ms));
 }
 
@@ -137,48 +136,6 @@ TEST(WrapAroundTests, OldRtp_NewRtcpWrapped) {
   
   
   EXPECT_EQ(0, timestamp_ms);
-}
-
-TEST(WrapAroundTests, GracefullyHandleRtpJump) {
-  RtpToNtpEstimator estimator;
-  bool new_sr;
-  uint32_t ntp_sec = 0;
-  uint32_t ntp_frac = 1;
-  uint32_t timestamp = 0;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  ntp_frac += kOneMsInNtpFrac;
-  timestamp += kTimestampTicksPerMs;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  ntp_frac += kOneMsInNtpFrac;
-  timestamp -= kTimestampTicksPerMs;
-  int64_t timestamp_ms = -1;
-  EXPECT_TRUE(estimator.Estimate(timestamp, &timestamp_ms));
-  
-  
-  EXPECT_EQ(0, timestamp_ms);
-
-  timestamp -= 0xFFFFF;
-  for (int i = 0; i < RtpToNtpEstimator::kMaxInvalidSamples - 1; ++i) {
-    EXPECT_FALSE(
-        estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-    ntp_frac += kOneMsInNtpFrac;
-    timestamp += kTimestampTicksPerMs;
-  }
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  ntp_frac += kOneMsInNtpFrac;
-  timestamp += kTimestampTicksPerMs;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  ntp_frac += kOneMsInNtpFrac;
-  timestamp += kTimestampTicksPerMs;
-
-  timestamp_ms = -1;
-  EXPECT_TRUE(estimator.Estimate(timestamp, &timestamp_ms));
-  
-  EXPECT_EQ(6, timestamp_ms);
 }
 
 TEST(UpdateRtcpMeasurementTests, FailsForZeroNtp) {
@@ -266,15 +223,15 @@ TEST(UpdateRtcpMeasurementTests, VerifyParameters) {
   EXPECT_TRUE(
       estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   EXPECT_TRUE(new_sr);
-  EXPECT_FALSE(estimator.params());
+  EXPECT_FALSE(estimator.params().calculated);
   
   ntp_frac += kOneMsInNtpFrac;
   timestamp += kTimestampTicksPerMs;
   EXPECT_TRUE(
       estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  EXPECT_TRUE(estimator.params());
-  EXPECT_DOUBLE_EQ(90.0, estimator.params()->frequency_khz);
-  EXPECT_NE(0.0, estimator.params()->offset_ms);
+  EXPECT_TRUE(estimator.params().calculated);
+  EXPECT_DOUBLE_EQ(90.0, estimator.params().frequency_khz);
+  EXPECT_NE(0.0, estimator.params().offset_ms);
 }
 
 TEST(RtpToNtpTests, FailsForNoParameters) {
@@ -287,7 +244,7 @@ TEST(RtpToNtpTests, FailsForNoParameters) {
       estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   EXPECT_TRUE(new_sr);
   
-  EXPECT_FALSE(estimator.params());
+  EXPECT_FALSE(estimator.params().calculated);
   int64_t timestamp_ms = -1;
   EXPECT_FALSE(estimator.Estimate(timestamp, &timestamp_ms));
 }

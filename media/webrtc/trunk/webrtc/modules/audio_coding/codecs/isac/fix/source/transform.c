@@ -15,9 +15,9 @@
 
 
 
-#include "modules/audio_coding/codecs/isac/fix/source/codec.h"
-#include "modules/audio_coding/codecs/isac/fix/source/fft.h"
-#include "modules/audio_coding/codecs/isac/fix/source/settings.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/codec.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/fft.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/settings.h"
 
 
 

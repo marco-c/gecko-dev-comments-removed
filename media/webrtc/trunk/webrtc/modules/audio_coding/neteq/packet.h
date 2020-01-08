@@ -8,16 +8,16 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_PACKET_H_
-#define MODULES_AUDIO_CODING_NETEQ_PACKET_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_PACKET_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_PACKET_H_
 
 #include <list>
 #include <memory>
 
-#include "api/audio_codecs/audio_decoder.h"
-#include "modules/audio_coding/neteq/tick_timer.h"
-#include "rtc_base/buffer.h"
-#include "typedefs.h"  
+#include "webrtc/base/buffer.h"
+#include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
+#include "webrtc/modules/audio_coding/neteq/tick_timer.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

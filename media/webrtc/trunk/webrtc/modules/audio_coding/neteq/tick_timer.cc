@@ -8,7 +8,7 @@
 
 
 
-#include "modules/audio_coding/neteq/tick_timer.h"
+#include "webrtc/modules/audio_coding/neteq/tick_timer.h"
 
 namespace webrtc {
 

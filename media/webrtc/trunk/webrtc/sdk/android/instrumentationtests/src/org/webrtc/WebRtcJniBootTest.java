@@ -8,7 +8,7 @@
 
 
 
-package org.webrtc;
+package org.appspot.apprtc.test;
 
 import android.support.test.InstrumentationRegistry;
 import android.support.test.filters.SmallTest;
@@ -25,9 +25,9 @@ public class WebRtcJniBootTest {
   @Test
   @SmallTest
   public void testJniLoadsWithoutError() throws InterruptedException {
-    PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions
-                                         .builder(InstrumentationRegistry.getTargetContext())
-                                         .createInitializationOptions());
+    PeerConnectionFactory.initializeAndroidGlobals(InstrumentationRegistry.getTargetContext(),
+        true , true ,
+        false );
 
     PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
     new PeerConnectionFactory(options);

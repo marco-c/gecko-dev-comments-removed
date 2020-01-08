@@ -8,13 +8,13 @@
 
 
 
-#include "modules/audio_processing/utility/delay_estimator.h"
+#include "webrtc/modules/audio_processing/utility/delay_estimator.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <algorithm>
 
-#include "rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 
 
@@ -440,11 +440,11 @@ BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(
 
 int WebRtc_AllocateHistoryBufferMemory(BinaryDelayEstimator* self,
                                        int history_size) {
-  BinaryDelayEstimatorFarend* far = self->farend;
+  BinaryDelayEstimatorFarend* farend = self->farend;
   
-  if (history_size != far->history_size) {
+  if (history_size != farend->history_size) {
     
-    history_size = WebRtc_AllocateFarendBufferMemory(far, history_size);
+    history_size = WebRtc_AllocateFarendBufferMemory(farend, history_size);
   }
   
   

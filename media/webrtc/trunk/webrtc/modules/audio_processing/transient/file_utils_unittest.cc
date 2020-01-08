@@ -8,17 +8,17 @@
 
 
 
-#include "modules/audio_processing/transient/file_utils.h"
+#include "webrtc/modules/audio_processing/transient/file_utils.h"
 
 #include <string.h>
 #include <string>
 #include <memory>
 #include <vector>
 
-#include "system_wrappers/include/file_wrapper.h"
-#include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
-#include "typedefs.h"  
+#include "webrtc/system_wrappers/include/file_wrapper.h"
+#include "webrtc/test/gtest.h"
+#include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

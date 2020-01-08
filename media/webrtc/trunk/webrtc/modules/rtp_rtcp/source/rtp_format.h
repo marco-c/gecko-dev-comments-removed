@@ -8,14 +8,14 @@
 
 
 
-#ifndef MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_H_
-#define MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_H_
+#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_H_
 
 #include <string>
 
-#include "modules/include/module_common_types.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
 class RtpPacketToSend;
@@ -24,22 +24,25 @@ class RtpPacketizer {
  public:
   static RtpPacketizer* Create(RtpVideoCodecTypes type,
                                size_t max_payload_len,
-                               size_t last_packet_reduction_len,
                                const RTPVideoTypeHeader* rtp_type_header,
                                FrameType frame_type);
 
   virtual ~RtpPacketizer() {}
 
-  
-  virtual size_t SetPayloadData(
-      const uint8_t* payload_data,
-      size_t payload_size,
-      const RTPFragmentationHeader* fragmentation) = 0;
+  virtual void SetPayloadData(const uint8_t* payload_data,
+                              size_t payload_size,
+                              const RTPFragmentationHeader* fragmentation) = 0;
 
   
   
   
-  virtual bool NextPacket(RtpPacketToSend* packet) = 0;
+  
+  
+  virtual bool NextPacket(RtpPacketToSend* packet, bool* last_packet) = 0;
+
+  virtual ProtectionType GetProtectionType() = 0;
+
+  virtual StorageType GetStorageType(uint32_t retransmission_settings) = 0;
 
   virtual std::string ToString() = 0;
 };

@@ -10,11 +10,11 @@
 
 
 
-#include "modules/audio_coding/neteq/buffer_level_filter.h"
+#include "webrtc/modules/audio_coding/neteq/buffer_level_filter.h"
 
 #include <math.h>  
 
-#include "test/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

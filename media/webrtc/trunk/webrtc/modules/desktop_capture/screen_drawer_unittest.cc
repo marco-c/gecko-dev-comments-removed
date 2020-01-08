@@ -8,99 +8,17 @@
 
 
 
-#include "modules/desktop_capture/screen_drawer.h"
+#include "webrtc/modules/desktop_capture/screen_drawer.h"
 
-#include <atomic>
 #include <stdint.h>
 
-#include "rtc_base/checks.h"
-#include "rtc_base/function_view.h"
-#include "rtc_base/logging.h"
-#include "rtc_base/random.h"
-#include "rtc_base/platform_thread.h"
-#include "rtc_base/ptr_util.h"
-#include "rtc_base/timeutils.h"
-#include "system_wrappers/include/sleep.h"
-#include "test/gtest.h"
-
-#if defined(WEBRTC_POSIX)
-#include "modules/desktop_capture/screen_drawer_lock_posix.h"
-#endif
+#include "webrtc/base/random.h"
+#include "webrtc/base/timeutils.h"
+#include "webrtc/system_wrappers/include/logging.h"
+#include "webrtc/system_wrappers/include/sleep.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
-
-namespace {
-
-void TestScreenDrawerLock(
-    rtc::FunctionView<std::unique_ptr<ScreenDrawerLock>()> ctor) {
-  constexpr int kLockDurationMs = 100;
-
-  RTC_DCHECK(ctor);
-
-  std::atomic<bool> created(false);
-  std::atomic<bool> ready(false);
-
-  class Task {
-   public:
-    Task(std::atomic<bool>* created,
-         const std::atomic<bool>& ready,
-         rtc::FunctionView<std::unique_ptr<ScreenDrawerLock>()> ctor)
-        : created_(created),
-          ready_(ready),
-          ctor_(ctor) {}
-
-    ~Task() = default;
-
-    static void RunTask(void* me) {
-      Task* task = static_cast<Task*>(me);
-      std::unique_ptr<ScreenDrawerLock> lock = task->ctor_();
-      ASSERT_TRUE(!!lock);
-      task->created_->store(true);
-      
-      while (!task->ready_.load()) {
-        SleepMs(1);
-      }
-      
-      
-      
-      
-      const int64_t current_ms = rtc::TimeMillis();
-      
-      
-      
-      
-      while (rtc::TimeMillis() - current_ms < kLockDurationMs) {
-        SleepMs(kLockDurationMs - (rtc::TimeMillis() - current_ms));
-      }
-    }
-
-   private:
-    std::atomic<bool>* const created_;
-    const std::atomic<bool>& ready_;
-    const rtc::FunctionView<std::unique_ptr<ScreenDrawerLock>()> ctor_;
-  } task(&created, ready, ctor);
-
-  rtc::PlatformThread lock_thread(&Task::RunTask, &task, "lock_thread");
-  lock_thread.Start();
-
-  
-  
-  
-  while (!created.load()) {
-    SleepMs(1);
-  }
-
-  const int64_t start_ms = rtc::TimeMillis();
-  ready.store(true);
-  
-  
-  ASSERT_GT(kLockDurationMs, rtc::TimeMillis() - start_ms);
-  ctor();
-  ASSERT_LE(kLockDurationMs, rtc::TimeMillis() - start_ms);
-  lock_thread.Stop();
-}
-
-}  
 
 
 
@@ -109,15 +27,13 @@ void TestScreenDrawerLock(
 TEST(ScreenDrawerTest, DISABLED_DrawRectangles) {
   std::unique_ptr<ScreenDrawer> drawer = ScreenDrawer::Create();
   if (!drawer) {
-    RTC_LOG(LS_WARNING)
-        << "No ScreenDrawer implementation for current platform.";
+    LOG(LS_WARNING) << "No ScreenDrawer implementation for current platform.";
     return;
   }
 
   if (drawer->DrawableRegion().is_empty()) {
-    RTC_LOG(LS_WARNING)
-        << "ScreenDrawer of current platform does not provide a "
-           "non-empty DrawableRegion().";
+    LOG(LS_WARNING) << "ScreenDrawer of current platform does not provide a "
+                       "non-empty DrawableRegion().";
     return;
   }
 
@@ -139,23 +55,6 @@ TEST(ScreenDrawerTest, DISABLED_DrawRectangles) {
   }
 
   SleepMs(10000);
-}
-
-TEST(ScreenDrawerTest, TwoScreenDrawerLocks) {
-#if defined(WEBRTC_POSIX)
-  
-  
-  const char* semaphore_name = "GSDL8784541a812011e788ff67427b";
-  ScreenDrawerLockPosix::Unlink(semaphore_name);
-
-  TestScreenDrawerLock([semaphore_name]() {
-    return rtc::MakeUnique<ScreenDrawerLockPosix>(semaphore_name);
-  });
-#elif defined(WEBRTC_WIN)
-  TestScreenDrawerLock([]() {
-    return ScreenDrawerLock::Create();
-  });
-#endif
 }
 
 }  

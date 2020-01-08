@@ -8,11 +8,11 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_BEAMFORMER_COVARIANCE_MATRIX_GENERATOR_H_
-#define MODULES_AUDIO_PROCESSING_BEAMFORMER_COVARIANCE_MATRIX_GENERATOR_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_BEAMFORMER_COVARIANCE_MATRIX_GENERATOR_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_BEAMFORMER_COVARIANCE_MATRIX_GENERATOR_H_
 
-#include "modules/audio_processing/beamformer/complex_matrix.h"
-#include "modules/audio_processing/beamformer/array_util.h"
+#include "webrtc/modules/audio_processing/beamformer/complex_matrix.h"
+#include "webrtc/modules/audio_processing/beamformer/array_util.h"
 
 namespace webrtc {
 

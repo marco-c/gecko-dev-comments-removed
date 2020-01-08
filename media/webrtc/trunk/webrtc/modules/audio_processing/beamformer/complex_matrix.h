@@ -8,13 +8,13 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_BEAMFORMER_COMPLEX_MATRIX_H_
-#define MODULES_AUDIO_PROCESSING_BEAMFORMER_COMPLEX_MATRIX_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_BEAMFORMER_COMPLEX_MATRIX_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_BEAMFORMER_COMPLEX_MATRIX_H_
 
 #include <complex>
 
-#include "modules/audio_processing/beamformer/matrix.h"
-#include "rtc_base/checks.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/modules/audio_processing/beamformer/matrix.h"
 
 namespace webrtc {
 

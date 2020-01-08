@@ -11,237 +11,351 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "modules/video_capture/device_info_impl.h"
-#include "modules/video_capture/video_capture_config.h"
-#include "rtc_base/logging.h"
+#include "webrtc/modules/video_capture/device_info_impl.h"
+#include "webrtc/modules/video_capture/video_capture_config.h"
+#include "webrtc/system_wrappers/include/logging.h"
 
 #ifndef abs
-#define abs(a) (a >= 0 ? a : -a)
+#define abs(a) (a>=0?a:-a)
 #endif
 
-namespace webrtc {
-namespace videocapturemodule {
+namespace webrtc
+{
+namespace videocapturemodule
+{
 DeviceInfoImpl::DeviceInfoImpl()
-    : _apiLock(*RWLockWrapper::CreateRWLock()),
-      _lastUsedDeviceName(NULL),
-      _lastUsedDeviceNameLength(0) {}
-
-DeviceInfoImpl::~DeviceInfoImpl(void) {
-  _apiLock.AcquireLockExclusive();
-  free(_lastUsedDeviceName);
-  _apiLock.ReleaseLockExclusive();
-
-  delete &_apiLock;
+    : _apiLock(*RWLockWrapper::CreateRWLock()), _lastUsedDeviceName(NULL),
+      _lastUsedDeviceNameLength(0)
+{
 }
-int32_t DeviceInfoImpl::NumberOfCapabilities(const char* deviceUniqueIdUTF8) {
-  if (!deviceUniqueIdUTF8)
-    return -1;
 
-  _apiLock.AcquireLockShared();
+DeviceInfoImpl::~DeviceInfoImpl(void)
+{
+    _apiLock.AcquireLockExclusive();
+    free(_lastUsedDeviceName);
+    _apiLock.ReleaseLockExclusive();
 
-  if (_lastUsedDeviceNameLength == strlen((char*)deviceUniqueIdUTF8)) {
+    delete &_apiLock;
+}
+int32_t DeviceInfoImpl::NumberOfCapabilities(
+                                        const char* deviceUniqueIdUTF8)
+{
 
-#if defined(WEBRTC_MAC) || defined(WEBRTC_LINUX) || defined(WEBRTC_BSD)
-    if (strncasecmp((char*)_lastUsedDeviceName, (char*)deviceUniqueIdUTF8,
-                    _lastUsedDeviceNameLength) == 0)
-#else
-    if (_strnicmp((char*)_lastUsedDeviceName, (char*)deviceUniqueIdUTF8,
-                  _lastUsedDeviceNameLength) == 0)
-#endif
+    if (!deviceUniqueIdUTF8)
+        return -1;
+
+    _apiLock.AcquireLockShared();
+
+    if (_lastUsedDeviceNameLength == strlen((char*) deviceUniqueIdUTF8))
     {
-      
-      _apiLock.ReleaseLockShared();
-      return static_cast<int32_t>(_captureCapabilities.size());
+        
+#if defined(WEBRTC_MAC) || defined(WEBRTC_LINUX) || defined(WEBRTC_BSD)
+        if(strncasecmp((char*)_lastUsedDeviceName,
+                       (char*) deviceUniqueIdUTF8,
+                       _lastUsedDeviceNameLength)==0)
+#else
+        if (_strnicmp((char*) _lastUsedDeviceName,
+                      (char*) deviceUniqueIdUTF8,
+                      _lastUsedDeviceNameLength) == 0)
+#endif
+        {
+            
+            _apiLock.ReleaseLockShared();
+            return static_cast<int32_t>(_captureCapabilities.size());
+        }
     }
-  }
-  
-  _apiLock.ReleaseLockShared();
-  WriteLockScoped cs2(_apiLock);
+    
+    _apiLock.ReleaseLockShared();
+    WriteLockScoped cs2(_apiLock);
 
-  int32_t ret = CreateCapabilityMap(deviceUniqueIdUTF8);
-  return ret;
+    int32_t ret = CreateCapabilityMap(deviceUniqueIdUTF8);
+    return ret;
 }
 
 int32_t DeviceInfoImpl::GetCapability(const char* deviceUniqueIdUTF8,
                                       const uint32_t deviceCapabilityNumber,
-                                      VideoCaptureCapability& capability) {
-  assert(deviceUniqueIdUTF8 != NULL);
+                                      VideoCaptureCapability& capability)
+{
+    assert(deviceUniqueIdUTF8 != NULL);
 
-  ReadLockScoped cs(_apiLock);
+    ReadLockScoped cs(_apiLock);
 
-  if ((_lastUsedDeviceNameLength != strlen((char*)deviceUniqueIdUTF8))
+    if ((_lastUsedDeviceNameLength != strlen((char*) deviceUniqueIdUTF8))
 #if defined(WEBRTC_MAC) || defined(WEBRTC_LINUX) || defined(WEBRTC_BSD)
-      || (strncasecmp((char*)_lastUsedDeviceName, (char*)deviceUniqueIdUTF8,
-                      _lastUsedDeviceNameLength) != 0))
+        || (strncasecmp((char*)_lastUsedDeviceName,
+                        (char*) deviceUniqueIdUTF8,
+                        _lastUsedDeviceNameLength)!=0))
 #else
-      || (_strnicmp((char*)_lastUsedDeviceName, (char*)deviceUniqueIdUTF8,
-                    _lastUsedDeviceNameLength) != 0))
+        || (_strnicmp((char*) _lastUsedDeviceName,
+                      (char*) deviceUniqueIdUTF8,
+                      _lastUsedDeviceNameLength) != 0))
 #endif
 
-  {
-    _apiLock.ReleaseLockShared();
-    _apiLock.AcquireLockExclusive();
-    if (-1 == CreateCapabilityMap(deviceUniqueIdUTF8)) {
-      _apiLock.ReleaseLockExclusive();
-      _apiLock.AcquireLockShared();
-      return -1;
+    {
+        _apiLock.ReleaseLockShared();
+        _apiLock.AcquireLockExclusive();
+        if (-1 == CreateCapabilityMap(deviceUniqueIdUTF8))
+        {
+            _apiLock.ReleaseLockExclusive();
+            _apiLock.AcquireLockShared();
+            return -1;
+        }
+        _apiLock.ReleaseLockExclusive();
+        _apiLock.AcquireLockShared();
     }
-    _apiLock.ReleaseLockExclusive();
-    _apiLock.AcquireLockShared();
-  }
 
-  
-  if (deviceCapabilityNumber >= (unsigned int)_captureCapabilities.size()) {
-    RTC_LOG(LS_ERROR) << deviceUniqueIdUTF8 << " Invalid deviceCapabilityNumber "
+    
+    if (deviceCapabilityNumber >= (unsigned int) _captureCapabilities.size())
+    {
+        LOG(LS_ERROR) << deviceUniqueIdUTF8 << " Invalid deviceCapabilityNumber "
                       << deviceCapabilityNumber << ">= number of capabilities ("
                       << _captureCapabilities.size() << ").";
-    return -1;
-  }
+        return -1;
+    }
 
-  capability = _captureCapabilities[deviceCapabilityNumber];
-  return 0;
+    capability = _captureCapabilities[deviceCapabilityNumber];
+    return 0;
 }
 
 int32_t DeviceInfoImpl::GetBestMatchedCapability(
-    const char* deviceUniqueIdUTF8,
-    const VideoCaptureCapability& requested,
-    VideoCaptureCapability& resulting) {
-  if (!deviceUniqueIdUTF8)
-    return -1;
+                                        const char*deviceUniqueIdUTF8,
+                                        const VideoCaptureCapability& requested,
+                                        VideoCaptureCapability& resulting)
+{
 
-  ReadLockScoped cs(_apiLock);
-  if ((_lastUsedDeviceNameLength != strlen((char*)deviceUniqueIdUTF8))
+
+    if (!deviceUniqueIdUTF8)
+        return -1;
+
+    ReadLockScoped cs(_apiLock);
+    if ((_lastUsedDeviceNameLength != strlen((char*) deviceUniqueIdUTF8))
 #if defined(WEBRTC_MAC) || defined(WEBRTC_LINUX) || defined(WEBRTC_BSD)
-      || (strncasecmp((char*)_lastUsedDeviceName, (char*)deviceUniqueIdUTF8,
-                      _lastUsedDeviceNameLength) != 0))
+        || (strncasecmp((char*)_lastUsedDeviceName,
+                        (char*) deviceUniqueIdUTF8,
+                        _lastUsedDeviceNameLength)!=0))
 #else
-      || (_strnicmp((char*)_lastUsedDeviceName, (char*)deviceUniqueIdUTF8,
-                    _lastUsedDeviceNameLength) != 0))
+        || (_strnicmp((char*) _lastUsedDeviceName,
+                      (char*) deviceUniqueIdUTF8,
+                      _lastUsedDeviceNameLength) != 0))
 #endif
-  {
-    _apiLock.ReleaseLockShared();
-    _apiLock.AcquireLockExclusive();
-    if (-1 == CreateCapabilityMap(deviceUniqueIdUTF8)) {
-      return -1;
+    {
+        _apiLock.ReleaseLockShared();
+        _apiLock.AcquireLockExclusive();
+        if (-1 == CreateCapabilityMap(deviceUniqueIdUTF8))
+        {
+            _apiLock.ReleaseLockExclusive();
+            _apiLock.AcquireLockShared();
+            return -1;
+        }
+        _apiLock.ReleaseLockExclusive();
+        _apiLock.AcquireLockShared();
     }
-    _apiLock.ReleaseLockExclusive();
-    _apiLock.AcquireLockShared();
-  }
 
-  int32_t bestformatIndex = -1;
-  int32_t bestWidth = 0;
-  int32_t bestHeight = 0;
-  int32_t bestFrameRate = 0;
-  VideoType bestVideoType = VideoType::kUnknown;
+    int32_t bestformatIndex = -1;
+    int32_t bestWidth = 0;
+    int32_t bestHeight = 0;
+    int32_t bestFrameRate = 0;
+    RawVideoType bestRawType = kVideoUnknown;
+    webrtc::VideoCodecType bestCodecType = webrtc::kVideoCodecUnknown;
 
-  const int32_t numberOfCapabilies =
-      static_cast<int32_t>(_captureCapabilities.size());
+    const int32_t numberOfCapabilies =
+        static_cast<int32_t>(_captureCapabilities.size());
 
-  for (int32_t tmp = 0; tmp < numberOfCapabilies;
-       ++tmp)  
-  {
-    VideoCaptureCapability& capability = _captureCapabilities[tmp];
+    for (int32_t tmp = 0; tmp < numberOfCapabilies; ++tmp) 
+    {
+        VideoCaptureCapability& capability = _captureCapabilities[tmp];
 
-    const int32_t diffWidth = capability.width - requested.width;
-    const int32_t diffHeight = capability.height - requested.height;
-    const int32_t diffFrameRate = capability.maxFPS - requested.maxFPS;
+        const int32_t diffWidth = capability.width - requested.width;
+        const int32_t diffHeight = capability.height - requested.height;
+        const int32_t diffFrameRate = capability.maxFPS - requested.maxFPS;
 
-    const int32_t currentbestDiffWith = bestWidth - requested.width;
-    const int32_t currentbestDiffHeight = bestHeight - requested.height;
-    const int32_t currentbestDiffFrameRate = bestFrameRate - requested.maxFPS;
+        const int32_t currentbestDiffWith = bestWidth - requested.width;
+        const int32_t currentbestDiffHeight = bestHeight - requested.height;
+        const int32_t currentbestDiffFrameRate = bestFrameRate - requested.maxFPS;
 
-    if ((diffHeight >= 0 &&
-         diffHeight <= abs(currentbestDiffHeight))  
-                                                    
-        || (currentbestDiffHeight < 0 && diffHeight >= currentbestDiffHeight)) {
-      if (diffHeight ==
-          currentbestDiffHeight)  
-      {
-        if ((diffWidth >= 0 &&
-             diffWidth <= abs(currentbestDiffWith))  
-            || (currentbestDiffWith < 0 && diffWidth >= currentbestDiffWith)) {
-          if (diffWidth == currentbestDiffWith &&
-              diffHeight == currentbestDiffHeight)  
-          {
-            
-            
-            if (((diffFrameRate >= 0 &&
-                  diffFrameRate <=
-                      currentbestDiffFrameRate)  
-                                                 
-                                                 
-                 || (currentbestDiffFrameRate < 0 &&
-                     diffFrameRate >=
-                         currentbestDiffFrameRate))  
-                                                     
-                                                     
-                ) {
-              if ((currentbestDiffFrameRate ==
-                   diffFrameRate)  
-                                   
-                  || (currentbestDiffFrameRate >= 0)) {
-                if (bestVideoType != requested.videoType &&
-                    requested.videoType != VideoType::kUnknown &&
-                    (capability.videoType == requested.videoType ||
-                     capability.videoType == VideoType::kI420 ||
-                     capability.videoType == VideoType::kYUY2 ||
-                     capability.videoType == VideoType::kYV12)) {
-                  bestVideoType = capability.videoType;
-                  bestformatIndex = tmp;
+        if ((diffHeight >= 0 && diffHeight <= abs(currentbestDiffHeight)) 
+            || (currentbestDiffHeight < 0 && diffHeight >= currentbestDiffHeight))
+        {
+
+            if (diffHeight == currentbestDiffHeight) 
+            {
+                if ((diffWidth >= 0 && diffWidth <= abs(currentbestDiffWith)) 
+                    || (currentbestDiffWith < 0 && diffWidth >= currentbestDiffWith))
+                {
+                    if (diffWidth == currentbestDiffWith && diffHeight
+                        == currentbestDiffHeight) 
+                    {
+                        
+                        if (((diffFrameRate >= 0 &&
+                              diffFrameRate <= currentbestDiffFrameRate) 
+                            ||
+                            (currentbestDiffFrameRate < 0 &&
+                             diffFrameRate >= currentbestDiffFrameRate)) 
+                        )
+                        {
+                            if ((currentbestDiffFrameRate == diffFrameRate) 
+                                || (currentbestDiffFrameRate >= 0))
+                            {
+                                if (bestRawType != requested.rawType
+                                    && requested.rawType != kVideoUnknown
+                                    && (capability.rawType == requested.rawType
+                                        || capability.rawType == kVideoI420
+                                        || capability.rawType == kVideoYUY2
+                                        || capability.rawType == kVideoYV12))
+                                {
+                                    bestCodecType = capability.codecType;
+                                    bestRawType = capability.rawType;
+                                    bestformatIndex = tmp;
+                                }
+                                
+                                if (capability.height == requested.height
+                                    && capability.width == requested.width
+                                    && capability.maxFPS >= requested.maxFPS)
+                                {
+                                    if (capability.codecType == requested.codecType
+                                        && bestCodecType != requested.codecType)
+                                    {
+                                        bestCodecType = capability.codecType;
+                                        bestformatIndex = tmp;
+                                    }
+                                }
+                            }
+                            else 
+                            {
+                                if (requested.codecType == capability.codecType)
+                                {
+
+                                    bestWidth = capability.width;
+                                    bestHeight = capability.height;
+                                    bestFrameRate = capability.maxFPS;
+                                    bestCodecType = capability.codecType;
+                                    bestRawType = capability.rawType;
+                                    bestformatIndex = tmp;
+                                }
+                            }
+                        }
+                    }
+                    else 
+                    {
+                        if (requested.codecType == capability.codecType)
+                        {
+                            bestWidth = capability.width;
+                            bestHeight = capability.height;
+                            bestFrameRate = capability.maxFPS;
+                            bestCodecType = capability.codecType;
+                            bestRawType = capability.rawType;
+                            bestformatIndex = tmp;
+                        }
+                    }
                 }
-                
-                
-                if (capability.height == requested.height &&
-                    capability.width == requested.width &&
-                    capability.maxFPS >= requested.maxFPS) {
-                  bestformatIndex = tmp;
-                }
-              } else  
-              {
-                bestWidth = capability.width;
-                bestHeight = capability.height;
-                bestFrameRate = capability.maxFPS;
-                bestVideoType = capability.videoType;
-                bestformatIndex = tmp;
-              }
             }
-          } else  
-          {
-            bestWidth = capability.width;
-            bestHeight = capability.height;
-            bestFrameRate = capability.maxFPS;
-            bestVideoType = capability.videoType;
-            bestformatIndex = tmp;
-          }
-        }     
-      } else  
-      {
-        bestWidth = capability.width;
-        bestHeight = capability.height;
-        bestFrameRate = capability.maxFPS;
-        bestVideoType = capability.videoType;
-        bestformatIndex = tmp;
-      }
-    }  
-  }    
+            else 
+            {
+                if (requested.codecType == capability.codecType)
+                {
+                    bestWidth = capability.width;
+                    bestHeight = capability.height;
+                    bestFrameRate = capability.maxFPS;
+                    bestCodecType = capability.codecType;
+                    bestRawType = capability.rawType;
+                    bestformatIndex = tmp;
+                }
+            }
+        }
+    }
 
-  RTC_LOG(LS_VERBOSE) << "Best camera format: " << bestWidth << "x"
-                      << bestHeight << "@" << bestFrameRate
-                      << "fps, color format: "
-                      << static_cast<int>(bestVideoType);
+    LOG(LS_VERBOSE) << "Best camera format: " << bestWidth << "x" << bestHeight
+                    << "@" << bestFrameRate
+                    << "fps, color format: " << bestRawType;
 
-  
-  if (bestformatIndex < 0)
-    return -1;
-  resulting = _captureCapabilities[bestformatIndex];
-  return bestformatIndex;
+    
+    if (bestformatIndex < 0)
+        return -1;
+    resulting = _captureCapabilities[bestformatIndex];
+    return bestformatIndex;
+}
+
+
+int32_t DeviceInfoImpl::GetExpectedCaptureDelay(
+                                          const DelayValues delayValues[],
+                                          const uint32_t sizeOfDelayValues,
+                                          const char* productId,
+                                          const uint32_t width,
+                                          const uint32_t height)
+{
+    int32_t bestDelay = kDefaultCaptureDelay;
+
+    for (uint32_t device = 0; device < sizeOfDelayValues; ++device)
+    {
+        if (delayValues[device].productId && strncmp((char*) productId,
+                                                     (char*) delayValues[device].productId,
+                                                     kVideoCaptureProductIdLength) == 0)
+        {
+            
+
+            int32_t bestWidth = 0;
+            int32_t bestHeight = 0;
+
+            
+            for (uint32_t delayIndex = 0; delayIndex < NoOfDelayValues; ++delayIndex)
+            {
+                const DelayValue& currentValue = delayValues[device].delayValues[delayIndex];
+
+                const int32_t diffWidth = currentValue.width - width;
+                const int32_t diffHeight = currentValue.height - height;
+
+                const int32_t currentbestDiffWith = bestWidth - width;
+                const int32_t currentbestDiffHeight = bestHeight - height;
+
+                if ((diffHeight >= 0 && diffHeight <= abs(currentbestDiffHeight)) 
+                    || (currentbestDiffHeight < 0 && diffHeight >= currentbestDiffHeight))
+                {
+
+                    if (diffHeight == currentbestDiffHeight) 
+                    {
+                        if ((diffWidth >= 0 && diffWidth <= abs(currentbestDiffWith)) 
+                            || (currentbestDiffWith < 0 && diffWidth >= currentbestDiffWith))
+                        {
+                            if (diffWidth == currentbestDiffWith && diffHeight
+                                == currentbestDiffHeight) 
+                            {
+                            }
+                            else 
+                            {
+                                bestWidth = currentValue.width;
+                                bestHeight = currentValue.height;
+                                bestDelay = currentValue.delay;
+                            }
+                        }
+                    }
+                    else 
+                    {
+                        bestWidth = currentValue.width;
+                        bestHeight = currentValue.height;
+                        bestDelay = currentValue.delay;
+                    }
+                }
+            }
+            break;
+        }
+    }
+    if (bestDelay > kMaxCaptureDelay)
+    {
+        LOG(LS_WARNING) << "Expected capture delay (" << bestDelay
+                        << " ms) too high, using " << kMaxCaptureDelay
+                        << " ms.";
+        bestDelay = kMaxCaptureDelay;
+    }
+
+    return bestDelay;
+
 }
 
 
 int32_t DeviceInfoImpl::GetOrientation(const char* deviceUniqueIdUTF8,
                                        VideoRotation& orientation) {
   orientation = kVideoRotation_0;
-  return -1;
+    return -1;
 }
 }  
 }  

@@ -1,17 +1,17 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef MediaEnginePrefs_h
 #define MediaEnginePrefs_h
 
 namespace mozilla {
 
-/**
- * Video source and friends.
- */
+
+
+
 class MediaEnginePrefs {
 public:
   static const int DEFAULT_VIDEO_FPS = 30;
@@ -26,7 +26,6 @@ public:
     , mFPS(0)
     , mFreq(0)
     , mAecOn(false)
-    , mUseAecMobile(false)
     , mAgcOn(false)
     , mNoiseOn(false)
     , mAec(0)
@@ -42,9 +41,8 @@ public:
   int32_t mWidth;
   int32_t mHeight;
   int32_t mFPS;
-  int32_t mFreq; // for test tones (fake:true)
+  int32_t mFreq; 
   bool mAecOn;
-  bool mUseAecMobile;
   bool mAgcOn;
   bool mNoiseOn;
   int32_t mAec;
@@ -61,7 +59,7 @@ public:
     return memcmp(this, &aRhs, sizeof(MediaEnginePrefs)) == 0;
   };
 
-  // mWidth and/or mHeight may be zero (=adaptive default), so use functions.
+  
 
   int32_t GetWidth(bool aHD = false) const {
     return mWidth? mWidth : (mHeight?
@@ -77,8 +75,8 @@ public:
 
 private:
   static int32_t GetDefWidth(bool aHD = false) {
-    // It'd be nice if we could use the ternary operator here, but we can't
-    // because of bug 1002729.
+    
+    
     if (aHD) {
       return DEFAULT_169_VIDEO_WIDTH;
     }
@@ -87,8 +85,8 @@ private:
   }
 
   static int32_t GetDefHeight(bool aHD = false) {
-    // It'd be nice if we could use the ternary operator here, but we can't
-    // because of bug 1002729.
+    
+    
     if (aHD) {
       return DEFAULT_169_VIDEO_HEIGHT;
     }
@@ -97,6 +95,6 @@ private:
   }
 };
 
-} // namespace mozilla
+} 
 
-#endif // MediaEnginePrefs_h
+#endif 

@@ -7,7 +7,7 @@
 
 
 
-#include "modules/video_coding/utility/vp8_header_parser.h"
+#include "webrtc/modules/video_coding/utility/vp8_header_parser.h"
 
 namespace webrtc {
 void FuzzOneInput(const uint8_t* data, size_t size) {

@@ -8,16 +8,16 @@
 
 
 
-#include "common_audio/vad/vad_unittest.h"
+#include "webrtc/common_audio/vad/vad_unittest.h"
 
 #include <stdlib.h>
 
-#include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "common_audio/vad/include/webrtc_vad.h"
-#include "rtc_base/arraysize.h"
-#include "rtc_base/checks.h"
-#include "test/gtest.h"
-#include "typedefs.h"  
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/common_audio/vad/include/webrtc_vad.h"
+#include "webrtc/test/gtest.h"
+#include "webrtc/typedefs.h"
 
 VadTest::VadTest() {}
 
@@ -52,8 +52,7 @@ bool VadTest::ValidRatesAndFrameLengths(int rate, size_t frame_length) {
   return false;
 }
 
-namespace webrtc {
-namespace test {
+namespace {
 
 TEST_F(VadTest, ApiTest) {
   
@@ -153,5 +152,4 @@ TEST_F(VadTest, ValidRatesFrameLengths) {
 
 
 
-}  
 }  

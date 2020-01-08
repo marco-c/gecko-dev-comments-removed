@@ -10,13 +10,13 @@
 
 
 
-#include "modules/audio_coding/neteq/delay_manager.h"
+#include "webrtc/modules/audio_coding/neteq/delay_manager.h"
 
 #include <math.h>
 
-#include "modules/audio_coding/neteq/mock/mock_delay_peak_detector.h"
-#include "test/gmock.h"
-#include "test/gtest.h"
+#include "webrtc/modules/audio_coding/neteq/mock/mock_delay_peak_detector.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 
@@ -266,58 +266,6 @@ TEST_F(DelayManagerTest, MinAndRequiredDelay) {
   EXPECT_EQ(kMinDelayPackets << 8, dm_->TargetLevel());
 }
 
-
-
-TEST_F(DelayManagerTest, EmptyPacketsReported) {
-  SetPacketAudioLength(kFrameSizeMs);
-  
-  InsertNextPacket();
-
-  
-  IncreaseTime(kFrameSizeMs);
-
-  
-  
-  seq_no_ += 10;
-  for (int j = 0; j < 10; ++j) {
-    dm_->RegisterEmptyPacket();
-  }
-
-  
-  
-  
-  
-  EXPECT_CALL(detector_, Update(1, 1)).WillOnce(Return(false));
-  InsertNextPacket();
-
-  EXPECT_EQ(1 << 8, dm_->TargetLevel());  
-}
-
-
-
-TEST_F(DelayManagerTest, EmptyPacketsNotReported) {
-  SetPacketAudioLength(kFrameSizeMs);
-  
-  InsertNextPacket();
-
-  
-  IncreaseTime(kFrameSizeMs);
-
-  
-  
-  seq_no_ += 10;
-
-  
-  
-  
-  
-  EXPECT_CALL(detector_, Update(10, 10)).WillOnce(Return(false));
-  InsertNextPacket();
-
-  
-  EXPECT_EQ(10 * 1 << 8, dm_->TargetLevel());  
-}
-
 TEST_F(DelayManagerTest, Failures) {
   
   EXPECT_EQ(-1, dm_->Update(0, 0, -1));
@@ -333,82 +281,6 @@ TEST_F(DelayManagerTest, Failures) {
   EXPECT_TRUE(dm_->SetMaximumDelay(100));
   EXPECT_TRUE(dm_->SetMinimumDelay(80));
   EXPECT_FALSE(dm_->SetMaximumDelay(60));
-}
-
-
-TEST(DelayManagerIATScalingTest, StretchTest) {
-  using IATVector = DelayManager::IATVector;
-  
-  IATVector iat = {12, 0, 0, 0, 0, 0};
-  IATVector expected_result = {4, 4, 4, 0, 0, 0};
-  IATVector stretched_iat = DelayManager::ScaleHistogram(iat, 60, 20);
-  EXPECT_EQ(stretched_iat, expected_result);
-
-  
-  
-  iat = {18, 15, 12, 9, 6, 3, 0};
-  expected_result = {6, 6, 6, 5, 5, 5, 30};
-  stretched_iat = DelayManager::ScaleHistogram(iat, 60, 20);
-  EXPECT_EQ(stretched_iat, expected_result);
-
-  
-  iat = {18, 16, 14, 4, 0};
-  expected_result = {9, 9, 8, 8, 18};
-  stretched_iat = DelayManager::ScaleHistogram(iat, 120, 60);
-  EXPECT_EQ(stretched_iat, expected_result);
-
-  
-  iat = {19, 12, 0, 0, 0, 0, 0, 0};
-  expected_result = {3, 3, 3, 3, 3, 3, 2, 11};
-  stretched_iat = DelayManager::ScaleHistogram(iat, 120, 20);
-  EXPECT_EQ(stretched_iat, expected_result);
-
-  
-  iat = {13, 7, 5, 3, 1, 5, 12, 11, 3, 0, 0, 0};
-  expected_result = {7, 5, 5, 3, 3, 2, 2, 1, 2, 2, 6, 22};
-  stretched_iat = DelayManager::ScaleHistogram(iat, 70, 40);
-  EXPECT_EQ(stretched_iat, expected_result);
-
-  
-  iat = {13, 7, 5, 3, 1, 5, 12, 11, 3, 0, 0, 0};
-  expected_result = {8, 6, 6, 3, 2, 2, 1, 3, 3, 8, 7, 11};
-  stretched_iat = DelayManager::ScaleHistogram(iat, 30, 20);
-  EXPECT_EQ(stretched_iat, expected_result);
-}
-
-
-
-TEST(DelayManagerIATScalingTest, CompressionTest) {
-  using IATVector = DelayManager::IATVector;
-  
-  IATVector iat = {12, 11, 10, 3, 2, 1};
-  IATVector expected_result = {33, 6, 0, 0, 0, 0};
-  IATVector compressed_iat = DelayManager::ScaleHistogram(iat, 20, 60);
-  EXPECT_EQ(compressed_iat, expected_result);
-
-  
-  iat = {18, 16, 14, 4, 1};
-  expected_result = {34, 18, 1, 0, 0};
-  compressed_iat = DelayManager::ScaleHistogram(iat, 60, 120);
-  EXPECT_EQ(compressed_iat, expected_result);
-
-  
-  iat = {18, 12, 5, 4, 4, 3, 5, 1};
-  expected_result = {46, 6, 0, 0, 0, 0, 0, 0};
-  compressed_iat = DelayManager::ScaleHistogram(iat, 20, 120);
-  EXPECT_EQ(compressed_iat, expected_result);
-
-  
-  iat = {13, 7, 5, 3, 1, 5, 12, 11, 3};
-  expected_result = {11, 8, 6, 2, 5, 12, 13, 3, 0};
-  compressed_iat = DelayManager::ScaleHistogram(iat, 70, 80);
-  EXPECT_EQ(compressed_iat, expected_result);
-
-  
-  iat = {13, 7, 5, 3, 1, 5, 12, 11, 3};
-  expected_result = {18, 8, 16, 16, 2, 0, 0, 0, 0};
-  compressed_iat = DelayManager::ScaleHistogram(iat, 50, 110);
-  EXPECT_EQ(compressed_iat, expected_result);
 }
 
 }  

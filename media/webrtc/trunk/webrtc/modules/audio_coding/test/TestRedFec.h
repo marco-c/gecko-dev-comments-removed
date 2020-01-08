@@ -8,15 +8,15 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_TEST_TESTREDFEC_H_
-#define MODULES_AUDIO_CODING_TEST_TESTREDFEC_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_TEST_TESTREDFEC_H_
+#define WEBRTC_MODULES_AUDIO_CODING_TEST_TESTREDFEC_H_
 
 #include <memory>
 #include <string>
 
-#include "modules/audio_coding/test/ACMTest.h"
-#include "modules/audio_coding/test/Channel.h"
-#include "modules/audio_coding/test/PCMFile.h"
+#include "webrtc/modules/audio_coding/test/ACMTest.h"
+#include "webrtc/modules/audio_coding/test/Channel.h"
+#include "webrtc/modules/audio_coding/test/PCMFile.h"
 
 namespace webrtc {
 

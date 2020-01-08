@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_TEST_TEST_UTILS_H_
-#define MODULES_AUDIO_PROCESSING_TEST_TEST_UTILS_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_TEST_TEST_UTILS_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_TEST_TEST_UTILS_H_
 
 #include <math.h>
 #include <iterator>
@@ -18,11 +18,11 @@
 #include <string>
 #include <vector>
 
-#include "common_audio/channel_buffer.h"
-#include "common_audio/wav_file.h"
-#include "modules/audio_processing/include/audio_processing.h"
-#include "modules/include/module_common_types.h"
-#include "rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/common_audio/channel_buffer.h"
+#include "webrtc/common_audio/wav_file.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
 

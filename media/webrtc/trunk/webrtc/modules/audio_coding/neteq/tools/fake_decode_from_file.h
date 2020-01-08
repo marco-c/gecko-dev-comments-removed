@@ -8,15 +8,15 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_TOOLS_FAKE_DECODE_FROM_FILE_H_
-#define MODULES_AUDIO_CODING_NETEQ_TOOLS_FAKE_DECODE_FROM_FILE_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_FAKE_DECODE_FROM_FILE_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_FAKE_DECODE_FROM_FILE_H_
 
 #include <memory>
 
-#include "api/array_view.h"
-#include "api/audio_codecs/audio_decoder.h"
-#include "api/optional.h"
-#include "modules/audio_coding/neteq/tools/input_audio_file.h"
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
+#include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
 
 namespace webrtc {
 namespace test {

@@ -8,72 +8,59 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_
-#define MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_
+#define WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_
 
 #include <vector>
 
-#include "common_types.h"  
+#include "webrtc/common_video/include/video_image.h"
 
 namespace webrtc {
 namespace test {
 
 
 struct FrameStatistic {
-  explicit FrameStatistic(int frame_number) : frame_number(frame_number) {}
-  const int frame_number = 0;
+  FrameStatistic();
+
+  bool encoding_successful;
+  bool decoding_successful;
+  int encode_return_code;
+  int decode_return_code;
+  int encode_time_in_us;
+  int decode_time_in_us;
+  int frame_number;
+  
+  int packets_dropped;
+  size_t total_packets;
 
   
-  int64_t encode_start_ns = 0;
-  int encode_return_code = 0;
-  bool encoding_successful = false;
-  int encode_time_us = 0;
-  int bitrate_kbps = 0;
-  size_t encoded_frame_size_bytes = 0;
-  webrtc::FrameType frame_type = kVideoFrameDelta;
+  
+  int bit_rate_in_kbps;
 
   
-  rtc::Optional<size_t> max_nalu_length;
-
-  
-  int64_t decode_start_ns = 0;
-  int decode_return_code = 0;
-  bool decoding_successful = false;
-  int decode_time_us = 0;
-  int decoded_width = 0;
-  int decoded_height = 0;
-
-  
-  int qp = -1;
-
-  
-  int packets_dropped = 0;
-  size_t total_packets = 0;
-  size_t manipulated_length = 0;
-
-  
-  float psnr = 0.0;
-  float ssim = 0.0;
+  size_t encoded_frame_length_in_bytes;
+  webrtc::FrameType frame_type;
 };
+
 
 
 class Stats {
  public:
-  Stats() = default;
-  ~Stats() = default;
+  typedef std::vector<FrameStatistic>::iterator FrameStatisticsIterator;
+
+  Stats();
+  virtual ~Stats();
 
   
-  FrameStatistic* AddFrame();
+  
+  
+  
+  FrameStatistic& NewFrame(int frame_number);
 
   
-  FrameStatistic* GetFrame(int frame_number);
-
-  size_t size() const;
-
   
-  void PrintSummary() const;
+  void PrintSummary();
 
- private:
   std::vector<FrameStatistic> stats_;
 };
 

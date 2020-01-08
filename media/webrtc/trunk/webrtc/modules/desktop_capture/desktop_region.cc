@@ -8,7 +8,7 @@
 
 
 
-#include "modules/desktop_capture/desktop_region.h"
+#include "webrtc/modules/desktop_capture/desktop_region.h"
 
 #include <assert.h>
 

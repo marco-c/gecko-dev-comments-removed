@@ -8,12 +8,12 @@
 
 
 
-#ifndef MODULES_RTP_RTCP_SOURCE_TMMBR_HELP_H_
-#define MODULES_RTP_RTCP_SOURCE_TMMBR_HELP_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_TMMBR_HELP_H_
+#define WEBRTC_MODULES_RTP_RTCP_SOURCE_TMMBR_HELP_H_
 
 #include <vector>
-#include "modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
-#include "typedefs.h"  
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

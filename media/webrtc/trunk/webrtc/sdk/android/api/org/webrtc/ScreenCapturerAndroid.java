@@ -20,6 +20,9 @@ import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.view.Surface;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 
 
@@ -74,8 +77,6 @@ public class ScreenCapturerAndroid
   }
 
   @Override
-  
-  @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void initialize(final SurfaceTextureHelper surfaceTextureHelper,
       final Context applicationContext, final VideoCapturer.CapturerObserver capturerObserver) {
     checkNotDisposed();
@@ -95,8 +96,6 @@ public class ScreenCapturerAndroid
   }
 
   @Override
-  
-  @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void startCapture(
       final int width, final int height, final int ignoredFramerate) {
     checkNotDisposed();
@@ -116,8 +115,6 @@ public class ScreenCapturerAndroid
   }
 
   @Override
-  
-  @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void stopCapture() {
     checkNotDisposed();
     ThreadUtils.invokeAtFrontUninterruptibly(surfaceTextureHelper.getHandler(), new Runnable() {
@@ -143,8 +140,6 @@ public class ScreenCapturerAndroid
   }
 
   @Override
-  
-  @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void dispose() {
     isDisposed = true;
   }
@@ -158,8 +153,6 @@ public class ScreenCapturerAndroid
 
 
   @Override
-  
-  @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void changeCaptureFormat(
       final int width, final int height, final int ignoredFramerate) {
     checkNotDisposed();

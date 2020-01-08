@@ -8,16 +8,15 @@
 
 
 
-#ifndef MODULES_DESKTOP_CAPTURE_SCREEN_DRAWER_H_
-#define MODULES_DESKTOP_CAPTURE_SCREEN_DRAWER_H_
+#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_SCREEN_DRAWER_H_
+#define WEBRTC_MODULES_DESKTOP_CAPTURE_SCREEN_DRAWER_H_
 
 #include <stdint.h>
 
 #include <memory>
 
-#include "modules/desktop_capture/rgba_color.h"
-#include "modules/desktop_capture/desktop_capture_types.h"
-#include "modules/desktop_capture/desktop_geometry.h"
+#include "webrtc/modules/desktop_capture/rgba_color.h"
+#include "webrtc/modules/desktop_capture/desktop_geometry.h"
 
 namespace webrtc {
 
@@ -51,7 +50,6 @@ class ScreenDrawer {
   
   
   
-  
   virtual DesktopRect DrawableRegion() = 0;
 
   
@@ -72,10 +70,6 @@ class ScreenDrawer {
   
   
   virtual bool MayDrawIncompleteShapes() = 0;
-
-  
-  
-  virtual WindowId window_id() const = 0;
 };
 
 }  

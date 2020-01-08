@@ -8,16 +8,16 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_CHECKSUM_H_
-#define MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_CHECKSUM_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_CHECKSUM_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_CHECKSUM_H_
 
 #include <string>
 
-#include "modules/audio_coding/neteq/tools/audio_sink.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/md5digest.h"
-#include "rtc_base/stringencode.h"
-#include "typedefs.h"  
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/md5digest.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/modules/audio_coding/neteq/tools/audio_sink.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 namespace test {

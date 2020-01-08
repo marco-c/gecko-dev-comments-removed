@@ -8,9 +8,9 @@
 
 
 
-#include "modules/rtp_rtcp/source/rtcp_packet/rrtr.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rrtr.h"
 
-#include "test/gtest.h"
+#include "webrtc/test/gtest.h"
 
 using webrtc::rtcp::Rrtr;
 

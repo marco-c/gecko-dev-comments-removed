@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+#include "webrtc/base/asyncresolverinterface.h"
+
+namespace rtc {
+
+AsyncResolverInterface::AsyncResolverInterface() {
+}
+
+AsyncResolverInterface::~AsyncResolverInterface() = default;
+
+};  

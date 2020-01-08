@@ -8,13 +8,13 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_TRANSIENT_FILE_UTILS_H_
-#define MODULES_AUDIO_PROCESSING_TRANSIENT_FILE_UTILS_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_TRANSIENT_FILE_UTILS_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_TRANSIENT_FILE_UTILS_H_
 
 #include <string.h>
 
-#include "system_wrappers/include/file_wrapper.h"
-#include "typedefs.h"  
+#include "webrtc/system_wrappers/include/file_wrapper.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

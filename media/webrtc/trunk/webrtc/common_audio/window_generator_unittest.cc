@@ -8,11 +8,11 @@
 
 
 
-#include "common_audio/window_generator.h"
+#include "webrtc/common_audio/window_generator.h"
 
 #include <cstring>
 
-#include "test/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

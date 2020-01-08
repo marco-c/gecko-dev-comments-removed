@@ -8,8 +8,8 @@
 
 
 
-#include "modules/video_coding/histogram.h"
-#include "test/gtest.h"
+#include "webrtc/modules/video_coding/histogram.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace video_coding {

@@ -8,9 +8,9 @@
 
 
 
-#include "modules/desktop_capture/screen_capturer_helper.h"
+#include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
 
-#include "test/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

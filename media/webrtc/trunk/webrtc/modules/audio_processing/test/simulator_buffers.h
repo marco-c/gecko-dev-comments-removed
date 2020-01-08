@@ -8,15 +8,15 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_TEST_SIMULATOR_BUFFERS_H_
-#define MODULES_AUDIO_PROCESSING_TEST_SIMULATOR_BUFFERS_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_TEST_SIMULATOR_BUFFERS_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_TEST_SIMULATOR_BUFFERS_H_
 
 #include <memory>
 #include <vector>
 
-#include "modules/audio_processing/audio_buffer.h"
-#include "modules/audio_processing/include/audio_processing.h"
-#include "rtc_base/random.h"
+#include "webrtc/base/random.h"
+#include "webrtc/modules/audio_processing/audio_buffer.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 
 namespace webrtc {
 namespace test {

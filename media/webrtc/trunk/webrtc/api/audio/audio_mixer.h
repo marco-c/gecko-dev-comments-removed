@@ -8,13 +8,13 @@
 
 
 
-#ifndef API_AUDIO_AUDIO_MIXER_H_
-#define API_AUDIO_AUDIO_MIXER_H_
+#ifndef WEBRTC_API_AUDIO_AUDIO_MIXER_H_
+#define WEBRTC_API_AUDIO_AUDIO_MIXER_H_
 
 #include <memory>
 
-#include "modules/include/module_common_types.h"
-#include "rtc_base/refcount.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
 

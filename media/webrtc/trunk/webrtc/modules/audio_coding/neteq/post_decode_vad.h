@@ -8,18 +8,18 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_POST_DECODE_VAD_H_
-#define MODULES_AUDIO_CODING_NETEQ_POST_DECODE_VAD_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_POST_DECODE_VAD_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_POST_DECODE_VAD_H_
 
 #include <string>  
 
-#include "api/audio_codecs/audio_decoder.h"
-#include "common_audio/vad/include/webrtc_vad.h"
-#include "common_types.h"  
-#include "modules/audio_coding/neteq/defines.h"
-#include "modules/audio_coding/neteq/packet.h"
-#include "rtc_base/constructormagic.h"
-#include "typedefs.h"  
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/common_audio/vad/include/webrtc_vad.h"
+#include "webrtc/common_types.h"  
+#include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
+#include "webrtc/modules/audio_coding/neteq/defines.h"
+#include "webrtc/modules/audio_coding/neteq/packet.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

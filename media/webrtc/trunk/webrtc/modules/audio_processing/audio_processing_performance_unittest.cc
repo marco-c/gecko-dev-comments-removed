@@ -7,7 +7,7 @@
 
 
 
-#include "modules/audio_processing/audio_processing_impl.h"
+#include "webrtc/modules/audio_processing/audio_processing_impl.h"
 
 #include <math.h>
 
@@ -15,17 +15,19 @@
 #include <memory>
 #include <vector>
 
-#include "api/array_view.h"
-#include "modules/audio_processing/test/test_utils.h"
-#include "modules/include/module_common_types.h"
-#include "rtc_base/atomicops.h"
-#include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/platform_thread.h"
-#include "rtc_base/random.h"
-#include "system_wrappers/include/clock.h"
-#include "system_wrappers/include/event_wrapper.h"
-#include "test/gtest.h"
-#include "test/testsupport/perf_test.h"
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/atomicops.h"
+#include "webrtc/base/platform_thread.h"
+#include "webrtc/base/random.h"
+#include "webrtc/base/safe_conversions.h"
+#include "webrtc/config.h"
+#include "webrtc/modules/audio_processing/test/test_utils.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/system_wrappers/include/event_wrapper.h"
+#include "webrtc/system_wrappers/include/sleep.h"
+#include "webrtc/test/gtest.h"
+#include "webrtc/test/testsupport/perf_test.h"
 
 
 
@@ -257,21 +259,34 @@ class TimedThreadApiProcessor {
   bool Process();
 
   
-  void print_processor_statistics(const std::string& processor_name) const {
+  void print_processor_statistics(std::string processor_name) const {
     const std::string modifier = "_api_call_duration";
+
+    
+    auto create_mean_and_std_string = [](int64_t average,
+                                         int64_t standard_dev) {
+      std::string s = std::to_string(average);
+      s += ", ";
+      s += std::to_string(standard_dev);
+      return s;
+    };
 
     const std::string sample_rate_name =
         "_" + std::to_string(simulation_config_->sample_rate_hz) + "Hz";
 
     webrtc::test::PrintResultMeanAndError(
         "apm_timing", sample_rate_name, processor_name,
-        GetDurationAverage(), GetDurationStandardDeviation(),
+        create_mean_and_std_string(GetDurationAverage(),
+                                   GetDurationStandardDeviation()),
         "us", false);
 
     if (kPrintAllDurations) {
+      std::string value_string = "";
+      for (int64_t duration : api_call_durations_) {
+        value_string += std::to_string(duration) + ",";
+      }
       webrtc::test::PrintResultList("apm_call_durations", sample_rate_name,
-                                    processor_name, api_call_durations_, "us",
-                                    false);
+                                    processor_name, value_string, "us", false);
     }
   }
 
@@ -429,7 +444,7 @@ class TimedThreadApiProcessor {
   AudioFrameData frame_data_;
   webrtc::Clock* clock_;
   const size_t num_durations_to_store_;
-  std::vector<double> api_call_durations_;
+  std::vector<int64_t> api_call_durations_;
   const float input_level_;
   bool first_process_call_ = true;
   const ProcessorType processor_type_;
@@ -699,8 +714,7 @@ const float CallSimulator::kRenderInputFloatLevel = 0.5f;
 const float CallSimulator::kCaptureInputFloatLevel = 0.03125f;
 }  
 
-
-TEST_P(CallSimulator, DISABLED_ApiCallDurationTest) {
+TEST_P(CallSimulator, ApiCallDurationTest) {
   
   EXPECT_EQ(kEventSignaled, Run());
 }

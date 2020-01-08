@@ -8,14 +8,13 @@
 
 
 
-#ifndef MEDIA_ENGINE_WEBRTCVIDEOENCODERFACTORY_H_
-#define MEDIA_ENGINE_WEBRTCVIDEOENCODERFACTORY_H_
+#ifndef WEBRTC_MEDIA_ENGINE_WEBRTCVIDEOENCODERFACTORY_H_
+#define WEBRTC_MEDIA_ENGINE_WEBRTCVIDEOENCODERFACTORY_H_
 
-#include <string>
 #include <vector>
 
-#include "common_types.h"  
-#include "media/base/codec.h"
+#include "webrtc/common_types.h"
+#include "webrtc/media/base/codec.h"
 
 namespace webrtc {
 class VideoEncoder;
@@ -23,26 +22,66 @@ class VideoEncoder;
 
 namespace cricket {
 
-
-
 class WebRtcVideoEncoderFactory {
  public:
+  
+  
+  
+  struct VideoCodec {
+    webrtc::VideoCodecType type;
+    std::string name;
+
+    VideoCodec(webrtc::VideoCodecType t, const std::string& nm)
+        : type(t), name(nm) {}
+
+    VideoCodec(webrtc::VideoCodecType t,
+               const std::string& nm,
+               int w,
+               int h,
+               int fr)
+        : type(t), name(nm) {}
+  };
+
   virtual ~WebRtcVideoEncoderFactory() {}
 
   
   
+  
+  
   virtual webrtc::VideoEncoder* CreateVideoEncoder(
-      const cricket::VideoCodec& codec) = 0;
+      const cricket::VideoCodec& codec);
 
   
-  virtual const std::vector<cricket::VideoCodec>& supported_codecs() const = 0;
+  virtual const std::vector<cricket::VideoCodec>& supported_codecs() const;
 
   
   
   
-  virtual bool EncoderTypeHasInternalSource(webrtc::VideoCodecType type) const;
+  
+  virtual webrtc::VideoEncoder* CreateVideoEncoder(webrtc::VideoCodecType type);
+
+  
+  
+  
+  virtual const std::vector<VideoCodec>& codecs() const;
+
+  
+  
+  
+  
+  
+  virtual bool EncoderTypeHasInternalSource(webrtc::VideoCodecType type) const {
+    return false;
+  }
 
   virtual void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) = 0;
+
+ private:
+  
+  
+  
+  mutable std::vector<VideoCodec> encoder_codecs_;
+  mutable std::vector<cricket::VideoCodec> codecs_;
 };
 
 }  

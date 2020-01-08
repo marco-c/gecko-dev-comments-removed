@@ -11,8 +11,8 @@
 
 
 
-#ifndef TYPEDEFS_H_
-#define TYPEDEFS_H_
+#ifndef WEBRTC_TYPEDEFS_H_
+#define WEBRTC_TYPEDEFS_H_
 
 
 
@@ -133,7 +133,8 @@
 
 
 
-#if (defined(WEBRTC_ARCH_X86_FAMILY) && !defined(__SSE2__))
+#if (defined(WEBRTC_ARCH_X86_FAMILY) && !defined(__SSE2__)) || \
+    defined(WEBRTC_DETECT_NEON)
 #define WEBRTC_CPU_DETECTION
 #endif
 
@@ -144,17 +145,14 @@
 
 
 
-#if defined(__clang__)
-#define RTC_WARN_UNUSED_RESULT __attribute__((__warn_unused_result__))
-#elif defined(__GNUC__)
 
-
-#define RTC_WARN_UNUSED_RESULT
+#if !defined(WARN_UNUSED_RESULT)
+#if defined(__GNUC__) || defined(__clang__)
+#define WARN_UNUSED_RESULT __attribute__ ((__warn_unused_result__))
 #else
-#define RTC_WARN_UNUSED_RESULT
+#define WARN_UNUSED_RESULT
 #endif
-
-
+#endif  
 
 
 
@@ -177,7 +175,6 @@
 #endif
 #endif
 
-#ifndef NO_RETURN
 
 #if defined(_MSC_VER)
 #define NO_RETURN __declspec(noreturn)
@@ -186,16 +183,5 @@
 #else
 #define NO_RETURN
 #endif
-#endif
-
-
-
-
-
-
-
-#ifndef RTC_UNUSED
-#define RTC_UNUSED(x) static_cast<void>(x)
-#endif  
 
 #endif  

@@ -8,8 +8,8 @@
 
 
 
-#include "test/gtest.h"
-#include "voice_engine/channel.h"
+#include "webrtc/test/gtest.h"
+#include "webrtc/voice_engine/channel.h"
 
 
 TEST(ChannelTest, EmptyTestToGetCodeCoverage) {}

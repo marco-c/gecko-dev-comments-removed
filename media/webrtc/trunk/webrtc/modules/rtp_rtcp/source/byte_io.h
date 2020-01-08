@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_RTP_RTCP_SOURCE_BYTE_IO_H_
-#define MODULES_RTP_RTCP_SOURCE_BYTE_IO_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_BYTE_IO_H_
+#define WEBRTC_MODULES_RTP_RTCP_SOURCE_BYTE_IO_H_
 
 
 
@@ -38,7 +38,7 @@
 
 #include <limits>
 
-#include "typedefs.h"  
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

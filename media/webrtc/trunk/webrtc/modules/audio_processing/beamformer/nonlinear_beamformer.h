@@ -8,21 +8,23 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_BEAMFORMER_NONLINEAR_BEAMFORMER_H_
-#define MODULES_AUDIO_PROCESSING_BEAMFORMER_NONLINEAR_BEAMFORMER_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_BEAMFORMER_NONLINEAR_BEAMFORMER_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_BEAMFORMER_NONLINEAR_BEAMFORMER_H_
 
 
+#ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES
+#endif
 
 #include <math.h>
 
 #include <memory>
 #include <vector>
 
-#include "common_audio/lapped_transform.h"
-#include "common_audio/channel_buffer.h"
-#include "modules/audio_processing/beamformer/array_util.h"
-#include "modules/audio_processing/beamformer/complex_matrix.h"
+#include "webrtc/common_audio/lapped_transform.h"
+#include "webrtc/common_audio/channel_buffer.h"
+#include "webrtc/modules/audio_processing/beamformer/array_util.h"
+#include "webrtc/modules/audio_processing/beamformer/complex_matrix.h"
 
 namespace webrtc {
 

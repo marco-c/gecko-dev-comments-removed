@@ -8,11 +8,11 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_ACM2_CALL_STATISTICS_H_
-#define MODULES_AUDIO_CODING_ACM2_CALL_STATISTICS_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_ACM2_CALL_STATISTICS_H_
+#define WEBRTC_MODULES_AUDIO_CODING_ACM2_CALL_STATISTICS_H_
 
-#include "common_types.h"  
-#include "modules/include/module_common_types.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 
 
 

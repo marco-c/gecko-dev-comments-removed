@@ -22,19 +22,28 @@
 
 
 
-#ifndef MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VP8_H_
-#define MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VP8_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VP8_H_
+#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VP8_H_
 
 #include <queue>
 #include <string>
 #include <vector>
 
-#include "modules/include/module_common_types.h"
-#include "modules/rtp_rtcp/source/rtp_format.h"
-#include "rtc_base/constructormagic.h"
-#include "typedefs.h"  
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
+
+enum VP8PacketizerMode {
+  kStrict = 0,  
+                
+  kAggregate,   
+  kEqualSize,   
+                
+  kNumModes,
+};
 
 
 class RtpPacketizerVp8 : public RtpPacketizer {
@@ -43,18 +52,28 @@ class RtpPacketizerVp8 : public RtpPacketizer {
   
   RtpPacketizerVp8(const RTPVideoHeaderVP8& hdr_info,
                    size_t max_payload_len,
-                   size_t last_packet_reduction_len);
+                   VP8PacketizerMode mode);
+
+  
+  
+  RtpPacketizerVp8(const RTPVideoHeaderVP8& hdr_info, size_t max_payload_len);
 
   virtual ~RtpPacketizerVp8();
 
-  size_t SetPayloadData(const uint8_t* payload_data,
-                        size_t payload_size,
-                        const RTPFragmentationHeader* fragmentation) override;
+  void SetPayloadData(const uint8_t* payload_data,
+                      size_t payload_size,
+                      const RTPFragmentationHeader* fragmentation) override;
 
   
   
   
-  bool NextPacket(RtpPacketToSend* packet) override;
+  
+  
+  bool NextPacket(RtpPacketToSend* packet, bool* last_packet) override;
+
+  ProtectionType GetProtectionType() override;
+
+  StorageType GetStorageType(uint32_t retransmission_settings) override;
 
   std::string ToString() override;
 
@@ -62,10 +81,19 @@ class RtpPacketizerVp8 : public RtpPacketizer {
   typedef struct {
     size_t payload_start_pos;
     size_t size;
-    bool first_packet;
+    bool first_fragment;
+    size_t first_partition_ix;
   } InfoStruct;
   typedef std::queue<InfoStruct> InfoQueue;
+  enum AggregationMode {
+    kAggrNone = 0,    
+    kAggrPartitions,  
+    kAggrFragments    
+  };
 
+  static const AggregationMode aggr_modes_[kNumModes];
+  static const bool balance_modes_[kNumModes];
+  static const bool separate_first_modes_[kNumModes];
   static const int kXBit = 0x80;
   static const int kNBit = 0x20;
   static const int kSBit = 0x10;
@@ -78,17 +106,35 @@ class RtpPacketizerVp8 : public RtpPacketizer {
   static const int kYBit = 0x20;
 
   
+  size_t CalcNextSize(size_t max_payload_len,
+                      size_t remaining_bytes,
+                      bool split_payload) const;
+
+  
   int GeneratePackets();
 
   
   
-  void GeneratePacketsSplitPayloadBalanced(size_t payload_len,
-                                           size_t capacity);
+  int GeneratePacketsBalancedAggregates();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void AggregateSmallPartitions(std::vector<int>* partition_vec,
+                                int* min_size,
+                                int* max_size);
 
   
   void QueuePacket(size_t start_pos,
                    size_t packet_size,
-                   bool first_packet);
+                   size_t first_partition_in_packet,
+                   bool start_on_new_fragment);
 
   
   
@@ -146,12 +192,17 @@ class RtpPacketizerVp8 : public RtpPacketizer {
 
   const uint8_t* payload_data_;
   size_t payload_size_;
+  RTPFragmentationHeader part_info_;
   const size_t vp8_fixed_payload_descriptor_bytes_;  
                                                      
+  const AggregationMode aggr_mode_;
+  const bool balance_;
+  const bool separate_first_;
   const RTPVideoHeaderVP8 hdr_info_;
+  size_t num_partitions_;
   const size_t max_payload_len_;
-  const size_t last_packet_reduction_len_;
   InfoQueue packets_;
+  bool packets_calculated_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpPacketizerVp8);
 };

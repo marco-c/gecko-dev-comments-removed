@@ -8,14 +8,17 @@
 
 
 
-#ifndef MODULES_DESKTOP_CAPTURE_RGBA_COLOR_H_
-#define MODULES_DESKTOP_CAPTURE_RGBA_COLOR_H_
+#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_RGBA_COLOR_H_
+#define WEBRTC_MODULES_DESKTOP_CAPTURE_RGBA_COLOR_H_
 
 #include <stdint.h>
 
-#include "modules/desktop_capture/desktop_frame.h"
+#include "webrtc/modules/desktop_capture/desktop_frame.h"
 
 namespace webrtc {
+
+
+
 
 
 

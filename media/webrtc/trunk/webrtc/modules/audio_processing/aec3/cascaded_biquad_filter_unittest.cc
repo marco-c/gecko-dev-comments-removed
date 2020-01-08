@@ -8,11 +8,11 @@
 
 
 
-#include "modules/audio_processing/aec3/cascaded_biquad_filter.h"
+#include "webrtc/modules/audio_processing/aec3/cascaded_biquad_filter.h"
 
 #include <vector>
 
-#include "test/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

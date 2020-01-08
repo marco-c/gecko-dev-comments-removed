@@ -8,12 +8,12 @@
 
 
 
-#include "modules/audio_processing/transient/file_utils.h"
+#include "webrtc/modules/audio_processing/transient/file_utils.h"
 
 #include <memory>
 
-#include "system_wrappers/include/file_wrapper.h"
-#include "typedefs.h"  
+#include "webrtc/system_wrappers/include/file_wrapper.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

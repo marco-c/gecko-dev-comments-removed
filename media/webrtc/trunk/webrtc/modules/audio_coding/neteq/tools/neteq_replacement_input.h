@@ -8,13 +8,13 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_REPLACEMENT_INPUT_H_
-#define MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_REPLACEMENT_INPUT_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_REPLACEMENT_INPUT_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_REPLACEMENT_INPUT_H_
 
 #include <memory>
 #include <set>
 
-#include "modules/audio_coding/neteq/tools/neteq_input.h"
+#include "webrtc/modules/audio_coding/neteq/tools/neteq_input.h"
 
 namespace webrtc {
 namespace test {

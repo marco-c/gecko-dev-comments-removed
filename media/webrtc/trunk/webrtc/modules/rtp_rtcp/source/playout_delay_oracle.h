@@ -8,15 +8,15 @@
 
 
 
-#ifndef MODULES_RTP_RTCP_SOURCE_PLAYOUT_DELAY_ORACLE_H_
-#define MODULES_RTP_RTCP_SOURCE_PLAYOUT_DELAY_ORACLE_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_PLAYOUT_DELAY_ORACLE_H_
+#define WEBRTC_MODULES_RTP_RTCP_SOURCE_PLAYOUT_DELAY_ORACLE_H_
 
 #include <stdint.h>
 
-#include "modules/include/module_common_types.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "rtc_base/criticalsection.h"
-#include "rtc_base/thread_annotations.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/thread_annotations.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
 
@@ -63,15 +63,15 @@ class PlayoutDelayOracle {
   
   rtc::CriticalSection crit_sect_;
   
-  int64_t high_sequence_number_ RTC_GUARDED_BY(crit_sect_);
+  int64_t high_sequence_number_ GUARDED_BY(crit_sect_);
   
-  bool send_playout_delay_ RTC_GUARDED_BY(crit_sect_);
+  bool send_playout_delay_ GUARDED_BY(crit_sect_);
   
-  uint32_t ssrc_ RTC_GUARDED_BY(crit_sect_);
+  uint32_t ssrc_ GUARDED_BY(crit_sect_);
   
-  SequenceNumberUnwrapper unwrapper_ RTC_GUARDED_BY(crit_sect_);
+  SequenceNumberUnwrapper unwrapper_ GUARDED_BY(crit_sect_);
   
-  PlayoutDelay playout_delay_ RTC_GUARDED_BY(crit_sect_);
+  PlayoutDelay playout_delay_ GUARDED_BY(crit_sect_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(PlayoutDelayOracle);
 };

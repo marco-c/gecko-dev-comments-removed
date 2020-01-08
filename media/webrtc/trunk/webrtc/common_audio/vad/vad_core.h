@@ -13,18 +13,20 @@
 
 
 
-#ifndef COMMON_AUDIO_VAD_VAD_CORE_H_
-#define COMMON_AUDIO_VAD_VAD_CORE_H_
+#ifndef WEBRTC_COMMON_AUDIO_VAD_VAD_CORE_H_
+#define WEBRTC_COMMON_AUDIO_VAD_VAD_CORE_H_
 
-#include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "typedefs.h"  
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/typedefs.h"
 
 enum { kNumChannels = 6 };  
 enum { kNumGaussians = 2 };  
 enum { kTableSize = kNumChannels * kNumGaussians };
 enum { kMinEnergy = 10 };  
 
-typedef struct VadInstT_ {
+typedef struct VadInstT_
+{
+
     int vad;
     int32_t downsampling_filter_states[4];
     WebRtcSpl_State48khzTo8khz state_48_to_8;
@@ -34,7 +36,7 @@ typedef struct VadInstT_ {
     int16_t speech_stds[kTableSize];
     
     int32_t frame_counter;
-    int16_t over_hang;  
+    int16_t over_hang; 
     int16_t num_of_speech;
     
     int16_t index_vector[16 * kNumChannels];
@@ -50,6 +52,7 @@ typedef struct VadInstT_ {
     int16_t total[3];
 
     int init_flag;
+
 } VadInstT;
 
 

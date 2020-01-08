@@ -8,19 +8,16 @@
 
 
 
-#ifndef MODULES_AUDIO_DEVICE_FINE_AUDIO_BUFFER_H_
-#define MODULES_AUDIO_DEVICE_FINE_AUDIO_BUFFER_H_
+#ifndef WEBRTC_MODULES_AUDIO_DEVICE_FINE_AUDIO_BUFFER_H_
+#define WEBRTC_MODULES_AUDIO_DEVICE_FINE_AUDIO_BUFFER_H_
 
 #include <memory>
 
-#include "api/array_view.h"
-#include "rtc_base/buffer.h"
-#include "typedefs.h"  
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
 class AudioDeviceBuffer;
-
 
 
 
@@ -37,10 +34,16 @@ class FineAudioBuffer {
   
   
   
+  
+  
   FineAudioBuffer(AudioDeviceBuffer* device_buffer,
-                  int sample_rate,
-                  size_t capacity);
+                  size_t desired_frame_size_bytes,
+                  int sample_rate);
   ~FineAudioBuffer();
+
+  
+  
+  size_t RequiredPlayoutBufferSizeBytes();
 
   
   void ResetPlayout();
@@ -48,9 +51,7 @@ class FineAudioBuffer {
 
   
   
-  
-  
-  void GetPlayoutData(rtc::ArrayView<int8_t> audio_buffer);
+  void GetPlayoutData(int8_t* buffer);
 
   
   
@@ -60,7 +61,11 @@ class FineAudioBuffer {
   
   
   
-  void DeliverRecordedData(rtc::ArrayView<const int8_t> audio_buffer,
+  
+  
+  
+  void DeliverRecordedData(const int8_t* buffer,
+                           size_t size_in_bytes,
                            int playout_delay_ms,
                            int record_delay_ms);
 
@@ -73,17 +78,30 @@ class FineAudioBuffer {
   
   AudioDeviceBuffer* const device_buffer_;
   
+  
+  const size_t desired_frame_size_bytes_;
+  
   const int sample_rate_;
   
   const size_t samples_per_10_ms_;
   
   const size_t bytes_per_10_ms_;
   
+  std::unique_ptr<int8_t[]> playout_cache_buffer_;
   
-  rtc::BufferT<int8_t> playout_buffer_;
+  size_t playout_cached_buffer_start_;
+  
+  size_t playout_cached_bytes_;
   
   
-  rtc::BufferT<int8_t> record_buffer_;
+  std::unique_ptr<int8_t[]> record_cache_buffer_;
+  
+  const size_t required_record_buffer_size_bytes_;
+  
+  size_t record_cached_bytes_;
+  
+  size_t record_read_pos_;
+  size_t record_write_pos_;
 };
 
 }  

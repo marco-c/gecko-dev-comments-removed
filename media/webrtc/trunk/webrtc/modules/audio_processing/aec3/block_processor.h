@@ -8,53 +8,35 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_BLOCK_PROCESSOR_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_BLOCK_PROCESSOR_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_BLOCK_PROCESSOR_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_BLOCK_PROCESSOR_H_
 
 #include <memory>
 #include <vector>
 
-#include "modules/audio_processing/aec3/echo_remover.h"
-#include "modules/audio_processing/aec3/render_delay_buffer.h"
-#include "modules/audio_processing/aec3/render_delay_controller.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
 
 namespace webrtc {
 
 
 class BlockProcessor {
  public:
-  static BlockProcessor* Create(const EchoCanceller3Config& config,
-                                int sample_rate_hz);
-  
-  static BlockProcessor* Create(
-      const EchoCanceller3Config& config,
-      int sample_rate_hz,
-      std::unique_ptr<RenderDelayBuffer> render_buffer);
-  static BlockProcessor* Create(
-      const EchoCanceller3Config& config,
-      int sample_rate_hz,
-      std::unique_ptr<RenderDelayBuffer> render_buffer,
-      std::unique_ptr<RenderDelayController> delay_controller,
-      std::unique_ptr<EchoRemover> echo_remover);
-
+  static BlockProcessor* Create(int sample_rate_hz);
   virtual ~BlockProcessor() = default;
 
   
-  virtual void GetMetrics(EchoControl::Metrics* metrics) const = 0;
-
-  
   virtual void ProcessCapture(
-      bool echo_path_gain_change,
-      bool capture_signal_saturation,
+      bool known_echo_path_change,
+      bool saturated_microphone_signal,
       std::vector<std::vector<float>>* capture_block) = 0;
 
   
-  virtual void BufferRender(
-      const std::vector<std::vector<float>>& render_block) = 0;
+  virtual bool BufferRender(std::vector<std::vector<float>>* render_block) = 0;
 
   
   
-  virtual void UpdateEchoLeakageStatus(bool leakage_detected) = 0;
+  virtual void ReportEchoLeakage(bool leakage_detected) = 0;
 };
 
 }  

@@ -8,13 +8,13 @@
 
 
 
-#include "common_audio/lapped_transform.h"
+#include "webrtc/common_audio/lapped_transform.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 
-#include "test/gtest.h"
+#include "webrtc/test/gtest.h"
 
 using std::complex;
 

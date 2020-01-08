@@ -8,16 +8,15 @@
 
 
 
-#ifndef SDK_ANDROID_SRC_JNI_ANDROIDMEDIAENCODER_JNI_H_
-#define SDK_ANDROID_SRC_JNI_ANDROIDMEDIAENCODER_JNI_H_
+#ifndef WEBRTC_SDK_ANDROID_SRC_JNI_ANDROIDMEDIAENCODER_JNI_H_
+#define WEBRTC_SDK_ANDROID_SRC_JNI_ANDROIDMEDIAENCODER_JNI_H_
 
 #include <vector>
 
-#include "sdk/android/src/jni/jni_helpers.h"
-#include "media/engine/webrtcvideoencoderfactory.h"
+#include "webrtc/sdk/android/src/jni/jni_helpers.h"
+#include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 
-namespace webrtc {
-namespace jni {
+namespace webrtc_jni {
 
 
 class MediaCodecVideoEncoderFactory
@@ -29,19 +28,22 @@ class MediaCodecVideoEncoderFactory
   void SetEGLContext(JNIEnv* jni, jobject egl_context);
 
   
-  VideoEncoder* CreateVideoEncoder(const cricket::VideoCodec& codec) override;
+  webrtc::VideoEncoder* CreateVideoEncoder(
+      const cricket::VideoCodec& codec) override;
   const std::vector<cricket::VideoCodec>& supported_codecs() const override;
-  void DestroyVideoEncoder(VideoEncoder* encoder) override;
+  void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) override;
 
  private:
+  
+  
+  using cricket::WebRtcVideoEncoderFactory::CreateVideoEncoder;
+
   jobject egl_context_;
 
   
   std::vector<cricket::VideoCodec> supported_codecs_;
-  std::vector<cricket::VideoCodec> supported_codecs_with_h264_hp_;
 };
 
-}  
 }  
 
 #endif  

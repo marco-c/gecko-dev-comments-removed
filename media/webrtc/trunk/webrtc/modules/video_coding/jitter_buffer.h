@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_JITTER_BUFFER_H_
-#define MODULES_VIDEO_CODING_JITTER_BUFFER_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_JITTER_BUFFER_H_
+#define WEBRTC_MODULES_VIDEO_CODING_JITTER_BUFFER_H_
 
 #include <list>
 #include <map>
@@ -17,19 +17,19 @@
 #include <set>
 #include <vector>
 
-#include "modules/include/module_common_types.h"
-#include "modules/utility/include/process_thread.h"
-#include "modules/video_coding/decoding_state.h"
-#include "modules/video_coding/include/video_coding.h"
-#include "modules/video_coding/include/video_coding_defines.h"
-#include "modules/video_coding/inter_frame_delay.h"
-#include "modules/video_coding/jitter_buffer_common.h"
-#include "modules/video_coding/jitter_estimator.h"
-#include "modules/video_coding/nack_module.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/criticalsection.h"
-#include "rtc_base/thread_annotations.h"
-#include "typedefs.h"  
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/thread_annotations.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/utility/include/process_thread.h"
+#include "webrtc/modules/video_coding/include/video_coding.h"
+#include "webrtc/modules/video_coding/include/video_coding_defines.h"
+#include "webrtc/modules/video_coding/decoding_state.h"
+#include "webrtc/modules/video_coding/inter_frame_delay.h"
+#include "webrtc/modules/video_coding/jitter_buffer_common.h"
+#include "webrtc/modules/video_coding/jitter_estimator.h"
+#include "webrtc/modules/video_coding/nack_module.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
@@ -220,72 +220,72 @@ class VCMJitterBuffer {
   VCMFrameBufferEnum GetFrame(const VCMPacket& packet,
                               VCMFrameBuffer** frame,
                               FrameList** frame_list)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   
   
   bool IsContinuousInState(const VCMFrameBuffer& frame,
                            const VCMDecodingState& decoding_state) const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   
   
   bool IsContinuous(const VCMFrameBuffer& frame) const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   
   
   
   void FindAndInsertContinuousFramesWithState(
       const VCMDecodingState& decoded_state)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   
   
   
   void FindAndInsertContinuousFrames(const VCMFrameBuffer& new_frame)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-  VCMFrameBuffer* NextFrame() const RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  VCMFrameBuffer* NextFrame() const EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   
   
   
   bool UpdateNackList(uint16_t sequence_number)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   bool TooLargeNackList() const;
   
   
-  bool HandleTooLargeNackList() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  bool HandleTooLargeNackList() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   bool MissingTooOldPacket(uint16_t latest_sequence_number) const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   
   
   
   bool HandleTooOldPackets(uint16_t latest_sequence_number)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   
   void DropPacketsFromNackList(uint16_t last_decoded_sequence_number);
 
   
   
-  VCMFrameBuffer* GetEmptyFrame() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  VCMFrameBuffer* GetEmptyFrame() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   
   
-  bool TryToIncreaseJitterBufferSize() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  bool TryToIncreaseJitterBufferSize() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   
   
-  bool RecycleFramesUntilKeyFrame() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  bool RecycleFramesUntilKeyFrame() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   
   
   
   void CountFrame(const VCMFrameBuffer& frame)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   
   void UpdateAveragePacketsPerFrame(int current_number_packets_);
 
   
   
-  void CleanUpOldOrEmptyFrames() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  void CleanUpOldOrEmptyFrames() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   
   bool IsPacketRetransmitted(const VCMPacket& packet) const;
@@ -303,33 +303,32 @@ class VCMJitterBuffer {
   
   bool WaitForRetransmissions();
 
-  int NonContinuousOrIncompleteDuration()
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  int NonContinuousOrIncompleteDuration() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   uint16_t EstimatedLowSequenceNumber(const VCMFrameBuffer& frame) const;
 
-  void UpdateHistograms() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  void UpdateHistograms() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   
   void RecycleFrameBuffer(VCMFrameBuffer* frame)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   Clock* clock_;
   
   bool running_;
-  rtc::CriticalSection crit_sect_;
+  CriticalSectionWrapper* crit_sect_;
   
   std::unique_ptr<EventWrapper> frame_event_;
   
   int max_number_of_frames_;
-  UnorderedFrameList free_frames_ RTC_GUARDED_BY(crit_sect_);
-  FrameList decodable_frames_ RTC_GUARDED_BY(crit_sect_);
-  FrameList incomplete_frames_ RTC_GUARDED_BY(crit_sect_);
-  VCMDecodingState last_decoded_state_ RTC_GUARDED_BY(crit_sect_);
+  UnorderedFrameList free_frames_ GUARDED_BY(crit_sect_);
+  FrameList decodable_frames_ GUARDED_BY(crit_sect_);
+  FrameList incomplete_frames_ GUARDED_BY(crit_sect_);
+  VCMDecodingState last_decoded_state_ GUARDED_BY(crit_sect_);
   bool first_packet_since_reset_;
 
   
-  VCMReceiveStatisticsCallback* stats_callback_ RTC_GUARDED_BY(crit_sect_);
+  VCMReceiveStatisticsCallback* stats_callback_ GUARDED_BY(crit_sect_);
   
   FrameCounts receive_statistics_;
   
@@ -341,13 +340,13 @@ class VCMJitterBuffer {
   
   int num_consecutive_old_packets_;
   
-  int num_packets_ RTC_GUARDED_BY(crit_sect_);
+  int num_packets_ GUARDED_BY(crit_sect_);
   
-  int num_duplicated_packets_ RTC_GUARDED_BY(crit_sect_);
+  int num_duplicated_packets_ GUARDED_BY(crit_sect_);
   
-  int num_discarded_packets_ RTC_GUARDED_BY(crit_sect_);
+  int num_discarded_packets_ GUARDED_BY(crit_sect_);
   
-  int64_t time_first_packet_ms_ RTC_GUARDED_BY(crit_sect_);
+  int64_t time_first_packet_ms_ GUARDED_BY(crit_sect_);
 
   
   

@@ -8,14 +8,14 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_CODECS_TEST_PACKET_MANIPULATOR_H_
-#define MODULES_VIDEO_CODING_CODECS_TEST_PACKET_MANIPULATOR_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_PACKET_MANIPULATOR_H_
+#define WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_PACKET_MANIPULATOR_H_
 
 #include <stdlib.h>
 
-#include "modules/video_coding/include/video_codec_interface.h"
-#include "rtc_base/criticalsection.h"
-#include "test/testsupport/packet_reader.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/test/testsupport/packet_reader.h"
 
 namespace webrtc {
 namespace test {
@@ -26,8 +26,11 @@ enum PacketLossMode {
   kUniform,
   
   
+  
   kBurst
 };
+
+const char* PacketLossModeToStr(PacketLossMode e);
 
 
 
@@ -88,7 +91,7 @@ class PacketManipulatorImpl : public PacketManipulator {
   PacketManipulatorImpl(PacketReader* packet_reader,
                         const NetworkingConfig& config,
                         bool verbose);
-  ~PacketManipulatorImpl() = default;
+  virtual ~PacketManipulatorImpl();
   int ManipulatePackets(webrtc::EncodedImage* encoded_image) override;
   virtual void InitializeRandomSeed(unsigned int seed);
 
@@ -97,13 +100,13 @@ class PacketManipulatorImpl : public PacketManipulator {
   virtual double RandomUniform();
 
  private:
-  PacketReader* const packet_reader_;
+  PacketReader* packet_reader_;
   const NetworkingConfig& config_;
-  const bool verbose_;
   
   int active_burst_packets_;
-  rtc::CriticalSection critsect_;
+  CriticalSectionWrapper* critsect_;
   unsigned int random_seed_;
+  bool verbose_;
 };
 
 }  

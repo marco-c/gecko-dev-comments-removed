@@ -8,12 +8,12 @@
 
 
 
-#ifndef COMMON_AUDIO_WINDOW_GENERATOR_H_
-#define COMMON_AUDIO_WINDOW_GENERATOR_H_
+#ifndef WEBRTC_COMMON_AUDIO_WINDOW_GENERATOR_H_
+#define WEBRTC_COMMON_AUDIO_WINDOW_GENERATOR_H_
 
 #include <stddef.h>
 
-#include "rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace webrtc {
 

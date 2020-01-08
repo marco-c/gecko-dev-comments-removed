@@ -8,11 +8,11 @@
 
 
 
-#include "modules/desktop_capture/rgba_color.h"
+#include "webrtc/modules/desktop_capture/rgba_color.h"
 
 #include <vector>
 
-#include "test/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

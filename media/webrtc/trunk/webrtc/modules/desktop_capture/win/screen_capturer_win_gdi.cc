@@ -8,21 +8,22 @@
 
 
 
-#include "modules/desktop_capture/win/screen_capturer_win_gdi.h"
+#include "webrtc/modules/desktop_capture/win/screen_capturer_win_gdi.h"
 
 #include <utility>
 
-#include "modules/desktop_capture/desktop_capture_options.h"
-#include "modules/desktop_capture/desktop_frame.h"
-#include "modules/desktop_capture/desktop_frame_win.h"
-#include "modules/desktop_capture/desktop_region.h"
-#include "modules/desktop_capture/mouse_cursor.h"
-#include "modules/desktop_capture/win/cursor.h"
-#include "modules/desktop_capture/win/desktop.h"
-#include "modules/desktop_capture/win/screen_capture_utils.h"
-#include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
-#include "rtc_base/timeutils.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/timeutils.h"
+#include "webrtc/modules/desktop_capture/desktop_capture_options.h"
+#include "webrtc/modules/desktop_capture/desktop_frame.h"
+#include "webrtc/modules/desktop_capture/desktop_frame_win.h"
+#include "webrtc/modules/desktop_capture/desktop_region.h"
+#include "webrtc/modules/desktop_capture/mouse_cursor.h"
+#include "webrtc/modules/desktop_capture/win/cursor.h"
+#include "webrtc/modules/desktop_capture/win/desktop.h"
+#include "webrtc/modules/desktop_capture/win/screen_capture_utils.h"
+#include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
 
@@ -89,15 +90,16 @@ void ScreenCapturerWinGdi::CaptureFrame() {
   frame->set_capture_time_ms(
       (rtc::TimeNanos() - capture_start_time_nanos) /
       rtc::kNumNanosecsPerMillisec);
-  frame->set_capturer_id(DesktopCapturerId::kScreenCapturerWinGdi);
   callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
 }
 
 bool ScreenCapturerWinGdi::GetSourceList(SourceList* sources) {
+  RTC_DCHECK(IsGUIThread(false));
   return webrtc::GetScreenList(sources);
 }
 
 bool ScreenCapturerWinGdi::SelectSource(SourceId id) {
+  RTC_DCHECK(IsGUIThread(false));
   bool valid = IsScreenValid(id, &current_device_key_);
   if (valid)
     current_screen_id_ = id;
@@ -110,10 +112,10 @@ void ScreenCapturerWinGdi::Start(Callback* callback) {
 
   callback_ = callback;
 
-  
-  
-  
   if (disable_composition_) {
+    
+    
+    
     if (composition_func_)
       (*composition_func_)(DWM_EC_DISABLECOMPOSITION);
   }
@@ -138,6 +140,7 @@ void ScreenCapturerWinGdi::Stop() {
 }
 
 void ScreenCapturerWinGdi::PrepareCaptureResources() {
+  RTC_DCHECK(IsGUIThread(false));
   
   
   std::unique_ptr<Desktop> input_desktop(Desktop::GetInputDesktop());
@@ -157,15 +160,23 @@ void ScreenCapturerWinGdi::PrepareCaptureResources() {
     
     desktop_.SetThreadDesktop(input_desktop.release());
 
-    
-    
-    if (composition_func_) {
-      (*composition_func_)(DWM_EC_DISABLECOMPOSITION);
+    if (disable_composition_) {
+      
+      
+      if (composition_func_ != NULL) {
+        (*composition_func_)(DWM_EC_DISABLECOMPOSITION);
+      }
     }
   }
 
   
-  if (display_configuration_monitor_.IsChanged()) {
+  
+  DesktopRect screen_rect(DesktopRect::MakeXYWH(
+      GetSystemMetrics(SM_XVIRTUALSCREEN),
+      GetSystemMetrics(SM_YVIRTUALSCREEN),
+      GetSystemMetrics(SM_CXVIRTUALSCREEN),
+      GetSystemMetrics(SM_CYVIRTUALSCREEN)));
+  if (!screen_rect.equals(desktop_dc_rect_)) {
     if (desktop_dc_) {
       ReleaseDC(NULL, desktop_dc_);
       desktop_dc_ = nullptr;
@@ -174,6 +185,7 @@ void ScreenCapturerWinGdi::PrepareCaptureResources() {
       DeleteDC(memory_dc_);
       memory_dc_ = nullptr;
     }
+    desktop_dc_rect_ = DesktopRect();
   }
 
   if (!desktop_dc_) {
@@ -184,6 +196,8 @@ void ScreenCapturerWinGdi::PrepareCaptureResources() {
     RTC_CHECK(desktop_dc_);
     memory_dc_ = CreateCompatibleDC(desktop_dc_);
     RTC_CHECK(memory_dc_);
+
+    desktop_dc_rect_ = screen_rect;
 
     
     queue_.Reset();
@@ -212,23 +226,33 @@ bool ScreenCapturerWinGdi::CaptureImage() {
       return false;
     queue_.ReplaceCurrentFrame(SharedDesktopFrame::Wrap(std::move(buffer)));
   }
-  queue_.current_frame()->set_top_left(
-      screen_rect.top_left().subtract(GetFullscreenRect().top_left()));
 
   
   
   DesktopFrameWin* current = static_cast<DesktopFrameWin*>(
       queue_.current_frame()->GetUnderlyingFrame());
   HGDIOBJ previous_object = SelectObject(memory_dc_, current->bitmap());
+  DWORD rop = SRCCOPY;
+  if (composition_enabled_func_) {
+    BOOL enabled;
+    (*composition_enabled_func_)(&enabled);
+    if (!enabled) {
+      
+      rop |= CAPTUREBLT;
+    }
+  } else {
+    
+    rop |= CAPTUREBLT;
+  }
   if (!previous_object || previous_object == HGDI_ERROR) {
     return false;
   }
 
   bool result = (BitBlt(memory_dc_, 0, 0, screen_rect.width(),
       screen_rect.height(), desktop_dc_, screen_rect.left(), screen_rect.top(),
-      SRCCOPY | CAPTUREBLT) != FALSE);
+      rop) != FALSE);
   if (!result) {
-    RTC_LOG_GLE(LS_WARNING) << "BitBlt failed";
+    LOG_GLE(LS_WARNING) << "BitBlt failed";
   }
 
   

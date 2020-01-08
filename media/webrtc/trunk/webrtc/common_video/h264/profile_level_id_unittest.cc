@@ -8,9 +8,9 @@
 
 
 
-#include "common_video/h264/profile_level_id.h"
+#include "webrtc/common_video/h264/profile_level_id.h"
 
-#include "test/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace H264 {

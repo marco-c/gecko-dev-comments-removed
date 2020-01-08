@@ -8,7 +8,7 @@
 
 
 
-#include "system_wrappers/source/event_timer_win.h"
+#include "webrtc/system_wrappers/source/event_timer_win.h"
 
 #include "Mmsystem.h"
 
@@ -24,7 +24,8 @@ EventTimerWin::EventTimerWin()
                            FALSE,   
                            FALSE,   
                            NULL)),  
-      timerID_(NULL) {}
+    timerID_(NULL) {
+}
 
 EventTimerWin::~EventTimerWin() {
   StopTimer();

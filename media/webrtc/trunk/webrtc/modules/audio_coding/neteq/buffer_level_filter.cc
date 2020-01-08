@@ -8,7 +8,7 @@
 
 
 
-#include "modules/audio_coding/neteq/buffer_level_filter.h"
+#include "webrtc/modules/audio_coding/neteq/buffer_level_filter.h"
 
 #include <algorithm>  
 
@@ -40,9 +40,9 @@ void BufferLevelFilter::Update(size_t buffer_size_packets,
     
     
     
-    filtered_current_level_ = std::max(
-        0, filtered_current_level_ - (time_stretched_samples * (1 << 8)) /
-                                         static_cast<int>(packet_len_samples));
+    filtered_current_level_ = std::max(0,
+        filtered_current_level_ -
+        (time_stretched_samples << 8) / static_cast<int>(packet_len_samples));
   }
 }
 

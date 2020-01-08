@@ -11,15 +11,15 @@
 
 
 
-#ifndef COMMON_AUDIO_RESAMPLER_SINC_RESAMPLER_H_
-#define COMMON_AUDIO_RESAMPLER_SINC_RESAMPLER_H_
+#ifndef WEBRTC_COMMON_AUDIO_RESAMPLER_SINC_RESAMPLER_H_
+#define WEBRTC_COMMON_AUDIO_RESAMPLER_SINC_RESAMPLER_H_
 
 #include <memory>
 
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/gtest_prod_util.h"
-#include "system_wrappers/include/aligned_malloc.h"
-#include "typedefs.h"  
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/gtest_prod_util.h"
+#include "webrtc/system_wrappers/include/aligned_malloc.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

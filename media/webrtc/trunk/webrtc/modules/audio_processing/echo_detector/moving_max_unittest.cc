@@ -8,8 +8,8 @@
 
 
 
-#include "modules/audio_processing/echo_detector/moving_max.h"
-#include "test/gtest.h"
+#include "webrtc/modules/audio_processing/echo_detector/moving_max.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

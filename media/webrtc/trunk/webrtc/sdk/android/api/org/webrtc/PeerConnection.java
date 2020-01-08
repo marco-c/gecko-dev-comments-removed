@@ -10,8 +10,8 @@
 
 package org.webrtc;
 
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 
@@ -21,6 +21,10 @@ import java.util.List;
 
 
 public class PeerConnection {
+  static {
+    System.loadLibrary("jingle_peerconnection_so");
+  }
+
   
   public enum IceGatheringState { NEW, GATHERING, COMPLETE }
 
@@ -92,145 +96,29 @@ public class PeerConnection {
 
   
   public static class IceServer {
-    
-    
-    
-    @Deprecated public final String uri;
-    public final List<String> urls;
+    public final String uri;
     public final String username;
     public final String password;
     public final TlsCertPolicy tlsCertPolicy;
 
     
-    
-    
-    
-    public final String hostname;
-
-    
-    public final List<String> tlsAlpnProtocols;
-
-    
-    
-    public final List<String> tlsEllipticCurves;
-
-    
-    @Deprecated
     public IceServer(String uri) {
       this(uri, "", "");
     }
 
-    @Deprecated
     public IceServer(String uri, String username, String password) {
       this(uri, username, password, TlsCertPolicy.TLS_CERT_POLICY_SECURE);
     }
 
-    @Deprecated
     public IceServer(String uri, String username, String password, TlsCertPolicy tlsCertPolicy) {
-      this(uri, username, password, tlsCertPolicy, "");
-    }
-
-    @Deprecated
-    public IceServer(String uri, String username, String password, TlsCertPolicy tlsCertPolicy,
-        String hostname) {
-      this(uri, Collections.singletonList(uri), username, password, tlsCertPolicy, hostname, null,
-          null);
-    }
-
-    private IceServer(String uri, List<String> urls, String username, String password,
-        TlsCertPolicy tlsCertPolicy, String hostname, List<String> tlsAlpnProtocols,
-        List<String> tlsEllipticCurves) {
-      if (uri == null || urls == null || urls.isEmpty()) {
-        throw new IllegalArgumentException("uri == null || urls == null || urls.isEmpty()");
-      }
-      for (String it : urls) {
-        if (it == null) {
-          throw new IllegalArgumentException("urls element is null: " + urls);
-        }
-      }
-      if (username == null) {
-        throw new IllegalArgumentException("username == null");
-      }
-      if (password == null) {
-        throw new IllegalArgumentException("password == null");
-      }
-      if (hostname == null) {
-        throw new IllegalArgumentException("hostname == null");
-      }
       this.uri = uri;
-      this.urls = urls;
       this.username = username;
       this.password = password;
       this.tlsCertPolicy = tlsCertPolicy;
-      this.hostname = hostname;
-      this.tlsAlpnProtocols = tlsAlpnProtocols;
-      this.tlsEllipticCurves = tlsEllipticCurves;
     }
 
-    @Override
     public String toString() {
-      return urls + " [" + username + ":" + password + "] [" + tlsCertPolicy + "] [" + hostname
-          + "] [" + tlsAlpnProtocols + "] [" + tlsEllipticCurves + "]";
-    }
-
-    public static Builder builder(String uri) {
-      return new Builder(Collections.singletonList(uri));
-    }
-
-    public static Builder builder(List<String> urls) {
-      return new Builder(urls);
-    }
-
-    public static class Builder {
-      private final List<String> urls;
-      private String username = "";
-      private String password = "";
-      private TlsCertPolicy tlsCertPolicy = TlsCertPolicy.TLS_CERT_POLICY_SECURE;
-      private String hostname = "";
-      private List<String> tlsAlpnProtocols;
-      private List<String> tlsEllipticCurves;
-
-      private Builder(List<String> urls) {
-        if (urls == null || urls.isEmpty()) {
-          throw new IllegalArgumentException("urls == null || urls.isEmpty(): " + urls);
-        }
-        this.urls = urls;
-      }
-
-      public Builder setUsername(String username) {
-        this.username = username;
-        return this;
-      }
-
-      public Builder setPassword(String password) {
-        this.password = password;
-        return this;
-      }
-
-      public Builder setTlsCertPolicy(TlsCertPolicy tlsCertPolicy) {
-        this.tlsCertPolicy = tlsCertPolicy;
-        return this;
-      }
-
-      public Builder setHostname(String hostname) {
-        this.hostname = hostname;
-        return this;
-      }
-
-      public Builder setTlsAlpnProtocols(List<String> tlsAlpnProtocols) {
-        this.tlsAlpnProtocols = tlsAlpnProtocols;
-        return this;
-      }
-
-      public Builder setTlsEllipticCurves(List<String> tlsEllipticCurves) {
-        this.tlsEllipticCurves = tlsEllipticCurves;
-        return this;
-      }
-
-      public IceServer createIceServer() {
-        return new IceServer(urls.get(0), urls, username, password, tlsCertPolicy, hostname,
-            tlsAlpnProtocols, tlsEllipticCurves);
-      }
+      return uri + " [" + username + ":" + password + "] [" + tlsCertPolicy + "]";
     }
   }
 
@@ -256,25 +144,6 @@ public class PeerConnection {
   public enum ContinualGatheringPolicy { GATHER_ONCE, GATHER_CONTINUALLY }
 
   
-  public static class IntervalRange {
-    private final int min;
-    private final int max;
-
-    public IntervalRange(int min, int max) {
-      this.min = min;
-      this.max = max;
-    }
-
-    public int getMin() {
-      return min;
-    }
-
-    public int getMax() {
-      return max;
-    }
-  }
-
-  
   public static class RTCConfiguration {
     public IceTransportsType iceTransportsType;
     public List<IceServer> iceServers;
@@ -291,28 +160,13 @@ public class PeerConnection {
     public int iceCandidatePoolSize;
     public boolean pruneTurnPorts;
     public boolean presumeWritableWhenFullyRelayed;
-    public Integer iceCheckMinInterval;
-    public boolean disableIPv6OnWifi;
-    
-    
-    
-    
-    
-    public int maxIPv6Networks;
-    public IntervalRange iceRegatherIntervalRange;
 
-    
-    public TurnCustomizer turnCustomizer;
-
-    
-    
-    
     public RTCConfiguration(List<IceServer> iceServers) {
       iceTransportsType = IceTransportsType.ALL;
       bundlePolicy = BundlePolicy.BALANCED;
       rtcpMuxPolicy = RtcpMuxPolicy.REQUIRE;
       tcpCandidatePolicy = TcpCandidatePolicy.ENABLED;
-      candidateNetworkPolicy = CandidateNetworkPolicy.ALL;
+      candidateNetworkPolicy = candidateNetworkPolicy.ALL;
       this.iceServers = iceServers;
       audioJitterBufferMaxPackets = 50;
       audioJitterBufferFastAccelerate = false;
@@ -323,22 +177,21 @@ public class PeerConnection {
       iceCandidatePoolSize = 0;
       pruneTurnPorts = false;
       presumeWritableWhenFullyRelayed = false;
-      iceCheckMinInterval = null;
-      disableIPv6OnWifi = false;
-      maxIPv6Networks = 5;
-      iceRegatherIntervalRange = null;
     }
   };
 
-  private final List<MediaStream> localStreams = new ArrayList<>();
+  private final List<MediaStream> localStreams;
   private final long nativePeerConnection;
   private final long nativeObserver;
-  private List<RtpSender> senders = new ArrayList<>();
-  private List<RtpReceiver> receivers = new ArrayList<>();
+  private List<RtpSender> senders;
+  private List<RtpReceiver> receivers;
 
   PeerConnection(long nativePeerConnection, long nativeObserver) {
     this.nativePeerConnection = nativePeerConnection;
     this.nativeObserver = nativeObserver;
+    localStreams = new LinkedList<MediaStream>();
+    senders = new LinkedList<RtpSender>();
+    receivers = new LinkedList<RtpReceiver>();
   }
 
   
@@ -355,18 +208,6 @@ public class PeerConnection {
   public native void setLocalDescription(SdpObserver observer, SessionDescription sdp);
 
   public native void setRemoteDescription(SdpObserver observer, SessionDescription sdp);
-
-  
-  
-  
-  
-  public native void setAudioPlayout(boolean playout);
-
-  
-  
-  
-  
-  public native void setAudioRecording(boolean recording);
 
   public boolean setConfiguration(RTCConfiguration config) {
     return nativeSetConfiguration(config, nativeObserver);
@@ -394,43 +235,6 @@ public class PeerConnection {
     localStreams.remove(stream);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   public RtpSender createSender(String kind, String stream_id) {
     RtpSender new_sender = nativeCreateSender(kind, stream_id);
     if (new_sender != null) {
@@ -457,21 +261,9 @@ public class PeerConnection {
     return Collections.unmodifiableList(receivers);
   }
 
-  
-  @Deprecated
   public boolean getStats(StatsObserver observer, MediaStreamTrack track) {
-    return nativeOldGetStats(observer, (track == null) ? 0 : track.nativeTrack);
+    return nativeGetStats(observer, (track == null) ? 0 : track.nativeTrack);
   }
-
-  
-  
-  public void getStats(RTCStatsCollectorCallback callback) {
-    nativeNewGetStats(callback);
-  }
-
-  
-  
-  public native boolean setBitrate(Integer min, Integer current, Integer max);
 
   
   
@@ -498,22 +290,6 @@ public class PeerConnection {
 
   public native void close();
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   public void dispose() {
     close();
     for (MediaStream stream : localStreams) {
@@ -529,9 +305,11 @@ public class PeerConnection {
       receiver.dispose();
     }
     receivers.clear();
-    JniCommon.nativeReleaseRef(nativePeerConnection);
+    freePeerConnection(nativePeerConnection);
     freeObserver(nativeObserver);
   }
+
+  private static native void freePeerConnection(long nativePeerConnection);
 
   private static native void freeObserver(long nativeObserver);
 
@@ -546,9 +324,7 @@ public class PeerConnection {
 
   private native void nativeRemoveLocalStream(long nativeStream);
 
-  private native boolean nativeOldGetStats(StatsObserver observer, long nativeTrack);
-
-  private native void nativeNewGetStats(RTCStatsCollectorCallback callback);
+  private native boolean nativeGetStats(StatsObserver observer, long nativeTrack);
 
   private native RtpSender nativeCreateSender(String kind, String stream_id);
 

@@ -8,7 +8,7 @@
 
 
 
-#include "test/video_renderer.h"
+#include "webrtc/test/video_renderer.h"
 
 namespace webrtc {
 namespace test {

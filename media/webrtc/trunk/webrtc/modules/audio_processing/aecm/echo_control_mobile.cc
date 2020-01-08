@@ -8,7 +8,7 @@
 
 
 
-#include "modules/audio_processing/aecm/echo_control_mobile.h"
+#include "webrtc/modules/audio_processing/aecm/echo_control_mobile.h"
 
 #ifdef AEC_DEBUG
 #include <stdio.h>
@@ -16,10 +16,10 @@
 #include <stdlib.h>
 
 extern "C" {
-#include "common_audio/ring_buffer.h"
-#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/common_audio/ring_buffer.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 }
-#include "modules/audio_processing/aecm/aecm_core.h"
+#include "webrtc/modules/audio_processing/aecm/aecm_core.h"
 
 #define BUF_SIZE_FRAMES 50 // buffer size (frames)
 
@@ -75,10 +75,10 @@ typedef struct
 
 
 
-static int WebRtcAecm_EstBufDelay(AecMobile* aecm, short msInSndCardBuf);
+static int WebRtcAecm_EstBufDelay(AecMobile* aecmInst, short msInSndCardBuf);
 
 
-static int WebRtcAecm_DelayComp(AecMobile* aecm);
+static int WebRtcAecm_DelayComp(AecMobile* aecmInst);
 
 void* WebRtcAecm_Create() {
     AecMobile* aecm = static_cast<AecMobile*>(malloc(sizeof(AecMobile)));

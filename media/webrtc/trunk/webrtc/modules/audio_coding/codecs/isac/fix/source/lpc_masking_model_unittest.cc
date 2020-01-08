@@ -8,10 +8,10 @@
 
 
 
-#include "modules/audio_coding/codecs/isac/fix/source/lpc_masking_model.h"
-#include "system_wrappers/include/cpu_features_wrapper.h"
-#include "test/gtest.h"
-#include "typedefs.h"  
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/lpc_masking_model.h"
+#include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
+#include "webrtc/test/gtest.h"
+#include "webrtc/typedefs.h"
 
 class LpcMaskingModelTest : public testing::Test {
  protected:

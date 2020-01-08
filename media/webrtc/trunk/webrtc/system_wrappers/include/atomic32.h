@@ -12,20 +12,15 @@
 
 
 
-#ifndef SYSTEM_WRAPPERS_INCLUDE_ATOMIC32_H_
-#define SYSTEM_WRAPPERS_INCLUDE_ATOMIC32_H_
-
-#include <atomic>
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_ATOMIC32_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_ATOMIC32_H_
 
 #include <stddef.h>
 
-#include "common_types.h"  
-#include "rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/common_types.h"
 
 namespace webrtc {
-
-
-
 
 
 
@@ -46,12 +41,24 @@ class Atomic32 {
   
   
   bool CompareExchange(int32_t new_value, int32_t compare_value);
-  int32_t Value() const;
+  int32_t Value() {
+    return *this += 0;
+  }
 
  private:
+  
+  
+  Atomic32 operator+(const Atomic32& other);
+  Atomic32 operator-(const Atomic32& other);
+
+  
+  inline bool Is32bitAligned() const {
+    return (reinterpret_cast<ptrdiff_t>(&value_) & 3) == 0;
+  }
+
   RTC_DISALLOW_COPY_AND_ASSIGN(Atomic32);
 
-  std::atomic<int32_t> value_;
+  int32_t value_;
 };
 
 }  

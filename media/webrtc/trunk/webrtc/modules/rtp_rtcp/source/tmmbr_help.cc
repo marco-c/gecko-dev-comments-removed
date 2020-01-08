@@ -8,12 +8,12 @@
 
 
 
-#include "modules/rtp_rtcp/source/tmmbr_help.h"
+#include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
 
 #include <algorithm>
 #include <limits>
 
-#include "rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 std::vector<rtcp::TmmbItem> TMMBRHelp::FindBoundingSet(

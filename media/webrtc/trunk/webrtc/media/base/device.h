@@ -8,12 +8,10 @@
 
 
 
-#ifndef MEDIA_BASE_DEVICE_H_
-#define MEDIA_BASE_DEVICE_H_
+#ifndef WEBRTC_MEDIA_BASE_DEVICE_H_
+#define WEBRTC_MEDIA_BASE_DEVICE_H_
 
-#include <string>
-
-#include "rtc_base/stringencode.h"
+#include "webrtc/base/stringencode.h"
 
 namespace cricket {
 

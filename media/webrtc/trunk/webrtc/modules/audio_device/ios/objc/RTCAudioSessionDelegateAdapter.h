@@ -8,7 +8,7 @@
 
 
 
-#import "sdk/objc/Framework/Headers/WebRTC/RTCAudioSession.h"
+#import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
 
 namespace webrtc {
 class AudioSessionObserver;

@@ -8,13 +8,13 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_AGC_AGC_MANAGER_DIRECT_H_
-#define MODULES_AUDIO_PROCESSING_AGC_AGC_MANAGER_DIRECT_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_AGC_MANAGER_DIRECT_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_AGC_MANAGER_DIRECT_H_
 
 #include <memory>
 
-#include "modules/audio_processing/agc/agc.h"
-#include "rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/audio_processing/agc/agc.h"
 
 namespace webrtc {
 

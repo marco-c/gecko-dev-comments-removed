@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_DESKTOP_CAPTURE_WIN_DXGI_OUTPUT_DUPLICATOR_H_
-#define MODULES_DESKTOP_CAPTURE_WIN_DXGI_OUTPUT_DUPLICATOR_H_
+#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_OUTPUT_DUPLICATOR_H_
+#define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_OUTPUT_DUPLICATOR_H_
 
 #include <comdef.h>
 #include <wrl/client.h>
@@ -17,18 +17,16 @@
 #include <DXGI1_2.h>
 
 #include <memory>
-#include <string>
 #include <vector>
 
-#include "modules/desktop_capture/desktop_frame_rotation.h"
-#include "modules/desktop_capture/desktop_geometry.h"
-#include "modules/desktop_capture/desktop_region.h"
-#include "modules/desktop_capture/shared_desktop_frame.h"
-#include "modules/desktop_capture/win/d3d_device.h"
-#include "modules/desktop_capture/win/dxgi_context.h"
-#include "modules/desktop_capture/win/dxgi_texture.h"
-#include "rtc_base/criticalsection.h"
-#include "rtc_base/thread_annotations.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/thread_annotations.h"
+#include "webrtc/modules/desktop_capture/desktop_geometry.h"
+#include "webrtc/modules/desktop_capture/desktop_region.h"
+#include "webrtc/modules/desktop_capture/desktop_frame_rotation.h"
+#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
+#include "webrtc/modules/desktop_capture/win/d3d_device.h"
+#include "webrtc/modules/desktop_capture/win/dxgi_texture.h"
 
 namespace webrtc {
 
@@ -36,7 +34,12 @@ namespace webrtc {
 
 class DxgiOutputDuplicator {
  public:
-  using Context = DxgiOutputContext;
+  struct Context {
+    
+    
+    
+    DesktopRegion updated_region;
+  };
 
   
   
@@ -69,23 +72,14 @@ class DxgiOutputDuplicator {
   
   DesktopRect desktop_rect() const { return desktop_rect_; }
 
-  
-  const std::string& device_name() const { return device_name_; }
-
-  void Setup(Context* context);
-
-  void Unregister(const Context* const context);
-
-  
-  int64_t num_frames_captured() const;
-
-  
-  void TranslateRect(const DesktopVector& position);
-
  private:
+  friend class DxgiAdapterDuplicator;
+
+  
   
   
   void DetectUpdatedRegion(const DXGI_OUTDUPL_FRAME_INFO& frame_info,
+                           DesktopVector offset,
                            DesktopRegion* updated_region);
 
   
@@ -101,23 +95,19 @@ class DxgiOutputDuplicator {
 
   
   
-  DesktopRect GetTranslatedDesktopRect(DesktopVector offset) const;
+  DesktopRect TranslatedDesktopRect(DesktopVector offset);
 
-  
-  
-  DesktopRect GetUntranslatedDesktopRect() const;
+  void Setup(Context* context);
+
+  void Unregister(const Context* const context);
 
   
   
   void SpreadContextChange(const Context* const context);
 
-  
-  DesktopSize desktop_size() const;
-
   const D3dDevice device_;
   const Microsoft::WRL::ComPtr<IDXGIOutput1> output_;
-  const std::string device_name_;
-  DesktopRect desktop_rect_;
+  const DesktopRect desktop_rect_;
   Microsoft::WRL::ComPtr<IDXGIOutputDuplication> duplication_;
   DXGI_OUTDUPL_DESC desc_;
   std::vector<uint8_t> metadata_;
@@ -136,8 +126,6 @@ class DxgiOutputDuplicator {
   
   std::unique_ptr<SharedDesktopFrame> last_frame_;
   DesktopVector last_frame_offset_;
-
-  int64_t num_frames_captured_ = 0;
 };
 
 }  

@@ -8,13 +8,13 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_AGC_MOCK_AGC_H_
-#define MODULES_AUDIO_PROCESSING_AGC_MOCK_AGC_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_MOCK_AGC_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_MOCK_AGC_H_
 
-#include "modules/audio_processing/agc/agc.h"
+#include "webrtc/modules/audio_processing/agc/agc.h"
 
-#include "modules/include/module_common_types.h"
-#include "test/gmock.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 

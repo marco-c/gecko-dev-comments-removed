@@ -8,13 +8,13 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_BEAMFORMER_ARRAY_UTIL_H_
-#define MODULES_AUDIO_PROCESSING_BEAMFORMER_ARRAY_UTIL_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_BEAMFORMER_ARRAY_UTIL_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_BEAMFORMER_ARRAY_UTIL_H_
 
 #include <cmath>
 #include <vector>
 
-#include "api/optional.h"
+#include "webrtc/base/optional.h"
 
 namespace webrtc {
 

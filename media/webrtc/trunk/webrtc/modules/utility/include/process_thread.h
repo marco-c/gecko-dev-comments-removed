@@ -8,26 +8,22 @@
 
 
 
-#ifndef MODULES_UTILITY_INCLUDE_PROCESS_THREAD_H_
-#define MODULES_UTILITY_INCLUDE_PROCESS_THREAD_H_
+#ifndef WEBRTC_MODULES_UTILITY_INCLUDE_PROCESS_THREAD_H_
+#define WEBRTC_MODULES_UTILITY_INCLUDE_PROCESS_THREAD_H_
 
 #include <memory>
 
-#include "typedefs.h"  
+#include "webrtc/typedefs.h"
 
 #if defined(WEBRTC_WIN)
 
 
-#include "rtc_base/task_queue.h"
+#include "webrtc/base/task_queue.h"
 #else
 namespace rtc {
 class QueuedTask;
 }
 #endif
-
-namespace rtc {
-class Location;
-}
 
 namespace webrtc {
 class Module;
@@ -65,7 +61,7 @@ class ProcessThread {
 
   
   
-  virtual void RegisterModule(Module* module, const rtc::Location& from) = 0;
+  virtual void RegisterModule(Module* module) = 0;
 
   
   

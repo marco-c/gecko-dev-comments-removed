@@ -8,15 +8,14 @@
 
 
 
-#ifndef COMMON_VIDEO_INCLUDE_I420_BUFFER_POOL_H_
-#define COMMON_VIDEO_INCLUDE_I420_BUFFER_POOL_H_
+#ifndef WEBRTC_COMMON_VIDEO_INCLUDE_I420_BUFFER_POOL_H_
+#define WEBRTC_COMMON_VIDEO_INCLUDE_I420_BUFFER_POOL_H_
 
 #include <list>
 #include <limits>
 
-#include "api/video/i420_buffer.h"
-#include "rtc_base/race_checker.h"
-#include "rtc_base/refcountedobject.h"
+#include "webrtc/api/video/i420_buffer.h"
+#include "webrtc/base/race_checker.h"
 
 namespace webrtc {
 

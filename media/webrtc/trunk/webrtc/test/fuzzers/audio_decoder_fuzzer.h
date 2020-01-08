@@ -8,12 +8,12 @@
 
 
 
-#ifndef TEST_FUZZERS_AUDIO_DECODER_FUZZER_H_
-#define TEST_FUZZERS_AUDIO_DECODER_FUZZER_H_
+#ifndef WEBRTC_TEST_FUZZERS_AUDIO_DECODER_FUZZER_H_
+#define WEBRTC_TEST_FUZZERS_AUDIO_DECODER_FUZZER_H_
 
 #include <stddef.h>
 
-#include "typedefs.h"  
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

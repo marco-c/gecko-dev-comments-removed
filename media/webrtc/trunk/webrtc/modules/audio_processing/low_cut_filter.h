@@ -8,13 +8,13 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_LOW_CUT_FILTER_H_
-#define MODULES_AUDIO_PROCESSING_LOW_CUT_FILTER_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_LOW_CUT_FILTER_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_LOW_CUT_FILTER_H_
 
 #include <memory>
 #include <vector>
 
-#include "rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace webrtc {
 

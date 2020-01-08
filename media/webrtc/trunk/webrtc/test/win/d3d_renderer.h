@@ -7,16 +7,16 @@
 
 
 
-#ifndef TEST_WIN_D3D_RENDERER_H_
-#define TEST_WIN_D3D_RENDERER_H_
+#ifndef WEBRTC_TEST_WIN_D3D_RENDERER_H_
+#define WEBRTC_TEST_WIN_D3D_RENDERER_H_
 
 #include <Windows.h>
 #include <d3d9.h>
 #pragma comment(lib, "d3d9.lib")       // located in DirectX SDK
 
-#include "rtc_base/scoped_ref_ptr.h"
-#include "test/video_renderer.h"
-#include "typedefs.h"  
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/test/video_renderer.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 namespace test {

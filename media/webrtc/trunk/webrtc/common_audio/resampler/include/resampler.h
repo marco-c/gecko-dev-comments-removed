@@ -13,86 +13,45 @@
 
 
 
-#ifndef COMMON_AUDIO_RESAMPLER_INCLUDE_RESAMPLER_H_
-#define COMMON_AUDIO_RESAMPLER_INCLUDE_RESAMPLER_H_
+#ifndef WEBRTC_RESAMPLER_RESAMPLER_H_
+#define WEBRTC_RESAMPLER_RESAMPLER_H_
 
 #include <stddef.h>
 
-#include "typedefs.h"  
+#include "webrtc/typedefs.h"
+#include <speex/speex_resampler.h>
 
 namespace webrtc {
+ 
+#define FIXED_RATE_RESAMPLER 0x10
 
 
-class Resampler {
- public:
-  Resampler();
-  Resampler(int inFreq, int outFreq, size_t num_channels);
-  ~Resampler();
+class Resampler
+{
 
-  
-  int Reset(int inFreq, int outFreq, size_t num_channels);
+public:
+    Resampler();
+    Resampler(int inFreq, int outFreq, size_t num_channels);
+    ~Resampler();
 
-  
-  int ResetIfNeeded(int inFreq, int outFreq, size_t num_channels);
+    
+    int Reset(int inFreq, int outFreq, size_t num_channels);
 
-  
-  int Push(const int16_t* samplesIn, size_t lengthIn, int16_t* samplesOut,
-           size_t maxLen, size_t& outLen);  
+    
+    int ResetIfNeeded(int inFreq, int outFreq, size_t num_channels);
 
- private:
-  enum ResamplerMode {
-    kResamplerMode1To1,
-    kResamplerMode1To2,
-    kResamplerMode1To3,
-    kResamplerMode1To4,
-    kResamplerMode1To6,
-    kResamplerMode1To12,
-    kResamplerMode2To3,
-    kResamplerMode2To11,
-    kResamplerMode4To11,
-    kResamplerMode8To11,
-    kResamplerMode11To16,
-    kResamplerMode11To32,
-    kResamplerMode2To1,
-    kResamplerMode3To1,
-    kResamplerMode4To1,
-    kResamplerMode6To1,
-    kResamplerMode12To1,
-    kResamplerMode3To2,
-    kResamplerMode11To2,
-    kResamplerMode11To4,
-    kResamplerMode11To8
-  };
+    
+    int Push(const int16_t* samplesIn, size_t lengthIn, int16_t* samplesOut,
+             size_t maxLen, size_t &outLen);
 
-  
-  
-  static int ComputeResamplerMode(int in_freq_hz,
-                                  int out_freq_hz,
-                                  ResamplerMode* mode);
+private:
+    SpeexResamplerState* state_;
 
-  
-  void* state1_;
-  void* state2_;
-  void* state3_;
-
-  
-  int16_t* in_buffer_;
-  int16_t* out_buffer_;
-  size_t in_buffer_size_;
-  size_t out_buffer_size_;
-  size_t in_buffer_size_max_;
-  size_t out_buffer_size_max_;
-
-  int my_in_frequency_khz_;
-  int my_out_frequency_khz_;
-  ResamplerMode my_mode_;
-  size_t num_channels_;
-
-  
-  Resampler* slave_left_;
-  Resampler* slave_right_;
+    int in_freq_;
+    int out_freq_;
+    int channels_;
 };
 
 }  
 
-#endif  
+#endif 

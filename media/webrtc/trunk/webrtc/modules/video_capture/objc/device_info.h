@@ -8,10 +8,10 @@
 
 
 
-#ifndef MODULES_VIDEO_CAPTURE_OBJC_DEVICE_INFO_H_
-#define MODULES_VIDEO_CAPTURE_OBJC_DEVICE_INFO_H_
+#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_OBJC_DEVICE_INFO_H_
+#define WEBRTC_MODULES_VIDEO_CAPTURE_OBJC_DEVICE_INFO_H_
 
-#include "modules/video_capture/device_info_impl.h"
+#include "webrtc/modules/video_capture/device_info_impl.h"
 
 #include <map>
 #include <string>

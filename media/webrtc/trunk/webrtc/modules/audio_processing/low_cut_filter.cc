@@ -8,10 +8,11 @@
 
 
 
-#include "modules/audio_processing/low_cut_filter.h"
+#include "webrtc/modules/audio_processing/low_cut_filter.h"
 
-#include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "modules/audio_processing/audio_buffer.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/modules/audio_processing/audio_buffer.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 namespace webrtc {
 namespace {
@@ -44,7 +45,7 @@ class LowCutFilter::BiquadFilter {
       tmp_int32 = (tmp_int32 >> 15);
       tmp_int32 += y[0] * ba[3];  
       tmp_int32 += y[2] * ba[4];  
-      tmp_int32 *= 2;
+      tmp_int32 = (tmp_int32 << 1);
 
       tmp_int32 += data[i] * ba[0];  
       tmp_int32 += x[0] * ba[1];     
@@ -58,8 +59,8 @@ class LowCutFilter::BiquadFilter {
       y[2] = y[0];
       y[3] = y[1];
       y[0] = static_cast<int16_t>(tmp_int32 >> 13);
-
-      y[1] = static_cast<int16_t>((tmp_int32 & 0x00001FFF) * 4);
+      y[1] = static_cast<int16_t>(
+          (tmp_int32 - (static_cast<int32_t>(y[0]) << 13)) << 2);
 
       
       tmp_int32 += 2048;

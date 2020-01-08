@@ -1,0 +1,37 @@
+
+
+
+
+
+
+
+
+
+
+#import "WebRTC/RTCIceCandidate.h"
+
+#include <memory>
+
+#include "webrtc/api/jsep.h"
+
+NS_ASSUME_NONNULL_BEGIN
+
+@interface RTCIceCandidate ()
+
+
+
+
+
+@property(nonatomic, readonly)
+    std::unique_ptr<webrtc::IceCandidateInterface> nativeCandidate;
+
+
+
+
+
+- (instancetype)initWithNativeCandidate:
+    (const webrtc::IceCandidateInterface *)candidate;
+
+@end
+
+NS_ASSUME_NONNULL_END

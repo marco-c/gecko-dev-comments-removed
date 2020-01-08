@@ -7,26 +7,28 @@
 
 
 
-#ifndef VIDEO_ENCODER_RTCP_FEEDBACK_H_
-#define VIDEO_ENCODER_RTCP_FEEDBACK_H_
+#ifndef WEBRTC_VIDEO_ENCODER_RTCP_FEEDBACK_H_
+#define WEBRTC_VIDEO_ENCODER_RTCP_FEEDBACK_H_
 
 #include <vector>
 
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "rtc_base/criticalsection.h"
-#include "system_wrappers/include/clock.h"
-#include "typedefs.h"  
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
-class VideoStreamEncoder;
+class ViEEncoder;
 
 class EncoderRtcpFeedback : public RtcpIntraFrameObserver {
  public:
   EncoderRtcpFeedback(Clock* clock,
                        const std::vector<uint32_t>& ssrcs,
-                       VideoStreamEncoder* encoder);
+                       ViEEncoder* encoder);
   void OnReceivedIntraFrameRequest(uint32_t ssrc) override;
+  void OnReceivedSLI(uint32_t ssrc, uint8_t picture_id) override;
+  void OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id) override;
 
  private:
   bool HasSsrc(uint32_t ssrc);
@@ -34,10 +36,10 @@ class EncoderRtcpFeedback : public RtcpIntraFrameObserver {
 
   Clock* const clock_;
   const std::vector<uint32_t> ssrcs_;
-  VideoStreamEncoder* const video_stream_encoder_;
+  ViEEncoder* const vie_encoder_;
 
   rtc::CriticalSection crit_;
-  std::vector<int64_t> time_last_intra_request_ms_ RTC_GUARDED_BY(crit_);
+  std::vector<int64_t> time_last_intra_request_ms_ GUARDED_BY(crit_);
 };
 
 }  

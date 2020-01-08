@@ -8,7 +8,7 @@
 
 
 
-#include "modules/audio_coding/codecs/isac/fix/source/lpc_masking_model.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/lpc_masking_model.h"
 
 
 

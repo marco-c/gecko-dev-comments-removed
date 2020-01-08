@@ -7,11 +7,11 @@
 
 
 
-#ifndef MODULES_RTP_RTCP_INCLUDE_RTP_HEADER_PARSER_H_
-#define MODULES_RTP_RTCP_INCLUDE_RTP_HEADER_PARSER_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_HEADER_PARSER_H_
+#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_HEADER_PARSER_H_
 
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "typedefs.h"  
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

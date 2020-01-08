@@ -8,18 +8,17 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_INPUT_H_
-#define MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_INPUT_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_INPUT_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_INPUT_H_
 
 #include <algorithm>
 #include <memory>
-#include <string>
 
-#include "api/optional.h"
-#include "common_types.h"  
-#include "modules/audio_coding/neteq/tools/packet.h"
-#include "modules/audio_coding/neteq/tools/packet_source.h"
-#include "rtc_base/buffer.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/modules/audio_coding/neteq/tools/packet.h"
+#include "webrtc/modules/audio_coding/neteq/tools/packet_source.h"
+#include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
 namespace test {
@@ -28,9 +27,7 @@ namespace test {
 class NetEqInput {
  public:
   struct PacketData {
-    std::string ToString() const;
-
-    RTPHeader header;
+    WebRtcRTPHeader header;
     rtc::Buffer payload;
     double time_ms;
   };
@@ -52,9 +49,9 @@ class NetEqInput {
     const auto b = NextOutputEventTime();
     
     if (a) {
-      return b ? std::min(*a, *b) : a;
+      return b ? rtc::Optional<int64_t>(std::min(*a, *b)) : a;
     }
-    return b ? b : rtc::nullopt;
+    return b ? b : rtc::Optional<int64_t>();
   }
 
   

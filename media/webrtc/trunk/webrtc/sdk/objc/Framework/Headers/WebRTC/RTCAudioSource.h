@@ -20,13 +20,6 @@ RTC_EXPORT
 
 - (instancetype)init NS_UNAVAILABLE;
 
-
-
-
-
-
-@property(nonatomic, assign) double volume;
-
 @end
 
 NS_ASSUME_NONNULL_END

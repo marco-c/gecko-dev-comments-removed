@@ -8,13 +8,13 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_CODECS_ISAC_LOCKED_BANDWIDTH_INFO_H_
-#define MODULES_AUDIO_CODING_CODECS_ISAC_LOCKED_BANDWIDTH_INFO_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_LOCKED_BANDWIDTH_INFO_H_
+#define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_LOCKED_BANDWIDTH_INFO_H_
 
-#include "modules/audio_coding/codecs/isac/bandwidth_info.h"
-#include "rtc_base/atomicops.h"
-#include "rtc_base/criticalsection.h"
-#include "rtc_base/thread_annotations.h"
+#include "webrtc/base/atomicops.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/thread_annotations.h"
+#include "webrtc/modules/audio_coding/codecs/isac/bandwidth_info.h"
 
 namespace webrtc {
 
@@ -48,7 +48,7 @@ class LockedIsacBandwidthInfo final {
  private:
   mutable volatile int ref_count_;
   rtc::CriticalSection lock_;
-  IsacBandwidthInfo bwinfo_ RTC_GUARDED_BY(lock_);
+  IsacBandwidthInfo bwinfo_ GUARDED_BY(lock_);
 };
 
 }  

@@ -8,8 +8,8 @@
 
 
 
-#ifndef SYSTEM_WRAPPERS_INCLUDE_FIELD_TRIAL_H_
-#define SYSTEM_WRAPPERS_INCLUDE_FIELD_TRIAL_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_FIELD_TRIAL_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_FIELD_TRIAL_H_
 
 #include <string>
 
@@ -61,13 +61,6 @@ namespace field_trial {
 
 
 std::string FindFullName(const std::string& name);
-
-
-
-
-inline bool IsEnabled(const char* name) {
-  return FindFullName(name).find("Enabled") == 0;
-}
 
 }  
 }  

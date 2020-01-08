@@ -8,17 +8,16 @@
 
 
 
-#ifndef MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_H_
-#define MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_H_
+#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_H_
+#define WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_H_
 
 #include <memory>
 
-#include "modules/desktop_capture/desktop_capture_types.h"
-#include "modules/desktop_capture/desktop_geometry.h"
-#include "modules/desktop_capture/desktop_region.h"
-#include "modules/desktop_capture/shared_memory.h"
-#include "rtc_base/constructormagic.h"
-#include "typedefs.h"  
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/desktop_capture/desktop_geometry.h"
+#include "webrtc/modules/desktop_capture/desktop_region.h"
+#include "webrtc/modules/desktop_capture/shared_memory.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
@@ -31,16 +30,7 @@ class DesktopFrame {
   virtual ~DesktopFrame();
 
   
-  
-  DesktopRect rect() const;
-
-  
   const DesktopSize& size() const { return size_; }
-
-  
-  
-  const DesktopVector& top_left() const { return top_left_; }
-  void set_top_left(const DesktopVector& top_left) { top_left_ = top_left; }
 
   
   int stride() const { return stride_; }
@@ -78,32 +68,6 @@ class DesktopFrame {
   
   uint8_t* GetFrameDataAtPos(const DesktopVector& pos) const;
 
-  
-  
-  
-  uint32_t capturer_id() const { return capturer_id_; }
-  void set_capturer_id(uint32_t capturer_id) {
-    capturer_id_ = capturer_id;
-  }
-
-  
-  
-  
-  
-  
-  void CopyFrameInfoFrom(const DesktopFrame& other);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void MoveFrameInfoFrom(DesktopFrame* other);
-
  protected:
   DesktopFrame(DesktopSize size,
                int stride,
@@ -121,10 +85,8 @@ class DesktopFrame {
   const int stride_;
 
   DesktopRegion updated_region_;
-  DesktopVector top_left_;
   DesktopVector dpi_;
   int64_t capture_time_ms_;
-  uint32_t capturer_id_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DesktopFrame);
 };
@@ -133,10 +95,8 @@ class DesktopFrame {
 class BasicDesktopFrame : public DesktopFrame {
  public:
   explicit BasicDesktopFrame(DesktopSize size);
-
   ~BasicDesktopFrame() override;
 
-  
   
   static DesktopFrame* CopyOf(const DesktopFrame& frame);
 
@@ -147,38 +107,23 @@ class BasicDesktopFrame : public DesktopFrame {
 
 class SharedMemoryDesktopFrame : public DesktopFrame {
  public:
-  
-  
-  
   static std::unique_ptr<DesktopFrame> Create(
       DesktopSize size,
       SharedMemoryFactory* shared_memory_factory);
 
+  static std::unique_ptr<DesktopFrame> Create(
+      DesktopSize size,
+      std::unique_ptr<SharedMemory> shared_memory);
+
+  
   
   
   SharedMemoryDesktopFrame(DesktopSize size,
                            int stride,
                            SharedMemory* shared_memory);
-
-  
-  SharedMemoryDesktopFrame(DesktopSize size,
-                           int stride,
-                           std::unique_ptr<SharedMemory> shared_memory);
-
   ~SharedMemoryDesktopFrame() override;
 
  private:
-  
-  
-  
-  
-  
-  
-  
-  SharedMemoryDesktopFrame(DesktopRect rect,
-                           int stride,
-                           SharedMemory* shared_memory);
-
   RTC_DISALLOW_COPY_AND_ASSIGN(SharedMemoryDesktopFrame);
 };
 

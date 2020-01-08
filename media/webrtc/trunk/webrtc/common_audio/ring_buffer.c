@@ -11,7 +11,7 @@
 
 
 
-#include "common_audio/ring_buffer.h"
+#include "webrtc/common_audio/ring_buffer.h"
 
 #include <stddef.h>  
 #include <stdlib.h>
@@ -118,6 +118,7 @@ size_t WebRtc_ReadBuffer(RingBuffer* self,
                                                    &buf_ptr_bytes_1,
                                                    &buf_ptr_2,
                                                    &buf_ptr_bytes_2);
+
     if (buf_ptr_bytes_2 > 0) {
       
       
@@ -130,7 +131,7 @@ size_t WebRtc_ReadBuffer(RingBuffer* self,
     }
     if (data_ptr) {
       
-      *data_ptr = read_count == 0 ? NULL : buf_ptr_1;
+      *data_ptr = buf_ptr_1;
     }
 
     

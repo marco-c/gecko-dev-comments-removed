@@ -8,9 +8,12 @@
 
 
 
-#include "modules/video_coding/utility/frame_dropper.h"
+#include "webrtc/modules/video_coding/utility/frame_dropper.h"
 
 #include <algorithm>
+
+#include "webrtc/base/logging.h"
+#include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {
 
@@ -47,6 +50,15 @@ FrameDropper::FrameDropper()
       drop_ratio_(kDefaultDropRatioAlpha, kDefaultDropRatioValue),
       enabled_(true),
       max_drop_duration_secs_(kDefaultMaxDropDurationSecs) {
+  Reset();
+}
+
+FrameDropper::FrameDropper(float max_drop_duration_secs)
+    : key_frame_ratio_(kDefaultKeyFrameRatioAlpha),
+      delta_frame_size_avg_kbits_(kDefaultFrameSizeAlpha),
+      drop_ratio_(kDefaultDropRatioAlpha, kDefaultDropRatioValue),
+      enabled_(true),
+      max_drop_duration_secs_(max_drop_duration_secs) {
   Reset();
 }
 
@@ -156,6 +168,7 @@ void FrameDropper::UpdateRatio() {
   if (accumulator_ > accumulator_max_) {
     
     
+    
     if (was_below_max_) {
       drop_next_ = true;
     }
@@ -166,6 +179,7 @@ void FrameDropper::UpdateRatio() {
   }
   was_below_max_ = accumulator_ < accumulator_max_;
 }
+
 
 
 

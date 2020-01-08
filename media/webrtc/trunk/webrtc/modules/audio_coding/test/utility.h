@@ -8,11 +8,11 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_TEST_UTILITY_H_
-#define MODULES_AUDIO_CODING_TEST_UTILITY_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_TEST_UTILITY_H_
+#define WEBRTC_MODULES_AUDIO_CODING_TEST_UTILITY_H_
 
-#include "modules/audio_coding/include/audio_coding_module.h"
-#include "test/gtest.h"
+#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 
@@ -83,9 +83,6 @@ class ACMTestTimer {
   unsigned long _hour;
 };
 
-
-namespace test {
-
 class CircularBuffer {
  public:
   CircularBuffer(uint32_t len);
@@ -111,8 +108,6 @@ class CircularBuffer {
   double _sum;
   double _sumSqr;
 };
-
-}  
 
 int16_t ChooseCodec(CodecInst& codecInst);
 

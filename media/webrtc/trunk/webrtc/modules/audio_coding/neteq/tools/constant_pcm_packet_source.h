@@ -8,15 +8,15 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_TOOLS_CONSTANT_PCM_PACKET_SOURCE_H_
-#define MODULES_AUDIO_CODING_NETEQ_TOOLS_CONSTANT_PCM_PACKET_SOURCE_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_CONSTANT_PCM_PACKET_SOURCE_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_CONSTANT_PCM_PACKET_SOURCE_H_
 
 #include <stdio.h>
 #include <string>
 
-#include "common_types.h"  
-#include "modules/audio_coding/neteq/tools/packet_source.h"
-#include "rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/neteq/tools/packet_source.h"
 
 namespace webrtc {
 namespace test {

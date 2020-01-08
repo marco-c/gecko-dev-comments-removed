@@ -8,14 +8,14 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_TRANSIENT_TRANSIENT_DETECTOR_H_
-#define MODULES_AUDIO_PROCESSING_TRANSIENT_TRANSIENT_DETECTOR_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_TRANSIENT_TRANSIENT_DETECTOR_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_TRANSIENT_TRANSIENT_DETECTOR_H_
 
 #include <deque>
 #include <memory>
 
-#include "modules/audio_processing/transient/moving_moments.h"
-#include "modules/audio_processing/transient/wpd_tree.h"
+#include "webrtc/modules/audio_processing/transient/moving_moments.h"
+#include "webrtc/modules/audio_processing/transient/wpd_tree.h"
 
 namespace webrtc {
 

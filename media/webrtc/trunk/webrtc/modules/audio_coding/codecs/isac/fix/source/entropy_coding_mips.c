@@ -8,8 +8,8 @@
 
 
 
-#include "modules/audio_coding/codecs/isac/fix/source/entropy_coding.h"
-#include "modules/audio_coding/codecs/isac/fix/source/settings.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/entropy_coding.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/settings.h"
 
 
 

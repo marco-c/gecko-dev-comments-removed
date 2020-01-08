@@ -10,9 +10,9 @@
 
 
 
-#include "modules/audio_coding/neteq/random_vector.h"
+#include "webrtc/modules/audio_coding/neteq/random_vector.h"
 
-#include "test/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

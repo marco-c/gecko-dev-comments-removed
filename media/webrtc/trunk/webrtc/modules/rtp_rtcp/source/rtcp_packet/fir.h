@@ -8,13 +8,13 @@
 
 
 
-#ifndef MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_FIR_H_
-#define MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_FIR_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_FIR_H_
+#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_FIR_H_
 
 #include <vector>
 
-#include "modules/rtp_rtcp/source/rtcp_packet/psfb.h"
-#include "rtc_base/basictypes.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/psfb.h"
 
 namespace webrtc {
 namespace rtcp {
@@ -30,8 +30,8 @@ class Fir : public Psfb {
     uint8_t seq_nr;
   };
 
-  Fir();
-  ~Fir() override;
+  Fir() {}
+  ~Fir() override {}
 
   
   bool Parse(const CommonHeader& packet);
@@ -41,8 +41,7 @@ class Fir : public Psfb {
   }
   const std::vector<Request>& requests() const { return items_; }
 
-  size_t BlockLength() const override;
-
+ protected:
   bool Create(uint8_t* packet,
               size_t* index,
               size_t max_length,
@@ -50,7 +49,9 @@ class Fir : public Psfb {
 
  private:
   static constexpr size_t kFciLength = 8;
-
+  size_t BlockLength() const override {
+    return kHeaderLength + kCommonFeedbackLength + kFciLength * items_.size();
+  }
   
   void SetMediaSsrc(uint32_t ssrc);
   uint32_t media_ssrc() const;

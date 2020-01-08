@@ -8,11 +8,11 @@
 
 
 
-#include "modules/audio_processing/vad/pitch_internal.h"
+#include "webrtc/modules/audio_processing/vad/pitch_internal.h"
 
 #include <math.h>
 
-#include "test/gtest.h"
+#include "webrtc/test/gtest.h"
 
 TEST(PitchInternalTest, test) {
   const int kSamplingRateHz = 8000;

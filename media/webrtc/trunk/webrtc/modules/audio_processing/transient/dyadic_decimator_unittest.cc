@@ -8,9 +8,9 @@
 
 
 
-#include "modules/audio_processing/transient/dyadic_decimator.h"
+#include "webrtc/modules/audio_processing/transient/dyadic_decimator.h"
 
-#include "test/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

@@ -8,13 +8,13 @@
 
 
 
-#ifndef MODULES_VIDEO_PROCESSING_UTIL_DENOISER_FILTER_H_
-#define MODULES_VIDEO_PROCESSING_UTIL_DENOISER_FILTER_H_
+#ifndef WEBRTC_MODULES_VIDEO_PROCESSING_UTIL_DENOISER_FILTER_H_
+#define WEBRTC_MODULES_VIDEO_PROCESSING_UTIL_DENOISER_FILTER_H_
 
 #include <climits>
 #include <memory>
 
-#include "modules/include/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
 

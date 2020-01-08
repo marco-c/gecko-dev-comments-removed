@@ -8,15 +8,15 @@
 
 
 
-#include "modules/audio_processing/vad/pitch_based_vad.h"
+#include "webrtc/modules/audio_processing/vad/pitch_based_vad.h"
 
 #include <math.h>
 #include <stdio.h>
 
 #include <string>
 
-#include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "webrtc/test/gtest.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
 

@@ -8,12 +8,12 @@
 
 
 
-#include "modules/audio_device/android/opensles_common.h"
+#include "webrtc/modules/audio_device/android/opensles_common.h"
 
 #include <SLES/OpenSLES.h>
 
-#include "rtc_base/arraysize.h"
-#include "rtc_base/checks.h"
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 

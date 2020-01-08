@@ -7,136 +7,63 @@
 
 
 
-#ifndef TEST_FAKE_AUDIO_DEVICE_H_
-#define TEST_FAKE_AUDIO_DEVICE_H_
+#ifndef WEBRTC_TEST_FAKE_AUDIO_DEVICE_H_
+#define WEBRTC_TEST_FAKE_AUDIO_DEVICE_H_
 
 #include <memory>
 #include <string>
-#include <vector>
 
-#include "api/array_view.h"
-#include "modules/audio_device/include/fake_audio_device.h"
-#include "rtc_base/buffer.h"
-#include "rtc_base/criticalsection.h"
-#include "rtc_base/event.h"
-#include "rtc_base/platform_thread.h"
-#include "typedefs.h"  
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/platform_thread.h"
+#include "webrtc/modules/audio_device/include/fake_audio_device.h"
+#include "webrtc/test/drifting_clock.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
+class Clock;
 class EventTimerWrapper;
+class FileWrapper;
+class ModuleFileUtility;
 
 namespace test {
 
-
-
 class FakeAudioDevice : public FakeAudioDeviceModule {
  public:
-  
-  
-  static size_t SamplesPerFrame(int sampling_frequency_in_hz);
+  FakeAudioDevice(Clock* clock, const std::string& filename, float speed);
 
-  class Capturer {
-   public:
-    virtual ~Capturer() {}
-    
-    
-    virtual int SamplingFrequency() const = 0;
-    
-    
-    
-    virtual bool Capture(rtc::BufferT<int16_t>* buffer) = 0;
-  };
-
-  class Renderer {
-   public:
-    virtual ~Renderer() {}
-    
-    
-    virtual int SamplingFrequency() const = 0;
-    
-    
-    virtual bool Render(rtc::ArrayView<const int16_t> data) = 0;
-  };
-
-  
-  
-  
-  
-  
-  
-  
-  FakeAudioDevice(std::unique_ptr<Capturer> capturer,
-                  std::unique_ptr<Renderer> renderer,
-                  float speed = 1);
-  ~FakeAudioDevice() override;
-
-  
-  
-  
-  static std::unique_ptr<Capturer> CreatePulsedNoiseCapturer(
-      int16_t max_amplitude, int sampling_frequency_in_hz);
-
-  
-  static std::unique_ptr<Capturer> CreateWavFileReader(
-      std::string filename, int sampling_frequency_in_hz);
-
-  
-  
-  static std::unique_ptr<Capturer> CreateWavFileReader(std::string filename);
-
-  
-  static std::unique_ptr<Renderer> CreateWavFileWriter(
-      std::string filename, int sampling_frequency_in_hz);
-
-  
-  
-  
-  static std::unique_ptr<Renderer> CreateBoundedWavFileWriter(
-      std::string filename, int sampling_frequency_in_hz);
-
-  
-  static std::unique_ptr<Renderer> CreateDiscardRenderer(
-      int sampling_frequency_in_hz);
+  virtual ~FakeAudioDevice();
 
   int32_t Init() override;
   int32_t RegisterAudioCallback(AudioTransport* callback) override;
 
-  int32_t StartPlayout() override;
-  int32_t StopPlayout() override;
-  int32_t StartRecording() override;
-  int32_t StopRecording() override;
-
   bool Playing() const override;
+  int32_t PlayoutDelay(uint16_t* delay_ms) const override;
   bool Recording() const override;
 
-  
-  
-  bool WaitForPlayoutEnd(int timeout_ms = rtc::Event::kForever);
-  
-  
-  bool WaitForRecordingEnd(int timeout_ms = rtc::Event::kForever);
+  void Start();
+  void Stop();
 
  private:
   static bool Run(void* obj);
-  void ProcessAudio();
+  void CaptureAudio();
 
-  const std::unique_ptr<Capturer> capturer_ RTC_GUARDED_BY(lock_);
-  const std::unique_ptr<Renderer> renderer_ RTC_GUARDED_BY(lock_);
+  static const uint32_t kFrequencyHz = 16000;
+  static const size_t kBufferSizeBytes = 2 * kFrequencyHz;
+
+  AudioTransport* audio_callback_;
+  bool capturing_;
+  int8_t captured_audio_[kBufferSizeBytes];
+  int8_t playout_buffer_[kBufferSizeBytes];
   const float speed_;
+  int64_t last_playout_ms_;
 
-  rtc::CriticalSection lock_;
-  AudioTransport* audio_callback_ RTC_GUARDED_BY(lock_);
-  bool rendering_ RTC_GUARDED_BY(lock_);
-  bool capturing_ RTC_GUARDED_BY(lock_);
-  rtc::Event done_rendering_;
-  rtc::Event done_capturing_;
-
-  std::vector<int16_t> playout_buffer_ RTC_GUARDED_BY(lock_);
-  rtc::BufferT<int16_t> recording_buffer_ RTC_GUARDED_BY(lock_);
-
+  DriftingClock clock_;
   std::unique_ptr<EventTimerWrapper> tick_;
+  rtc::CriticalSection lock_;
   rtc::PlatformThread thread_;
+  std::unique_ptr<ModuleFileUtility> file_utility_;
+  std::unique_ptr<FileWrapper> input_stream_;
 };
 }  
 }  

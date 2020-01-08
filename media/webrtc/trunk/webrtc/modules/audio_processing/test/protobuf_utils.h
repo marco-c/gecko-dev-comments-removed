@@ -8,16 +8,15 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_TEST_PROTOBUF_UTILS_H_
-#define MODULES_AUDIO_PROCESSING_TEST_PROTOBUF_UTILS_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_TEST_PROTOBUF_UTILS_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_TEST_PROTOBUF_UTILS_H_
 
 #include <memory>
 
-#include "rtc_base/ignore_wundef.h"
-#include "rtc_base/protobuf_utils.h"
+#include "webrtc/base/ignore_wundef.h"
 
 RTC_PUSH_IGNORING_WUNDEF()
-#include "modules/audio_processing/debug.pb.h"
+#include "webrtc/modules/audio_processing/debug.pb.h"
 RTC_POP_IGNORING_WUNDEF()
 
 namespace webrtc {
@@ -27,7 +26,7 @@ namespace webrtc {
 size_t ReadMessageBytesFromFile(FILE* file, std::unique_ptr<uint8_t[]>* bytes);
 
 
-bool ReadMessageFromFile(FILE* file, MessageLite* msg);
+bool ReadMessageFromFile(FILE* file, ::google::protobuf::MessageLite* msg);
 
 }  
 

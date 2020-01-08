@@ -11,8 +11,8 @@
 
 
 
-#ifndef COMMON_AUDIO_RING_BUFFER_H_
-#define COMMON_AUDIO_RING_BUFFER_H_
+#ifndef WEBRTC_COMMON_AUDIO_RING_BUFFER_H_
+#define WEBRTC_COMMON_AUDIO_RING_BUFFER_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,7 +35,6 @@ typedef struct RingBuffer {
 RingBuffer* WebRtc_CreateBuffer(size_t element_count, size_t element_size);
 void WebRtc_InitBuffer(RingBuffer* handle);
 void WebRtc_FreeBuffer(void* handle);
-
 
 
 

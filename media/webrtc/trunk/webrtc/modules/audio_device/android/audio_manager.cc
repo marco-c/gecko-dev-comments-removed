@@ -8,16 +8,18 @@
 
 
 
-#include "modules/audio_device/android/audio_manager.h"
+#include "webrtc/modules/audio_device/android/audio_manager.h"
 
 #include <utility>
 
 #include <android/log.h>
 
-#include "modules/audio_device/android/audio_common.h"
-#include "modules/utility/include/helpers_android.h"
-#include "rtc_base/arraysize.h"
-#include "rtc_base/checks.h"
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/modules/audio_device/android/audio_common.h"
+#include "webrtc/modules/utility/include/helpers_android.h"
+
+#include "OpenSLESProvider.h"
 
 #define TAG "AudioManager"
 #define ALOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, TAG, __VA_ARGS__)
@@ -83,10 +85,11 @@ AudioManager::AudioManager()
   j_native_registration_ = j_environment_->RegisterNatives(
       "org/webrtc/voiceengine/WebRtcAudioManager", native_methods,
       arraysize(native_methods));
-  j_audio_manager_.reset(
-      new JavaAudioManager(j_native_registration_.get(),
-                           j_native_registration_->NewObject(
-                               "<init>", "(J)V", PointerTojlong(this))));
+  j_audio_manager_.reset(new JavaAudioManager(
+      j_native_registration_.get(),
+      j_native_registration_->NewObject(
+          "<init>", "(Landroid/content/Context;J)V",
+          JVM::GetInstance()->context(), PointerTojlong(this))));
 }
 
 AudioManager::~AudioManager() {
@@ -107,13 +110,14 @@ void AudioManager::SetActiveAudioLayer(
   
   
   delay_estimate_in_milliseconds_ =
-      (audio_layer == AudioDeviceModule::kAndroidJavaAudio)
-          ? kHighLatencyModeDelayEstimateInMilliseconds
-          : kLowLatencyModeDelayEstimateInMilliseconds;
+      (audio_layer == AudioDeviceModule::kAndroidJavaAudio) ?
+      kHighLatencyModeDelayEstimateInMilliseconds :
+      kLowLatencyModeDelayEstimateInMilliseconds;
   ALOGD("delay_estimate_in_milliseconds: %d", delay_estimate_in_milliseconds_);
 }
 
 SLObjectItf AudioManager::GetOpenSLEngine() {
+  __android_log_print(ANDROID_LOG_ERROR, "WebRTC", ">>>> Initializing SLES\n");
   ALOGD("GetOpenSLEngine%s", GetThreadInfo().c_str());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   
@@ -134,20 +138,39 @@ SLObjectItf AudioManager::GetOpenSLEngine() {
   
   const SLEngineOption option[] = {
       {SL_ENGINEOPTION_THREADSAFE, static_cast<SLuint32>(SL_BOOLEAN_TRUE)}};
-  SLresult result =
-      slCreateEngine(engine_object_.Receive(), 1, option, 0, NULL, NULL);
+
+  SLresult result;
+#ifndef MOZILLA_INTERNAL_API
+  result = slCreateEngine_(&engine_object_, 1, option, 0, NULL, NULL);
   if (result != SL_RESULT_SUCCESS) {
     ALOGE("slCreateEngine() failed: %s", GetSLErrorString(result));
     engine_object_.Reset();
     return nullptr;
   }
   
-  result = engine_object_->Realize(engine_object_.Get(), SL_BOOLEAN_FALSE);
+  result = (*engine_object_)->Realize(engine_object_, SL_BOOLEAN_FALSE);
   if (result != SL_RESULT_SUCCESS) {
-    ALOGE("Realize() failed: %s", GetSLErrorString(result));
+    ALOGE("slCreateEngine() failed: %s", GetSLErrorString(result));
     engine_object_.Reset();
     return nullptr;
   }
+#else
+  result = mozilla_get_sles_engine(engine_object_.Receive(), 1, option);
+  if (result != SL_RESULT_SUCCESS) {
+    ALOGE("slCreateEngine() failed: %s", GetSLErrorString(result));
+    engine_object_.Reset();
+    return nullptr;
+  }
+  result = mozilla_realize_sles_engine(engine_object_.Get());
+  if (result != SL_RESULT_SUCCESS) {
+    ALOGE("slCreateEngine() failed: %s", GetSLErrorString(result));
+    engine_object_.Reset();
+    return nullptr;
+  }
+#endif
+
+  __android_log_print(ANDROID_LOG_ERROR, "WebRTC", ">>>> Initialized SLES\n");
+
   
   return engine_object_.Get();
 }
@@ -201,9 +224,8 @@ bool AudioManager::IsLowLatencyPlayoutSupported() const {
   ALOGD("IsLowLatencyPlayoutSupported()");
   
   
-  return j_audio_manager_->IsDeviceBlacklistedForOpenSLESUsage()
-             ? false
-             : low_latency_playout_;
+  return j_audio_manager_->IsDeviceBlacklistedForOpenSLESUsage() ?
+      false : low_latency_playout_;
 }
 
 bool AudioManager::IsLowLatencyRecordSupported() const {
@@ -219,18 +241,6 @@ bool AudioManager::IsProAudioSupported() const {
   
   
   return pro_audio_;
-}
-
-bool AudioManager::IsStereoPlayoutSupported() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  ALOGD("IsStereoPlayoutSupported()");
-  return (playout_parameters_.channels() == 2);
-}
-
-bool AudioManager::IsStereoRecordSupported() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  ALOGD("IsStereoRecordSupported()");
-  return (record_parameters_.channels() == 2);
 }
 
 int AudioManager::GetDelayEstimateInMilliseconds() const {

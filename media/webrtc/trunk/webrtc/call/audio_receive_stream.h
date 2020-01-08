@@ -8,23 +8,21 @@
 
 
 
-#ifndef CALL_AUDIO_RECEIVE_STREAM_H_
-#define CALL_AUDIO_RECEIVE_STREAM_H_
+#ifndef WEBRTC_CALL_AUDIO_RECEIVE_STREAM_H_
+#define WEBRTC_CALL_AUDIO_RECEIVE_STREAM_H_
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "api/audio_codecs/audio_decoder_factory.h"
-#include "api/call/transport.h"
-#include "api/optional.h"
-#include "api/rtpparameters.h"
-#include "api/rtpreceiverinterface.h"
-#include "call/rtp_config.h"
-#include "common_types.h"  
-#include "rtc_base/scoped_ref_ptr.h"
-#include "typedefs.h"  
+#include "webrtc/api/call/transport.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
+#include "webrtc/common_types.h"
+#include "webrtc/config.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 class AudioSinkInterface;
@@ -50,19 +48,9 @@ class AudioReceiveStream {
     uint32_t jitter_buffer_preferred_ms = 0;
     uint32_t delay_estimate_ms = 0;
     int32_t audio_level = -1;
-    
-    
-    double total_output_energy = 0.0;
-    uint64_t total_samples_received = 0;
-    double total_output_duration = 0.0;
-    uint64_t concealed_samples = 0;
-    uint64_t concealment_events = 0;
-    double jitter_buffer_delay_seconds = 0.0;
-    
     float expand_rate = 0.0f;
     float speech_expand_rate = 0.0f;
     float secondary_decoded_rate = 0.0f;
-    float secondary_discarded_rate = 0.0f;
     float accelerate_rate = 0.0f;
     float preemptive_expand_rate = 0.0f;
     int32_t decoding_calls_to_silence_generator = 0;
@@ -115,7 +103,10 @@ class AudioReceiveStream {
     std::string sync_group;
 
     
-    std::map<int, SdpAudioFormat> decoder_map;
+    
+    
+    
+    std::map<uint8_t, AudioDecoder*> decoder_map;
 
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory;
   };
@@ -128,8 +119,6 @@ class AudioReceiveStream {
   virtual void Stop() = 0;
 
   virtual Stats GetStats() const = 0;
-  
-  virtual int GetOutputLevel() const = 0;
 
   
   
@@ -144,8 +133,6 @@ class AudioReceiveStream {
   
   
   virtual void SetGain(float gain) = 0;
-
-  virtual std::vector<RtpSource> GetSources() const = 0;
 
  protected:
   virtual ~AudioReceiveStream() {}

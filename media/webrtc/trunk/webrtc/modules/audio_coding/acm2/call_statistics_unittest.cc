@@ -8,8 +8,8 @@
 
 
 
-#include "modules/audio_coding/acm2/call_statistics.h"
-#include "test/gtest.h"
+#include "webrtc/modules/audio_coding/acm2/call_statistics.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

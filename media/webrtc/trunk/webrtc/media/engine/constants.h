@@ -8,8 +8,8 @@
 
 
 
-#ifndef MEDIA_ENGINE_CONSTANTS_H_
-#define MEDIA_ENGINE_CONSTANTS_H_
+#ifndef WEBRTC_MEDIA_ENGINE_CONSTANTS_H_
+#define WEBRTC_MEDIA_ENGINE_CONSTANTS_H_
 
 namespace cricket {
 
@@ -18,7 +18,7 @@ extern const int kVideoRtpBufferSize;
 
 extern const char kH264CodecName[];
 
-extern const int kMinVideoBitrateBps;
+extern const int kMinVideoBitrateKbps;
 
 }  
 

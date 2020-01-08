@@ -13,7 +13,6 @@
 #import <WebRTC/RTCMacros.h>
 
 @class RTCIceServer;
-@class RTCIntervalRange;
 
 
 
@@ -84,15 +83,6 @@ RTC_EXPORT
 @property(nonatomic, assign) RTCCandidateNetworkPolicy candidateNetworkPolicy;
 @property(nonatomic, assign)
     RTCContinualGatheringPolicy continualGatheringPolicy;
-
-
-
-
-
-
-
-@property(nonatomic, assign) int maxIPv6Networks;
-
 @property(nonatomic, assign) int audioJitterBufferMaxPackets;
 @property(nonatomic, assign) BOOL audioJitterBufferFastAccelerate;
 @property(nonatomic, assign) int iceConnectionReceivingTimeout;
@@ -114,19 +104,7 @@ RTC_EXPORT
 
 @property(nonatomic, assign) BOOL shouldPresumeWritableWhenFullyRelayed;
 
-
-
-
-@property(nonatomic, copy, nullable) NSNumber *iceCheckMinInterval;
-
-
-
-
-
-
-@property(nonatomic, strong, nullable) RTCIntervalRange *iceRegatherIntervalRange;
-
-- (instancetype)init;
+- (instancetype)init NS_DESIGNATED_INITIALIZER;
 
 @end
 

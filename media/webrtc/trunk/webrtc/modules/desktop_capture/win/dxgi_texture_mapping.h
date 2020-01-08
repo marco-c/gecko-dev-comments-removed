@@ -8,15 +8,15 @@
 
 
 
-#ifndef MODULES_DESKTOP_CAPTURE_WIN_DXGI_TEXTURE_MAPPING_H_
-#define MODULES_DESKTOP_CAPTURE_WIN_DXGI_TEXTURE_MAPPING_H_
+#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_TEXTURE_MAPPING_H_
+#define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_TEXTURE_MAPPING_H_
 
 #include <D3D11.h>
 #include <DXGI1_2.h>
 
-#include "modules/desktop_capture/desktop_geometry.h"
-#include "modules/desktop_capture/desktop_region.h"
-#include "modules/desktop_capture/win/dxgi_texture.h"
+#include "webrtc/modules/desktop_capture/desktop_geometry.h"
+#include "webrtc/modules/desktop_capture/desktop_region.h"
+#include "webrtc/modules/desktop_capture/win/dxgi_texture.h"
 
 namespace webrtc {
 
@@ -28,13 +28,13 @@ class DxgiTextureMapping : public DxgiTexture {
  public:
   
   
-  explicit DxgiTextureMapping(IDXGIOutputDuplication* duplication);
+  DxgiTextureMapping(const DesktopSize& desktop_size,
+                     IDXGIOutputDuplication* duplication);
 
   ~DxgiTextureMapping() override;
 
- protected:
-  bool CopyFromTexture(const DXGI_OUTDUPL_FRAME_INFO& frame_info,
-                       ID3D11Texture2D* texture) override;
+  bool CopyFrom(const DXGI_OUTDUPL_FRAME_INFO& frame_info,
+                IDXGIResource* resource) override;
 
   bool DoRelease() override;
 

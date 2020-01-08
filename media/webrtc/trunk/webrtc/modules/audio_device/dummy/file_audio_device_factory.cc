@@ -8,13 +8,13 @@
 
 
 
-#include "modules/audio_device/dummy/file_audio_device_factory.h"
+#include "webrtc/modules/audio_device/dummy/file_audio_device_factory.h"
 
 #include <cstdlib>
 #include <cstring>
 
-#include "modules/audio_device/dummy/file_audio_device.h"
-#include "rtc_base/logging.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/modules/audio_device/dummy/file_audio_device.h"
 
 namespace webrtc {
 
@@ -22,26 +22,25 @@ bool FileAudioDeviceFactory::_isConfigured = false;
 char FileAudioDeviceFactory::_inputAudioFilename[MAX_FILENAME_LEN] = "";
 char FileAudioDeviceFactory::_outputAudioFilename[MAX_FILENAME_LEN] = "";
 
-FileAudioDevice* FileAudioDeviceFactory::CreateFileAudioDevice() {
+FileAudioDevice* FileAudioDeviceFactory::CreateFileAudioDevice(
+    const int32_t id) {
   
   
   if (!_isConfigured) {
-    RTC_LOG(LS_WARNING)
-        << "WebRTC configured with WEBRTC_DUMMY_FILE_DEVICES but "
-        << "no device files supplied. Will fall back to dummy "
-        << "audio.";
+    LOG(LS_WARNING) << "WebRTC configured with WEBRTC_DUMMY_FILE_DEVICES but "
+                    << "no device files supplied. Will fall back to dummy "
+                    << "audio.";
 
     return nullptr;
   }
-  return new FileAudioDevice(_inputAudioFilename, _outputAudioFilename);
+  return new FileAudioDevice(id, _inputAudioFilename, _outputAudioFilename);
 }
 
 void FileAudioDeviceFactory::SetFilenamesToUse(
-    const char* inputAudioFilename,
-    const char* outputAudioFilename) {
+    const char* inputAudioFilename, const char* outputAudioFilename) {
 #ifdef WEBRTC_DUMMY_FILE_DEVICES
-  RTC_DCHECK_LT(strlen(inputAudioFilename), MAX_FILENAME_LEN);
-  RTC_DCHECK_LT(strlen(outputAudioFilename), MAX_FILENAME_LEN);
+  assert(strlen(inputAudioFilename) < MAX_FILENAME_LEN &&
+         strlen(outputAudioFilename) < MAX_FILENAME_LEN);
 
   
   strncpy(_inputAudioFilename, inputAudioFilename, MAX_FILENAME_LEN);
@@ -49,9 +48,8 @@ void FileAudioDeviceFactory::SetFilenamesToUse(
   _isConfigured = true;
 #else
   
-  printf(
-      "Trying to use dummy file devices, but is not compiled "
-      "with WEBRTC_DUMMY_FILE_DEVICES. Bailing out.\n");
+  printf("Trying to use dummy file devices, but is not compiled "
+         "with WEBRTC_DUMMY_FILE_DEVICES. Bailing out.\n");
   std::exit(1);
 #endif
 }

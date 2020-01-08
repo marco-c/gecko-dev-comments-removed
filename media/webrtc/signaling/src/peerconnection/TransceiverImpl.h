@@ -76,8 +76,7 @@ public:
 
   nsresult UpdatePrincipal(nsIPrincipal* aPrincipal);
 
-  void ResetSync();
-
+  
   nsresult SyncWithMatchingVideoConduits(
       std::vector<RefPtr<TransceiverImpl>>& transceivers);
 

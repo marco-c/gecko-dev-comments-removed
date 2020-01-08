@@ -8,16 +8,12 @@
 
 
 
-#ifndef MODULES_DESKTOP_CAPTURE_CROPPED_DESKTOP_FRAME_H_
-#define MODULES_DESKTOP_CAPTURE_CROPPED_DESKTOP_FRAME_H_
+#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_CROPPED_DESKTOP_FRAME_H_
+#define WEBRTC_MODULES_DESKTOP_CAPTURE_CROPPED_DESKTOP_FRAME_H_
 
-#include "modules/desktop_capture/desktop_frame.h"
+#include "webrtc/modules/desktop_capture/desktop_frame.h"
 
 namespace webrtc {
-
-
-
-
 
 
 std::unique_ptr<DesktopFrame> CreateCroppedDesktopFrame(

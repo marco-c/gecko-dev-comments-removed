@@ -8,10 +8,9 @@
 
 
 
-#include "modules/audio_coding/neteq/sync_buffer.h"
-#include "rtc_base/numerics/safe_conversions.h"
+#include "webrtc/modules/audio_coding/neteq/sync_buffer.h"
 
-#include "test/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 
@@ -58,7 +57,7 @@ TEST(SyncBuffer, PushBackAndFlush) {
   
   for (size_t channel = 0; channel < kChannels; ++channel) {
     for (size_t i = 0; i < kNewLen; ++i) {
-      new_data[channel][i] = rtc::checked_cast<int16_t>(i);
+      new_data[channel][i] = i;
     }
   }
   
@@ -98,7 +97,7 @@ TEST(SyncBuffer, PushFrontZeros) {
   
   for (size_t channel = 0; channel < kChannels; ++channel) {
     for (size_t i = 0; i < kNewLen; ++i) {
-      new_data[channel][i] = rtc::checked_cast<int16_t>(1000 + i);
+      new_data[channel][i] = 1000 + i;
     }
   }
   sync_buffer.PushBack(new_data);
@@ -131,7 +130,7 @@ TEST(SyncBuffer, GetNextAudioInterleaved) {
   
   for (size_t channel = 0; channel < kChannels; ++channel) {
     for (size_t i = 0; i < kNewLen; ++i) {
-      new_data[channel][i] = rtc::checked_cast<int16_t>(i);
+      new_data[channel][i] = i;
     }
   }
   
@@ -155,14 +154,14 @@ TEST(SyncBuffer, GetNextAudioInterleaved) {
   EXPECT_EQ(kNewLen / 2, output2.samples_per_channel_);
 
   
-  const int16_t* output_ptr = output1.data();
+  int16_t* output_ptr = output1.data_;
   for (size_t i = 0; i < kNewLen / 2; ++i) {
     for (size_t channel = 0; channel < kChannels; ++channel) {
       EXPECT_EQ(new_data[channel][i], *output_ptr);
       ++output_ptr;
     }
   }
-  output_ptr = output2.data();
+  output_ptr = output2.data_;
   for (size_t i = kNewLen / 2; i < kNewLen; ++i) {
     for (size_t channel = 0; channel < kChannels; ++channel) {
       EXPECT_EQ(new_data[channel][i], *output_ptr);

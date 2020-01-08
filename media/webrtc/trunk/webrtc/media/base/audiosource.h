@@ -8,8 +8,8 @@
 
 
 
-#ifndef MEDIA_BASE_AUDIOSOURCE_H_
-#define MEDIA_BASE_AUDIOSOURCE_H_
+#ifndef WEBRTC_MEDIA_BASE_AUDIOSOURCE_H_
+#define WEBRTC_MEDIA_BASE_AUDIOSOURCE_H_
 
 #include <cstddef>
 

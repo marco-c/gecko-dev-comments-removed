@@ -7,10 +7,10 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_CODECS_VP9_SCREENSHARE_LAYERS_H_
-#define MODULES_VIDEO_CODING_CODECS_VP9_SCREENSHARE_LAYERS_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP9_SCREENSHARE_LAYERS_H_
+#define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP9_SCREENSHARE_LAYERS_H_
 
-#include "modules/video_coding/codecs/vp9/vp9_impl.h"
+#include "webrtc/modules/video_coding/codecs/vp9/vp9_impl.h"
 
 namespace webrtc {
 

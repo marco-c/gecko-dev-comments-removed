@@ -7,18 +7,18 @@
 
 
 
-#ifndef MODULES_RTP_RTCP_TEST_TESTAPI_TEST_API_H_
-#define MODULES_RTP_RTCP_TEST_TESTAPI_TEST_API_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_TEST_TESTAPI_TEST_API_H_
+#define WEBRTC_MODULES_RTP_RTCP_TEST_TESTAPI_TEST_API_H_
 
-#include "api/call/transport.h"
-#include "common_types.h"  
-#include "modules/rtp_rtcp/include/receive_statistics.h"
-#include "modules/rtp_rtcp/include/rtp_header_parser.h"
-#include "modules/rtp_rtcp/include/rtp_payload_registry.h"
-#include "modules/rtp_rtcp/include/rtp_receiver.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "test/gtest.h"
+#include "webrtc/api/call/transport.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_payload_registry.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 
@@ -51,7 +51,7 @@ class LoopBackTransport : public Transport {
   RtpRtcp* rtp_rtcp_module_;
 };
 
-class TestRtpReceiver : public RtpData {
+class TestRtpReceiver : public NullRtpData {
  public:
   int32_t OnReceivedPayloadData(
       const uint8_t* payload_data,

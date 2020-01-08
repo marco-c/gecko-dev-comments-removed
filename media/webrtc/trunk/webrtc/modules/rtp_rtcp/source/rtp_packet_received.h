@@ -7,27 +7,25 @@
 
 
 
-#ifndef MODULES_RTP_RTCP_SOURCE_RTP_PACKET_RECEIVED_H_
-#define MODULES_RTP_RTCP_SOURCE_RTP_PACKET_RECEIVED_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_PACKET_RECEIVED_H_
+#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_PACKET_RECEIVED_H_
 
-#include <vector>
-
-#include "common_types.h"  
-#include "modules/rtp_rtcp/source/rtp_packet.h"
-#include "system_wrappers/include/ntp_time.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_packet.h"
+#include "webrtc/system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
 
-class RtpPacketReceived : public RtpPacket {
+class RtpPacketReceived : public rtp::Packet {
  public:
-  RtpPacketReceived();
-  explicit RtpPacketReceived(const ExtensionManager* extensions);
+  RtpPacketReceived() = default;
+  explicit RtpPacketReceived(const ExtensionManager* extensions)
+      : Packet(extensions) {}
 
-  ~RtpPacketReceived();
-
-  
-  
-  void GetHeader(RTPHeader* header) const;
+  void GetHeader(RTPHeader* header) const {
+    Packet::GetHeader(header);
+    header->payload_type_frequency = payload_type_frequency();
+  }
 
   
   
@@ -39,29 +37,19 @@ class RtpPacketReceived : public RtpPacket {
   void set_capture_ntp_time(NtpTime time) { capture_time_ = time; }
 
   
-  bool recovered() const { return recovered_; }
-  void set_recovered(bool value) { recovered_ = value; }
+  bool retransmit() const { return retransmit_; }
+  void set_retransmit(bool value) { retransmit_ = value; }
 
   int payload_type_frequency() const { return payload_type_frequency_; }
   void set_payload_type_frequency(int value) {
     payload_type_frequency_ = value;
   }
 
-  
-  
-  rtc::ArrayView<const uint8_t> application_data() const {
-    return application_data_;
-  }
-  void set_application_data(rtc::ArrayView<const uint8_t> data) {
-    application_data_.assign(data.begin(), data.end());
-  }
-
  private:
   NtpTime capture_time_;
   int64_t arrival_time_ms_ = 0;
   int payload_type_frequency_ = 0;
-  bool recovered_ = false;
-  std::vector<uint8_t> application_data_;
+  bool retransmit_ = false;
 };
 
 }  

@@ -8,10 +8,10 @@
 
 
 
-#ifndef SYSTEM_WRAPPERS_SOURCE_RW_LOCK_WIN_H_
-#define SYSTEM_WRAPPERS_SOURCE_RW_LOCK_WIN_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_WIN_H_
+#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_WIN_H_
 
-#include "system_wrappers/include/rw_lock_wrapper.h"
+#include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
 
 #include <Windows.h>
 

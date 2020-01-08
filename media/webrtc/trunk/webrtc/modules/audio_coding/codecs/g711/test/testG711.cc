@@ -17,7 +17,7 @@
 #include <string.h>
 
 
-#include "modules/audio_coding/codecs/g711/g711_interface.h"
+#include "webrtc/modules/audio_coding/codecs/g711/g711_interface.h"
 
 
 #include <time.h>

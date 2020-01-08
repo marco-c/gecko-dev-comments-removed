@@ -12,25 +12,13 @@
 
 #import <WebRTC/RTCMacros.h>
 #import <WebRTC/RTCMediaSource.h>
-#import <WebRTC/RTCVideoCapturer.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 RTC_EXPORT
-
-@interface RTCVideoSource : RTCMediaSource <RTCVideoCapturerDelegate>
+@interface RTCVideoSource : RTCMediaSource
 
 - (instancetype)init NS_UNAVAILABLE;
-
-
-
-
-
-
-
-
-
-- (void)adaptOutputFormatToWidth:(int)width height:(int)height fps:(int)fps;
 
 @end
 

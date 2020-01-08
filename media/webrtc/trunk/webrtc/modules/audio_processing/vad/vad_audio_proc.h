@@ -8,13 +8,13 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_VAD_VAD_AUDIO_PROC_H_
-#define MODULES_AUDIO_PROCESSING_VAD_VAD_AUDIO_PROC_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_VAD_VAD_AUDIO_PROC_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_VAD_VAD_AUDIO_PROC_H_
 
 #include <memory>
 
-#include "modules/audio_processing/vad/common.h"
-#include "typedefs.h"  
+#include "webrtc/modules/audio_processing/vad/common.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

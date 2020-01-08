@@ -7,16 +7,16 @@
 
 
 
-#ifndef MODULES_CONGESTION_CONTROLLER_TRENDLINE_ESTIMATOR_H_
-#define MODULES_CONGESTION_CONTROLLER_TRENDLINE_ESTIMATOR_H_
+#ifndef WEBRTC_MODULES_CONGESTION_CONTROLLER_TRENDLINE_ESTIMATOR_H_
+#define WEBRTC_MODULES_CONGESTION_CONTROLLER_TRENDLINE_ESTIMATOR_H_
 
 #include <stddef.h>
 #include <stdint.h>
 
-#include <deque>
+#include <list>
 #include <utility>
 
-#include "rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace webrtc {
 
@@ -61,7 +61,7 @@ class TrendlineEstimator {
   double accumulated_delay_;
   double smoothed_delay_;
   
-  std::deque<std::pair<double, double>> delay_hist_;
+  std::list<std::pair<double, double>> delay_hist_;
   double trendline_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(TrendlineEstimator);

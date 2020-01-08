@@ -10,22 +10,19 @@
 
 
 
-#ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_REMOTE_BITRATE_ESTIMATOR_H_
-#define MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_REMOTE_BITRATE_ESTIMATOR_H_
+#ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_REMOTE_BITRATE_ESTIMATOR_H_
+#define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_REMOTE_BITRATE_ESTIMATOR_H_
 
 #include <map>
 #include <vector>
 
-#include "common_types.h"  
-#include "modules/include/module.h"
-#include "modules/include/module_common_types.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "typedefs.h"  
+#include "webrtc/common_types.h"
+#include "webrtc/modules/include/module.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
-namespace rtcp {
-class TransportFeedback;
-}  
 
 class Clock;
 
@@ -37,14 +34,9 @@ class RemoteBitrateObserver {
   
   virtual void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
                                        uint32_t bitrate) = 0;
+  virtual void OnProbeBitrate(uint32_t bitrate) {}
 
   virtual ~RemoteBitrateObserver() {}
-};
-
-class TransportFeedbackSenderInterface {
- public:
-  virtual ~TransportFeedbackSenderInterface() = default;
-  virtual bool SendTransportFeedback(rtcp::TransportFeedback* packet) = 0;
 };
 
 
@@ -52,7 +44,12 @@ struct ReceiveBandwidthEstimatorStats {};
 
 class RemoteBitrateEstimator : public CallStatsObserver, public Module {
  public:
-  ~RemoteBitrateEstimator() override {}
+  virtual ~RemoteBitrateEstimator() {}
+
+  virtual void IncomingPacketFeedbackVector(
+      const std::vector<PacketInfo>& packet_feedback_vector) {
+    assert(false);
+  }
 
   
   
@@ -73,7 +70,9 @@ class RemoteBitrateEstimator : public CallStatsObserver, public Module {
                               uint32_t* bitrate_bps) const = 0;
 
   
-  virtual bool GetStats(ReceiveBandwidthEstimatorStats* output) const;
+  virtual bool GetStats(ReceiveBandwidthEstimatorStats* output) const {
+    return false;
+  }
 
   virtual void SetMinBitrate(int min_bitrate_bps) = 0;
 
@@ -81,11 +80,6 @@ class RemoteBitrateEstimator : public CallStatsObserver, public Module {
   static const int64_t kProcessIntervalMs = 500;
   static const int64_t kStreamTimeOutMs = 2000;
 };
-
-inline bool RemoteBitrateEstimator::GetStats(
-    ReceiveBandwidthEstimatorStats* output) const {
-  return false;
-}
 
 }  
 

@@ -7,11 +7,11 @@
 
 
 
-#ifndef MODULES_RTP_RTCP_INCLUDE_RTP_CVO_H_
-#define MODULES_RTP_RTCP_INCLUDE_RTP_CVO_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_CVO_H_
+#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_CVO_H_
 
-#include "api/video/video_rotation.h"
-#include "rtc_base/checks.h"
+#include "webrtc/api/video/video_rotation.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 

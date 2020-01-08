@@ -8,14 +8,14 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_TICK_TIMER_H_
-#define MODULES_AUDIO_CODING_NETEQ_TICK_TIMER_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TICK_TIMER_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TICK_TIMER_H_
 
 #include <memory>
 
-#include "rtc_base/checks.h"
-#include "rtc_base/constructormagic.h"
-#include "typedefs.h"  
+#include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

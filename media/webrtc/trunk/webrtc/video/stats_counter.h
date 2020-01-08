@@ -8,14 +8,14 @@
 
 
 
-#ifndef VIDEO_STATS_COUNTER_H_
-#define VIDEO_STATS_COUNTER_H_
+#ifndef WEBRTC_VIDEO_STATS_COUNTER_H_
+#define WEBRTC_VIDEO_STATS_COUNTER_H_
 
 #include <memory>
 #include <string>
 
-#include "rtc_base/constructormagic.h"
-#include "typedefs.h"  
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
@@ -100,13 +100,6 @@ class StatsCounter {
   void ProcessAndPause();
 
   
-  
-  void ProcessAndPauseForDuration(int64_t min_pause_time_ms);
-
-  
-  void ProcessAndStopPause();
-
-  
   bool HasSample() const;
 
  protected:
@@ -116,8 +109,7 @@ class StatsCounter {
                StatsCounterObserver* observer);
 
   void Add(int sample);
-  void Set(int64_t sample, uint32_t stream_id);
-  void SetLast(int64_t sample, uint32_t stream_id);
+  void Set(int sample, uint32_t stream_id);
 
   const bool include_empty_intervals_;
   const int64_t process_intervals_ms_;
@@ -129,15 +121,11 @@ class StatsCounter {
   void TryProcess();
   void ReportMetricToAggregatedCounter(int value, int num_values_to_add) const;
   bool IncludeEmptyIntervals() const;
-  void Resume();
-  void ResumeIfMinTimePassed();
 
   Clock* const clock_;
   const std::unique_ptr<StatsCounterObserver> observer_;
   int64_t last_process_time_ms_;
   bool paused_;
-  int64_t pause_time_ms_;
-  int64_t min_pause_time_ms_;
 };
 
 
@@ -275,11 +263,7 @@ class RateAccCounter : public StatsCounter {
                  bool include_empty_intervals);
   ~RateAccCounter() override {}
 
-  void Set(int64_t sample, uint32_t stream_id);
-
-  
-  
-  void SetLast(int64_t sample, uint32_t stream_id);
+  void Set(int sample, uint32_t stream_id);
 
  private:
   bool GetMetric(int* metric) const override;

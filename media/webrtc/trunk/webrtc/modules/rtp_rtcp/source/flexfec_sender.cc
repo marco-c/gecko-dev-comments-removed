@@ -8,14 +8,14 @@
 
 
 
-#include "modules/rtp_rtcp/include/flexfec_sender.h"
+#include "webrtc/modules/rtp_rtcp/include/flexfec_sender.h"
 
 #include <utility>
 
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "modules/rtp_rtcp/source/forward_error_correction.h"
-#include "modules/rtp_rtcp/source/rtp_header_extensions.h"
-#include "rtc_base/logging.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
 
 namespace webrtc {
 
@@ -49,10 +49,9 @@ RtpHeaderExtensionMap RegisterBweExtensions(
     } else if (extension.uri == TransmissionOffset::kUri) {
       map.Register<TransmissionOffset>(extension.id);
     } else {
-      RTC_LOG(LS_INFO)
-          << "FlexfecSender only supports RTP header extensions for "
-          << "BWE, so the extension " << extension.ToString()
-          << " will not be used.";
+      LOG(LS_INFO) << "FlexfecSender only supports RTP header extensions for "
+                   << "BWE, so the extension " << extension.ToString()
+                   << " will not be used.";
     }
   }
   return map;
@@ -66,7 +65,6 @@ FlexfecSender::FlexfecSender(
     uint32_t protected_media_ssrc,
     const std::vector<RtpExtension>& rtp_header_extensions,
     rtc::ArrayView<const RtpExtensionSize> extension_sizes,
-    const RtpState* rtp_state,
     Clock* clock)
     : clock_(clock),
       random_(clock_->TimeInMicroseconds()),
@@ -74,15 +72,11 @@ FlexfecSender::FlexfecSender(
       payload_type_(payload_type),
       
       
-      
-      timestamp_offset_(rtp_state ? rtp_state->start_timestamp
-                                  : random_.Rand<uint32_t>()),
+      timestamp_offset_(random_.Rand<uint32_t>()),
       ssrc_(ssrc),
       protected_media_ssrc_(protected_media_ssrc),
-      seq_num_(rtp_state ? rtp_state->sequence_number
-                         : random_.Rand(1, kMaxInitRtpSeqNumber)),
-      ulpfec_generator_(
-          ForwardErrorCorrection::CreateFlexfec(ssrc, protected_media_ssrc)),
+      seq_num_(random_.Rand(1, kMaxInitRtpSeqNumber)),
+      ulpfec_generator_(ForwardErrorCorrection::CreateFlexfec()),
       rtp_header_extension_map_(RegisterBweExtensions(rtp_header_extensions)),
       header_extensions_size_(
           rtp_header_extension_map_.GetTotalLengthInBytes(extension_sizes)) {
@@ -146,9 +140,9 @@ std::vector<std::unique_ptr<RtpPacketToSend>> FlexfecSender::GetFecPackets() {
   int64_t now_ms = clock_->TimeInMilliseconds();
   if (!fec_packets_to_send.empty() &&
       now_ms - last_generated_packet_ms_ > kPacketLogIntervalMs) {
-    RTC_LOG(LS_VERBOSE) << "Generated " << fec_packets_to_send.size()
-                        << " FlexFEC packets with payload type: "
-                        << payload_type_ << " and SSRC: " << ssrc_ << ".";
+    LOG(LS_VERBOSE) << "Generated " << fec_packets_to_send.size()
+                    << " FlexFEC packets with payload type: " << payload_type_
+                    << " and SSRC: " << ssrc_ << ".";
     last_generated_packet_ms_ = now_ms;
   }
 
@@ -158,13 +152,6 @@ std::vector<std::unique_ptr<RtpPacketToSend>> FlexfecSender::GetFecPackets() {
 
 size_t FlexfecSender::MaxPacketOverhead() const {
   return header_extensions_size_ + kFlexfecMaxHeaderSize;
-}
-
-RtpState FlexfecSender::GetRtpState() {
-  RtpState rtp_state;
-  rtp_state.sequence_number = seq_num_;
-  rtp_state.start_timestamp = timestamp_offset_;
-  return rtp_state;
 }
 
 }  

@@ -8,7 +8,7 @@
 
 
 
-#include "modules/desktop_capture/differ_vector_sse2.h"
+#include "webrtc/modules/desktop_capture/differ_vector_sse2.h"
 
 #if defined(_MSC_VER)
 #include <intrin.h>

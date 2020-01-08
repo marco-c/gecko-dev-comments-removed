@@ -8,16 +8,16 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_ENCODED_FRAME_H_
-#define MODULES_VIDEO_CODING_ENCODED_FRAME_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_ENCODED_FRAME_H_
+#define WEBRTC_MODULES_VIDEO_CODING_ENCODED_FRAME_H_
 
 #include <vector>
 
-#include "common_types.h"  
-#include "common_video/include/video_frame.h"
-#include "modules/include/module_common_types.h"
-#include "modules/video_coding/include/video_codec_interface.h"
-#include "modules/video_coding/include/video_coding_defines.h"
+#include "webrtc/common_types.h"
+#include "webrtc/common_video/include/video_image.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
+#include "webrtc/modules/video_coding/include/video_coding_defines.h"
 
 namespace webrtc {
 
@@ -46,11 +46,6 @@ class VCMEncodedFrame : protected EncodedImage {
     _encodedWidth = width;
     _encodedHeight = height;
   }
-
-  void SetPlayoutDelay(PlayoutDelay playout_delay) {
-    playout_delay_ = playout_delay;
-  }
-
   
 
 
@@ -81,14 +76,6 @@ class VCMEncodedFrame : protected EncodedImage {
 
 
   VideoRotation rotation() const { return rotation_; }
-  
-
-
-  VideoContentType contentType() const { return content_type_; }
-  
-
-
-  EncodedImage::Timing video_timing() const { return timing_; }
   
 
 

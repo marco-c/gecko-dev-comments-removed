@@ -8,20 +8,21 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_CODECS_TOOLS_AUDIO_CODEC_SPEED_TEST_H_
-#define MODULES_AUDIO_CODING_CODECS_TOOLS_AUDIO_CODEC_SPEED_TEST_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_TOOLS_AUDIO_CODEC_SPEED_TEST_H_
+#define WEBRTC_MODULES_AUDIO_CODING_CODECS_TOOLS_AUDIO_CODEC_SPEED_TEST_H_
 
 #include <memory>
 #include <string>
 
-#include "test/gtest.h"
-#include "typedefs.h"  
+#include "webrtc/test/gtest.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
 
 
-typedef std::tuple<size_t, int, std::string, std::string, bool> coding_param;
+typedef std::tr1::tuple<size_t, int, std::string, std::string, bool>
+    coding_param;
 
 class AudioCodecSpeedTest : public testing::TestWithParam<coding_param> {
  protected:

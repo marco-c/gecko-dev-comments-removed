@@ -8,13 +8,13 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_CASCADED_BIQUAD_FILTER_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_CASCADED_BIQUAD_FILTER_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_CASCADED_BIQUAD_FILTER_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_CASCADED_BIQUAD_FILTER_H_
 
 #include <vector>
 
-#include "api/array_view.h"
-#include "rtc_base/constructormagic.h"
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace webrtc {
 

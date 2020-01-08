@@ -8,15 +8,13 @@
 
 
 
-#ifndef MODULES_PACING_ALR_DETECTOR_H_
-#define MODULES_PACING_ALR_DETECTOR_H_
+#ifndef WEBRTC_MODULES_PACING_ALR_DETECTOR_H_
+#define WEBRTC_MODULES_PACING_ALR_DETECTOR_H_
 
-#include "api/optional.h"
-#include "common_types.h"  
-#include "modules/pacing/interval_budget.h"
-#include "modules/pacing/paced_sender.h"
-#include "rtc_base/rate_statistics.h"
-#include "typedefs.h"  
+#include "webrtc/base/rate_statistics.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/pacing/paced_sender.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
@@ -32,7 +30,7 @@ class AlrDetector {
   AlrDetector();
   ~AlrDetector();
 
-  void OnBytesSent(size_t bytes_sent, int64_t delta_time_ms);
+  void OnBytesSent(size_t bytes_sent, int64_t now_ms);
 
   
   void SetEstimatedBitrate(int bitrate_bps);
@@ -41,40 +39,11 @@ class AlrDetector {
   
   rtc::Optional<int64_t> GetApplicationLimitedRegionStartTime() const;
 
-  struct AlrExperimentSettings {
-    float pacing_factor = PacedSender::kDefaultPaceMultiplier;
-    int64_t max_paced_queue_time = PacedSender::kMaxQueueLengthMs;
-    int alr_bandwidth_usage_percent = kDefaultAlrBandwidthUsagePercent;
-    int alr_start_budget_level_percent = kDefaultAlrStartBudgetLevelPercent;
-    int alr_stop_budget_level_percent = kDefaultAlrStopBudgetLevelPercent;
-    
-    
-    
-    int group_id = 0;
-  };
-  static rtc::Optional<AlrExperimentSettings> ParseAlrSettingsFromFieldTrial(
-      const char* experiment_name);
-
-  
-  
-  
-  
-  
-  static constexpr int kDefaultAlrBandwidthUsagePercent = 65;
-  static constexpr int kDefaultAlrStartBudgetLevelPercent = 80;
-  static constexpr int kDefaultAlrStopBudgetLevelPercent = 50;
-  static const char kScreenshareProbingBweExperimentName[];
-  static const char kStrictPacingAndProbingExperimentName[];
-
-  void UpdateBudgetWithElapsedTime(int64_t delta_time_ms);
-  void UpdateBudgetWithBytesSent(size_t bytes_sent);
-
  private:
-  int bandwidth_usage_percent_;
-  int alr_start_budget_level_percent_;
-  int alr_stop_budget_level_percent_;
+  RateStatistics rate_;
+  int estimated_bitrate_bps_ = 0;
 
-  IntervalBudget alr_budget_;
+  
   rtc::Optional<int64_t> alr_started_time_ms_;
 };
 

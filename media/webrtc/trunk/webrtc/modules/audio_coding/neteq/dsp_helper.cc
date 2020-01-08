@@ -8,14 +8,14 @@
 
 
 
-#include "modules/audio_coding/neteq/dsp_helper.h"
+#include "webrtc/modules/audio_coding/neteq/dsp_helper.h"
 
 #include <assert.h>
 #include <string.h>  
 
 #include <algorithm>  
 
-#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
 namespace webrtc {
 

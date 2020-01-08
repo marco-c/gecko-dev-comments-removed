@@ -8,29 +8,18 @@
 
 
 
-#ifndef MODULES_RTP_RTCP_INCLUDE_RECEIVE_STATISTICS_H_
-#define MODULES_RTP_RTCP_INCLUDE_RECEIVE_STATISTICS_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_RECEIVE_STATISTICS_H_
+#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RECEIVE_STATISTICS_H_
 
 #include <map>
-#include <vector>
 
-#include "modules/include/module.h"
-#include "modules/include/module_common_types.h"
-#include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
-#include "typedefs.h"  
+#include "webrtc/modules/include/module.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
 class Clock;
-
-class ReceiveStatisticsProvider {
- public:
-  virtual ~ReceiveStatisticsProvider() = default;
-  
-  
-  virtual std::vector<rtcp::ReportBlock> RtcpReportBlocks(
-      size_t max_blocks) = 0;
-};
 
 class StreamStatistician {
  public:
@@ -55,9 +44,11 @@ class StreamStatistician {
   virtual bool IsPacketInOrder(uint16_t sequence_number) const = 0;
 };
 
-class ReceiveStatistics : public ReceiveStatisticsProvider {
+typedef std::map<uint32_t, StreamStatistician*> StatisticianMap;
+
+class ReceiveStatistics {
  public:
-  ~ReceiveStatistics() override = default;
+  virtual ~ReceiveStatistics() {}
 
   static ReceiveStatistics* Create(Clock* clock);
 
@@ -69,6 +60,10 @@ class ReceiveStatistics : public ReceiveStatisticsProvider {
   
   virtual void FecPacketReceived(const RTPHeader& header,
                                  size_t packet_length) = 0;
+
+  
+  
+  virtual StatisticianMap GetActiveStatisticians() const = 0;
 
   
   virtual StreamStatistician* GetStatistician(uint32_t ssrc) const = 0;
@@ -83,6 +78,22 @@ class ReceiveStatistics : public ReceiveStatisticsProvider {
   
   virtual void RegisterRtpStatisticsCallback(
       StreamDataCountersCallback* callback) = 0;
+};
+
+class NullReceiveStatistics : public ReceiveStatistics {
+ public:
+  void IncomingPacket(const RTPHeader& rtp_header,
+                      size_t packet_length,
+                      bool retransmitted) override;
+  void FecPacketReceived(const RTPHeader& header,
+                         size_t packet_length) override;
+  StatisticianMap GetActiveStatisticians() const override;
+  StreamStatistician* GetStatistician(uint32_t ssrc) const override;
+  void SetMaxReorderingThreshold(int max_reordering_threshold) override;
+  void RegisterRtcpStatisticsCallback(
+      RtcpStatisticsCallback* callback) override;
+  void RegisterRtpStatisticsCallback(
+      StreamDataCountersCallback* callback) override;
 };
 
 }  

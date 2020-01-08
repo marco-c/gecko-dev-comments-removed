@@ -8,11 +8,11 @@
 
 
 
-#ifndef MODULES_AUDIO_DEVICE_INCLUDE_MOCK_AUDIO_TRANSPORT_H_
-#define MODULES_AUDIO_DEVICE_INCLUDE_MOCK_AUDIO_TRANSPORT_H_
+#ifndef WEBRTC_MODULES_AUDIO_DEVICE_INCLUDE_MOCK_AUDIO_TRANSPORT_H_
+#define WEBRTC_MODULES_AUDIO_DEVICE_INCLUDE_MOCK_AUDIO_TRANSPORT_H_
 
-#include "modules/audio_device/include/audio_device_defines.h"
-#include "test/gmock.h"
+#include "webrtc/modules/audio_device/include/audio_device_defines.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 namespace test {

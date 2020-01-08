@@ -8,22 +8,23 @@
 
 
 
-#ifndef MODULES_VIDEO_CAPTURE_MAIN_SOURCE_VIDEO_CAPTURE_IMPL_H_
-#define MODULES_VIDEO_CAPTURE_MAIN_SOURCE_VIDEO_CAPTURE_IMPL_H_
+#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_VIDEO_CAPTURE_IMPL_H_
+#define WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_VIDEO_CAPTURE_IMPL_H_
 
 
 
 
 
-#include "api/video/video_frame.h"
-#include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "modules/video_capture/video_capture.h"
-#include "modules/video_capture/video_capture_config.h"
-#include "rtc_base/criticalsection.h"
-#include "rtc_base/scoped_ref_ptr.h"
+#include "webrtc/api/video/video_frame.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/video_capture/video_capture.h"
+#include "webrtc/modules/video_capture/video_capture_config.h"
+#include <set>
 
 namespace webrtc
 {
+class CriticalSectionWrapper;
 
 namespace videocapturemodule {
 
@@ -95,7 +96,8 @@ protected:
     int32_t DeliverCapturedFrame(VideoFrame& captureFrame);
 
     char* _deviceUniqueId; 
-    rtc::CriticalSection _apiCs;
+    CriticalSectionWrapper& _apiCs;
+    int32_t _captureDelay; 
     VideoCaptureCapability _requestedCapability; 
 private:
     void UpdateFrameCount();

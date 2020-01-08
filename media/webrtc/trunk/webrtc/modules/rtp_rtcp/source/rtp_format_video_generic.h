@@ -7,15 +7,15 @@
 
 
 
-#ifndef MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VIDEO_GENERIC_H_
-#define MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VIDEO_GENERIC_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VIDEO_GENERIC_H_
+#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VIDEO_GENERIC_H_
 
 #include <string>
 
-#include "common_types.h"  
-#include "modules/rtp_rtcp/source/rtp_format.h"
-#include "rtc_base/constructormagic.h"
-#include "typedefs.h"  
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 namespace RtpFormatVideoGeneric {
@@ -27,21 +27,24 @@ class RtpPacketizerGeneric : public RtpPacketizer {
  public:
   
   
-  RtpPacketizerGeneric(FrameType frametype,
-                       size_t max_payload_len,
-                       size_t last_packet_reduction_len);
+  RtpPacketizerGeneric(FrameType frametype, size_t max_payload_len);
 
   virtual ~RtpPacketizerGeneric();
 
-  
-  size_t SetPayloadData(const uint8_t* payload_data,
-                        size_t payload_size,
-                        const RTPFragmentationHeader* fragmentation) override;
+  void SetPayloadData(const uint8_t* payload_data,
+                      size_t payload_size,
+                      const RTPFragmentationHeader* fragmentation) override;
 
   
   
   
-  bool NextPacket(RtpPacketToSend* packet) override;
+  
+  
+  bool NextPacket(RtpPacketToSend* packet, bool* last_packet) override;
+
+  ProtectionType GetProtectionType() override;
+
+  StorageType GetStorageType(uint32_t retransmission_settings) override;
 
   std::string ToString() override;
 
@@ -49,14 +52,9 @@ class RtpPacketizerGeneric : public RtpPacketizer {
   const uint8_t* payload_data_;
   size_t payload_size_;
   const size_t max_payload_len_;
-  const size_t last_packet_reduction_len_;
   FrameType frame_type_;
-  size_t payload_len_per_packet_;
+  size_t payload_length_;
   uint8_t generic_header_;
-  
-  size_t num_packets_left_;
-  
-  size_t num_larger_packets_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpPacketizerGeneric);
 };

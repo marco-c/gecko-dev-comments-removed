@@ -14,7 +14,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-
 RTC_EXTERN NSString * const kRTCMediaConstraintsMinAspectRatio;
 RTC_EXTERN NSString * const kRTCMediaConstraintsMaxAspectRatio;
 RTC_EXTERN NSString * const kRTCMediaConstraintsMaxWidth;
@@ -24,17 +23,6 @@ RTC_EXTERN NSString * const kRTCMediaConstraintsMinHeight;
 RTC_EXTERN NSString * const kRTCMediaConstraintsMaxFrameRate;
 RTC_EXTERN NSString * const kRTCMediaConstraintsMinFrameRate;
 RTC_EXTERN NSString * const kRTCMediaConstraintsLevelControl;
-
-
-
-RTC_EXTERN NSString * const kRTCMediaConstraintsAudioNetworkAdaptorConfig;
-
-
-RTC_EXTERN NSString * const kRTCMediaConstraintsIceRestart;
-RTC_EXTERN NSString * const kRTCMediaConstraintsOfferToReceiveAudio;
-RTC_EXTERN NSString * const kRTCMediaConstraintsOfferToReceiveVideo;
-RTC_EXTERN NSString * const kRTCMediaConstraintsVoiceActivityDetection;
-
 
 RTC_EXTERN NSString * const kRTCMediaConstraintsValueTrue;
 RTC_EXTERN NSString * const kRTCMediaConstraintsValueFalse;

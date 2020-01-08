@@ -8,10 +8,10 @@
 
 
 
-#ifndef MODULES_VIDEO_PROCESSING_UTIL_DENOISER_FILTER_NEON_H_
-#define MODULES_VIDEO_PROCESSING_UTIL_DENOISER_FILTER_NEON_H_
+#ifndef WEBRTC_MODULES_VIDEO_PROCESSING_UTIL_DENOISER_FILTER_NEON_H_
+#define WEBRTC_MODULES_VIDEO_PROCESSING_UTIL_DENOISER_FILTER_NEON_H_
 
-#include "modules/video_processing/util/denoiser_filter.h"
+#include "webrtc/modules/video_processing/util/denoiser_filter.h"
 
 namespace webrtc {
 

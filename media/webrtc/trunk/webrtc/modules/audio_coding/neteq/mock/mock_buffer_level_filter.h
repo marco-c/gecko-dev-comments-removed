@@ -8,12 +8,12 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_BUFFER_LEVEL_FILTER_H_
-#define MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_BUFFER_LEVEL_FILTER_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_BUFFER_LEVEL_FILTER_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_BUFFER_LEVEL_FILTER_H_
 
-#include "modules/audio_coding/neteq/buffer_level_filter.h"
+#include "webrtc/modules/audio_coding/neteq/buffer_level_filter.h"
 
-#include "test/gmock.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 

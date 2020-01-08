@@ -8,7 +8,7 @@
 
 
 
-#include "modules/audio_processing/vad/vad_circular_buffer.h"
+#include "webrtc/modules/audio_processing/vad/vad_circular_buffer.h"
 
 #include <stdlib.h>
 

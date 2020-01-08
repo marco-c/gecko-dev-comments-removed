@@ -8,14 +8,14 @@
 
 
 
-#ifndef MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_H_
-#define MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_H_
+#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_H_
+#define WEBRTC_MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_H_
 
-#include "modules/audio_processing/include/config.h"
-#include "api/video/video_rotation.h"
-#include "media/base/videosinkinterface.h"
-#include "modules/include/module.h"
-#include "modules/video_capture/video_capture_defines.h"
+#include "webrtc/modules/audio_processing/include/config.h"
+#include "webrtc/api/video/video_rotation.h"
+#include "webrtc/media/base/videosinkinterface.h"
+#include "webrtc/modules/include/module.h"
+#include "webrtc/modules/video_capture/video_capture_defines.h"
 #include <set>
 
 #if defined(ANDROID)

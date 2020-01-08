@@ -8,14 +8,14 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_BIQUAD_FILTER_H_
-#define MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_BIQUAD_FILTER_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_BIQUAD_FILTER_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_BIQUAD_FILTER_H_
 
 #include <vector>
 
-#include "api/array_view.h"
-#include "rtc_base/arraysize.h"
-#include "rtc_base/constructormagic.h"
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace webrtc {
 

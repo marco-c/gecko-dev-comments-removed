@@ -8,22 +8,21 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_DECODER_DATABASE_H_
-#define MODULES_AUDIO_CODING_NETEQ_DECODER_DATABASE_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_DECODER_DATABASE_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_DECODER_DATABASE_H_
 
 #include <map>
 #include <memory>
 #include <string>
 
-#include "api/audio_codecs/audio_decoder_factory.h"
-#include "api/audio_codecs/audio_format.h"
-#include "common_types.h"  
-#include "modules/audio_coding/codecs/cng/webrtc_cng.h"
-#include "modules/audio_coding/neteq/neteq_decoder_enum.h"
-#include "modules/audio_coding/neteq/packet.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/scoped_ref_ptr.h"
-#include "typedefs.h"  
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/common_types.h"  
+#include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
+#include "webrtc/modules/audio_coding/codecs/audio_format.h"
+#include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
+#include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
+#include "webrtc/modules/audio_coding/neteq/packet.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
@@ -54,10 +53,6 @@ class DecoderDatabase {
                 const std::string& codec_name);
     DecoderInfo(DecoderInfo&&);
     ~DecoderInfo();
-
-    
-    
-    bool CanGetDecoder() const;
 
     
     AudioDecoder* GetDecoder() const;
@@ -152,11 +147,6 @@ class DecoderDatabase {
   
   
   virtual void Reset();
-
-  
-  
-  virtual std::vector<int> SetCodecs(
-      const std::map<int, SdpAudioFormat>& codecs);
 
   
   

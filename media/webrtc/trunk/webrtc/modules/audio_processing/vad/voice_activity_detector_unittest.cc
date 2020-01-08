@@ -8,13 +8,13 @@
 
 
 
-#include "modules/audio_processing/vad/voice_activity_detector.h"
+#include "webrtc/modules/audio_processing/vad/voice_activity_detector.h"
 
 #include <algorithm>
 #include <vector>
 
-#include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "webrtc/test/gtest.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
 namespace {

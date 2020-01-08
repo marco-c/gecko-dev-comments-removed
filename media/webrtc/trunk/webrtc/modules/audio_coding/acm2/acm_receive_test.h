@@ -8,16 +8,16 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_ACM2_ACM_RECEIVE_TEST_H_
-#define MODULES_AUDIO_CODING_ACM2_ACM_RECEIVE_TEST_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_ACM2_ACM_RECEIVE_TEST_H_
+#define WEBRTC_MODULES_AUDIO_CODING_ACM2_ACM_RECEIVE_TEST_H_
 
 #include <memory>
 #include <string>
 
-#include "api/audio_codecs/audio_decoder_factory.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/scoped_ref_ptr.h"
-#include "system_wrappers/include/clock.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
+#include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
 class AudioCodingModule;

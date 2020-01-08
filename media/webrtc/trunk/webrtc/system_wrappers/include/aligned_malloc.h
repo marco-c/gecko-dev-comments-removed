@@ -8,8 +8,8 @@
 
 
 
-#ifndef SYSTEM_WRAPPERS_INCLUDE_ALIGNED_MALLOC_H_
-#define SYSTEM_WRAPPERS_INCLUDE_ALIGNED_MALLOC_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_ALIGNED_MALLOC_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_ALIGNED_MALLOC_H_
 
 
 
@@ -36,12 +36,12 @@ void AlignedFree(void* mem_block);
 
 
 
-template <typename T>
+template<typename T>
 T* GetRightAlign(const T* ptr, size_t alignment) {
-  return reinterpret_cast<T*>(
-      GetRightAlign(reinterpret_cast<const void*>(ptr), alignment));
+  return reinterpret_cast<T*>(GetRightAlign(reinterpret_cast<const void*>(ptr),
+                                            alignment));
 }
-template <typename T>
+template<typename T>
 T* AlignedMalloc(size_t size, size_t alignment) {
   return reinterpret_cast<T*>(AlignedMalloc(size, alignment));
 }
@@ -49,9 +49,11 @@ T* AlignedMalloc(size_t size, size_t alignment) {
 
 
 struct AlignedFreeDeleter {
-  inline void operator()(void* ptr) const { AlignedFree(ptr); }
+  inline void operator()(void* ptr) const {
+    AlignedFree(ptr);
+  }
 };
 
 }  
 
-#endif  
+#endif 

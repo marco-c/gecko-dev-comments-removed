@@ -15,8 +15,8 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_ARITH_ROUTINES_H_
-#define MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_ARITH_ROUTINES_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_ARITH_ROUTINES_H_
+#define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_ARITH_ROUTINES_H_
 
 #include "structs.h"
 
@@ -43,20 +43,20 @@ int WebRtcIsac_DecLogisticMulti2(
 void WebRtcIsac_EncHistMulti(
     Bitstr *streamdata,         
     const int *data,            
-    const uint16_t *const *cdf, 
+    const uint16_t **cdf, 
     const int N);               
 
 int WebRtcIsac_DecHistBisectMulti(
     int *data,                      
     Bitstr *streamdata,             
-    const uint16_t *const *cdf,     
+    const uint16_t **cdf,     
     const uint16_t *cdf_size, 
     const int N);                   
 
 int WebRtcIsac_DecHistOneStepMulti(
     int *data,                       
     Bitstr *streamdata,              
-    const uint16_t *const *cdf,      
+    const uint16_t **cdf,      
     const uint16_t *init_index,
     const int N);                    
 

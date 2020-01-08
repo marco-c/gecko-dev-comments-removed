@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_RTP_RTCP_SOURCE_FORWARD_ERROR_CORRECTION_H_
-#define MODULES_RTP_RTCP_SOURCE_FORWARD_ERROR_CORRECTION_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_FORWARD_ERROR_CORRECTION_H_
+#define WEBRTC_MODULES_RTP_RTCP_SOURCE_FORWARD_ERROR_CORRECTION_H_
 
 #include <stdint.h>
 
@@ -17,19 +17,17 @@
 #include <memory>
 #include <vector>
 
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "modules/rtp_rtcp/source/forward_error_correction_internal.h"
-#include "rtc_base/basictypes.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/refcount.h"
-#include "rtc_base/scoped_ref_ptr.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/source/forward_error_correction_internal.h"
 
 namespace webrtc {
 
 class FecHeaderReader;
 class FecHeaderWriter;
-
-
 
 
 
@@ -65,16 +63,17 @@ class ForwardErrorCorrection {
    public:
     
     
-    
     struct LessThan {
       template <typename S, typename T>
       bool operator() (const S& first, const T& second);
     };
 
-    uint32_t ssrc;
     uint16_t seq_num;
   };
 
+  
+  
+  
   
   
   
@@ -84,6 +83,8 @@ class ForwardErrorCorrection {
     ReceivedPacket();
     ~ReceivedPacket();
 
+    uint32_t ssrc;  
+                    
     bool is_fec;    
                     
     rtc::scoped_refptr<Packet> pkt;  
@@ -108,7 +109,7 @@ class ForwardErrorCorrection {
   
   
   
-  class ProtectedPacket : public SortablePacket {
+  class ProtectedPacket : public ForwardErrorCorrection::SortablePacket {
    public:
     ProtectedPacket();
     ~ProtectedPacket();
@@ -121,7 +122,7 @@ class ForwardErrorCorrection {
   
   
   
-  class ReceivedFecPacket : public SortablePacket {
+  class ReceivedFecPacket : public ForwardErrorCorrection::SortablePacket {
    public:
     ReceivedFecPacket();
     ~ReceivedFecPacket();
@@ -142,16 +143,15 @@ class ForwardErrorCorrection {
   };
 
   using PacketList = std::list<std::unique_ptr<Packet>>;
+  using ReceivedPacketList = std::list<std::unique_ptr<ReceivedPacket>>;
   using RecoveredPacketList = std::list<std::unique_ptr<RecoveredPacket>>;
   using ReceivedFecPacketList = std::list<std::unique_ptr<ReceivedFecPacket>>;
 
   ~ForwardErrorCorrection();
 
   
-  static std::unique_ptr<ForwardErrorCorrection> CreateUlpfec(uint32_t ssrc);
-  static std::unique_ptr<ForwardErrorCorrection> CreateFlexfec(
-      uint32_t ssrc,
-      uint32_t protected_media_ssrc);
+  static std::unique_ptr<ForwardErrorCorrection> CreateUlpfec();
+  static std::unique_ptr<ForwardErrorCorrection> CreateFlexfec();
 
   
   
@@ -218,8 +218,10 @@ class ForwardErrorCorrection {
   
   
   
-  void DecodeFec(const ReceivedPacket& received_packet,
-                 RecoveredPacketList* recovered_packets);
+  
+  
+  int DecodeFec(ReceivedPacketList* received_packets,
+                RecoveredPacketList* recovered_packets);
 
   
   
@@ -240,9 +242,7 @@ class ForwardErrorCorrection {
 
  protected:
   ForwardErrorCorrection(std::unique_ptr<FecHeaderReader> fec_header_reader,
-                         std::unique_ptr<FecHeaderWriter> fec_header_writer,
-                         uint32_t ssrc,
-                         uint32_t protected_media_ssrc);
+                         std::unique_ptr<FecHeaderWriter> fec_header_writer);
 
  private:
   
@@ -266,12 +266,12 @@ class ForwardErrorCorrection {
 
   
   
-  void InsertPacket(const ReceivedPacket& received_packet,
-                    RecoveredPacketList* recovered_packets);
+  void InsertPackets(ReceivedPacketList* received_packets,
+                     RecoveredPacketList* recovered_packets);
 
   
   void InsertMediaPacket(RecoveredPacketList* recovered_packets,
-                         const ReceivedPacket& received_packet);
+                         ReceivedPacket* received_packet);
 
   
   
@@ -282,7 +282,7 @@ class ForwardErrorCorrection {
 
   
   void InsertFecPacket(const RecoveredPacketList& recovered_packets,
-                       const ReceivedPacket& received_packet);
+                       ReceivedPacket* received_packet);
 
   
   static void AssignRecoveredPackets(
@@ -329,10 +329,6 @@ class ForwardErrorCorrection {
   
   
   void DiscardOldRecoveredPackets(RecoveredPacketList* recovered_packets);
-
-  
-  const uint32_t ssrc_;
-  const uint32_t protected_media_ssrc_;
 
   std::unique_ptr<FecHeaderReader> fec_header_reader_;
   std::unique_ptr<FecHeaderWriter> fec_header_writer_;

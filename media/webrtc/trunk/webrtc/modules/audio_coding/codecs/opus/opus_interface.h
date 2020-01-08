@@ -8,13 +8,12 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_CODECS_OPUS_OPUS_INTERFACE_H_
-#define MODULES_AUDIO_CODING_CODECS_OPUS_OPUS_INTERFACE_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_OPUS_INTERFACE_H_
+#define WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_OPUS_INTERFACE_H_
 
 #include <stddef.h>
 
-#include "modules/audio_coding/codecs/opus/opus_inst.h"
-#include "typedefs.h"  
+#include "webrtc/typedefs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -192,69 +191,9 @@ int16_t WebRtcOpus_DisableDtx(OpusEncInst* inst);
 
 
 
-int16_t WebRtcOpus_EnableCbr(OpusEncInst* inst);
-
-
-
-
-
-
-
-
-
-
-
-
-int16_t WebRtcOpus_DisableCbr(OpusEncInst* inst);
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 int16_t WebRtcOpus_SetComplexity(OpusEncInst* inst, int32_t complexity);
-
-
-
-
-
-
-
-
-
-
-
-
-int32_t WebRtcOpus_GetBandwidth(OpusEncInst* inst);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int16_t WebRtcOpus_SetBandwidth(OpusEncInst* inst, int32_t bandwidth);
 
 
 

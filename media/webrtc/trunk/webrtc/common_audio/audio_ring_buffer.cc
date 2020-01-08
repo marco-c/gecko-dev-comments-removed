@@ -8,10 +8,10 @@
 
 
 
-#include "common_audio/audio_ring_buffer.h"
+#include "webrtc/common_audio/audio_ring_buffer.h"
 
-#include "common_audio/ring_buffer.h"
-#include "rtc_base/checks.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/common_audio/ring_buffer.h"
 
 
 

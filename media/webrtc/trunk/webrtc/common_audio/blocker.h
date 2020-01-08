@@ -8,13 +8,13 @@
 
 
 
-#ifndef COMMON_AUDIO_BLOCKER_H_
-#define COMMON_AUDIO_BLOCKER_H_
+#ifndef WEBRTC_INTERNAL_BEAMFORMER_BLOCKER_H_
+#define WEBRTC_INTERNAL_BEAMFORMER_BLOCKER_H_
 
 #include <memory>
 
-#include "common_audio/audio_ring_buffer.h"
-#include "common_audio/channel_buffer.h"
+#include "webrtc/common_audio/audio_ring_buffer.h"
+#include "webrtc/common_audio/channel_buffer.h"
 
 namespace webrtc {
 

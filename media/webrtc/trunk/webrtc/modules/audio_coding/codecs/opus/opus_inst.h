@@ -8,12 +8,12 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_CODECS_OPUS_OPUS_INST_H_
-#define MODULES_AUDIO_CODING_CODECS_OPUS_OPUS_INST_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_OPUS_INST_H_
+#define WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_OPUS_INST_H_
 
 #include <stddef.h>
 
-#include "rtc_base/ignore_wundef.h"
+#include "webrtc/base/ignore_wundef.h"
 
 RTC_PUSH_IGNORING_WUNDEF()
 #include "opus.h"

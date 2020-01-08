@@ -8,14 +8,13 @@
 
 
 
-#ifndef SYSTEM_WRAPPERS_INCLUDE_CLOCK_H_
-#define SYSTEM_WRAPPERS_INCLUDE_CLOCK_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CLOCK_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CLOCK_H_
 
 #include <memory>
 
-#include "system_wrappers/include/ntp_time.h"
-#include "system_wrappers/include/rw_lock_wrapper.h"
-#include "typedefs.h"  
+#include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
@@ -39,15 +38,13 @@ class Clock {
   virtual int64_t TimeInMicroseconds() const = 0;
 
   
-  virtual NtpTime CurrentNtpTime() const = 0;
+  virtual void CurrentNtp(uint32_t& seconds, uint32_t& fractions) const = 0;
 
   
   virtual int64_t CurrentNtpInMilliseconds() const = 0;
 
   
-  static int64_t NtpToMs(uint32_t seconds, uint32_t fractions) {
-    return NtpTime(seconds, fractions).ToMs();
-  }
+  static int64_t NtpToMs(uint32_t seconds, uint32_t fractions);
 
   
   static Clock* GetRealTimeClock();
@@ -68,7 +65,7 @@ class SimulatedClock : public Clock {
   int64_t TimeInMicroseconds() const override;
 
   
-  NtpTime CurrentNtpTime() const override;
+  void CurrentNtp(uint32_t& seconds, uint32_t& fractions) const override;
 
   
   int64_t CurrentNtpInMilliseconds() const override;

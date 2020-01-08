@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_H_
-#define MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_H_
+#define WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_H_
 
 #if defined(WEBRTC_WIN)
 
@@ -21,11 +21,11 @@
 #include <windows.h>
 #endif
 
-#include "api/video/video_frame.h"
-#include "modules/include/module.h"
-#include "modules/include/module_common_types.h"
-#include "modules/video_coding/include/video_coding_defines.h"
-#include "system_wrappers/include/event_wrapper.h"
+#include "webrtc/api/video/video_frame.h"
+#include "webrtc/modules/include/module.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/video_coding/include/video_coding_defines.h"
+#include "webrtc/system_wrappers/include/event_wrapper.h"
 
 namespace webrtc {
 
@@ -71,8 +71,32 @@ class VideoCodingModule : public Module {
  public:
   enum SenderNackMode { kNackNone, kNackAll, kNackSelective };
 
-  
+  enum ReceiverRobustness { kNone, kHardNack, kSoftNack, kReferenceSelection };
+
   static VideoCodingModule* Create(Clock* clock, EventFactory* event_factory);
+
+  static VideoCodingModule* Create(
+      Clock* clock,
+      VCMQMSettingsCallback* qm_settings_callback,
+      NackSender* nack_sender,
+      KeyFrameRequestSender* keyframe_request_sender,
+      EncodedImageCallback* pre_decode_image_callback);
+
+  static VideoCodingModule* Create(
+      Clock* clock,
+      EventFactory* event_factory,
+      NackSender* nack_sender,
+      KeyFrameRequestSender* keyframe_request_sender);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  static void Codec(VideoCodecType codecType, VideoCodec* codec);
 
   
 
@@ -296,6 +320,18 @@ class VideoCodingModule : public Module {
   
   
   
+  virtual int32_t RegisterDecoderTimingCallback(
+      VCMDecoderTimingCallback* decoderTiming) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -314,6 +350,19 @@ class VideoCodingModule : public Module {
   
   virtual int32_t RegisterPacketRequestCallback(
       VCMPacketRequestCallback* callback) = 0;
+ 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual int32_t RegisterReceiveStateCallback(
+      VCMReceiveStateCallback* callback) = 0;
 
   
   
@@ -323,6 +372,22 @@ class VideoCodingModule : public Module {
   
   
   virtual int32_t Decode(uint16_t maxWaitTimeMs = 200) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  virtual int32_t ReceiveCodec(VideoCodec* currentReceiveCodec) const = 0;
+
+  
+  
+  
+  
+  
+  virtual VideoCodecType ReceiveCodec() const = 0;
 
   
   
@@ -371,6 +436,12 @@ class VideoCodingModule : public Module {
   virtual int32_t Delay() const = 0;
 
   
+  
+  
+  
+  virtual uint32_t DiscardedPackets() const = 0;
+
+  
 
   
   
@@ -385,7 +456,6 @@ class VideoCodingModule : public Module {
   
   
   
-  enum ReceiverRobustness { kNone, kHardNack };
   virtual int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode,
                                         VCMDecodeErrorMode errorMode) = 0;
 
@@ -409,6 +479,9 @@ class VideoCodingModule : public Module {
   
   
   virtual int SetMinReceiverDelay(int desired_delay_ms) = 0;
+ 
+  
+  virtual void SetCPULoadState(CPULoadState state) = 0;
 
   virtual void RegisterPostEncodeImageCallback(
       EncodedImageCallback* post_encode_callback) = 0;

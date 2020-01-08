@@ -8,15 +8,15 @@
 
 
 
-#ifndef TEST_TESTSUPPORT_FRAME_READER_H_
-#define TEST_TESTSUPPORT_FRAME_READER_H_
+#ifndef WEBRTC_TEST_TESTSUPPORT_FRAME_READER_H_
+#define WEBRTC_TEST_TESTSUPPORT_FRAME_READER_H_
 
 #include <stdio.h>
 
 #include <string>
 
-#include "rtc_base/scoped_ref_ptr.h"
-#include "typedefs.h"  
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 class I420Buffer;
@@ -46,14 +46,14 @@ class FrameReader {
   virtual int NumberOfFrames() = 0;
 };
 
-class YuvFrameReaderImpl : public FrameReader {
+class FrameReaderImpl : public FrameReader {
  public:
   
   
   
   
-  YuvFrameReaderImpl(std::string input_filename, int width, int height);
-  ~YuvFrameReaderImpl() override;
+  FrameReaderImpl(std::string input_filename, int width, int height);
+  ~FrameReaderImpl() override;
   bool Init() override;
   rtc::scoped_refptr<I420Buffer> ReadFrame() override;
   void Close() override;
@@ -61,10 +61,10 @@ class YuvFrameReaderImpl : public FrameReader {
   int NumberOfFrames() override;
 
  private:
-  const std::string input_filename_;
+  std::string input_filename_;
   size_t frame_length_in_bytes_;
-  const int width_;
-  const int height_;
+  int width_;
+  int height_;
   int number_of_frames_;
   FILE* input_file_;
 };

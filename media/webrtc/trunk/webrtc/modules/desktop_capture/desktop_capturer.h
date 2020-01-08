@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURER_H_
-#define MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURER_H_
+#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURER_H_
+#define WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURER_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -19,9 +19,9 @@
 #include <type_traits>
 #include <vector>
 
-#include "modules/desktop_capture/desktop_frame.h"
-#include "modules/desktop_capture/desktop_capture_types.h"
-#include "modules/desktop_capture/shared_memory.h"
+#include "webrtc/modules/desktop_capture/desktop_frame.h"
+#include "webrtc/modules/desktop_capture/desktop_capture_types.h"
+#include "webrtc/modules/desktop_capture/shared_memory.h"
 
 namespace webrtc {
 
@@ -106,10 +106,6 @@ class DesktopCapturer {
 
   
   
-  
-  
-  
-  
   virtual bool GetSourceList(SourceList* sources);
 
   
@@ -120,13 +116,6 @@ class DesktopCapturer {
   
   
   virtual bool FocusOnSelectedSource();
-
-  
-  
-  
-  
-  
-  virtual bool IsOccluded(const DesktopVector& pos);
 
   
   static std::unique_ptr<DesktopCapturer> CreateWindowCapturer(

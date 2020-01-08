@@ -8,18 +8,31 @@
 
 
 
-#ifndef API_VIDEO_VIDEO_FRAME_H_
-#define API_VIDEO_VIDEO_FRAME_H_
+#ifndef WEBRTC_API_VIDEO_VIDEO_FRAME_H_
+#define WEBRTC_API_VIDEO_VIDEO_FRAME_H_
 
 #include <stdint.h>
 
-#include "api/video/video_rotation.h"
-#include "api/video/video_frame_buffer.h"
+#include "webrtc/api/video/video_rotation.h"
+#include "webrtc/api/video/video_frame_buffer.h"
+
+
+
+
+#include "webrtc/base/timeutils.h"
 
 namespace webrtc {
 
 class VideoFrame {
  public:
+  VideoFrame() {
+    video_frame_buffer_ = nullptr;
+    timestamp_rtp_ = 0;
+    timestamp_us_ = 0;
+    ntp_time_ms_ = 0;
+    rotation_ = kVideoRotation_0;
+  }
+
   
   
   
@@ -43,10 +56,9 @@ class VideoFrame {
 
   
   int width() const;
+
   
   int height() const;
-  
-  uint32_t size() const;
 
   
   int64_t timestamp_us() const { return timestamp_us_; }
@@ -67,10 +79,8 @@ class VideoFrame {
   uint32_t transport_frame_id() const { return timestamp(); }
 
   
-  
   void set_ntp_time_ms(int64_t ntp_time_ms) { ntp_time_ms_ = ntp_time_ms; }
 
-  
   
   int64_t ntp_time_ms() const { return ntp_time_ms_; }
 
@@ -88,6 +98,8 @@ class VideoFrame {
   void set_rotation(VideoRotation rotation) { rotation_ = rotation; }
 
   
+  void set_render_time_ms(int64_t render_time_ms);
+
   
   int64_t render_time_ms() const;
 
@@ -98,7 +110,7 @@ class VideoFrame {
   
   
   bool is_texture() const {
-    return video_frame_buffer()->type() == VideoFrameBuffer::Type::kNative;
+    return video_frame_buffer()->native_handle() != nullptr;
   }
 
  private:

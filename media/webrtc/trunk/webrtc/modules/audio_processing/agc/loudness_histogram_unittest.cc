@@ -10,16 +10,16 @@
 
 
 
-#include "modules/audio_processing/agc/loudness_histogram.h"
+#include "webrtc/modules/audio_processing/agc/loudness_histogram.h"
 
 #include <stdio.h>
 #include <algorithm>
 #include <cmath>
 #include <memory>
 
-#include "modules/audio_processing/agc/utility.h"
-#include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "webrtc/modules/audio_processing/agc/utility.h"
+#include "webrtc/test/gtest.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
 

@@ -8,9 +8,9 @@
 
 
 
-#include "modules/rtp_rtcp/source/rtcp_packet/rtpfb.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rtpfb.h"
 
-#include "modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 
 namespace webrtc {
 namespace rtcp {

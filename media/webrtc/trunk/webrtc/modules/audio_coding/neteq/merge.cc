@@ -8,7 +8,7 @@
 
 
 
-#include "modules/audio_coding/neteq/merge.h"
+#include "webrtc/modules/audio_coding/neteq/merge.h"
 
 #include <assert.h>
 #include <string.h>  
@@ -16,14 +16,12 @@
 #include <algorithm>  
 #include <memory>
 
-#include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "modules/audio_coding/neteq/audio_multi_vector.h"
-#include "modules/audio_coding/neteq/cross_correlation.h"
-#include "modules/audio_coding/neteq/dsp_helper.h"
-#include "modules/audio_coding/neteq/expand.h"
-#include "modules/audio_coding/neteq/sync_buffer.h"
-#include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/numerics/safe_minmax.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
+#include "webrtc/modules/audio_coding/neteq/cross_correlation.h"
+#include "webrtc/modules/audio_coding/neteq/dsp_helper.h"
+#include "webrtc/modules/audio_coding/neteq/expand.h"
+#include "webrtc/modules/audio_coding/neteq/sync_buffer.h"
 
 namespace webrtc {
 
@@ -158,7 +156,6 @@ size_t Merge::Process(int16_t* input, size_t input_length,
 
   
   
-  RTC_DCHECK_GE(output_length, old_length);
   return output_length - old_length;
 }
 
@@ -212,8 +209,8 @@ size_t Merge::GetExpandedSignal(size_t* old_length, size_t* expand_period) {
 int16_t Merge::SignalScaling(const int16_t* input, size_t input_length,
                              const int16_t* expanded_signal) const {
   
-  const auto mod_input_length = rtc::SafeMin<size_t>(
-      64 * rtc::dchecked_cast<size_t>(fs_mult_), input_length);
+  const size_t mod_input_length =
+      std::min(static_cast<size_t>(64 * fs_mult_), input_length);
 
   
   if (mod_input_length == 0) {

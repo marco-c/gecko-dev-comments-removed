@@ -8,11 +8,11 @@
 
 
 
-#include "modules/audio_processing/voice_detection_impl.h"
+#include "webrtc/modules/audio_processing/voice_detection_impl.h"
 
-#include "common_audio/vad/include/webrtc_vad.h"
-#include "modules/audio_processing/audio_buffer.h"
-#include "rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/common_audio/vad/include/webrtc_vad.h"
+#include "webrtc/modules/audio_processing/audio_buffer.h"
 
 namespace webrtc {
 class VoiceDetectionImpl::Vad {

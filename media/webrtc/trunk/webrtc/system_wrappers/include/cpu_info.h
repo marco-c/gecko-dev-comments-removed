@@ -8,10 +8,10 @@
 
 
 
-#ifndef SYSTEM_WRAPPERS_INCLUDE_CPU_INFO_H_
-#define SYSTEM_WRAPPERS_INCLUDE_CPU_INFO_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CPU_INFO_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CPU_INFO_H_
 
-#include "typedefs.h"  
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
@@ -25,4 +25,4 @@ class CpuInfo {
 
 }  
 
-#endif  
+#endif 

@@ -13,12 +13,12 @@
 
 
 
-#ifndef COMMON_AUDIO_VAD_INCLUDE_WEBRTC_VAD_H_  
-#define COMMON_AUDIO_VAD_INCLUDE_WEBRTC_VAD_H_
+#ifndef WEBRTC_COMMON_AUDIO_VAD_INCLUDE_WEBRTC_VAD_H_  
+#define WEBRTC_COMMON_AUDIO_VAD_INCLUDE_WEBRTC_VAD_H_
 
 #include <stddef.h>
 
-#include "typedefs.h"  
+#include "webrtc/typedefs.h"
 
 typedef struct WebRtcVadInst VadInst;
 

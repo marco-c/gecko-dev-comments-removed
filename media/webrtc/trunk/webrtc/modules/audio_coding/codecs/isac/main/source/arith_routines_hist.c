@@ -17,7 +17,7 @@
 
 void WebRtcIsac_EncHistMulti(Bitstr *streamdata, 
                              const int *data,  
-                             const uint16_t *const *cdf, 
+                             const uint16_t **cdf, 
                              const int N)   
 {
   uint32_t W_lower, W_upper;
@@ -84,7 +84,7 @@ void WebRtcIsac_EncHistMulti(Bitstr *streamdata,
 
 int WebRtcIsac_DecHistBisectMulti(int *data,     
                                   Bitstr *streamdata,   
-                                  const uint16_t *const *cdf,  
+                                  const uint16_t **cdf,  
                                   const uint16_t *cdf_size, 
                                   const int N)    
 {
@@ -192,7 +192,7 @@ int WebRtcIsac_DecHistBisectMulti(int *data,
 
 int WebRtcIsac_DecHistOneStepMulti(int *data,        
                                    Bitstr *streamdata,      
-                                   const uint16_t *const *cdf,   
+                                   const uint16_t **cdf,   
                                    const uint16_t *init_index, 
                                    const int N)     
 {

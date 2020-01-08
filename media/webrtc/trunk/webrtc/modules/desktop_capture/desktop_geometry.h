@@ -8,11 +8,11 @@
 
 
 
-#ifndef MODULES_DESKTOP_CAPTURE_DESKTOP_GEOMETRY_H_
-#define MODULES_DESKTOP_CAPTURE_DESKTOP_GEOMETRY_H_
+#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_GEOMETRY_H_
+#define WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_GEOMETRY_H_
 
-#include "rtc_base/constructormagic.h"
-#include "typedefs.h"  
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
@@ -105,9 +105,6 @@ class DesktopRect {
   int32_t width() const { return right_ - left_; }
   int32_t height() const { return bottom_ - top_; }
 
-  void set_width(int32_t width) { right_ = left_ + width; }
-  void set_height(int32_t height) { bottom_ = top_ + height; }
-
   DesktopVector top_left() const { return DesktopVector(left_, top_); }
   DesktopSize size() const { return DesktopSize(width(), height()); }
 
@@ -128,10 +125,6 @@ class DesktopRect {
   void IntersectWith(const DesktopRect& rect);
 
   
-  
-  void UnionWith(const DesktopRect& rect);
-
-  
   void Translate(int32_t dx, int32_t dy);
   void Translate(DesktopVector d) { Translate(d.x(), d.y()); };
 
@@ -144,10 +137,6 @@ class DesktopRect {
               int32_t top_offset,
               int32_t right_offset,
               int32_t bottom_offset);
-
-  
-  
-  void Scale(double horizontal, double vertical);
 
  private:
   DesktopRect(int32_t left, int32_t top, int32_t right, int32_t bottom)

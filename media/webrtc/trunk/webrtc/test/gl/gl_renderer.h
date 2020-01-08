@@ -8,8 +8,8 @@
 
 
 
-#ifndef TEST_GL_GL_RENDERER_H_
-#define TEST_GL_GL_RENDERER_H_
+#ifndef WEBRTC_TEST_GL_GL_RENDERER_H_
+#define WEBRTC_TEST_GL_GL_RENDERER_H_
 
 #ifdef WEBRTC_MAC
 #include <OpenGL/gl.h>
@@ -17,8 +17,8 @@
 #include <GL/gl.h>
 #endif
 
-#include "test/video_renderer.h"
-#include "typedefs.h"  
+#include "webrtc/test/video_renderer.h"
+#include "webrtc/typedefs.h"
 
 
 namespace webrtc {

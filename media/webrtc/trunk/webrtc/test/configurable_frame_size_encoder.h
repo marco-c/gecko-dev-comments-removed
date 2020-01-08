@@ -8,13 +8,13 @@
 
 
 
-#ifndef TEST_CONFIGURABLE_FRAME_SIZE_ENCODER_H_
-#define TEST_CONFIGURABLE_FRAME_SIZE_ENCODER_H_
+#ifndef WEBRTC_TEST_CONFIGURABLE_FRAME_SIZE_ENCODER_H_
+#define WEBRTC_TEST_CONFIGURABLE_FRAME_SIZE_ENCODER_H_
 
 #include <memory>
 #include <vector>
 
-#include "api/video_codecs/video_encoder.h"
+#include "webrtc/video_encoder.h"
 
 namespace webrtc {
 namespace test {

@@ -8,9 +8,9 @@
 
 
 
-#include "common_video/h264/h264_bitstream_parser.h"
+#include "webrtc/common_video/h264/h264_bitstream_parser.h"
 
-#include "test/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

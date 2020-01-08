@@ -8,10 +8,11 @@
 
 
 
-#include "modules/audio_processing/test/debug_dump_replayer.h"
+#include "webrtc/modules/audio_processing/test/debug_dump_replayer.h"
 
-#include "modules/audio_processing/test/protobuf_utils.h"
-#include "rtc_base/checks.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/modules/audio_processing/test/protobuf_utils.h"
+
 
 namespace webrtc {
 namespace test {
@@ -51,9 +52,9 @@ bool DebugDumpReplayer::SetDumpFile(const std::string& filename) {
 
 rtc::Optional<audioproc::Event> DebugDumpReplayer::GetNextEvent() const {
   if (!has_next_event_)
-    return rtc::nullopt;
+    return rtc::Optional<audioproc::Event>();
   else
-    return next_event_;
+    return rtc::Optional<audioproc::Event>(next_event_);
 }
 
 

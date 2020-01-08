@@ -8,9 +8,9 @@
 
 
 
-#include "modules/video_coding/utility/moving_average.h"
+#include "webrtc/modules/video_coding/utility/moving_average.h"
 
-#include "test/gtest.h"
+#include "webrtc/test/gtest.h"
 
 TEST(MovingAverageTest, EmptyAverage) {
   webrtc::MovingAverage moving_average(1);

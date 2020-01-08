@@ -8,15 +8,15 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_TRANSIENT_TRANSIENT_SUPPRESSOR_H_
-#define MODULES_AUDIO_PROCESSING_TRANSIENT_TRANSIENT_SUPPRESSOR_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_TRANSIENT_TRANSIENT_SUPPRESSOR_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_TRANSIENT_TRANSIENT_SUPPRESSOR_H_
 
 #include <deque>
 #include <memory>
 #include <set>
 
-#include "rtc_base/gtest_prod_util.h"
-#include "typedefs.h"  
+#include "webrtc/base/gtest_prod_util.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

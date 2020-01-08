@@ -8,15 +8,16 @@
 
 
 
-#ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_METRIC_RECORDER_H_
-#define MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_METRIC_RECORDER_H_
+#ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_METRIC_RECORDER_H_
+#define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_METRIC_RECORDER_H_
 
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
 
-#include "rtc_base/gtest_prod_util.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/gtest_prod_util.h"
 
 namespace webrtc {
 namespace testing {

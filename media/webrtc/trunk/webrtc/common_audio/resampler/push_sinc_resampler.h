@@ -8,14 +8,14 @@
 
 
 
-#ifndef COMMON_AUDIO_RESAMPLER_PUSH_SINC_RESAMPLER_H_
-#define COMMON_AUDIO_RESAMPLER_PUSH_SINC_RESAMPLER_H_
+#ifndef WEBRTC_COMMON_AUDIO_RESAMPLER_PUSH_SINC_RESAMPLER_H_
+#define WEBRTC_COMMON_AUDIO_RESAMPLER_PUSH_SINC_RESAMPLER_H_
 
 #include <memory>
 
-#include "common_audio/resampler/sinc_resampler.h"
-#include "rtc_base/constructormagic.h"
-#include "typedefs.h"  
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/common_audio/resampler/sinc_resampler.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

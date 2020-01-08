@@ -8,15 +8,15 @@
 
 
 
-#ifndef MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_GENERATOR_H_
-#define MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_GENERATOR_H_
+#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_GENERATOR_H_
+#define WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_GENERATOR_H_
 
 #include <memory>
 
-#include "modules/desktop_capture/desktop_frame.h"
-#include "modules/desktop_capture/desktop_geometry.h"
-#include "modules/desktop_capture/desktop_region.h"
-#include "modules/desktop_capture/shared_memory.h"
+#include "webrtc/modules/desktop_capture/desktop_frame.h"
+#include "webrtc/modules/desktop_capture/desktop_geometry.h"
+#include "webrtc/modules/desktop_capture/desktop_region.h"
+#include "webrtc/modules/desktop_capture/shared_memory.h"
 
 namespace webrtc {
 

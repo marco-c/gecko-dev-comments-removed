@@ -8,14 +8,14 @@
 
 
 
-#ifndef MODULES_MEDIA_FILE_MEDIA_FILE_H_
-#define MODULES_MEDIA_FILE_MEDIA_FILE_H_
+#ifndef WEBRTC_MODULES_MEDIA_FILE_MEDIA_FILE_H_
+#define WEBRTC_MODULES_MEDIA_FILE_MEDIA_FILE_H_
 
-#include "common_types.h"  
-#include "modules/include/module.h"
-#include "modules/include/module_common_types.h"
-#include "modules/media_file/media_file_defines.h"
-#include "typedefs.h"  
+#include "webrtc/common_types.h"
+#include "webrtc/modules/include/module.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/media_file/media_file_defines.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 class MediaFile : public Module

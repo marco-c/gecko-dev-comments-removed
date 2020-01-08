@@ -8,13 +8,16 @@
 
 
 
-#include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 
-#include "test/gtest.h"
+#include "webrtc/test/gtest.h"
 
 using webrtc::rtcp::CommonHeader;
 
 namespace webrtc {
+namespace {
+const size_t kHeaderSizeBytes = 4;
+}  
 
 TEST(RtcpCommonHeaderTest, TooSmallBuffer) {
   uint8_t buffer[] = {0x80, 0x00, 0x00, 0x00};
@@ -50,7 +53,6 @@ TEST(RtcpCommonHeaderTest, PacketSize) {
   EXPECT_TRUE(header.Parse(buffer, sizeof(buffer)));
   EXPECT_EQ(8u, header.payload_size_bytes());
   EXPECT_EQ(buffer + sizeof(buffer), header.NextPacket());
-  EXPECT_EQ(sizeof(buffer), header.packet_size());
 }
 
 TEST(RtcpCommonHeaderTest, PaddingAndPayloadSize) {
@@ -64,8 +66,7 @@ TEST(RtcpCommonHeaderTest, PaddingAndPayloadSize) {
 
   buffer[3] = 2;  
   const size_t kPayloadSizeBytes = buffer[3] * 4;
-  const size_t kPaddingAddress =
-      CommonHeader::kHeaderSizeBytes + kPayloadSizeBytes - 1;
+  const size_t kPaddingAddress = kHeaderSizeBytes + kPayloadSizeBytes - 1;
 
   
   buffer[kPaddingAddress] = kPayloadSizeBytes + 1;
@@ -80,15 +81,13 @@ TEST(RtcpCommonHeaderTest, PaddingAndPayloadSize) {
   EXPECT_TRUE(header.Parse(buffer, sizeof(buffer)));
   EXPECT_EQ(0u, header.payload_size_bytes());
   EXPECT_EQ(buffer + sizeof(buffer), header.NextPacket());
-  EXPECT_EQ(header.payload(), buffer + CommonHeader::kHeaderSizeBytes);
-  EXPECT_EQ(header.packet_size(), sizeof(buffer));
+  EXPECT_EQ(header.payload(), buffer + kHeaderSizeBytes);
 
   
   buffer[kPaddingAddress] = kPayloadSizeBytes - 1;
   EXPECT_TRUE(header.Parse(buffer, sizeof(buffer)));
   EXPECT_EQ(1u, header.payload_size_bytes());
   EXPECT_EQ(buffer + sizeof(buffer), header.NextPacket());
-  EXPECT_EQ(header.packet_size(), sizeof(buffer));
 }
 
 TEST(RtcpCommonHeaderTest, FormatAndPayloadType) {
@@ -100,6 +99,6 @@ TEST(RtcpCommonHeaderTest, FormatAndPayloadType) {
   EXPECT_EQ(header.fmt(), 0x1e);
   EXPECT_EQ(header.type(), 0xab);
   EXPECT_EQ(header.payload_size_bytes(), 0u);
-  EXPECT_EQ(header.payload(), buffer + CommonHeader::kHeaderSizeBytes);
+  EXPECT_EQ(header.payload(), buffer + kHeaderSizeBytes);
 }
 }  

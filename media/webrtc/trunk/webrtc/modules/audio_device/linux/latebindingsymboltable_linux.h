@@ -8,24 +8,24 @@
 
 
 
-#ifndef AUDIO_DEVICE_LATEBINDINGSYMBOLTABLE_LINUX_H_
-#define AUDIO_DEVICE_LATEBINDINGSYMBOLTABLE_LINUX_H_
+#ifndef WEBRTC_AUDIO_DEVICE_LATEBINDINGSYMBOLTABLE_LINUX_H
+#define WEBRTC_AUDIO_DEVICE_LATEBINDINGSYMBOLTABLE_LINUX_H
 
 #include <assert.h>
 #include <stddef.h>  
 #include <string.h>
 
-#include "rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/system_wrappers/include/trace.h"
 
 
 
 
 
 
-namespace webrtc {
-namespace adm_linux {
+namespace webrtc_adm_linux {
 
-#ifdef WEBRTC_LINUX
+#if defined(WEBRTC_LINUX) || defined(WEBRTC_BSD)
 typedef void *DllHandle;
 
 const DllHandle kInvalidDllHandle = NULL;
@@ -81,6 +81,8 @@ class LateBindingSymbolTable {
     if (undefined_symbols_) {
       
       
+      
+      
       return false;
     }
     handle_ = InternalLoadDll(kDllName);
@@ -133,19 +135,18 @@ enum {
   ClassName##_SYMBOL_TABLE_INDEX_##sym,
 
 
-#define LATE_BINDING_SYMBOL_TABLE_DECLARE_END(ClassName)       \
-  ClassName##_SYMBOL_TABLE_SIZE                                \
-  }                                                            \
-  ;                                                            \
-                                                               \
-  extern const char ClassName##_kDllName[];                    \
-  extern const char* const                                     \
-      ClassName##_kSymbolNames[ClassName##_SYMBOL_TABLE_SIZE]; \
-                                                               \
-  typedef ::webrtc::adm_linux::LateBindingSymbolTable<         \
-      ClassName##_SYMBOL_TABLE_SIZE, ClassName##_kDllName,     \
-      ClassName##_kSymbolNames>                                \
-      ClassName;
+#define LATE_BINDING_SYMBOL_TABLE_DECLARE_END(ClassName) \
+  ClassName##_SYMBOL_TABLE_SIZE \
+}; \
+\
+extern const char ClassName##_kDllName[]; \
+extern const char *const \
+    ClassName##_kSymbolNames[ClassName##_SYMBOL_TABLE_SIZE]; \
+\
+typedef ::webrtc_adm_linux::LateBindingSymbolTable<ClassName##_SYMBOL_TABLE_SIZE, \
+                                            ClassName##_kDllName, \
+                                            ClassName##_kSymbolNames> \
+    ClassName;
 
 
 
@@ -172,7 +173,6 @@ const char *const ClassName##_kSymbolNames[ClassName##_SYMBOL_TABLE_SIZE] = {
   (*reinterpret_cast<typeof(&sym)>( \
       (inst)->GetSymbol(LATESYM_INDEXOF(ClassName, sym))))
 
-}  
 }  
 
 #endif  

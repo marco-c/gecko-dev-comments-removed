@@ -8,7 +8,7 @@
 
 
 
-#include "modules/video_coding/protection_bitrate_calculator.h"
+#include "webrtc/modules/video_coding/protection_bitrate_calculator.h"
 
 namespace webrtc {
 

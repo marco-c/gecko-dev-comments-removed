@@ -10,8 +10,6 @@
 
 package org.webrtc;
 
-import android.media.MediaRecorder;
-
 
 
 
@@ -60,32 +58,6 @@ public interface CameraVideoCapturer extends VideoCapturer {
 
 
   void switchCamera(CameraSwitchHandler switchEventsHandler);
-
-  
-
-
-
-
-  public interface MediaRecorderHandler {
-    
-    void onMediaRecorderSuccess();
-
-    
-    void onMediaRecorderError(String errorDescription);
-  }
-
-  
-
-
-
-
-  void addMediaRecorderToCamera(MediaRecorder mediaRecorder, MediaRecorderHandler resultHandler);
-
-  
-
-
-
-  void removeMediaRecorderFromCamera(MediaRecorderHandler resultHandler);
 
   
 

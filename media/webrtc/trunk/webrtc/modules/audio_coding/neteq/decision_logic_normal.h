@@ -8,12 +8,12 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_DECISION_LOGIC_NORMAL_H_
-#define MODULES_AUDIO_CODING_NETEQ_DECISION_LOGIC_NORMAL_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_DECISION_LOGIC_NORMAL_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_DECISION_LOGIC_NORMAL_H_
 
-#include "modules/audio_coding/neteq/decision_logic.h"
-#include "rtc_base/constructormagic.h"
-#include "typedefs.h"  
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/audio_coding/neteq/decision_logic.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

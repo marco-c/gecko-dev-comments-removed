@@ -8,12 +8,12 @@
 
 
 
-#ifndef MODULES_AUDIO_MIXER_DEFAULT_OUTPUT_RATE_CALCULATOR_H_
-#define MODULES_AUDIO_MIXER_DEFAULT_OUTPUT_RATE_CALCULATOR_H_
+#ifndef WEBRTC_MODULES_AUDIO_MIXER_DEFAULT_OUTPUT_RATE_CALCULATOR_H_
+#define WEBRTC_MODULES_AUDIO_MIXER_DEFAULT_OUTPUT_RATE_CALCULATOR_H_
 
 #include <vector>
 
-#include "modules/audio_mixer/output_rate_calculator.h"
+#include "webrtc/modules/audio_mixer/output_rate_calculator.h"
 
 namespace webrtc {
 

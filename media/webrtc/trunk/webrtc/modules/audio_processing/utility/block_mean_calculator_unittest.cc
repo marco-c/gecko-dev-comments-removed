@@ -8,8 +8,8 @@
 
 
 
-#include "modules/audio_processing/utility/block_mean_calculator.h"
-#include "test/gtest.h"
+#include "webrtc/modules/audio_processing/utility/block_mean_calculator.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

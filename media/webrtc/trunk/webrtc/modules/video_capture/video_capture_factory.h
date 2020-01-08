@@ -11,10 +11,10 @@
 
 
 
-#ifndef MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_FACTORY_H_
-#define MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_FACTORY_H_
+#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_FACTORY_H_
+#define WEBRTC_MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_FACTORY_H_
 
-#include "modules/video_capture/video_capture.h"
+#include "webrtc/modules/video_capture/video_capture.h"
 
 namespace webrtc {
 

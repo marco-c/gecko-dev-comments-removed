@@ -8,7 +8,7 @@
 
 
 
-#include "modules/audio_processing/test/audio_buffer_tools.h"
+#include "webrtc/modules/audio_processing/test/audio_buffer_tools.h"
 
 #include <string.h>
 

@@ -8,14 +8,14 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_CODEC_TIMER_H_
-#define MODULES_VIDEO_CODING_CODEC_TIMER_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_CODEC_TIMER_H_
+#define WEBRTC_MODULES_VIDEO_CODING_CODEC_TIMER_H_
 
 #include <queue>
 
-#include "modules/include/module_common_types.h"
-#include "rtc_base/numerics/percentile_filter.h"
-#include "typedefs.h"  
+#include "webrtc/base/numerics/percentile_filter.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

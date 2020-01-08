@@ -7,13 +7,12 @@
 
 
 
-#ifndef VIDEO_TRANSPORT_ADAPTER_H_
-#define VIDEO_TRANSPORT_ADAPTER_H_
+#ifndef WEBRTC_VIDEO_TRANSPORT_ADAPTER_H_
+#define WEBRTC_VIDEO_TRANSPORT_ADAPTER_H_
 
-#include <atomic>
-
-#include "api/call/transport.h"
-#include "common_types.h"  
+#include "webrtc/api/call/transport.h"
+#include "webrtc/common_types.h"
+#include "webrtc/system_wrappers/include/atomic32.h"
 
 namespace webrtc {
 namespace internal {
@@ -32,7 +31,7 @@ class TransportAdapter : public Transport {
 
  private:
   Transport *transport_;
-  std::atomic<bool> enabled_;
+  Atomic32 enabled_;
 };
 }  
 }  

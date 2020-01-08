@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_CONGESTION_CONTROLLER_DELAY_BASED_BWE_UNITTEST_HELPER_H_
-#define MODULES_CONGESTION_CONTROLLER_DELAY_BASED_BWE_UNITTEST_HELPER_H_
+#ifndef WEBRTC_MODULES_CONGESTION_CONTROLLER_DELAY_BASED_BWE_UNITTEST_HELPER_H_
+#define WEBRTC_MODULES_CONGESTION_CONTROLLER_DELAY_BASED_BWE_UNITTEST_HELPER_H_
 
 #include <list>
 #include <map>
@@ -17,12 +17,11 @@
 #include <utility>
 #include <vector>
 
-#include "modules/congestion_controller/acknowledged_bitrate_estimator.h"
-#include "modules/congestion_controller/delay_based_bwe.h"
-#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "rtc_base/constructormagic.h"
-#include "system_wrappers/include/clock.h"
-#include "test/gtest.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/congestion_controller/delay_based_bwe.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace test {
@@ -55,8 +54,7 @@ class RtpStream {
   
   
   
-  int64_t GenerateFrame(int64_t time_now_us,
-                        std::vector<PacketFeedback>* packets);
+  int64_t GenerateFrame(int64_t time_now_us, std::vector<PacketInfo>* packets);
 
   
   int64_t next_rtp_time() const;
@@ -96,8 +94,7 @@ class StreamGenerator {
 
   
   
-  int64_t GenerateFrame(std::vector<PacketFeedback>* packets,
-                        int64_t time_now_us);
+  int64_t GenerateFrame(std::vector<PacketInfo>* packets, int64_t time_now_us);
 
  private:
   
@@ -128,7 +125,7 @@ class DelayBasedBweTest : public ::testing::Test {
                         int64_t send_time_ms,
                         uint16_t sequence_number,
                         size_t payload_size,
-                        const PacedPacketInfo& pacing_info);
+                        int probe_cluster_id);
 
   
   
@@ -165,7 +162,6 @@ class DelayBasedBweTest : public ::testing::Test {
 
   SimulatedClock clock_;  
   test::TestBitrateObserver bitrate_observer_;
-  std::unique_ptr<AcknowledgedBitrateEstimator> acknowledged_bitrate_estimator_;
   std::unique_ptr<DelayBasedBwe> bitrate_estimator_;
   std::unique_ptr<test::StreamGenerator> stream_generator_;
   int64_t arrival_time_offset_ms_;

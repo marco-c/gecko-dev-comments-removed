@@ -8,115 +8,111 @@
 
 
 
-#include "media/engine/webrtcmediaengine.h"
+#include "webrtc/media/engine/webrtcmediaengine.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 
 #include <algorithm>
-#include <memory>
-#include <tuple>
-#include <utility>
-
-#include "api/video_codecs/video_decoder_factory.h"
-#include "api/video_codecs/video_encoder_factory.h"
-#include "media/engine/webrtcvoiceengine.h"
 
 #ifdef HAVE_WEBRTC_VIDEO
-#include "media/engine/webrtcvideoengine.h"
+#include "webrtc/media/engine/webrtcvideoengine2.h"
 #else
-#include "media/engine/nullwebrtcvideoengine.h"
+#include "webrtc/media/engine/nullwebrtcvideoengine.h"
 #endif
+#include "webrtc/media/engine/webrtcvoiceengine.h"
 
 namespace cricket {
 
-namespace {
-
-MediaEngineInterface* CreateWebRtcMediaEngine(
-    webrtc::AudioDeviceModule* adm,
-    const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
-        audio_encoder_factory,
-    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
-        audio_decoder_factory,
-    WebRtcVideoEncoderFactory* video_encoder_factory,
-    WebRtcVideoDecoderFactory* video_decoder_factory,
-    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
-    rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing) {
+class WebRtcMediaEngine2
 #ifdef HAVE_WEBRTC_VIDEO
-  typedef WebRtcVideoEngine VideoEngine;
-  std::tuple<std::unique_ptr<WebRtcVideoEncoderFactory>,
-             std::unique_ptr<WebRtcVideoDecoderFactory>>
-      video_args(
-          (std::unique_ptr<WebRtcVideoEncoderFactory>(video_encoder_factory)),
-          (std::unique_ptr<WebRtcVideoDecoderFactory>(video_decoder_factory)));
+    : public CompositeMediaEngine<WebRtcVoiceEngine, WebRtcVideoEngine2> {
 #else
-  typedef NullWebRtcVideoEngine VideoEngine;
-  std::tuple<> video_args;
+    : public CompositeMediaEngine<WebRtcVoiceEngine, NullWebRtcVideoEngine> {
 #endif
-  return new CompositeMediaEngine<WebRtcVoiceEngine, VideoEngine>(
-      std::forward_as_tuple(adm, audio_encoder_factory, audio_decoder_factory,
-                            audio_mixer, audio_processing),
-      std::move(video_args));
-}
+ public:
+  WebRtcMediaEngine2(webrtc::AudioDeviceModule* adm,
+                     const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
+                         audio_decoder_factory,
+                     WebRtcVideoEncoderFactory* video_encoder_factory,
+                     WebRtcVideoDecoderFactory* video_decoder_factory,
+                     rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer)
+#ifdef HAVE_WEBRTC_VIDEO
+      : CompositeMediaEngine<WebRtcVoiceEngine, WebRtcVideoEngine2>(
+            adm,
+            audio_decoder_factory,
+            audio_mixer){
+#else
+      : CompositeMediaEngine<WebRtcVoiceEngine, NullWebRtcVideoEngine>(
+            adm,
+            audio_decoder_factory,
+            audio_mixer) {
+#endif
+            video_.SetExternalDecoderFactory(video_decoder_factory);
+    video_.SetExternalEncoderFactory(video_encoder_factory);
+  }
+};
 
 }  
 
+cricket::MediaEngineInterface* CreateWebRtcMediaEngine(
+    webrtc::AudioDeviceModule* adm,
+    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
+        audio_decoder_factory,
+    cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
+    cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
+    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer) {
+  return new cricket::WebRtcMediaEngine2(adm, audio_decoder_factory,
+                                         video_encoder_factory,
+                                         video_decoder_factory, audio_mixer);
+}
+
+void DestroyWebRtcMediaEngine(cricket::MediaEngineInterface* media_engine) {
+  delete media_engine;
+}
+
+namespace cricket {
+
+
+
+
 MediaEngineInterface* WebRtcMediaEngineFactory::Create(
     webrtc::AudioDeviceModule* adm,
-    const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
-        audio_encoder_factory,
+    WebRtcVideoEncoderFactory* video_encoder_factory,
+    WebRtcVideoDecoderFactory* video_decoder_factory) {
+  return CreateWebRtcMediaEngine(
+      adm, webrtc::CreateBuiltinAudioDecoderFactory(), video_encoder_factory,
+      video_decoder_factory, nullptr);
+}
+
+MediaEngineInterface* WebRtcMediaEngineFactory::Create(
+    webrtc::AudioDeviceModule* adm,
     const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
         audio_decoder_factory,
     WebRtcVideoEncoderFactory* video_encoder_factory,
     WebRtcVideoDecoderFactory* video_decoder_factory) {
-  return CreateWebRtcMediaEngine(
-      adm, audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
-      video_decoder_factory, nullptr, webrtc::AudioProcessing::Create());
+  return CreateWebRtcMediaEngine(adm, audio_decoder_factory,
+                                 video_encoder_factory, video_decoder_factory,
+                                 nullptr);
 }
+
+
 
 MediaEngineInterface* WebRtcMediaEngineFactory::Create(
     webrtc::AudioDeviceModule* adm,
-    const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
-        audio_encoder_factory,
     const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
         audio_decoder_factory,
     WebRtcVideoEncoderFactory* video_encoder_factory,
     WebRtcVideoDecoderFactory* video_decoder_factory,
-    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
-    rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing) {
-  return CreateWebRtcMediaEngine(
-      adm, audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
-      video_decoder_factory, audio_mixer, audio_processing);
-}
-
-std::unique_ptr<MediaEngineInterface> WebRtcMediaEngineFactory::Create(
-    rtc::scoped_refptr<webrtc::AudioDeviceModule> adm,
-    rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory,
-    rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory,
-    std::unique_ptr<webrtc::VideoEncoderFactory> video_encoder_factory,
-    std::unique_ptr<webrtc::VideoDecoderFactory> video_decoder_factory,
-    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
-    rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing) {
-#ifdef HAVE_WEBRTC_VIDEO
-  typedef WebRtcVideoEngine VideoEngine;
-  std::tuple<std::unique_ptr<webrtc::VideoEncoderFactory>,
-             std::unique_ptr<webrtc::VideoDecoderFactory>>
-      video_args(std::move(video_encoder_factory),
-                 std::move(video_decoder_factory));
-#else
-  typedef NullWebRtcVideoEngine VideoEngine;
-  std::tuple<> video_args;
-#endif
-  return std::unique_ptr<MediaEngineInterface>(
-      new CompositeMediaEngine<WebRtcVoiceEngine, VideoEngine>(
-          std::forward_as_tuple(adm, audio_encoder_factory,
-                                audio_decoder_factory, audio_mixer,
-                                audio_processing),
-          std::move(video_args)));
+    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer) {
+  return CreateWebRtcMediaEngine(adm, audio_decoder_factory,
+                                 video_encoder_factory, video_decoder_factory,
+                                 audio_mixer);
 }
 
 namespace {
 
 void DiscardRedundantExtensions(
     std::vector<webrtc::RtpExtension>* extensions,
-    rtc::ArrayView<const char* const> extensions_decreasing_prio) {
+    rtc::ArrayView<const char*> extensions_decreasing_prio) {
   RTC_DCHECK(extensions);
   bool found = false;
   for (const char* uri : extensions_decreasing_prio) {
@@ -138,12 +134,11 @@ bool ValidateRtpExtensions(
   bool id_used[14] = {false};
   for (const auto& extension : extensions) {
     if (extension.id <= 0 || extension.id >= 15) {
-      RTC_LOG(LS_ERROR) << "Bad RTP extension ID: " << extension.ToString();
+      LOG(LS_ERROR) << "Bad RTP extension ID: " << extension.ToString();
       return false;
     }
     if (id_used[extension.id - 1]) {
-      RTC_LOG(LS_ERROR) << "Duplicate RTP extension ID: "
-                        << extension.ToString();
+      LOG(LS_ERROR) << "Duplicate RTP extension ID: " << extension.ToString();
       return false;
     }
     id_used[extension.id - 1] = true;
@@ -164,32 +159,27 @@ std::vector<webrtc::RtpExtension> FilterRtpExtensions(
     if (supported(extension.uri)) {
       result.push_back(extension);
     } else {
-      RTC_LOG(LS_WARNING) << "Unsupported RTP extension: "
-                          << extension.ToString();
+      LOG(LS_WARNING) << "Unsupported RTP extension: " << extension.ToString();
     }
   }
 
   
   
-  
   std::sort(result.begin(), result.end(),
             [](const webrtc::RtpExtension& rhs,
-               const webrtc::RtpExtension& lhs) {
-                return rhs.encrypt == lhs.encrypt ? rhs.uri < lhs.uri
-                                                  : rhs.encrypt > lhs.encrypt;
-              });
+               const webrtc::RtpExtension& lhs) { return rhs.uri < lhs.uri; });
 
   
   if (filter_redundant_extensions) {
     auto it = std::unique(
         result.begin(), result.end(),
         [](const webrtc::RtpExtension& rhs, const webrtc::RtpExtension& lhs) {
-          return rhs.uri == lhs.uri && rhs.encrypt == lhs.encrypt;
+          return rhs.uri == lhs.uri;
         });
     result.erase(it, result.end());
 
     
-    static const char* const kBweExtensionPriorities[] = {
+    static const char* kBweExtensionPriorities[] = {
         webrtc::RtpExtension::kTransportSequenceNumberUri,
         webrtc::RtpExtension::kAbsSendTimeUri,
         webrtc::RtpExtension::kTimestampOffsetUri};

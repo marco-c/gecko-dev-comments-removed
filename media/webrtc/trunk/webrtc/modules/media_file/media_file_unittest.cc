@@ -8,10 +8,10 @@
 
 
 
-#include "modules/media_file/media_file.h"
-#include "system_wrappers/include/sleep.h"
-#include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "webrtc/modules/media_file/media_file.h"
+#include "webrtc/system_wrappers/include/sleep.h"
+#include "webrtc/test/gtest.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 class MediaFileTest : public testing::Test {
  protected:

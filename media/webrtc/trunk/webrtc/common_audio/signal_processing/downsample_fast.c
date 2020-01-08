@@ -8,10 +8,10 @@
 
 
 
-#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
-#include "rtc_base/checks.h"
-#include "rtc_base/sanitizer.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/sanitizer.h"
 
 
 

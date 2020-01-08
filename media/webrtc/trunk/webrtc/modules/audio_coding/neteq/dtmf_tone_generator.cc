@@ -28,10 +28,10 @@
 
 
 
-#include "modules/audio_coding/neteq/dtmf_tone_generator.h"
+#include "webrtc/modules/audio_coding/neteq/dtmf_tone_generator.h"
 
-#include "rtc_base/arraysize.h"
-#include "rtc_base/checks.h"
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 

@@ -8,24 +8,21 @@
 
 
 
-#ifndef MODULES_PACING_BITRATE_PROBER_H_
-#define MODULES_PACING_BITRATE_PROBER_H_
+#ifndef WEBRTC_MODULES_PACING_BITRATE_PROBER_H_
+#define WEBRTC_MODULES_PACING_BITRATE_PROBER_H_
 
 #include <queue>
 
-#include "modules/include/module_common_types.h"
-#include "rtc_base/basictypes.h"
-#include "typedefs.h"  
+#include "webrtc/base/basictypes.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
-class RtcEventLog;
 
 
 
 class BitrateProber {
  public:
   BitrateProber();
-  explicit BitrateProber(RtcEventLog* event_log);
 
   void SetEnabled(bool enable);
 
@@ -41,14 +38,14 @@ class BitrateProber {
 
   
   
-  void CreateProbeCluster(int bitrate_bps, int64_t now_ms);
+  void CreateProbeCluster(int bitrate_bps);
 
   
   
   int TimeUntilNextProbe(int64_t now_ms);
 
   
-  PacedPacketInfo CurrentCluster() const;
+  int CurrentClusterId() const;
 
   
   
@@ -77,34 +74,27 @@ class BitrateProber {
   
   
   struct ProbeCluster {
-    PacedPacketInfo pace_info;
-
+    int min_probes = 0;
     int sent_probes = 0;
+    int min_bytes = 0;
     int sent_bytes = 0;
-    int64_t time_created_ms = -1;
-    int64_t time_started_ms = -1;
-    int retries = 0;
+    int bitrate_bps = 0;
+    int id = -1;
   };
 
   
-  void ResetState(int64_t now_ms);
-
-  int64_t GetNextProbeTime(const ProbeCluster& cluster);
+  void ResetState();
 
   ProbingState probing_state_;
-
   
   
   
   std::queue<ProbeCluster> clusters_;
-
   
-  int64_t next_probe_time_ms_;
-
+  size_t probe_size_last_sent_;
+  
+  int64_t time_last_probe_sent_ms_;
   int next_cluster_id_;
-  RtcEventLog* const event_log_;
 };
-
 }  
-
 #endif  

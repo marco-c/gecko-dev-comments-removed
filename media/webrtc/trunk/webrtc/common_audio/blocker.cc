@@ -8,11 +8,11 @@
 
 
 
-#include "common_audio/blocker.h"
+#include "webrtc/common_audio/blocker.h"
 
 #include <string.h>
 
-#include "rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 namespace {
 

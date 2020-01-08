@@ -8,13 +8,13 @@
 
 
 
-#ifndef MEDIA_ENGINE_NULLWEBRTCVIDEOENGINE_H_
-#define MEDIA_ENGINE_NULLWEBRTCVIDEOENGINE_H_
+#ifndef WEBRTC_MEDIA_ENGINE_NULLWEBRTCVIDEOENGINE_H_
+#define WEBRTC_MEDIA_ENGINE_NULLWEBRTCVIDEOENGINE_H_
 
 #include <vector>
 
-#include "media/base/mediachannel.h"
-#include "media/base/mediaengine.h"
+#include "webrtc/media/base/mediachannel.h"
+#include "webrtc/media/base/mediaengine.h"
 
 namespace webrtc {
 
@@ -33,15 +33,31 @@ class WebRtcVideoEncoderFactory;
 
 class NullWebRtcVideoEngine {
  public:
-  std::vector<VideoCodec> codecs() const { return std::vector<VideoCodec>(); }
+  NullWebRtcVideoEngine() {}
+  ~NullWebRtcVideoEngine() {}
 
-  RtpCapabilities GetCapabilities() const { return RtpCapabilities(); }
+  void SetExternalDecoderFactory(WebRtcVideoDecoderFactory* decoder_factory) {}
+  void SetExternalEncoderFactory(WebRtcVideoEncoderFactory* encoder_factory) {}
+
+  void Init() {}
+
+  const std::vector<VideoCodec>& codecs() {
+    return codecs_;
+  }
+
+  RtpCapabilities GetCapabilities() {
+    RtpCapabilities capabilities;
+    return capabilities;
+  }
 
   VideoMediaChannel* CreateChannel(webrtc::Call* call,
                                    const MediaConfig& config,
                                    const VideoOptions& options) {
     return nullptr;
   }
+
+ private:
+  std::vector<VideoCodec> codecs_;
 };
 
 }  

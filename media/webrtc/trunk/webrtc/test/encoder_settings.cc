@@ -7,16 +7,15 @@
 
 
 
-#include "test/encoder_settings.h"
+#include "webrtc/test/encoder_settings.h"
 
 #include <algorithm>
 #include <string>
 
-#include "modules/video_coding/codecs/h264/include/h264.h"
-#include "modules/video_coding/codecs/vp8/include/vp8.h"
-#include "modules/video_coding/codecs/vp9/include/vp9.h"
-#include "rtc_base/refcountedobject.h"
-#include "test/fake_decoder.h"
+#include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
+#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
+#include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
+#include "webrtc/test/fake_decoder.h"
 
 namespace webrtc {
 namespace test {
@@ -25,7 +24,7 @@ const size_t DefaultVideoStreamFactory::kMaxNumberOfStreams;
 const int DefaultVideoStreamFactory::kMaxBitratePerStream[] = {150000, 450000,
                                                                1500000};
 const int DefaultVideoStreamFactory::kDefaultMinBitratePerStream[] = {
-    30000, 200000, 700000};
+    50000, 200000, 700000};
 
 
 std::vector<VideoStream> CreateVideoStreams(
@@ -88,11 +87,11 @@ VideoReceiveStream::Decoder CreateMatchingDecoder(
   decoder.payload_type = encoder_settings.payload_type;
   decoder.payload_name = encoder_settings.payload_name;
   if (encoder_settings.payload_name == "H264") {
-    decoder.decoder = H264Decoder::Create().release();
+    decoder.decoder = H264Decoder::Create();
   } else if (encoder_settings.payload_name == "VP8") {
-    decoder.decoder = VP8Decoder::Create().release();
+    decoder.decoder = VP8Decoder::Create();
   } else if (encoder_settings.payload_name == "VP9") {
-    decoder.decoder = VP9Decoder::Create().release();
+    decoder.decoder = VP9Decoder::Create();
   } else {
     decoder.decoder = new FakeDecoder();
   }

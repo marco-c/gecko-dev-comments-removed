@@ -8,10 +8,10 @@
 
 
 
-#ifndef TEST_GTEST_H_
-#define TEST_GTEST_H_
+#ifndef WEBRTC_TEST_GTEST_H_
+#define WEBRTC_TEST_GTEST_H_
 
-#include "rtc_base/ignore_wundef.h"
+#include "webrtc/base/ignore_wundef.h"
 
 RTC_PUSH_IGNORING_WUNDEF()
 #include "testing/gtest/include/gtest/gtest.h"

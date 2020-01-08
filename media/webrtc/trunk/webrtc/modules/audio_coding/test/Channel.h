@@ -8,15 +8,15 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_TEST_CHANNEL_H_
-#define MODULES_AUDIO_CODING_TEST_CHANNEL_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_TEST_CHANNEL_H_
+#define WEBRTC_MODULES_AUDIO_CODING_TEST_CHANNEL_H_
 
 #include <stdio.h>
 
-#include "modules/audio_coding/include/audio_coding_module.h"
-#include "modules/include/module_common_types.h"
-#include "rtc_base/criticalsection.h"
-#include "typedefs.h"  
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

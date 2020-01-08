@@ -12,11 +12,6 @@
 
 #import <WebRTC/RTCMacros.h>
 
-typedef NS_ENUM(NSUInteger, RTCTlsCertPolicy) {
-  RTCTlsCertPolicySecure,
-  RTCTlsCertPolicyInsecureNoCheck
-};
-
 NS_ASSUME_NONNULL_BEGIN
 
 RTC_EXPORT
@@ -31,27 +26,6 @@ RTC_EXPORT
 
 @property(nonatomic, readonly, nullable) NSString *credential;
 
-
-
-
-@property(nonatomic, readonly) RTCTlsCertPolicy tlsCertPolicy;
-
-
-
-
-
-
-@property(nonatomic, readonly, nullable) NSString *hostname;
-
-
-@property(nonatomic, readonly) NSArray<NSString *> *tlsAlpnProtocols;
-
-
-
-
-
-@property(nonatomic, readonly) NSArray<NSString *> *tlsEllipticCurves;
-
 - (nonnull instancetype)init NS_UNAVAILABLE;
 
 
@@ -63,50 +37,7 @@ RTC_EXPORT
 
 - (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings
                           username:(nullable NSString *)username
-                        credential:(nullable NSString *)credential;
-
-
-
-
-
-- (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings
-                          username:(nullable NSString *)username
                         credential:(nullable NSString *)credential
-                     tlsCertPolicy:(RTCTlsCertPolicy)tlsCertPolicy;
-
-
-
-
-
-- (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings
-                          username:(nullable NSString *)username
-                        credential:(nullable NSString *)credential
-                     tlsCertPolicy:(RTCTlsCertPolicy)tlsCertPolicy
-                          hostname:(nullable NSString *)hostname;
-
-
-
-
-
-- (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings
-                          username:(nullable NSString *)username
-                        credential:(nullable NSString *)credential
-                     tlsCertPolicy:(RTCTlsCertPolicy)tlsCertPolicy
-                          hostname:(nullable NSString *)hostname
-                  tlsAlpnProtocols:(NSArray<NSString *> *)tlsAlpnProtocols;
-
-
-
-
-
-
-- (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings
-                          username:(nullable NSString *)username
-                        credential:(nullable NSString *)credential
-                     tlsCertPolicy:(RTCTlsCertPolicy)tlsCertPolicy
-                          hostname:(nullable NSString *)hostname
-                  tlsAlpnProtocols:(nullable NSArray<NSString *> *)tlsAlpnProtocols
-                 tlsEllipticCurves:(nullable NSArray<NSString *> *)tlsEllipticCurves
     NS_DESIGNATED_INITIALIZER;
 
 @end

@@ -8,9 +8,9 @@
 
 
 
-#include "modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
 
-#include "modules/audio_coding/codecs/isac/audio_encoder_isac_t_impl.h"
+#include "webrtc/modules/audio_coding/codecs/isac/audio_encoder_isac_t_impl.h"
 
 namespace webrtc {
 

@@ -8,11 +8,11 @@
 
 
 
-#ifndef MODULES_AUDIO_DEVICE_IOS_AUDIO_SESSION_OBSERVER_H_
-#define MODULES_AUDIO_DEVICE_IOS_AUDIO_SESSION_OBSERVER_H_
+#ifndef WEBRTC_MODULES_AUDIO_DEVICE_IOS_AUDIO_SESSION_OBSERVER_H_
+#define WEBRTC_MODULES_AUDIO_DEVICE_IOS_AUDIO_SESSION_OBSERVER_H_
 
-#include "rtc_base/asyncinvoker.h"
-#include "rtc_base/thread.h"
+#include "webrtc/base/asyncinvoker.h"
+#include "webrtc/base/thread.h"
 
 namespace webrtc {
 
@@ -30,8 +30,6 @@ class AudioSessionObserver {
 
   
   virtual void OnCanPlayOrRecordChange(bool can_play_or_record) = 0;
-
-  virtual void OnChangedOutputVolume() = 0;
 
  protected:
   virtual ~AudioSessionObserver() {}

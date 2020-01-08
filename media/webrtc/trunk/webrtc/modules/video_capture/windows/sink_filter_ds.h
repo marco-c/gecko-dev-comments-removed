@@ -8,10 +8,10 @@
 
 
 
-#ifndef MODULES_VIDEO_CAPTURE_MAIN_SOURCE_WINDOWS_SINK_FILTER_DS_H_
-#define MODULES_VIDEO_CAPTURE_MAIN_SOURCE_WINDOWS_SINK_FILTER_DS_H_
+#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_WINDOWS_SINK_FILTER_DS_H_
+#define WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_WINDOWS_SINK_FILTER_DS_H_
 
-#include "modules/video_capture/video_capture_defines.h"
+#include "webrtc/modules/video_capture/video_capture_defines.h"
 #include "BaseInputPin.h"
 #include "BaseFilter.h"
 #include "MediaType.h"
@@ -69,6 +69,7 @@ public:
     
     void LockReceive()  { m_crtRecv.Enter();}
     void UnlockReceive() {m_crtRecv.Leave();}
+
     
     void LockFilter() {m_crtFilter.Enter();}
     void UnlockFilter() { m_crtFilter.Leave(); }

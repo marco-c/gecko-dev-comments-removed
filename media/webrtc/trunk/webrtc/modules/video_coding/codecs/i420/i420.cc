@@ -8,14 +8,13 @@
 
 
 
-#include "modules/video_coding/codecs/i420/include/i420.h"
+#include "webrtc/modules/video_coding/codecs/i420/include/i420.h"
 
 #include <limits>
 #include <string>
 
-#include "api/video/i420_buffer.h"
-#include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "libyuv.h"  
+#include "webrtc/api/video/i420_buffer.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 
 namespace {
 const size_t kI420HeaderSize = 4;
@@ -58,9 +57,9 @@ int I420Encoder::InitEncode(const VideoCodec* codecSettings,
     _encodedImage._buffer = NULL;
     _encodedImage._size = 0;
   }
-  const size_t newSize = CalcBufferSize(VideoType::kI420, codecSettings->width,
-                                        codecSettings->height) +
-                         kI420HeaderSize;
+  const size_t newSize =
+      CalcBufferSize(kI420, codecSettings->width, codecSettings->height) +
+      kI420HeaderSize;
   uint8_t* newBuffer = new uint8_t[newSize];
   if (newBuffer == NULL) {
     return WEBRTC_VIDEO_CODEC_MEMORY;
@@ -97,9 +96,9 @@ int I420Encoder::Encode(const VideoFrame& inputImage,
     return WEBRTC_VIDEO_CODEC_ERR_SIZE;
   }
 
-  size_t req_length = CalcBufferSize(VideoType::kI420, inputImage.width(),
-                                     inputImage.height()) +
-                      kI420HeaderSize;
+  size_t req_length =
+      CalcBufferSize(kI420, inputImage.width(), inputImage.height()) +
+      kI420HeaderSize;
   if (_encodedImage._size > req_length) {
     
     delete[] _encodedImage._buffer;
@@ -194,27 +193,19 @@ int I420Decoder::Decode(const EncodedImage& inputImage,
   _height = height;
 
   
-  size_t req_length =
-      CalcBufferSize(VideoType::kI420, _width, _height) + kI420HeaderSize;
+  size_t req_length = CalcBufferSize(kI420, _width, _height) + kI420HeaderSize;
 
   if (req_length > inputImage._length) {
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   
+  int half_width = (_width + 1) / 2;
   rtc::scoped_refptr<webrtc::I420Buffer> frame_buffer =
-      I420Buffer::Create(_width, _height);
+      I420Buffer::Create(_width, _height, _width, half_width, half_width);
 
   
-  int y_stride = 16 * ((_width + 15) / 16);
-  int uv_stride = 16 * ((_width + 31) / 32);
-  int y_size = y_stride * height;
-  int u_size = uv_stride * frame_buffer->ChromaHeight();
-  int ret = libyuv::I420Copy(
-      buffer, y_stride, buffer + y_size, uv_stride, buffer + y_size + u_size,
-      uv_stride, frame_buffer.get()->MutableDataY(),
-      frame_buffer.get()->StrideY(), frame_buffer.get()->MutableDataU(),
-      frame_buffer.get()->StrideU(), frame_buffer.get()->MutableDataV(),
-      frame_buffer.get()->StrideV(), _width, _height);
+  int ret = ConvertToI420(kI420, buffer, 0, 0, _width, _height, 0,
+                          kVideoRotation_0, frame_buffer.get());
   if (ret < 0) {
     return WEBRTC_VIDEO_CODEC_MEMORY;
   }

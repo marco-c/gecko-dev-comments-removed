@@ -10,11 +10,12 @@
 
 #include <memory>
 
-#include "modules/desktop_capture/desktop_capturer.h"
-#include "modules/desktop_capture/desktop_capture_options.h"
-#include "modules/desktop_capture/desktop_frame.h"
-#include "modules/desktop_capture/desktop_region.h"
-#include "test/gtest.h"
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
+#include "webrtc/modules/desktop_capture/desktop_capture_options.h"
+#include "webrtc/modules/desktop_capture/desktop_frame.h"
+#include "webrtc/modules/desktop_capture/desktop_region.h"
+#include "webrtc/system_wrappers/include/logging.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 
@@ -24,7 +25,6 @@ class WindowCapturerTest : public testing::Test,
   void SetUp() override {
     capturer_ = DesktopCapturer::CreateWindowCapturer(
         DesktopCaptureOptions::CreateDefault());
-    RTC_DCHECK(capturer_);
   }
 
   void TearDown() override {}
@@ -52,19 +52,13 @@ TEST_F(WindowCapturerTest, Enumerate) {
 }
 
 
-#if defined(WEBRTC_LINUX)
-#define MAYBE_Capture DISABLED_Capture
-#else
-#define MAYBE_Capture Capture
-#endif
 
 
 
 
 
 
-
-TEST_F(WindowCapturerTest, MAYBE_Capture) {
+TEST_F(WindowCapturerTest, Capture) {
   DesktopCapturer::SourceList sources;
   capturer_->Start(this);
   EXPECT_TRUE(capturer_->GetSourceList(&sources));

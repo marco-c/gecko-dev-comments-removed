@@ -8,10 +8,10 @@
 
 
 
-#include "video/encoder_rtcp_feedback.h"
+#include "webrtc/video/encoder_rtcp_feedback.h"
 
-#include "rtc_base/checks.h"
-#include "video/video_stream_encoder.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/video/vie_encoder.h"
 
 static const int kMinKeyFrameRequestIntervalMs = 300;
 
@@ -19,10 +19,10 @@ namespace webrtc {
 
 EncoderRtcpFeedback::EncoderRtcpFeedback(Clock* clock,
                                          const std::vector<uint32_t>& ssrcs,
-                                         VideoStreamEncoder* encoder)
+                                         ViEEncoder* encoder)
     : clock_(clock),
       ssrcs_(ssrcs),
-      video_stream_encoder_(encoder),
+      vie_encoder_(encoder),
       time_last_intra_request_ms_(ssrcs.size(), -1) {
   RTC_DCHECK(!ssrcs.empty());
 }
@@ -60,7 +60,18 @@ void EncoderRtcpFeedback::OnReceivedIntraFrameRequest(uint32_t ssrc) {
     time_last_intra_request_ms_[index] = now_ms;
   }
 
-  video_stream_encoder_->OnReceivedIntraFrameRequest(index);
+  vie_encoder_->OnReceivedIntraFrameRequest(index);
 }
 
+void EncoderRtcpFeedback::OnReceivedSLI(uint32_t ssrc, uint8_t picture_id) {
+  RTC_DCHECK(HasSsrc(ssrc));
+
+  vie_encoder_->OnReceivedSLI(picture_id);
+}
+
+void EncoderRtcpFeedback::OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id) {
+  RTC_DCHECK(HasSsrc(ssrc));
+
+  vie_encoder_->OnReceivedRPSI(picture_id);
+}
 }  
