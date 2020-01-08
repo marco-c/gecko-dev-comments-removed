@@ -1095,7 +1095,6 @@ protected:
   virtual ~nsGlobalWindowInner();
 
   void FreeInnerObjects();
-  nsGlobalWindowInner *CallerInnerWindow();
 
   
   
