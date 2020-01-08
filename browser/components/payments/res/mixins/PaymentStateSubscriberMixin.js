@@ -19,10 +19,14 @@ export let requestStore = new PaymentsStore({
     
     selectedStateKey: "selectedPaymentCard",
   },
-  "address-page": {
+  "shipping-address-page": {
     guid: null,
-    selectedStateKey: null,
-    title: "",
+  },
+  "payer-address-page": {
+    guid: null,
+  },
+  "billing-address-page": {
+    guid: null,
   },
   "payment-summary": {
   },
