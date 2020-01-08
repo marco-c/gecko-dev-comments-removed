@@ -4,6 +4,8 @@
 
 "use strict";
 
+const { getFormatStr, getStr } = require("./l10n");
+
 
 
 
@@ -54,5 +56,39 @@ function getRuleHash(ruleData) {
   return `${atRules}${selector}${ruleIndex}`;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getSourceForDisplay(source) {
+  let href;
+
+  switch (source.type) {
+    case "element":
+      href = getStr("changes.elementStyleLabel");
+      break;
+    case "stylesheet":
+      if (source.href) {
+        const url = new URL(source.href);
+        href = url.pathname.substring(url.pathname.lastIndexOf("/") + 1);
+      } else {
+        href = getFormatStr("changes.inlineStyleSheetLabel", `#${source.index}`);
+      }
+      break;
+  }
+
+  return href;
+}
+
+module.exports.getSourceForDisplay = getSourceForDisplay;
 module.exports.getSourceHash = getSourceHash;
 module.exports.getRuleHash = getRuleHash;
