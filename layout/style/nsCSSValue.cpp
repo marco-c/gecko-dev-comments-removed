@@ -1405,15 +1405,7 @@ css::ImageValue::LoadImage(nsIDocument* aDocument)
                          mCORSMode);
 
   
-  
-  imgRequestProxy* request =
-    loadingDoc->StyleImageLoader()->RegisterCSSImage(this);
-
-  if (aDocument != loadingDoc) {
-    request = aDocument->StyleImageLoader()->RegisterCSSImage(this);
-  }
-
-  return request;
+  return aDocument->StyleImageLoader()->RegisterCSSImage(this);
 }
 
 css::ImageValue::~ImageValue()
