@@ -45,53 +45,56 @@ ContentDispatchChooser.prototype =
         window = aWindowContext.getInterface(Ci.nsIDOMWindow);
     } catch (e) {  }
 
-    
-    
-    aHandler = this.protoSvc.getProtocolHandlerInfoFromOS(aURI.spec, {});
+    if (!aURI.schemeIs("content")) {
 
+      
+      
+      aHandler = this.protoSvc.getProtocolHandlerInfoFromOS(aURI.spec, {});
+
+      if (aHandler.possibleApplicationHandlers.length > 1) {
+
+        
+        
+        aHandler.launchWithURI(aURI, aWindowContext);
+        this._closeBlankWindow(window);
+        return;
+      }
+    }
     
     
-    if (aHandler.possibleApplicationHandlers.length > 1) {
-      aHandler.launchWithURI(aURI, aWindowContext);
+    
+    let win = this._getChromeWin();
+    if (!win) {
+      return;
+    }
+
+    let msg = {
+      type: "Intent:OpenNoHandler",
+      uri: aURI.spec,
+    };
+
+    EventDispatcher.instance.sendRequestForResult(msg).then(() => {
+      
       this._closeBlankWindow(window);
 
-    } else {
-      
-      
-      
-      let win = this._getChromeWin();
-      if (!win) {
+    }, (data) => {
+      if (data.isFallback) {
+        
+        window.location.href = data.uri;
         return;
       }
 
-      let msg = {
-        type: "Intent:OpenNoHandler",
-        uri: aURI.spec,
-      };
-
-      EventDispatcher.instance.sendRequestForResult(msg).then(() => {
-        
+      
+      
+      
+      let dwu = window.windowUtils;
+      let millis = dwu.millisSinceLastUserInput;
+      if (millis < 0 || millis >= 1000) {
+        window.docShell.displayLoadError(Cr.NS_ERROR_UNKNOWN_PROTOCOL, aURI, null);
+      } else {
         this._closeBlankWindow(window);
-
-      }, (data) => {
-        if (data.isFallback) {
-          
-          window.location.href = data.uri;
-          return;
-        }
-
-        
-        
-        
-        let dwu = window.windowUtils;
-        let millis = dwu.millisSinceLastUserInput;
-        if (millis < 0 || millis >= 1000) {
-          window.docShell.displayLoadError(Cr.NS_ERROR_UNKNOWN_PROTOCOL, aURI, null);
-        } else {
-          this._closeBlankWindow(window);
-        }
-      });
-    }
+      }
+    });
   },
 };
 
