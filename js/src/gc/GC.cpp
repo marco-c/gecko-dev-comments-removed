@@ -8927,7 +8927,7 @@ JS_PUBLIC_API bool js::gc::detail::CellIsMarkedGrayIfKnown(const Cell* cell) {
 
 #ifdef DEBUG
 
-JS_PUBLIC_API bool js::gc::detail::CellIsNotGray(const Cell* cell) {
+JS_PUBLIC_API void js::gc::detail::AssertCellIsNotGray(const Cell* cell) {
   
   
   
@@ -8935,7 +8935,7 @@ JS_PUBLIC_API bool js::gc::detail::CellIsNotGray(const Cell* cell) {
   
 
   if (!CanCheckGrayBits(cell)) {
-    return true;
+    return;
   }
 
   
@@ -8943,7 +8943,7 @@ JS_PUBLIC_API bool js::gc::detail::CellIsNotGray(const Cell* cell) {
   MOZ_ASSERT(!JS::RuntimeHeapIsCycleCollecting());
 
   auto tc = &cell->asTenured();
-  return !detail::CellIsMarkedGray(tc);
+  MOZ_ASSERT(!detail::CellIsMarkedGray(tc));
 }
 
 extern JS_PUBLIC_API bool js::gc::detail::ObjectIsMarkedBlack(

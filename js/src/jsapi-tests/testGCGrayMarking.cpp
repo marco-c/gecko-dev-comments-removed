@@ -494,11 +494,11 @@ bool TestCCWs() {
   
   
   
+  
   grayRoots.grayRoot1.get();
   CHECK(IsMarkedBlack(wrapper));
   CHECK(IsMarkedGray(target));
   CHECK(!JS::ObjectIsMarkedGray(target));
-  MOZ_ASSERT(!JS::ObjectIsNotGray(target));
 
   
   JS::FinishIncrementalGC(cx, JS::gcreason::API);

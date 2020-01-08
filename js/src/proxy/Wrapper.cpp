@@ -287,12 +287,6 @@ JSObject* Wrapper::weakmapKeyDelegate(JSObject* proxy) const {
 
 JSObject* Wrapper::New(JSContext* cx, JSObject* obj, const Wrapper* handler,
                        const WrapperOptions& options) {
-  
-  
-  mozilla::Maybe<AutoRealmUnchecked> ar;
-  if (handler->isCrossCompartmentWrapper()) {
-    ar.emplace(cx, cx->compartment()->realmForNewCCW());
-  }
   RootedValue priv(cx, ObjectValue(*obj));
   return NewProxyObject(cx, handler, priv, options.proto(), options);
 }
@@ -314,12 +308,14 @@ JSObject* Wrapper::wrappedObject(JSObject* wrapper) {
     MOZ_ASSERT_IF(IsCrossCompartmentWrapper(wrapper),
                   !IsCrossCompartmentWrapper(target));
 
+#ifdef DEBUG
     
     
-    MOZ_ASSERT_IF(
-        !wrapper->runtimeFromMainThread()->gc.isIncrementalGCInProgress() &&
-            wrapper->isMarkedBlack(),
-        JS::ObjectIsNotGray(target));
+    if (!wrapper->runtimeFromMainThread()->gc.isIncrementalGCInProgress() &&
+        wrapper->isMarkedBlack()) {
+      JS::AssertObjectIsNotGray(target);
+    }
+#endif
 
     
     
