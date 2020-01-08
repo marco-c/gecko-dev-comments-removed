@@ -2089,29 +2089,21 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
                 return decimalNumber(unit, start, numStart, modifier, ttp);
             }
 
-            
-            
-            
-            if (MOZ_UNLIKELY(unit == EOF)) {
-                
-                
-                
-                ungetCodeUnit(unit);
-            } else if (MOZ_LIKELY(isAsciiCodePoint(unit))) {
-                ungetCodeUnit(unit);
+            ungetCodeUnit(unit);
 
+            
+            
+            
+            if (MOZ_LIKELY(isAsciiCodePoint(unit))) {
                 if (unicode::IsIdentifierStart(char16_t(unit))) {
                     error(JSMSG_IDSTART_AFTER_NUMBER);
                     return badToken();
                 }
-            } else {
-                int32_t codePoint;
-                if (!getNonAsciiCodePoint(unit, &codePoint))
-                    return badToken();
-
-                ungetNonAsciiNormalizedCodePoint(codePoint);
-
-                if (unicode::IsIdentifierStart(uint32_t(codePoint))) {
+            } else if (MOZ_LIKELY(unit != EOF)) {
+                
+                
+                PeekedCodePoint<CharT> peeked = this->sourceUnits.peekCodePoint();
+                if (!peeked.isNone() && unicode::IsIdentifierStart(peeked.codePoint())) {
                     error(JSMSG_IDSTART_AFTER_NUMBER);
                     return badToken();
                 }
