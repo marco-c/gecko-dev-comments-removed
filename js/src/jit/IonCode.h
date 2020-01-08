@@ -259,10 +259,6 @@ struct IonScript
     uint32_t constantEntries_;
 
     
-    uint32_t sharedStubList_;
-    uint32_t sharedStubEntries_;
-
-    
     uint32_t invalidationCount_;
 
     
@@ -336,7 +332,7 @@ struct IonScript
                           size_t constants, size_t safepointIndexEntries,
                           size_t osiIndexEntries, size_t icEntries,
                           size_t runtimeSize, size_t safepointsSize,
-                          size_t sharedStubEntries, OptimizationLevel optimizationLevel);
+                          OptimizationLevel optimizationLevel);
     static void Trace(JSTracer* trc, IonScript* script);
     static void Destroy(FreeOp* fop, IonScript* script);
 
@@ -491,12 +487,6 @@ struct IonScript
     size_t numICs() const {
         return icEntries_;
     }
-    IonICEntry* sharedStubList() {
-        return (IonICEntry*) &bottomBuffer()[sharedStubList_];
-    }
-    size_t numSharedStubs() const {
-        return sharedStubEntries_;
-    }
     size_t runtimeSize() const {
         return runtimeSize_;
     }
@@ -559,7 +549,6 @@ struct IonScript
         return &fallbackStubSpace_;
     }
     void adoptFallbackStubs(FallbackICStubSpace* stubSpace);
-    void purgeOptimizedStubs(Zone* zone);
 
     enum ShouldIncreaseAge {
         IncreaseAge = true,
