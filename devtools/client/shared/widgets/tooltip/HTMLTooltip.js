@@ -330,7 +330,6 @@ function HTMLTooltip(toolboxDoc, {
   this._position = null;
 
   this._onClick = this._onClick.bind(this);
-  this._onMouseup = this._onMouseup.bind(this);
   this._onXulPanelHidden = this._onXulPanelHidden.bind(this);
 
   this._toggle = new TooltipToggle(this);
@@ -457,7 +456,6 @@ HTMLTooltip.prototype = {
       
       this.topWindow = this._getTopWindow();
       this.topWindow.addEventListener("click", this._onClick, true);
-      this.topWindow.addEventListener("mouseup", this._onMouseup, true);
       this.emit("shown");
     }, 0);
   },
@@ -696,21 +694,14 @@ HTMLTooltip.prototype = {
 
 
 
-  async hide({ fromMouseup = false } = {}) {
+  async hide() {
     this.doc.defaultView.clearTimeout(this.attachEventsTimer);
     if (!this.isVisible()) {
       this.emit("hidden");
       return;
     }
 
-    
-    
-    if (fromMouseup) {
-      await new Promise(resolve => this.topWindow.setTimeout(resolve, 0));
-    }
-
-    this.removeEventListeners();
-
+    this.topWindow.removeEventListener("click", this._onClick, true);
     this.container.classList.remove("tooltip-visible");
     if (this.useXulWrapper) {
       await this._hideXulWrapper();
@@ -723,11 +714,6 @@ HTMLTooltip.prototype = {
       this._focusedElement.focus();
       this._focusedElement = null;
     }
-  },
-
-  removeEventListeners: function() {
-    this.topWindow.removeEventListener("click", this._onClick, true);
-    this.topWindow.removeEventListener("mouseup", this._onMouseup, true);
   },
 
   
@@ -744,7 +730,6 @@ HTMLTooltip.prototype = {
 
   destroy: function() {
     this.hide();
-    this.removeEventListeners();
     this.container.remove();
     if (this.xulPanelWrapper) {
       this.xulPanelWrapper.remove();
@@ -781,30 +766,17 @@ HTMLTooltip.prototype = {
       return;
     }
 
-    if (this.consumeOutsideClicks && e.button === 0) {
-      
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  },
-
-  
-
-
-
-
-
-  _onMouseup: function(e) {
-    if (this._isInTooltipContainer(e.target)) {
-      return;
-    }
-
     
     if (Services.prefs.getBoolPref("ui.popup.disable_autohide", false)) {
       return;
     }
 
-    this.hide({ fromMouseup: true });
+    this.hide();
+    if (this.consumeOutsideClicks && e.button === 0) {
+      
+      e.preventDefault();
+      e.stopPropagation();
+    }
   },
 
   _isInTooltipContainer: function(node) {
