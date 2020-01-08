@@ -264,6 +264,28 @@ class Bootstrapper(object):
                 continue
             return ''
 
+    
+    
+    
+    
+    
+    def try_to_create_state_dir(self):
+        state_dir, _ = get_state_dir()
+
+        if not os.path.exists(state_dir):
+            if not self.instance.no_interactive:
+                choice = self.instance.prompt_int(
+                    prompt=STATE_DIR_INFO.format(statedir=state_dir),
+                    low=1,
+                    high=2)
+
+                if choice == 1:
+                    print('Creating global state directory: %s' % state_dir)
+                    os.makedirs(state_dir, mode=0o770)
+
+        state_dir_available = os.path.exists(state_dir)
+        return state_dir_available, state_dir
+
     def bootstrap(self):
         if self.choice is None:
             
@@ -286,25 +308,7 @@ class Bootstrapper(object):
         self.instance.ensure_python_modern()
         self.instance.ensure_rust_modern()
 
-        
-        
-        
-        
-        
-        state_dir, _ = get_state_dir()
-
-        if not os.path.exists(state_dir):
-            if not self.instance.no_interactive:
-                choice = self.instance.prompt_int(
-                    prompt=STATE_DIR_INFO.format(statedir=state_dir),
-                    low=1,
-                    high=2)
-
-                if choice == 1:
-                    print('Creating global state directory: %s' % state_dir)
-                    os.makedirs(state_dir, mode=0o770)
-
-        state_dir_available = os.path.exists(state_dir)
+        state_dir_available, state_dir = self.try_to_create_state_dir()
 
         
         
