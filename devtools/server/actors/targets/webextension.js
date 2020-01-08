@@ -76,14 +76,11 @@ const webExtensionTargetPrototype = extend({}, parentProcessTargetPrototype);
 
 webExtensionTargetPrototype.initialize = function(conn, chromeGlobal, prefix, addonId) {
   this.addonId = addonId;
+  this.chromeGlobal = chromeGlobal;
 
   
   
-  let extensionWindow = this._searchForExtensionWindow();
-  if (!extensionWindow) {
-    this._createFallbackWindow();
-    extensionWindow = this.fallbackWindow;
-  }
+  const extensionWindow = this._searchForExtensionWindow();
 
   parentProcessTargetPrototype.initialize.call(this, conn, extensionWindow);
   this._chromeGlobal = chromeGlobal;
@@ -154,33 +151,24 @@ webExtensionTargetPrototype.exit = function() {
 
 
 
-webExtensionTargetPrototype._createFallbackWindow = function() {
+webExtensionTargetPrototype._searchFallbackWindow = function() {
   if (this.fallbackWindow) {
     
-    return;
+    return this.fallbackWindow;
   }
 
   
   
   
-  this.fallbackWebNav = Services.appShell.createWindowlessBrowser(true);
-
   
-  this.fallbackWindow = this.fallbackWebNav.document.defaultView;
+  this.fallbackWindow = this.chromeGlobal.content;
+  this.fallbackWindow.location = "data:text/html,<h1>" + FALLBACK_DOC_MESSAGE;
 
-  
-  this.fallbackWindow.document.body.innerText = FALLBACK_DOC_MESSAGE;
+  return this.fallbackWindow;
 };
 
 webExtensionTargetPrototype._destroyFallbackWindow = function() {
-  if (this.fallbackWebNav) {
-    const systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
-    
-    
-    this.fallbackWebNav.loadURI("about:blank", 0, null, null, null, systemPrincipal);
-    this.fallbackWebNav.close();
-
-    this.fallbackWebNav = null;
+  if (this.fallbackWindow) {
     this.fallbackWindow = null;
   }
 };
@@ -196,7 +184,7 @@ webExtensionTargetPrototype._searchForExtensionWindow = function() {
     }
   }
 
-  return undefined;
+  return this._searchFallbackWindow();
 };
 
 
@@ -214,9 +202,7 @@ webExtensionTargetPrototype._onDocShellDestroy = function(docShell) {
   
   
   if (this.attached && docShell == this.docShell) {
-    
-    this._createFallbackWindow();
-    this._changeTopLevelDocument(this.fallbackWindow);
+    this._changeTopLevelDocument(this._searchForExtensionWindow());
   }
 };
 
@@ -233,14 +219,7 @@ webExtensionTargetPrototype._attach = function() {
 
   if (!this.window || this.window.document.nodePrincipal.addonId !== this.addonId) {
     
-    const extensionWindow = this._searchForExtensionWindow();
-
-    if (!extensionWindow) {
-      this._createFallbackWindow();
-      this._setWindow(this.fallbackWindow);
-    } else {
-      this._setWindow(extensionWindow);
-    }
+    this._setWindow(this._searchForExtensionWindow());
   }
 
   
