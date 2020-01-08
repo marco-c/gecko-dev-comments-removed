@@ -42,6 +42,10 @@ ObjectClient.prototype = {
     return this._grip.extensible;
   },
 
+  threadGrip: DebuggerClient.requester({
+    type: "threadGrip",
+  }),
+
   getDefinitionSite: DebuggerClient.requester({
     type: "definitionSite"
   }, {
@@ -178,6 +182,17 @@ ObjectClient.prototype = {
 
   getProperty: DebuggerClient.requester({
     type: "property",
+    name: arg(0)
+  }),
+
+  
+
+
+
+
+
+  getPropertyValue: DebuggerClient.requester({
+    type: "propertyValue",
     name: arg(0)
   }),
 

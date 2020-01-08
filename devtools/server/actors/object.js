@@ -510,6 +510,53 @@ const proto = {
   
 
 
+
+
+
+
+
+
+
+
+
+  propertyValue: function(name) {
+    if (!name) {
+      return this.throwError("missingParameter", "no property name was specified");
+    }
+
+    const value = this.obj.getProperty(name);
+
+    return { value: this._buildCompletion(value) };
+  },
+
+  
+
+
+
+
+
+
+  _buildCompletion(value) {
+    let completionGrip = null;
+
+    
+    
+    if (value) {
+      completionGrip = {};
+      if ("return" in value) {
+        completionGrip.return = this.hooks.createValueGrip(value.return);
+      }
+      if ("throw" in value) {
+        completionGrip.throw = this.hooks.createValueGrip(value.throw);
+      }
+    }
+
+    return completionGrip;
+  },
+
+  
+
+
   displayString: function() {
     const string = stringify(this.obj);
     return { displayString: this.hooks.createValueGrip(string) };
