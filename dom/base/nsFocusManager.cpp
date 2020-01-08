@@ -3313,10 +3313,18 @@ nsFocusManager::GetNextTabbableContentInScope(nsIContent* aOwner,
         
         
         
+        
+        
+        
         nsIFrame* possibleAnonOwnerFrame = iterContent->GetPrimaryFrame();
         nsIAnonymousContentCreator* anonCreator =
           do_QueryFrame(possibleAnonOwnerFrame);
-        if (anonCreator && !iterContent->IsInNativeAnonymousSubtree()) {
+        bool isIterContentInUAWidgetShadow =
+          iterContent->GetContainingShadow() &&
+          iterContent->GetContainingShadow()->IsUAWidget();
+        if (anonCreator &&
+            !isIterContentInUAWidgetShadow &&
+            !iterContent->IsInNativeAnonymousSubtree()) {
           nsIFrame* frame = nullptr;
           
           
