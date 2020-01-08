@@ -330,6 +330,8 @@ private:
 
   void Shutdown();
 
+  nsresult SessionError(enum errorType);
+
   
   
   
