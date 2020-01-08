@@ -44,7 +44,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/RangeBoundary.h"
 #include "nsIContentPolicy.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsPIDOMWindow.h"
 #include "nsRFPService.h"
 
@@ -206,6 +206,7 @@ typedef bool (*CallOnRemoteChildFunction)(mozilla::dom::TabParent* aTabParent,
 class nsContentUtils {
   friend class nsAutoScriptBlockerSuppressNodeRemoved;
   typedef mozilla::dom::Element Element;
+  typedef mozilla::dom::Document Document;
   typedef mozilla::Cancelable Cancelable;
   typedef mozilla::CanBubble CanBubble;
   typedef mozilla::Composed Composed;
@@ -305,7 +306,7 @@ class nsContentUtils {
   
   static bool ShouldResistFingerprinting();
   static bool ShouldResistFingerprinting(nsIDocShell* aDocShell);
-  static bool ShouldResistFingerprinting(nsIDocument* aDoc);
+  static bool ShouldResistFingerprinting(Document* aDoc);
 
   
   
@@ -542,8 +543,8 @@ class nsContentUtils {
 
 
 
-  static nsIDocument* GetSubdocumentWithOuterWindowId(nsIDocument* aDocument,
-                                                      uint64_t aOuterWindowId);
+  static Document* GetSubdocumentWithOuterWindowId(Document* aDocument,
+                                                   uint64_t aOuterWindowId);
 
   static const nsDependentSubstring TrimCharsInSet(const char* aSet,
                                                    const nsAString& aValue);
@@ -711,7 +712,7 @@ class nsContentUtils {
   
   static nsIPrincipal* ObjectPrincipal(JSObject* aObj);
 
-  static nsresult GenerateStateKey(nsIContent* aContent, nsIDocument* aDocument,
+  static nsresult GenerateStateKey(nsIContent* aContent, Document* aDocument,
                                    nsACString& aKey);
 
   
@@ -721,7 +722,7 @@ class nsContentUtils {
 
   static nsresult NewURIWithDocumentCharset(nsIURI** aResult,
                                             const nsAString& aSpec,
-                                            nsIDocument* aDocument,
+                                            Document* aDocument,
                                             nsIURI* aBaseURI);
 
   
@@ -781,7 +782,7 @@ class nsContentUtils {
   static bool IsExactSitePermDeny(nsIPrincipal* aPrincipal, const char* aType);
 
   
-  static bool HaveEqualPrincipals(nsIDocument* aDoc1, nsIDocument* aDoc2);
+  static bool HaveEqualPrincipals(Document* aDoc1, Document* aDoc2);
 
   static mozilla::intl::LineBreaker* LineBreaker() {
     return sLineBreaker.get();
@@ -842,13 +843,13 @@ class nsContentUtils {
 
 
   static bool CanLoadImage(nsIURI* aURI, nsINode* aNode,
-                           nsIDocument* aLoadingDocument,
+                           Document* aLoadingDocument,
                            nsIPrincipal* aLoadingPrincipal);
 
   
 
 
-  static bool DocumentInactiveForImageLoads(nsIDocument* aDocument);
+  static bool DocumentInactiveForImageLoads(Document* aDocument);
 
   
 
@@ -880,7 +881,7 @@ class nsContentUtils {
 
 
   static nsresult LoadImage(
-      nsIURI* aURI, nsINode* aContext, nsIDocument* aLoadingDocument,
+      nsIURI* aURI, nsINode* aContext, Document* aLoadingDocument,
       nsIPrincipal* aLoadingPrincipal, uint64_t aRequestContextID,
       nsIURI* aReferrer, mozilla::net::ReferrerPolicy aReferrerPolicy,
       imgINotificationObserver* aObserver, int32_t aLoadFlags,
@@ -892,14 +893,14 @@ class nsContentUtils {
 
 
 
-  static imgLoader* GetImgLoaderForDocument(nsIDocument* aDoc);
+  static imgLoader* GetImgLoaderForDocument(Document* aDoc);
   static imgLoader* GetImgLoaderForChannel(nsIChannel* aChannel,
-                                           nsIDocument* aContext);
+                                           Document* aContext);
 
   
 
 
-  static bool IsImageInCache(nsIURI* aURI, nsIDocument* aDocument);
+  static bool IsImageInCache(nsIURI* aURI, Document* aDocument);
 
   
 
@@ -915,7 +916,7 @@ class nsContentUtils {
 
 
   static already_AddRefed<imgRequestProxy> GetStaticRequest(
-      nsIDocument* aLoadingDocument, imgRequestProxy* aRequest);
+      Document* aLoadingDocument, imgRequestProxy* aRequest);
 
   
 
@@ -962,7 +963,7 @@ class nsContentUtils {
   
 
 
-  static mozilla::OriginAttributes GetOriginAttributes(nsIDocument* aDoc);
+  static mozilla::OriginAttributes GetOriginAttributes(Document* aDoc);
 
   
 
@@ -973,7 +974,7 @@ class nsContentUtils {
   
 
 
-  static bool IsInPrivateBrowsing(nsIDocument* aDoc);
+  static bool IsInPrivateBrowsing(Document* aDoc);
 
   
 
@@ -1036,7 +1037,7 @@ class nsContentUtils {
   };
   static nsresult ReportToConsoleNonLocalized(
       const nsAString& aErrorText, uint32_t aErrorFlags,
-      const nsACString& aCategory, const nsIDocument* aDocument,
+      const nsACString& aCategory, const Document* aDocument,
       nsIURI* aURI = nullptr, const nsString& aSourceLine = EmptyString(),
       uint32_t aLineNumber = 0, uint32_t aColumnNumber = 0,
       MissingErrorLocationMode aLocationMode = eUSE_CALLING_LOCATION);
@@ -1105,13 +1106,12 @@ class nsContentUtils {
   };
   static nsresult ReportToConsole(
       uint32_t aErrorFlags, const nsACString& aCategory,
-      const nsIDocument* aDocument, PropertiesFile aFile,
-      const char* aMessageName, const char16_t** aParams = nullptr,
-      uint32_t aParamsLength = 0, nsIURI* aURI = nullptr,
-      const nsString& aSourceLine = EmptyString(), uint32_t aLineNumber = 0,
-      uint32_t aColumnNumber = 0);
+      const Document* aDocument, PropertiesFile aFile, const char* aMessageName,
+      const char16_t** aParams = nullptr, uint32_t aParamsLength = 0,
+      nsIURI* aURI = nullptr, const nsString& aSourceLine = EmptyString(),
+      uint32_t aLineNumber = 0, uint32_t aColumnNumber = 0);
 
-  static void ReportEmptyGetElementByIdArg(const nsIDocument* aDoc);
+  static void ReportEmptyGetElementByIdArg(const Document* aDoc);
 
   static void LogMessageToConsole(const char* aMsg);
 
@@ -1214,12 +1214,12 @@ class nsContentUtils {
   
 
 
-  static bool IsChromeDoc(nsIDocument* aDocument);
+  static bool IsChromeDoc(Document* aDocument);
 
   
 
 
-  static bool IsChildOfSameType(nsIDocument* aDoc);
+  static bool IsChildOfSameType(Document* aDoc);
 
   
 
@@ -1237,7 +1237,7 @@ class nsContentUtils {
 
 
 
-  static bool IsInChromeDocshell(nsIDocument* aDocument);
+  static bool IsInChromeDocshell(Document* aDocument);
 
   
 
@@ -1316,7 +1316,7 @@ class nsContentUtils {
 
 
 
-  static bool HasMutationListeners(nsIDocument* aDocument, uint32_t aType);
+  static bool HasMutationListeners(Document* aDocument, uint32_t aType);
   
 
 
@@ -1347,13 +1347,13 @@ class nsContentUtils {
 
 
 
-  static nsresult DispatchTrustedEvent(nsIDocument* aDoc, nsISupports* aTarget,
+  static nsresult DispatchTrustedEvent(Document* aDoc, nsISupports* aTarget,
                                        const nsAString& aEventName, CanBubble,
                                        Cancelable,
                                        Composed aComposed = Composed::eDefault,
                                        bool* aDefaultAction = nullptr);
 
-  static nsresult DispatchTrustedEvent(nsIDocument* aDoc, nsISupports* aTarget,
+  static nsresult DispatchTrustedEvent(Document* aDoc, nsISupports* aTarget,
                                        const nsAString& aEventName,
                                        CanBubble aCanBubble,
                                        Cancelable aCancelable,
@@ -1376,7 +1376,7 @@ class nsContentUtils {
 
   template <class WidgetEventType>
   static nsresult DispatchTrustedEvent(
-      nsIDocument* aDoc, nsISupports* aTarget, EventMessage aEventMessage,
+      Document* aDoc, nsISupports* aTarget, EventMessage aEventMessage,
       CanBubble aCanBubble, Cancelable aCancelable,
       bool* aDefaultAction = nullptr,
       ChromeOnlyDispatch aOnlyChromeDispatch = ChromeOnlyDispatch::eNo) {
@@ -1420,8 +1420,7 @@ class nsContentUtils {
 
 
 
-  static nsresult DispatchUntrustedEvent(nsIDocument* aDoc,
-                                         nsISupports* aTarget,
+  static nsresult DispatchUntrustedEvent(Document* aDoc, nsISupports* aTarget,
                                          const nsAString& aEventName, CanBubble,
                                          Cancelable,
                                          bool* aDefaultAction = nullptr);
@@ -1440,7 +1439,7 @@ class nsContentUtils {
 
   template <class WidgetEventType>
   static nsresult DispatchUntrustedEvent(
-      nsIDocument* aDoc, nsISupports* aTarget, EventMessage aEventMessage,
+      Document* aDoc, nsISupports* aTarget, EventMessage aEventMessage,
       CanBubble aCanBubble, Cancelable aCancelable,
       bool* aDefaultAction = nullptr,
       ChromeOnlyDispatch aOnlyChromeDispatch = ChromeOnlyDispatch::eNo) {
@@ -1469,7 +1468,7 @@ class nsContentUtils {
 
 
 
-  static nsresult DispatchChromeEvent(nsIDocument* aDoc, nsISupports* aTarget,
+  static nsresult DispatchChromeEvent(Document* aDoc, nsISupports* aTarget,
                                       const nsAString& aEventName, CanBubble,
                                       Cancelable,
                                       bool* aDefaultAction = nullptr);
@@ -1500,7 +1499,7 @@ class nsContentUtils {
 
 
 
-  static nsresult DispatchEventOnlyToChrome(nsIDocument* aDoc,
+  static nsresult DispatchEventOnlyToChrome(Document* aDoc,
                                             nsISupports* aTarget,
                                             const nsAString& aEventName,
                                             CanBubble, Cancelable,
@@ -1672,7 +1671,7 @@ class nsContentUtils {
 
 
   static nsresult ParseFragmentXML(const nsAString& aSourceBuffer,
-                                   nsIDocument* aDocument,
+                                   Document* aDocument,
                                    nsTArray<nsString>& aTagStack,
                                    bool aPreventScriptExecution,
                                    mozilla::dom::DocumentFragment** aReturn);
@@ -1691,7 +1690,7 @@ class nsContentUtils {
 
 
   static nsresult ParseDocumentHTML(const nsAString& aSourceBuffer,
-                                    nsIDocument* aTargetDocument,
+                                    Document* aTargetDocument,
                                     bool aScriptingEnabledForNoscriptParsing);
 
   
@@ -1885,7 +1884,7 @@ class nsContentUtils {
 
 
 
-  static void HidePopupsInDocument(nsIDocument* aDocument);
+  static void HidePopupsInDocument(Document* aDocument);
 
   
 
@@ -1921,7 +1920,7 @@ class nsContentUtils {
 
 
 
-  static void GetOfflineAppManifest(nsIDocument* aDocument, nsIURI** aURI);
+  static void GetOfflineAppManifest(Document* aDocument, nsIURI** aURI);
 
   
 
@@ -1994,7 +1993,7 @@ class nsContentUtils {
 
 
 
-  static void WarnScriptWasIgnored(nsIDocument* aDocument);
+  static void WarnScriptWasIgnored(Document* aDocument);
 
   
 
@@ -2028,7 +2027,7 @@ class nsContentUtils {
 
 
 
-  static nsresult ProcessViewportInfo(nsIDocument* aDocument,
+  static nsresult ProcessViewportInfo(Document* aDocument,
                                       const nsAString& viewportInfo);
 
   static JSContext* GetCurrentJSContext();
@@ -2209,7 +2208,7 @@ class nsContentUtils {
 
 
 
-  static nsIPresShell* FindPresShellForDocument(const nsIDocument* aDoc);
+  static nsIPresShell* FindPresShellForDocument(const Document* aDoc);
 
   
 
@@ -2219,7 +2218,7 @@ class nsContentUtils {
 
 
 
-  static nsIWidget* WidgetForDocument(const nsIDocument* aDoc);
+  static nsIWidget* WidgetForDocument(const Document* aDoc);
 
   
 
@@ -2243,7 +2242,7 @@ class nsContentUtils {
 
 
   static already_AddRefed<mozilla::layers::LayerManager>
-  LayerManagerForDocument(const nsIDocument* aDoc);
+  LayerManagerForDocument(const Document* aDoc);
 
   
 
@@ -2270,7 +2269,7 @@ class nsContentUtils {
 
 
   static already_AddRefed<mozilla::layers::LayerManager>
-  PersistentLayerManagerForDocument(nsIDocument* aDoc);
+  PersistentLayerManagerForDocument(Document* aDoc);
 
   
 
@@ -2398,7 +2397,7 @@ class nsContentUtils {
 
 
 
-  static void FireMutationEventsForDirectParsing(nsIDocument* aDoc,
+  static void FireMutationEventsForDirectParsing(Document* aDoc,
                                                  nsIContent* aDest,
                                                  int32_t aOldChildCount);
 
@@ -2414,7 +2413,7 @@ class nsContentUtils {
 
 
 
-  static nsIDocument* GetRootDocument(nsIDocument* aDoc);
+  static Document* GetRootDocument(Document* aDoc);
 
   
 
@@ -2517,7 +2516,7 @@ class nsContentUtils {
 
 
   static bool IsPatternMatching(nsAString& aValue, nsAString& aPattern,
-                                nsIDocument* aDocument);
+                                Document* aDocument);
 
   
 
@@ -2860,7 +2859,7 @@ class nsContentUtils {
                                 mozilla::dom::EventTarget* aChromeEventHandler,
                                 bool aOnlySystemGroup = false);
 
-  static already_AddRefed<nsPIWindowRoot> GetWindowRoot(nsIDocument* aDoc);
+  static already_AddRefed<nsPIWindowRoot> GetWindowRoot(Document* aDoc);
 
   
 
@@ -2878,7 +2877,7 @@ class nsContentUtils {
 
 
   static nsresult SetFetchReferrerURIWithPolicy(
-      nsIPrincipal* aPrincipal, nsIDocument* aDoc, nsIHttpChannel* aChannel,
+      nsIPrincipal* aPrincipal, Document* aDoc, nsIHttpChannel* aChannel,
       mozilla::net::ReferrerPolicy aReferrerPolicy);
 
   
@@ -2944,7 +2943,7 @@ class nsContentUtils {
 
 
 
-  static StorageAccess StorageAllowedForDocument(nsIDocument* aDoc);
+  static StorageAccess StorageAllowedForDocument(Document* aDoc);
 
   
 
@@ -2972,8 +2971,7 @@ class nsContentUtils {
 
 
 
-  static bool StorageDisabledByAntiTracking(nsIDocument* aDocument,
-                                            nsIURI* aURI) {
+  static bool StorageDisabledByAntiTracking(Document* aDocument, nsIURI* aURI) {
     
     
     
@@ -3049,7 +3047,7 @@ class nsContentUtils {
 
 
 
-  static bool HttpsStateIsModern(nsIDocument* aDocument);
+  static bool HttpsStateIsModern(Document* aDocument);
 
   
 
@@ -3067,14 +3065,14 @@ class nsContentUtils {
       mozilla::dom::CustomElementDefinition* aDefinition);
 
   static mozilla::dom::CustomElementRegistry* GetCustomElementRegistry(
-      nsIDocument*);
+      Document*);
 
   
 
 
 
   static mozilla::dom::CustomElementDefinition* LookupCustomElementDefinition(
-      nsIDocument* aDoc, nsAtom* aNameAtom, uint32_t aNameSpaceID,
+      Document* aDoc, nsAtom* aNameAtom, uint32_t aNameSpaceID,
       nsAtom* aTypeAtom);
 
   static void RegisterCallbackUpgradeElement(Element* aElement,
@@ -3087,7 +3085,7 @@ class nsContentUtils {
       Element* aElement, mozilla::dom::CustomElementDefinition* aDefinition);
 
   static void EnqueueLifecycleCallback(
-      nsIDocument::ElementCallbackType aType, Element* aCustomElement,
+      Document::ElementCallbackType aType, Element* aCustomElement,
       mozilla::dom::LifecycleCallbackArgs* aArgs = nullptr,
       mozilla::dom::LifecycleAdoptedCallbackArgs* aAdoptedCallbackArgs =
           nullptr,
@@ -3102,7 +3100,7 @@ class nsContentUtils {
 
 
   static void AppendDocumentLevelNativeAnonymousContentTo(
-      nsIDocument* aDocument, nsTArray<nsIContent*>& aElements);
+      Document* aDocument, nsTArray<nsIContent*>& aElements);
 
   
 
@@ -3315,13 +3313,13 @@ class nsContentUtils {
                              JS::MutableHandle<JS::Value> vp,
                              bool aAllowWrapping);
 
-  static nsresult DispatchEvent(nsIDocument* aDoc, nsISupports* aTarget,
+  static nsresult DispatchEvent(Document* aDoc, nsISupports* aTarget,
                                 const nsAString& aEventName, CanBubble,
                                 Cancelable, Composed, Trusted,
                                 bool* aDefaultAction = nullptr,
                                 ChromeOnlyDispatch = ChromeOnlyDispatch::eNo);
 
-  static nsresult DispatchEvent(nsIDocument* aDoc, nsISupports* aTarget,
+  static nsresult DispatchEvent(Document* aDoc, nsISupports* aTarget,
                                 mozilla::WidgetEvent& aWidgetEvent,
                                 EventMessage aEventMessage, CanBubble,
                                 Cancelable, Trusted,

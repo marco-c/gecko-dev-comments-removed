@@ -30,7 +30,7 @@
 
 class nsPresContext;
 class nsIPresShell;
-class nsIDocument;
+
 class imgIRequest;
 class nsINode;
 class nsIRunnable;
@@ -92,6 +92,7 @@ class nsAPostRefreshObserver {
 
 class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
                               public nsARefreshObserver {
+  using Document = mozilla::dom::Document;
   using TransactionId = mozilla::layers::TransactionId;
   using VVPResizeEvent =
       mozilla::dom::VisualViewport::VisualViewportResizeEvent;
@@ -255,12 +256,12 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   
 
 
-  void ScheduleFrameRequestCallbacks(nsIDocument* aDocument);
+  void ScheduleFrameRequestCallbacks(Document* aDocument);
 
   
 
 
-  void RevokeFrameRequestCallbacks(nsIDocument* aDocument);
+  void RevokeFrameRequestCallbacks(Document* aDocument);
 
   
 
@@ -273,7 +274,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
 
 
-  void CancelPendingFullscreenEvents(nsIDocument* aDocument);
+  void CancelPendingFullscreenEvents(Document* aDocument);
 
   
 
@@ -562,8 +563,8 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   AutoTArray<nsIPresShell*, 16> mStyleFlushObservers;
   AutoTArray<nsIPresShell*, 16> mLayoutFlushObservers;
   
-  nsTArray<nsIDocument*> mFrameRequestCallbackDocs;
-  nsTArray<nsIDocument*> mThrottledFrameRequestCallbackDocs;
+  nsTArray<Document*> mFrameRequestCallbackDocs;
+  nsTArray<Document*> mThrottledFrameRequestCallbackDocs;
   nsTObserverArray<nsAPostRefreshObserver*> mPostRefreshObservers;
   nsTArray<mozilla::UniquePtr<mozilla::PendingFullscreenEvent>>
       mPendingFullscreenEvents;
