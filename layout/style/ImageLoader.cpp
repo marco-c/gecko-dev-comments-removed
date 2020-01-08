@@ -170,6 +170,8 @@ ImageLoader::AssociateRequestToFrame(imgIRequest* aRequest,
           
           
           
+          
+          
           nsCOMPtr<imgIContainer> imgContainer;
           aRequest->GetImage(getter_AddRefs(imgContainer));
           if (imgContainer) {
