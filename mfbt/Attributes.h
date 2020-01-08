@@ -710,6 +710,10 @@
 
 
 
+
+
+
+
 #ifdef MOZ_CLANG_PLUGIN
 #  define MOZ_CAN_RUN_SCRIPT __attribute__((annotate("moz_can_run_script")))
 #  define MOZ_CAN_RUN_SCRIPT_BOUNDARY __attribute__((annotate("moz_can_run_script_boundary")))
@@ -721,6 +725,7 @@
 #  define MOZ_NON_TEMPORARY_CLASS __attribute__((annotate("moz_non_temporary_class")))
 #  define MOZ_TEMPORARY_CLASS __attribute__((annotate("moz_temporary_class")))
 #  define MOZ_TRIVIAL_CTOR_DTOR __attribute__((annotate("moz_trivial_ctor_dtor")))
+#  define MOZ_ALLOW_TEMPORARY __attribute__((annotate("moz_allow_temporary")))
 #  ifdef DEBUG
      
 #    define MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS __attribute__((annotate("moz_global_class")))
@@ -776,6 +781,7 @@
 #  define MOZ_NON_TEMPORARY_CLASS
 #  define MOZ_TEMPORARY_CLASS
 #  define MOZ_TRIVIAL_CTOR_DTOR
+#  define MOZ_ALLOW_TEMPORARY
 #  define MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS
 #  define MOZ_IMPLICIT
 #  define MOZ_IS_SMARTPTR_TO_REFCOUNTED
