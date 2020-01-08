@@ -296,6 +296,16 @@ NS_IMPL_RELEASE_INHERITED(nsXULElement, nsStyledElement)
 
 NS_INTERFACE_TABLE_HEAD_CYCLE_COLLECTION_INHERITED(nsXULElement)
   NS_ELEMENT_INTERFACE_TABLE_TO_MAP_SEGUE
+
+  nsCOMPtr<nsISupports> iface =
+      CustomElementRegistry::CallGetCustomInterface(this, aIID);
+  if (iface) {
+    iface->QueryInterface(aIID, aInstancePtr);
+    if (*aInstancePtr) {
+      return NS_OK;
+    }
+  }
+
 NS_INTERFACE_MAP_END_INHERITING(nsStyledElement)
 
 
@@ -427,7 +437,7 @@ bool nsXULElement::IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) {
   }
 #endif
 
-  nsCOMPtr<nsIDOMXULControlElement> xulControl = AsXULControl();
+  nsCOMPtr<nsIDOMXULControlElement> xulControl = do_QueryObject(this);
   if (xulControl) {
     
     bool disabled;
@@ -533,13 +543,15 @@ bool nsXULElement::PerformAccesskey(bool aKeyCausesActivation,
         nsCOMPtr<Element> elementToFocus;
         
         if (content->IsXULElement(nsGkAtoms::radio)) {
-          nsCOMPtr<nsIDOMXULSelectControlItemElement> controlItem =
-              content->AsXULSelectControlItem();
+          nsCOMPtr<nsIDOMXULSelectControlItemElement> controlItem(
+              do_QueryInterface(content));
           if (controlItem) {
             bool disabled;
             controlItem->GetDisabled(&disabled);
             if (!disabled) {
-              controlItem->GetControl(getter_AddRefs(elementToFocus));
+              nsCOMPtr<nsIDOMXULSelectControlElement> selectControl;
+              controlItem->GetControl(getter_AddRefs(selectControl));
+              elementToFocus = do_QueryInterface(selectControl);
             }
           }
         } else {
@@ -1729,6 +1741,15 @@ nsresult nsXULPrototypeElement::SetAttrAt(uint32_t aPos,
   
 
   if (!mNodeInfo->NamespaceEquals(kNameSpaceID_XUL)) {
+    if (mNodeInfo->NamespaceEquals(kNameSpaceID_XHTML) &&
+        mAttributes[aPos].mName.Equals(nsGkAtoms::is)) {
+      
+      mAttributes[aPos].mValue.ParseAtom(aValue);
+      mIsAtom = mAttributes[aPos].mValue.GetAtomValue();
+
+      return NS_OK;
+    }
+
     mAttributes[aPos].mValue.ParseStringOrAtom(aValue);
 
     return NS_OK;
