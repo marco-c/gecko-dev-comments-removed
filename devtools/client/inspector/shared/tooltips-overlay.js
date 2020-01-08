@@ -12,18 +12,20 @@
 
 
 const Services = require("Services");
+const flags = require("devtools/shared/flags");
 const {
   VIEW_NODE_VALUE_TYPE,
   VIEW_NODE_FONT_TYPE,
   VIEW_NODE_IMAGE_URL_TYPE,
   VIEW_NODE_VARIABLE_TYPE,
 } = require("devtools/client/inspector/shared/node-types");
-const { getColor } = require("devtools/client/shared/theme");
-const { HTMLTooltip } = require("devtools/client/shared/widgets/tooltip/HTMLTooltip");
 
 loader.lazyRequireGetter(this, "getCssProperties",
   "devtools/shared/fronts/css-properties", true);
-
+loader.lazyRequireGetter(this, "getColor",
+  "devtools/client/shared/theme", true);
+loader.lazyRequireGetter(this, "HTMLTooltip",
+  "devtools/client/shared/widgets/tooltip/HTMLTooltip", true);
 loader.lazyRequireGetter(this, "getImageDimensions",
   "devtools/client/shared/widgets/tooltip/ImageTooltipHelper", true);
 loader.lazyRequireGetter(this, "setImageTooltip",
@@ -87,7 +89,14 @@ TooltipsOverlay.prototype = {
     
     
     
-    this.getTooltip("previewTooltip");
+    if (flags.testing) {
+      this.getTooltip("previewTooltip");
+    } else {
+      
+      this.view.element.addEventListener("mousemove", () => {
+        this.getTooltip("previewTooltip");
+      }, { once: true });
+    }
   },
 
   
