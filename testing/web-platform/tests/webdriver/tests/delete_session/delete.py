@@ -31,5 +31,5 @@ def test_dismissed_beforeunload_prompt(session):
     assert_success(response)
 
     
-    with pytest.raises(error.SessionNotCreatedException):
+    with pytest.raises(error.InvalidSessionIdException):
         session.alert.text
