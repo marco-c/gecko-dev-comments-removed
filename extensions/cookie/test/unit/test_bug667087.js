@@ -10,7 +10,7 @@ function run_test() {
 
   
   
-  cm.add("a", "/", "foo", "bar", false, false, true, expiry, {});
+  cm.add("a", "/", "foo", "bar", false, false, true, expiry, {}, Ci.nsICookie2.SAMESITE_UNSET);
   Assert.equal(cm.countCookiesFromHost("a"), 1);
   Assert.equal(cs.getCookieString(NetUtil.newURI("http://a"), null), "foo=bar");
 }

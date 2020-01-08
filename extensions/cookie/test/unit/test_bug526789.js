@@ -13,7 +13,8 @@ function run_test() {
 
   
   
-  cm.add("baz.com", "/", "foo", "bar", false, false, true, expiry, {});
+  cm.add("baz.com", "/", "foo", "bar", false, false, true, expiry, {},
+         Ci.nsICookie2.SAMESITE_UNSET);
   Assert.equal(cm.countCookiesFromHost("baz.com"), 1);
   Assert.equal(cm.countCookiesFromHost("BAZ.com"), 1);
   Assert.equal(cm.countCookiesFromHost(".baz.com"), 1);
@@ -34,7 +35,8 @@ function run_test() {
   Assert.equal(cm.countCookiesFromHost("baz.com"), 0);
 
   
-  cm.add("baz.com.", "/", "foo", "bar", false, false, true, expiry, {});
+  cm.add("baz.com.", "/", "foo", "bar", false, false, true, expiry, {},
+         Ci.nsICookie2.SAMESITE_UNSET);
   Assert.equal(cm.countCookiesFromHost("baz.com"), 0);
   Assert.equal(cm.countCookiesFromHost("BAZ.com"), 0);
   Assert.equal(cm.countCookiesFromHost(".baz.com"), 0);
@@ -47,7 +49,8 @@ function run_test() {
 
   
   
-  cm.add("192.168.0.1", "/", "foo", "bar", false, false, true, expiry, {});
+  cm.add("192.168.0.1", "/", "foo", "bar", false, false, true, expiry, {},
+         Ci.nsICookie2.SAMESITE_UNSET);
   Assert.equal(cm.countCookiesFromHost("192.168.0.1"), 1);
   Assert.equal(cm.countCookiesFromHost("192.168.0.1."), 0);
   do_check_throws(function() {
@@ -57,7 +60,8 @@ function run_test() {
     cm.countCookiesFromHost(".192.168.0.1.");
   }, Cr.NS_ERROR_ILLEGAL_VALUE);
 
-  cm.add("localhost", "/", "foo", "bar", false, false, true, expiry, {});
+  cm.add("localhost", "/", "foo", "bar", false, false, true, expiry, {},
+         Ci.nsICookie2.SAMESITE_UNSET);
   Assert.equal(cm.countCookiesFromHost("localhost"), 1);
   Assert.equal(cm.countCookiesFromHost("localhost."), 0);
   do_check_throws(function() {
@@ -67,7 +71,8 @@ function run_test() {
     cm.countCookiesFromHost(".localhost.");
   }, Cr.NS_ERROR_ILLEGAL_VALUE);
 
-  cm.add("co.uk", "/", "foo", "bar", false, false, true, expiry, {});
+  cm.add("co.uk", "/", "foo", "bar", false, false, true, expiry, {},
+         Ci.nsICookie2.SAMESITE_UNSET);
   Assert.equal(cm.countCookiesFromHost("co.uk"), 1);
   Assert.equal(cm.countCookiesFromHost("co.uk."), 0);
   do_check_throws(function() {
@@ -154,10 +159,12 @@ function run_test() {
 
   
   
-  cm.add("", "/", "foo2", "bar", false, false, true, expiry, {});
+  cm.add("", "/", "foo2", "bar", false, false, true, expiry, {},
+         Ci.nsICookie2.SAMESITE_UNSET);
   Assert.equal(getCookieCount(), 1);
   do_check_throws(function() {
-    cm.add(".", "/", "foo3", "bar", false, false, true, expiry, {});
+    cm.add(".", "/", "foo3", "bar", false, false, true, expiry, {},
+           Ci.nsICookie2.SAMESITE_UNSET);
   }, Cr.NS_ERROR_ILLEGAL_VALUE);
   Assert.equal(getCookieCount(), 1);
 

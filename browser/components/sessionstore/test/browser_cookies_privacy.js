@@ -8,7 +8,8 @@ function addCookie(scheme, secure = false) {
   Services.cookies.add(cookie.host, cookie.path, cookie.name, cookie.value,
                        cookie.secure,  false,
                         true, MAX_EXPIRY,
-                        {});
+                        {},
+                       Ci.nsICookie2.SAMESITE_UNSET);
   return cookie;
 }
 
