@@ -84,7 +84,8 @@ class App extends PureComponent {
         ...this.props.networkRuntimes,
         ...this.props.usbRuntimes,
       ];
-      return !!runtimes.find(x => x.id === id);
+      const runtime = runtimes.find(x => x.id === id);
+      return runtime && runtime.runtimeDetails;
     };
 
     const { dispatch } = this.props;
