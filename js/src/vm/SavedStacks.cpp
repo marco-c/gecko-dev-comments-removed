@@ -1676,7 +1676,9 @@ bool SavedStacks::getLocation(JSContext* cx, const FrameIter& iter,
 }
 
 void SavedStacks::chooseSamplingProbability(Realm* realm) {
-  GlobalObject* global = realm->maybeGlobal();
+  
+  
+  GlobalObject* global = realm->unsafeUnbarrieredMaybeGlobal();
   if (!global) {
     return;
   }
