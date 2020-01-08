@@ -29,4 +29,5 @@ addEventListener("ImageContentLoaded", function(aEvent) {
 
 
 var outerWindowID = docShell.outerWindowID;
-sendAsyncMessage("Browser:Init", {outerWindowID});
+var browsingContextId = docShell.browsingContext.id;
+sendAsyncMessage("Browser:Init", {outerWindowID, browsingContextId});

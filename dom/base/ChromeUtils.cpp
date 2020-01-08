@@ -782,6 +782,12 @@ ChromeUtils::RequestIOActivity(GlobalObject& aGlobal, ErrorResult& aRv)
   return domPromise.forget();
 }
 
+ already_AddRefed<BrowsingContext>
+ChromeUtils::GetBrowsingContext(GlobalObject& aGlobal, uint64_t id)
+{
+  return BrowsingContext::Get(id);
+}
+
  void
 ChromeUtils::GetRootBrowsingContexts(GlobalObject& aGlobal,
                                      nsTArray<RefPtr<BrowsingContext>>& aBrowsingContexts)
