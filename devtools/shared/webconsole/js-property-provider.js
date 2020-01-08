@@ -291,6 +291,10 @@ function JSPropertyProvider({
   const startQuoteRegex = /^('|"|`)/;
 
   
+  let astExpression;
+  let matchProp = completionPart.slice(lastCompletionCharIndex + 1).trimLeft();
+
+  
   
   
   
@@ -305,29 +309,36 @@ function JSPropertyProvider({
     
     
     if (lastBody) {
-      const expression = lastBody.expression;
+      astExpression = lastBody.expression;
       let matchingObject;
 
-      if (expression.type === "ArrayExpression") {
+      if (astExpression.type === "ArrayExpression") {
         matchingObject = Array.prototype;
-      } else if (expression.type === "Literal" && typeof expression.value === "string") {
+      } else if (
+        astExpression.type === "Literal" &&
+        typeof astExpression.value === "string"
+      ) {
         matchingObject = String.prototype;
-      } else if (expression.type === "Literal" && Number.isFinite(expression.value)) {
+      } else if (
+        astExpression.type === "Literal" &&
+        Number.isFinite(astExpression.value)
+      ) {
         
         
         
         
         
         if (
-          !Number.isInteger(expression.value) ||
+          !Number.isInteger(astExpression.value) ||
           /\d[^\.]{0}\.$/.test(completionPart) === false
         ) {
           matchingObject = Number.prototype;
+        } else {
+          return null;
         }
       }
 
       if (matchingObject) {
-        const matchProp = completionPart.slice(lastCompletionCharIndex + 1).trimLeft();
         let search = matchProp;
 
         let elementAccessQuote;
@@ -351,15 +362,26 @@ function JSPropertyProvider({
   }
 
   
-  const properties = completionPart.split(".");
-  let matchProp;
-  if (isElementAccess) {
-    const lastPart = properties[properties.length - 1];
-    const openBracketIndex = lastPart.lastIndexOf("[");
-    matchProp = lastPart.substr(openBracketIndex + 1);
-    properties[properties.length - 1] = lastPart.substring(0, openBracketIndex);
+  let properties = [];
+
+  if (astExpression) {
+    if (lastCompletionCharIndex > -1) {
+      properties = getPropertiesFromAstExpression(astExpression);
+
+      if (properties === null) {
+        return null;
+      }
+    }
   } else {
-    matchProp = properties.pop().trimLeft();
+    properties = completionPart.split(".");
+    if (isElementAccess) {
+      const lastPart = properties[properties.length - 1];
+      const openBracketIndex = lastPart.lastIndexOf("[");
+      matchProp = lastPart.substr(openBracketIndex + 1);
+      properties[properties.length - 1] = lastPart.substring(0, openBracketIndex);
+    } else {
+      matchProp = properties.pop().trimLeft();
+    }
   }
 
   let search = matchProp;
@@ -416,8 +438,11 @@ function JSPropertyProvider({
   
   
   for (let [index, prop] of properties.entries()) {
-    prop = prop.trim();
-    if (!prop) {
+    if (typeof prop === "string") {
+      prop = prop.trim();
+    }
+
+    if (prop === undefined || prop === null || prop === "") {
       return null;
     }
 
@@ -449,22 +474,53 @@ function JSPropertyProvider({
     }
   }
 
+  const prepareReturnedObject = matches => {
+    if (isElementAccess) {
+      
+      
+      matches = wrapMatchesInQuotes(matches, elementAccessQuote);
+    }
+    return {isElementAccess, matchProp, matches};
+  };
+
   
   if (typeof obj != "object") {
-    return {
-      isElementAccess,
-      matchProp,
-      matches: getMatchedProps(obj, search),
-    };
+    return prepareReturnedObject(getMatchedProps(obj, search));
   }
 
-  let matches = getMatchedPropsInDbgObject(obj, search);
-  if (isElementAccess) {
-    
-    
-    matches = wrapMatchesInQuotes(matches, elementAccessQuote);
+  return prepareReturnedObject(getMatchedPropsInDbgObject(obj, search));
+}
+
+
+
+
+
+
+function getPropertiesFromAstExpression(ast) {
+  let result = [];
+  if (!ast) {
+    return result;
   }
-  return {isElementAccess, matchProp, matches};
+  const {type, property, object, name} = ast;
+  if (type === "ThisExpression") {
+    result.unshift("this");
+  } else if (type === "Identifier" && name) {
+    result.unshift(name);
+  } else if (type === "MemberExpression") {
+    if (property) {
+      if (property.type === "Identifier" && property.name) {
+        result.unshift(property.name);
+      } else if (property.type === "Literal") {
+        result.unshift(property.value);
+      }
+    }
+    if (object) {
+      result = (getPropertiesFromAstExpression(object) || []).concat(result);
+    }
+  } else {
+    return null;
+  }
+  return result;
 }
 
 function wrapMatchesInQuotes(matches, quote = `"`) {
