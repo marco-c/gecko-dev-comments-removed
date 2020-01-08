@@ -34,6 +34,8 @@ user_pref("extensions.legacy.enabled", true);
 user_pref("extensions.update.enabled", false);
 
 user_pref("general.useragent.updates.enabled", false);
+
+user_pref("gfx.webrender.all.qualified", false);
 user_pref("hangmonitor.timeout", 0); 
 user_pref("media.gmp-manager.updateEnabled", false);
 
