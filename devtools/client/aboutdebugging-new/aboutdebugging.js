@@ -99,9 +99,6 @@ const AboutDebugging = {
       await this.actions.unwatchRuntime(currentRuntimeId);
     }
 
-    
-    this.actions.removeRuntimeListeners();
-
     removeNetworkLocationsObserver(this.onNetworkLocationsUpdated);
     removeUSBRuntimesObserver(this.onUSBRuntimesUpdated);
     disableUSBRuntimes();

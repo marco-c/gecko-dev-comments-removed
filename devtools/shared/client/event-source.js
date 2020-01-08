@@ -28,11 +28,7 @@ function eventSource(proto) {
 
 
 
-
-
-
-
-  proto.addListener = function(name, listener, key = listener) {
+  proto.addListener = function(name, listener) {
     if (typeof listener != "function") {
       throw TypeError("Listeners must be functions.");
     }
@@ -41,7 +37,7 @@ function eventSource(proto) {
       this._listeners = {};
     }
 
-    this._getListeners(name).push({ key, callback: listener });
+    this._getListeners(name).push(listener);
   };
 
   
@@ -57,14 +53,14 @@ function eventSource(proto) {
 
   proto.addOneTimeListener = function(name, listener) {
     return new Promise(resolve => {
-      const oneTimeListener = (eventName, ...rest) => {
-        this.removeListener(name, listener);
+      const l = (eventName, ...rest) => {
+        this.removeListener(name, l);
         if (listener) {
           listener(eventName, ...rest);
         }
         resolve(rest[0]);
       };
-      this.addListener(name, oneTimeListener, listener);
+      this.addListener(name, l);
     });
   };
 
@@ -87,7 +83,7 @@ function eventSource(proto) {
       this._listeners[name] = [];
     } else {
       this._listeners[name] =
-        this._listeners[name].filter(l => l.key != listener);
+        this._listeners[name].filter(l => l != listener);
     }
   };
 
@@ -125,7 +121,7 @@ function eventSource(proto) {
 
     for (const listener of listeners) {
       try {
-        listener.callback.apply(null, arguments);
+        listener.apply(null, arguments);
       } catch (e) {
         
         DevToolsUtils.reportException("notify event '" + name + "'", e);

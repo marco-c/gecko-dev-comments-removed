@@ -22,6 +22,14 @@ const runtimeInfo = {
   version: PropTypes.string.isRequired,
 };
 
+const runtimeTransportDetails = {
+  
+  host: PropTypes.string.isRequired,
+
+  
+  port: PropTypes.number.isRequired,
+};
+
 const runtimeDetails = {
   
   clientWrapper: PropTypes.instanceOf(ClientWrapper).isRequired,
@@ -31,6 +39,10 @@ const runtimeDetails = {
 
   
   info: PropTypes.shape(runtimeInfo).isRequired,
+
+  
+  
+  transportDetails: PropTypes.shape(runtimeTransportDetails),
 };
 
 const networkRuntimeConnectionParameter = {

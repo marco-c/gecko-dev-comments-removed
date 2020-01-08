@@ -29,19 +29,13 @@ class UsbMocks {
     };
 
     
-    
-    this.usbRuntimesMock.refreshUSBRuntimes = () => {
-      this.emitUpdate();
-    };
-
-    
     this._observerMock = addObserverMock(this.usbRuntimesMock);
 
     
     this.runtimeClientFactoryMock = createRuntimeClientFactoryMock();
     this._clients = {};
     this.runtimeClientFactoryMock.createClientForRuntime = runtime => {
-      return this._clients[runtime.id];
+      return { clientWrapper: this._clients[runtime.id] };
     };
 
     
