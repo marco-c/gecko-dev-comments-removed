@@ -360,6 +360,7 @@ class JSTerm extends Component {
         });
 
         this.editor.on("changes", this._inputEventHandler);
+        this.editor.on("beforeChange", this._onBeforeChange);
         this.editor.appendToLocalElement(this.node);
         const cm = this.editor.codeMirror;
         cm.on("paste", (_, event) => this.props.onPaste(event));
@@ -736,6 +737,16 @@ class JSTerm extends Component {
     }
 
     return this.inputNode ? this.inputNode.selectionStart : null;
+  }
+
+  
+
+
+
+  _onBeforeChange() {
+    
+    
+    this.setAutoCompletionText("");
   }
 
   
