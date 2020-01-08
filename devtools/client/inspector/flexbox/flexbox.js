@@ -401,7 +401,7 @@ class FlexboxInspector {
 
 
   onToggleFlexboxHighlighter(node) {
-    this.highlighters.toggleFlexboxHighlighter(node);
+    this.highlighters.toggleFlexboxHighlighter(node, "layout");
     this.store.dispatch(updateFlexboxHighlighted(node !==
       this.highlighters.flexboxHighlighterShow));
   }

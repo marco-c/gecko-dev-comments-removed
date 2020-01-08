@@ -261,13 +261,15 @@ class HighlightersOverlay {
 
 
 
-  async toggleFlexboxHighlighter(node, options = {}) {
+
+
+  async toggleFlexboxHighlighter(node, trigger) {
     if (node == this.flexboxHighlighterShown) {
       await this.hideFlexboxHighlighter(node);
       return;
     }
 
-    await this.showFlexboxHighlighter(node, options);
+    await this.showFlexboxHighlighter(node, {}, trigger);
   }
 
   
@@ -278,7 +280,11 @@ class HighlightersOverlay {
 
 
 
-  async showFlexboxHighlighter(node, options) {
+
+
+
+
+  async showFlexboxHighlighter(node, options, trigger) {
     const highlighter = await this._getHighlighter("FlexboxHighlighter");
     if (!highlighter) {
       return;
@@ -292,6 +298,17 @@ class HighlightersOverlay {
     }
 
     this._toggleRuleViewIcon(node, true, ".ruleview-flex");
+
+    this.telemetry.toolOpened("flexbox_highlighter", this.inspector.toolbox.sessionId,
+      this);
+
+    if (trigger === "layout") {
+      this.telemetry.scalarAdd("devtools.layout.flexboxhighlighter.opened", 1);
+    } else if (trigger === "markup") {
+      this.telemetry.scalarAdd("devtools.markup.flexboxhighlighter.opened", 1);
+    } else if (trigger === "rule") {
+      this.telemetry.scalarAdd("devtools.rules.flexboxhighlighter.opened", 1);
+    }
 
     try {
       
@@ -318,6 +335,9 @@ class HighlightersOverlay {
     if (!this.flexboxHighlighterShown || !this.highlighters.FlexboxHighlighter) {
       return;
     }
+
+    this.telemetry.toolClosed("flexbox_highlighter", this.inspector.toolbox.sessionId,
+      this);
 
     this._toggleRuleViewIcon(node, false, ".ruleview-flex");
 
@@ -464,9 +484,11 @@ class HighlightersOverlay {
 
     this._toggleRuleViewIcon(node, true, ".ruleview-grid");
 
-    if (trigger == "grid") {
+    if (trigger === "grid") {
       this.telemetry.scalarAdd("devtools.grid.gridinspector.opened", 1);
-    } else if (trigger == "rule") {
+    } else if (trigger === "markup") {
+      this.telemetry.scalarAdd("devtools.markup.gridinspector.opened", 1);
+    } else if (trigger === "rule") {
       this.telemetry.scalarAdd("devtools.rules.gridinspector.opened", 1);
     }
 
@@ -968,7 +990,7 @@ class HighlightersOverlay {
 
     if (this._isRuleViewDisplayFlex(event.target)) {
       event.stopPropagation();
-      this.toggleFlexboxHighlighter(this.inspector.selection.nodeFront);
+      this.toggleFlexboxHighlighter(this.inspector.selection.nodeFront, "rule");
     }
 
     if (this._isRuleViewShapeSwatch(event.target)) {
