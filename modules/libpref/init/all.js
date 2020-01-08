@@ -5172,11 +5172,6 @@ pref("dom.w3c_pointer_events.dispatch_by_pointer_messages", false);
 pref("dom.w3c_pointer_events.implicit_capture", false);
 
 
-
-
-pref("dom.promise_rejection_events.enabled", false);
-
-
 pref("dom.imagecapture.enabled", false);
 
 

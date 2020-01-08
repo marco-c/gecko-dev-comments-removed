@@ -281,6 +281,15 @@ VARCACHE_PREF(
 
 
 
+VARCACHE_PREF(
+  "dom.promise_rejection_events.enabled",
+   dom_promise_rejection_events_enabled,
+  RelaxedAtomicBool, false
+)
+
+
+
+
 
 VARCACHE_PREF(
   "dom.clearSiteData.enabled",
