@@ -4309,6 +4309,18 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
 
   errorPage.AssignLiteral("neterror");
 
+  if (mLoadURIDelegate) {
+    bool loadErrorHandled = false;
+    rv = mLoadURIDelegate->HandleLoadError(aURI, aError,
+                                           NS_ERROR_GET_MODULE(aError),
+                                           &loadErrorHandled);
+    if (NS_SUCCEEDED(rv) && loadErrorHandled) {
+      
+      *aDisplayedErrorPage = false;
+      return NS_OK;
+    }
+  }
+
   
   if (NS_ERROR_UNKNOWN_PROTOCOL == aError) {
     NS_ENSURE_ARG_POINTER(aURI);
