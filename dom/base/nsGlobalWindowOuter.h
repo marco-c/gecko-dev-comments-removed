@@ -245,8 +245,6 @@ public:
     return GetWrapperPreserveColor();
   }
 
-  void TraceGlobalJSObject(JSTracer* aTrc);
-
   virtual nsresult EnsureScriptEnvironment() override;
 
   virtual nsIScriptContext *GetScriptContext() override;
@@ -345,8 +343,6 @@ public:
   virtual bool CanClose() override;
   virtual void ForceClose() override;
 
-  virtual void MaybeUpdateTouchState() override;
-
   
   virtual bool DispatchCustomEvent(const nsAString& aEventName) override;
   bool DispatchResizeEvent(const mozilla::CSSIntSize& aSize);
@@ -362,11 +358,6 @@ public:
   bool SetWidgetFullscreen(FullscreenReason aReason, bool aIsFullscreen,
                            nsIWidget* aWidget, nsIScreen* aScreen);
   bool FullScreen() const;
-
-  using EventTarget::EventListenerAdded;
-  virtual void EventListenerAdded(nsAtom* aType) override;
-  using EventTarget::EventListenerRemoved;
-  virtual void EventListenerRemoved(nsAtom* aType) override;
 
   
   NS_DECL_NSIINTERFACEREQUESTOR
@@ -505,9 +496,6 @@ public:
   {
     mAllowScriptsToClose = true;
   }
-
-  
-  bool UpdateVRDisplays(nsTArray<RefPtr<mozilla::dom::VRDisplay>>& aDisplays);
 
   
   uint32_t GetAutoActivateVRDisplayID();
@@ -915,7 +903,6 @@ public:
   already_AddRefed<nsIBaseWindow> GetTreeOwnerWindow();
   already_AddRefed<nsIWebBrowserChrome> GetWebBrowserChrome();
   nsresult SecurityCheckURL(const char *aURL, nsIURI** aURI);
-  bool IsPrivateBrowsing();
 
   bool PopupWhitelisted();
   PopupControlState RevisePopupAbuseLevel(PopupControlState);
@@ -1118,8 +1105,6 @@ protected:
   RefPtr<mozilla::dom::Storage> mLocalStorage;
 
   nsCOMPtr<nsIPrincipal> mDocumentPrincipal;
-  
-  nsCOMPtr<nsITabChild>  mTabChild;
 
   uint32_t mSerial;
 
