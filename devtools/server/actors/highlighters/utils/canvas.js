@@ -290,7 +290,10 @@ function getBoundsFromPoints(points) {
 
 
 
-function getCurrentMatrix(element, window) {
+
+
+
+function getCurrentMatrix(element, window, { ignoreWritingModeAndTextDirection } = {}) {
   const computedStyle = getComputedStyle(element);
 
   const paddingTop = parseFloat(computedStyle.paddingTop);
@@ -329,9 +332,12 @@ function getCurrentMatrix(element, window) {
     width: element.offsetWidth - borderLeft - borderRight - paddingLeft - paddingRight,
     height: element.offsetHeight - borderTop - borderBottom - paddingTop - paddingBottom,
   };
-  const writingModeMatrix = getWritingModeMatrix(size, computedStyle);
-  if (!isIdentity(writingModeMatrix)) {
-    currentMatrix = multiply(currentMatrix, writingModeMatrix);
+
+  if (!ignoreWritingModeAndTextDirection) {
+    const writingModeMatrix = getWritingModeMatrix(size, computedStyle);
+    if (!isIdentity(writingModeMatrix)) {
+      currentMatrix = multiply(currentMatrix, writingModeMatrix);
+    }
   }
 
   return { currentMatrix, hasNodeTransformations };

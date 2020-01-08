@@ -67,6 +67,18 @@ const JUSTIFY_CONTENT = "justify-content";
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 class FlexboxHighlighter extends AutoRefreshHighlighter {
   constructor(highlighterEnv) {
     super(highlighterEnv);
@@ -683,8 +695,10 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
     updateCanvasElement(this.canvas, this._canvasPosition, this.win.devicePixelRatio);
 
     
-    const { currentMatrix, hasNodeTransformations } = getCurrentMatrix(this.currentNode,
-      this.win);
+    const { currentMatrix, hasNodeTransformations } =
+      getCurrentMatrix(this.currentNode, this.win, {
+        ignoreWritingModeAndTextDirection: true,
+      });
     this.currentMatrix = currentMatrix;
     this.hasNodeTransformations = hasNodeTransformations;
 
