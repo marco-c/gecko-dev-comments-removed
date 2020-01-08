@@ -6,7 +6,7 @@
 
 #include "js/WeakMapPtr.h"
 
-#include "gc/WeakMap.h"
+#include "gc/WeakMap-inl.h"
 
 
 
