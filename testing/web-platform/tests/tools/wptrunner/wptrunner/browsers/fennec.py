@@ -220,16 +220,6 @@ class FennecBrowser(FirefoxBrowser):
 
         self.runner.start(debug_args=debug_args, interactive=self.debug_info and self.debug_info.interactive)
 
-        
-        logcat_args = {
-            "filterspec": "Gecko",
-            "serial": self.runner.device.app_ctx.device_serial
-        }
-        
-        
-        logcat_args["stream"] = sys.stdout
-        self.runner.device.start_logcat(**logcat_args)
-
         self.runner.device.device.forward(
             local="tcp:{}".format(self.marionette_port),
             remote="tcp:{}".format(self.marionette_port))
