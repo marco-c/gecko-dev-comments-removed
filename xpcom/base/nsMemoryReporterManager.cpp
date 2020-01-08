@@ -25,12 +25,10 @@
 #include "nsMemoryInfoDumper.h"
 #endif
 #include "nsNetCID.h"
-#include "nsThread.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/MemoryReportingProcess.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/ResultExtensions.h"
 #include "mozilla/Services.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/UniquePtrExtensions.h"
@@ -40,8 +38,6 @@
 #include "mozilla/ipc/FileDescriptorUtils.h"
 
 #ifdef XP_WIN
-#include "mozilla/MemoryInfo.h"
-
 #include <process.h>
 #ifndef getpid
 #define getpid _getpid
@@ -59,8 +55,6 @@ using namespace dom;
 #endif  
 
 #if defined(XP_LINUX)
-
-#include "mozilla/MemoryMapping.h"
 
 #include <malloc.h>
 #include <string.h>
@@ -95,15 +89,48 @@ GetProcSelfSmapsPrivate(int64_t* aN)
   
   
 
-  nsTArray<MemoryMapping> mappings(1024);
-  MOZ_TRY(GetMemoryMappings(mappings));
+  FILE* f = fopen("/proc/self/smaps", "r");
+  if (NS_WARN_IF(!f)) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  
+  
+  static const uint32_t carryOver = 32;
+  static const uint32_t readSize = 4096;
 
   int64_t amount = 0;
-  for (auto& mapping : mappings) {
-    amount += mapping.Private_Clean();
-    amount += mapping.Private_Dirty();
+  char buffer[carryOver + readSize + 1];
+
+  
+  
+  memset(buffer, ' ', carryOver);
+
+  for (;;) {
+    size_t bytes = fread(buffer + carryOver, sizeof(*buffer), readSize, f);
+    char* end = buffer + bytes;
+    char* ptr = buffer;
+    end[carryOver] = '\0';
+    
+    while ((ptr = strstr(ptr, "Private"))) {
+      if (ptr >= end) {
+        break;
+      }
+      ptr += sizeof("Private_Xxxxx:");
+      amount += strtol(ptr, nullptr, 10);
+    }
+    if (bytes < readSize) {
+      
+      MOZ_ASSERT(!strstr(end, "Private"));
+      break;
+    }
+    
+    memcpy(buffer, end, carryOver);
   }
-  *aN = amount;
+
+  fclose(f);
+  
+  *aN = amount * 1024;
   return NS_OK;
 }
 
@@ -1404,115 +1431,6 @@ public:
 };
 NS_IMPL_ISUPPORTS(AtomTablesReporter, nsIMemoryReporter)
 
-#if defined(XP_LINUX) || defined(XP_WIN)
-class ThreadStacksReporter final : public nsIMemoryReporter
-{
-  ~ThreadStacksReporter() = default;
-
-public:
-  NS_DECL_ISUPPORTS
-
-  NS_IMETHOD CollectReports(nsIHandleReportCallback* aHandleReport,
-                            nsISupports* aData, bool aAnonymize) override
-  {
-#ifdef XP_LINUX
-    nsTArray<MemoryMapping> mappings(1024);
-    MOZ_TRY(GetMemoryMappings(mappings));
-#endif
-
-    
-    
-    
-    struct ThreadData
-    {
-      nsCString mName;
-      uint32_t mThreadId;
-      size_t mPrivateSize;
-    };
-    AutoTArray<ThreadData, 32> threads;
-
-    for (auto* thread : nsThread::Enumerate()) {
-      if (!thread->StackBase()) {
-        continue;
-      }
-
-#ifdef XP_LINUX
-      int idx = mappings.BinaryIndexOf(thread->StackBase());
-      if (idx < 0) {
-        continue;
-      }
-      
-      
-      
-      
-      size_t privateSize = mappings[idx].Referenced();
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      MOZ_ASSERT(mappings[idx].Size() == thread->StackSize(),
-                 "Mapping region size doesn't match stack allocation size");
-#else
-      auto memInfo = MemoryInfo::Get(thread->StackBase(), thread->StackSize());
-      size_t privateSize = memInfo.Committed();
-#endif
-
-      threads.AppendElement(ThreadData{
-        nsCString(PR_GetThreadName(thread->GetPRThread())),
-        thread->ThreadId(),
-        
-        
-        
-        
-        
-        std::min(privateSize, thread->StackSize()),
-      });
-    }
-
-    for (auto& thread : threads) {
-      nsPrintfCString path("explicit/thread-stacks/%s (tid=%u)",
-                           thread.mName.get(), thread.mThreadId);
-
-      aHandleReport->Callback(
-          EmptyCString(), path,
-          KIND_NONHEAP, UNITS_BYTES,
-          thread.mPrivateSize,
-          NS_LITERAL_CSTRING("The sizes of thread stacks which have been "
-                             "committed to memory."),
-          aData);
-    }
-
-    return NS_OK;
-  }
-};
-NS_IMPL_ISUPPORTS(ThreadStacksReporter, nsIMemoryReporter)
-#endif
-
 #ifdef DEBUG
 
 
@@ -1673,10 +1591,6 @@ nsMemoryReporterManager::Init()
 #endif
 
   RegisterStrongReporter(new AtomTablesReporter());
-
-#if defined(XP_LINUX) || defined(XP_WIN)
-  RegisterStrongReporter(new ThreadStacksReporter());
-#endif
 
 #ifdef DEBUG
   RegisterStrongReporter(new DeadlockDetectorReporter());

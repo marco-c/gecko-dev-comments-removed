@@ -7,7 +7,6 @@
 #include "nsThread.h"
 
 #include "base/message_loop.h"
-#include "base/platform_thread.h"
 
 
 #ifdef LOG
@@ -51,23 +50,9 @@
 #include "mozilla/dom/ContentChild.h"
 
 #ifdef XP_LINUX
-#ifdef __GLIBC__
-#include <gnu/libc-version.h>
-#endif
-#include <sys/mman.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sched.h>
-#include <stdio.h>
-#endif
-
-#ifdef XP_WIN
-#include "mozilla/DynamicallyLinkedFunctionPtr.h"
-
-#include <Winbase.h>
-
-using GetCurrentThreadStackLimitsFn = void (WINAPI*)(
-  PULONG_PTR LowLimit, PULONG_PTR HighLimit);
 #endif
 
 #define HAVE_UALARM _BSD_SOURCE || (_XOPEN_SOURCE >= 500 ||                 \
@@ -391,26 +376,6 @@ struct ThreadInitData {
 
 }
 
- mozilla::OffTheBooksMutex&
-nsThread::ThreadListMutex()
-{
-  static OffTheBooksMutex sMutex("nsThread::ThreadListMutex");
-  return sMutex;
-}
-
- LinkedList<nsThread>&
-nsThread::ThreadList()
-{
-  static LinkedList<nsThread> sList;
-  return sList;
-}
-
- nsThreadEnumerator
-nsThread::Enumerate()
-{
-  return {};
-}
-
  void
 nsThread::ThreadFunc(void* aArg)
 {
@@ -420,79 +385,12 @@ nsThread::ThreadFunc(void* aArg)
   nsThread* self = initData->thread;  
 
   self->mThread = PR_GetCurrentThread();
-  self->mThreadId = uint32_t(PlatformThread::CurrentId());
   self->mVirtualThread = GetCurrentVirtualThread();
   self->mEventTarget->SetCurrentThread();
   SetupCurrentThreadForChaosMode();
 
   if (!initData->name.IsEmpty()) {
     NS_SetCurrentThreadName(initData->name.BeginReading());
-  }
-
-  {
-#if defined(XP_LINUX)
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_getattr_np(pthread_self(), &attr);
-
-    size_t stackSize;
-    pthread_attr_getstack(&attr, &self->mStackBase, &stackSize);
-
-    
-    
-    
-    
-    
-    static bool sAdjustForGuardSize = ({
-#ifdef __GLIBC__
-      unsigned major, minor;
-      sscanf(gnu_get_libc_version(), "%u.%u", &major, &minor) < 2 ||
-        major < 2 || (major == 2 && minor < 27);
-#else
-      false;
-#endif
-    });
-    if (sAdjustForGuardSize) {
-      size_t guardSize;
-      pthread_attr_getguardsize(&attr, &guardSize);
-
-      
-      
-      
-      
-      self->mStackBase = reinterpret_cast<char*>(self->mStackBase) + guardSize;
-      stackSize -= guardSize;
-    }
-
-    self->mStackSize = stackSize;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    madvise(self->mStackBase, stackSize, MADV_NOHUGEPAGE);
-
-    pthread_attr_destroy(&attr);
-#elif defined(XP_WIN)
-    static const DynamicallyLinkedFunctionPtr<GetCurrentThreadStackLimitsFn>
-      sGetStackLimits(L"kernel32.dll", "GetCurrentThreadStackLimits");
-
-    if (sGetStackLimits) {
-      ULONG_PTR stackBottom, stackTop;
-      sGetStackLimits(&stackBottom, &stackTop);
-      self->mStackBase = reinterpret_cast<void*>(stackBottom);
-      self->mStackSize = stackTop - stackBottom;
-    }
-#endif
   }
 
   
@@ -670,7 +568,6 @@ nsThread::~nsThread()
 {
   NS_ASSERTION(mRequestedShutdownContexts.IsEmpty(),
                "shouldn't be waiting on other threads to shutdown");
-  MOZ_ASSERT(!isInList());
 #ifdef DEBUG
   
   
@@ -702,11 +599,6 @@ nsThread::Init(const nsACString& aName)
                        PR_JOINABLE_THREAD, mStackSize)) {
     NS_RELEASE_THIS();
     return NS_ERROR_OUT_OF_MEMORY;
-  }
-
-  {
-    OffTheBooksMutexAutoLock mal(ThreadListMutex());
-    ThreadList().insertBack(this);
   }
 
   
@@ -821,13 +713,6 @@ nsThread::ShutdownInternal(bool aSync)
   
   if (!mShutdownRequired.compareExchange(true, false)) {
     return nullptr;
-  }
-
-  {
-    OffTheBooksMutexAutoLock mal(ThreadListMutex());
-    if (isInList()) {
-      removeFrom(ThreadList());
-    }
   }
 
   NotNull<nsThread*> currentThread =
