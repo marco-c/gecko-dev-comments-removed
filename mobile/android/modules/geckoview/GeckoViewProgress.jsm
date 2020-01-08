@@ -141,7 +141,8 @@ var IdentityHandler = {
     
     
     if (identityMode === this.IDENTITY_MODE_UNKNOWN ||
-        (aState & Ci.nsIWebProgressListener.STATE_IS_BROKEN)) {
+        (aState & Ci.nsIWebProgressListener.STATE_IS_BROKEN) ||
+        (aState & Ci.nsIWebProgressListener.STATE_IS_INSECURE)) {
       result.secure = false;
       return result;
     }
