@@ -48,7 +48,10 @@ public:
   {
     mAnimationGeneration = Some(aCount);
   }
-  Maybe<uint64_t> GetAnimationGeneration() { return mAnimationGeneration; }
+  Maybe<uint64_t> GetAnimationGeneration() const
+  {
+    return mAnimationGeneration;
+  }
 
   
   void ClearAnimations();
