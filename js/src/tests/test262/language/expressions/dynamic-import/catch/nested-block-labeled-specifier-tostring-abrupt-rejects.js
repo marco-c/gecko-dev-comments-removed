@@ -37,6 +37,7 @@
 
 
 
+
 const obj = {
     toString() {
         throw 'custom error';

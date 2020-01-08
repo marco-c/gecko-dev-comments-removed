@@ -15,7 +15,14 @@ for (let date of dates) {
 
     
     
-    assertEq(Date.parse(d.toString()), timeValue, `Cannot parse from toString() of "${date}"`);
+    
+    
+    
+    
+    let tz = d.getTimezoneOffset();
+    if (Math.trunc(tz) === tz) {
+        assertEq(Date.parse(d.toString()), timeValue, `Cannot parse from toString() of "${date}"`);
+    }
     assertEq(Date.parse(d.toUTCString()), timeValue, `Cannot parse from toUTCString() of "${date}"`);
     assertEq(Date.parse(d.toISOString()), timeValue, `Cannot parse from toISOString() of "${date}"`);
 }

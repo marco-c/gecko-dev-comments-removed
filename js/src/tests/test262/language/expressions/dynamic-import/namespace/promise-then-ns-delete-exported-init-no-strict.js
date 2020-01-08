@@ -79,6 +79,7 @@
 
 
 
+
 import('./module-code_FIXTURE.js').then(ns => {
 
     assert.sameValue(delete ns.default, false, 'delete: default');

@@ -2,4 +2,4 @@
 
 
 
-export default import('./indirect-resolution-2_FIXTURE.js');
+export default import('indirect-resolution-2_FIXTURE.js');

@@ -72,6 +72,7 @@
 
 
 
+
 import('./module-code_FIXTURE.js').then(ns => {
 
     assert.sameValue(Object.isExtensible(ns), false);

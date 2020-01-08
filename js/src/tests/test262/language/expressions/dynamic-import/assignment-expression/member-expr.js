@@ -19,6 +19,7 @@
 
 
 
+
 const obj = {
     a: './module-code_FIXTURE.js',
     b: './module-code-other_FIXTURE.js'
