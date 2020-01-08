@@ -169,7 +169,7 @@ add_task(async function valid_cookieStoreId() {
       for (let [i, expectedResult] of Object.entries(expectedExecuteScriptResult)) {
         
         
-        let expectedUrl = Array.isArray(createParams.url) ? createParams.url[i] : createParams.url || "about:newtab";
+        let expectedUrl = Array.isArray(createParams.url) ? createParams.url[i] : createParams.url || "about:home";
         await awaitTabReady(win.tabs[i].id, expectedUrl);
 
         let result = await executeScriptAndGetResult(win.tabs[i].id);
