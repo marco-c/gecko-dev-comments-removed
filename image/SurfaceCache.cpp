@@ -12,6 +12,7 @@
 #include <algorithm>
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Move.h"
@@ -251,10 +252,11 @@ class ImageSurfaceCache
 {
   ~ImageSurfaceCache() { }
 public:
-  ImageSurfaceCache()
+  explicit ImageSurfaceCache(const ImageKey aImageKey)
     : mLocked(false)
     , mFactor2Mode(false)
     , mFactor2Pruned(false)
+    , mIsVectorImage(aImageKey->GetType() == imgIContainer::TYPE_VECTOR)
   { }
 
   MOZ_DECLARE_REFCOUNTED_TYPENAME(ImageSurfaceCache)
@@ -330,7 +332,7 @@ public:
 
     
     IntSize suggestedSize = SuggestedSize(aIdealKey.Size());
-    if (mFactor2Mode) {
+    if (suggestedSize != aIdealKey.Size()) {
       if (!exactMatch) {
         SurfaceKey compactKey = aIdealKey.CloneWithSize(suggestedSize);
         mSurfaces.Get(compactKey, getter_AddRefs(exactMatch));
@@ -401,7 +403,7 @@ public:
       } else if (aIdealKey.Size() != bestMatch->GetSurfaceKey().Size()) {
         
         MOZ_ASSERT(suggestedSize != aIdealKey.Size());
-        MOZ_ASSERT(mFactor2Mode);
+        MOZ_ASSERT(mFactor2Mode || mIsVectorImage);
         matchType = MatchType::SUBSTITUTE_BECAUSE_BEST;
       } else {
         
@@ -437,16 +439,14 @@ public:
     
     
     
-    
-    
-    
-    
-    
     auto first = ConstIter();
     NotNull<CachedSurface*> current = WrapNotNull(first.UserData());
     Image* image = static_cast<Image*>(current->GetImageKey());
     size_t nativeSizes = image->GetNativeSizesLength();
-    if (nativeSizes == 0) {
+    if (mIsVectorImage) {
+      MOZ_ASSERT(nativeSizes == 0);
+      nativeSizes = 1;
+    } else if (nativeSizes == 0) {
       return;
     }
 
@@ -531,6 +531,33 @@ public:
 
   IntSize SuggestedSize(const IntSize& aSize) const
   {
+    IntSize suggestedSize = SuggestedSizeInternal(aSize);
+    MOZ_ASSERT(SurfaceCache::IsLegalSize(suggestedSize));
+
+    
+    
+    
+    if (mIsVectorImage) {
+      
+      
+      
+      
+      int32_t maxSizeKB = gfxPrefs::ImageCacheMaxRasterizedSVGThresholdKB();
+      int32_t proposedKB = suggestedSize.width * suggestedSize.height / 256;
+      if (maxSizeKB >= proposedKB) {
+        return suggestedSize;
+      }
+
+      double scale = sqrt(double(maxSizeKB) / proposedKB);
+      suggestedSize.width = int32_t(scale * suggestedSize.width);
+      suggestedSize.height = int32_t(scale * suggestedSize.height);
+    }
+
+    return suggestedSize;
+  }
+
+  IntSize SuggestedSizeInternal(const IntSize& aSize) const
+  {
     
     if (!mFactor2Mode) {
       return aSize;
@@ -553,8 +580,45 @@ public:
         factorSize.IsEmpty()) {
       
       
+      
       MOZ_ASSERT_UNREACHABLE("Expected valid native size!");
       return aSize;
+    }
+
+    if (mIsVectorImage) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      int32_t delta = factorSize.width * aSize.height - aSize.width * factorSize.height;
+      int32_t maxDelta = (factorSize.height * aSize.height) >> 4;
+      if (delta > maxDelta || delta < -maxDelta) {
+        return aSize;
+      }
+
+      
+      
+      if (factorSize.width < aSize.width) {
+        do {
+          IntSize candidate(factorSize.width * 2, factorSize.height * 2);
+          if (!SurfaceCache::IsLegalSize(candidate)) {
+            break;
+          }
+
+          factorSize = candidate;
+        } while (factorSize.width < aSize.width);
+
+        return factorSize;
+      }
+
+      
     }
 
     
@@ -674,6 +738,10 @@ private:
   
   
   bool              mFactor2Pruned;
+
+  
+  
+  bool              mIsVectorImage;
 };
 
 
@@ -760,9 +828,10 @@ public:
 
     
     
-    RefPtr<ImageSurfaceCache> cache = GetImageCache(aProvider->GetImageKey());
+    const ImageKey imageKey = aProvider->GetImageKey();
+    RefPtr<ImageSurfaceCache> cache = GetImageCache(imageKey);
     if (!cache) {
-      cache = new ImageSurfaceCache;
+      cache = new ImageSurfaceCache(imageKey);
       mImageCaches.Put(aProvider->GetImageKey(), cache);
     }
 
@@ -1014,7 +1083,7 @@ public:
   {
     RefPtr<ImageSurfaceCache> cache = GetImageCache(aImageKey);
     if (!cache) {
-      cache = new ImageSurfaceCache;
+      cache = new ImageSurfaceCache(aImageKey);
       mImageCaches.Put(aImageKey, cache);
     }
 

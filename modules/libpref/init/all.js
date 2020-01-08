@@ -4621,6 +4621,10 @@ pref("image.animated.resume-from-last-displayed", true);
 pref("image.cache.factor2.threshold-surfaces", 4);
 
 
+
+pref("image.cache.max-rasterized-svg-threshold-kb", 92160);
+
+
 pref("image.cache.size", 5242880);
 
 
@@ -5018,14 +5022,6 @@ pref("extensions.webextensions.protocol.remote", true);
 
 
 pref("extensions.webextensions.tabhide.enabled", true);
-
-#ifdef NIGHTLY_BUILD
-
-pref("extensions.webextensions.userScripts.enabled", true);
-#else
-
-pref("extensions.webextensions.userScripts.enabled", false);
-#endif
 
 pref("extensions.webextensions.background-delayed-startup", false);
 
