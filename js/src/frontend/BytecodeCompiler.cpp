@@ -52,7 +52,7 @@ class MOZ_STACK_CLASS BytecodeCompiler
 
     JSScript* compileGlobalScript(ScopeKind scopeKind);
     JSScript* compileEvalScript(HandleObject environment, HandleScope enclosingScope);
-    JSScript* compileModule();
+    ModuleObject* compileModule();
     bool compileStandaloneFunction(MutableHandleFunction fun, GeneratorKind generatorKind,
                                    FunctionAsyncKind asyncKind,
                                    const Maybe<uint32_t>& parameterListEnd);
@@ -411,7 +411,7 @@ BytecodeCompiler::compileEvalScript(HandleObject environment, HandleScope enclos
     return compileScript(environment, &evalsc);
 }
 
-JSScript*
+ModuleObject*
 BytecodeCompiler::compileModule()
 {
     if (!createSourceAndParser(ParseGoal::Module)) {
@@ -462,7 +462,7 @@ BytecodeCompiler::compileModule()
     }
 
     MOZ_ASSERT_IF(!cx->helperThread(), !cx->isExceptionPending());
-    return script;
+    return module;
 }
 
 
@@ -676,9 +676,8 @@ frontend::CompileGlobalBinASTScript(JSContext* cx, LifoAlloc& alloc, const ReadO
         return nullptr;
     }
 
-    if (!sourceObj->source()->setBinASTSourceCopy(cx, src, len)) {
+    if (!sourceObj->source()->setBinASTSourceCopy(cx, src, len))
         return nullptr;
-    }
 
     RootedScript script(cx, JSScript::Create(cx, options, sourceObj, 0, len, 0, len));
 
@@ -742,7 +741,7 @@ frontend::CompileEvalScript(JSContext* cx, LifoAlloc& alloc,
 
 }
 
-JSScript*
+ModuleObject*
 frontend::CompileModule(JSContext* cx, const ReadOnlyCompileOptions& optionsInput,
                         SourceBufferHolder& srcBuf, LifoAlloc& alloc,
                         ScriptSourceObject** sourceObjectOut)
@@ -760,16 +759,16 @@ frontend::CompileModule(JSContext* cx, const ReadOnlyCompileOptions& optionsInpu
     RootedScope emptyGlobalScope(cx, &cx->global()->emptyGlobalScope());
     BytecodeCompiler compiler(cx, alloc, options, srcBuf, emptyGlobalScope);
     AutoInitializeSourceObject autoSSO(compiler, sourceObjectOut);
-    JSScript* script = compiler.compileModule();
-    if (!script) {
+    ModuleObject* module = compiler.compileModule();
+    if (!module) {
         return nullptr;
     }
 
     assertException.reset();
-    return script;
+    return module;
 }
 
-JSScript*
+ModuleObject*
 frontend::CompileModule(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
                         SourceBufferHolder& srcBuf)
 {
@@ -780,20 +779,19 @@ frontend::CompileModule(JSContext* cx, const JS::ReadOnlyCompileOptions& options
     }
 
     LifoAlloc& alloc = cx->tempLifoAlloc();
-    RootedScript script(cx, CompileModule(cx, options, srcBuf, alloc));
-    if (!script) {
+    RootedModuleObject module(cx, CompileModule(cx, options, srcBuf, alloc));
+    if (!module) {
         return nullptr;
     }
 
     
     
-    RootedModuleObject module(cx, script->module());
     if (!ModuleObject::Freeze(cx, module)) {
         return nullptr;
     }
 
     assertException.reset();
-    return script;
+    return module;
 }
 
 
@@ -956,13 +954,11 @@ frontend::CompileLazyBinASTFunction(JSContext* cx, Handle<LazyScript*> lazy, con
     RootedScript script(cx, JSScript::Create(cx, options, sourceObj, lazy->sourceStart(), lazy->sourceEnd(),
                                              lazy->sourceStart(), lazy->sourceEnd()));
 
-    if (!script) {
+    if (!script)
         return false;
-    }
 
-    if (lazy->hasBeenCloned()) {
+    if (lazy->hasBeenCloned())
         script->setHasBeenCloned();
-    }
 
     frontend::BinASTParser<BinTokenReaderMultipart> parser(cx, cx->tempLifoAlloc(),
                                                            usedNames, options, sourceObj,
@@ -970,26 +966,22 @@ frontend::CompileLazyBinASTFunction(JSContext* cx, Handle<LazyScript*> lazy, con
 
     auto parsed = parser.parseLazyFunction(lazy->scriptSource(), lazy->sourceStart());
 
-    if (parsed.isErr()) {
+    if (parsed.isErr())
         return false;
-    }
 
     ParseNode *pn = parsed.unwrap();
 
     BytecodeEmitter bce(nullptr, &parser, pn->as<CodeNode>().funbox(), script,
                         lazy, pn->pn_pos, BytecodeEmitter::LazyFunction);
 
-    if (!bce.init()) {
+    if (!bce.init())
         return false;
-    }
 
-    if (!bce.emitFunctionScript(&pn->as<CodeNode>(), BytecodeEmitter::TopLevelFunction::Yes)) {
+    if (!bce.emitFunctionScript(&pn->as<CodeNode>(), BytecodeEmitter::TopLevelFunction::Yes))
         return false;
-    }
 
-    if (!NameFunctions(cx, pn)) {
+    if (!NameFunctions(cx, pn))
         return false;
-    }
 
     return script;
 }

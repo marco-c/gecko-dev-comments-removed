@@ -541,9 +541,9 @@ ModuleParseTask::parse(JSContext* cx)
 
     Rooted<ScriptSourceObject*> sourceObject(cx);
 
-    JSScript* script = frontend::CompileModule(cx, options, data, cx->tempLifoAlloc(), &sourceObject.get());
-    if (script) {
-        scripts.infallibleAppend(script);
+    ModuleObject* module = frontend::CompileModule(cx, options, data, cx->tempLifoAlloc(), &sourceObject.get());
+    if (module) {
+        scripts.infallibleAppend(module->script());
         if (sourceObject) {
             sourceObjects.infallibleAppend(sourceObject);
         }
@@ -930,9 +930,8 @@ js::StartOffThreadDecodeBinAST(JSContext* cx, const ReadOnlyCompileOptions& opti
                                const uint8_t* buf, size_t length,
                                JS::OffThreadCompileCallback callback, void *callbackData)
 {
-    if (!cx->runtime()->binast().ensureBinTablesInitialized(cx)) {
+    if (!cx->runtime()->binast().ensureBinTablesInitialized(cx))
         return false;
-    }
 
     auto task = cx->make_unique<BinASTDecodeTask>(cx, buf, length, callback, callbackData);
     if (!task || !StartOffThreadParseTask(cx, task.get(), options)) {
@@ -1244,14 +1243,12 @@ GlobalHelperThreadState::checkTaskThreadLimit(size_t maxThreads, bool isMaster) 
 void
 GlobalHelperThreadState::triggerFreeUnusedMemory()
 {
-    if (!CanUseExtraThreads()) {
+    if (!CanUseExtraThreads())
         return;
-    }
 
     AutoLockHelperThreadState lock;
-    for (auto& thread : *threads) {
+    for (auto& thread : *threads)
         thread.shouldFreeUnusedMemory = true;
-    }
     notifyAll(PRODUCER, lock);
 }
 
@@ -1919,10 +1916,10 @@ GlobalHelperThreadState::finishMultiScriptsDecodeTask(JSContext* cx, JS::OffThre
     return finishMultiParseTask(cx, ParseTaskKind::MultiScriptsDecode, token, scripts);
 }
 
-JSScript*
+JSObject*
 GlobalHelperThreadState::finishModuleParseTask(JSContext* cx, JS::OffThreadToken* token)
 {
-    RootedScript script(cx, finishSingleParseTask(cx, ParseTaskKind::Module, token));
+    JSScript* script = finishSingleParseTask(cx, ParseTaskKind::Module, token);
     if (!script) {
         return nullptr;
     }
@@ -1935,7 +1932,7 @@ GlobalHelperThreadState::finishModuleParseTask(JSContext* cx, JS::OffThreadToken
         return nullptr;
     }
 
-    return script;
+    return module;
 }
 
 void

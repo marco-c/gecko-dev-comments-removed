@@ -54,7 +54,6 @@ public:
     void SetDocShellAllowsScript(bool aAllowed);
 
     static Scriptability& Get(JSObject* aScope);
-    static Scriptability& Get(JSScript* aScript);
 
 private:
     

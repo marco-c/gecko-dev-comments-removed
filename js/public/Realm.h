@@ -76,11 +76,6 @@ GetObjectRealmOrNull(JSObject* obj);
 
 
 
-extern JS_PUBLIC_API(Realm*)
-GetScriptRealm(JSScript* script);
-
-
-
 
 extern JS_PUBLIC_API(void*)
 GetRealmPrivate(Realm* realm);
