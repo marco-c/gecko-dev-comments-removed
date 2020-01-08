@@ -2093,18 +2093,9 @@ nsContentUtils::CanCallerAccess(nsIPrincipal* aSubjectPrincipal,
 
 
 bool
-nsContentUtils::CanCallerAccess(const nsINode* aNode)
+nsContentUtils::CanCallerAccess(nsINode* aNode)
 {
-  nsIPrincipal* subject = SubjectPrincipal();
-  if (IsSystemPrincipal(subject)) {
-    return true;
-  }
-
-  if (aNode->ChromeOnlyAccess()) {
-    return false;
-  }
-
-  return CanCallerAccess(subject, aNode->NodePrincipal());
+  return CanCallerAccess(SubjectPrincipal(), aNode->NodePrincipal());
 }
 
 
@@ -9045,6 +9036,26 @@ nsContentUtils::IsTrackingResourceWindow(nsPIDOMWindowInner* aWindow)
   }
 
   return httpChannel->GetIsTrackingResource();
+}
+
+
+bool
+nsContentUtils::IsThirdPartyTrackingResourceWindow(nsPIDOMWindowInner* aWindow)
+{
+  MOZ_ASSERT(aWindow);
+
+  nsIDocument* document = aWindow->GetExtantDoc();
+  if (!document) {
+    return false;
+  }
+
+  nsCOMPtr<nsIHttpChannel> httpChannel =
+    do_QueryInterface(document->GetChannel());
+  if (!httpChannel) {
+    return false;
+  }
+
+  return httpChannel->GetIsThirdPartyTrackingResource();
 }
 
 static bool
