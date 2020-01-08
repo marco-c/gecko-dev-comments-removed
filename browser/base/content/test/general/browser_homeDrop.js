@@ -19,8 +19,6 @@ add_task(async function() {
     let setHomepageDialogPromise = BrowserTestUtils.domWindowOpened();
 
     EventUtils.synthesizeDrop(dragSrcElement, homeButton, dragData, "copy", window);
-    
-    EventUtils.synthesizeMouseAtCenter(homeButton, { type: "mouseup" }, window);
 
     let setHomepageDialog = await setHomepageDialogPromise;
     ok(true, "dialog appeared in response to home button drop");
@@ -70,8 +68,6 @@ add_task(async function() {
         
         expectUncaughtException();
         EventUtils.synthesizeDrop(dragSrcElement, homeButton, [[{type: "text/plain", data: "javascript:8888"}]], "copy", window);
-        
-        EventUtils.synthesizeMouseAtCenter(homeButton, { type: "mouseup" }, window);
       });
     });
   }
