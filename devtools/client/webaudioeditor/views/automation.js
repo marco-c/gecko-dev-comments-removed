@@ -86,7 +86,7 @@ var AutomationView = {
   _createParamButtons: function(params) {
     this._buttons.innerHTML = "";
     params.forEach((param, i) => {
-      const button = document.createElement("toolbarbutton");
+      const button = document.createXULElement("toolbarbutton");
       button.setAttribute("class", "devtools-toolbarbutton automation-param-button");
       button.setAttribute("data-param", param.param);
       
