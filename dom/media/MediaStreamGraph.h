@@ -375,8 +375,6 @@ public:
 
 
 
-
-
   void RunAfterPendingUpdates(already_AddRefed<nsIRunnable> aRunnable);
 
   
