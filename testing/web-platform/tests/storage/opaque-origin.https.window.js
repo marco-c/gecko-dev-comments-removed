@@ -1,9 +1,4 @@
-<!DOCTYPE html>
-<meta charset=utf-8>
-<title>StorageManager API and opaque origins</title>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script>
+
 
 function load_iframe(src, sandbox) {
   return new Promise(resolve => {
@@ -41,7 +36,7 @@ function make_script(snippet) {
          '            window.parent.postMessage({result: error.name}, "*");' +
          '          });' +
          '    } catch (ex) {' +
-         // Report if not implemented/exposed, rather than time out.
+         
          '      window.parent.postMessage({result: ex.message}, "*");' +
          '    }' +
          '  };' +
@@ -76,4 +71,3 @@ function make_script(snippet) {
       });
   }, `${snippet} in sandboxed iframe should reject with TypeError`);
 });
-</script>

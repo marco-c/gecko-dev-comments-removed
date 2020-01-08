@@ -1,4 +1,5 @@
-importScripts('/resources/testharness.js');
+
+importScripts("/resources/testharness.js");
 
 test(function() {
   assert_false('persist' in navigator.storage);
