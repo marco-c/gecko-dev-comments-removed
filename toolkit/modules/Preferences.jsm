@@ -187,14 +187,14 @@ Preferences.isSet = function(prefName) {
     return prefName.map(this.isSet, this);
 
   return (this.has(prefName) && this._prefBranch.prefHasUserValue(prefName));
-},
+};
 
 
 
 
 
 
-Preferences.modified = function(prefName) { return this.isSet(prefName); },
+Preferences.modified = function(prefName) { return this.isSet(prefName); };
 
 Preferences.reset = function(prefName) {
   if (Array.isArray(prefName)) {
@@ -329,7 +329,7 @@ Preferences.resetBranch = function(prefBranch = "") {
     else
       throw ex;
   }
-},
+};
 
 
 
@@ -361,7 +361,7 @@ Object.defineProperty(Preferences, "_prefBranch",
     return this._cachedPrefBranch;
   },
   enumerable: true,
-  configurable: true,
+  configurable: true
 });
 
 
@@ -408,7 +408,7 @@ PrefObserver.prototype = {
         this.callback(prefValue);
     } else 
       this.callback.observe(subject, topic, data);
-  },
+  }
 };
 
 function isObject(val) {

@@ -18,7 +18,7 @@ if (this.Components) {
   
   let timeStamps = {
     entered: Date.now(),
-    loaded: null,
+    loaded: null
   };
 
   importScripts("resource://gre/modules/osfile.jsm");
@@ -30,7 +30,7 @@ if (this.Components) {
   let worker = new PromiseWorker.AbstractWorker();
   worker.dispatch = function(method, args = []) {
     return Agent[method](...args);
-  },
+  };
   worker.log = LOG;
   worker.postMessage = function(message, ...transfers) {
     if (timeStamps) {
@@ -95,7 +95,7 @@ if (this.Components) {
 
    listOpenedResources: function listOpenedResources() {
      return Array.from(this._map, ([id, resource]) => resource.info.path);
-   },
+   }
   };
 
  
@@ -172,7 +172,7 @@ if (this.Components) {
      let result = {
        openedFiles: OpenedFiles.listOpenedResources(),
        openedDirectoryIterators: OpenedDirectoryIterators.listOpenedResources(),
-       killed: false, 
+       killed: false 
      };
 
      
@@ -223,7 +223,7 @@ if (this.Components) {
      return OpenedFiles.add(file, {
        
        
-       path: filePath,
+       path: filePath
      });
    },
    openUnique: function openUnique(path, options) {
@@ -232,12 +232,12 @@ if (this.Components) {
      let resourceId = OpenedFiles.add(openedFile.file, {
        
        
-       path: openedFile.path,
+       path: openedFile.path
      });
 
      return {
        path: openedFile.path,
-       file: resourceId,
+       file: resourceId
      };
    },
    read: function read(path, bytes, options) {
@@ -248,9 +248,9 @@ if (this.Components) {
      return new Meta({
          buffer: data.buffer,
          byteOffset: data.byteOffset,
-         byteLength: data.byteLength,
+         byteLength: data.byteLength
      }, {
-       transfers: [data.buffer],
+       transfers: [data.buffer]
      });
    },
    exists: function exists(path) {
@@ -274,7 +274,7 @@ if (this.Components) {
      return OpenedDirectoryIterators.add(iterator, {
        
        
-       path: directoryPath,
+       path: directoryPath
      });
    },
    
@@ -313,9 +313,9 @@ if (this.Components) {
          return new Meta({
              buffer: data.buffer,
              byteOffset: data.byteOffset,
-             byteLength: data.byteLength,
+             byteLength: data.byteLength
          }, {
-           transfers: [data.buffer],
+           transfers: [data.buffer]
          });
        }
      );
@@ -389,7 +389,7 @@ if (this.Components) {
        function do_exists() {
          return this.exists();
        });
-   },
+   }
   };
   if (!SharedAll.Constants.Win) {
     Agent.unixSymLink = function unixSymLink(sourcePath, destPath) {
