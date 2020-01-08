@@ -76,8 +76,6 @@ class TenuringTracer : public JSTracer
 
     
     size_t tenuredSize;
-    
-    size_t tenuredCells;
 
     
     
@@ -442,7 +440,6 @@ class Nursery
         size_t nurseryLazyCapacity = 0;
         size_t nurseryUsedBytes = 0;
         size_t tenuredBytes = 0;
-        size_t tenuredCells = 0;
     } previousGC;
 
     

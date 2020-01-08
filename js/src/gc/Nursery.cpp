@@ -249,8 +249,6 @@ js::Nursery::disable()
     freeChunksFrom(0);
     maxChunkCount_ = 0;
 
-    
-    
     currentEnd_ = 0;
     currentStringEnd_ = 0;
     runtime()->gc.storeBuffer().disable();
@@ -396,9 +394,6 @@ js::Nursery::allocate(size_t size)
 
     void* thing = (void*)position();
     position_ = position() + size;
-#if defined(NIGHTLY_BUILD)
-    runtime()->gc.stats().noteNurseryAlloc();
-#endif
 
     JS_EXTRA_POISON(thing, JS_ALLOCATED_NURSERY_PATTERN, size, MemCheckKind::MakeUndefined);
 
@@ -553,7 +548,6 @@ js::TenuringTracer::TenuringTracer(JSRuntime* rt, Nursery* nursery)
   : JSTracer(rt, JSTracer::TracerKindTag::Tenuring, TraceWeakMapKeysValues)
   , nursery_(*nursery)
   , tenuredSize(0)
-  , tenuredCells(0)
   , objHead(nullptr)
   , objTail(&objHead)
   , stringHead(nullptr)
@@ -613,7 +607,6 @@ js::Nursery::renderProfileJSON(JSONPrinter& json) const
 
     json.property("reason", JS::gcreason::ExplainReason(previousGC.reason));
     json.property("bytes_tenured", previousGC.tenuredBytes);
-    json.property("cells_tenured", previousGC.tenuredCells);
     json.property("bytes_used", previousGC.nurseryUsedBytes);
     json.property("cur_capacity", previousGC.nurseryCapacity);
     const size_t newCapacity = spaceToEnd(maxChunkCount());
@@ -623,13 +616,6 @@ js::Nursery::renderProfileJSON(JSONPrinter& json) const
         json.property("lazy_capacity", previousGC.nurseryLazyCapacity);
     if (!timeInChunkAlloc_.IsZero())
         json.property("chunk_alloc_us", timeInChunkAlloc_, json.MICROSECONDS);
-
-#if defined(NIGHTLY_BUILD)
-    
-    
-    json.property("cells_allocated_nursery", runtime()->gc.stats().allocsSinceMinorGCNursery());
-    json.property("cells_allocated_tenured", runtime()->gc.stats().allocsSinceMinorGCTenured());
-#endif
 
     json.beginObjectProperty("phase_times");
 
@@ -763,7 +749,6 @@ js::Nursery::collect(JS::gcreason::Reason reason)
         previousGC.nurseryCapacity = spaceToEnd(maxChunkCount());
         previousGC.nurseryLazyCapacity = spaceToEnd(allocatedChunkCount());
         previousGC.tenuredBytes = 0;
-        previousGC.tenuredCells = 0;
     }
 
     
@@ -977,7 +962,6 @@ js::Nursery::doCollection(JS::gcreason::Reason reason, TenureCountCache& tenureC
     previousGC.nurseryLazyCapacity = spaceToEnd(allocatedChunkCount());
     previousGC.nurseryUsedBytes = initialNurseryUsedBytes;
     previousGC.tenuredBytes = mover.tenuredSize;
-    previousGC.tenuredCells = mover.tenuredCells;
 }
 
 void
