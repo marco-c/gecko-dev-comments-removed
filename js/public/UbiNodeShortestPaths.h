@@ -274,9 +274,9 @@ struct JS_PUBLIC_API(ShortestPaths)
 
 
 
-    NodeSet::Range eachTarget() const {
+    NodeSet::Iterator targetIter() const {
         MOZ_ASSERT(initialized());
-        return targets_.all();
+        return targets_.iter();
     }
 
     
