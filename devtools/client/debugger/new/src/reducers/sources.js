@@ -3,13 +3,10 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getSelectedSource = exports.getSelectedLocation = exports.getSourcesForTabs = exports.getSourceTabs = exports.getTabs = undefined;
+exports.getSelectedSource = exports.getSelectedLocation = exports.getSourceCount = undefined;
 exports.initialSourcesState = initialSourcesState;
 exports.createSource = createSource;
-exports.removeSourceFromTabList = removeSourceFromTabList;
-exports.removeSourcesFromTabList = removeSourcesFromTabList;
 exports.getBlackBoxList = getBlackBoxList;
-exports.getNewSelectedSourceId = getNewSelectedSourceId;
 exports.getSource = getSource;
 exports.getSourceFromId = getSourceFromId;
 exports.getSourceByURL = getSourceByURL;
@@ -17,26 +14,19 @@ exports.getGeneratedSource = getGeneratedSource;
 exports.getPendingSelectedLocation = getPendingSelectedLocation;
 exports.getPrettySource = getPrettySource;
 exports.hasPrettySource = hasPrettySource;
+exports.getSourceByUrlInSources = getSourceByUrlInSources;
 exports.getSourceInSources = getSourceInSources;
 exports.getSources = getSources;
+exports.getUrls = getUrls;
 exports.getSourceList = getSourceList;
-exports.getSourceCount = getSourceCount;
 
 var _reselect = require("devtools/client/debugger/new/dist/vendors").vendored["reselect"];
-
-var _lodashMove = require("devtools/client/debugger/new/dist/vendors").vendored["lodash-move"];
-
-var _lodashMove2 = _interopRequireDefault(_lodashMove);
 
 var _source = require("../utils/source");
 
 var _devtoolsSourceMap = require("devtools/client/shared/source-map/index.js");
 
-var _lodash = require("devtools/client/shared/vendor/lodash");
-
 var _prefs = require("../utils/prefs");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 
 
@@ -49,9 +39,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function initialSourcesState() {
   return {
     sources: {},
+    urls: {},
     selectedLocation: undefined,
-    pendingSelectedLocation: _prefs.prefs.pendingSelectedLocation,
-    tabs: restoreTabs()
+    pendingSelectedLocation: _prefs.prefs.pendingSelectedLocation
   };
 }
 
@@ -123,28 +113,6 @@ function update(state = initialSourcesState(), action) {
       _prefs.prefs.pendingSelectedLocation = location;
       return { ...state,
         pendingSelectedLocation: location
-      };
-
-    case "ADD_TAB":
-      return { ...state,
-        tabs: updateTabList(state.tabs, action.url)
-      };
-
-    case "MOVE_TAB":
-      return { ...state,
-        tabs: updateTabList(state.tabs, action.url, action.tabIndex)
-      };
-
-    case "CLOSE_TAB":
-      _prefs.prefs.tabs = action.tabs;
-      return { ...state,
-        tabs: action.tabs
-      };
-
-    case "CLOSE_TABS":
-      _prefs.prefs.tabs = action.tabs;
-      return { ...state,
-        tabs: action.tabs
       };
 
     case "LOAD_SOURCE_TEXT":
@@ -228,43 +196,16 @@ function updateSource(state, source) {
   const updatedSource = existingSource ? { ...existingSource,
     ...source
   } : createSource(source);
+  const existingUrls = state.urls[source.url];
+  const urls = existingUrls ? [...existingUrls, source.id] : [source.id];
   return { ...state,
     sources: { ...state.sources,
       [source.id]: updatedSource
+    },
+    urls: { ...state.urls,
+      [source.url]: urls
     }
   };
-}
-
-function removeSourceFromTabList(tabs, url) {
-  return tabs.filter(tab => tab !== url);
-}
-
-function removeSourcesFromTabList(tabs, urls) {
-  return urls.reduce((t, url) => removeSourceFromTabList(t, url), tabs);
-}
-
-function restoreTabs() {
-  const prefsTabs = _prefs.prefs.tabs || [];
-  return prefsTabs;
-}
-
-
-
-
-
-
-
-function updateTabList(tabs, url, newIndex) {
-  const currentIndex = tabs.indexOf(url);
-
-  if (currentIndex === -1) {
-    tabs = [url, ...tabs];
-  } else if (newIndex !== undefined) {
-    tabs = (0, _lodashMove2.default)(tabs, currentIndex, newIndex);
-  }
-
-  _prefs.prefs.tabs = tabs;
-  return tabs;
 }
 
 function updateBlackBoxList(url, isBlackBoxed) {
@@ -284,59 +225,6 @@ function updateBlackBoxList(url, isBlackBoxed) {
 
 function getBlackBoxList() {
   return _prefs.prefs.tabsBlackBoxed || [];
-}
-
-
-
-
-
-
-
-
-
-
-
-function getNewSelectedSourceId(state, availableTabs) {
-  const selectedLocation = state.sources.selectedLocation;
-
-  if (!selectedLocation) {
-    return "";
-  }
-
-  const selectedTab = getSource(state, selectedLocation.sourceId);
-
-  if (!selectedTab) {
-    return "";
-  }
-
-  if (availableTabs.includes(selectedTab.url)) {
-    const sources = state.sources.sources;
-
-    if (!sources) {
-      return "";
-    }
-
-    const selectedSource = getSourceByURL(state, selectedTab.url);
-
-    if (selectedSource) {
-      return selectedSource.id;
-    }
-
-    return "";
-  }
-
-  const tabUrls = state.sources.tabs;
-  const leftNeighborIndex = Math.max(tabUrls.indexOf(selectedTab.url) - 1, 0);
-  const lastAvailbleTabIndex = availableTabs.length - 1;
-  const newSelectedTabIndex = Math.min(leftNeighborIndex, lastAvailbleTabIndex);
-  const availableTab = availableTabs[newSelectedTabIndex];
-  const tabSource = getSourceByUrlInSources(state.sources.sources, availableTab);
-
-  if (tabSource) {
-    return tabSource.id;
-  }
-
-  return "";
 } 
 
 
@@ -358,7 +246,7 @@ function getSourceFromId(state, id) {
 }
 
 function getSourceByURL(state, url) {
-  return getSourceByUrlInSources(state.sources.sources, url);
+  return getSourceByUrlInSources(getSources(state), getUrls(state), url);
 }
 
 function getGeneratedSource(state, source) {
@@ -387,12 +275,22 @@ function hasPrettySource(state, id) {
   return !!getPrettySource(state, id);
 }
 
-function getSourceByUrlInSources(sources, url) {
-  if (!url) {
+function getSourceByUrlInSources(sources, urls, url) {
+  const foundSources = getSourcesByUrlInSources(sources, urls, url);
+
+  if (!foundSources) {
     return null;
   }
 
-  return (0, _lodash.find)(sources, source => source.url === url);
+  return foundSources[0];
+}
+
+function getSourcesByUrlInSources(sources, urls, url) {
+  if (!url || !urls[url]) {
+    return [];
+  }
+
+  return urls[url].map(id => sources[id]);
 }
 
 function getSourceInSources(sources, id) {
@@ -403,19 +301,15 @@ function getSources(state) {
   return state.sources.sources;
 }
 
+function getUrls(state) {
+  return state.sources.urls;
+}
+
 function getSourceList(state) {
   return Object.values(getSources(state));
 }
 
-function getSourceCount(state) {
-  return Object.keys(getSources(state)).length;
-}
-
-const getTabs = exports.getTabs = (0, _reselect.createSelector)(getSourcesState, sources => sources.tabs);
-const getSourceTabs = exports.getSourceTabs = (0, _reselect.createSelector)(getTabs, getSources, (tabs, sources) => tabs.filter(tab => getSourceByUrlInSources(sources, tab)));
-const getSourcesForTabs = exports.getSourcesForTabs = (0, _reselect.createSelector)(getSourceTabs, getSources, (tabs, sources) => {
-  return tabs.map(tab => getSourceByUrlInSources(sources, tab)).filter(source => source);
-});
+const getSourceCount = exports.getSourceCount = (0, _reselect.createSelector)(getSources, sources => Object.keys(sources).length);
 const getSelectedLocation = exports.getSelectedLocation = (0, _reselect.createSelector)(getSourcesState, sources => sources.selectedLocation);
 const getSelectedSource = exports.getSelectedSource = (0, _reselect.createSelector)(getSelectedLocation, getSources, (selectedLocation, sources) => {
   if (!selectedLocation) {
