@@ -8,7 +8,6 @@
 
 #include "nsIAudioDeviceInfo.h"
 #include "CubebUtils.h"
-#include "nsString.h"
 #include "mozilla/Maybe.h"
 
 
@@ -35,15 +34,13 @@ public:
                   uint32_t aMinRate,
                   uint32_t aMaxLatency,
                   uint32_t aMinLatency);
-
   explicit AudioDeviceInfo(cubeb_device_info* aInfo);
-  
-  
-  mozilla::Maybe<AudioDeviceID> GetDeviceID();
-  const nsString& FriendlyName();
-  uint32_t MaxChannels();
-  uint32_t Type();
-  uint32_t State();
+
+  AudioDeviceID DeviceID() const;
+  const nsString& Name() const;
+  uint32_t MaxChannels() const;
+  uint32_t Type() const;
+  uint32_t State() const;
 private:
   virtual ~AudioDeviceInfo() = default;
 
