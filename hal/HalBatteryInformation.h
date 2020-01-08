@@ -4,19 +4,16 @@
 
 
 
-#ifndef mozilla_dom_battery_Types_h
-#define mozilla_dom_battery_Types_h
+#ifndef mozilla_HalBatteryInformation_h
+#define mozilla_HalBatteryInformation_h
+
+#include "mozilla/Observer.h"
 
 namespace mozilla {
 namespace hal {
 class BatteryInformation;
-} 
-
-template <class T>
-class Observer;
-
 typedef Observer<hal::BatteryInformation> BatteryObserver;
-
+} 
 } 
 
 #endif 

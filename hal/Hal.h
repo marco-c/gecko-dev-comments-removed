@@ -10,10 +10,10 @@
 #include "base/basictypes.h"
 #include "base/platform_thread.h"
 #include "nsTArray.h"
-#include "mozilla/dom/battery/Types.h"
 #include "mozilla/dom/power/Types.h"
 #include "mozilla/dom/ScreenOrientation.h"
 #include "mozilla/hal_sandbox/PHal.h"
+#include "mozilla/HalBatteryInformation.h"
 #include "mozilla/HalNetworkInformation.h"
 #include "mozilla/HalScreenConfiguration.h"
 #include "mozilla/HalTypes.h"
@@ -85,13 +85,13 @@ void CancelVibrate(const hal::WindowIdentifier &id);
 
 
 
-void RegisterBatteryObserver(BatteryObserver* aBatteryObserver);
+void RegisterBatteryObserver(hal::BatteryObserver* aBatteryObserver);
 
 
 
 
 
-void UnregisterBatteryObserver(BatteryObserver* aBatteryObserver);
+void UnregisterBatteryObserver(hal::BatteryObserver* aBatteryObserver);
 
 
 
