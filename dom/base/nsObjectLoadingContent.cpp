@@ -725,7 +725,6 @@ nsObjectLoadingContent::InstantiatePluginInstance(bool aIsLoading)
     return NS_OK;
   }
 
-  nsresult rv = NS_ERROR_FAILURE;
   RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
 
   if (!pluginHost) {
@@ -742,9 +741,9 @@ nsObjectLoadingContent::InstantiatePluginInstance(bool aIsLoading)
   }
 
   RefPtr<nsPluginInstanceOwner> newOwner;
-  rv = pluginHost->InstantiatePluginInstance(mContentType,
-                                             mURI.get(), this,
-                                             getter_AddRefs(newOwner));
+  nsresult rv = pluginHost->InstantiatePluginInstance(mContentType,
+                                                      mURI.get(), this,
+                                                      getter_AddRefs(newOwner));
 
   
   if (appShell) {
@@ -2150,7 +2149,6 @@ nsObjectLoadingContent::LoadObject(bool aNotify,
       mPendingCheckPluginStopEvent || mFinalListener)
   {
     MOZ_ASSERT_UNREACHABLE("Trying to load new plugin with existing content");
-    rv = NS_ERROR_UNEXPECTED;
     return NS_OK;
   }
 
@@ -2158,7 +2156,6 @@ nsObjectLoadingContent::LoadObject(bool aNotify,
   
   if (mType != eType_Null && !!mChannel != mChannelLoaded) {
     MOZ_ASSERT_UNREACHABLE("Trying to load with bad channel state");
-    rv = NS_ERROR_UNEXPECTED;
     return NS_OK;
   }
 

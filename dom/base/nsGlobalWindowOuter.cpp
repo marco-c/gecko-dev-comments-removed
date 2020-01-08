@@ -1695,7 +1695,7 @@ nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
   bool reUseInnerWindow = (aForceReuseInnerWindow || wouldReuseInnerWindow) &&
                           GetCurrentInnerWindowInternal();
 
-  nsresult rv = NS_OK;
+  nsresult rv;
 
   
   
