@@ -1916,6 +1916,13 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
+  "dom.reporting.cleanup.timeout",
+   dom_reporting_cleanup_timeout,
+  uint32_t, 3600
+)
+
+
+VARCACHE_PREF(
   "dom.reporting.delivering.timeout",
    dom_reporting_delivering_timeout,
   uint32_t, 5
