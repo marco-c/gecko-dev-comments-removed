@@ -4414,10 +4414,6 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
         }
 
         
-        for (JSScript** i = scriptVector.begin(); i != scriptVector.end(); ++i)
-            JS::ExposeScriptToActiveJS(*i);
-
-        
         
         
         
