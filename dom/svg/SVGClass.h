@@ -19,10 +19,8 @@ namespace mozilla {
 namespace dom {
 class SVGAnimatedString;
 class SVGElement;
-}  
-}  
 
-class nsSVGClass {
+class SVGClass {
  public:
   typedef mozilla::dom::SVGElement SVGElement;
 
@@ -47,13 +45,13 @@ class nsSVGClass {
  public:
   struct SMILString : public nsISMILAttr {
    public:
-    SMILString(nsSVGClass* aVal, SVGElement* aSVGElement)
+    SMILString(SVGClass* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}
 
     
     
     
-    nsSVGClass* mVal;
+    SVGClass* mVal;
     SVGElement* mSVGElement;
 
     
@@ -66,4 +64,8 @@ class nsSVGClass {
     virtual nsresult SetAnimValue(const nsSMILValue& aValue) override;
   };
 };
+
+}  
+}  
+
 #endif  
