@@ -363,10 +363,13 @@ DoCORSChecks(nsIChannel* aChannel, nsILoadInfo* aLoadInfo,
     return NS_OK;
   }
 
-  nsIPrincipal* loadingPrincipal = aLoadInfo->LoadingPrincipal();
+  
+  
+  
+  nsIPrincipal* principal = aLoadInfo->TriggeringPrincipal();
   RefPtr<nsCORSListenerProxy> corsListener =
     new nsCORSListenerProxy(aInAndOutListener,
-                            loadingPrincipal,
+                            principal,
                             aLoadInfo->GetCookiePolicy() ==
                               nsILoadInfo::SEC_COOKIES_INCLUDE);
   
