@@ -15,6 +15,10 @@
 #include <limits.h> 
 #include <string.h> 
 
+#if defined(__MINGW32__)
+#include <windows.h>
+#endif
+
 #define NSS_MAX_ERROR_STACK_COUNT 16 /* error codes */
 
 
@@ -65,7 +69,32 @@ static const PRCallOnceType error_call_again;
 static PRStatus
 error_once_function(void)
 {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(__MINGW32__)
+    HMODULE nss3 = GetModuleHandleW(L"nss3");
+    if (nss3) {
+        FARPROC freePtr = GetProcAddress(nss3, "PR_Free");
+        if (freePtr) {
+            return PR_NewThreadPrivateIndex(&error_stack_index, freePtr);
+        }
+    }
     return PR_NewThreadPrivateIndex(&error_stack_index, PR_Free);
+#else
+    return PR_NewThreadPrivateIndex(&error_stack_index, PR_Free);
+#endif
 }
 
 
