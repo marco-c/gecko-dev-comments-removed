@@ -20,6 +20,7 @@
 #include "nsICertOverrideService.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIPrompt.h"
+#include "nsIProtocolProxyService.h"
 #include "nsISupportsPriority.h"
 #include "nsIStreamLoader.h"
 #include "nsITokenDialogs.h"
@@ -234,6 +235,24 @@ OCSPRequest::Run()
   }
   if (!scheme.LowerCaseEqualsLiteral("http")) {
     return NotifyDone(NS_ERROR_MALFORMED_URI, lock);
+  }
+
+  
+  
+  nsCOMPtr<nsIProtocolProxyService> pps =
+    do_GetService(NS_PROTOCOLPROXYSERVICE_CONTRACTID, &rv);
+  if (NS_FAILED(rv)) {
+    return NotifyDone(rv, lock);
+  }
+
+  bool isPACLoading = false;
+  rv = pps->GetIsPACLoading(&isPACLoading);
+  if (NS_FAILED(rv)) {
+    return NotifyDone(rv, lock);
+  }
+
+  if (isPACLoading) {
+    return NotifyDone(NS_ERROR_FAILURE, lock);
   }
 
   nsCOMPtr<nsIChannel> channel;
