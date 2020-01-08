@@ -248,6 +248,8 @@ Classifier::Close()
 {
   
   
+  
+  mUpdateInterrupted = true;
   mIsClosed = true;
   DropStores();
 }
