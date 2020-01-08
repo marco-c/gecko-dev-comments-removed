@@ -1907,6 +1907,7 @@ nsHttpConnection::OnSocketWritable()
         if (!mCompletedProxyConnect && !mProxyConnectStream) {
             
             
+            MOZ_ASSERT(false, "proxy connect will never happen");
             LOG(("return failure because proxy connect will never happen\n"));
             return NS_ERROR_FAILURE;
         }
@@ -2087,6 +2088,7 @@ nsHttpConnection::OnSocketReadable()
         !mCompletedProxyConnect && !mProxyConnectStream) {
         
         
+        MOZ_ASSERT(false, "proxy connect will never happen");
         LOG(("return failure because proxy connect will never happen\n"));
         return NS_ERROR_FAILURE;
     }
