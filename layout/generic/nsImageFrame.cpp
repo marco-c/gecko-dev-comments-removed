@@ -1811,8 +1811,11 @@ nsDisplayImage::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilde
   IntSize decodeSize =
     nsLayoutUtils::ComputeImageContainerDrawingParameters(mImage, mFrame, destRect,
                                                           aSc, flags, svgContext);
-  RefPtr<ImageContainer> container =
-    mImage->GetImageContainerAtSize(aManager, decodeSize, svgContext, flags);
+
+  RefPtr<layers::ImageContainer> container;
+  ImgDrawResult drawResult =
+    mImage->GetImageContainerAtSize(aManager, decodeSize, svgContext,
+                                    flags, getter_AddRefs(container));
   if (!container) {
     return false;
   }
@@ -2201,7 +2204,8 @@ nsImageFrame::GetCursor(const nsPoint& aPoint,
         PresShell()->StyleSet()->
           ResolveStyleFor(area->AsElement(), Style(),
                           LazyComputeBehavior::Allow);
-      FillCursorInformationFromStyle(areaStyle->StyleUI(), aCursor);
+      FillCursorInformationFromStyle(areaStyle->StyleUserInterface(),
+                                     aCursor);
       if (NS_STYLE_CURSOR_AUTO == aCursor.mCursor) {
         aCursor.mCursor = NS_STYLE_CURSOR_DEFAULT;
       }
