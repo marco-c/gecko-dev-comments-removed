@@ -446,12 +446,6 @@ class JS::Compartment {
     bool hasEnteredRealm = false;
   } gcState;
 
-  
-  
-  
-  
-  bool nukedOutgoingWrappers = false;
-
   JS::Zone* zone() { return zone_; }
   const JS::Zone* zone() const { return zone_; }
 

@@ -58,8 +58,8 @@ NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_BEGIN(CallbackObject)
   if (MOZ_UNLIKELY(!callback)) {
     return true;
   }
-  if (MOZ_LIKELY(tmp->mIncumbentGlobal) &&
-      MOZ_UNLIKELY(js::NukedObjectRealm(tmp->CallbackGlobalPreserveColor()))) {
+  auto pvt = xpc::CompartmentPrivate::Get(callback);
+  if (MOZ_LIKELY(tmp->mIncumbentGlobal && pvt) && MOZ_UNLIKELY(pvt->wasNuked)) {
     
     
     AddForDeferredFinalization(new JSObjectsDropper(tmp));

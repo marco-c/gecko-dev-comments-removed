@@ -2809,6 +2809,10 @@ class CompartmentPrivate {
 
   
   
+  bool wasNuked;
+
+  
+  
   bool wrapperDenialWarnings[WrapperDenialTypeCount];
 
   JSObject2WrappedJSMap* GetWrappedJSMap() const { return mWrappedJSMap; }
