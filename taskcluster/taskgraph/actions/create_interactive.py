@@ -7,6 +7,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
+import re
 
 from .util import (
     create_tasks,
@@ -25,6 +26,35 @@ task. You may need to wait for it to begin running.
 '''
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SCOPE_WHITELIST = [
+    
+    re.compile(r'^secrets:get:project/taskcluster/gecko/hgfingerprint$'),
+    
+    re.compile(r'^docker-worker:relengapi-proxy:tooltool.download.public$'),
+    
+    
+    
+    re.compile(r'^secrets:get:project/releng/gecko/build/level-[0-9]/\*'),
+]
+
+
 @register_callback_action(
     title='Create Interactive Task',
     name='create-interactive',
@@ -36,6 +66,9 @@ task. You may need to wait for it to begin running.
     ),
     order=50,
     context=[{'worker-implementation': 'docker-worker'}],
+    
+    
+    available=lambda params: int(params['level']) < 3,
     schema={
         'type': 'object',
         'properties': {
@@ -77,15 +110,18 @@ def create_interactive_action(parameters, graph_config, input, task_group_id, ta
         task_def['deadline'] = {'relative-datestamp': '12 hours'}
         task_def['created'] = {'relative-datestamp': '0 hours'}
         task_def['expires'] = {'relative-datestamp': '1 day'}
+
+        
+        task.task['scopes'] = [s for s in task.task.get('scopes', [])
+                               if any(p.match(s) for p in SCOPE_WHITELIST)]
+
         payload = task_def['payload']
+
+        
         payload['maxRunTime'] = max(3600 * 3, payload.get('maxRunTime', 0))
 
         
-        task_def['scopes'] = [s for s in task_def['scopes']
-                              if not s.startswith('docker-worker:cache:')]
         payload['cache'] = {}
-
-        
         payload['artifacts'] = {}
 
         
@@ -100,6 +136,7 @@ def create_interactive_action(parameters, graph_config, input, task_group_id, ta
                                    parameters, modifier=edit)
 
     taskId = label_to_taskid[label]
+    logger.info('Created interactive task {}; sending notification'.format(taskId))
 
     if input and 'notify' in input:
         email = input['notify']
