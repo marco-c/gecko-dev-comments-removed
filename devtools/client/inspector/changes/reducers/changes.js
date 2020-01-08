@@ -151,6 +151,7 @@ function removeRule(ruleId, rules) {
 
 
 
+
 const INITIAL_STATE = {};
 
 const reducers = {
