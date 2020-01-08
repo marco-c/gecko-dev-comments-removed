@@ -18,17 +18,6 @@
 
 
 
-
-
-#define NS_DOCSHELL_CID                                                        \
-  { 0xf1eac762, 0x87e9, 0x11d3,                                                \
-    { 0xaf, 0x80, 0x00, 0xa0, 0x24, 0xff, 0xc0, 0x8c } }
-#define NS_DOCSHELL_CONTRACTID "@mozilla.org/docshell/html;1"
-
-
-
-
-
 #define NS_IHISTORY_CONTRACTID "@mozilla.org/browser/history;1"
 
 

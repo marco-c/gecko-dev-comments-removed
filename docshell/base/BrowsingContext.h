@@ -25,6 +25,12 @@ class LogModule;
 
 namespace dom {
 
+class ContentParent;
+
+
+
+
+
 
 
 
@@ -43,17 +49,41 @@ class BrowsingContext
   , public LinkedListElement<RefPtr<BrowsingContext>>
 {
 public:
+  enum class Type
+  {
+    Chrome,
+    Content
+  };
+
   static void Init();
   static LogModule* GetLog();
   static void CleanupContexts(uint64_t aProcessId);
 
+  
   static already_AddRefed<BrowsingContext> Get(uint64_t aId);
-  static already_AddRefed<BrowsingContext> Create(nsIDocShell* aDocShell);
+
+  
+  static already_AddRefed<BrowsingContext> Create(BrowsingContext* aParent,
+                                                  const nsAString& aName,
+                                                  Type aType);
+
+  
+  static already_AddRefed<BrowsingContext> CreateFromIPC(
+    BrowsingContext* aParent,
+    const nsAString& aName,
+    uint64_t aId,
+    ContentParent* aOriginProcess);
+
+  
+  
+  nsIDocShell* GetDocShell() { return mDocShell; }
+  void SetDocShell(nsIDocShell* aDocShell);
 
   
   
   
-  void Attach(BrowsingContext* aParent);
+  
+  void Attach();
 
   
   
@@ -63,26 +93,23 @@ public:
   
   void CacheChildren();
 
+  
+  
   bool IsCached();
 
+  
+  
   void SetName(const nsAString& aName) { mName = aName; }
   void GetName(nsAString& aName) { aName = mName; }
   bool NameEquals(const nsAString& aName) { return mName.Equals(aName); }
 
-  uint64_t Id() const { return mBrowsingContextId; }
-  uint64_t OwnerProcessId() const;
+  bool IsContent() const { return mType == Type::Content; }
 
-  already_AddRefed<BrowsingContext> GetParent()
-  {
-    return do_AddRef(mParent.get());
-  }
+  uint64_t Id() const { return mBrowsingContextId; }
+
+  BrowsingContext* GetParent() { return mParent; }
 
   void GetChildren(nsTArray<RefPtr<BrowsingContext>>& aChildren);
-
-  already_AddRefed<nsIDocShell> GetDocShell()
-  {
-    return do_AddRef(mDocShell.get());
-  }
 
   static void GetRootBrowsingContexts(
     nsTArray<RefPtr<BrowsingContext>>& aBrowsingContexts);
@@ -99,15 +126,18 @@ public:
 
 protected:
   virtual ~BrowsingContext();
-  
-  
-  
-  explicit BrowsingContext(nsIDocShell* aDocShell);
-  BrowsingContext(uint64_t aBrowsingContextId,
-                  const nsAString& aName);
+  BrowsingContext(BrowsingContext* aParent,
+                  const nsAString& aName,
+                  uint64_t aBrowsingContextId,
+                  Type aType);
 
 private:
+  
+  const Type mType;
+
+  
   const uint64_t mBrowsingContextId;
+
 
   WeakPtr<BrowsingContext> mParent;
   Children mChildren;

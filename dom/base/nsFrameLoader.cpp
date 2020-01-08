@@ -562,6 +562,30 @@ SetTreeOwnerAndChromeEventHandlerOnDocshellTree(nsIDocShellTreeItem* aItem,
   }
 }
 
+static bool
+CheckDocShellType(mozilla::dom::Element* aOwnerContent,
+                  nsIDocShellTreeItem* aDocShell,
+                  nsAtom* aAtom)
+{
+  bool isContent = aOwnerContent->AttrValueIs(
+    kNameSpaceID_None, aAtom, nsGkAtoms::content, eIgnoreCase);
+
+  if (!isContent) {
+    nsCOMPtr<nsIMozBrowserFrame> mozbrowser = aOwnerContent->GetAsMozBrowserFrame();
+    if (mozbrowser) {
+      mozbrowser->GetMozbrowser(&isContent);
+    }
+  }
+
+  if (isContent) {
+    return aDocShell->ItemType() == nsIDocShellTreeItem::typeContent;
+  }
+
+  nsCOMPtr<nsIDocShellTreeItem> parent;
+  aDocShell->GetParent(getter_AddRefs(parent));
+
+  return parent && parent->ItemType() == aDocShell->ItemType();
+}
 
 
 
@@ -569,54 +593,18 @@ SetTreeOwnerAndChromeEventHandlerOnDocshellTree(nsIDocShellTreeItem* aItem,
 
 
 
-
-
-bool
+void
 nsFrameLoader::AddTreeItemToTreeOwner(nsIDocShellTreeItem* aItem,
-                                      nsIDocShellTreeOwner* aOwner,
-                                      int32_t aParentType,
-                                      nsIDocShell* aParentNode)
+                                      nsIDocShellTreeOwner* aOwner)
 {
   MOZ_ASSERT(aItem, "Must have docshell treeitem");
   MOZ_ASSERT(mOwnerContent, "Must have owning content");
 
-  nsAutoString value;
-  bool isContent = mOwnerContent->AttrValueIs(
-    kNameSpaceID_None, TypeAttrName(), nsGkAtoms::content, eIgnoreCase);
+  MOZ_DIAGNOSTIC_ASSERT(
+    CheckDocShellType(mOwnerContent, aItem, TypeAttrName()),
+    "Correct ItemType should be set when creating BrowsingContext");
 
-  
-  
-  nsCOMPtr<nsIDOMMozBrowserFrame> mozbrowser =
-    do_QueryInterface(mOwnerContent);
-  if (mozbrowser) {
-    bool isMozbrowser = false;
-    mozbrowser->GetMozbrowser(&isMozbrowser);
-    isContent |= isMozbrowser;
-  }
-
-  if (isContent) {
-    
-
-    aItem->SetItemType(nsIDocShellTreeItem::typeContent);
-  } else {
-    
-    
-    
-
-    aItem->SetItemType(aParentType);
-  }
-
-  
-  if (aParentNode) {
-    aParentNode->AddChild(aItem);
-  } else if (nsCOMPtr<nsIDocShell> childAsDocShell = do_QueryInterface(aItem)) {
-    childAsDocShell->AttachBrowsingContext(aParentNode);
-  }
-
-  bool retval = false;
-  if (aParentType == nsIDocShellTreeItem::typeChrome && isContent) {
-    retval = true;
-
+  if (mIsTopLevelContent) {
     bool is_primary =
       mOwnerContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::primary,
                                  nsGkAtoms::_true, eIgnoreCase);
@@ -626,8 +614,6 @@ nsFrameLoader::AddTreeItemToTreeOwner(nsIDocShellTreeItem* aItem,
       aOwner->ContentShellAdded(aItem, is_primary);
     }
   }
-
-  return retval;
 }
 
 static bool
@@ -1499,9 +1485,8 @@ nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   SetOwnerContent(otherContent);
   aOther->SetOwnerContent(ourContent);
 
-  AddTreeItemToTreeOwner(ourDocshell, otherOwner, otherParentType, nullptr);
-  aOther->AddTreeItemToTreeOwner(otherDocshell, ourOwner, ourParentType,
-                                 nullptr);
+  AddTreeItemToTreeOwner(ourDocshell, otherOwner);
+  aOther->AddTreeItemToTreeOwner(otherDocshell, ourOwner);
 
   
   
@@ -1904,6 +1889,23 @@ nsFrameLoader::IsRemoteFrame()
   return false;
 }
 
+static already_AddRefed<BrowsingContext>
+CreateBrowsingContext(BrowsingContext* aParentContext,
+                      const nsAString& aName,
+                      bool aIsContent)
+{
+  
+  
+  if (aIsContent && !aParentContext->IsContent()) {
+    aParentContext = nullptr;
+  }
+
+  BrowsingContext::Type type =
+    aIsContent ? BrowsingContext::Type::Content : BrowsingContext::Type::Chrome;
+
+  return BrowsingContext::Create(aParentContext, aName, type);
+}
+
 nsresult
 nsFrameLoader::MaybeCreateDocShell()
 {
@@ -1936,22 +1938,16 @@ nsFrameLoader::MaybeCreateDocShell()
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  nsCOMPtr<nsIDocShell> parentDocShell = doc->GetDocShell();
-  nsCOMPtr<nsIWebNavigation> parentAsWebNav = do_QueryInterface(parentDocShell);
-  NS_ENSURE_STATE(parentAsWebNav);
-
   
-  mDocShell = do_CreateInstance("@mozilla.org/docshell;1");
-  NS_ENSURE_TRUE(mDocShell, NS_ERROR_FAILURE);
-
-  if (!mNetworkCreated) {
-    if (mDocShell) {
-      mDocShell->SetCreatedDynamically(true);
-    }
+  RefPtr<nsDocShell> parentDocShell = nsDocShell::Cast(doc->GetDocShell());
+  if (NS_WARN_IF(!parentDocShell)) {
+    return NS_ERROR_UNEXPECTED;
   }
 
+  RefPtr<BrowsingContext> parentBC = parentDocShell->GetBrowsingContext();
+  MOZ_ASSERT(parentBC, "docShell must have BrowsingContext");
+
   
-  NS_ENSURE_TRUE(mDocShell, NS_ERROR_FAILURE);
   nsAutoString frameName;
 
   int32_t namespaceID = mOwnerContent->GetNameSpaceID();
@@ -1966,45 +1962,55 @@ nsFrameLoader::MaybeCreateDocShell()
     }
   }
 
-  if (!frameName.IsEmpty()) {
-    mDocShell->SetName(frameName);
+  
+  bool isContent = parentBC->IsContent() ||
+    mOwnerContent->AttrValueIs(kNameSpaceID_None, TypeAttrName(),
+                               nsGkAtoms::content, eIgnoreCase);
+
+  
+  
+  nsCOMPtr<nsIMozBrowserFrame> mozbrowser =
+    mOwnerContent->GetAsMozBrowserFrame();
+  if (!isContent && mozbrowser) {
+    mozbrowser->GetMozbrowser(&isContent);
   }
 
-  
-  
-  
+  RefPtr<BrowsingContext> browsingContext = CreateBrowsingContext(parentBC, frameName, isContent);
 
-  const int32_t parentType = parentDocShell->ItemType();
+  mDocShell = nsDocShell::Create(browsingContext);
+  NS_ENSURE_TRUE(mDocShell, NS_ERROR_FAILURE);
+
+  mIsTopLevelContent = isContent && !parentBC->IsContent();
+  if (!mNetworkCreated && !mIsTopLevelContent) {
+    mDocShell->SetCreatedDynamically(true);
+  }
+
+  if (mIsTopLevelContent) {
+    
+    
+    
+    
+    
+    parentDocShell->AddChild(mDocShell);
+  }
 
   
   
   nsCOMPtr<nsIDocShellTreeOwner> parentTreeOwner;
   parentDocShell->GetTreeOwner(getter_AddRefs(parentTreeOwner));
-  NS_ENSURE_STATE(parentTreeOwner);
-  mIsTopLevelContent =
-    AddTreeItemToTreeOwner(mDocShell, parentTreeOwner, parentType,
-                           parentDocShell);
-
-  if (mIsTopLevelContent) {
-    mDocShell->SetCreatedDynamically(false);
-  }
+  AddTreeItemToTreeOwner(mDocShell, parentTreeOwner);
 
   
   
   RefPtr<EventTarget> chromeEventHandler;
-
-  if (parentType == nsIDocShellTreeItem::typeChrome) {
+  if (parentBC->IsContent()) {
     
     
-
-    chromeEventHandler = mOwnerContent;
-    NS_ASSERTION(chromeEventHandler,
-                 "This mContent should implement this.");
+    parentDocShell->GetChromeEventHandler(getter_AddRefs(chromeEventHandler));
   } else {
     
     
-
-    parentDocShell->GetChromeEventHandler(getter_AddRefs(chromeEventHandler));
+    chromeEventHandler = mOwnerContent;
   }
 
   mDocShell->SetChromeEventHandler(chromeEventHandler);
@@ -2015,32 +2021,34 @@ nsFrameLoader::MaybeCreateDocShell()
   
 
   
-  nsCOMPtr<Element> frame_element = mOwnerContent;
-  NS_ASSERTION(frame_element, "frame loader owner element not a DOM element!");
-
-  nsCOMPtr<nsPIDOMWindowOuter> win_private(mDocShell->GetWindow());
-  nsCOMPtr<nsIBaseWindow> base_win(do_QueryInterface(mDocShell));
-  if (win_private) {
-    win_private->SetFrameElementInternal(frame_element);
-
+  nsCOMPtr<nsPIDOMWindowOuter> newWindow = mDocShell->GetWindow();
+  if (NS_WARN_IF(!newWindow)) {
     
-    if (mOpener) {
-      win_private->SetOpenerWindow(mOpener, true);
-      mOpener = nullptr;
-    }
+    NS_WARNING("Something wrong when creating the docshell for a frameloader!");
+    return NS_ERROR_FAILURE;
+  }
+
+  newWindow->SetFrameElementInternal(mOwnerContent);
+
+  
+  
+  if (mOpener) {
+    newWindow->SetOpenerWindow(mOpener, true);
+    mOpener = nullptr;
   }
 
   
-  if (win_private && mOwnerContent->IsXULElement(nsGkAtoms::browser) &&
+  if (mOwnerContent->IsXULElement(nsGkAtoms::browser) &&
       mOwnerContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::allowscriptstoclose,
                                  nsGkAtoms::_true, eCaseMatters)) {
-    nsGlobalWindowOuter::Cast(win_private)->AllowScriptsToClose();
+    nsGlobalWindowOuter::Cast(newWindow)->AllowScriptsToClose();
   }
 
   
   
   
-  if (NS_FAILED(base_win->Create()) || !win_private) {
+  nsCOMPtr<nsIBaseWindow> baseWin = do_QueryInterface(mDocShell);
+  if (NS_FAILED(baseWin->Create())) {
     
     NS_WARNING("Something wrong when creating the docshell for a frameloader!");
     return NS_ERROR_FAILURE;
@@ -2060,7 +2068,7 @@ nsFrameLoader::MaybeCreateDocShell()
 
   OriginAttributes attrs;
   if (parentDocShell->ItemType() == mDocShell->ItemType()) {
-    attrs = nsDocShell::Cast(parentDocShell)->GetOriginAttributes();
+    attrs = parentDocShell->GetOriginAttributes();
   }
 
   
@@ -2070,7 +2078,7 @@ nsFrameLoader::MaybeCreateDocShell()
   
   
   
-  if (parentType == nsIDocShellTreeItem::typeContent &&
+  if (parentBC->IsContent() &&
       !nsContentUtils::IsSystemPrincipal(doc->NodePrincipal()) &&
       !OwnerIsMozBrowserFrame()) {
     OriginAttributes oa = doc->NodePrincipal()->OriginAttributesRef();
@@ -2116,10 +2124,7 @@ nsFrameLoader::MaybeCreateDocShell()
   }
 
   bool isPrivate = false;
-  nsCOMPtr<nsILoadContext> parentContext = do_QueryInterface(parentDocShell);
-  NS_ENSURE_STATE(parentContext);
-
-  rv = parentContext->GetUsePrivateBrowsing(&isPrivate);
+  rv = parentDocShell->GetUsePrivateBrowsing(&isPrivate);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -2158,7 +2163,7 @@ nsFrameLoader::MaybeCreateDocShell()
   
   nsCOMPtr<nsPIDOMWindowOuter> win = doc->GetWindow();
   if (!mDocShell->GetIsMozBrowser() &&
-      parentType == mDocShell->ItemType() &&
+      parentDocShell->ItemType() == mDocShell->ItemType() &&
       !doc->IsStaticDocument() && win) {
     
     nsTArray<nsCOMPtr<nsIPrincipal>> ancestorPrincipals;

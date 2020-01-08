@@ -182,8 +182,9 @@ public:
   
   NS_FORWARD_NSISECURITYEVENTSINK(nsDocLoader::)
 
-  nsDocShell();
-  virtual nsresult Init() override;
+  
+  static already_AddRefed<nsDocShell>
+  Create(mozilla::dom::BrowsingContext* aBrowsingContext);
 
   NS_IMETHOD Stop() override
   {
@@ -380,13 +381,16 @@ public:
   
   bool IsForceReloading();
 
-  already_AddRefed<mozilla::dom::BrowsingContext>
-  GetBrowsingContext() const;
+  
+
+
+  mozilla::dom::BrowsingContext* GetBrowsingContext() const;
 
 private: 
   friend class nsDSURIContentListener;
   friend class FramingChecker;
   friend class OnLinkClickEvent;
+  friend class nsIDocShell;
 
   
   
@@ -404,6 +408,8 @@ private:
     nsDocShell*, UniquePtr<AbstractTimelineMarker>&&);
   friend void mozilla::TimelineConsumers::PopMarkers(nsDocShell*,
     JSContext*, nsTArray<dom::ProfileTimelineMarker>&);
+
+  nsDocShell();
 
   
   

@@ -56,11 +56,14 @@
 
 #include "nsIBaseWindow.h"
 #include "nsIDocShellTreeItem.h"
+#include "nsDocShell.h"
 
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/MouseEvents.h"
+
+#include "mozilla/dom/BrowsingContext.h"
 
 #include "nsPIWindowRoot.h"
 
@@ -179,9 +182,14 @@ nsresult nsWebShellWindow::Initialize(nsIXULWindow* aParent,
   mWindow->SetBackgroundColor(NS_RGB(255,255,255));
 
   
-  mDocShell = do_CreateInstance("@mozilla.org/docshell;1");
+  RefPtr<BrowsingContext> browsingContext =
+    BrowsingContext::Create(nullptr, EmptyString(), BrowsingContext::Type::Chrome);
+  mDocShell = nsDocShell::Create(browsingContext);
   NS_ENSURE_TRUE(mDocShell, NS_ERROR_FAILURE);
 
+  
+  
+  
   mDocShell->SetOpener(aOpeningTab);
 
   
@@ -191,9 +199,6 @@ nsresult nsWebShellWindow::Initialize(nsIXULWindow* aParent,
   NS_ENSURE_SUCCESS(EnsureChromeTreeOwner(), NS_ERROR_FAILURE);
 
   docShellAsItem->SetTreeOwner(mChromeTreeOwner);
-  docShellAsItem->SetItemType(nsIDocShellTreeItem::typeChrome);
-
-  mDocShell->AttachBrowsingContext(nullptr);
 
   r.MoveTo(0, 0);
   nsCOMPtr<nsIBaseWindow> docShellAsWin(do_QueryInterface(mDocShell));

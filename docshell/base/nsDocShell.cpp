@@ -449,44 +449,70 @@ nsDocShell::~nsDocShell()
 #endif
 }
 
-nsresult
-nsDocShell::Init()
+ already_AddRefed<nsDocShell>
+nsDocShell::Create(BrowsingContext* aBrowsingContext)
 {
-  MOZ_ASSERT(!mIsBeingDestroyed);
+  MOZ_ASSERT(aBrowsingContext, "DocShell without a BrowsingContext!");
 
-  nsresult rv = nsDocLoader::Init();
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsresult rv;
+  RefPtr<nsDocShell> ds = new nsDocShell();
+  ds->mBrowsingContext = aBrowsingContext;
 
-  NS_ASSERTION(mLoadGroup, "Something went wrong!");
+  
+  rv = ds->nsDocLoader::Init();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
 
-  mContentListener = new nsDSURIContentListener(this);
-  rv = mContentListener->Init();
-  NS_ENSURE_SUCCESS(rv, rv);
+  
+  ds->mContentListener = new nsDSURIContentListener(ds);
+  rv = ds->mContentListener->Init();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
 
   
   
   
   if (!ServiceWorkerParentInterceptEnabled() || XRE_IsParentProcess()) {
-    mInterceptController = new ServiceWorkerInterceptController();
+    ds->mInterceptController = new ServiceWorkerInterceptController();
   }
 
   
   
-  nsCOMPtr<nsIInterfaceRequestor> proxy =
-    new InterfaceRequestorProxy(static_cast<nsIInterfaceRequestor*>(this));
-  mLoadGroup->SetNotificationCallbacks(proxy);
-
-  rv = nsDocLoader::AddDocLoaderAsChildOfRoot(this);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  mBrowsingContext = BrowsingContext::Create(this);
+  nsCOMPtr<nsIInterfaceRequestor> proxy = new InterfaceRequestorProxy(ds);
+  ds->mLoadGroup->SetNotificationCallbacks(proxy);
 
   
   
+  rv = nsDocLoader::AddDocLoaderAsChildOfRoot(ds);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
+
   
   
-  return AddProgressListener(this, nsIWebProgress::NOTIFY_STATE_DOCUMENT |
-                                     nsIWebProgress::NOTIFY_STATE_NETWORK);
+  
+  
+  rv = ds->AddProgressListener(ds,
+                               nsIWebProgress::NOTIFY_STATE_DOCUMENT |
+                                 nsIWebProgress::NOTIFY_STATE_NETWORK);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
+
+  
+  ds->SetItemType(aBrowsingContext->IsContent() ? typeContent : typeChrome);
+
+  
+  RefPtr<BrowsingContext> parent = aBrowsingContext->GetParent();
+  if (parent && parent->GetDocShell()) {
+    parent->GetDocShell()->AddChild(ds);
+  }
+
+  
+  aBrowsingContext->SetDocShell(ds);
+  return ds.forget();
 }
 
 void
@@ -3501,8 +3527,6 @@ nsDocShell::AddChild(nsIDocShellTreeItem* aChild)
     return NS_OK;
   }
 
-  childAsDocShell->AttachBrowsingContext(this);
-
   
 
   
@@ -3564,11 +3588,6 @@ nsDocShell::RemoveChild(nsIDocShellTreeItem* aChild)
 
   nsresult rv = RemoveChildLoader(childAsDocLoader);
   NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<nsIDocShell> childAsDocShell(do_QueryInterface(aChild));
-  if (childAsDocShell) {
-    childAsDocShell->DetachBrowsingContext();
-  }
 
   aChild->SetTreeOwner(nullptr);
 
@@ -7783,6 +7802,14 @@ nsDocShell::BeginRestore(nsIContentViewer* aContentViewer, bool aTop)
       mIsRestoringDocument = false;
     }
   }
+
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(
+    (aTop && !mBrowsingContext->GetParent()) ||
+    ((!aTop || GetIsMozBrowser()) && mBrowsingContext->GetParent()));
+  mBrowsingContext->Attach();
 
   if (!aTop) {
     
@@ -14093,11 +14120,10 @@ nsDocShell::IsForceReloading()
   return IsForceReloadType(mLoadType);
 }
 
-already_AddRefed<BrowsingContext>
+BrowsingContext*
 nsDocShell::GetBrowsingContext() const
 {
-  RefPtr<BrowsingContext> browsingContext = mBrowsingContext;
-  return browsingContext.forget();
+  return mBrowsingContext;
 }
 
 NS_IMETHODIMP
@@ -14105,25 +14131,4 @@ nsDocShell::GetBrowsingContext(BrowsingContext** aBrowsingContext)
 {
   *aBrowsingContext = do_AddRef(mBrowsingContext).take();
   return NS_OK;
-}
-
-void
-nsIDocShell::AttachBrowsingContext(nsIDocShell* aParentDocShell)
-{
-  RefPtr<BrowsingContext> childContext =
-    nsDocShell::Cast(this)->GetBrowsingContext();
-  RefPtr<BrowsingContext> parentContext;
-  if (aParentDocShell) {
-    parentContext =
-      nsDocShell::Cast(aParentDocShell)->GetBrowsingContext();
-  }
-  childContext->Attach(parentContext);
-}
-
-void
-nsIDocShell::DetachBrowsingContext()
-{
-  RefPtr<BrowsingContext> browsingContext =
-    nsDocShell::Cast(this)->GetBrowsingContext();
-  browsingContext->Detach();
 }
