@@ -1,0 +1,16 @@
+
+
+
+'use strict';
+
+idl_test(
+  ['scroll-animations'],
+  
+  
+  ['web-animations', 'css-pseudo', 'dom'],
+  idl_array => {
+    idl_array.add_objects({
+      ScrollTimeline: ['new ScrollTimeline()'],
+    });
+  }
+);
