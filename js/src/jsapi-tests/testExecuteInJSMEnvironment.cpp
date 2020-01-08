@@ -3,7 +3,6 @@
 
 
 #include "js/CompilationAndEvaluation.h"
-#include "js/PropertySpec.h"
 #include "jsapi-tests/tests.h"
 #include "vm/EnvironmentObject.h"
 #include "vm/EnvironmentObject-inl.h"

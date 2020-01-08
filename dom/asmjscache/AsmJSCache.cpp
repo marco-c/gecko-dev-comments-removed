@@ -8,7 +8,6 @@
 
 #include <stdio.h>
 
-#include "js/BuildId.h"  
 #include "js/RootingAPI.h"
 #include "jsfriendapi.h"
 #include "mozilla/Assertions.h"

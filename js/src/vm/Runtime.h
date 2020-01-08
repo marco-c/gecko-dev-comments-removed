@@ -30,7 +30,6 @@
 #include "gc/GCRuntime.h"
 #include "gc/Tracer.h"
 #include "irregexp/RegExpStack.h"
-#include "js/BuildId.h"  
 #include "js/Debug.h"
 #include "js/GCVector.h"
 #include "js/HashTable.h"

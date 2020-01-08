@@ -29,7 +29,6 @@
 #include "jit/AtomicOperations.h"
 #include "jit/JitOptions.h"
 #include "js/Printf.h"
-#include "js/PropertySpec.h"  
 #include "util/StringBuffer.h"
 #include "util/Text.h"
 #include "vm/Interpreter.h"

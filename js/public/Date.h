@@ -29,15 +29,11 @@
 
 
 
-#include "mozilla/FloatingPoint.h"  
-#include "mozilla/MathAlgorithms.h"  
+#include "mozilla/FloatingPoint.h"
+#include "mozilla/MathAlgorithms.h"
 
-#include "js/Conversions.h"  
-#include "js/RootingAPI.h"   
-#include "js/Value.h"        
-
-struct JSContext;
-class JSObject;
+#include "js/Conversions.h"
+#include "js/Value.h"
 
 namespace JS {
 
@@ -114,38 +110,13 @@ inline ClippedTime TimeClip(double time) {
 
 
 inline Value TimeValue(ClippedTime time) {
-  return DoubleValue(CanonicalizeNaN(time.toDouble()));
+  return DoubleValue(JS::CanonicalizeNaN(time.toDouble()));
 }
 
 
 
 
 extern JS_PUBLIC_API JSObject* NewDateObject(JSContext* cx, ClippedTime time);
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API JSObject* NewDateObject(JSContext* cx, int year, int mon,
-                                             int mday, int hour, int min,
-                                             int sec);
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool ObjectIsDate(JSContext* cx, Handle<JSObject*> obj,
-                                       bool* isDate);
 
 
 

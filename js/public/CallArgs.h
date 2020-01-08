@@ -73,7 +73,7 @@
 #include "js/Value.h"
 
 
-using JSNative = bool (*)(JSContext* cx, unsigned argc, JS::Value* vp);
+typedef bool (*JSNative)(JSContext* cx, unsigned argc, JS::Value* vp);
 
 namespace JS {
 
