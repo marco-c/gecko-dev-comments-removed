@@ -184,16 +184,6 @@
 
 
 
-
-
-
-
-.downloadDetailsFull {
-  display: none;
-}
-
-
-
 @item@:hover > .downloadMainArea > .downloadContainer > .downloadDetailsNormal,
 @item@:not(:hover) > .downloadMainArea > .downloadContainer > .downloadDetailsHover {
   display: none;
