@@ -8,6 +8,7 @@
 #define frontend_BytecodeControlStructures_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Maybe.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -17,6 +18,7 @@
 #include "frontend/SharedContext.h"
 #include "frontend/TDZCheckCache.h"
 #include "gc/Rooting.h"
+#include "vm/BytecodeUtil.h"
 #include "vm/StringType.h"
 
 namespace js {
@@ -104,6 +106,44 @@ class LoopControl : public BreakableControl
     TDZCheckCache tdzCache_;
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    ptrdiff_t loopEndOffset_ = -1;
+
+    
+    JumpList entryJump_;
+
+    
+    JumpTarget head_ = { -1 };
+
+    
+    JumpTarget breakTarget_ = { -1 };
+
+    
+    
+    JumpTarget continueTarget_ = { -1 };
+
+    
     int32_t stackDepth_;
 
     
@@ -114,23 +154,68 @@ class LoopControl : public BreakableControl
 
   public:
     
-    
-    JumpTarget continueTarget;
-
-    
     JumpList continues;
 
     LoopControl(BytecodeEmitter* bce, StatementKind loopKind);
 
-    uint32_t loopDepth() const {
-        return loopDepth_;
+    ptrdiff_t headOffset() const {
+        return head_.offset;
+    }
+    ptrdiff_t loopEndOffset() const {
+        return loopEndOffset_;
+    }
+    ptrdiff_t breakTargetOffset() const {
+        return breakTarget_.offset;
+    }
+    ptrdiff_t continueTargetOffset() const {
+        return continueTarget_.offset;
     }
 
-    bool canIonOsr() const {
-        return canIonOsr_;
+    
+    
+    ptrdiff_t loopEndOffsetFromEntryJump() const {
+        return loopEndOffset_ - entryJump_.offset;
     }
 
+    
+    
+    ptrdiff_t loopEndOffsetFromLoopHead() const {
+        return loopEndOffset_ - head_.offset;
+    }
+
+    
+    
+    ptrdiff_t continueTargetOffsetFromLoopHead() const {
+        return continueTarget_.offset - head_.offset;
+    }
+
+    
+    
+    
+    
+    void setContinueTarget(ptrdiff_t offset) {
+        continueTarget_.offset = offset;
+    }
+    MOZ_MUST_USE bool emitContinueTarget(BytecodeEmitter* bce);
+
+    
     MOZ_MUST_USE bool emitSpecialBreakForDone(BytecodeEmitter* bce);
+
+    MOZ_MUST_USE bool emitEntryJump(BytecodeEmitter* bce);
+
+    
+    
+    
+    MOZ_MUST_USE bool emitLoopHead(BytecodeEmitter* bce,
+                                   const mozilla::Maybe<uint32_t>& nextPos);
+
+    
+    
+    
+    MOZ_MUST_USE bool emitLoopEntry(BytecodeEmitter* bce,
+                                    const mozilla::Maybe<uint32_t>& nextPos);
+
+    MOZ_MUST_USE bool emitLoopEnd(BytecodeEmitter* bce, JSOp op);
     MOZ_MUST_USE bool patchBreaksAndContinues(BytecodeEmitter* bce);
 };
 template <>
