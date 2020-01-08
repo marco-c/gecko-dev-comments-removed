@@ -396,6 +396,8 @@ TextPropertyEditor.prototype = {
       gridClass: "ruleview-grid",
       shapeClass: "ruleview-shape",
       shapeSwatchClass: SHARED_SWATCH_CLASS + " " + SHAPE_SWATCH_CLASS,
+      
+      
       defaultColorType: !propDirty,
       urlClass: "theme-link",
       fontFamilyClass: FONT_FAMILY_CLASS,

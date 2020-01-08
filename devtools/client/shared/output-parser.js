@@ -1226,10 +1226,15 @@ OutputParser.prototype = {
         container.appendChild(swatch);
       }
 
-      if (options.defaultColorType) {
-        color = colorObj.toString();
-        container.dataset.color = color;
+      if (!options.defaultColorType) {
+        
+        
+        
+        
+        colorObj.colorUnit = colorUtils.classifyColor(color);
       }
+      color = colorObj.toString();
+      container.dataset.color = color;
 
       const value = this._createNode("span", {
         class: options.colorClass,
