@@ -748,7 +748,9 @@ struct DIGroup
         GP("doing children in EndGroup\n");
         aGrouper->PaintContainerItem(this, item, bounds, children, aContext, aRecorder);
       } else {
-        if (dirty) {
+        
+        
+        if (dirty && item->GetType() != DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO) {
           
           
           
