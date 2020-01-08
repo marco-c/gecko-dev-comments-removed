@@ -60,9 +60,6 @@ const whitelist = {
     "resource://gre/modules/WebProgressChild.jsm",
 
     
-    "chrome://pocket/content/AboutPocket.jsm",
-
-    
     "resource://gre/modules/TelemetryController.jsm", 
     "resource://gre/modules/TelemetryUtils.jsm", 
 
