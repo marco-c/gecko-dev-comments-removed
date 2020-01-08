@@ -1,5 +1,5 @@
 
-var test = function (isContent) {
+var test = function(isContent) {
   SimpleTest.waitForExplicitFinish();
 
 	SpecialPowers.pushPrefEnv({"set": [["security.allow_eval_with_system_principal",
@@ -28,38 +28,36 @@ var test = function (isContent) {
     ["screen.orientation.type", "'landscape-primary'"],
     ["screen.orientation.angle", 0],
     ["screen.mozOrientation", "'landscape-primary'"],
-    ["devicePixelRatio", 1]
+    ["devicePixelRatio", 1],
   ];
 
   
-  let checkPair = function (a, b) {
+  let checkPair = function(a, b) {
     is(eval(a), eval(b), a + " should be equal to " + b);
   };
 
   
-  let prefVals = (function*() { yield false; yield true; })();
+  let prefVals = (function* () { yield false; yield true; })();
 
   
-  let nextTest = function () {
-    let {value : prefValue, done} = prefVals.next();
+  let nextTest = function() {
+    let {value: prefValue, done} = prefVals.next();
     if (done) {
       SimpleTest.finish();
       return;
     }
-    SpecialPowers.pushPrefEnv({set : [["privacy.resistFingerprinting", prefValue]]},
-      function () {
+    SpecialPowers.pushPrefEnv({set: [["privacy.resistFingerprinting", prefValue]]},
+      function() {
         
         
         let resisting = prefValue && isContent;
         
-        pairs.map(function ([item, onVal]) {
+        pairs.map(function([item, onVal]) {
           if (resisting) {
             checkPair("window." + item, onVal);
-          } else {
-            if (!item.startsWith("moz")) {
+          } else if (!item.startsWith("moz")) {
               checkPair("window." + item, "chromeWindow." + item);
             }
-          }
         });
         if (!resisting) {
           
@@ -70,7 +68,7 @@ var test = function (isContent) {
         }
       nextTest();
     });
-  }
+  };
 
   nextTest();
-}
+};
