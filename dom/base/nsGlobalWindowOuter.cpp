@@ -525,7 +525,7 @@ bool nsOuterWindowProxy::defineProperty(JSContext* cx,
                                         JS::Handle<jsid> id,
                                         JS::Handle<JS::PropertyDescriptor> desc,
                                         JS::ObjectOpResult& result) const {
-  if (IsArrayIndex(GetArrayIndexFromId(cx, id))) {
+  if (IsArrayIndex(GetArrayIndexFromId(id))) {
     
     
     
@@ -619,7 +619,7 @@ bool nsOuterWindowProxy::delete_(JSContext* cx, JS::Handle<JSObject*> proxy,
     return result.failCantDeleteWindowElement();
   }
 
-  if (IsArrayIndex(GetArrayIndexFromId(cx, id))) {
+  if (IsArrayIndex(GetArrayIndexFromId(id))) {
     
     return result.succeed();
   }
@@ -709,7 +709,7 @@ bool nsOuterWindowProxy::set(JSContext* cx, JS::Handle<JSObject*> proxy,
                              JS::Handle<jsid> id, JS::Handle<JS::Value> v,
                              JS::Handle<JS::Value> receiver,
                              JS::ObjectOpResult& result) const {
-  if (IsArrayIndex(GetArrayIndexFromId(cx, id))) {
+  if (IsArrayIndex(GetArrayIndexFromId(id))) {
     
     
     return result.failReadOnly();
@@ -773,7 +773,7 @@ bool nsOuterWindowProxy::GetSubframeWindow(JSContext* cx,
 
 already_AddRefed<nsPIDOMWindowOuter> nsOuterWindowProxy::GetSubframeWindow(
     JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id) const {
-  uint32_t index = GetArrayIndexFromId(cx, id);
+  uint32_t index = GetArrayIndexFromId(id);
   if (!IsArrayIndex(index)) {
     return nullptr;
   }

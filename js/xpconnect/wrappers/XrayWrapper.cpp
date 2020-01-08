@@ -535,7 +535,7 @@ bool JSXrayTraits::resolveOwnProperty(JSContext* cx, HandleObject wrapper,
       return getOwnPropertyFromWrapperIfSafe(cx, wrapper, id, desc);
     }
     if (IsTypedArrayKey(key)) {
-      if (IsArrayIndex(GetArrayIndexFromId(cx, id))) {
+      if (IsArrayIndex(GetArrayIndexFromId(id))) {
         
         
         if (CompartmentPrivate::Get(CurrentGlobalOrNull(cx))
@@ -814,7 +814,7 @@ bool JSXrayTraits::defineProperty(JSContext* cx, HandleObject wrapper,
           ->isWebExtensionContentScript &&
       desc.isDataDescriptor() &&
       (desc.value().isNumber() || desc.value().isUndefined()) &&
-      IsArrayIndex(GetArrayIndexFromId(cx, id))) {
+      IsArrayIndex(GetArrayIndexFromId(id))) {
     RootedObject target(cx, getTargetObject(wrapper));
     JSAutoRealm ar(cx, target);
     JS_MarkCrossZoneId(cx, id);
@@ -1633,7 +1633,7 @@ bool DOMXrayTraits::resolveOwnProperty(JSContext* cx, HandleObject wrapper,
   }
 
   
-  uint32_t index = GetArrayIndexFromId(cx, id);
+  uint32_t index = GetArrayIndexFromId(id);
   if (IsArrayIndex(index)) {
     nsGlobalWindowInner* win = AsWindow(cx, wrapper);
     
@@ -1692,7 +1692,7 @@ bool DOMXrayTraits::defineProperty(JSContext* cx, HandleObject wrapper,
   
   
   if (IsWindow(cx, wrapper)) {
-    if (IsArrayIndex(GetArrayIndexFromId(cx, id))) {
+    if (IsArrayIndex(GetArrayIndexFromId(id))) {
       *defined = true;
       return result.succeed();
     }

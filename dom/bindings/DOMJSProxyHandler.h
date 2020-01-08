@@ -165,7 +165,7 @@ extern jsid s_length_id;
 
 
 
-inline uint32_t GetArrayIndexFromId(JSContext* cx, JS::Handle<jsid> id) {
+inline uint32_t GetArrayIndexFromId(JS::Handle<jsid> id) {
   
   
   
