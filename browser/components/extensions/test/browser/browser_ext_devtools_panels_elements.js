@@ -11,9 +11,6 @@ add_task(async function test_devtools_panels_elements_onSelectionChanged() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "http://mochi.test:8888/");
 
   function devtools_page() {
-    let isReloading = false;
-    let collectedEvalResults = [];
-
     browser.devtools.panels.elements.onSelectionChanged.addListener(async () => {
       const [
         evalResult, exceptionInfo,
@@ -24,13 +21,7 @@ add_task(async function test_devtools_panels_elements_onSelectionChanged() {
                           JSON.stringify(exceptionInfo));
       }
 
-      collectedEvalResults.push(evalResult);
-
-      
-      
-      if (!isReloading) {
-        browser.test.sendMessage("devtools_eval_result", evalResult);
-      }
+      browser.test.sendMessage("devtools_eval_result", evalResult);
     });
 
     browser.test.onMessage.addListener(msg => {
@@ -38,15 +29,7 @@ add_task(async function test_devtools_panels_elements_onSelectionChanged() {
         case "inspectedWindow_reload": {
           
           
-          isReloading = true;
-          collectedEvalResults = [];
           browser.devtools.inspectedWindow.eval("window.location.reload();");
-          break;
-        }
-
-        case "collected_devtools_eval_results:request": {
-          browser.test.sendMessage("collected_devtools_eval_results:reply",
-                                   collectedEvalResults);
           break;
         }
 
@@ -90,8 +73,9 @@ add_task(async function test_devtools_panels_elements_onSelectionChanged() {
 
   const inspector = toolbox.getPanel("inspector");
 
-  const evalResult = await extension.awaitMessage("devtools_eval_result");
+  info("Waiting for the first onSelectionChanged event to be fired once the inspector is open");
 
+  const evalResult = await extension.awaitMessage("devtools_eval_result");
   is(evalResult, "BODY", "Got the expected onSelectionChanged once the inspector is selected");
 
   
@@ -100,17 +84,17 @@ add_task(async function test_devtools_panels_elements_onSelectionChanged() {
   extension.sendMessage("inspectedWindow_reload");
   await onceMarkupReloaded;
 
-  
-  
-  
-  extension.sendMessage("collected_devtools_eval_results:request");
-  const collectedEvalResults = await extension.awaitMessage("collected_devtools_eval_results:reply");
-  const evalResultNavigating = collectedEvalResults.shift();
-  const evalResultOnceMarkupReloaded = collectedEvalResults.pop();
+  info("Waiting for the two onSelectionChanged events fired before and after the navigation");
 
+  
+  
+  const evalResultNavigating = await extension.awaitMessage("devtools_eval_result");
   is(evalResultNavigating, undefined,
      "Got the expected onSelectionChanged once the tab is navigating");
 
+  
+  
+  const evalResultOnceMarkupReloaded = await extension.awaitMessage("devtools_eval_result");
   is(evalResultOnceMarkupReloaded, "BODY",
      "Got the expected onSelectionChanged once the tab has been completely reloaded");
 
