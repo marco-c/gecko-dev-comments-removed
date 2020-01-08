@@ -2,8 +2,8 @@
 
 
 
-#include "other/CombinedStacks.h"
-#include "other/ProcessedStack.h"
+#include "CombinedStacks.h"
+#include "ProcessedStack.h"
 using namespace mozilla::Telemetry;
 using namespace TelemetryTestHelpers;
 

@@ -5,7 +5,7 @@
 
 
 #include "TelemetryIOInterposeObserver.h"
-#include "core/TelemetryCommon.h"
+#include "TelemetryCommon.h"
 
 namespace mozilla {
 namespace Telemetry {

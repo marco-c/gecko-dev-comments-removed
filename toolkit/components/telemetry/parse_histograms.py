@@ -96,13 +96,8 @@ whitelists = None
 def load_whitelist():
     global whitelists
     try:
-        parsers_path = os.path.realpath(os.path.dirname(__file__))
-        
-        
-        
-        
-        telemetry_module_path = os.path.abspath(os.path.join(parsers_path, os.pardir, os.pardir))
-        whitelist_path = os.path.join(telemetry_module_path, 'histogram-whitelists.json')
+        whitelist_path = os.path.join(os.path.abspath(os.path.realpath(os.path.dirname(__file__))),
+                                      'histogram-whitelists.json')
         with open(whitelist_path, 'r') as f:
             try:
                 whitelists = json.load(f)
