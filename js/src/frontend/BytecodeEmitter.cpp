@@ -5648,14 +5648,7 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
 
         SharedContext* outersc = sc;
         if (fun->isInterpretedLazy()) {
-            
-            
-            
-            
-            
-            
-            
-            fun->lazyScript()->setEnclosingScope(innermostScope());
+            funbox->setEnclosingScopeForInnerLazyFunction(innermostScope());
             if (emittingRunOnceLambda)
                 fun->lazyScript()->setTreatAsRunOnce();
         } else {
@@ -9129,6 +9122,8 @@ CGObjectList::finish(ObjectArray* array)
         --cursor;
         MOZ_ASSERT(!*cursor);
         MOZ_ASSERT(objbox->object->isTenured());
+        if (objbox->isFunctionBox())
+            objbox->asFunctionBox()->finish();
         *cursor = objbox->object;
     } while ((objbox = objbox->emitLink) != nullptr);
     MOZ_ASSERT(cursor == array->vector);

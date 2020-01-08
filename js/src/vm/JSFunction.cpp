@@ -1591,6 +1591,8 @@ JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx, HandleFuncti
         bool canRelazify = !lazy->numInnerFunctions() && !lazy->hasDirectEval();
 
         if (script) {
+            
+            
             fun->setUnlazifiedScript(script);
             
             
@@ -1600,6 +1602,10 @@ JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx, HandleFuncti
         }
 
         if (fun != lazy->functionNonDelazifying()) {
+            
+            
+            
+            
             if (!LazyScript::functionDelazifying(cx, lazy))
                 return false;
             script = lazy->functionNonDelazifying()->nonLazyScript();
@@ -1609,6 +1615,8 @@ JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx, HandleFuncti
             fun->setUnlazifiedScript(script);
             return true;
         }
+
+        
 
         MOZ_ASSERT(lazy->scriptSource()->hasSourceData());
 
@@ -2128,7 +2136,7 @@ js::CanReuseScriptForClone(JS::Realm* realm, HandleFunction fun,
     
     return fun->hasScript()
         ? fun->nonLazyScript()->hasNonSyntacticScope()
-        : fun->lazyScript()->enclosingScope()->hasOnChain(ScopeKind::NonSyntactic);
+        : fun->lazyScript()->hasNonSyntacticScope();
 }
 
 static inline JSFunction*

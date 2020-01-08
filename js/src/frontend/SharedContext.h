@@ -297,6 +297,16 @@ class FunctionBox : public ObjectBox, public SharedContext
     
     
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     Scope* enclosingScope_;
 
     
@@ -418,14 +428,34 @@ class FunctionBox : public ObjectBox, public SharedContext
     void initStandaloneFunction(Scope* enclosingScope);
     void initWithEnclosingParseContext(ParseContext* enclosing, FunctionSyntaxKind kind);
 
+    inline bool isLazyFunctionWithoutEnclosingScope() const {
+        return function()->isInterpretedLazy() &&
+               !function()->lazyScript()->hasEnclosingScope();
+    }
+    void setEnclosingScopeForInnerLazyFunction(Scope* enclosingScope);
+    void finish();
+
     JSFunction* function() const { return &object->as<JSFunction>(); }
 
     Scope* compilationEnclosingScope() const override {
         
         
         
-        MOZ_ASSERT_IF(function()->isInterpretedLazy(),
+
+        
+        
+        
+        
+        MOZ_ASSERT_IF(function()->isInterpretedLazy() &&
+                      function()->lazyScript()->hasEnclosingScope(),
                       enclosingScope_ == function()->lazyScript()->enclosingScope());
+
+        
+        
+        
+        if (isLazyFunctionWithoutEnclosingScope())
+            return nullptr;
+
         return enclosingScope_;
     }
 

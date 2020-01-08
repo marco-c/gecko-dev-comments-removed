@@ -4576,7 +4576,8 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
         
         
         
-        if (oom || script->selfHosted() || !script->code())
+        
+        if (oom || script->selfHosted() || script->isUncompleted())
             return;
         Realm* realm = script->realm();
         if (!realms.has(realm))

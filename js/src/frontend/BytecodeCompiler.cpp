@@ -774,7 +774,9 @@ frontend::CompileLazyFunction(JSContext* cx, Handle<LazyScript*> lazy, const cha
 {
     MOZ_ASSERT(cx->compartment() == lazy->functionNonDelazifying()->compartment());
     
-    MOZ_ASSERT(!lazy->isEnclosingScriptLazy());
+    
+    
+    MOZ_ASSERT(lazy->enclosingScriptHasEverBeenCompiled());
 
     AutoAssertReportedException assertException(cx);
     Rooted<JSFunction*> fun(cx, lazy->functionNonDelazifying());

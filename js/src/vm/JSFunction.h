@@ -564,6 +564,9 @@ class JSFunction : public js::NativeObject
     
     
     
+    
+    
+    
     bool hasUncompletedScript() const {
         MOZ_ASSERT(hasScript());
         return !u.scripted.s.script_;

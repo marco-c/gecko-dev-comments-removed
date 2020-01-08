@@ -1264,6 +1264,12 @@ class JSScript : public js::gc::TenuredCell
             return nullptr;
         return scriptData_->code();
     }
+    bool isUncompleted() const {
+        
+        
+        return !code();
+    }
+
     size_t length() const {
         MOZ_ASSERT(scriptData_);
         return scriptData_->codeLength();
@@ -2144,7 +2150,81 @@ class LazyScript : public gc::TenuredCell
     GCPtrFunction function_;
 
     
-    GCPtrScope enclosingScope_;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    GCPtr<TenuredCell*> enclosingLazyScriptOrScope_;
 
     
     
@@ -2245,11 +2325,11 @@ class LazyScript : public gc::TenuredCell
     
     
     
-    static LazyScript* Create(JSContext* cx, HandleFunction fun,
-                              HandleScript script, HandleScope enclosingScope,
-                              HandleScriptSourceObject sourceObject,
-                              uint64_t packedData, uint32_t begin, uint32_t end,
-                              uint32_t toStringStart, uint32_t lineno, uint32_t column);
+    static LazyScript* CreateForXDR(JSContext* cx, HandleFunction fun,
+                                    HandleScript script, HandleScope enclosingScope,
+                                    HandleScriptSourceObject sourceObject,
+                                    uint64_t packedData, uint32_t begin, uint32_t end,
+                                    uint32_t toStringStart, uint32_t lineno, uint32_t column);
 
     void initRuntimeFields(uint64_t packedFields);
 
@@ -2270,8 +2350,29 @@ class LazyScript : public gc::TenuredCell
         return bool(script_);
     }
 
+    bool hasEnclosingScope() const {
+        return enclosingLazyScriptOrScope_ &&
+               enclosingLazyScriptOrScope_->is<Scope>();
+    }
+    bool hasEnclosingLazyScript() const {
+        return enclosingLazyScriptOrScope_ &&
+               enclosingLazyScriptOrScope_->is<LazyScript>();
+    }
+
+    LazyScript* enclosingLazyScript() const {
+        MOZ_ASSERT(hasEnclosingLazyScript());
+        return enclosingLazyScriptOrScope_->as<LazyScript>();
+    }
+    void setEnclosingLazyScript(LazyScript* enclosingLazyScript);
+
     Scope* enclosingScope() const {
-        return enclosingScope_;
+        MOZ_ASSERT(hasEnclosingScope());
+        return enclosingLazyScriptOrScope_->as<Scope>();
+    }
+    void setEnclosingScope(Scope* enclosingScope);
+
+    bool hasNonSyntacticScope() const {
+        return enclosingScope()->hasOnChain(ScopeKind::NonSyntactic);
     }
 
     ScriptSourceObject& sourceObject() const;
@@ -2282,8 +2383,6 @@ class LazyScript : public gc::TenuredCell
     bool mutedErrors() const {
         return scriptSource()->mutedErrors();
     }
-
-    void setEnclosingScope(Scope* enclosingScope);
 
     uint32_t numClosedOverBindings() const {
         return p_.numClosedOverBindings;
@@ -2441,11 +2540,12 @@ class LazyScript : public gc::TenuredCell
 
     
     
-    bool hasUncompletedEnclosingScript() const;
-
     
-    bool isEnclosingScriptLazy() const {
-        return !enclosingScope_;
+    
+    
+    
+    bool enclosingScriptHasEverBeenCompiled() const {
+        return hasEnclosingScope();
     }
 
     friend class GCMarker;

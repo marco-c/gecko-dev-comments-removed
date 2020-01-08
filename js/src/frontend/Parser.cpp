@@ -512,7 +512,10 @@ FunctionBox::initFromLazyFunction()
         setDerivedClassConstructor();
     if (fun->lazyScript()->needsHomeObject())
         setNeedsHomeObject();
-    enclosingScope_ = fun->lazyScript()->enclosingScope();
+    if (fun->lazyScript()->hasEnclosingScope())
+        enclosingScope_ = fun->lazyScript()->enclosingScope();
+    else
+        enclosingScope_ = nullptr;
     initWithEnclosingScope(enclosingScope_);
 }
 
@@ -592,6 +595,27 @@ FunctionBox::initWithEnclosingScope(Scope* enclosingScope)
     }
 
     computeInWith(enclosingScope);
+}
+
+void
+FunctionBox::setEnclosingScopeForInnerLazyFunction(Scope* enclosingScope)
+{
+    MOZ_ASSERT(isLazyFunctionWithoutEnclosingScope());
+
+    
+    
+    
+    
+    enclosingScope_ = enclosingScope;
+}
+
+void
+FunctionBox::finish()
+{
+    if (!isLazyFunctionWithoutEnclosingScope())
+        return;
+    MOZ_ASSERT(enclosingScope_);
+    function()->lazyScript()->setEnclosingScope(enclosingScope_);
 }
 
 template <class ParseHandler, typename CharT>

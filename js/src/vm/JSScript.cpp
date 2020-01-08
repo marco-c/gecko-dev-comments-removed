@@ -273,9 +273,9 @@ XDRRelazificationInfo(XDRState<mode>* xdr, HandleFunction fun, HandleScript scri
 
         if (mode == XDR_DECODE) {
             RootedScriptSourceObject sourceObject(cx, &script->scriptSourceUnwrap());
-            lazy.set(LazyScript::Create(cx, fun, script, enclosingScope, sourceObject,
-                                        packedFields, sourceStart, sourceEnd, toStringStart,
-                                        lineno, column));
+            lazy.set(LazyScript::CreateForXDR(cx, fun, script, enclosingScope, sourceObject,
+                                              packedFields, sourceStart, sourceEnd, toStringStart,
+                                              lineno, column));
             if (!lazy)
                 return xdr->fail(JS::TranscodeResult_Throw);
 
@@ -951,9 +951,9 @@ js::XDRLazyScript(XDRState<mode>* xdr, HandleScope enclosingScope,
         MOZ_TRY(xdr->codeUint64(&packedFields));
 
         if (mode == XDR_DECODE) {
-            lazy.set(LazyScript::Create(cx, fun, nullptr, enclosingScope, sourceObject,
-                                        packedFields, sourceStart, sourceEnd, toStringStart,
-                                        lineno, column));
+            lazy.set(LazyScript::CreateForXDR(cx, fun, nullptr, enclosingScope, sourceObject,
+                                              packedFields, sourceStart, sourceEnd, toStringStart,
+                                              lineno, column));
             if (!lazy)
                 return xdr->fail(JS::TranscodeResult_Throw);
             lazy->setToStringEnd(toStringEnd);
@@ -975,8 +975,11 @@ js::XDRLazyScript(XDRState<mode>* xdr, HandleScope enclosingScope,
 
             MOZ_TRY(XDRInterpretedFunction(xdr, nullptr, sourceObject, &func));
 
-            if (mode == XDR_DECODE)
+            if (mode == XDR_DECODE) {
                 innerFunctions[i] = func;
+                if (innerFunctions[i]->isInterpretedLazy())
+                    innerFunctions[i]->lazyScript()->setEnclosingLazyScript(lazy);
+            }
         }
     }
 
@@ -2952,6 +2955,12 @@ JSScript::fullyInitFromEmitter(JSContext* cx, HandleScript script, BytecodeEmitt
     MOZ_ASSERT(bce->atomIndices->count() <= INDEX_LIMIT);
     MOZ_ASSERT(bce->objectList.length <= INDEX_LIMIT);
 
+    uint64_t nslots = bce->maxFixedSlots + static_cast<uint64_t>(bce->maxStackDepth);
+    if (nslots > UINT32_MAX) {
+        bce->reportError(nullptr, JSMSG_NEED_DIET, js_script_str);
+        return false;
+    }
+
     uint32_t mainLength = bce->offset();
     uint32_t prologueLength = bce->prologueOffset();
     uint32_t nsrcnotes;
@@ -2973,6 +2982,11 @@ JSScript::fullyInitFromEmitter(JSContext* cx, HandleScript script, BytecodeEmitt
 
     if (!script->createScriptData(cx, prologueLength + mainLength, nsrcnotes, natoms))
         return false;
+
+    
+    
+    
+    
 
     jsbytecode* code = script->code();
     PodCopy<jsbytecode>(code, bce->prologue.code.begin(), prologueLength);
@@ -2998,18 +3012,15 @@ JSScript::fullyInitFromEmitter(JSContext* cx, HandleScript script, BytecodeEmitt
     script->bitFields_.bindingsAccessedDynamically_ = bce->sc->bindingsAccessedDynamically();
     script->bitFields_.hasSingletons_ = bce->hasSingletons;
 
-    uint64_t nslots = bce->maxFixedSlots + static_cast<uint64_t>(bce->maxStackDepth);
-    if (nslots > UINT32_MAX) {
-        bce->reportError(nullptr, JSMSG_NEED_DIET, js_script_str);
-        return false;
-    }
-
     script->nfixed_ = bce->maxFixedSlots;
     script->nslots_ = nslots;
     script->bodyScopeIndex_ = bce->bodyScopeIndex;
     script->bitFields_.hasNonSyntacticScope_ =
         bce->outermostScope()->hasOnChain(ScopeKind::NonSyntactic);
 
+    
+    
+    
     if (bce->sc->isFunctionBox())
         initFromFunctionBox(script, bce->sc->asFunctionBox());
     else if (bce->sc->isModuleContext())
@@ -4201,7 +4212,6 @@ LazyScript::LazyScript(JSFunction* fun, ScriptSourceObject& sourceObject,
                        uint32_t toStringStart, uint32_t lineno, uint32_t column)
   : script_(nullptr),
     function_(fun),
-    enclosingScope_(nullptr),
     sourceObject_(&sourceObject),
     table_(table),
     packedFields_(packedFields),
@@ -4228,11 +4238,26 @@ LazyScript::initScript(JSScript* script)
 }
 
 void
+LazyScript::setEnclosingLazyScript(LazyScript* enclosingLazyScript)
+{
+    MOZ_ASSERT(enclosingLazyScript);
+
+    
+    MOZ_ASSERT(!hasEnclosingLazyScript());
+
+    
+    MOZ_ASSERT(!hasEnclosingScope());
+
+    enclosingLazyScriptOrScope_ = enclosingLazyScript;
+}
+
+void
 LazyScript::setEnclosingScope(Scope* enclosingScope)
 {
-    
-    
-    enclosingScope_ = enclosingScope;
+    MOZ_ASSERT(enclosingScope);
+    MOZ_ASSERT(!hasEnclosingScope());
+
+    enclosingLazyScriptOrScope_ = enclosingScope;
 }
 
 ScriptSourceObject&
@@ -4329,18 +4354,21 @@ LazyScript::Create(JSContext* cx, HandleFunction fun,
         resClosedOverBindings[i] = closedOverBindings[i];
 
     GCPtrFunction* resInnerFunctions = res->innerFunctions();
-    for (size_t i = 0; i < res->numInnerFunctions(); i++)
+    for (size_t i = 0; i < res->numInnerFunctions(); i++) {
         resInnerFunctions[i].init(innerFunctions[i]);
+        if (resInnerFunctions[i]->isInterpretedLazy())
+            resInnerFunctions[i]->lazyScript()->setEnclosingLazyScript(res);
+    }
 
     return res;
 }
 
  LazyScript*
-LazyScript::Create(JSContext* cx, HandleFunction fun,
-                   HandleScript script, HandleScope enclosingScope,
-                   HandleScriptSourceObject sourceObject,
-                   uint64_t packedFields, uint32_t sourceStart, uint32_t sourceEnd,
-                   uint32_t toStringStart, uint32_t lineno, uint32_t column)
+LazyScript::CreateForXDR(JSContext* cx, HandleFunction fun,
+                         HandleScript script, HandleScope enclosingScope,
+                         HandleScriptSourceObject sourceObject,
+                         uint64_t packedFields, uint32_t sourceStart, uint32_t sourceEnd,
+                         uint32_t toStringStart, uint32_t lineno, uint32_t column)
 {
     
     RootedAtom dummyAtom(cx, cx->names().comma);
@@ -4370,7 +4398,8 @@ LazyScript::Create(JSContext* cx, HandleFunction fun,
     
     
     
-    MOZ_ASSERT(!res->enclosingScope());
+    
+    MOZ_ASSERT(!res->hasEnclosingScope());
     if (enclosingScope)
         res->setEnclosingScope(enclosingScope);
 
@@ -4392,24 +4421,6 @@ LazyScript::initRuntimeFields(uint64_t packedFields)
     packed = packedFields;
     p_.hasBeenCloned = p.hasBeenCloned;
     p_.treatAsRunOnce = p.treatAsRunOnce;
-}
-
-bool
-LazyScript::hasUncompletedEnclosingScript() const
-{
-    
-    
-    
-    
-    
-    
-    
-
-    if (!enclosingScope() || !enclosingScope()->is<FunctionScope>())
-        return false;
-
-    JSFunction* fun = enclosingScope()->as<FunctionScope>().canonicalFunction();
-    return !fun->hasScript() || fun->hasUncompletedScript() || !fun->nonLazyScript()->code();
 }
 
 void
