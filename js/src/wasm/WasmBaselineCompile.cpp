@@ -1896,6 +1896,7 @@ class BaseCompiler final : public BaseCompilerInterface
     MIRTypeVector               SigPIII_;
     MIRTypeVector               SigPIIL_;
     MIRTypeVector               SigPILL_;
+    MIRTypeVector               SigPIIII_;
     NonAssertingLabel           returnLabel_;
 
     LatentOp                    latentOp_;       
@@ -6016,8 +6017,10 @@ class BaseCompiler final : public BaseCompilerInterface
     MOZ_MUST_USE bool emitAtomicXchg(ValType type, Scalar::Type viewType);
     void emitAtomicXchg64(MemoryAccessDesc* access, ValType type, WantResult wantResult);
 #ifdef ENABLE_WASM_BULKMEM_OPS
-    MOZ_MUST_USE bool emitMemCopy();
+    MOZ_MUST_USE bool emitMemOrTableCopy(bool isMem);
+    MOZ_MUST_USE bool emitMemOrTableDrop(bool isMem);
     MOZ_MUST_USE bool emitMemFill();
+    MOZ_MUST_USE bool emitMemOrTableInit(bool isMem);
 #endif
 };
 
@@ -9365,18 +9368,46 @@ BaseCompiler::emitWake()
 
 #ifdef ENABLE_WASM_BULKMEM_OPS
 bool
-BaseCompiler::emitMemCopy()
+BaseCompiler::emitMemOrTableCopy(bool isMem)
 {
     uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
 
     Nothing nothing;
-    if (!iter_.readMemOrTableCopy(true, &nothing, &nothing, &nothing))
+    if (!iter_.readMemOrTableCopy(isMem, &nothing, &nothing, &nothing))
         return false;
 
     if (deadCode_)
         return true;
 
-    emitInstanceCall(lineOrBytecode, SigPIII_, ExprType::Void, SymbolicAddress::MemCopy);
+    SymbolicAddress callee = isMem ? SymbolicAddress::MemCopy
+                                   : SymbolicAddress::TableCopy;
+    emitInstanceCall(lineOrBytecode, SigPIII_, ExprType::Void, callee);
+
+    Label ok;
+    masm.branchTest32(Assembler::NotSigned, ReturnReg, ReturnReg, &ok);
+    trap(Trap::ThrowReported);
+    masm.bind(&ok);
+
+    return true;
+}
+
+bool
+BaseCompiler::emitMemOrTableDrop(bool isMem)
+{
+    uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
+
+    uint32_t segIndex = 0;
+    if (!iter_.readMemOrTableDrop(isMem, &segIndex))
+        return false;
+
+    if (deadCode_)
+        return true;
+
+    
+    pushI32(int32_t(segIndex));
+    SymbolicAddress callee = isMem ? SymbolicAddress::MemDrop
+                                   : SymbolicAddress::TableDrop;
+    emitInstanceCall(lineOrBytecode, SigPI_, ExprType::Void, callee);
 
     Label ok;
     masm.branchTest32(Assembler::NotSigned, ReturnReg, ReturnReg, &ok);
@@ -9399,6 +9430,32 @@ BaseCompiler::emitMemFill()
         return true;
 
     emitInstanceCall(lineOrBytecode, SigPIII_, ExprType::Void, SymbolicAddress::MemFill);
+
+    Label ok;
+    masm.branchTest32(Assembler::NotSigned, ReturnReg, ReturnReg, &ok);
+    trap(Trap::ThrowReported);
+    masm.bind(&ok);
+
+    return true;
+}
+
+bool
+BaseCompiler::emitMemOrTableInit(bool isMem)
+{
+    uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
+
+    uint32_t segIndex = 0;
+    Nothing nothing;
+    if (!iter_.readMemOrTableInit(isMem, &segIndex, &nothing, &nothing, &nothing))
+        return false;
+
+    if (deadCode_)
+        return true;
+
+    pushI32(int32_t(segIndex));
+    SymbolicAddress callee = isMem ? SymbolicAddress::MemInit
+                                   : SymbolicAddress::TableInit;
+    emitInstanceCall(lineOrBytecode, SigPIIII_, ExprType::Void, callee);
 
     Label ok;
     masm.branchTest32(Assembler::NotSigned, ReturnReg, ReturnReg, &ok);
@@ -10034,9 +10091,19 @@ BaseCompiler::emitBody()
 #endif 
 #ifdef ENABLE_WASM_BULKMEM_OPS
               case uint16_t(MiscOp::MemCopy):
-                CHECK_NEXT(emitMemCopy());
+                CHECK_NEXT(emitMemOrTableCopy(true));
+              case uint16_t(MiscOp::MemDrop):
+                CHECK_NEXT(emitMemOrTableDrop(true));
               case uint16_t(MiscOp::MemFill):
                 CHECK_NEXT(emitMemFill());
+              case uint16_t(MiscOp::MemInit):
+                CHECK_NEXT(emitMemOrTableInit(true));
+              case uint16_t(MiscOp::TableCopy):
+                CHECK_NEXT(emitMemOrTableCopy(false));
+              case uint16_t(MiscOp::TableDrop):
+                CHECK_NEXT(emitMemOrTableDrop(false));
+              case uint16_t(MiscOp::TableInit):
+                CHECK_NEXT(emitMemOrTableInit(false));
 #endif 
               default:
                 break;
@@ -10298,6 +10365,12 @@ BaseCompiler::init()
     }
     if (!SigPILL_.append(MIRType::Pointer) || !SigPILL_.append(MIRType::Int32) ||
         !SigPILL_.append(MIRType::Int64) || !SigPILL_.append(MIRType::Int64))
+    {
+        return false;
+    }
+    if (!SigPIIII_.append(MIRType::Pointer) || !SigPIIII_.append(MIRType::Int32) ||
+        !SigPIIII_.append(MIRType::Int32) || !SigPIIII_.append(MIRType::Int32) ||
+        !SigPIIII_.append(MIRType::Int32))
     {
         return false;
     }
