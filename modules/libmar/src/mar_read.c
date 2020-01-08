@@ -19,6 +19,12 @@
 
 
 
+
+
+
+#define MAXADDITIONALBLOCKSIZE 96
+
+
 static uint32_t mar_hash_name(const char *name) {
   uint32_t val = 0;
   unsigned char* c;
@@ -397,20 +403,23 @@ int
 mar_read_product_info_block(MarFile *mar,
                             struct ProductInformationBlock *infoBlock)
 {
-  uint32_t i, offsetAdditionalBlocks, numAdditionalBlocks,
+  uint32_t offsetAdditionalBlocks, numAdditionalBlocks,
     additionalBlockSize, additionalBlockID;
   int hasAdditionalBlocks;
 
   
 
-  char buf[97] = { '\0' };
+  char buf[MAXADDITIONALBLOCKSIZE + 1] = { '\0' };
   if (get_mar_file_info_fp(mar->fp, NULL, NULL,
                            &hasAdditionalBlocks,
                            &offsetAdditionalBlocks,
                            &numAdditionalBlocks) != 0) {
     return -1;
   }
-  for (i = 0; i < numAdditionalBlocks; ++i) {
+
+  
+
+  if (numAdditionalBlocks > 0) {
     
     if (fread(&additionalBlockSize,
               sizeof(additionalBlockSize),
@@ -420,6 +429,11 @@ mar_read_product_info_block(MarFile *mar,
     additionalBlockSize = ntohl(additionalBlockSize) -
                           sizeof(additionalBlockSize) -
                           sizeof(additionalBlockID);
+
+    
+    if (additionalBlockSize > MAXADDITIONALBLOCKSIZE) {
+      return -1;
+    }
 
     
     if (fread(&additionalBlockID,
@@ -433,16 +447,7 @@ mar_read_product_info_block(MarFile *mar,
       const char *location;
       int len;
 
-      
-
-
-
-
-      if (additionalBlockSize > 96) {
-        return -1;
-      }
-
-    if (fread(buf, additionalBlockSize, 1, mar->fp) != 1) {
+      if (fread(buf, additionalBlockSize, 1, mar->fp) != 1) {
         return -1;
       }
 
