@@ -30,7 +30,6 @@ static FeatureMap sSupportedFeatures[] = {
   
   { "camera", FeatureMap::eAll  },
   { "encrypted-media", FeatureMap::eAll  },
-  
   { "fullscreen", FeatureMap::eAll  },
   
   { "geolocation", FeatureMap::eAll  },

@@ -312,6 +312,10 @@ HTMLIFrameElement::RefreshFeaturePolicy()
     mFeaturePolicy->MaybeSetAllowedPolicy(NS_LITERAL_STRING("payment"));
   }
 
+  if (AllowFullscreen()) {
+    mFeaturePolicy->MaybeSetAllowedPolicy(NS_LITERAL_STRING("fullscreen"));
+  }
+
   
   
 }
