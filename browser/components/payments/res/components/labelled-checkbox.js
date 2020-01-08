@@ -11,6 +11,7 @@ import ObservedPropertiesMixin from "../mixins/ObservedPropertiesMixin.js";
 export default class LabelledCheckbox extends ObservedPropertiesMixin(HTMLElement) {
   static get observedAttributes() {
     return [
+      "form",
       "label",
       "value",
     ];
@@ -33,6 +34,13 @@ export default class LabelledCheckbox extends ObservedPropertiesMixin(HTMLElemen
 
   render() {
     this._labelSpan.textContent = this.label;
+    
+    
+    if (this.hasAttribute("form")) {
+      this._checkbox.setAttribute("form", this.getAttribute("form"));
+    } else {
+      this._checkbox.removeAttribute("form");
+    }
   }
 
   get checked() {
