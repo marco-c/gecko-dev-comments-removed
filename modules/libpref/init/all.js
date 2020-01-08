@@ -2931,6 +2931,9 @@ pref("layout.css.filters.enabled", true);
 pref("layout.css.scrollbar-colors.enabled", false);
 
 
+pref("layout.css.scrollbar-width.enabled", false);
+
+
 
 pref("layout.css.scroll-snap.proximity-threshold", 200);
 
