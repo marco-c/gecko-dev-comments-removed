@@ -32,11 +32,6 @@ html|input[type="checkbox"]:-moz-focusring + html|label:before {
   outline: 1px dotted;
 }
 
-*|button.primary:focus {
-  outline: 1px dotted;
-  outline-offset: -3px;
-}
-
 
 
 @media (-moz-windows-default-theme: 0) {
