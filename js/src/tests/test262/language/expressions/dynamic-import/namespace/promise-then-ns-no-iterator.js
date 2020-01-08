@@ -71,6 +71,7 @@
 
 
 
+
 import('./module-code_FIXTURE.js').then(ns => {
 
     assert.sameValue(Object.prototype.hasOwnProperty.call(ns, Symbol.iterator), false);

@@ -34,6 +34,7 @@
 
 
 
+
 let f = () => import('./eval-gtbndng-indirect-update-dflt_FIXTURE.js').then(imported => {
 
   assert.sameValue(imported.default(), 1);

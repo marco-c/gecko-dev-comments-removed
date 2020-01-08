@@ -71,6 +71,7 @@
 
 
 
+
 import('./empty_FIXTURE.js').then(ns => {
 
     assert.sameValue(typeof Object.setPrototypeOf, 'function');

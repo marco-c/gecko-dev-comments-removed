@@ -21,6 +21,7 @@
 
 
 
+
 import('./indirect-resolution-1_FIXTURE.js').then(async imported => {
   assert.sameValue(Promise.resolve(imported.default), imported.default, 'default is Promise instance');
   assert.sameValue(Object.getPrototypeOf(imported.default), Promise.prototype, 'default proto is Promise.prototype');

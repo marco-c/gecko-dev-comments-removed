@@ -23,6 +23,7 @@
 
 
 
+
 const originalPromise = Promise;
 
 fnGlobalObject().Promise = function() {

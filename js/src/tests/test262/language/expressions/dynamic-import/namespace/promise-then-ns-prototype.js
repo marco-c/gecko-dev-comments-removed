@@ -71,6 +71,7 @@
 
 
 
+
 import('./module-code_FIXTURE.js').then(ns => {
 
     assert.sameValue(ns instanceof Object, false);

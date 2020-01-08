@@ -79,6 +79,7 @@
 
 
 
+
 import('./module-code_FIXTURE.js').then(ns => {
 
     assert.sameValue(ns[Symbol.toStringTag], 'Module');
