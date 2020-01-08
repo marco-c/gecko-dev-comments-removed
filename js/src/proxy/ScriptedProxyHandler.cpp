@@ -200,6 +200,7 @@ GetProxyTrap(JSContext* cx, HandleObject handler, HandlePropertyName name, Mutab
 }
 
 
+
 bool
 ScriptedProxyHandler::getPrototype(JSContext* cx, HandleObject proxy,
                                    MutableHandleObject protop) const
@@ -276,6 +277,7 @@ ScriptedProxyHandler::getPrototype(JSContext* cx, HandleObject proxy,
     protop.set(handlerProto.toObjectOrNull());
     return true;
 }
+
 
 
 bool
@@ -377,6 +379,7 @@ ScriptedProxyHandler::setImmutablePrototype(JSContext* cx, HandleObject proxy,
 }
 
 
+
 bool
 ScriptedProxyHandler::preventExtensions(JSContext* cx, HandleObject proxy,
                                         ObjectOpResult& result) const
@@ -438,6 +441,7 @@ ScriptedProxyHandler::preventExtensions(JSContext* cx, HandleObject proxy,
 }
 
 
+
 bool
 ScriptedProxyHandler::isExtensible(JSContext* cx, HandleObject proxy, bool* extensible) const
 {
@@ -491,6 +495,7 @@ ScriptedProxyHandler::isExtensible(JSContext* cx, HandleObject proxy, bool* exte
     *extensible = booleanTrapResult;
     return true;
 }
+
 
 
 bool
@@ -613,6 +618,7 @@ ScriptedProxyHandler::getOwnPropertyDescriptor(JSContext* cx, HandleObject proxy
     desc.object().set(proxy);
     return true;
 }
+
 
 
 bool
@@ -915,6 +921,7 @@ ScriptedProxyHandler::ownPropertyKeys(JSContext* cx, HandleObject proxy, AutoIdV
 }
 
 
+
 bool
 ScriptedProxyHandler::delete_(JSContext* cx, HandleObject proxy, HandleId id,
                               ObjectOpResult& result) const
@@ -983,6 +990,7 @@ ScriptedProxyHandler::delete_(JSContext* cx, HandleObject proxy, HandleId id,
     
     return result.succeed();
 }
+
 
 
 bool
@@ -1056,6 +1064,7 @@ ScriptedProxyHandler::has(JSContext* cx, HandleObject proxy, HandleId id, bool* 
     *bp = booleanTrapResult;
     return true;
 }
+
 
 
 bool
@@ -1137,6 +1146,7 @@ ScriptedProxyHandler::get(JSContext* cx, HandleObject proxy, HandleValue receive
     vp.set(trapResult);
     return true;
 }
+
 
 
 bool
@@ -1427,6 +1437,7 @@ IsRevokedScriptedProxy(JSObject* obj)
     obj = CheckedUnwrap(obj);
     return obj && IsScriptedProxy(obj) && !obj->as<ProxyObject>().target();
 }
+
 
 
 static bool

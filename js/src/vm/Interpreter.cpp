@@ -621,6 +621,7 @@ js::CallFromStack(JSContext* cx, const CallArgs& args)
 }
 
 
+
 bool
 js::Call(JSContext* cx, HandleValue fval, HandleValue thisv, const AnyInvokeArgs& args,
          MutableHandleValue rval)
