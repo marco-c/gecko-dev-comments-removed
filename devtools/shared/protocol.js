@@ -857,12 +857,6 @@ Pool.prototype = extend(EventEmitter.prototype, {
       actor.actorID = this.conn.allocID(actor.actorPrefix || actor.typeName);
     }
 
-    
-    const parent = actor.parent();
-    if (parent) {
-      parent.unmanage(actor);
-    }
-
     this._poolMap.set(actor.actorID, actor);
     return actor;
   },
