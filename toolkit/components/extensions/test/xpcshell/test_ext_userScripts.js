@@ -160,6 +160,10 @@ add_task(async function test_userScripts_matches_denied() {
 
 
 
+
+
+
+if (false) {
 add_task(async function test_userScripts_no_webext_apis() {
   async function background() {
     const matches = ["http://localhost/*/file_sample.html"];
@@ -293,6 +297,7 @@ add_task(async function test_userScripts_no_webext_apis() {
 
   await extension.unload();
 });
+}
 
 add_task(async function test_userScripts_exported_APIs() {
   async function background() {
