@@ -33,38 +33,18 @@ async function getApplicableBindingsForOriginalPosition(generatedAstBindings, so
   end
 }, bindingType, locationType, sourceMaps) {
   const ranges = await sourceMaps.getGeneratedRanges(start, source);
-  const resultRanges = ranges.reduce((acc, mapRange) => {
-    
-    
-    
-    
-    if (locationType === "ref" && mapRange.columnStart === 0 && mapRange.columnEnd === Infinity) {
-      return acc;
+  const resultRanges = ranges.map(mapRange => ({
+    start: {
+      line: mapRange.line,
+      column: mapRange.columnStart
+    },
+    end: {
+      line: mapRange.line,
+      
+      
+      column: mapRange.columnEnd + 1
     }
-
-    const range = {
-      start: {
-        line: mapRange.line,
-        column: mapRange.columnStart
-      },
-      end: {
-        line: mapRange.line,
-        
-        
-        column: mapRange.columnEnd + 1
-      }
-    };
-    const previous = acc[acc.length - 1];
-
-    if (previous && (previous.end.line === range.start.line && previous.end.column === range.start.column || previous.end.line + 1 === range.start.line && previous.end.column === Infinity && range.start.column === 0)) {
-      previous.end.line = range.end.line;
-      previous.end.column = range.end.column;
-    } else {
-      acc.push(range);
-    }
-
-    return acc;
-  }, []); 
+  })); 
   
   
   

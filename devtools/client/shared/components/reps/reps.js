@@ -1944,9 +1944,17 @@ function getStacktraceElements(props, preview) {
   const isStacktraceALongString = isLongString(preview.stack);
   const stackString = isStacktraceALongString ? preview.stack.initial : preview.stack;
 
-  stackString.split("\n").forEach((frame, index) => {
+  stackString.split("\n").forEach((frame, index, frames) => {
     if (!frame) {
       
+      return;
+    }
+
+    
+    
+    
+    
+    if (isStacktraceALongString && index === frames.length - 1) {
       return;
     }
 
@@ -1978,6 +1986,7 @@ function getStacktraceElements(props, preview) {
     
     
     const locationParts = location.match(/^(.*):(\d+):(\d+)$/);
+
     if (props.onViewSourceInDebugger && location && locationParts && !IGNORED_SOURCE_URLS.includes(locationParts[1])) {
       const [, url, line, column] = locationParts;
       onLocationClick = e => {
@@ -1991,7 +2000,7 @@ function getStacktraceElements(props, preview) {
       };
     }
 
-    stack.push(span({
+    stack.push("\t", span({
       key: `fn${index}`,
       className: "objectBox-stackTrace-fn"
     }, cleanFunctionName(functionName)), span({
@@ -1999,16 +2008,8 @@ function getStacktraceElements(props, preview) {
       className: "objectBox-stackTrace-location",
       onClick: onLocationClick,
       title: onLocationClick ? `View source in debugger → ${location}` : undefined
-    }, location));
+    }, location), "\n");
   });
-
-  if (isStacktraceALongString) {
-    
-    
-    
-    
-    stack.splice(-2);
-  }
 
   return span({
     key: "stack",

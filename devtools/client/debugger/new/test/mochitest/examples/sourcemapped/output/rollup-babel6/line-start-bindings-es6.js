@@ -1,0 +1,20 @@
+var rollupBabel6LineStartBindingsEs6 = (function () {
+  'use strict';
+
+  function root() {
+    function aFunc() {
+
+      
+      
+      this.thing = 4;
+
+      console.log("pause here", root);
+    }
+
+    aFunc.call({});
+  }
+
+  return root;
+
+}());
+

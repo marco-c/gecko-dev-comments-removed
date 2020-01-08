@@ -5,6 +5,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.toggleBlackBox = toggleBlackBox;
 
+var _telemetry = require("../../utils/telemetry");
+
 var _promise = require("../utils/middleware/promise");
 
 
@@ -26,6 +28,11 @@ function toggleBlackBox(source) {
       isBlackBoxed,
       id
     } = source;
+
+    if (!isBlackBoxed) {
+      (0, _telemetry.recordEvent)("blackbox");
+    }
+
     return dispatch({
       type: "BLACKBOX",
       source,

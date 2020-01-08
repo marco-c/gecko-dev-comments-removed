@@ -17,6 +17,8 @@ var _sourceMaps = require("../../utils/source-maps");
 
 var _source = require("../../utils/source");
 
+var _telemetry = require("../../utils/telemetry");
+
 
 
 
@@ -149,6 +151,7 @@ function addBreakpoint(location, {
     sourceMaps,
     client
   }) => {
+    (0, _telemetry.recordEvent)("add_breakpoint");
     return dispatch({
       type: "ADD_BREAKPOINT",
       breakpoint,

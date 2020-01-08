@@ -237,6 +237,16 @@ async function findGeneratedBinding(sourceMaps, client, source, name, originalBi
       hadApplicableBindings = true;
     }
 
+    if (locationType === "ref") {
+      
+      
+      
+      
+      applicableBindings = applicableBindings.filter(({
+        range
+      }) => !(range.start.column === 0 && range.end.column === Infinity));
+    }
+
     if (locationType !== "ref" && !(await (0, _getApplicableBindingsForOriginalPosition.originalRangeStartsInside)(source, pos, sourceMaps))) {
       applicableBindings = [];
     }
