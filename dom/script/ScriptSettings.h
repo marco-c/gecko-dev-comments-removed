@@ -322,7 +322,10 @@ public:
                   const char *aReason,
                   bool aIsMainThread = NS_IsMainThread());
 
-  AutoEntryScript(JSObject* aObject, 
+  
+  
+  
+  AutoEntryScript(JSObject* aObject,
                   const char *aReason,
                   bool aIsMainThread = NS_IsMainThread());
 
