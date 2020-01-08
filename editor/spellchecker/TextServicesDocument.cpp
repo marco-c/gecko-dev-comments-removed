@@ -1150,10 +1150,7 @@ TextServicesDocument::InsertText(const nsString* aText)
 
   
   
-  
-  
-  
-  AutoTransactionBatch bundleAllTransactions(*mTextEditor);
+  AutoTransactionBatchExternal treatAsOneTransaction(*mTextEditor);
 
   nsresult rv = mTextEditor->InsertTextAsAction(*aText);
   if (NS_FAILED(rv)) {
