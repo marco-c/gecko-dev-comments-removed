@@ -5812,6 +5812,7 @@ PCCountProfiling_ScriptContents(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
+
 static const JSFunctionSpecWithHelp TestingFunctions[] = {
     JS_FN_HELP("gc", ::GC, 0, 0,
 "gc([obj] | 'zone' [, 'shrinking'])",
@@ -6515,6 +6516,8 @@ gc::ZealModeHelpText),
     JS_FS_HELP_END
 };
 
+
+
 static const JSFunctionSpecWithHelp FuzzingUnsafeTestingFunctions[] = {
 #ifdef DEBUG
     JS_FN_HELP("parseRegExp", ParseRegExp, 3, 0,
@@ -6545,6 +6548,8 @@ JS_FN_HELP("setDefaultLocale", SetDefaultLocale, 1, 0,
     JS_FS_HELP_END
 };
 
+
+
 static const JSFunctionSpecWithHelp PCCountProfilingTestingFunctions[] = {
     JS_FN_HELP("start", PCCountProfiling_Start, 0, 0,
     "start()",
@@ -6574,6 +6579,7 @@ static const JSFunctionSpecWithHelp PCCountProfilingTestingFunctions[] = {
 
     JS_FS_HELP_END
 };
+
 
 bool
 js::DefineTestingFunctions(JSContext* cx, HandleObject obj, bool fuzzingSafe_,

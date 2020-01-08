@@ -20,12 +20,14 @@ Something(JSContext* cx, unsigned argc, JS::Value* vp)
     return true;
 }
 
+
 static const JSFunctionSpecWithHelp unwind_functions[] = {
     JS_FN_HELP("something", Something, 0, 0,
 "something()",
 "  Test function for test-unwind."),
     JS_FS_HELP_END
 };
+
 
 FRAGMENT(unwind, simple) {
     using namespace JS;
