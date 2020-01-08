@@ -234,21 +234,23 @@ class UrlbarInput {
     try {
       new URL(url);
     } catch (ex) {
-      let browser = this.window.gBrowser.selectedBrowser;
-      let lastLocationChange = browser.lastLocationChange;
-
-      UrlbarUtils.getShortcutOrURIAndPostData(url).then(data => {
-        if (where != "current" ||
-            browser.lastLocationChange == lastLocationChange) {
-          openParams.postData = data.postData;
-          openParams.allowInheritPrincipal = data.mayInheritPrincipal;
-          this._loadURL(data.url, where, openParams);
-        }
-      });
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       return;
     }
 
     this._loadURL(url, where, openParams);
+
+    this.view.close();
   }
 
   
@@ -558,7 +560,7 @@ class UrlbarInput {
       browser.initialPageLoadedFromURLBar = url;
     }
     try {
-      UrlbarUtils.addToUrlbarHistory(url, this.window);
+      UrlbarUtils.addToUrlbarHistory(url);
     } catch (ex) {
       
       
@@ -600,8 +602,6 @@ class UrlbarInput {
     
     
     
-
-    this.closePopup();
   }
 
   
