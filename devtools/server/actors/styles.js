@@ -1489,15 +1489,17 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
   logChange(change) {
-    let prevValue = this._declarations[change.index]
-      ? this._declarations[change.index].value
-      : null;
-    const prevName = this._declarations[change.index]
-      ? this._declarations[change.index].name
-      : null;
-    const prevPriority = this._declarations[change.index]
-      ? this._declarations[change.index].priority
-      : null;
+    
+    
+    let {
+      value: prevValue,
+      name: prevName,
+      priority: prevPriority,
+      commentOffsets,
+    } = this._declarations[change.index] || {};
+    
+    
+    const prevDisabled = !!commentOffsets;
     
     prevValue = (prevValue && prevPriority) ? `${prevValue} !important` : prevValue;
 
@@ -1569,6 +1571,15 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         
         
         data.remove = prevValue ? { property: prevName, value: prevValue } : null;
+
+        
+        
+        
+        
+        if (prevDisabled && !change.newName && prevValue === newValue) {
+          data.remove = null;
+        }
+
         break;
 
       case "remove":
