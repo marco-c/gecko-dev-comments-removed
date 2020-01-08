@@ -75,7 +75,10 @@ function addWindow(aUrl) {
 }
 
 function getChromeWindow(aWindow) {
-  return aWindow.docShell.rootTreeItem.domWindow;
+  return aWindow
+    .QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIWebNavigation)
+    .QueryInterface(Ci.nsIDocShellTreeItem).rootTreeItem
+    .QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow);
 }
 
 

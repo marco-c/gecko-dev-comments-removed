@@ -14,6 +14,17 @@ const EXPORTED_SYMBOLS = ["WebNavigationFrames"];
 
 
 
+function docShellToWindow(docShell) {
+  return docShell.QueryInterface(Ci.nsIInterfaceRequestor)
+                 .getInterface(Ci.nsIDOMWindow);
+}
+
+
+
+
+
+
+
 
 
 
@@ -30,7 +41,7 @@ function* iterateDocShellTree(docShell) {
     docShell.typeContent, docShell.ENUMERATE_FORWARDS);
 
   while (docShellsEnum.hasMoreElements()) {
-    yield docShellsEnum.getNext().QueryInterface(Ci.nsIDocShell);
+    yield docShellsEnum.getNext();
   }
 }
 
@@ -70,7 +81,8 @@ function getDocShellFrameId(docShell) {
     return undefined;
   }
 
-  return getFrameId(docShell.domWindow);
+  return getFrameId(docShell.QueryInterface(Ci.nsIInterfaceRequestor)
+                            .getInterface(Ci.nsIDOMWindow));
 }
 
 
@@ -80,7 +92,7 @@ function getDocShellFrameId(docShell) {
 
 
 function convertDocShellToFrameDetail(docShell) {
-  let window = docShell.domWindow;
+  let window = docShellToWindow(docShell);
 
   return {
     frameId: getFrameId(window),
@@ -101,7 +113,7 @@ function convertDocShellToFrameDetail(docShell) {
 
 function findDocShell(frameId, rootDocShell) {
   for (let docShell of iterateDocShellTree(rootDocShell)) {
-    if (frameId == getFrameId(docShell.domWindow)) {
+    if (frameId == getFrameId(docShellToWindow(docShell))) {
       return docShell;
     }
   }

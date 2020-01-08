@@ -10,7 +10,7 @@ function waitForDocshellActivated() {
     
     await ContentTaskUtils.waitForEvent(content.document, "visibilitychange",
                                         true , (aEvent) => {
-      return content.docShell.isActive;
+      return content.document.docShell.isActive;
     });
   });
 }

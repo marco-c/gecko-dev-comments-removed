@@ -552,7 +552,7 @@ var NetErrorContent = {
         Services.prefs.getBoolPref("security.certerror.hideAddException", false);
     }
     if (this.isAboutNetError(win.document)) {
-      let docShell = win.docShell;
+      let docShell = win.document.docShell;
       if (docShell) {
         let {securityInfo} = docShell.failedChannel;
         
@@ -597,7 +597,7 @@ var NetErrorContent = {
     
     if (evt.detail) {
       let win = evt.originalTarget.ownerGlobal;
-      let docShell = win.docShell;
+      let docShell = win.document.docShell;
 
       let {securityInfo} = docShell.failedChannel;
       securityInfo.QueryInterface(Ci.nsITransportSecurityInfo);
@@ -610,7 +610,7 @@ var NetErrorContent = {
   },
 
   onCertError(global, targetElement, win) {
-    let docShell = win.docShell;
+    let docShell = win.document.docShell;
     global.sendAsyncMessage("Browser:CertExceptionError", {
       frameId: WebNavigationFrames.getFrameId(win),
       location: win.document.location.href,

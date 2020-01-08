@@ -4,13 +4,19 @@
 
 "use strict";
 
+const { Ci } = require("chrome");
 const Services = require("Services");
 
 
 
 
 function getToplevelWindow(window) {
-  return window.docShell.rootTreeItem.domWindow;
+  return window.QueryInterface(Ci.nsIInterfaceRequestor)
+               .getInterface(Ci.nsIWebNavigation)
+               .QueryInterface(Ci.nsIDocShellTreeItem)
+               .rootTreeItem
+               .QueryInterface(Ci.nsIInterfaceRequestor)
+               .getInterface(Ci.nsIDOMWindow);
 }
 exports.getToplevelWindow = getToplevelWindow;
 

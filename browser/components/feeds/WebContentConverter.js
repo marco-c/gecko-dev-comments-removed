@@ -287,7 +287,12 @@ WebContentConverterRegistrar.prototype = {
 
 
   _getBrowserWindowForContentWindow(aContentWindow) {
-    return aContentWindow.docShell.rootTreeItem.domWindow
+    return aContentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                         .getInterface(Ci.nsIWebNavigation)
+                         .QueryInterface(Ci.nsIDocShellTreeItem)
+                         .rootTreeItem
+                         .QueryInterface(Ci.nsIInterfaceRequestor)
+                         .getInterface(Ci.nsIDOMWindow)
                          .wrappedJSObject;
   },
 
