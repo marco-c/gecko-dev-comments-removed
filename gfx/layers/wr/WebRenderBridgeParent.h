@@ -170,7 +170,6 @@ public:
 
   void ExtractImageCompositeNotifications(nsTArray<ImageCompositeNotificationInfo>* aNotifications);
 
-  wr::Epoch GetCurrentEpoch() const { return mWrEpoch; }
   wr::IdNamespace GetIdNamespace()
   {
     return mIdNamespace;
@@ -250,7 +249,8 @@ private:
   void RemovePipelineIdForCompositable(const wr::PipelineId& aPipelineId,
                                        wr::TransactionBuilder& aTxn);
 
-  void RemoveExternalImageId(const ExternalImageId& aImageId);
+  void DeleteImage(const wr::ImageKey& aKey,
+                   wr::TransactionBuilder& aUpdates);
   void ReleaseTextureOfImage(const wr::ImageKey& aKey);
 
   LayersId GetLayersId() const;
@@ -336,7 +336,7 @@ private:
   std::unordered_set<uint64_t> mActiveAnimations;
   std::unordered_map<uint64_t, RefPtr<WebRenderImageHost>> mAsyncCompositables;
   std::unordered_map<uint64_t, CompositableTextureHostRef> mTextureHosts;
-  std::unordered_set<uint64_t> mSharedSurfaceIds;
+  std::unordered_map<uint64_t, wr::ExternalImageId> mSharedSurfaceIds;
 
   TimeDuration mVsyncRate;
   TimeStamp mPreviousFrameTimeStamp;

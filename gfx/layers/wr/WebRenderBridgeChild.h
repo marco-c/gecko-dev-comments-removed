@@ -101,8 +101,6 @@ public:
                                     const CompositableHandle& aHandlee);
   void RemovePipelineIdForCompositable(const wr::PipelineId& aPipelineId);
 
-  void DeallocExternalImageId(const wr::ExternalImageId& aImageId);
-
   
   
   void ReleaseTextureOfImage(const wr::ImageKey& aKey);
