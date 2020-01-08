@@ -127,6 +127,7 @@ add_task(async function check_permission_state_change() {
   
   await openIdentityPopup();
   let menulist = document.getElementById("identity-popup-popup-menulist");
+  menulist.menupopup.openPopup(); 
   let menuitem = menulist.getElementsByTagName("menuitem")[0];
   menuitem.click();
   await closeIdentityPopup();
@@ -160,6 +161,7 @@ add_task(async function check_permission_state_change() {
   
   await openIdentityPopup();
   menulist = document.getElementById("identity-popup-popup-menulist");
+  menulist.menupopup.openPopup(); 
   menuitem = menulist.getElementsByTagName("menuitem")[1];
   menuitem.click();
   await closeIdentityPopup();
