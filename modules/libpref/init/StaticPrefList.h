@@ -181,17 +181,11 @@ VARCACHE_PREF(
 
 
 
-#ifdef RELEASE_OR_BETA
-# define PREF_VALUE false
-#else
-# define PREF_VALUE true
-#endif
 VARCACHE_PREF(
   "dom.keyboardevent.keypress.set_keycode_and_charcode_to_same_value",
    dom_keyboardevent_keypress_set_keycode_and_charcode_to_same_value,
-  bool, PREF_VALUE
+  bool, false
 )
-#undef PREF_VALUE
 
 
 
