@@ -48,6 +48,8 @@ add_task(async function() {
   await SpecialPowers.flushPrefEnv();
   await SpecialPowers.pushPrefEnv({"set": [
     ["browser.contentblocking.enabled", true],
+    ["browser.contentblocking.ui.enabled", true],
+    ["browser.contentblocking.rejecttrackers.ui.enabled", true],
     ["browser.fastblock.enabled", false],
     ["privacy.trackingprotection.enabled", true],
     
