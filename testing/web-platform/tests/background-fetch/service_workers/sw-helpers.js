@@ -6,6 +6,25 @@ function sendMessageToDocument(msg) {
 }
 
 
+
+
+function cloneRegistration(registration) {
+  function deepCopy(src) {
+    if (typeof src !== 'object' || src === null)
+        return src;
+    var dst = Array.isArray(src) ? [] : {};
+    for (var property in src) {
+        if (typeof src[property] === 'function')
+            continue;
+        dst[property] = deepCopy(src[property]);
+    }
+    return dst;
+  }
+
+  return deepCopy(registration);
+}
+
+
 self.addEventListener('message', event => {
   source = event.source;
   sendMessageToDocument('ready');
