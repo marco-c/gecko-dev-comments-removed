@@ -162,6 +162,7 @@ class ImageCompositeNotification;
 class ImageContainer;
 class ImageContainerChild;
 class SharedPlanarYCbCrImage;
+class SharedSurfacesAnimation;
 class PlanarYCbCrImage;
 class TextureClient;
 class KnowsCompositor;
@@ -640,6 +641,13 @@ public:
 
   void DropImageClient();
 
+  SharedSurfacesAnimation* GetSharedSurfacesAnimation() const
+  {
+    return mSharedAnimation;
+  }
+
+  SharedSurfacesAnimation* EnsureSharedSurfacesAnimation();
+
 private:
   typedef mozilla::RecursiveMutex RecursiveMutex;
 
@@ -699,6 +707,8 @@ private:
   
   
   RefPtr<ImageClient> mImageClient;
+
+  nsAutoPtr<SharedSurfacesAnimation> mSharedAnimation;
 
   bool mIsAsync;
   CompositableHandle mAsyncContainerHandle;
