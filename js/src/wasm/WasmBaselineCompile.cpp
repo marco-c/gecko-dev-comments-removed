@@ -3382,7 +3382,7 @@ class BaseCompiler final : public BaseCompilerInterface
 
         GenerateFunctionPrologue(masm,
                                  env_.funcTypes[func_.index]->id,
-                                 env_.mode == CompileMode::Tier1 ? Some(func_.index) : Nothing(),
+                                 env_.mode() == CompileMode::Tier1 ? Some(func_.index) : Nothing(),
                                  &offsets_);
 
         
@@ -10352,7 +10352,7 @@ js::wasm::BaselineCompileFunctions(const ModuleEnvironment& env, LifoAlloc& lifo
                                    const FuncCompileInputVector& inputs, CompiledCode* code,
                                    UniqueChars* error)
 {
-    MOZ_ASSERT(env.tier == Tier::Baseline);
+    MOZ_ASSERT(env.tier() == Tier::Baseline);
     MOZ_ASSERT(env.kind == ModuleKind::Wasm);
 
     
