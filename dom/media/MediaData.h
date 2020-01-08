@@ -662,7 +662,7 @@ private:
   MediaRawData* mTarget;
 };
 
-class MediaRawData : public MediaData
+class MediaRawData final : public MediaData
 {
 public:
   MediaRawData();
@@ -700,11 +700,11 @@ public:
   RefPtr<TrackInfoSharedPtr> mTrackInfo;
 
   
-  virtual already_AddRefed<MediaRawData> Clone() const;
+  already_AddRefed<MediaRawData> Clone() const;
   
   
-  virtual UniquePtr<MediaRawDataWriter> CreateWriter();
-  virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
+  UniquePtr<MediaRawDataWriter> CreateWriter();
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
 protected:
   ~MediaRawData();
