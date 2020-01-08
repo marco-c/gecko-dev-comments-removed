@@ -502,9 +502,14 @@ class nsDOMMutationObserver final : public nsISupports, public nsWrapperCache {
   }
 
   void ClearPendingRecords() {
-    mFirstPendingMutation = nullptr;
+    
+    
+    RefPtr<nsDOMMutationRecord> current = mFirstPendingMutation.forget();
     mLastPendingMutation = nullptr;
     mPendingMutationCount = 0;
+    while (current) {
+      current = current->mNext.forget();
+    }
   }
 
   
