@@ -396,7 +396,7 @@ pub struct PicturePrimitive {
 
     
     
-    pub spatial_node_index: SpatialNodeIndex,
+    spatial_node_index: SpatialNodeIndex,
 
     
     
@@ -633,29 +633,31 @@ impl PicturePrimitive {
     pub fn add_split_plane(
         splitter: &mut PlaneSplitter,
         transforms: &TransformPalette,
-        local_rect: LayoutRect,
-        spatial_node_index: SpatialNodeIndex,
+        prim_instance: &PrimitiveInstance,
+        original_local_rect: LayoutRect,
         plane_split_anchor: usize,
-        world_bounds: WorldRect,
     ) -> bool {
-        
-        
-        
-        if local_rect.size.width <= 0.0 ||
-           local_rect.size.height <= 0.0 {
-            return false;
-        }
-
         let transform = transforms
-            .get_world_transform(spatial_node_index);
+            .get_world_transform(prim_instance.spatial_node_index);
         let matrix = transform.cast();
-        let local_rect = local_rect.cast();
-        let world_bounds = world_bounds.cast();
+
+        
+        
+        
+        
+        
+        
+        let local_rect = match original_local_rect
+            .intersection(&prim_instance.combined_local_clip_rect)
+        {
+            Some(rect) => rect.cast(),
+            None => return false,
+        };
 
         match transform.transform_kind() {
             TransformedRectKind::AxisAligned => {
                 let inv_transform = transforms
-                    .get_world_inv_transform(spatial_node_index);
+                    .get_world_inv_transform(prim_instance.spatial_node_index);
                 let polygon = Polygon::from_transformed_rect_with_inverse(
                     local_rect,
                     &matrix,
@@ -672,7 +674,7 @@ impl PicturePrimitive {
                         plane_split_anchor,
                     ),
                     &matrix,
-                    Some(world_bounds),
+                    prim_instance.clipped_world_rect.map(|r| r.to_f64()),
                 );
                 if let Ok(results) = results {
                     for poly in results {
