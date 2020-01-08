@@ -1532,7 +1532,7 @@ WebRenderBridgeParent::UpdateWebRender(CompositorVsyncScheduler* aScheduler,
   mAnimStorage = aAnimStorage;
 
   
-  mAsyncImageManager->AddPipeline(mPipelineId);
+  mAsyncImageManager->AddPipeline(mPipelineId, this);
 
   return GetNextWrEpoch(); 
 }
