@@ -332,15 +332,15 @@ DebuggerClient.prototype = {
 
 
 
-  attachTab: function(targetActor) {
+  attachTarget: function(targetActor) {
     if (this._clients.has(targetActor)) {
-      const cachedTab = this._clients.get(targetActor);
+      const cachedTarget = this._clients.get(targetActor);
       const cachedResponse = {
-        cacheDisabled: cachedTab.cacheDisabled,
-        javascriptEnabled: cachedTab.javascriptEnabled,
-        traits: cachedTab.traits,
+        cacheDisabled: cachedTarget.cacheDisabled,
+        javascriptEnabled: cachedTarget.javascriptEnabled,
+        traits: cachedTarget.traits,
       };
-      return promise.resolve([cachedResponse, cachedTab]);
+      return promise.resolve([cachedResponse, cachedTarget]);
     }
 
     const packet = {
@@ -348,9 +348,12 @@ DebuggerClient.prototype = {
       type: "attach"
     };
     return this.request(packet).then(response => {
-      const tabClient = new TabClient(this, response);
-      this.registerClient(tabClient);
-      return [response, tabClient];
+      
+      
+      
+      const targetClient = new TabClient(this, response);
+      this.registerClient(targetClient);
+      return [response, targetClient];
     });
   },
 
