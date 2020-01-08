@@ -589,6 +589,29 @@ nsXPCWrappedJSClass::DelegatedQueryInterface(nsXPCWrappedJS* self,
     
     
     
+    if (aIID.Equals(NS_GET_IID(nsISimpleEnumerator))) {
+        bool found;
+        XPCJSContext* xpccx = ccx.GetContext();
+        if (JS_HasPropertyById(aes.cx(), obj,
+                               xpccx->GetStringID(xpccx->IDX_QUERY_INTERFACE),
+                               &found) && !found) {
+            nsresult rv;
+            nsCOMPtr<nsIJSEnumerator> jsEnum;
+            if (!XPCConvert::JSObject2NativeInterface(aes.cx(),
+                                                      getter_AddRefs(jsEnum), obj,
+                                                      &NS_GET_IID(nsIJSEnumerator),
+                                                      nullptr, &rv)) {
+                return rv;
+            }
+            nsCOMPtr<nsISimpleEnumerator> res = new XPCWrappedJSIterator(jsEnum);
+            res.forget(aInstancePtr);
+            return NS_OK;
+        }
+    }
+
+    
+    
+    
     
     if (nsXPCWrappedJS* sibling = self->FindOrFindInherited(aIID)) {
         NS_ADDREF(sibling);
@@ -609,29 +632,6 @@ nsXPCWrappedJSClass::DelegatedQueryInterface(nsXPCWrappedJS* self,
             *aInstancePtr = wrapper.forget().take()->GetXPTCStub();
         }
         return rv;
-    }
-
-    
-    
-    
-    if (aIID.Equals(NS_GET_IID(nsISimpleEnumerator))) {
-        bool found;
-        XPCJSContext* xpccx = ccx.GetContext();
-        if (JS_HasPropertyById(aes.cx(), obj,
-                               xpccx->GetStringID(xpccx->IDX_QUERY_INTERFACE),
-                               &found) && !found) {
-            nsresult rv;
-            nsCOMPtr<nsIJSEnumerator> jsEnum;
-            if (!XPCConvert::JSObject2NativeInterface(aes.cx(),
-                                                      getter_AddRefs(jsEnum), obj,
-                                                      &NS_GET_IID(nsIJSEnumerator),
-                                                      nullptr, &rv)) {
-                return rv;
-            }
-            nsCOMPtr<nsISimpleEnumerator> res = new XPCWrappedJSIterator(jsEnum);
-            res.forget(aInstancePtr);
-            return NS_OK;
-        }
     }
 
     
