@@ -345,11 +345,6 @@ public:
   
 
 
-  void NotifyMediaStreamTracksAvailable(DOMMediaStream* aStream);
-
-  
-
-
 
   void NotifyOutputTrackStopped(DOMMediaStream* aOwningStream,
                                 TrackID aDestinationTrackID);
@@ -821,7 +816,6 @@ protected:
   class ChannelLoader;
   class ErrorSink;
   class MediaLoadListener;
-  class MediaStreamTracksAvailableCallback;
   class MediaStreamTrackListener;
   class VideoFrameListener;
   class ShutdownObserver;
