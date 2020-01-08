@@ -447,7 +447,7 @@ Toolbox.prototype = {
       
 
       
-      await this._target.makeRemote();
+      await this._target.attach();
 
       
       
