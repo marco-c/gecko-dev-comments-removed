@@ -1,4 +1,4 @@
-use spec::{ self, SpecBuilder, TypeSum };
+use spec::{ self, SpecBuilder, TypeSum, Laziness };
 
 use webidl::ast::*;
 
@@ -6,6 +6,25 @@ pub struct Importer {
     builder: SpecBuilder,
 }
 impl Importer {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -95,7 +114,19 @@ impl Importer {
             if let InterfaceMember::Attribute(Attribute::Regular(ref attribute)) = *member {
                 let name = self.builder.field_name(&attribute.name);
                 let type_ = self.convert_type(&*attribute.type_);
-                fields.push((name, type_));
+                let mut laziness = Laziness::Eager;
+
+                for extended_attribute in &attribute.extended_attributes {
+                    use webidl::ast::ExtendedAttribute::NoArguments;
+                    use webidl::ast::Other::Identifier;
+                    if let &NoArguments(Identifier(ref id)) = extended_attribute.as_ref() {
+                        if &*id == "Lazy" {
+                            laziness = Laziness::Lazy;
+                        }
+                    }
+                }
+
+                fields.push((name, type_, laziness));
             } else {
                 panic!("Expected an attribute, got {:?}", member);
             }
@@ -103,18 +134,8 @@ impl Importer {
         let name = self.builder.node_name(&interface.name);
         let mut node = self.builder.add_interface(&name)
             .expect("Name already present");
-        for (field_name, field_type) in fields.drain(..) {
-            node.with_field(&field_name, field_type);
-        }
-
-        for extended_attribute in &interface.extended_attributes {
-            use webidl::ast::ExtendedAttribute::NoArguments;
-            use webidl::ast::Other::Identifier;
-            if let &NoArguments(Identifier(ref id)) = extended_attribute.as_ref() {
-                if &*id == "Skippable" {
-                    node.with_skippable(true);
-                }
-            }
+        for (field_name, field_type, field_laziness) in fields.drain(..) {
+            node.with_field(&field_name, field_type, field_laziness);
         }
     }
     fn convert_type(&mut self, t: &Type) -> spec::Type {
@@ -140,6 +161,8 @@ impl Importer {
             }
             TypeKind::RestrictedDouble =>
                 spec::TypeSpec::Number,
+            TypeKind::UnsignedLong =>
+                spec::TypeSpec::UnsignedLong,
             _ => {
                 panic!("I don't know how to import {:?} yet", t);
             }
