@@ -1,0 +1,17 @@
+
+
+
+
+
+#ifndef __HAL_WAKELOCK_INTERNAL_H_
+#define __HAL_WAKELOCK_INTERNAL_H_
+
+namespace mozilla {
+namespace hal {
+
+void WakeLockInit();
+
+} 
+} 
+
+#endif 
