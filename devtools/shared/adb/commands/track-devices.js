@@ -13,6 +13,7 @@ const { setTimeout } = require("resource://gre/modules/Timer.jsm");
 const { adbProcess } = require("../adb-process");
 const client = require("../adb-client");
 
+const ADB_STATUS_OFFLINE = "offline";
 const OKAY = 0x59414b4f;
 
 
@@ -20,7 +21,8 @@ const OKAY = 0x59414b4f;
 class TrackDevicesCommand extends EventEmitter {
   run() {
     this._waitForFirst = true;
-    this._devices = {};
+    
+    this._devices = new Map();
     this._socket = client.connect();
 
     this._socket.s.onopen = this._onOpen.bind(this);
@@ -54,10 +56,7 @@ class TrackDevicesCommand extends EventEmitter {
     dumpn("trackDevices onclose");
 
     
-    for (const dev in this._devices) {
-      this._devices[dev] = false;
-      this.emit("device-disconnected", dev);
-    }
+    this._disconnectAllDevices();
 
     
     
@@ -96,33 +95,54 @@ class TrackDevicesCommand extends EventEmitter {
 
     if (packet.data == "") {
       
-      for (const dev in this._devices) {
-        this._devices[dev] = false;
-        this.emit("device-disconnected", dev);
-      }
+      this._disconnectAllDevices();
     } else {
       
       const lines = packet.data.split("\n");
-      const newDev = {};
+      const newDevices = new Map();
       lines.forEach(function(line) {
         if (line.length == 0) {
           return;
         }
 
-        const [dev, status] = line.split("\t");
-        newDev[dev] = status !== "offline";
+        const [deviceId, status] = line.split("\t");
+        newDevices.set(deviceId, status);
       });
+
       
-      for (const dev in newDev) {
-        if (this._devices[dev] != newDev[dev]) {
-          if (dev in this._devices || newDev[dev]) {
-            const topic = newDev[dev] ? "device-connected"
-                                      : "device-disconnected";
-            this.emit(topic, dev);
-          }
-          this._devices[dev] = newDev[dev];
-        }
+      const deviceIds = new Set([...this._devices.keys(), ...newDevices.keys()]);
+      for (const deviceId of deviceIds) {
+        const currentStatus = this._devices.get(deviceId);
+        const newStatus = newDevices.get(deviceId);
+        this._fireConnectionEventIfNeeded(deviceId, currentStatus, newStatus);
       }
+
+      
+      this._devices = newDevices;
+    }
+  }
+
+  _disconnectAllDevices() {
+    for (const [deviceId, status] of this._devices.entries()) {
+      if (status !== ADB_STATUS_OFFLINE) {
+        this.emit("device-disconnected", deviceId);
+      }
+    }
+    this._devices = new Map();
+  }
+
+  _fireConnectionEventIfNeeded(deviceId, currentStatus, newStatus) {
+    const isCurrentOnline = !!(currentStatus && currentStatus !== ADB_STATUS_OFFLINE);
+    const isNewOnline = !!(newStatus && newStatus !== ADB_STATUS_OFFLINE);
+
+    if (isCurrentOnline === isNewOnline) {
+      return;
+    }
+
+    if (isNewOnline) {
+      this.emit("device-connected", deviceId);
+    } else {
+      this.emit("device-disconnected", deviceId);
     }
   }
 }
