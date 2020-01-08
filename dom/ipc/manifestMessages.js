@@ -1,0 +1,134 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"use strict";
+const {
+  utils: Cu,
+} = Components;
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+
+ChromeUtils.defineModuleGetter(this, "ManifestObtainer",
+				  "resource://gre/modules/ManifestObtainer.jsm");
+ChromeUtils.defineModuleGetter(this, "ManifestFinder",
+				  "resource://gre/modules/ManifestFinder.jsm");
+ChromeUtils.defineModuleGetter(this, "ManifestIcons",
+				  "resource://gre/modules/ManifestIcons.jsm");
+
+const MessageHandler = {
+  registerListeners() {
+    addMessageListener(
+      "DOM:WebManifest:hasManifestLink",
+      this.hasManifestLink.bind(this)
+    );
+    addMessageListener(
+      "DOM:ManifestObtainer:Obtain",
+      this.obtainManifest.bind(this)
+    );
+    addMessageListener(
+      "DOM:Manifest:FireAppInstalledEvent",
+      this.fireAppInstalledEvent.bind(this)
+    );
+    addMessageListener(
+      "DOM:WebManifest:fetchIcon",
+      this.fetchIcon.bind(this)
+    );
+  },
+
+  
+
+
+
+
+  hasManifestLink({data: {id}}) {
+    const response = makeMsgResponse(id);
+    response.result = ManifestFinder.contentHasManifestLink(content);
+    response.success = true;
+    sendAsyncMessage("DOM:WebManifest:hasManifestLink", response);
+  },
+
+  
+
+
+
+
+
+  async obtainManifest({data: {id}}) {
+    const response = makeMsgResponse(id);
+    try {
+      response.result = await ManifestObtainer.contentObtainManifest(content);
+      response.success = true;
+    } catch (err) {
+      response.result = serializeError(err);
+    }
+    sendAsyncMessage("DOM:ManifestObtainer:Obtain", response);
+  },
+
+  fireAppInstalledEvent({data: {id}}){
+    const ev = new Event("appinstalled");
+    const response = makeMsgResponse(id);
+    if (!content || content.top !== content) {
+      const msg = "Can only dispatch install event on top-level browsing contexts.";
+      response.result = serializeError(new Error(msg));
+    } else {
+      response.success = true;
+      content.dispatchEvent(ev);
+    }
+    sendAsyncMessage("DOM:Manifest:FireAppInstalledEvent", response);
+  },
+
+  
+
+
+
+  async fetchIcon({data: {id, manifest, iconSize}}) {
+    const response = makeMsgResponse(id);
+    try {
+      response.result =
+        await ManifestIcons.contentFetchIcon(content, manifest, iconSize);
+      response.success = true;
+    } catch (err) {
+      response.result = serializeError(err);
+    }
+    sendAsyncMessage("DOM:WebManifest:fetchIcon", response);
+  },
+
+};
+
+
+
+
+
+
+
+function serializeError(aError) {
+  const clone = {
+    "fileName": aError.fileName,
+    "lineNumber": aError.lineNumber,
+    "columnNumber": aError.columnNumber,
+    "stack": aError.stack,
+    "message": aError.message,
+    "name": aError.name
+  };
+  return clone;
+}
+
+function makeMsgResponse(aId) {
+    return {
+      id: aId,
+      success: false,
+      result: undefined
+    };
+  }
+
+MessageHandler.registerListeners();

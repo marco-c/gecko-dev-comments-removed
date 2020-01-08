@@ -3,7 +3,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["ShieldFrameListener"];
+
 
 
 
@@ -17,6 +17,7 @@ var EXPORTED_SYMBOLS = ["ShieldFrameListener"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
 const frameGlobal = {};
 ChromeUtils.defineModuleGetter(
@@ -37,10 +38,6 @@ XPCOMUtils.defineLazyGetter(this, "gStringBundle", function() {
 
 
 class ShieldFrameListener {
-  constructor(mm) {
-    this.mm = mm;
-  }
-
   handleEvent(event) {
     
     if (!this.ensureTrustedOrigin()) {
@@ -49,23 +46,23 @@ class ShieldFrameListener {
 
     
     
-    this.mm.addMessageListener("Shield:ShuttingDown", this);
-    this.mm.addMessageListener("Shield:ReceiveStudyList", this);
-    this.mm.addMessageListener("Shield:ReceiveStudiesEnabled", this);
+    addMessageListener("Shield:ShuttingDown", this);
+    addMessageListener("Shield:ReceiveStudyList", this);
+    addMessageListener("Shield:ReceiveStudiesEnabled", this);
 
     switch (event.detail.action) {
       
       case "GetRemoteValue:StudyList":
-        this.mm.sendAsyncMessage("Shield:GetStudyList");
+        sendAsyncMessage("Shield:GetStudyList");
         break;
       case "RemoveStudy":
-        this.mm.sendAsyncMessage("Shield:RemoveStudy", event.detail.data);
+        sendAsyncMessage("Shield:RemoveStudy", event.detail.data);
         break;
       case "GetRemoteValue:StudiesEnabled":
-        this.mm.sendAsyncMessage("Shield:GetStudiesEnabled");
+        sendAsyncMessage("Shield:GetStudiesEnabled");
         break;
       case "NavigateToDataPreferences":
-        this.mm.sendAsyncMessage("Shield:OpenDataPreferences");
+        sendAsyncMessage("Shield:OpenDataPreferences");
         break;
       
       case "GetRemoteValue:ShieldLearnMoreHref":
@@ -97,7 +94,7 @@ class ShieldFrameListener {
 
 
   ensureTrustedOrigin() {
-    return this.mm.content.document.documentURI.startsWith("about:studies");
+    return content.document.documentURI.startsWith("about:studies");
   }
 
   
@@ -130,8 +127,6 @@ class ShieldFrameListener {
       return;
     }
 
-    let {content} = this.mm;
-
     
     const event = new content.document.defaultView.CustomEvent(type, {
       bubbles: true,
@@ -141,8 +136,10 @@ class ShieldFrameListener {
   }
 
   onShutdown() {
-    this.mm.removeMessageListener("Shield:SendStudyList", this);
-    this.mm.removeMessageListener("Shield:ShuttingDown", this);
-    this.mm.removeEventListener("Shield", this);
+    removeMessageListener("Shield:SendStudyList", this);
+    removeMessageListener("Shield:ShuttingDown", this);
+    removeEventListener("Shield", this);
   }
 }
+
+addEventListener("ShieldPageEvent", new ShieldFrameListener(), false, true);

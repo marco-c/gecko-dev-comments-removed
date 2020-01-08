@@ -23,12 +23,18 @@ const whitelist = {
     "extension-process-script.js",
   ]),
   modules: new Set([
+    
     "chrome://mochikit/content/ShutdownLeaksCollector.jsm",
+    "resource://specialpowers/MockColorPicker.jsm",
+    "resource://specialpowers/MockFilePicker.jsm",
+    "resource://specialpowers/MockPermissionPrompt.jsm",
 
     
     "resource://gre/modules/AppConstants.jsm",
     "resource://gre/modules/AsyncShutdown.jsm",
     "resource://gre/modules/DeferredTask.jsm",
+    "resource://gre/modules/FileUtils.jsm",
+    "resource://gre/modules/NetUtil.jsm",
     "resource://gre/modules/PromiseUtils.jsm",
     "resource://gre/modules/Services.jsm", 
     "resource://gre/modules/Timer.jsm",
@@ -53,8 +59,6 @@ const whitelist = {
     "resource://gre/modules/E10SUtils.jsm",
     "resource://gre/modules/PrivateBrowsingUtils.jsm",
     "resource://gre/modules/ReaderMode.jsm",
-    "resource://gre/modules/WebProgressChild.jsm",
-    "resource://gre/modules/WebNavigationChild.jsm",
 
     
     "chrome://pocket/content/AboutPocket.jsm",
@@ -67,6 +71,12 @@ const whitelist = {
     
     "resource://gre/modules/ExtensionUtils.jsm",
     "resource://gre/modules/MessageChannel.jsm",
+
+    
+    "resource://gre/modules/ServiceWorkerCleanUp.jsm",
+
+    
+    "resource://normandy-content/AboutPages.jsm",
   ]),
 };
 
