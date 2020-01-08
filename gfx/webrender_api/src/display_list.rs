@@ -16,7 +16,7 @@ use time::precise_time_ns;
 use {AlphaType, BorderDetails, BorderDisplayItem, BorderRadius, BorderWidths, BoxShadowClipMode};
 use {BoxShadowDisplayItem, ClipAndScrollInfo, ClipChainId, ClipChainItem, ClipDisplayItem, ClipId};
 use {ColorF, ComplexClipRegion, DisplayItem, ExtendMode, ExternalScrollId, FilterOp};
-use {FontInstanceKey, GlyphInstance, GlyphOptions, GlyphRasterSpace, Gradient};
+use {FontInstanceKey, GlyphInstance, GlyphOptions, GlyphRasterSpace, Gradient, GradientBuilder};
 use {GradientDisplayItem, GradientStop, IframeDisplayItem, ImageDisplayItem, ImageKey, ImageMask};
 use {ImageRendering, LayoutPoint, LayoutPrimitiveInfo, LayoutRect, LayoutSize, LayoutTransform};
 use {LayoutVector2D, LineDisplayItem, LineOrientation, LineStyle, MixBlendMode, PipelineId};
@@ -947,7 +947,12 @@ impl DisplayListBuilder {
         index
     }
 
-    fn push_item(&mut self, item: SpecificDisplayItem, info: &LayoutPrimitiveInfo) {
+    
+    
+    
+    
+    
+    pub fn push_item(&mut self, item: SpecificDisplayItem, info: &LayoutPrimitiveInfo) {
         serialize_fast(
             &mut self.data,
             &DisplayItem {
@@ -1018,7 +1023,11 @@ impl DisplayListBuilder {
         debug_assert_eq!(len, count);
     }
 
-    fn push_iter<I>(&mut self, iter: I)
+    
+    
+    
+    
+    pub fn push_iter<I>(&mut self, iter: I)
     where
         I: IntoIterator,
         I::IntoIter: ExactSizeIterator + Clone,
@@ -1114,82 +1123,17 @@ impl DisplayListBuilder {
 
     
     
-    
-    
-    
-    
-    
-    fn normalize_stops(stops: &mut Vec<GradientStop>, extend_mode: ExtendMode) -> (f32, f32) {
-        assert!(stops.len() >= 2);
-
-        let first = *stops.first().unwrap();
-        let last = *stops.last().unwrap();
-
-        assert!(first.offset <= last.offset);
-
-        let stops_delta = last.offset - first.offset;
-
-        if stops_delta > 0.000001 {
-            for stop in stops {
-                stop.offset = (stop.offset - first.offset) / stops_delta;
-            }
-
-            (first.offset, last.offset)
-        } else {
-            
-            
-            
-            stops.clear();
-
-            match extend_mode {
-                ExtendMode::Clamp => {
-                    
-                    
-                    
-                    stops.push(GradientStop { color: first.color, offset: 0.0, });
-                    stops.push(GradientStop { color: first.color, offset: 0.5, });
-                    stops.push(GradientStop { color: last.color, offset: 0.5, });
-                    stops.push(GradientStop { color: last.color, offset: 1.0, });
-
-                    let offset = last.offset;
-
-                    (offset - 0.5, offset + 0.5)
-                }
-                ExtendMode::Repeat => {
-                    
-                    
-                    
-                    
-                    stops.push(GradientStop { color: last.color, offset: 0.0, });
-                    stops.push(GradientStop { color: last.color, offset: 1.0, });
-
-                    (0.0, 1.0)
-                }
-            }
-        }
-    }
-
-    
-    
     pub fn create_gradient(
         &mut self,
         start_point: LayoutPoint,
         end_point: LayoutPoint,
-        mut stops: Vec<GradientStop>,
+        stops: Vec<GradientStop>,
         extend_mode: ExtendMode,
     ) -> Gradient {
-        let (start_offset, end_offset) =
-            DisplayListBuilder::normalize_stops(&mut stops, extend_mode);
-
-        let start_to_end = end_point - start_point;
-
-        self.push_stops(&stops);
-
-        Gradient {
-            start_point: start_point + start_to_end * start_offset,
-            end_point: start_point + start_to_end * end_offset,
-            extend_mode,
-        }
+        let mut builder = GradientBuilder::with_stops(stops);
+        let gradient = builder.gradient(start_point, end_point, extend_mode);
+        self.push_stops(builder.stops());
+        gradient
     }
 
     
@@ -1198,43 +1142,13 @@ impl DisplayListBuilder {
         &mut self,
         center: LayoutPoint,
         radius: LayoutSize,
-        mut stops: Vec<GradientStop>,
+        stops: Vec<GradientStop>,
         extend_mode: ExtendMode,
     ) -> RadialGradient {
-        if radius.width <= 0.0 || radius.height <= 0.0 {
-            
-            
-            
-            let last_color = stops.last().unwrap().color;
-
-            let stops = [
-                GradientStop { offset: 0.0, color: last_color, },
-                GradientStop { offset: 1.0, color: last_color, },
-            ];
-
-            self.push_stops(&stops);
-
-            return RadialGradient {
-                center,
-                radius: LayoutSize::new(1.0, 1.0),
-                start_offset: 0.0,
-                end_offset: 1.0,
-                extend_mode,
-            };
-        }
-
-        let (start_offset, end_offset) =
-            DisplayListBuilder::normalize_stops(&mut stops, extend_mode);
-
-        self.push_stops(&stops);
-
-        RadialGradient {
-            center,
-            radius,
-            start_offset,
-            end_offset,
-            extend_mode,
-        }
+        let mut builder = GradientBuilder::with_stops(stops);
+        let gradient = builder.radial_gradient(center, radius, extend_mode);
+        self.push_stops(builder.stops());
+        gradient
     }
 
     pub fn push_border(

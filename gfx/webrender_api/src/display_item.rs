@@ -543,6 +543,9 @@ pub enum MixBlendMode {
 
 #[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
 pub enum FilterOp {
+    
+    
+    Identity,
     Blur(f32),
     Brightness(f32),
     Contrast(f32),
