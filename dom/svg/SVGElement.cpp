@@ -47,11 +47,11 @@
 #include "nsSVGBoolean.h"
 #include "SVGEnum.h"
 #include "nsSVGInteger.h"
-#include "nsSVGIntegerPair.h"
+#include "SVGIntegerPair.h"
 #include "nsSVGLength2.h"
 #include "SVGMotionSMILAttr.h"
 #include "nsSVGNumber2.h"
-#include "nsSVGNumberPair.h"
+#include "SVGNumberPair.h"
 #include "nsSVGString.h"
 #include "nsSVGViewBox.h"
 #include <stdarg.h>

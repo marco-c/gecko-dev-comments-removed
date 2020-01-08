@@ -11,9 +11,8 @@
 #include "nsError.h"
 #include "nsISMILAttr.h"
 #include "nsMathUtils.h"
-#include "SVGElement.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/SVGAnimatedNumber.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/UniquePtr.h"
 
@@ -22,10 +21,10 @@ class nsSMILValue;
 namespace mozilla {
 namespace dom {
 class SVGAnimationElement;
-}  
+class SVGElement;
 }  
 
-class nsSVGNumberPair {
+class SVGNumberPair {
  public:
   typedef mozilla::dom::SVGElement SVGElement;
 
@@ -72,14 +71,14 @@ class nsSVGNumberPair {
 
  public:
   struct DOMAnimatedNumber final : public mozilla::dom::SVGAnimatedNumber {
-    DOMAnimatedNumber(nsSVGNumberPair* aVal, PairIndex aIndex,
+    DOMAnimatedNumber(SVGNumberPair* aVal, PairIndex aIndex,
                       SVGElement* aSVGElement)
         : mozilla::dom::SVGAnimatedNumber(aSVGElement),
           mVal(aVal),
           mIndex(aIndex) {}
     virtual ~DOMAnimatedNumber();
 
-    nsSVGNumberPair* mVal;  
+    SVGNumberPair* mVal;    
     PairIndex mIndex;       
 
     virtual float BaseVal() override { return mVal->GetBaseValue(mIndex); }
@@ -98,13 +97,13 @@ class nsSVGNumberPair {
 
   struct SMILNumberPair : public nsISMILAttr {
    public:
-    SMILNumberPair(nsSVGNumberPair* aVal, SVGElement* aSVGElement)
+    SMILNumberPair(SVGNumberPair* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}
 
     
     
     
-    nsSVGNumberPair* mVal;
+    SVGNumberPair* mVal;
     SVGElement* mSVGElement;
 
     
@@ -117,5 +116,7 @@ class nsSVGNumberPair {
     virtual nsresult SetAnimValue(const nsSMILValue& aValue) override;
   };
 };
+
+}  
 
 #endif  

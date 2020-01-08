@@ -10,20 +10,19 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsError.h"
 #include "nsISMILAttr.h"
-#include "SVGElement.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/SVGAnimatedInteger.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/SVGAnimatedInteger.h"
 
 class nsSMILValue;
 
 namespace mozilla {
 namespace dom {
 class SVGAnimationElement;
-}  
+class SVGElement;
 }  
 
-class nsSVGIntegerPair {
+class SVGIntegerPair {
  public:
   typedef mozilla::dom::SVGElement SVGElement;
 
@@ -71,14 +70,14 @@ class nsSVGIntegerPair {
 
  public:
   struct DOMAnimatedInteger final : public mozilla::dom::SVGAnimatedInteger {
-    DOMAnimatedInteger(nsSVGIntegerPair* aVal, PairIndex aIndex,
+    DOMAnimatedInteger(SVGIntegerPair* aVal, PairIndex aIndex,
                        SVGElement* aSVGElement)
         : mozilla::dom::SVGAnimatedInteger(aSVGElement),
           mVal(aVal),
           mIndex(aIndex) {}
     virtual ~DOMAnimatedInteger();
 
-    nsSVGIntegerPair* mVal;  
+    SVGIntegerPair* mVal;    
     PairIndex mIndex;        
 
     virtual int32_t BaseVal() override { return mVal->GetBaseValue(mIndex); }
@@ -96,13 +95,13 @@ class nsSVGIntegerPair {
 
   struct SMILIntegerPair : public nsISMILAttr {
    public:
-    SMILIntegerPair(nsSVGIntegerPair* aVal, SVGElement* aSVGElement)
+    SMILIntegerPair(SVGIntegerPair* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}
 
     
     
     
-    nsSVGIntegerPair* mVal;
+    SVGIntegerPair* mVal;
     SVGElement* mSVGElement;
 
     
@@ -115,5 +114,7 @@ class nsSVGIntegerPair {
     virtual nsresult SetAnimValue(const nsSMILValue& aValue) override;
   };
 };
+
+}  
 
 #endif  
