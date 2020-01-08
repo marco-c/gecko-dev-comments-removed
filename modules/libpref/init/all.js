@@ -1363,8 +1363,6 @@ pref("privacy.firstparty.isolate",                        false);
 
 pref("privacy.firstparty.isolate.restrict_opener_access", true);
 
-pref("privacy.resistFingerprinting", false);
-
 
 
 

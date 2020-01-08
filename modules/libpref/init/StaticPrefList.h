@@ -1443,6 +1443,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "privacy.resistFingerprinting",
+   privacy_resistFingerprinting,
+  RelaxedAtomicBool, false
+)
+
+
 
 
 
