@@ -8971,9 +8971,14 @@ nsContentUtils::IsThirdPartyWindowOrChannel(nsPIDOMWindowInner* aWindow,
   bool thirdParty = false;
 
   if (aWindow) {
-    Unused << thirdPartyUtil->IsThirdPartyWindow(aWindow->GetOuterWindow(),
-                                                 aURI,
-                                                 &thirdParty);
+    nsresult rv = thirdPartyUtil->IsThirdPartyWindow(aWindow->GetOuterWindow(),
+                                                     aURI,
+                                                     &thirdParty);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      
+      
+      return false;
+    }
   }
 
   if (aChannel) {
@@ -8981,9 +8986,13 @@ nsContentUtils::IsThirdPartyWindowOrChannel(nsPIDOMWindowInner* aWindow,
     
     
     
-    Unused << thirdPartyUtil->IsThirdPartyChannel(aChannel,
-                                                  nullptr,
-                                                  &thirdParty);
+    nsresult rv = thirdPartyUtil->IsThirdPartyChannel(aChannel,
+                                                      nullptr,
+                                                      &thirdParty);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      
+      thirdParty = true;
+    }
   }
 
   return thirdParty;
