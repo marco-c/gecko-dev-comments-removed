@@ -493,11 +493,6 @@ js::DateTimeInfo::instance;
  js::ExclusiveData<js::IcuTimeZoneStatus>*
 js::IcuTimeZoneState;
 
-#if defined(XP_WIN)
-static bool
-IsOlsonCompatibleWindowsTimeZoneId(const char* tz);
-#endif
-
 bool
 js::InitDateTimeState()
 {
@@ -512,25 +507,12 @@ js::InitDateTimeState()
     MOZ_ASSERT(!IcuTimeZoneState,
                "we should be initializing only once");
 
-    IcuTimeZoneStatus initialStatus = IcuTimeZoneStatus::Valid;
-
     
     
     
     
-    
-    if (const char* tz = std::getenv("TZ")) {
-#if defined(XP_WIN)
-        if (IsOlsonCompatibleWindowsTimeZoneId(tz))
-            initialStatus = IcuTimeZoneStatus::NeedsUpdate;
-#else
-        if (std::strcmp(tz, ":/etc/localtime") == 0)
-            initialStatus = IcuTimeZoneStatus::NeedsUpdate;
-#endif 
-    }
-
     IcuTimeZoneState = js_new<ExclusiveData<IcuTimeZoneStatus>>(mutexid::IcuTimeZoneStateMutex,
-                                                                initialStatus);
+                                                                IcuTimeZoneStatus::NeedsUpdate);
     if (!IcuTimeZoneState) {
         js_delete(DateTimeInfo::instance);
         DateTimeInfo::instance = nullptr;
@@ -622,7 +604,15 @@ IsOlsonCompatibleWindowsTimeZoneId(const char* tz)
     return false;
 }
 #elif ENABLE_INTL_API && defined(ICU_TZ_HAS_RECREATE_DEFAULT)
-
+static inline const char*
+TZContainsPath(const char* tzVar)
+{
+    
+    
+    
+    
+    return tzVar[0] == ':' && tzVar[1] == '/' ? tzVar + 1 : nullptr;
+}
 
 
 
@@ -636,32 +626,86 @@ IsOlsonCompatibleWindowsTimeZoneId(const char* tz)
 
 
 static icu::UnicodeString
-ReadSystemTimeZoneId()
+ReadTimeZoneLink(const char* tz)
 {
-    
-    static constexpr char SystemTimeZoneFile[] = "/etc/localtime";
-
     
     
     static constexpr char ZoneInfoPath[] = "/zoneinfo/";
     constexpr size_t ZoneInfoPathLength = mozilla::ArrayLength(ZoneInfoPath) - 1; 
 
-    char buf[PATH_MAX];
-    constexpr size_t buflen = mozilla::ArrayLength(buf) - 1; 
+    
+    
+    
+    
+    
+    
+    constexpr uint32_t FollowDepthLimit = 4;
+
+#ifdef PATH_MAX
+    constexpr size_t PathMax = PATH_MAX;
+#else
+    constexpr size_t PathMax = 4096;
+#endif
+    static_assert(PathMax > 0, "PathMax should be larger than zero");
+
+    char linkName[PathMax];
+    constexpr size_t linkNameLen = mozilla::ArrayLength(linkName) - 1; 
 
     
-    ssize_t slen = readlink(SystemTimeZoneFile, buf, buflen);
-    if (slen < 0 || size_t(slen) >= buflen)
+    if (std::strlen(tz) > linkNameLen)
         return icu::UnicodeString();
 
-    
-    
-    buf[size_t(slen)] = '\0';
+    std::strcpy(linkName, tz);
+
+    char linkTarget[PathMax];
+    constexpr size_t linkTargetLen = mozilla::ArrayLength(linkTarget) - 1; 
+
+    uint32_t depth = 0;
 
     
-    const char* timeZoneWithZoneInfo = std::strstr(buf, ZoneInfoPath);
-    if (!timeZoneWithZoneInfo)
-        return icu::UnicodeString();
+    const char* timeZoneWithZoneInfo;
+    while (!(timeZoneWithZoneInfo = std::strstr(linkName, ZoneInfoPath))) {
+        
+        if (++depth > FollowDepthLimit)
+            return icu::UnicodeString();
+
+        
+        ssize_t slen = readlink(linkName, linkTarget, linkTargetLen);
+        if (slen < 0 || size_t(slen) >= linkTargetLen)
+            return icu::UnicodeString();
+
+        
+        
+        size_t len = size_t(slen);
+        linkTarget[len] = '\0';
+
+        
+        if (linkTarget[0] == '/') {
+            std::strcpy(linkName, linkTarget);
+            continue;
+        }
+
+        
+        
+        char* separator = std::strrchr(linkName, '/');
+
+        
+        
+        if (!separator) {
+            std::strcpy(linkName, linkTarget);
+            continue;
+        }
+
+        
+        separator[1] = '\0';
+
+        
+        if (std::strlen(linkName) + len > linkNameLen)
+            return icu::UnicodeString();
+
+        
+        std::strcat(linkName, linkTarget);
+    }
 
     const char* timeZone = timeZoneWithZoneInfo + ZoneInfoPathLength;
     size_t timeZoneLen = std::strlen(timeZone);
@@ -715,10 +759,8 @@ js::ResyncICUDefaultTimeZone()
             
             
             
-            
-            
-            if (std::strcmp(tz, ":/etc/localtime") == 0)
-                tzid.setTo(ReadSystemTimeZoneId());
+            if (const char* tzlink = TZContainsPath(tz))
+                tzid.setTo(ReadTimeZoneLink(tzlink));
 #endif 
 
             if (!tzid.isEmpty()) {
