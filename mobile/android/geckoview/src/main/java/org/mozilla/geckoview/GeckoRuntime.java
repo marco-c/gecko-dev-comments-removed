@@ -231,6 +231,10 @@ public final class GeckoRuntime implements Parcelable {
         return true;
     }
 
+     void setDefaultPrefs(GeckoBundle prefs) {
+        EventDispatcher.getInstance().dispatch("GeckoView:SetDefaultPrefs", prefs);
+    }
+
     
 
 

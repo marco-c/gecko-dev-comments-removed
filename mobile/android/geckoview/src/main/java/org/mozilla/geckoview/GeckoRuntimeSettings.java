@@ -329,16 +329,34 @@ public final class GeckoRuntimeSettings implements Parcelable {
         public void set(T newValue) {
             mValue = newValue;
             mIsSet = true;
-            flush();
+
+            
+            this.flush();
         }
 
         public T get() {
             return mValue;
         }
 
-        public void flush() {
-            if (GeckoRuntimeSettings.this.runtime != null) {
-                GeckoRuntimeSettings.this.runtime.setPref(name, mValue, mIsSet);
+        private void flush() {
+            final GeckoRuntime runtime = GeckoRuntimeSettings.this.runtime;
+            if (runtime != null) {
+                final GeckoBundle prefs = new GeckoBundle(1);
+                intoBundle(prefs);
+                runtime.setDefaultPrefs(prefs);
+            }
+        }
+
+        public void intoBundle(final GeckoBundle bundle) {
+            final T value = mIsSet ? mValue : defaultValue;
+            if (value instanceof String) {
+                bundle.putString(name, (String)value);
+            } else if (value instanceof Integer) {
+                bundle.putInt(name, (Integer)value);
+            } else if (value instanceof Boolean) {
+                bundle.putBoolean(name, (Boolean)value);
+            } else {
+                throw new UnsupportedOperationException("Unhandled pref type for " + name);
             }
         }
     }
@@ -421,9 +439,21 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
      void flush() {
         flushLocale();
-        for (final Pref<?> pref: mPrefs) {
-            pref.flush();
+
+        
+        
+        
+        
+        
+        
+        final String[] names = new String[mPrefs.length];
+        for (int i = 0; i < mPrefs.length; i++) {
+            names[i] = mPrefs[i].name;
         }
+
+        final GeckoBundle data = new GeckoBundle(1);
+        data.putStringArray("names", names);
+        EventDispatcher.getInstance().dispatch("GeckoView:ResetUserPrefs", data);
     }
 
     
