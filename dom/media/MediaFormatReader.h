@@ -543,7 +543,7 @@ class MediaFormatReader final
     
     
     const TrackInfo* GetWorkingInfo() const { return mWorkingInfo.get(); }
-    bool IsEncrypted() const { return GetCurrentInfo()->mCrypto.IsEncrypted(); }
+    bool IsEncrypted() const { return GetCurrentInfo()->mCrypto.mValid; }
 
     
     Atomic<size_t> mSizeOfQueue;

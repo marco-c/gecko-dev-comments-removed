@@ -185,10 +185,6 @@ class Sbgp final : public Atom
   Result<Ok, nsresult> Parse(Box& aBox);
 };
 
-
-
-
-
 struct CencSampleEncryptionInfoEntry final {
  public:
   CencSampleEncryptionInfoEntry() {}
@@ -198,9 +194,6 @@ struct CencSampleEncryptionInfoEntry final {
   bool mIsEncrypted = false;
   uint8_t mIVSize = 0;
   nsTArray<uint8_t> mKeyId;
-  uint8_t mCryptByteBlock = 0;
-  uint8_t mSkipByteBlock = 0;
-  nsTArray<uint8_t> mConsantIV;
 };
 
 class Sgpd final : public Atom  
@@ -253,13 +246,7 @@ class Moof final : public Atom {
   Result<Ok, nsresult> ParseTrun(Box& aBox, Mvhd& aMvhd, Mdhd& aMdhd,
                                  Edts& aEdts, uint64_t* aDecodeTime,
                                  bool aIsAudio);
-  
-  
-  
-  
-  
-  
-  bool ProcessCencAuxInfo(AtomType aScheme);
+  bool ProcessCenc();
   uint64_t mMaxRoundingError;
 };
 

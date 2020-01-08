@@ -422,7 +422,7 @@ already_AddRefed<MediaRawData> MP4TrackDemuxer::GetNextSample() {
   }
   if (mInfo->GetAsVideoInfo()) {
     sample->mExtraData = mInfo->GetAsVideoInfo()->mExtraData;
-    if (mIsH264 && !sample->mCrypto.IsEncrypted()) {
+    if (mIsH264 && !sample->mCrypto.mValid) {
       H264::FrameType type = H264::GetFrameType(sample);
       switch (type) {
         case H264::FrameType::I_FRAME:
@@ -458,6 +458,17 @@ already_AddRefed<MediaRawData> MP4TrackDemuxer::GetNextSample() {
     }
   }
 
+  if (sample->mCrypto.mValid) {
+    UniquePtr<MediaRawDataWriter> writer(sample->CreateWriter());
+    writer->mCrypto.mMode = mInfo->mCrypto.mMode;
+
+    
+    
+    if (writer->mCrypto.mKeyId.Length() == 0) {
+      writer->mCrypto.mIVSize = mInfo->mCrypto.mIVSize;
+      writer->mCrypto.mKeyId.AppendElements(mInfo->mCrypto.mKeyId);
+    }
+  }
   return sample.forget();
 }
 

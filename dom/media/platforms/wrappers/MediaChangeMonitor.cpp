@@ -146,7 +146,7 @@ class VPXChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
 
   MediaResult CheckForChange(MediaRawData* aSample) override {
     
-    if (aSample->mCrypto.IsEncrypted()) {
+    if (aSample->mCrypto.mValid) {
       return NS_OK;
     }
     
