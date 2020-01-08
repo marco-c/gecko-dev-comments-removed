@@ -34,7 +34,6 @@ public:
   {
     if (CanBeInstantiated()) {
       UpdateConfigFromExtraData(aInfo.mExtraData);
-      mPreviousExtraData = aInfo.mExtraData;
     }
   }
 
@@ -72,8 +71,14 @@ public:
       
       
       
-      if (!H264::HasSPS(aSample->mExtraData) ||
+      bool hasOutOfBandExtraData = H264::HasSPS(aSample->mExtraData);
+      if (!hasOutOfBandExtraData || !mPreviousExtraData ||
           H264::CompareExtraData(aSample->mExtraData, mPreviousExtraData)) {
+        if (hasOutOfBandExtraData && !mPreviousExtraData) {
+          
+          
+          mPreviousExtraData = aSample->mExtraData;
+        }
         return NS_OK;
       }
       extra_data = aSample->mExtraData;
