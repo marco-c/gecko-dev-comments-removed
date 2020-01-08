@@ -12,56 +12,8 @@ function dprint(s) {
 }
 
 var hasSharedArrayBuffer = !!(this.SharedArrayBuffer &&
-                              this.getSharedArrayBuffer &&
-                              this.setSharedArrayBuffer);
-
-if (hasSharedArrayBuffer) {
-
-
-
-
-var sab = new SharedArrayBuffer(12);
-var mem = new Int32Array(sab);
-
-
-
-assertEq(getSharedArrayBuffer(), null); 
-
-assertEq(setSharedArrayBuffer(mem.buffer), undefined); 
-assertEq(getSharedArrayBuffer() == null, false);       
-
-var v = getSharedArrayBuffer();
-assertEq(v.byteLength, mem.buffer.byteLength); 
-var w = new Int32Array(v);
-mem[0] = 314159;
-assertEq(w[0], 314159);		
-mem[0] = 0;
-
-setSharedArrayBuffer(null);	
-assertEq(getSharedArrayBuffer(), null);
-
-setSharedArrayBuffer(mem.buffer);
-setSharedArrayBuffer(undefined); 
-assertEq(getSharedArrayBuffer(), null);
-
-setSharedArrayBuffer(mem.buffer);
-setSharedArrayBuffer();		
-assertEq(getSharedArrayBuffer(), null);
-
-
-
-assertThrowsInstanceOf(() => setSharedArrayBuffer({x:10, y:20}), Error);
-assertThrowsInstanceOf(() => setSharedArrayBuffer([1,2]), Error);
-assertThrowsInstanceOf(() => setSharedArrayBuffer(new ArrayBuffer(10)), Error);
-assertThrowsInstanceOf(() => setSharedArrayBuffer(new Int32Array(10)), Error);
-assertThrowsInstanceOf(() => setSharedArrayBuffer(false), Error);
-assertThrowsInstanceOf(() => setSharedArrayBuffer(3.14), Error);
-assertThrowsInstanceOf(() => setSharedArrayBuffer(mem), Error);
-assertThrowsInstanceOf(() => setSharedArrayBuffer("abracadabra"), Error);
-assertThrowsInstanceOf(() => setSharedArrayBuffer(() => 37), Error);
-
-} 
-
+                              this.getSharedObject &&
+                              this.setSharedObject);
 
 
 
@@ -89,10 +41,10 @@ mem[0] = 42;
 mem[1] = 37;
 mem[2] = DEBUG;
 
-setSharedArrayBuffer(mem.buffer);
+setSharedObject(mem.buffer);
 
 evalInWorker(`
-var mem = new Int32Array(getSharedArrayBuffer());
+var mem = new Int32Array(getSharedObject());
 function dprint(s) {
     if (mem[2]) print(s);
 }
@@ -102,7 +54,7 @@ mem[1] = 1337;
 dprint("Sleeping for 2 seconds");
 sleep(2);
 dprint("Waking the main thread now");
-setSharedArrayBuffer(null);
+setSharedObject(null);
 assertEq(Atomics.wake(mem, 0, 1), 1); 
 `);
 
@@ -110,16 +62,16 @@ var then = Date.now();
 assertEq(Atomics.wait(mem, 0, 42), "ok");
 dprint("Woke up as I should have in " + (Date.now() - then)/1000 + "s");
 assertEq(mem[1], 1337); 
-assertEq(getSharedArrayBuffer(), null); 
+assertEq(getSharedObject(), null); 
 
 
 
 
 
-setSharedArrayBuffer(mem.buffer);
+setSharedObject(mem.buffer);
 
 evalInWorker(`
-var mem = new Int32Array(getSharedArrayBuffer());
+var mem = new Int32Array(getSharedObject());
 sleep(2);				
 assertEq(Atomics.wake(mem, 0), 1);	
 `);

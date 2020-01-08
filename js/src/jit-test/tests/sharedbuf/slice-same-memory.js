@@ -6,7 +6,7 @@ load(libdir + "asserts.js");
 var sab = new SharedArrayBuffer(1 * Int32Array.BYTES_PER_ELEMENT);
 
 
-var sab2 = (setSharedArrayBuffer(sab), getSharedArrayBuffer());
+var sab2 = (setSharedObject(sab), getSharedObject());
 
 
 assertEq(sab === sab2, false);
