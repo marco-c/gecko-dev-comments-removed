@@ -123,8 +123,7 @@ nsContentBlocker::Init()
   
   
   
-  mPrefBranchInternal = do_QueryInterface(prefBranch, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
+  mPrefBranchInternal = prefBranch;
 
   rv = mPrefBranchInternal->AddObserver("", this, true);
   PrefChanged(prefBranch, nullptr);

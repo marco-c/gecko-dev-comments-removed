@@ -499,18 +499,12 @@ nsStreamConverterService::AsyncConvertData(const char *aFromType,
                 return rv;
             }
 
-            nsCOMPtr<nsIStreamListener> chainListener(do_QueryInterface(converter, &rv));
-            if (NS_FAILED(rv)) {
-                delete converterChain;
-                return rv;
-            }
-
             
             
             
             
             
-            finalListener = chainListener;
+            finalListener = converter;
         }
         delete converterChain;
         
