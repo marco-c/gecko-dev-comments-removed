@@ -16,6 +16,7 @@
 
 #include <stdint.h>
 
+#include "gc/Cell.h"
 #include "js/HeapAPI.h"
 #include "vm/JSObject.h"
 #include "vm/Shape.h"
@@ -23,49 +24,36 @@
 namespace js {
 namespace gc {
 
-struct Cell;
 
 
 
 
-
-class RelocationOverlay
+class RelocationOverlay : public Cell
 {
     
-    static const uint32_t Relocated = js::gc::Relocated;
-
     
-
-
-
-    uint32_t preserve_;
-
     
-    uint32_t magic_;
-
     
-    Cell* newLocation_;
+    
+    
+    uintptr_t dataWithTag_;
 
     
     RelocationOverlay* next_;
 
   public:
     static const RelocationOverlay* fromCell(const Cell* cell) {
-        return reinterpret_cast<const RelocationOverlay*>(cell);
+        return static_cast<const RelocationOverlay*>(cell);
     }
 
     static RelocationOverlay* fromCell(Cell* cell) {
-        return reinterpret_cast<RelocationOverlay*>(cell);
-    }
-
-    bool isForwarded() const {
-        (void) preserve_; 
-        return magic_ == Relocated;
+        return static_cast<RelocationOverlay*>(cell);
     }
 
     Cell* forwardingAddress() const {
         MOZ_ASSERT(isForwarded());
-        return newLocation_;
+        uintptr_t newLocation = dataWithTag_ & ~Cell::RESERVED_MASK;
+        return reinterpret_cast<Cell*>(newLocation);
     }
 
     void forwardTo(Cell* cell);
@@ -78,10 +66,6 @@ class RelocationOverlay
     RelocationOverlay* next() const {
         MOZ_ASSERT(isForwarded());
         return next_;
-    }
-
-    static bool isCellForwarded(const Cell* cell) {
-        return fromCell(cell)->isForwarded();
     }
 };
 

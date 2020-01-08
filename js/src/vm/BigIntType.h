@@ -38,13 +38,16 @@ class BigInt final : public js::gc::TenuredCell
     friend bool js::StringToBigIntImpl(const mozilla::Range<const CharT>& chars,
                                        uint8_t radix, Handle<BigInt*> res);
 
+  protected:
+    
+    
+    uintptr_t reserved_;
+
   private:
-    
-    
-    union {
-        mpz_t num_;
-        uint8_t unused_[js::gc::MinCellSize];
-    };
+    mpz_t num_;
+
+  protected:
+    BigInt() : reserved_(0) { }
 
   public:
     

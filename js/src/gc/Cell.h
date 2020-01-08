@@ -49,9 +49,34 @@ class StoreBuffer;
 class TenuredCell;
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 struct alignas(gc::CellAlignBytes) Cell
 {
   public:
+    
+    static constexpr int ReservedBits = 2;
+    static constexpr uintptr_t RESERVED_MASK = JS_BITMASK(ReservedBits);
+
+    
+    static constexpr uintptr_t FORWARD_BIT = JS_BIT(0);
+
+    
+    
+    
+    
+    static constexpr uintptr_t JSSTRING_BIT = JS_BIT(1);
+
     MOZ_ALWAYS_INLINE bool isTenured() const { return !IsInsideNursery(this); }
     MOZ_ALWAYS_INLINE const TenuredCell& asTenured() const;
     MOZ_ALWAYS_INLINE TenuredCell& asTenured();
@@ -76,6 +101,17 @@ struct alignas(gc::CellAlignBytes) Cell
     inline JS::TraceKind getTraceKind() const;
 
     static MOZ_ALWAYS_INLINE bool needWriteBarrierPre(JS::Zone* zone);
+
+    inline bool isForwarded() const {
+        uintptr_t firstWord = *reinterpret_cast<const uintptr_t*>(this);
+        return firstWord & FORWARD_BIT;
+    }
+
+    inline bool nurseryCellIsString() const {
+        MOZ_ASSERT(!isTenured());
+        uintptr_t firstWord = *reinterpret_cast<const uintptr_t*>(this);
+        return firstWord & JSSTRING_BIT;
+    }
 
     template <class T>
     inline bool is() const {
@@ -255,7 +291,7 @@ Cell::getTraceKind() const
 {
     if (isTenured())
         return asTenured().getTraceKind();
-    if (JS::shadow::String::nurseryCellIsString(this))
+    if (nurseryCellIsString())
         return JS::TraceKind::String;
     return JS::TraceKind::Object;
 }

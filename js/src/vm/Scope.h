@@ -306,17 +306,10 @@ class Scope : public js::gc::TenuredCell
     friend class GCMarker;
 
     
-    
-    
-    
-    
-    union {
-        ScopeKind kind_;
-        uintptr_t paddedKind_;
-    };
+    GCPtrScope enclosing_;
 
     
-    GCPtrScope enclosing_;
+    ScopeKind kind_;
 
     
     
@@ -327,12 +320,9 @@ class Scope : public js::gc::TenuredCell
 
     Scope(ScopeKind kind, Scope* enclosing, Shape* environmentShape)
       : enclosing_(enclosing),
+        kind_(kind),
         environmentShape_(environmentShape),
-        data_(nullptr)
-    {
-        paddedKind_ = 0;
-        kind_ = kind;
-    }
+        data_(nullptr) { }
 
     static Scope* create(JSContext* cx, ScopeKind kind, HandleScope enclosing,
                          HandleShape envShape);
