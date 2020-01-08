@@ -8,13 +8,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "cps",
 
 var CaptivePortalWatcher = {
   
-
-
-
-
-  PORTAL_RECHECK_DELAY_MS: Services.prefs.getIntPref("captivedetect.portalRecheckDelayMS", 500),
-
-  
   PORTAL_NOTIFICATION_VALUE: "captive-portal-detected",
 
   
@@ -67,6 +60,9 @@ var CaptivePortalWatcher = {
       this._delayedRecheckPending = true;
     }
 
+    
+    
+    
     XPCOMUtils.defineLazyPreferenceGetter(this, "PORTAL_RECHECK_DELAY_MS",
                                           "captivedetect.portalRecheckDelayMS", 500);
   },
