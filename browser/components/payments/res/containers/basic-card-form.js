@@ -3,7 +3,6 @@
 
 
 
-import AcceptedCards from "../components/accepted-cards.js";
 import LabelledCheckbox from "../components/labelled-checkbox.js";
 import PaymentRequestPage from "../components/payment-request-page.js";
 import PaymentStateSubscriberMixin from "../mixins/PaymentStateSubscriberMixin.js";
@@ -37,8 +36,6 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(PaymentRe
 
     this.persistCheckbox = new LabelledCheckbox();
     this.persistCheckbox.className = "persist-checkbox";
-
-    this.acceptedCardsList = new AcceptedCards();
 
     
     this.cancelButton = document.createElement("button");
@@ -105,7 +102,6 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(PaymentRe
 
       this.body.appendChild(this.persistCheckbox);
       this.body.appendChild(this.genericErrorText);
-      this.body.appendChild(this.acceptedCardsList);
       
       
       super.connectedCallback();
@@ -132,7 +128,6 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(PaymentRe
     this.persistCheckbox.label = this.dataset.persistCheckboxLabel;
     this.addressAddLink.textContent = this.dataset.addressAddLinkLabel;
     this.addressEditLink.textContent = this.dataset.addressEditLinkLabel;
-    this.acceptedCardsList.label = this.dataset.acceptedCardsLabel;
 
     
     
