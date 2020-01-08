@@ -9,7 +9,9 @@
 
 
 
+
 var gOCSPRequestCount = 0;
+var gOCSPResponse;
 
 function run_test() {
   do_get_profile();
@@ -22,13 +24,14 @@ function run_test() {
 
   let args = [["bad-signature", "default-ee", "unused", 0]];
   let ocspResponses = generateOCSPResponses(args, "ocsp_certs");
-  let ocspResponseBadSignature = ocspResponses[0];
+  
+  gOCSPResponse = ocspResponses[0];
 
   let ocspResponder = new HttpServer();
   ocspResponder.registerPrefixHandler("/", function (request, response) {
     response.setStatusLine(request.httpVersion, 200, "OK");
     response.setHeader("Content-Type", "application/ocsp-response");
-    response.write(ocspResponseBadSignature);
+    response.write(gOCSPResponse);
     gOCSPRequestCount++;
   });
   ocspResponder.start(8888);
@@ -49,6 +52,12 @@ function add_tests() {
     equal(gOCSPRequestCount, 1,
           "OCSP request count should be 1 due to OCSP response caching");
     gOCSPRequestCount = 0;
+    
+    gOCSPResponse = "";
+    clearOCSPCache();
     run_next_test();
   });
+
+  add_connection_test("ocsp-stapling-none.example.com",
+                      SEC_ERROR_OCSP_MALFORMED_RESPONSE);
 }
