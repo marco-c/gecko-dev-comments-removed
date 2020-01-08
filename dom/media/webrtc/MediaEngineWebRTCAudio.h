@@ -101,39 +101,26 @@ private:
 
 
 
-
-  nsresult ReevaluateAllocation(const RefPtr<AllocationHandle>& aHandle,
-                                const NormalizedConstraints* aConstraintsUpdate,
-                                const MediaEnginePrefs& aPrefs,
-                                const nsString& aDeviceId,
-                                const char** aOutBadConstraint);
-
+  nsresult EvaluateSettings(const NormalizedConstraints& aConstraintsUpdate,
+                            const MediaEnginePrefs& aInPrefs,
+                            MediaEnginePrefs* aOutPrefs,
+                            const char** aOutBadConstraint);
   
 
 
 
-
-  nsresult UpdateSingleSource(const RefPtr<const AllocationHandle>& aHandle,
-                              const NormalizedConstraints& aNetConstraints,
-                              const MediaEnginePrefs& aPrefs,
-                              const nsString& aDeviceId,
-                              const char** aOutBadConstraint);
+  void ApplySettings(const MediaEnginePrefs& aPrefs);
 
   
+
+
   void UpdateAECSettingsIfNeeded(bool aEnable, webrtc::EcModes aMode);
   void UpdateAGCSettingsIfNeeded(bool aEnable, webrtc::AgcModes aMode);
   void UpdateNSSettingsIfNeeded(bool aEnable, webrtc::NsModes aMode);
   void UpdateAPMExtraOptions(bool aExtendedFilter, bool aDelayAgnostic);
-  void ApplySettings(const MediaEnginePrefs& aPrefs,
-                     RefPtr<MediaStreamGraphImpl> aGraph);
-
-  bool HasEnabledTrack() const;
-
-  RefPtr<AllocationHandle> mHandle;
 
   TrackID mTrackID = TRACK_NONE;
   PrincipalHandle mPrincipal = PRINCIPAL_HANDLE_NONE;
-  bool mEnabled = false;
 
   const RefPtr<AudioDeviceInfo> mDeviceInfo;
   const bool mDelayAgnostic;
@@ -147,10 +134,6 @@ private:
   
   
   const nsMainThreadPtrHandle<media::Refcountable<dom::MediaTrackSettings>> mSettings;
-  
-  
-  
-  MediaEnginePrefs mNetPrefs;
 
   
   MediaEngineSourceState mState;
@@ -174,8 +157,7 @@ public:
                        TrackID aTrackID,
                        const PrincipalHandle& aPrincipalHandle);
 
-  void Pull(const RefPtr<const AllocationHandle>& aHandle,
-            const RefPtr<SourceMediaStream>& aStream,
+  void Pull(const RefPtr<SourceMediaStream>& aStream,
             TrackID aTrackID,
             StreamTime aDesiredTime,
             const PrincipalHandle& aPrincipalHandle);
