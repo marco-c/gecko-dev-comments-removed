@@ -41,6 +41,13 @@ class DisplayListBuilder;
 }  
 }  
 
+enum class ImageType {
+  BMP,
+  ICO,
+  JPEG,
+  PNG,
+};
+
 class gfxUtils {
  public:
   typedef mozilla::gfx::DataSourceSurface DataSourceSurface;
@@ -244,9 +251,8 @@ class gfxUtils {
 
 
 
-
   static nsresult EncodeSourceSurface(SourceSurface* aSurface,
-                                      const nsACString& aMimeType,
+                                      const ImageType aImageType,
                                       const nsAString& aOutputOptions,
                                       BinaryOrData aBinaryOrData, FILE* aFile,
                                       nsACString* aString = nullptr);
