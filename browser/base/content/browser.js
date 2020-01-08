@@ -560,7 +560,7 @@ const gSessionHistoryObserver = {
 const gStoragePressureObserver = {
   _lastNotificationTime: -1,
 
-  observe(subject, topic, data) {
+  async observe(subject, topic, data) {
     if (topic != "QuotaManager::StoragePressure") {
       return;
     }
@@ -584,17 +584,17 @@ const gStoragePressureObserver = {
     }
     this._lastNotificationTime = Date.now();
 
+    MozXULElement.insertFTLIfNeeded("branding/brand.ftl");
+    MozXULElement.insertFTLIfNeeded("browser/preferences/preferences.ftl");
+
     const BYTES_IN_GIGABYTE = 1073741824;
     const USAGE_THRESHOLD_BYTES = BYTES_IN_GIGABYTE *
       Services.prefs.getIntPref("browser.storageManager.pressureNotification.usageThresholdGB");
     let msg = "";
     let buttons = [];
     let usage = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
-    let prefStrBundle = document.getElementById("bundle_preferences");
-    let brandShortName = document.getElementById("bundle_brand").getString("brandShortName");
     buttons.push({
-      label: prefStrBundle.getString("spaceAlert.learnMoreButton.label"),
-      accessKey: prefStrBundle.getString("spaceAlert.learnMoreButton.accesskey"),
+      "l10n-id": "space-alert-learn-more-button",
       callback(notificationBar, button) {
         let learnMoreURL = Services.urlFormatter.formatURLPref("app.support.baseURL") + "storage-permissions";
         
@@ -606,27 +606,17 @@ const gStoragePressureObserver = {
       
       
       
-      msg = prefStrBundle.getFormattedString("spaceAlert.under5GB.message", [brandShortName]);
+      [msg] = await document.l10n.formatValues([{id: "space-alert-under-5gb-message"}]);
       buttons.push({
-        label: prefStrBundle.getString("spaceAlert.under5GB.okButton.label"),
-        accessKey: prefStrBundle.getString("spaceAlert.under5GB.okButton.accesskey"),
+        "l10n-id": "space-alert-under-5gb-ok-button",
         callback() {},
       });
     } else {
       
       
-      let descriptionStringID = "spaceAlert.over5GB.message1";
-      let prefButtonLabelStringID = "spaceAlert.over5GB.prefButton.label";
-      let prefButtonAccesskeyStringID = "spaceAlert.over5GB.prefButton.accesskey";
-      if (AppConstants.platform == "win") {
-        descriptionStringID = "spaceAlert.over5GB.messageWin1";
-        prefButtonLabelStringID = "spaceAlert.over5GB.prefButtonWin.label";
-        prefButtonAccesskeyStringID = "spaceAlert.over5GB.prefButtonWin.accesskey";
-      }
-      msg = prefStrBundle.getFormattedString(descriptionStringID, [brandShortName]);
+      [msg] = await document.l10n.formatValues([{id: "space-alert-over-5gb-message"}]);
       buttons.push({
-        label: prefStrBundle.getString(prefButtonLabelStringID),
-        accessKey: prefStrBundle.getString(prefButtonAccesskeyStringID),
+        "l10n-id": "space-alert-over-5gb-pref-button",
         callback(notificationBar, button) {
           
           
@@ -638,6 +628,10 @@ const gStoragePressureObserver = {
     gHighPriorityNotificationBox.appendNotification(
       msg, NOTIFICATION_VALUE, null,
       gHighPriorityNotificationBox.PRIORITY_WARNING_HIGH, buttons, null);
+
+    
+    
+    document.l10n.translateFragment(gHighPriorityNotificationBox.currentNotification);
   },
 };
 
