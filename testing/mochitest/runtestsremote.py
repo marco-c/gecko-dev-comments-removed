@@ -318,6 +318,11 @@ class MochiRemote(MochitestDesktop):
             self.mozLogName)
         if options.dmd:
             browserEnv['DMD'] = '1'
+        
+        
+        
+        
+        browserEnv["MOZ_UPLOAD_DIR"] = self.remoteMozLog
         return browserEnv
 
     def runApp(self, *args, **kwargs):
