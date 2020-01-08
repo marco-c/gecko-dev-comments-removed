@@ -1024,6 +1024,11 @@ impl Device {
             )
         };
 
+        
+        gl.disable(gl::FRAMEBUFFER_SRGB);
+        gl.disable(gl::MULTISAMPLE);
+        gl.disable(gl::POLYGON_SMOOTH);
+
         Device {
             gl,
             resource_override_path,
@@ -1156,9 +1161,19 @@ impl Device {
         }
     }
 
+    
+    
+    pub fn check_gl_state(&self) {
+        debug_assert!(self.gl.is_enabled(gl::FRAMEBUFFER_SRGB) == 0);
+        debug_assert!(self.gl.is_enabled(gl::MULTISAMPLE) == 0);
+        debug_assert!(self.gl.is_enabled(gl::POLYGON_SMOOTH) == 0);
+    }
+
     pub fn begin_frame(&mut self) -> GpuFrameId {
         debug_assert!(!self.inside_frame);
         self.inside_frame = true;
+
+        self.check_gl_state();
 
         
         let mut default_read_fbo = [0];
