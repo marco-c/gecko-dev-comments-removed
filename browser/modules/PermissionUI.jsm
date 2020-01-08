@@ -144,6 +144,16 @@ var PermissionPromptPrototype = {
 
 
 
+  get usePermissionManager() {
+    return true;
+  },
+
+  
+
+
+
+
+
 
 
 
@@ -271,7 +281,8 @@ var PermissionPromptPrototype = {
       return;
     }
 
-    if (this.permissionKey) {
+    if (this.usePermissionManager &&
+        this.permissionKey) {
       
       
       
@@ -306,6 +317,19 @@ var PermissionPromptPrototype = {
       
       this.browser.dispatchEvent(new this.browser.ownerGlobal
                                          .CustomEvent("PermissionStateChange"));
+    } else if (this.permissionKey) {
+      
+      
+      let {state} = SitePermissions.get(null,
+                                        this.permissionKey,
+                                        this.browser);
+
+      if (state == SitePermissions.BLOCK) {
+        
+
+        this.cancel();
+        return;
+      }
     }
 
     let chromeWin = this.browser.ownerGlobal;
@@ -325,7 +349,8 @@ var PermissionPromptPrototype = {
             promptAction.callback();
           }
 
-          if (this.permissionKey) {
+          if (this.usePermissionManager &&
+              this.permissionKey) {
             if ((state && state.checkboxChecked && state.source != "esc-press") ||
                 promptAction.scope == SitePermissions.SCOPE_PERSISTENT) {
               
@@ -356,6 +381,18 @@ var PermissionPromptPrototype = {
               this.allow();
             } else {
               this.cancel();
+            }
+          } else if (this.permissionKey) {
+            
+            if (promptAction.action == SitePermissions.BLOCK) {
+              
+              
+              
+              SitePermissions.set(null,
+                                  this.permissionKey,
+                                  promptAction.action,
+                                  SitePermissions.SCOPE_TEMPORARY,
+                                  this.browser);
             }
           }
         },
