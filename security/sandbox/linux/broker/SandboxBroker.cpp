@@ -1033,10 +1033,31 @@ SandboxBroker::ThreadMain(void)
     if (sent < 0) {
       SANDBOX_LOG_ERROR("failed to send broker response to pid %d: %s", mChildPid,
                         strerror(errno));
+    } else {
+      MOZ_ASSERT(static_cast<size_t>(sent) == ios[0].iov_len + ios[1].iov_len);
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const struct Response fakeResp = { -4095 };
+    const struct iovec fakeIO = {
+      const_cast<Response*>(&fakeResp), sizeof(fakeResp)
+    };
+    
+    
+    if (SendWithFd(respfd, &fakeIO, 1, respfd) < 0) {
+      MOZ_ASSERT(errno == EPIPE || errno == ECONNREFUSED || errno == ENOTCONN);
+    }
+
     close(respfd);
-    MOZ_ASSERT(sent < 0 ||
-               static_cast<size_t>(sent) == ios[0].iov_len + ios[1].iov_len);
 
     if (openedFd >= 0) {
       close(openedFd);
