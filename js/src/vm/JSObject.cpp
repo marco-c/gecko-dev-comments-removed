@@ -3974,12 +3974,14 @@ js::gc::AllocKind JSObject::allocKindForTenure(
 
 
   if (is<TypedArrayObject>() && !as<TypedArrayObject>().hasBuffer()) {
-    size_t nbytes = as<TypedArrayObject>().byteLength();
+    gc::AllocKind allocKind;
     if (as<TypedArrayObject>().hasInlineElements()) {
-      return GetBackgroundAllocKind(
-          TypedArrayObject::AllocKindForLazyBuffer(nbytes));
+      size_t nbytes = as<TypedArrayObject>().byteLength();
+      allocKind = TypedArrayObject::AllocKindForLazyBuffer(nbytes);
+    } else {
+      allocKind = GetGCObjectKind(getClass());
     }
-    return GetGCObjectKind(getClass());
+    return GetBackgroundAllocKind(allocKind);
   }
 
   
