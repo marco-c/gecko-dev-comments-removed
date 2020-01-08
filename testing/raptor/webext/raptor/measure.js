@@ -25,6 +25,12 @@ var getDCF = false;
 
 
 
+
+
+var getTTFI = false;
+
+
+
 var getFCP = false;
 
 
@@ -85,6 +91,14 @@ function setup(settings) {
       heroesToCapture = settings.measure.hero;
       console.log("hero elements to measure: " + heroesToCapture);
       measureHero();
+    }
+  }
+
+  if (settings.measure.ttfi !== undefined) {
+    getTTFI = settings.measure.ttfi;
+    if (getTTFI) {
+      console.log("will be measuring ttfi");
+      measureTTFI();
     }
   }
 }
@@ -175,6 +189,37 @@ function measureDCF() {
       window.setTimeout(measureDCF, 100);
     } else {
       console.log("\nunable to get a value for dcf after " + gRetryCounter + " retries\n");
+    }
+  }
+}
+
+function measureTTFI() {
+  var x = window.performance.timing.timeToFirstInteractive;
+
+  if (typeof(x) == "undefined") {
+    console.log("ERROR: timeToFirstInteractive is undefined; ensure the pref is enabled");
+    return;
+  }
+  if (x > 0) {
+    console.log("got timeToFirstInteractive: " + x);
+    gRetryCounter = 0;
+    var startTime = perfData.timing.fetchStart;
+    sendResult("ttfi", x - startTime);
+  } else {
+    gRetryCounter += 1;
+    
+    
+    
+    
+    
+    
+    
+    if (gRetryCounter <= 25 * (1000 / 200)) {
+      console.log("\TTFI is not yet available (0), retry number " + gRetryCounter + "...\n");
+      window.setTimeout(measureTTFI, 200);
+    } else {
+      
+      sendResult("ttfi", 0);
     }
   }
 }
