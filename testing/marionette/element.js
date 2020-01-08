@@ -1035,9 +1035,7 @@ element.getContainer = function(el) {
     return element.findClosest(el, "datalist,select") || el;
   }
 
-  
-  
-  return element.findClosest(el, "button") || el;
+  return el;
 };
 
 
