@@ -24,8 +24,8 @@ class Sidebar extends PureComponent {
   static get propTypes() {
     return {
       dispatch: PropTypes.func.isRequired,
-      runtimes: PropTypes.object.isRequired,
-      selectedPage: PropTypes.string,
+      runtimes: PropTypes.array.isRequired,
+      selectedPage: PropTypes.string.isRequired,
     };
   }
 
@@ -37,7 +37,7 @@ class Sidebar extends PureComponent {
           id: "about-debugging-sidebar-no-devices"
         }, dom.span(
           {
-            className: "sidebar__devices__no-devices-message"
+            className: "sidebar__devices__no-devices-message js-sidebar-no-devices"
           },
           "No devices discovered"
         )
@@ -61,24 +61,20 @@ class Sidebar extends PureComponent {
           dispatch,
           icon: GLOBE_ICON,
           isSelected: selectedPage === pageId,
-          key: pageId,
           name: runtime.id,
           runtimeId: runtime.id,
           selectable: runtimeHasClient,
         });
       }),
-      ...runtimes.usbRuntimes.map(runtime => {
-        const pageId = "usb-" + runtime.id;
-        return SidebarItem({
-          id: pageId,
+      ...runtimes.usbRuntimes.map(runtime =>
+        SidebarItem({
+          id: `usb-${ runtime.id }`,
           dispatch,
           icon: USB_ICON,
           isSelected: false,
-          key: pageId,
           name: runtime.name,
           selectable: false,
-        });
-      }),
+        })),
     ];
   }
 
