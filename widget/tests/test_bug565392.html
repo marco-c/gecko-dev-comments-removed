@@ -48,7 +48,7 @@
     transferable.addDataFlavor(mime);
     clipboard.getData(transferable, 1);
     var data = {};
-    transferable.getTransferData(mime, data, {}) ;
+    transferable.getTransferData(mime, data);
     return data;
   }
 
