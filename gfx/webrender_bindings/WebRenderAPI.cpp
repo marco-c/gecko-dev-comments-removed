@@ -375,10 +375,17 @@ WebRenderAPI::HitTest(const wr::WorldPoint& aPoint,
                       layers::FrameMetrics::ViewID& aOutScrollId,
                       gfx::CompositorHitTestInfo& aOutHitInfo)
 {
-  static_assert(sizeof(gfx::CompositorHitTestInfo) == sizeof(uint16_t),
-                "CompositorHitTestInfo should be u16-sized");
-  return wr_api_hit_test(mDocHandle, aPoint,
-          &aOutPipelineId, &aOutScrollId, (uint16_t*)&aOutHitInfo);
+  static_assert(DoesCompositorHitTestInfoFitIntoBits<16>(),
+                "CompositorHitTestFlags MAX value has to be less than number of bits in uint16_t");
+
+  uint16_t serialized = static_cast<uint16_t>(aOutHitInfo.serialize());
+  const bool result = wr_api_hit_test(mDocHandle, aPoint,
+    &aOutPipelineId, &aOutScrollId, &serialized);
+
+  if (result) {
+    aOutHitInfo.deserialize(serialized);
+  }
+  return result;
 }
 
 void
@@ -1122,7 +1129,6 @@ DisplayListBuilder::PushYCbCrPlanarImage(const wr::LayoutRect& aBounds,
                                          wr::ImageKey aImageChannel0,
                                          wr::ImageKey aImageChannel1,
                                          wr::ImageKey aImageChannel2,
-                                         wr::WrColorDepth aColorDepth,
                                          wr::WrYuvColorSpace aColorSpace,
                                          wr::ImageRendering aRendering)
 {
@@ -1133,7 +1139,6 @@ DisplayListBuilder::PushYCbCrPlanarImage(const wr::LayoutRect& aBounds,
                               aImageChannel0,
                               aImageChannel1,
                               aImageChannel2,
-                              aColorDepth,
                               aColorSpace,
                               aRendering);
 }
@@ -1144,7 +1149,6 @@ DisplayListBuilder::PushNV12Image(const wr::LayoutRect& aBounds,
                                   bool aIsBackfaceVisible,
                                   wr::ImageKey aImageChannel0,
                                   wr::ImageKey aImageChannel1,
-                                  wr::WrColorDepth aColorDepth,
                                   wr::WrYuvColorSpace aColorSpace,
                                   wr::ImageRendering aRendering)
 {
@@ -1154,7 +1158,6 @@ DisplayListBuilder::PushNV12Image(const wr::LayoutRect& aBounds,
                             aIsBackfaceVisible,
                             aImageChannel0,
                             aImageChannel1,
-                            aColorDepth,
                             aColorSpace,
                             aRendering);
 }
@@ -1164,7 +1167,6 @@ DisplayListBuilder::PushYCbCrInterleavedImage(const wr::LayoutRect& aBounds,
                                               const wr::LayoutRect& aClip,
                                               bool aIsBackfaceVisible,
                                               wr::ImageKey aImageChannel0,
-                                              wr::WrColorDepth aColorDepth,
                                               wr::WrYuvColorSpace aColorSpace,
                                               wr::ImageRendering aRendering)
 {
@@ -1173,7 +1175,6 @@ DisplayListBuilder::PushYCbCrInterleavedImage(const wr::LayoutRect& aBounds,
                                    MergeClipLeaf(aClip),
                                    aIsBackfaceVisible,
                                    aImageChannel0,
-                                   aColorDepth,
                                    aColorSpace,
                                    aRendering);
 }
@@ -1336,9 +1337,10 @@ void
 DisplayListBuilder::SetHitTestInfo(const layers::FrameMetrics::ViewID& aScrollId,
                                    gfx::CompositorHitTestInfo aHitInfo)
 {
-  static_assert(sizeof(gfx::CompositorHitTestInfo) == sizeof(uint16_t),
-                "CompositorHitTestInfo should be u16-sized");
-  wr_set_item_tag(mWrState, aScrollId, static_cast<uint16_t>(aHitInfo));
+  static_assert(DoesCompositorHitTestInfoFitIntoBits<16>(),
+                "CompositorHitTestFlags MAX value has to be less than number of bits in uint16_t");
+
+  wr_set_item_tag(mWrState, aScrollId, static_cast<uint16_t>(aHitInfo.serialize()));
 }
 
 void
