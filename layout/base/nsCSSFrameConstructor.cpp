@@ -5943,7 +5943,7 @@ nsCSSFrameConstructor::ConstructFramesFromItem(nsFrameConstructorState& aState,
   
   computedStyle->StartBackgroundImageLoads();
 
-  nsFrameState savedStateBits = aState.mAdditionalStateBits;
+  AutoRestore<nsFrameState> savedStateBits(aState.mAdditionalStateBits);
   if (item.mIsGeneratedContent) {
     
     
@@ -5962,8 +5962,6 @@ nsCSSFrameConstructor::ConstructFramesFromItem(nsFrameConstructorState& aState,
     
     item.mIsGeneratedContent = false;
   }
-
-  aState.mAdditionalStateBits = savedStateBits;
 }
 
 
