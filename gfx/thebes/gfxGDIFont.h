@@ -57,8 +57,7 @@ class gfxGDIFont : public gfxFont {
   virtual bool ProvidesGlyphWidths() const override { return true; }
 
   
-  virtual int32_t GetGlyphWidth(DrawTarget &aDrawTarget,
-                                uint16_t aGID) override;
+  virtual int32_t GetGlyphWidth(uint16_t aGID) override;
 
   virtual void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                                       FontCacheSizes *aSizes) const;

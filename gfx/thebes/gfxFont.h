@@ -1940,7 +1940,7 @@ class gfxFont {
 
   
   
-  virtual int32_t GetGlyphWidth(DrawTarget& aDrawTarget, uint16_t aGID) {
+  virtual int32_t GetGlyphWidth(uint16_t aGID) {
     return -1;
   }
 
