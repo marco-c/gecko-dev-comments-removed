@@ -282,8 +282,6 @@ pref("browser.urlbar.speculativeConnect.enabled", true);
 
 
 
-
-pref("browser.urlbar.matchBehavior", 1);
 pref("browser.urlbar.filter.javascript", true);
 
 
