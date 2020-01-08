@@ -610,6 +610,7 @@ class LayerManager : public FrameRecorder {
 
 
   virtual void SetIsFirstPaint() {}
+  virtual bool GetIsFirstPaint() const { return false; }
 
   
 

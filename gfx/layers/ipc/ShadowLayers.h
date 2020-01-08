@@ -338,6 +338,7 @@ class ShadowLayerForwarder final : public LayersIPCActor,
 
 
   void SetIsFirstPaint() { mIsFirstPaint = true; }
+  bool GetIsFirstPaint() const { return mIsFirstPaint; }
 
   
 
