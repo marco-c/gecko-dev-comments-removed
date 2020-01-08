@@ -378,51 +378,6 @@ function geoSpecificDefaultsEnabled() {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getIsUS() {
-  
-  
-  if (getLocale() != "en-US") {
-    return false;
-  }
-
-  
-  try {
-    return Services.prefs.getCharPref("browser.search.region") == "US";
-  } catch (e) {}
-
-  
-  let isNA = isUSTimezone();
-  LOG("getIsUS() fell back to a timezone check with the result=" + isNA);
-  return isNA;
-}
-
-
-function getGeoSpecificPrefName(basepref) {
-  if (!geoSpecificDefaultsEnabled() || isPartnerBuild())
-    return basepref;
-  if (getIsUS())
-    return basepref + ".US";
-  return basepref;
-}
-
-
 function isUSTimezone() {
   
   
@@ -439,10 +394,6 @@ function isUSTimezone() {
   let UTCOffset = (new Date()).getTimezoneOffset();
   return UTCOffset >= 150 && UTCOffset <= 600;
 }
-
-
-
-
 
 
 var ensureKnownCountryCode = async function(ss) {
@@ -496,6 +447,12 @@ var ensureKnownCountryCode = async function(ss) {
   
   Services.telemetry.getHistogramById("SEARCH_SERVICE_COUNTRY_FETCH_CAUSED_SYNC_INIT").add(gInitialized);
 };
+
+
+
+
+
+
 
 
 
@@ -2761,9 +2718,8 @@ SearchService.prototype = {
         let defaultPrefB = Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF);
         let nsIPLS = Ci.nsIPrefLocalizedString;
 
-        let defPref = getGeoSpecificPrefName("defaultenginename");
         try {
-          defaultEngine = defaultPrefB.getComplexValue(defPref, nsIPLS).data;
+          defaultEngine = defaultPrefB.getComplexValue("defaultenginename", nsIPLS).data;
         } catch (ex) {
           
           
@@ -3634,9 +3590,8 @@ SearchService.prototype = {
           }
         } catch (e) { }
 
-        let prefNameBase = getGeoSpecificPrefName(BROWSER_SEARCH_PREF + "order");
         while (true) {
-          prefName = prefNameBase + "." + (++i);
+          prefName = `${BROWSER_SEARCH_PREF}order.${++i}`;
           engineName = getLocalizedPref(prefName);
           if (!engineName)
             break;
@@ -3783,9 +3738,8 @@ SearchService.prototype = {
       }
 
       
-      let prefNameBase = getGeoSpecificPrefName(BROWSER_SEARCH_PREF + "order");
       for (var j = 1; ; j++) {
-        let prefName = prefNameBase + "." + j;
+        let prefName = `${BROWSER_SEARCH_PREF}order.${j}`;
         engineName = getLocalizedPref(prefName);
         if (!engineName)
           break;
@@ -4188,10 +4142,9 @@ SearchService.prototype = {
           } catch (e) {}
         }
 
-        let prefNameBase = getGeoSpecificPrefName(BROWSER_SEARCH_PREF + "order");
         let i = 0;
         while (!sendSubmissionURL) {
-          let prefName = prefNameBase + "." + (++i);
+          let prefName = `${BROWSER_SEARCH_PREF}order.${++i}`;
           let engineName = getLocalizedPref(prefName);
           if (!engineName)
             break;
