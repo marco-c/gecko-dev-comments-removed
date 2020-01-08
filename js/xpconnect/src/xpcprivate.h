@@ -373,7 +373,14 @@ public:
 
     PRTime GetWatchdogTimestamp(WatchdogTimestampCategory aCategory);
 
-    static void ActivityCallback(void* arg, bool active);
+    static bool RecordScriptActivity(bool aActive);
+
+    bool SetHasScriptActivity(bool aActive) {
+        bool oldValue = mHasScriptActivity;
+        mHasScriptActivity = aActive;
+        return oldValue;
+    }
+
     static bool InterruptCallback(JSContext* cx);
 
     
@@ -460,6 +467,8 @@ private:
     
     mozilla::TimeDuration mSlowScriptActualWait;
     bool mTimeoutAccumulated;
+
+    bool mHasScriptActivity;
 
     
     

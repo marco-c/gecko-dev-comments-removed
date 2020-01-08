@@ -23,13 +23,11 @@ async function testBody() {
   
   
   
-  await new Promise(resolve => {
-    var timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-    timer.initWithCallback(resolve, 10000, Ci.nsITimer.TYPE_ONE_SHOT);
-    simulateActivityCallback(false);
-  });
 
-  simulateActivityCallback(true);
+  
+  
+  simulateNoScriptActivity(10);
+
   busyWait(1000); 
   var stateChange = Cu.getWatchdogTimestamp("ContextStateChange");
   startHibernation = Cu.getWatchdogTimestamp("WatchdogHibernateStart");

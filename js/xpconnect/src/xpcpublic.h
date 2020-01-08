@@ -550,8 +550,14 @@ WindowGlobalOrNull(JSObject* aObj);
 nsGlobalWindowInner*
 CurrentWindowOrNull(JSContext* cx);
 
-void
-SimulateActivityCallback(bool aActive);
+class MOZ_RAII AutoScriptActivity
+{
+    bool mActive;
+    bool mOldValue;
+  public:
+    explicit AutoScriptActivity(bool aActive);
+    ~AutoScriptActivity();
+};
 
 
 

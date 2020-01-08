@@ -551,28 +551,49 @@ XPCJSContext::GetWatchdogTimestamp(WatchdogTimestampCategory aCategory)
         mWatchdogManager->GetTimestamp(aCategory, lock);
 }
 
-void
-xpc::SimulateActivityCallback(bool aActive)
-{
-    XPCJSContext::ActivityCallback(XPCJSContext::Get(), aActive);
-}
 
-
-void
-XPCJSContext::ActivityCallback(void* arg, bool active)
+bool
+XPCJSContext::RecordScriptActivity(bool aActive)
 {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    XPCJSContext* xpccx = XPCJSContext::Get();
+    if (!xpccx) {
+        
+        
+        MOZ_ASSERT(!aActive);
+        return false;
+    }
+
+    bool oldValue = xpccx->SetHasScriptActivity(aActive);
+    if (aActive == oldValue) {
+        
+        return oldValue;
+    }
+
     
     
     if (recordreplay::IsRecordingOrReplaying()) {
-        return;
+        return oldValue;
     }
 
-    if (!active) {
+    if (!aActive) {
         ProcessHangMonitor::ClearHang();
     }
+    xpccx->mWatchdogManager->RecordContextActivity(xpccx, aActive);
 
-    XPCJSContext* self = static_cast<XPCJSContext*>(arg);
-    self->mWatchdogManager->RecordContextActivity(self, active);
+    return oldValue;
+}
+
+AutoScriptActivity::AutoScriptActivity(bool aActive)
+  : mActive(aActive)
+  , mOldValue(XPCJSContext::RecordScriptActivity(aActive))
+{
+}
+
+AutoScriptActivity::~AutoScriptActivity()
+{
+    MOZ_ALWAYS_TRUE(mActive == XPCJSContext::RecordScriptActivity(mOldValue));
 }
 
 
@@ -890,8 +911,6 @@ XPCJSContext::~XPCJSContext()
     Preferences::UnregisterCallback(ReloadPrefsCallback, "fuzzing.enabled", this);
 #endif
 
-    js::SetActivityCallback(Context(), nullptr, nullptr);
-
     
     
     SetPendingException(nullptr);
@@ -926,6 +945,7 @@ XPCJSContext::XPCJSContext()
    mWatchdogManager(GetWatchdogManager()),
    mSlowScriptSecondHalf(false),
    mTimeoutAccumulated(false),
+   mHasScriptActivity(false),
    mPendingResult(NS_OK),
    mActive(CONTEXT_INACTIVE),
    mLastStateChange(PR_Now())
@@ -1140,7 +1160,6 @@ XPCJSContext::Initialize(XPCJSContext* aPrimaryContext)
 
     PROFILER_SET_JS_CONTEXT(cx);
 
-    js::SetActivityCallback(cx, ActivityCallback, this);
     JS_AddInterruptCallback(cx, InterruptCallback);
 
     if (!aPrimaryContext) {

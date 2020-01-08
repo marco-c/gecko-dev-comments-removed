@@ -12,6 +12,7 @@
 #include "MainThreadUtils.h"
 #include "nsIGlobalObject.h"
 #include "nsIPrincipal.h"
+#include "xpcpublic.h"
 
 #include "mozilla/Maybe.h"
 
@@ -383,6 +384,7 @@ private:
   friend nsIPrincipal* GetWebIDLCallerPrincipal();
 
   Maybe<DocshellEntryMonitor> mDocShellEntryMonitor;
+  Maybe<xpc::AutoScriptActivity> mScriptActivity;
   JS::AutoHideScriptedCaller mCallerOverride;
 #ifdef MOZ_GECKO_PROFILER
   AutoProfilerLabel mAutoProfilerLabel;
@@ -459,13 +461,17 @@ private:
 
 
 
-class MOZ_RAII AutoSlowOperation : public dom::AutoJSAPI
+
+
+class MOZ_RAII AutoSlowOperation
 {
 public:
   explicit AutoSlowOperation(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM);
   void CheckForInterrupt();
 private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+  bool mIsMainThread;
+  Maybe<xpc::AutoScriptActivity> mScriptActivity;
 };
 
 
