@@ -1103,15 +1103,40 @@ class ScriptSourceHolder {
   ScriptSource* get() const { return ss; }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ScriptSourceObject : public NativeObject {
   static const ClassOps classOps_;
+
+  static ScriptSourceObject* createInternal(JSContext* cx, ScriptSource* source,
+                                            HandleObject canonical);
+
+  bool isCanonical() const {
+    return &getReservedSlot(CANONICAL_SLOT).toObject() == this;
+  }
+  ScriptSourceObject* unwrappedCanonical() const;
 
  public:
   static const Class class_;
 
   static void trace(JSTracer* trc, JSObject* obj);
   static void finalize(FreeOp* fop, JSObject* obj);
+
   static ScriptSourceObject* create(JSContext* cx, ScriptSource* source);
+  static ScriptSourceObject* clone(JSContext* cx, HandleScriptSourceObject sso);
 
   
   
@@ -1127,27 +1152,38 @@ class ScriptSourceObject : public NativeObject {
   ScriptSource* source() const {
     return static_cast<ScriptSource*>(getReservedSlot(SOURCE_SLOT).toPrivate());
   }
-  JSObject* element() const {
-    return getReservedSlot(ELEMENT_SLOT).toObjectOrNull();
+
+  JSObject* unwrappedElement() const {
+    return unwrappedCanonical()->getReservedSlot(ELEMENT_SLOT).toObjectOrNull();
   }
-  const Value& elementAttributeName() const {
-    MOZ_ASSERT(!getReservedSlot(ELEMENT_PROPERTY_SLOT).isMagic());
-    return getReservedSlot(ELEMENT_PROPERTY_SLOT);
+  const Value& unwrappedElementAttributeName() const {
+    const Value& v =
+        unwrappedCanonical()->getReservedSlot(ELEMENT_PROPERTY_SLOT);
+    MOZ_ASSERT(!v.isMagic());
+    return v;
   }
-  JSScript* introductionScript() const {
-    Value value = getReservedSlot(INTRODUCTION_SCRIPT_SLOT);
+  JSScript* unwrappedIntroductionScript() const {
+    Value value =
+        unwrappedCanonical()->getReservedSlot(INTRODUCTION_SCRIPT_SLOT);
     if (value.isUndefined()) {
       return nullptr;
     }
     return value.toGCThing()->as<JSScript>();
   }
 
-  void setPrivate(const Value& value) { setReservedSlot(PRIVATE_SLOT, value); }
-  Value getPrivate() const { return getReservedSlot(PRIVATE_SLOT); }
+  void setPrivate(const Value& value) {
+    MOZ_ASSERT(isCanonical());
+    setReservedSlot(PRIVATE_SLOT, value);
+  }
+
+  Value unwrappedPrivate() const {
+    return unwrappedCanonical()->getReservedSlot(PRIVATE_SLOT);
+  }
 
  private:
   enum {
     SOURCE_SLOT = 0,
+    CANONICAL_SLOT,
     ELEMENT_SLOT,
     ELEMENT_PROPERTY_SLOT,
     INTRODUCTION_SCRIPT_SLOT,
@@ -1481,10 +1517,7 @@ class JSScript : public js::gc::TenuredCell {
   js::TypeScript* types_ = nullptr;
 
   
-  
-  
-  
-  js::GCPtrObject sourceObject_ = {};
+  js::GCPtr<js::ScriptSourceObject*> sourceObject_ = {};
 
   
 
@@ -1740,20 +1773,20 @@ class JSScript : public js::gc::TenuredCell {
       js::MutableHandle<JS::GCVector<js::Scope*>> scopes);
 
  private:
-  JSScript(JS::Realm* realm, uint8_t* stubEntry, js::HandleObject sourceObject,
-           uint32_t sourceStart, uint32_t sourceEnd, uint32_t toStringStart,
-           uint32_t toStringend);
+  JSScript(JS::Realm* realm, uint8_t* stubEntry,
+           js::HandleScriptSourceObject sourceObject, uint32_t sourceStart,
+           uint32_t sourceEnd, uint32_t toStringStart, uint32_t toStringend);
 
-  static JSScript* New(JSContext* cx, js::HandleObject sourceObject,
+  static JSScript* New(JSContext* cx, js::HandleScriptSourceObject sourceObject,
                        uint32_t sourceStart, uint32_t sourceEnd,
                        uint32_t toStringStart, uint32_t toStringEnd);
 
  public:
   static JSScript* Create(JSContext* cx,
                           const JS::ReadOnlyCompileOptions& options,
-                          js::HandleObject sourceObject, uint32_t sourceStart,
-                          uint32_t sourceEnd, uint32_t toStringStart,
-                          uint32_t toStringEnd);
+                          js::HandleScriptSourceObject sourceObject,
+                          uint32_t sourceStart, uint32_t sourceEnd,
+                          uint32_t toStringStart, uint32_t toStringEnd);
 
   
   
@@ -2281,15 +2314,14 @@ class JSScript : public js::gc::TenuredCell {
 
   static bool loadSource(JSContext* cx, js::ScriptSource* ss, bool* worked);
 
-  void setSourceObject(JSObject* object);
-  JSObject* sourceObject() const { return sourceObject_; }
-  js::ScriptSourceObject& scriptSourceUnwrap() const;
+  void setSourceObject(js::ScriptSourceObject* object);
+  js::ScriptSourceObject* sourceObject() const { return sourceObject_; }
   js::ScriptSource* scriptSource() const;
   js::ScriptSource* maybeForwardedScriptSource() const;
 
-  void setDefaultClassConstructorSpan(JSObject* sourceObject, uint32_t start,
-                                      uint32_t end, unsigned line,
-                                      unsigned column);
+  void setDefaultClassConstructorSpan(js::ScriptSourceObject* sourceObject,
+                                      uint32_t start, uint32_t end,
+                                      unsigned line, unsigned column);
 
   bool mutedErrors() const { return scriptSource()->mutedErrors(); }
   const char* filename() const { return scriptSource()->filename(); }
@@ -2788,8 +2820,7 @@ class LazyScript : public gc::TenuredCell {
 
   
   
-  
-  GCPtrObject sourceObject_;
+  GCPtr<ScriptSourceObject*> sourceObject_;
 
   
   void* table_;
