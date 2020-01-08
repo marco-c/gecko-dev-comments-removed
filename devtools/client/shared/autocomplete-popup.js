@@ -155,10 +155,9 @@ AutocompletePopup.prototype = {
 
 
   selectItemAtIndex: function(index) {
-    if (typeof index !== "number") {
+    if (!Number.isInteger(index)) {
       
-      const isAboveInput = this.position === "top";
-      index = isAboveInput ? this.itemCount - 1 : 0;
+      index = 0;
     }
     this.selectedIndex = index;
   },
