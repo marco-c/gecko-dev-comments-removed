@@ -88,12 +88,6 @@ pub struct FrameId(usize);
 impl FrameId {
     
     
-    pub fn invalid() -> Self {
-        FrameId(0)
-    }
-
-    
-    
     
     
     
@@ -112,6 +106,10 @@ impl FrameId {
     fn advance(&mut self) {
         self.0 += 1;
     }
+
+    
+    
+    pub const INVALID: FrameId = FrameId(0);
 }
 
 impl ::std::ops::Add<usize> for FrameId {
@@ -345,7 +343,7 @@ impl Document {
         let accumulated_scale_factor = self.view.accumulated_scale_factor();
         let pan = self.view.pan.to_f32() / accumulated_scale_factor;
 
-        assert!(self.frame_id != FrameId::invalid(),
+        assert!(self.frame_id != FrameId::INVALID,
                 "First frame increment must happen before build_frame()");
 
         let frame = {

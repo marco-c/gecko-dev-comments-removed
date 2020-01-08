@@ -30,7 +30,7 @@ use render_task::{RenderTaskCacheKeyKind, RenderTaskId, RenderTaskCacheEntryHand
 use renderer::{MAX_VERTEX_TEXTURE_WIDTH};
 use resource_cache::{ImageProperties, ImageRequest, ResourceCache};
 use scene::SceneProperties;
-use std::{cmp, fmt, mem, ops, usize};
+use std::{cmp, fmt, mem, ops, u32, usize};
 #[cfg(debug_assertions)]
 use std::sync::atomic::{AtomicUsize, Ordering};
 use tiling::SpecialRenderPasses;
@@ -289,6 +289,13 @@ pub struct DeferredResolve {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct PrimitiveIndex(pub usize);
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct ClipTaskIndex(pub u32);
+
+impl ClipTaskIndex {
+    pub const INVALID: ClipTaskIndex = ClipTaskIndex(0);
+}
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -823,26 +830,20 @@ bitflags! {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum BrushSegmentTaskId {
-    RenderTaskId(RenderTaskId),
-    Opaque,
-    Empty,
-}
 
-impl BrushSegmentTaskId {
-    pub fn needs_blending(&self) -> bool {
-        match *self {
-            BrushSegmentTaskId::RenderTaskId(..) => true,
-            BrushSegmentTaskId::Opaque | BrushSegmentTaskId::Empty => false,
-        }
-    }
+#[derive(Debug, Clone)]
+pub enum ClipMaskKind {
+    
+    Mask(RenderTaskId),
+    
+    None,
+    
+    Clipped,
 }
 
 #[derive(Debug, Clone)]
 pub struct BrushSegment {
     pub local_rect: LayoutRect,
-    pub clip_task_id: BrushSegmentTaskId,
     pub may_need_clip_mask: bool,
     pub edge_flags: EdgeAaSegmentMask,
     pub extra_data: [f32; 4],
@@ -859,7 +860,6 @@ impl BrushSegment {
     ) -> Self {
         Self {
             local_rect,
-            clip_task_id: BrushSegmentTaskId::Opaque,
             may_need_clip_mask,
             edge_flags,
             extra_data,
@@ -867,6 +867,8 @@ impl BrushSegment {
         }
     }
 
+    
+    
     pub fn update_clip_task(
         &mut self,
         clip_chain: Option<&ClipChainInstance>,
@@ -876,13 +878,12 @@ impl BrushSegment {
         pic_state: &mut PictureState,
         frame_context: &FrameBuildingContext,
         frame_state: &mut FrameBuildingState,
-    ) {
+    ) -> ClipMaskKind {
         match clip_chain {
             Some(clip_chain) => {
                 if !clip_chain.needs_mask ||
                    (!self.may_need_clip_mask && !clip_chain.has_non_local_clips) {
-                    self.clip_task_id = BrushSegmentTaskId::Opaque;
-                    return;
+                    return ClipMaskKind::None;
                 }
 
                 let (device_rect, _, _) = match get_raster_rects(
@@ -894,8 +895,7 @@ impl BrushSegment {
                 ) {
                     Some(info) => info,
                     None => {
-                        self.clip_task_id = BrushSegmentTaskId::Empty;
-                        return;
+                        return ClipMaskKind::Clipped;
                     }
                 };
 
@@ -912,10 +912,10 @@ impl BrushSegment {
 
                 let clip_task_id = frame_state.render_tasks.add(clip_task);
                 frame_state.surfaces[surface_index.0].tasks.push(clip_task_id);
-                self.clip_task_id = BrushSegmentTaskId::RenderTaskId(clip_task_id);
+                ClipMaskKind::Mask(clip_task_id)
             }
             None => {
-                self.clip_task_id = BrushSegmentTaskId::Empty;
+                ClipMaskKind::Clipped
             }
         }
     }
@@ -1849,7 +1849,10 @@ pub struct PrimitiveInstance {
 
     
     
-    pub clip_task_id: Option<RenderTaskId>,
+    
+    
+    
+    pub clip_task_index: ClipTaskIndex,
 
     
     
@@ -1881,11 +1884,11 @@ impl PrimitiveInstance {
             combined_local_clip_rect: LayoutRect::zero(),
             clipped_world_rect: None,
             #[cfg(debug_assertions)]
-            prepared_frame_id: FrameId::invalid(),
+            prepared_frame_id: FrameId::INVALID,
             #[cfg(debug_assertions)]
             id: PrimitiveDebugId(NEXT_PRIM_ID.fetch_add(1, Ordering::Relaxed)),
-            clip_task_id: None,
             gpu_location: GpuCacheHandle::new(),
+            clip_task_index: ClipTaskIndex::INVALID,
             clip_chain_id,
             spatial_node_index,
             cluster_range: ClusterRange { start: 0, end: 0 },
@@ -1907,6 +1910,13 @@ pub struct PrimitiveStore {
     pub primitives: Vec<Primitive>,
     pub pictures: Vec<PicturePrimitive>,
     pub text_runs: Vec<TextRunPrimitive>,
+
+    
+    
+    
+    
+    
+    pub clip_mask_instances: Vec<ClipMaskKind>,
 }
 
 impl PrimitiveStore {
@@ -1915,7 +1925,16 @@ impl PrimitiveStore {
             primitives: Vec::new(),
             pictures: Vec::new(),
             text_runs: Vec::new(),
+            clip_mask_instances: Vec::new(),
         }
+    }
+
+    pub fn reset_clip_instances(&mut self) {
+        
+        
+        
+        self.clip_mask_instances.clear();
+        self.clip_mask_instances.push(ClipMaskKind::None)
     }
 
     pub fn create_picture(
@@ -2313,6 +2332,7 @@ impl PrimitiveStore {
                 frame_state,
                 &clip_node_collector,
                 &mut self.primitives,
+                &mut self.clip_mask_instances,
             );
 
             if prim_instance.is_chased() {
@@ -2790,6 +2810,7 @@ impl PrimitiveInstance {
         frame_state: &mut FrameBuildingState,
         clip_node_collector: &Option<ClipNodeCollector>,
         primitives: &mut [Primitive],
+        clip_mask_instances: &mut Vec<ClipMaskKind>,
     ) -> bool {
         let brush = match self.kind {
             PrimitiveInstanceKind::Picture { .. } |
@@ -2806,13 +2827,6 @@ impl PrimitiveInstance {
             }
         };
 
-        
-        if let Some(ref mut desc) = brush.segment_desc {
-            for segment in &mut desc.segments {
-                segment.clip_task_id = BrushSegmentTaskId::Opaque;
-            }
-        }
-
         brush.write_brush_segment_description(
             prim_local_rect,
             prim_local_clip_rect,
@@ -2827,10 +2841,21 @@ impl PrimitiveInstance {
 
         
         
+        if segment_desc.segments.is_empty() {
+            return true;
+        }
+
+        
+        
+        
+        self.clip_task_index = ClipTaskIndex(clip_mask_instances.len() as _);
+
+        
+        
         
         
         if segment_desc.segments.len() == 1 {
-            segment_desc.segments[0].update_clip_task(
+            let clip_mask_kind = segment_desc.segments[0].update_clip_task(
                 Some(prim_clip_chain),
                 prim_bounding_rect,
                 root_spatial_node_index,
@@ -2839,6 +2864,7 @@ impl PrimitiveInstance {
                 frame_context,
                 frame_state,
             );
+            clip_mask_instances.push(clip_mask_kind);
         } else {
             for segment in &mut segment_desc.segments {
                 
@@ -2862,7 +2888,7 @@ impl PrimitiveInstance {
                         &mut frame_state.resources.clip_data_store,
                     );
 
-                segment.update_clip_task(
+                let clip_mask_kind = segment.update_clip_task(
                     segment_clip_chain.as_ref(),
                     prim_bounding_rect,
                     root_spatial_node_index,
@@ -2871,6 +2897,7 @@ impl PrimitiveInstance {
                     frame_context,
                     frame_state,
                 );
+                clip_mask_instances.push(clip_mask_kind);
             }
         }
 
@@ -3476,13 +3503,14 @@ impl PrimitiveInstance {
         frame_state: &mut FrameBuildingState,
         clip_node_collector: &Option<ClipNodeCollector>,
         primitives: &mut [Primitive],
+        clip_mask_instances: &mut Vec<ClipMaskKind>,
     ) {
         if self.is_chased() {
             println!("\tupdating clip task with pic rect {:?}", clip_chain.pic_clip_rect);
         }
 
         
-        self.clip_task_id = None;
+        self.clip_task_index = ClipTaskIndex::INVALID;
 
         
         if self.update_clip_task_for_brush(
@@ -3498,6 +3526,7 @@ impl PrimitiveInstance {
             frame_state,
             clip_node_collector,
             primitives,
+            clip_mask_instances,
         ) {
             if self.is_chased() {
                 println!("\tsegment tasks have been created for clipping");
@@ -3529,7 +3558,10 @@ impl PrimitiveInstance {
                     println!("\tcreated task {:?} with device rect {:?}",
                         clip_task_id, device_rect);
                 }
-                self.clip_task_id = Some(clip_task_id);
+                
+                let clip_task_index = ClipTaskIndex(clip_mask_instances.len() as _);
+                clip_mask_instances.push(ClipMaskKind::Mask(clip_task_id));
+                self.clip_task_index = clip_task_index;
                 frame_state.surfaces[surface_index.0].tasks.push(clip_task_id);
             }
         }
