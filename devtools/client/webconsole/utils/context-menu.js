@@ -35,6 +35,8 @@ loader.lazyRequireGetter(this, "openContentLink", "devtools/client/shared/link",
 
 
 
+
+
 function createContextMenu(hud, parentNode, {
   actor,
   clipboardText,
@@ -43,6 +45,8 @@ function createContextMenu(hud, parentNode, {
   serviceContainer,
   openSidebar,
   rootActorId,
+  executionPoint,
+  toolbox,
 }) {
   const win = parentNode.ownerDocument.defaultView;
   const selection = win.getSelection();
@@ -174,6 +178,19 @@ function createContextMenu(hud, parentNode, {
       accesskey: l10n.getStr("webconsole.menu.openInSidebar.accesskey"),
       disabled: !rootActorId,
       click: () => openSidebar(message.messageId),
+    }));
+  }
+
+  
+  if (executionPoint) {
+    menu.append(new MenuItem({
+      id: "console-menu-time-warp",
+      label: l10n.getStr("webconsole.menu.timeWarp.label"),
+      disabled: false,
+      click: () => {
+        const threadClient = toolbox.threadClient;
+        threadClient.timeWarp(executionPoint);
+      },
     }));
   }
 

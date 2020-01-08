@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const Services = require("Services");
@@ -154,6 +155,9 @@ WebConsoleOutputWrapper.prototype = {
           store.dispatch(actions.showMessageObjectInSidebar(rootActorId, messageId));
         } : null;
 
+        const messageData = getMessage(store.getState(), message.messageId);
+        const executionPoint = messageData && messageData.executionPoint;
+
         const menu = createContextMenu(this.hud, this.parentNode, {
           actor,
           clipboardText,
@@ -161,7 +165,9 @@ WebConsoleOutputWrapper.prototype = {
           message,
           serviceContainer,
           openSidebar,
-          rootActorId
+          rootActorId,
+          executionPoint,
+          toolbox: this.toolbox,
         });
 
         
