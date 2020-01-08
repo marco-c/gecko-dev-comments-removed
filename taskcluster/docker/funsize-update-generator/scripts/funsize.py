@@ -35,16 +35,19 @@ log = logging.getLogger(__name__)
 ddstats = ThreadStats(namespace='releng.releases.partials')
 
 
+ROOT_URL = os.environ['TASKCLUSTER_ROOT_URL']
+QUEUE_PREFIX = ("https://queue.taskcluster.net/"
+                if ROOT_URL == 'https://taskcluster.net'
+                else ROOT_URL + '/api/queue/')
 ALLOWED_URL_PREFIXES = (
     "http://download.cdn.mozilla.net/pub/mozilla.org/firefox/nightly/",
     "http://download.cdn.mozilla.net/pub/firefox/nightly/",
     "https://mozilla-nightly-updates.s3.amazonaws.com",
-    "https://queue.taskcluster.net/",
     "http://ftp.mozilla.org/",
     "http://download.mozilla.org/",
     "https://archive.mozilla.org/",
     "http://archive.mozilla.org/",
-    "https://queue.taskcluster.net/v1/task/",
+    QUEUE_PREFIX,
 )
 STAGING_URL_PREFIXES = (
     "http://ftp.stage.mozaws.net/",
@@ -52,12 +55,6 @@ STAGING_URL_PREFIXES = (
 
 DEFAULT_FILENAME_TEMPLATE = "{appName}-{branch}-{version}-{platform}-" \
                             "{locale}-{from_buildid}-{to_buildid}.partial.mar"
-
-BCJ_OPTIONS = {
-    'x86': ['--x86'],
-    'x86_64': ['--x86'],
-    'aarch64': [],
-}
 
 
 def write_dogrc(api_key):
@@ -235,7 +232,7 @@ def get_hash(path, hash_type="sha512"):
 
 class WorkEnv(object):
 
-    def __init__(self, allowed_url_prefixes, mar=None, mbsdiff=None, arch=None):
+    def __init__(self, allowed_url_prefixes, mar=None, mbsdiff=None):
         self.workdir = tempfile.mkdtemp()
         self.paths = {
             'unwrap_full_update.pl': os.path.join(self.workdir, 'unwrap_full_update.pl'),
@@ -255,7 +252,6 @@ class WorkEnv(object):
             self.urls['mar'] = mar
         if mbsdiff:
             self.urls['mbsdiff'] = mbsdiff
-        self.arch = arch
 
     async def setup(self, mar=None, mbsdiff=None):
         for filename, url in self.urls.items():
@@ -280,8 +276,6 @@ class WorkEnv(object):
         my_env['LC_ALL'] = 'C'
         my_env['MAR'] = self.paths['mar']
         my_env['MBSDIFF'] = self.paths['mbsdiff']
-        if self.arch:
-            my_env['BCJ_OPTIONS'] = ' '.join(BCJ_OPTIONS[self.arch])
         return my_env
 
 
@@ -421,8 +415,7 @@ async def async_main(args, signing_certs):
         workenv = WorkEnv(
             allowed_url_prefixes=allowed_url_prefixes,
             mar=definition.get('mar_binary'),
-            mbsdiff=definition.get('mbsdiff_binary'),
-            arch=args.arch,
+            mbsdiff=definition.get('mbsdiff_binary')
         )
         await workenv.setup()
         tasks.append(asyncio.ensure_future(retry_async(
@@ -462,9 +455,6 @@ def main():
     parser.add_argument("-q", "--quiet", dest="log_level",
                         action="store_const", const=logging.WARNING,
                         default=logging.DEBUG)
-    parser.add_argument('--arch', type=str, required=True,
-                        choices=BCJ_OPTIONS.keys(),
-                        help='The archtecture you are building.')
     args = parser.parse_args()
 
     logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
