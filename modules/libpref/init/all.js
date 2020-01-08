@@ -3127,7 +3127,7 @@ pref("layout.display-list.dump-parent", false);
 
 #if !defined(ANDROID)
 pref("layout.display-list.retain", true);
-pref("layout.display-list.retain.chrome", true);
+pref("layout.display-list.retain.chrome", false);
 #else
 pref("layout.display-list.retain", false);
 #endif
