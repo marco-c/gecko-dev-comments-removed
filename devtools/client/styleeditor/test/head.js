@@ -115,3 +115,30 @@ var getComputedStyleProperty = async function(args) {
     }
   );
 };
+
+
+
+
+
+
+
+
+
+function waitForManyEvents(ui, delay) {
+  return new Promise(resolve => {
+    let timer;
+    let count = 0;
+    const onEvent = () => {
+      count++;
+      clearTimeout(timer);
+
+      
+      timer = setTimeout(() => {
+        
+        ui.off("media-list-changed", onEvent);
+        resolve(count);
+      }, delay);
+    };
+    ui.on("media-list-changed", onEvent);
+  });
+}

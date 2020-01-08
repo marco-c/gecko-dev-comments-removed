@@ -30,14 +30,14 @@ add_task(async function() {
   
   if (originalWidth < 500) {
     info("Window is too small for the test, resize it to > 800px width");
-    const onMediaListChanged = waitForManyEvents(ui, win);
+    const onMediaListChanged = waitForManyEvents(ui, EVENTS_DELAY);
     await resizeWindow(800, ui, win);
     info("Wait for media-list-changed events to settle");
     await onMediaListChanged;
   }
 
   info("Resize the window to stop matching media queries, and trigger the UI updates");
-  const onMediaListChanged = waitForManyEvents(ui, win);
+  const onMediaListChanged = waitForManyEvents(ui, win, EVENTS_DELAY);
   await resizeWindow(400, ui, win);
   const eventsCount = await onMediaListChanged;
 
@@ -50,33 +50,9 @@ add_task(async function() {
 
 
 
-
 async function resizeWindow(width, ui, win) {
   const onResize = once(win, "resize");
   win.resizeTo(width, win.outerHeight);
   info("Wait for window resize event");
   await onResize;
-}
-
-
-
-
-
-function waitForManyEvents(ui, win) {
-  return new Promise(resolve => {
-    let timer;
-    let count = 0;
-    const onEvent = () => {
-      count++;
-      win.clearTimeout(timer);
-
-      
-      timer = win.setTimeout(() => {
-        
-        ui.off("media-list-changed", onEvent);
-        resolve(count);
-      }, EVENTS_DELAY);
-    };
-    ui.on("media-list-changed", onEvent);
-  });
 }
