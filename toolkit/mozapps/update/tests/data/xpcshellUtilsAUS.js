@@ -767,7 +767,10 @@ gTestDirsPartialSuccess = gTestDirsCommon.concat(gTestDirsPartialSuccess);
 
 
 
-function setupTestCommon() {
+
+
+
+function setupTestCommon(aAppUpdateAutoEnabled = false) {
   debugDump("start - general test setup");
 
   Assert.strictEqual(gTestID, undefined,
@@ -873,6 +876,8 @@ function setupTestCommon() {
       }
     }
   }
+
+  setAppUpdateAutoSync(aAppUpdateAutoEnabled);
 
   debugDump("finish - general test setup");
   return true;
