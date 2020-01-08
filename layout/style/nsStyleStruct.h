@@ -226,8 +226,6 @@ private:
 class nsStyleImageRequest
 {
 public:
-  typedef mozilla::css::URLValueData URLValueData;
-
   
   
   
@@ -251,7 +249,7 @@ public:
 
   
   
-  nsStyleImageRequest(Mode aModeFlags, mozilla::css::ImageValue* aImageValue);
+  nsStyleImageRequest(Mode aModeFlags, mozilla::css::URLValue* aImageValue);
 
   bool Resolve(nsPresContext*, const nsStyleImageRequest* aOldImageRequest);
   bool IsResolved() const { return mResolved; }
@@ -269,7 +267,7 @@ public:
   
   bool DefinitelyEquals(const nsStyleImageRequest& aOther) const;
 
-  mozilla::css::ImageValue* GetImageValue() const { return mImageValue; }
+  mozilla::css::URLValue* GetImageValue() const { return mImageValue; }
 
   already_AddRefed<nsIURI> GetImageURI() const;
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsStyleImageRequest);
@@ -281,7 +279,7 @@ private:
   void MaybeTrackAndLock();
 
   RefPtr<imgRequestProxy> mRequestProxy;
-  RefPtr<mozilla::css::ImageValue> mImageValue;
+  RefPtr<mozilla::css::URLValue> mImageValue;
   RefPtr<mozilla::dom::ImageTracker> mImageTracker;
 
   
@@ -335,8 +333,7 @@ private:
 
 struct nsStyleImage
 {
-  typedef mozilla::css::URLValue     URLValue;
-  typedef mozilla::css::URLValueData URLValueData;
+  typedef mozilla::css::URLValue URLValue;
 
   nsStyleImage();
   ~nsStyleImage();
@@ -390,7 +387,7 @@ struct nsStyleImage
 
   already_AddRefed<nsIURI> GetImageURI() const;
 
-  URLValueData* GetURLValue() const;
+  URLValue* GetURLValue() const;
 
   
 

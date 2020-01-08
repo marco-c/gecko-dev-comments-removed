@@ -7,10 +7,9 @@
 use cssparser::Parser;
 use gecko_bindings::bindings;
 use gecko_bindings::structs::ServoBundledURI;
-use gecko_bindings::structs::mozilla::css::URLValueData;
 use gecko_bindings::structs::root::{RustString, nsStyleImageRequest};
 use gecko_bindings::structs::root::mozilla::CORSMode;
-use gecko_bindings::structs::root::mozilla::css::{ImageValue, URLValue};
+use gecko_bindings::structs::root::mozilla::css::URLValue;
 use gecko_bindings::sugar::refptr::RefPtr;
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use nsstring::nsCString;
@@ -39,7 +38,6 @@ pub struct CssUrl {
 
 impl CssUrl {
     
-    
     pub fn parse_from_string(url: String, context: &ParserContext) -> Self {
         CssUrl {
             serialization: Arc::new(url),
@@ -55,7 +53,7 @@ impl CssUrl {
     }
 
     
-    unsafe fn from_url_value_data(url: &URLValueData) -> Self {
+    unsafe fn from_url_value(url: &URLValue) -> Self {
         let arc_type = &url.mString as *const _ as *const RawOffsetArc<String>;
         CssUrl {
             serialization: Arc::from_raw_offset((*arc_type).clone()),
@@ -129,72 +127,19 @@ pub struct SpecifiedUrl {
 }
 
 impl SpecifiedUrl {
-    fn from_css_url(url: CssUrl) -> Self {
-        let url_value = unsafe {
-            let ptr = bindings::Gecko_NewURLValue(url.for_ffi());
-            
-            debug_assert!(!ptr.is_null());
-            RefPtr::from_addrefed(ptr)
-        };
-        Self { url, url_value }
-    }
-}
-
-impl PartialEq for SpecifiedUrl {
-    fn eq(&self, other: &Self) -> bool {
-        self.url.eq(&other.url)
-    }
-}
-
-impl Eq for SpecifiedUrl {}
-
-impl Parse for SpecifiedUrl {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        CssUrl::parse(context, input).map(Self::from_css_url)
-    }
-}
-
-impl MallocSizeOf for SpecifiedUrl {
-    fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
-        let mut n = self.url.size_of(ops);
-        
-        
-        
-        n += unsafe { bindings::Gecko_URLValue_SizeOfIncludingThis(self.url_value.get()) };
-        n
-    }
-}
-
-
-
-
-#[derive(Clone, Debug, SpecifiedValueInfo, ToCss)]
-pub struct SpecifiedImageUrl {
-    
-    pub url: CssUrl,
-    
-    
-    #[css(skip)]
-    pub image_value: RefPtr<ImageValue>,
-}
-
-impl SpecifiedImageUrl {
     
     pub fn parse_from_string(url: String, context: &ParserContext) -> Self {
         Self::from_css_url(CssUrl::parse_from_string(url, context))
     }
 
     fn from_css_url_with_cors(url: CssUrl, cors: CORSMode) -> Self {
-        let image_value = unsafe {
-            let ptr = bindings::Gecko_ImageValue_Create(url.for_ffi(), cors);
+        let url_value = unsafe {
+            let ptr = bindings::Gecko_URLValue_Create(url.for_ffi(), cors);
             
             debug_assert!(!ptr.is_null());
             RefPtr::from_addrefed(ptr)
         };
-        Self { url, image_value }
+        Self { url, url_value }
     }
 
     fn from_css_url(url: CssUrl) -> Self {
@@ -206,18 +151,9 @@ impl SpecifiedImageUrl {
         use gecko_bindings::structs::root::mozilla::CORSMode_CORS_ANONYMOUS;
         Self::from_css_url_with_cors(url, CORSMode_CORS_ANONYMOUS)
     }
-
-    
-    
-    pub fn parse_with_cors_anonymous<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        CssUrl::parse(context, input).map(Self::from_css_url_with_cors_anonymous)
-    }
 }
 
-impl Parse for SpecifiedImageUrl {
+impl Parse for SpecifiedUrl {
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -226,21 +162,21 @@ impl Parse for SpecifiedImageUrl {
     }
 }
 
-impl PartialEq for SpecifiedImageUrl {
+impl PartialEq for SpecifiedUrl {
     fn eq(&self, other: &Self) -> bool {
         self.url.eq(&other.url)
     }
 }
 
-impl Eq for SpecifiedImageUrl {}
+impl Eq for SpecifiedUrl {}
 
-impl MallocSizeOf for SpecifiedImageUrl {
+impl MallocSizeOf for SpecifiedUrl {
     fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
         let mut n = self.url.size_of(ops);
         
         
         
-        n += unsafe { bindings::Gecko_ImageValue_SizeOfIncludingThis(self.image_value.get()) };
+        n += unsafe { bindings::Gecko_URLValue_SizeOfIncludingThis(self.url_value.get()) };
         n
     }
 }
@@ -259,6 +195,37 @@ impl ToComputedValue for SpecifiedUrl {
     }
 }
 
+
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
+pub struct SpecifiedImageUrl(pub SpecifiedUrl);
+
+impl SpecifiedImageUrl {
+    
+    pub fn parse_from_string(url: String, context: &ParserContext) -> Self {
+        SpecifiedImageUrl(SpecifiedUrl::parse_from_string(url, context))
+    }
+
+    
+    
+    pub fn parse_with_cors_anonymous<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        CssUrl::parse(context, input)
+            .map(SpecifiedUrl::from_css_url_with_cors_anonymous)
+            .map(SpecifiedImageUrl)
+    }
+}
+
+impl Parse for SpecifiedImageUrl {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        SpecifiedUrl::parse(context, input).map(SpecifiedImageUrl)
+    }
+}
+
 impl ToComputedValue for SpecifiedImageUrl {
     type ComputedValue = ComputedImageUrl;
 
@@ -274,9 +241,9 @@ impl ToComputedValue for SpecifiedImageUrl {
 }
 
 fn serialize_computed_url<W>(
-    url_value_data: &URLValueData,
+    url_value: &URLValue,
     dest: &mut CssWriter<W>,
-    get_url: unsafe extern "C" fn(*const URLValueData, *mut nsCString),
+    get_url: unsafe extern "C" fn(*const URLValue, *mut nsCString) -> (),
 ) -> fmt::Result
 where
     W: Write,
@@ -284,7 +251,7 @@ where
     dest.write_str("url(")?;
     unsafe {
         let mut string = nsCString::new();
-        get_url(url_value_data, &mut string);
+        get_url(url_value, &mut string);
         string.as_str_unchecked().to_css(dest)?;
     }
     dest.write_char(')')
@@ -303,7 +270,7 @@ impl ToCss for ComputedUrl {
         W: Write,
     {
         serialize_computed_url(
-            &self.0.url_value._base,
+            &self.0.url_value,
             dest,
             bindings::Gecko_GetComputedURLSpec,
         )
@@ -313,8 +280,13 @@ impl ToCss for ComputedUrl {
 impl ComputedUrl {
     
     pub unsafe fn from_url_value(url_value: RefPtr<URLValue>) -> Self {
-        let url = CssUrl::from_url_value_data(&url_value._base);
+        let url = CssUrl::from_url_value(&*url_value);
         ComputedUrl(SpecifiedUrl { url, url_value })
+    }
+
+    
+    pub fn url_value_ptr(&self) -> *mut URLValue {
+        self.0.url_value.get()
     }
 }
 
@@ -328,7 +300,7 @@ impl ToCss for ComputedImageUrl {
         W: Write,
     {
         serialize_computed_url(
-            &self.0.image_value._base,
+            &(self.0).0.url_value,
             dest,
             bindings::Gecko_GetComputedImageURLSpec,
         )
@@ -338,8 +310,13 @@ impl ToCss for ComputedImageUrl {
 impl ComputedImageUrl {
     
     pub unsafe fn from_image_request(image_request: &nsStyleImageRequest) -> Self {
-        let image_value = image_request.mImageValue.to_safe();
-        let url = CssUrl::from_url_value_data(&image_value._base);
-        ComputedImageUrl(SpecifiedImageUrl { url, image_value })
+        let url_value = image_request.mImageValue.to_safe();
+        let url = CssUrl::from_url_value(&*url_value);
+        ComputedImageUrl(SpecifiedImageUrl(SpecifiedUrl { url, url_value }))
+    }
+
+    
+    pub fn url_value_ptr(&self) -> *mut URLValue {
+        (self.0).0.url_value.get()
     }
 }

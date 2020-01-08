@@ -208,7 +208,7 @@ ImageLoader::AssociateRequestToFrame(imgIRequest* aRequest,
 }
 
 imgRequestProxy*
-ImageLoader::RegisterCSSImage(ImageLoader::Image* aImage)
+ImageLoader::RegisterCSSImage(URLValue* aImage)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aImage);
@@ -254,7 +254,7 @@ ImageLoader::RegisterCSSImage(ImageLoader::Image* aImage)
 }
 
  void
-ImageLoader::DeregisterCSSImageFromAllLoaders(ImageLoader::Image* aImage)
+ImageLoader::DeregisterCSSImageFromAllLoaders(URLValue* aImage)
 {
   MOZ_ASSERT(aImage);
 
@@ -455,7 +455,7 @@ ImageLoader::LoadImage(nsIURI* aURI,
                        nsIURI* aReferrer,
                        mozilla::net::ReferrerPolicy aPolicy,
                        nsIDocument* aDocument,
-                       ImageLoader::Image* aImage,
+                       URLValue* aImage,
                        CORSMode aCorsMode)
 {
   MOZ_ASSERT(NS_IsMainThread());

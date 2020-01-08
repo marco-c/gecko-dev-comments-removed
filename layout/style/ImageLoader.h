@@ -31,7 +31,7 @@ class nsIPrincipal;
 namespace mozilla {
 namespace css {
 
-struct ImageValue;
+struct URLValue;
 
 
 
@@ -51,8 +51,6 @@ public:
     REQUEST_HAS_BLOCKED_ONLOAD   = 1u << 1,
   };
 
-  typedef mozilla::css::ImageValue Image;
-
   explicit ImageLoader(nsIDocument* aDocument)
   : mDocument(aDocument),
     mInClone(false)
@@ -65,7 +63,7 @@ public:
 
   void DropDocumentReference();
 
-  imgRequestProxy* RegisterCSSImage(Image* aImage);
+  imgRequestProxy* RegisterCSSImage(URLValue* aImage);
 
   void AssociateRequestToFrame(imgIRequest* aRequest,
                                nsIFrame* aFrame,
@@ -88,14 +86,14 @@ public:
                         nsIURI* aReferrer,
                         mozilla::net::ReferrerPolicy aPolicy,
                         nsIDocument* aDocument,
-                        Image* aCSSValue,
+                        URLValue* aImage,
                         CORSMode aCorsMode);
 
   
   
   
   
-  static void DeregisterCSSImageFromAllLoaders(Image* aImage);
+  static void DeregisterCSSImageFromAllLoaders(URLValue* aImage);
 
   void FlushUseCounters();
 
