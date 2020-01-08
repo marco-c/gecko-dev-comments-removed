@@ -565,7 +565,16 @@ RtlGetProcessHeap()
 {
   PTEB teb = ::NtCurrentTeb();
   PPEB peb = teb->ProcessEnvironmentBlock;
+#if !defined(__MINGW32__)
   return peb->Reserved4[1];
+#else
+  
+  
+  
+  void* startOfHeapPtr = &peb->Reserved4[1 * sizeof(HANDLE)];
+  HANDLE* heapPtrPtr = (HANDLE*)startOfHeapPtr;
+  return *heapPtrPtr;
+#endif
 }
 
 inline Maybe<DWORD>
