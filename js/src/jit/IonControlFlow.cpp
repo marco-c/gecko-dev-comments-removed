@@ -546,7 +546,7 @@ ControlFlowGenerator::processTry()
 
     
     
-    jsbytecode* endpc = pc + GetSrcNoteOffset(sn, 0);
+    jsbytecode* endpc = pc + GetSrcNoteOffset(sn, SrcNote::Try::EndOfTryJumpOffset);
     MOZ_ASSERT(JSOp(*endpc) == JSOP_GOTO);
     MOZ_ASSERT(GetJumpOffset(endpc) > 0);
 

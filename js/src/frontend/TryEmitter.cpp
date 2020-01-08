@@ -81,8 +81,11 @@ TryEmitter::emitTryEnd()
     }
 
     
-    if (!bce_->setSrcNoteOffset(noteIndex_, 0, bce_->offset() - tryStart_ + JSOP_TRY_LENGTH))
+    if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::Try::EndOfTryJumpOffset,
+                                bce_->offset() - tryStart_ + JSOP_TRY_LENGTH))
+    {
         return false;
+    }
 
     
     if (!bce_->emitJump(JSOP_GOTO, &catchAndFinallyJump_))
