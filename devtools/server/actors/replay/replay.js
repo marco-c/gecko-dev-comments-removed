@@ -149,9 +149,9 @@ function addScriptSource(source) {
 }
 
 function considerScript(script) {
-  return script.url
-      && !script.url.startsWith("resource:")
-      && !script.url.startsWith("chrome:");
+  
+  
+  return RecordReplayControl.shouldUpdateProgressCounter(script.url);
 }
 
 dbg.onNewScript = function(script) {
