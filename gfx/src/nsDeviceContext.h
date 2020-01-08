@@ -112,12 +112,6 @@ public:
 
 
 
-    static int32_t AppUnitsPerCSSInch() { return mozilla::AppUnitsPerCSSInch(); }
-
-    
-
-
-
     int32_t AppUnitsPerDevPixelAtUnitFullZoom() const
     { return mAppUnitsPerDevPixelAtUnitFullZoom; }
 
