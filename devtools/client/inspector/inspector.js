@@ -873,6 +873,8 @@ Inspector.prototype = {
       hideTabstripe: true
     });
 
+    
+    
     let defaultTab = Services.prefs.getCharPref("devtools.inspector.activeSidebar");
 
     if (this.is3PaneModeEnabled && defaultTab === "ruleview") {
