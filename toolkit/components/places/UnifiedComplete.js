@@ -4,6 +4,7 @@
 
 
 
+
 "use strict";
 
 
@@ -613,8 +614,20 @@ function Search(searchString, searchParam, autocompleteListener,
                           parseInt(userContextId[1], 10) :
                           Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID;
 
-  this._searchTokens =
-    this.filterTokens(getUnfilteredSearchTokens(this._searchString));
+  let unfilteredTokens = getUnfilteredSearchTokens(this._searchString);
+
+  
+  
+  
+  if (unfilteredTokens.length > 1 &&
+      this._trimmedOriginalSearchString.startsWith(unfilteredTokens[0]) &&
+      Object.values(UrlbarTokenizer.RESTRICT).includes(unfilteredTokens[0])) {
+    this._leadingRestrictionToken = unfilteredTokens[0];
+  } else if (this._trimmedOriginalSearchString.startsWith(UrlbarTokenizer.RESTRICT.SEARCH)) {
+    this._leadingRestrictionToken = UrlbarTokenizer.RESTRICT.SEARCH;
+  }
+
+  this._searchTokens = this.filterTokens(unfilteredTokens);
 
   
   
@@ -898,9 +911,18 @@ Search.prototype = {
       
       
       
-      if (this._searchEngineAliasMatch &&
-          this._searchEngineAliasMatch.isTokenAlias &&
-          !this._searchEngineAliasMatch.query) {
+      
+      
+      
+      
+      
+      let emptyQueryTokenAlias = this._searchEngineAliasMatch &&
+                                  this._searchEngineAliasMatch.isTokenAlias &&
+                                  !this._searchEngineAliasMatch.query;
+      let emptySearchRestriction = this._trimmedOriginalSearchString.length <= 3 &&
+                                   this._leadingRestrictionToken == UrlbarTokenizer.RESTRICT.SEARCH &&
+                                   /\s*\S?$/.test(this._trimmedOriginalSearchString);
+      if (emptySearchRestriction || emptyQueryTokenAlias) {
         this._cleanUpNonCurrentMatches(null, false);
         this._autocompleteSearch.finishSearch(true);
         return;
@@ -1574,10 +1596,11 @@ Search.prototype = {
     if (!engine || !this.pending) {
       return false;
     }
-    this._addSearchEngineMatch({
-      engine,
-      query: this._originalSearchString,
-    });
+    
+    let query = this._leadingRestrictionToken ?
+      substringAfter(this._trimmedOriginalSearchString, this._leadingRestrictionToken).trim() :
+      this._trimmedOriginalSearchString;
+    this._addSearchEngineMatch({ engine, query });
     return true;
   },
 
