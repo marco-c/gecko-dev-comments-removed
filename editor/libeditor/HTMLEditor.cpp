@@ -89,28 +89,15 @@ GetLowerCaseNameAtom(const nsAString& aTagName)
 
 
 static bool
-IsLinkTag(const nsString& s)
-{
-  return s.EqualsIgnoreCase("href");
-}
-
-static bool
 IsLinkTag(const nsAtom& aTagName)
 {
-  return aTagName.Equals(NS_LITERAL_STRING("href"));
-}
-
-static bool
-IsNamedAnchorTag(const nsString& s)
-{
-  return s.EqualsIgnoreCase("anchor") || s.EqualsIgnoreCase("namedanchor");
+  return &aTagName == nsGkAtoms::href;
 }
 
 static bool
 IsNamedAnchorTag(const nsAtom& aTagName)
 {
-  return aTagName.Equals(NS_LITERAL_STRING("anchor")) ||
-         aTagName.Equals(NS_LITERAL_STRING("namedanchor"));
+  return &aTagName == nsGkAtoms::anchor;
 }
 
 template EditorDOMPoint
@@ -1106,24 +1093,38 @@ HTMLEditor::TabInTable(bool inIsShift,
   NS_ENSURE_TRUE(outHandled, NS_ERROR_NULL_POINTER);
   *outHandled = false;
 
-  
-  nsCOMPtr<Element> cellElement =
-    GetElementOrParentByTagName(NS_LITERAL_STRING("td"), nullptr);
-  
-  NS_ENSURE_TRUE(cellElement, NS_OK);
+  RefPtr<Selection> selection = GetSelection();
+  if (NS_WARN_IF(!selection)) {
+    
+    return NS_OK;
+  }
 
   
-  nsCOMPtr<Element> table = GetEnclosingTable(cellElement);
-  NS_ENSURE_TRUE(table, NS_OK);
+  Element* cellElement =
+    GetElementOrParentByTagNameAtSelection(*selection, *nsGkAtoms::td);
+  if (NS_WARN_IF(!cellElement)) {
+    
+    return NS_OK;
+  }
+
+  
+  RefPtr<Element> table = GetEnclosingTable(cellElement);
+  if (NS_WARN_IF(!table)) {
+    return NS_OK;
+  }
 
   
   
   nsCOMPtr<nsIContentIterator> iter = NS_NewContentIterator();
   nsresult rv = iter->Init(table);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
   
   rv = iter->PositionAt(cellElement);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   nsCOMPtr<nsINode> node;
   do {
@@ -2527,84 +2528,93 @@ HTMLEditor::Align(const nsAString& aAlignType)
   return rules->DidDoAction(selection, subActionInfo, rv);
 }
 
-already_AddRefed<Element>
-HTMLEditor::GetElementOrParentByTagName(const nsAString& aTagName,
+Element*
+HTMLEditor::GetElementOrParentByTagName(const nsAtom& aTagName,
                                         nsINode* aNode)
 {
-  MOZ_ASSERT(!aTagName.IsEmpty());
+  MOZ_ASSERT(&aTagName != nsGkAtoms::_empty);
 
-  nsCOMPtr<nsINode> node = aNode;
-  if (!node) {
-    
-    RefPtr<Selection> selection = GetSelection();
-    if (NS_WARN_IF(!selection)) {
-      return nullptr;
-    }
-
-    const EditorDOMPoint atAnchor(selection->AnchorRef());
-    if (NS_WARN_IF(!atAnchor.IsSet())) {
-      return nullptr;
-    }
-
-    
-    if (atAnchor.GetContainer()->HasChildNodes() &&
-        atAnchor.GetContainerAsContent()) {
-      node = atAnchor.GetChild();
-    }
-    
-    if (!node) {
-      node = atAnchor.GetContainer();
-    }
+  if (aNode) {
+    return GetElementOrParentByTagNameInternal(aTagName, *aNode);
   }
+  RefPtr<Selection> selection = GetSelection();
+  if (NS_WARN_IF(!selection)) {
+    return nullptr;
+  }
+  return GetElementOrParentByTagNameAtSelection(*selection, aTagName);
+}
 
-  nsCOMPtr<Element> current;
-  if (node->IsElement()) {
-    current = node->AsElement();
-  } else if (node->GetParentElement()) {
-    current = node->GetParentElement();
-  } else {
-    
-    MOZ_ASSERT(!node->GetParentNode() ||
-               !node->GetParentNode()->GetParentNode());
+Element*
+HTMLEditor::GetElementOrParentByTagNameAtSelection(Selection& aSelection,
+                                                   const nsAtom& aTagName)
+{
+  MOZ_ASSERT(&aTagName != nsGkAtoms::_empty);
+
+  
+  const EditorRawDOMPoint atAnchor(aSelection.AnchorRef());
+  if (NS_WARN_IF(!atAnchor.IsSet())) {
     return nullptr;
   }
 
-  nsAutoString tagName(aTagName);
-  ToLowerCase(tagName);
-  bool getLink = IsLinkTag(tagName);
-  bool getNamedAnchor = IsNamedAnchorTag(tagName);
-  if (getLink || getNamedAnchor) {
-    tagName.Assign('a');
+  
+  nsCOMPtr<nsINode> node;
+  if (atAnchor.GetContainer()->HasChildNodes() &&
+      atAnchor.GetContainerAsContent()) {
+    node = atAnchor.GetChild();
   }
-  bool findTableCell = tagName.EqualsLiteral("td");
-  bool findList = tagName.EqualsLiteral("list");
-
-  for (; current; current = current->GetParentElement()) {
-    
-    if ((getLink && HTMLEditUtils::IsLink(current)) ||
-        (getNamedAnchor && HTMLEditUtils::IsNamedAnchor(current))) {
-      return current.forget();
+  
+  if (!node) {
+    node = atAnchor.GetContainer();
+    if (NS_WARN_IF(!node)) {
+      return nullptr;
     }
-    if (findList) {
+  }
+  return GetElementOrParentByTagNameInternal(aTagName, *node);
+}
+
+Element*
+HTMLEditor::GetElementOrParentByTagNameInternal(const nsAtom& aTagName,
+                                                nsINode& aNode)
+{
+  MOZ_ASSERT(&aTagName != nsGkAtoms::_empty);
+
+  Element* currentElement =
+    aNode.IsElement() ? aNode.AsElement() : aNode.GetParentElement();
+  if (NS_WARN_IF(!currentElement)) {
+    
+    MOZ_ASSERT(!aNode.GetParentNode() ||
+               !aNode.GetParentNode()->GetParentNode());
+    return nullptr;
+  }
+
+  bool getLink = IsLinkTag(aTagName);
+  bool getNamedAnchor = IsNamedAnchorTag(aTagName);
+  const nsAtom& tagName = getLink || getNamedAnchor ? *nsGkAtoms::a : aTagName;
+  for (; currentElement; currentElement = currentElement->GetParentElement()) {
+    
+    if ((getLink && HTMLEditUtils::IsLink(currentElement)) ||
+        (getNamedAnchor && HTMLEditUtils::IsNamedAnchor(currentElement))) {
+      return currentElement;
+    }
+    if (&tagName == nsGkAtoms::list_) {
       
-      if (HTMLEditUtils::IsList(current)) {
-        return current.forget();
+      if (HTMLEditUtils::IsList(currentElement)) {
+        return currentElement;
       }
-    } else if (findTableCell) {
+    } else if (&tagName == nsGkAtoms::td) {
       
-      if (HTMLEditUtils::IsTableCell(current)) {
-        return current.forget();
+      if (HTMLEditUtils::IsTableCell(currentElement)) {
+        return currentElement;
       }
-    } else if (current->NodeName().Equals(tagName,
-                   nsCaseInsensitiveStringComparator())) {
-      return current.forget();
+    } else if (&tagName == currentElement->NodeInfo()->NameAtom()) {
+      return currentElement;
     }
 
     
     
     
-    if (current->GetParentElement() &&
-        current->GetParentElement()->IsHTMLElement(nsGkAtoms::body)) {
+    if (currentElement->GetParentElement() &&
+        currentElement->GetParentElement()->IsHTMLElement(nsGkAtoms::body)) {
       break;
     }
   }
@@ -2617,15 +2627,20 @@ HTMLEditor::GetElementOrParentByTagName(const nsAString& aTagName,
                                         nsINode* aNode,
                                         Element** aReturn)
 {
-  NS_ENSURE_TRUE(!aTagName.IsEmpty(), NS_ERROR_NULL_POINTER);
-  NS_ENSURE_TRUE(aReturn, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(aTagName.IsEmpty()) ||
+      NS_WARN_IF(!aReturn)) {
+    return NS_ERROR_INVALID_ARG;
+  }
 
-  RefPtr<Element> parent = GetElementOrParentByTagName(aTagName, aNode);
+  RefPtr<nsAtom> tagName = GetLowerCaseNameAtom(aTagName);
+  if (NS_WARN_IF(!tagName) || NS_WARN_IF(tagName == nsGkAtoms::_empty)) {
+    return NS_ERROR_INVALID_ARG;
+  }
 
+  RefPtr<Element> parent = GetElementOrParentByTagName(*tagName, aNode);
   if (!parent) {
     return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
   }
-
   parent.forget(aReturn);
   return NS_OK;
 }
@@ -2707,22 +2722,22 @@ HTMLEditor::GetSelectedElement(Selection& aSelection,
     const RangeBoundary& focus = aSelection.FocusRef();
     
     if (anchor.IsSet()) {
-      RefPtr<Element> parentLinkOfAnchor =
-        GetElementOrParentByTagName(NS_LITERAL_STRING("href"),
-                                    anchor.Container());
+      Element* parentLinkOfAnchor =
+        GetElementOrParentByTagNameInternal(*nsGkAtoms::href,
+                                            *anchor.Container());
       
       if (parentLinkOfAnchor) {
         if (aSelection.IsCollapsed()) {
           
-          return parentLinkOfAnchor.forget();
+          return do_AddRef(parentLinkOfAnchor);
         }
         if (focus.IsSet()) {
           
-          RefPtr<Element> parentLinkOfFocus =
-            GetElementOrParentByTagName(NS_LITERAL_STRING("href"),
-                                        focus.Container());
+          Element* parentLinkOfFocus =
+            GetElementOrParentByTagNameInternal(*nsGkAtoms::href,
+                                                *focus.Container());
           if (parentLinkOfFocus == parentLinkOfAnchor) {
-            return parentLinkOfAnchor.forget();
+            return do_AddRef(parentLinkOfAnchor);
           }
         }
       } else if (anchor.GetChildAtOffset() && focus.GetChildAtOffset()) {
