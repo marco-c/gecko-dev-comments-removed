@@ -17,6 +17,9 @@ const TEST_URI =
   `;
 
 add_task(async function() {
+  
+  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
+
   const hud = await openNewTabAndConsole(TEST_URI);
   info("Web Console opened");
   const outputScroller = hud.ui.outputScroller;

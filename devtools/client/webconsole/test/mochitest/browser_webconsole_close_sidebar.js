@@ -11,9 +11,9 @@ const TEST_URI = "data:text/html;charset=utf8,";
 
 add_task(async function() {
   
-  await SpecialPowers.pushPrefEnv({"set": [
-    ["devtools.webconsole.sidebarToggle", true]
-  ]});
+  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
+  
+  await pushPref("devtools.webconsole.sidebarToggle", true);
 
   const hud = await openNewTabAndConsole(TEST_URI);
   await showSidebar(hud);

@@ -7,7 +7,7 @@
 "use strict";
 
 
-const { createFactory } = require("devtools/client/shared/vendor/react");
+const { createElement, createFactory } = require("devtools/client/shared/vendor/react");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const Message = createFactory(require("devtools/client/webconsole/components/Message"));
 
@@ -34,9 +34,12 @@ function ConsoleCommand(props) {
     source,
     type,
     level,
-    messageText: messageBody,
+    messageText,
   } = message;
 
+  
+  
+  const messageBody = createElement("syntax-highlighted", null, messageText);
   return Message({
     source,
     type,

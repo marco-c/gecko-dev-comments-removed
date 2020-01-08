@@ -8,6 +8,9 @@
 const TEST_URI = "data:text/html;charset=utf-8,<p>Web Console test for splitting</p>";
 
 add_task(async function() {
+  
+  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
+
   info("Test that the split console input is focused and restores the focus properly.");
 
   const toolbox = await openNewTabAndToolbox(TEST_URI, "inspector");

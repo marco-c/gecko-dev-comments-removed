@@ -10,6 +10,8 @@ const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
 
 add_task(async function() {
   
+  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
+  
   await pushPref("devtools.browserconsole.filter.net", true);
   
   await pushPref("devtools.chrome.enabled", true);
