@@ -282,6 +282,19 @@ function createDataChannelPair(
 }
 
 
+async function waitForRtpAndRtcpStats(pc) {
+  while (true) {
+    const report = await pc.getStats();
+    const stats = [...report.values()].filter(({type}) => type.endsWith("bound-rtp"));
+    
+    
+    if (stats.length && stats.every(({localId, remoteId}) => localId || remoteId)) {
+      break;
+    }
+  }
+}
+
+
 
 function awaitMessage(channel) {
   return new Promise((resolve, reject) => {
