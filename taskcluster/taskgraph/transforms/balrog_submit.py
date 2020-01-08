@@ -17,17 +17,12 @@ from taskgraph.util.scriptworker import (
     get_balrog_server_scope, get_worker_type_for_scope
 )
 from taskgraph.transforms.task import task_description_schema
-from voluptuous import Any, Required, Optional
+from voluptuous import Optional
 
 
 
 
 task_description_schema = {str(k): v for k, v in task_description_schema.schema.iteritems()}
-
-
-taskref_or_string = Any(
-    basestring,
-    {Required('task-reference'): basestring})
 
 balrog_description_schema = schema.extend({
     

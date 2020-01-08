@@ -17,20 +17,15 @@ from taskgraph.util.schema import (
     resolve_keyed_by,
 )
 from taskgraph.util.taskcluster import get_artifact_prefix
-from taskgraph.util.platforms import archive_format, executable_extension, architecture
+from taskgraph.util.platforms import archive_format, executable_extension
 from taskgraph.util.workertypes import worker_type_implementation
 from taskgraph.transforms.job import job_description_schema
-from voluptuous import Any, Required, Optional
+from voluptuous import Required, Optional
 
 
 
 job_description_schema = {str(k): v for k, v in job_description_schema.schema.iteritems()}
 
-
-
-taskref_or_string = Any(
-    basestring,
-    {Required('task-reference'): basestring})
 
 packaging_description_schema = schema.extend({
     
@@ -89,8 +84,7 @@ packaging_description_schema = schema.extend({
 
 PACKAGE_FORMATS = {
     'mar': {
-        'args': ['mar',
-                 '--arch', '{architecture}'],
+        'args': ['mar'],
         'inputs': {
             'input': 'target{archive_format}',
             'mar': 'mar{executable_extension}',
@@ -109,7 +103,7 @@ PACKAGE_FORMATS = {
         'args': ['msi', '--wsx', '{wsx-stub}',
                  '--version', '{version_display}',
                  '--locale', '{_locale}',
-                 '--arch', '{architecture}',
+                 '--arch', '{_arch}',
                  '--candle', '{fetch-dir}/candle.exe',
                  '--light', '{fetch-dir}/light.exe'],
         'inputs': {
@@ -264,13 +258,14 @@ def make_job_description(config, jobs):
         if use_stub and not repackage_signing_task:
             
             package_formats += ['installer-stub']
+        _fetch_subst_arch = 'x86' if 'win32' in build_platform else 'x64'
         for format in package_formats:
             command = copy.deepcopy(PACKAGE_FORMATS[format])
             substs = {
                 'archive_format': archive_format(build_platform),
                 'executable_extension': executable_extension(build_platform),
                 '_locale': _fetch_subst_locale,
-                'architecture': architecture(build_platform),
+                '_arch': _fetch_subst_arch,
                 'version_display': config.params['version'],
             }
             

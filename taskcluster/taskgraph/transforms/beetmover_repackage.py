@@ -19,7 +19,7 @@ from taskgraph.util.scriptworker import (get_beetmover_bucket_scope,
                                          get_worker_type_for_scope)
 from taskgraph.util.taskcluster import get_artifact_prefix
 from taskgraph.transforms.task import task_description_schema
-from voluptuous import Any, Required, Optional
+from voluptuous import Required, Optional
 
 import logging
 import re
@@ -98,7 +98,7 @@ UPSTREAM_ARTIFACT_UNSIGNED_PATHS = _compile_regex_mapping({
                     "host/bin/mar.exe",
                     "host/bin/mbsdiff.exe",
                 ]),
-    r'^win(32|64(|-aarch64-msvc))(|-devedition)-nightly$':
+    r'^win(32|64)(|-devedition)-nightly$':
         _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US + [
             'host/bin/mar.exe',
             'host/bin/mbsdiff.exe',
@@ -114,7 +114,7 @@ UPSTREAM_ARTIFACT_UNSIGNED_PATHS = _compile_regex_mapping({
 UPSTREAM_ARTIFACT_SIGNED_PATHS = _compile_regex_mapping({
     r'^linux(|64)(|-devedition|-asan-reporter)-nightly(|-l10n)$':
         ['target.tar.bz2', 'target.tar.bz2.asc'],
-    r'^win(32|64)(|-aarch64-msvc)(|-devedition|-asan-reporter)-nightly(|-l10n)$': ['target.zip'],
+    r'^win(32|64)(|-devedition|-asan-reporter)-nightly(|-l10n)$': ['target.zip'],
 })
 
 
@@ -145,11 +145,6 @@ UPSTREAM_ARTIFACT_SIGNED_MAR_PATHS = [
 
 
 task_description_schema = {str(k): v for k, v in task_description_schema.schema.iteritems()}
-
-
-taskref_or_string = Any(
-    basestring,
-    {Required('task-reference'): basestring})
 
 beetmover_description_schema = schema.extend({
     
