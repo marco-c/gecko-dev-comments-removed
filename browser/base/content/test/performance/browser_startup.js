@@ -31,7 +31,6 @@ const startupPhases = {
       "MainProcessSingleton.js",
 
       
-      "WebContentConverter.js", 
       "nsSessionStartup.js", 
       "PushComponents.js", 
     ]),

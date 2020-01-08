@@ -207,7 +207,6 @@ const listeners = {
     
 
     "FeedConverter:addLiveBookmark": ["Feeds"],
-    "WCCR:setAutoHandler": ["Feeds"],
     "webrtc:UpdateGlobalIndicators": ["webrtcUI"],
     "webrtc:UpdatingIndicators": ["webrtcUI"],
   },
@@ -232,7 +231,6 @@ const listeners = {
     "LoginStats:LoginEncountered": ["LoginManagerParent"],
     
     "WCCR:registerProtocolHandler": ["Feeds"],
-    "WCCR:registerContentHandler": ["Feeds"],
     "rtcpeer:CancelRequest": ["webrtcUI"],
     "rtcpeer:Request": ["webrtcUI"],
     "webrtc:CancelRequest": ["webrtcUI"],
