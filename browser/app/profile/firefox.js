@@ -429,11 +429,7 @@ pref("browser.link.open_newwindow.disabled_in_fullscreen", false);
 #endif
 
 
-#ifdef EARLY_BETA_OR_EARLIER
 pref("browser.tabs.multiselect", true);
-#else
-pref("browser.tabs.multiselect", false);
-#endif
 pref("browser.tabs.20FpsThrobber", false);
 pref("browser.tabs.30FpsThrobber", false);
 pref("browser.tabs.closeTabByDblclick", false);
@@ -1254,6 +1250,14 @@ pref("browser.library.activity-stream.enabled", true);
 
 
 pref("browser.newtabpage.activity-stream.fxaccounts.endpoint", "https://accounts.firefox.com/");
+
+
+#ifdef EARLY_BETA_OR_EARLIER
+pref("browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts", true);
+#else
+pref("browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts", false);
+#else
+#endif
 
 
 pref("full-screen-api.enabled", true);
