@@ -67,10 +67,11 @@ class ServoElementSnapshot
 public:
   typedef ServoElementSnapshotFlags Flags;
 
-  explicit ServoElementSnapshot(const Element* aElement);
+  explicit ServoElementSnapshot(const Element&);
 
   ~ServoElementSnapshot()
   {
+    MOZ_ASSERT(NS_IsMainThread());
     MOZ_COUNT_DTOR(ServoElementSnapshot);
   }
 
@@ -100,13 +101,13 @@ public:
 
 
 
-  inline void AddAttrs(Element*, int32_t aNameSpaceID, nsAtom* aAttribute);
+  inline void AddAttrs(const Element&, int32_t aNameSpaceID, nsAtom* aAttribute);
 
   
 
 
 
-  void AddOtherPseudoClassState(Element* aElement);
+  void AddOtherPseudoClassState(const Element&);
 
   
 
@@ -194,7 +195,7 @@ private:
 
 
 inline void
-ServoElementSnapshot::AddAttrs(mozilla::dom::Element* aElement,
+ServoElementSnapshot::AddAttrs(const Element& aElement,
                                int32_t aNameSpaceID,
                                nsAtom* aAttribute)
 {
@@ -214,20 +215,20 @@ ServoElementSnapshot::AddAttrs(mozilla::dom::Element* aElement,
     return;
   }
 
-  uint32_t attrCount = aElement->GetAttrCount();
+  uint32_t attrCount = aElement.GetAttrCount();
   mAttrs.SetCapacity(attrCount);
   for (uint32_t i = 0; i < attrCount; ++i) {
-    const BorrowedAttrInfo info = aElement->GetAttrInfoAt(i);
+    const BorrowedAttrInfo info = aElement.GetAttrInfoAt(i);
     MOZ_ASSERT(info);
     mAttrs.AppendElement(ServoAttrSnapshot { *info.mName, *info.mValue });
   }
 
   mContains |= Flags::Attributes;
-  if (aElement->HasID()) {
+  if (aElement.HasID()) {
     mContains |= Flags::Id;
   }
 
-  if (const nsAttrValue* classValue = aElement->GetClasses()) {
+  if (const nsAttrValue* classValue = aElement.GetClasses()) {
     
     
     

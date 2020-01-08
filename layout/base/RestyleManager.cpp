@@ -496,7 +496,7 @@ RestyleManager::ContentRemoved(nsIContent* aOldChild,
 
 
 void
-RestyleManager::ContentStateChangedInternal(Element* aElement,
+RestyleManager::ContentStateChangedInternal(const Element& aElement,
                                             EventStates aStateMask,
                                             nsChangeHint* aOutChangeHint)
 {
@@ -510,7 +510,7 @@ RestyleManager::ContentStateChangedInternal(Element* aElement,
   
   
   
-  nsIFrame* primaryFrame = aElement->GetPrimaryFrame();
+  nsIFrame* primaryFrame = aElement.GetPrimaryFrame();
   if (primaryFrame) {
     
     if (!primaryFrame->IsGeneratedContentFrame() &&
@@ -2200,8 +2200,8 @@ ServoRestyleState::TableAwareParentFor(const nsIFrame* aChild)
 
 void
 RestyleManager::PostRestyleEvent(Element* aElement,
-                                      nsRestyleHint aRestyleHint,
-                                      nsChangeHint aMinChangeHint)
+                                 nsRestyleHint aRestyleHint,
+                                 nsChangeHint aMinChangeHint)
 {
   MOZ_ASSERT(!(aMinChangeHint & nsChangeHint_NeutralChange),
              "Didn't expect explicit change hints to be neutral!");
@@ -2945,7 +2945,7 @@ RestyleManager::ClearSnapshots()
 }
 
 ServoElementSnapshot&
-RestyleManager::SnapshotFor(Element* aElement)
+RestyleManager::SnapshotFor(Element& aElement)
 {
   MOZ_ASSERT(!mInStyleRefresh);
 
@@ -2959,14 +2959,14 @@ RestyleManager::SnapshotFor(Element* aElement)
   
   
   
-  MOZ_ASSERT(aElement->HasServoData());
-  MOZ_ASSERT(!aElement->HasFlag(ELEMENT_HANDLED_SNAPSHOT));
+  MOZ_ASSERT(aElement.HasServoData());
+  MOZ_ASSERT(!aElement.HasFlag(ELEMENT_HANDLED_SNAPSHOT));
 
-  ServoElementSnapshot* snapshot = mSnapshots.LookupOrAdd(aElement, aElement);
-  aElement->SetFlags(ELEMENT_HAS_SNAPSHOT);
+  ServoElementSnapshot* snapshot = mSnapshots.LookupOrAdd(&aElement, aElement);
+  aElement.SetFlags(ELEMENT_HAS_SNAPSHOT);
 
   
-  aElement->NoteDirtyForServo();
+  aElement.NoteDirtyForServo();
   return *snapshot;
 }
 
@@ -3177,30 +3177,33 @@ RestyleManager::ContentStateChanged(nsIContent* aContent,
     return;
   }
 
-  Element* aElement = aContent->AsElement();
-  if (!aElement->HasServoData()) {
+  Element& element = *aContent->AsElement();
+  if (!element.HasServoData()) {
     return;
   }
 
   nsChangeHint changeHint;
-  ContentStateChangedInternal(aElement, aChangedBits, &changeHint);
+  ContentStateChangedInternal(element, aChangedBits, &changeHint);
 
+  
+  
+  
   
   
   
   
   
   if (!aChangedBits.HasAtLeastOneOfStates(DIRECTION_STATES) &&
-      !StyleSet()->HasStateDependency(*aElement, aChangedBits)) {
+      !StyleSet()->HasStateDependency(element, aChangedBits)) {
     return;
   }
 
-  ServoElementSnapshot& snapshot = SnapshotFor(aElement);
-  EventStates previousState = aElement->StyleState() ^ aChangedBits;
+  ServoElementSnapshot& snapshot = SnapshotFor(element);
+  EventStates previousState = element.StyleState() ^ aChangedBits;
   snapshot.AddState(previousState);
 
   if (changeHint) {
-    Servo_NoteExplicitHints(aElement, nsRestyleHint(0), changeHint);
+    Servo_NoteExplicitHints(&element, nsRestyleHint(0), changeHint);
   }
 
   
@@ -3271,30 +3274,30 @@ RestyleManager::AttributeWillChange(Element* aElement,
                                     int32_t aModType,
                                     const nsAttrValue* aNewValue)
 {
-  TakeSnapshotForAttributeChange(aElement, aNameSpaceID, aAttribute);
+  TakeSnapshotForAttributeChange(*aElement, aNameSpaceID, aAttribute);
 }
 
 void
 RestyleManager::ClassAttributeWillBeChangedBySMIL(Element* aElement)
 {
-  TakeSnapshotForAttributeChange(aElement, kNameSpaceID_None,
+  TakeSnapshotForAttributeChange(*aElement, kNameSpaceID_None,
                                  nsGkAtoms::_class);
 }
 
 void
-RestyleManager::TakeSnapshotForAttributeChange(Element* aElement,
+RestyleManager::TakeSnapshotForAttributeChange(Element& aElement,
                                                int32_t aNameSpaceID,
                                                nsAtom* aAttribute)
 {
   MOZ_ASSERT(!mInStyleRefresh);
 
-  if (!aElement->HasServoData()) {
+  if (!aElement.HasServoData()) {
     return;
   }
 
   bool influencesOtherPseudoClassState;
   if (!NeedToRecordAttrChange(*StyleSet(),
-                              *aElement,
+                              aElement,
                               aNameSpaceID,
                               aAttribute,
                               &influencesOtherPseudoClassState)) {
