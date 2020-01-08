@@ -224,10 +224,7 @@ nsThreadPool::Run()
           TimeDuration delta = timeout - (now - idleSince);
           LOG(("THRD-P(%p) %s waiting [%f]\n", this, mName.BeginReading(),
                delta.ToMilliseconds()));
-          {
-            AUTO_PROFILER_THREAD_SLEEP;
-            mEventsAvailable.Wait(delta);
-          }
+          mEventsAvailable.Wait(delta);
           LOG(("THRD-P(%p) done waiting\n", this));
         }
       } else if (wasIdle) {
@@ -445,7 +442,13 @@ nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs)
     
     
     if (thread->mThread && contexts[i]) {
-      currentThread->mRequestedShutdownContexts.RemoveElement(contexts[i]);
+      auto index = currentThread->mRequestedShutdownContexts.IndexOf(contexts[i]);
+      if (index != nsThread::ShutdownContexts::NoIndex) {
+        
+        
+        currentThread->mRequestedShutdownContexts[index].forget();
+        currentThread->mRequestedShutdownContexts.RemoveElementsAt(index, 1);
+      }
     }
   }
 

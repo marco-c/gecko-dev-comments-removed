@@ -918,8 +918,9 @@ nsThread::ShutdownComplete(NotNull<nsThreadShutdownContext*> aContext)
 #endif
 
   
-  MOZ_ALWAYS_TRUE(
-    aContext->mJoiningThread->mRequestedShutdownContexts.RemoveElement(aContext));
+  
+  
+  aContext->mJoiningThread->mRequestedShutdownContexts.RemoveElement(aContext);
 }
 
 void

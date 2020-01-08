@@ -206,7 +206,8 @@ protected:
   RefPtr<mozilla::ThreadEventTarget> mEventTarget;
 
   
-  nsTArray<nsAutoPtr<struct nsThreadShutdownContext>> mRequestedShutdownContexts;
+  using ShutdownContexts = nsTArray<nsAutoPtr<struct nsThreadShutdownContext>>;
+  ShutdownContexts mRequestedShutdownContexts;
   
   struct nsThreadShutdownContext* mShutdownContext;
 
