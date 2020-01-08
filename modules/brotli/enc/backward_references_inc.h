@@ -10,9 +10,9 @@
 static BROTLI_NOINLINE void EXPORT_FN(CreateBackwardReferences)(
     size_t num_bytes, size_t position,
     const uint8_t* ringbuffer, size_t ringbuffer_mask,
-    const BrotliEncoderParams* params, HasherHandle hasher, int* dist_cache,
-    size_t* last_insert_len, Command* commands, size_t* num_commands,
-    size_t* num_literals) {
+    const BrotliEncoderParams* params,
+    HasherHandle hasher, int* dist_cache, size_t* last_insert_len,
+    Command* commands, size_t* num_commands, size_t* num_literals) {
   
   const size_t max_backward_limit = BROTLI_MAX_BACKWARD_LIMIT(params->lgwin);
 
@@ -42,9 +42,8 @@ static BROTLI_NOINLINE void EXPORT_FN(CreateBackwardReferences)(
     sr.distance = 0;
     sr.score = kMinScore;
     FN(FindLongestMatch)(hasher, &params->dictionary,
-                         ringbuffer, ringbuffer_mask, dist_cache, position,
-                         max_length, max_distance, gap,
-                         params->dist.max_distance, &sr);
+        ringbuffer, ringbuffer_mask, dist_cache, position, max_length,
+        max_distance, gap, params->dist.max_distance, &sr);
     if (sr.score > kMinScore) {
       
       int delayed_backward_references_in_row = 0;
@@ -58,7 +57,8 @@ static BROTLI_NOINLINE void EXPORT_FN(CreateBackwardReferences)(
         sr2.distance = 0;
         sr2.score = kMinScore;
         max_distance = BROTLI_MIN(size_t, position + 1, max_backward_limit);
-        FN(FindLongestMatch)(hasher, &params->dictionary,
+        FN(FindLongestMatch)(hasher,
+            &params->dictionary,
             ringbuffer, ringbuffer_mask, dist_cache, position + 1, max_length,
             max_distance, gap, params->dist.max_distance, &sr2);
         if (sr2.score >= sr.score + cost_diff_lazy) {
@@ -80,8 +80,8 @@ static BROTLI_NOINLINE void EXPORT_FN(CreateBackwardReferences)(
       {
         
 
-        size_t distance_code =
-            ComputeDistanceCode(sr.distance, max_distance + gap, dist_cache);
+        size_t distance_code = ComputeDistanceCode(
+            sr.distance, max_distance + gap, dist_cache);
         if ((sr.distance <= (max_distance + gap)) && distance_code > 0) {
           dist_cache[3] = dist_cache[2];
           dist_cache[2] = dist_cache[1];
