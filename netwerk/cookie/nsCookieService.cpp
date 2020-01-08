@@ -1998,8 +1998,8 @@ nsresult nsCookieService::GetCookieStringCommon(nsIURI *aHostURI,
     
     
     
-    if (isForeign && AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
-                         httpChannel, aHostURI, nullptr)) {
+    if (AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
+            httpChannel, aHostURI, nullptr)) {
       firstPartyStorageAccessGranted = true;
     }
   }
@@ -2099,8 +2099,8 @@ nsresult nsCookieService::SetCookieStringCommon(nsIURI *aHostURI,
     
     
     
-    if (isForeign && AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
-                         httpChannel, aHostURI, nullptr)) {
+    if (AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
+            httpChannel, aHostURI, nullptr)) {
       firstPartyStorageAccessGranted = true;
     }
   }
