@@ -432,7 +432,7 @@ BinTokenReaderMultipart::AutoBase::~AutoBase()
     
     
     
-    MOZ_ASSERT_IF(initialized_, reader_.cx_->isExceptionPending());
+    MOZ_ASSERT_IF(initialized_, reader_.hasRaisedError());
 }
 
 JS::Result<Ok>
@@ -462,7 +462,7 @@ BinTokenReaderMultipart::AutoList::done()
 {
     MOZ_ASSERT(initialized_);
     initialized_ = false;
-    if (reader_.cx_->isExceptionPending()) {
+    if (reader_.hasRaisedError()) {
         
         return reader_.cx_->alreadyReportedError();
     }
@@ -513,7 +513,7 @@ BinTokenReaderMultipart::AutoTaggedTuple::done()
 {
     MOZ_ASSERT(initialized_);
     initialized_ = false;
-    if (reader_.cx_->isExceptionPending()) {
+    if (reader_.hasRaisedError()) {
         
         return reader_.cx_->alreadyReportedError();
     }
@@ -530,7 +530,7 @@ BinTokenReaderMultipart::AutoTuple::done()
 {
     MOZ_ASSERT(initialized_);
     initialized_ = false;
-    if (reader_.cx_->isExceptionPending()) {
+    if (reader_.hasRaisedError()) {
         
         return reader_.cx_->alreadyReportedError();
     }
