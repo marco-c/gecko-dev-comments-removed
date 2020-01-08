@@ -368,18 +368,16 @@ AddTransformFunctions(const nsCSSValueList* aList,
         break;
       }
       case eCSSKeyword_interpolatematrix: {
-        bool dummy;
         Matrix4x4 matrix;
         nsStyleTransformMatrix::ProcessInterpolateMatrix(
-          matrix, array, aRefBox, &dummy);
+          matrix, array, aRefBox);
         aFunctions.AppendElement(TransformMatrix(matrix));
         break;
       }
       case eCSSKeyword_accumulatematrix: {
-        bool dummy;
         Matrix4x4 matrix;
         nsStyleTransformMatrix::ProcessAccumulateMatrix(
-          matrix, array, aRefBox, &dummy);
+          matrix, array, aRefBox);
         aFunctions.AppendElement(TransformMatrix(matrix));
         break;
       }
@@ -444,13 +442,10 @@ SetAnimatable(nsCSSPropertyID aProperty,
       break;
     case eCSSProperty_transform: {
       aAnimatable = InfallibleTArray<TransformFunction>();
-      if (aAnimationValue.mServo) {
-        RefPtr<nsCSSValueSharedList> list;
-        Servo_AnimationValue_GetTransform(aAnimationValue.mServo, &list);
-        AddTransformFunctions(list, aFrame, aRefBox, aAnimatable);
-      } else {
-        MOZ_CRASH("old style system disabled");
-      }
+      MOZ_ASSERT(aAnimationValue.mServo);
+      RefPtr<nsCSSValueSharedList> list;
+      Servo_AnimationValue_GetTransform(aAnimationValue.mServo, &list);
+      AddTransformFunctions(list, aFrame, aRefBox, aAnimatable);
       break;
     }
     default:
@@ -8379,7 +8374,6 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(
   }
 
   
-  bool dummyBool;
   Matrix4x4 result;
   
   
@@ -8398,8 +8392,7 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(
       aProperties.mMotion,
       aProperties.mTransformList ? aProperties.mTransformList->mHead : nullptr,
       refBox,
-      aAppUnitsPerPixel,
-      &dummyBool);
+      aAppUnitsPerPixel);
   } else if (hasSVGTransforms) {
     
     float pixelsPerCSSPx = AppUnitsPerCSSPixel() / aAppUnitsPerPixel;
