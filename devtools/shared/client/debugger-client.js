@@ -332,6 +332,12 @@ DebuggerClient.prototype = {
 
 
 
+
+
+
+
+
+
   attachTarget: function(targetActor) {
     if (this._clients.has(targetActor)) {
       const cachedTarget = this._clients.get(targetActor);
@@ -395,6 +401,23 @@ DebuggerClient.prototype = {
   },
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
