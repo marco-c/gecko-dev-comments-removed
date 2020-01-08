@@ -181,7 +181,12 @@ BoxModel.prototype = {
       this._updateReasons = [];
 
       return null;
-    }).bind(this))().catch(console.error);
+    }).bind(this))().catch(error => {
+      
+      if (this.document) {
+        console.error(error);
+      }
+    });
 
     this._lastRequest = lastRequest;
   },
