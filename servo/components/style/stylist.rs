@@ -1208,11 +1208,6 @@ impl Stylist {
         let mut shadow_cascade_order = 0;
 
         
-        
-        
-        
-        
-        
         if let Some(shadow) = rule_hash_target.shadow_root() {
             debug_assert!(
                 matches_user_and_author_rules,
