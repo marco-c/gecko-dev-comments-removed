@@ -35,7 +35,6 @@
 #include "nsIChannel.h"
 #include "nsUnicharUtils.h"
 #include "mozilla/net/HttpAuthUtils.h"
-#include "mozilla/ClearOnShutdown.h"
 
 namespace mozilla {
 namespace net {
@@ -45,8 +44,6 @@ static const char kAllowNonFqdn[] = "network.automatic-ntlm-auth.allow-non-fqdn"
 static const char kTrustedURIs[]  = "network.automatic-ntlm-auth.trusted-uris";
 static const char kForceGeneric[] = "network.auth.force-generic-ntlm";
 static const char kSSOinPBmode[] = "network.auth.private-browsing-sso";
-
-StaticRefPtr<nsHttpNTLMAuth> nsHttpNTLMAuth::gSingleton;
 
 static bool
 IsNonFqdn(nsIURI *uri)
@@ -147,21 +144,6 @@ NS_IMPL_ISUPPORTS0(nsNTLMSessionState)
 
 
 
-already_AddRefed<nsIHttpAuthenticator>
-nsHttpNTLMAuth::GetOrCreate()
-{
-    nsCOMPtr<nsIHttpAuthenticator> authenticator;
-    if (gSingleton) {
-      authenticator = gSingleton;
-    } else {
-      gSingleton = new nsHttpNTLMAuth();
-      ClearOnShutdown(&gSingleton);
-      authenticator = gSingleton;
-    }
-
-    return authenticator.forget();
-}
-
 NS_IMPL_ISUPPORTS(nsHttpNTLMAuth, nsIHttpAuthenticator)
 
 NS_IMETHODIMP
@@ -186,7 +168,7 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel *channel,
     
     
     if (PL_strcasecmp(challenge, "NTLM") == 0) {
-        nsCOMPtr<nsIAuthModule> module;
+        nsCOMPtr<nsISupports> module;
 
         
         
@@ -201,7 +183,7 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel *channel,
                 
                 
                 
-                module = nsIAuthModule::CreateInstance("sys-ntlm");
+                module = do_CreateInstance(NS_AUTH_MODULE_CONTRACTID_PREFIX "sys-ntlm");
             }
 #ifdef XP_WIN
             else {
@@ -210,7 +192,7 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel *channel,
                 
                 
                 
-                module = nsIAuthModule::CreateInstance("sys-ntlm");
+                module = do_CreateInstance(NS_AUTH_MODULE_CONTRACTID_PREFIX "sys-ntlm");
                 *identityInvalid = true;
             }
 #endif 
@@ -238,7 +220,7 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel *channel,
             
             
             LOG(("Trying to fall back on internal ntlm auth.\n"));
-            module = nsIAuthModule::CreateInstance("ntlm");
+            module = do_CreateInstance(NS_AUTH_MODULE_CONTRACTID_PREFIX "ntlm");
 
             mUseNative = false;
 
@@ -254,7 +236,7 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel *channel,
 
         
         
-        module.forget(continuationState);
+        module.swap(*continuationState);
     }
     return NS_OK;
 }
