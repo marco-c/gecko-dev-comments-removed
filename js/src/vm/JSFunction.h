@@ -262,6 +262,14 @@ class JSFunction : public js::NativeObject
     }
     bool isLambda()                 const { return flags() & LAMBDA; }
     bool isInterpretedLazy()        const { return flags() & INTERPRETED_LAZY; }
+
+    
+    
+    
+    
+    
+    
+    
     bool hasScript()                const { return flags() & INTERPRETED; }
 
     bool infallibleIsDefaultClassConstructor(JSContext* cx) const;
