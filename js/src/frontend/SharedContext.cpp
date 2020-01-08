@@ -5,6 +5,9 @@
 
 
 #include "frontend/SharedContext.h"
+
+#include "frontend/ModuleSharedContext.h"
+
 #include "frontend/ParseContext-inl.h"
 #include "vm/EnvironmentObject-inl.h"
 
