@@ -445,7 +445,8 @@ private:
   Monitor mMonitor;
 
   
-  InfallibleVector<char, 0, AllocPolicy<MemoryKind::Generic>> mMessageBuffer;
+  typedef InfallibleVector<char, 0, AllocPolicy<MemoryKind::Generic>> MessageBuffer;
+  MessageBuffer* mMessageBuffer;
 
   
   size_t mMessageBytes;
