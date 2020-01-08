@@ -176,11 +176,6 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
       mCurAppUnitsPerDevPixel(0),
       mAutoQualityMinFontSizePixelsPref(0),
       mLangService(nsLanguageAtomService::GetService()),
-      
-      
-      mLastResizeEventVisibleArea(nsRect(nscoord_MIN, nscoord_MIN,
-                                         NS_UNCONSTRAINEDSIZE,
-                                         NS_UNCONSTRAINEDSIZE)),
       mPageSize(-1, -1),
       mPageScale(0.0),
       mPPScale(1.0f),
