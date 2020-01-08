@@ -4214,7 +4214,7 @@ SearchService.prototype = {
           
           
           
-          const urlTest = /^(?:www\.google\.|search\.aol\.|yandex\.)|(?:search\.yahoo|\.ask|\.bing|\.startpage|\.baidu|\.duckduckgo)\.com$/;
+          const urlTest = /^(?:www\.google\.|search\.aol\.|yandex\.)|(?:search\.yahoo|\.ask|\.bing|\.startpage|\.baidu|duckduckgo)\.com$/;
           sendSubmissionURL = urlTest.test(engineHost);
         }
       }
