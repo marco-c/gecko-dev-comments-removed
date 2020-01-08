@@ -2028,6 +2028,12 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
     attrs.mAppId = nsIScriptSecurityManager::NO_APP_ID;
     attrs.mInIsolatedMozBrowser = OwnerIsIsolatedMozBrowserFrame();
     mDocShell->SetFrameType(nsIDocShell::FRAME_TYPE_BROWSER);
+  } else {
+    nsCOMPtr<nsIDocShellTreeItem> parentCheck;
+    mDocShell->GetSameTypeParent(getter_AddRefs(parentCheck));
+    if (!!parentCheck) {
+      mDocShell->SetIsFrame();
+    }
   }
 
   
