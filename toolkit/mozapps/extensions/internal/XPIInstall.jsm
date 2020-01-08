@@ -164,8 +164,7 @@ const DIR_TRASH                       = "trash";
 
 
 const PROP_METADATA      = ["id", "version", "type", "internalName", "updateURL",
-                            "optionsURL", "optionsType", "aboutURL",
-                            "iconURL", "icon64URL"];
+                            "optionsURL", "optionsType", "aboutURL", "iconURL"];
 const PROP_LOCALE_SINGLE = ["name", "description", "creator", "homepageURL"];
 const PROP_LOCALE_MULTI  = ["developers", "translators", "contributors"];
 
@@ -486,7 +485,6 @@ async function loadManifestFromWebManifest(aUri, aPackage) {
 
   
   addon.iconURL = null;
-  addon.icon64URL = null;
   addon.icons = manifest.icons || {};
   addon.userPermissions = extension.manifestPermissions;
 

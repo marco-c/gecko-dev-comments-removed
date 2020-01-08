@@ -2087,7 +2087,6 @@ var AddonManagerInternal = {
 
 
 
-
   getPreferredIconURL(aAddon, aSize, aWindow = undefined) {
     if (aWindow && aWindow.devicePixelRatio) {
       aSize *= aWindow.devicePixelRatio;
@@ -2101,9 +2100,6 @@ var AddonManagerInternal = {
       if (aAddon.iconURL) {
         icons[32] = aAddon.iconURL;
         icons[48] = aAddon.iconURL;
-      }
-      if (aAddon.icon64URL) {
-        icons[64] = aAddon.icon64URL;
       }
     }
 

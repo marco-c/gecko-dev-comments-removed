@@ -30,7 +30,6 @@ async function testSimpleIconsetParsing(manifest) {
 
     
     equal(addon.iconURL, uri + "icon48.png");
-    equal(addon.icon64URL, uri + "icon64.png");
 
     
     equal(AddonManager.getPreferredIconURL(addon, 1), uri + "icon16.png");
@@ -91,7 +90,6 @@ async function testNoIconsParsing(manifest) {
   deepEqual(addon.icons, {});
 
   equal(addon.iconURL, null);
-  equal(addon.icon64URL, null);
 
   equal(AddonManager.getPreferredIconURL(addon, 128), null);
 
