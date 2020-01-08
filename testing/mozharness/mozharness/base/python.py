@@ -351,7 +351,15 @@ class VirtualenvMixin(object):
         virtualenv_options = c.get('virtualenv_options', [])
         
         
-        virtualenv_options.append('--always-copy')
+        
+        
+        
+        
+        if self._is_redhat():
+            self.warning("creating virtualenv without --always-copy "
+                         "due to issues on Redhat derived distros")
+        else:
+            virtualenv_options.append('--always-copy')
 
         if os.path.exists(self.query_python_path()):
             self.info("Virtualenv %s appears to already exist; skipping virtualenv creation." % self.query_python_path())
