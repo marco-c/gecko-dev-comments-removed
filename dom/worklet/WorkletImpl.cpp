@@ -116,7 +116,7 @@ WorkletImpl::GetOrCreateThread()
 
   if (!mWorkletThread) {
     
-    mWorkletThread = dom::WorkletThread::Create(mWorkletLoadInfo);
+    mWorkletThread = dom::WorkletThread::Create();
   }
 
   return mWorkletThread;
