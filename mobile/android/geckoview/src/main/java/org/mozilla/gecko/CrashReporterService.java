@@ -65,25 +65,30 @@ public class CrashReporterService extends JobIntentService {
             return;
         }
 
-        Class<?> reporterActivityCls = getFennecReporterActivity();
-        if (reporterActivityCls != null) {
-            intent.setClass(this, reporterActivityCls);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-            return;
-        }
-
         submitCrash(intent);
     }
 
     @Override
     public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
+        Class<?> reporterActivityCls = getFennecReporterActivity();
+        if (reporterActivityCls != null) {
+            intent.setClass(this, reporterActivityCls);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+
+            
+            System.exit(0);
+        }
+
         
         
         if (Build.VERSION.SDK_INT >= 26) {
             
             
             enqueueWork(this, intent);
+
+            
+            System.exit(0);
         }
 
         return super.onStartCommand(intent, flags, startId);
