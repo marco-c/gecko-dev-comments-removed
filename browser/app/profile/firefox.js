@@ -126,6 +126,13 @@ pref("app.update.log", false);
 pref("app.update.backgroundMaxErrors", 10);
 
 
+#ifdef MOZ_UPDATER
+pref("app.update.enabled", true);
+#else
+pref("app.update.enabled", false);
+#endif
+
+
 pref("app.update.doorhanger", true);
 
 
@@ -139,6 +146,7 @@ pref("app.update.download.promptMaxAttempts", 2);
 
 
 pref("app.update.elevation.promptMaxAttempts", 2);
+
 
 
 

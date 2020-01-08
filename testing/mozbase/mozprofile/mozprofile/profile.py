@@ -431,8 +431,7 @@ class FirefoxProfile(Profile):
     """Specialized Profile subclass for Firefox"""
 
     preferences = {  
-        'app.update.disabledForTesting': True,
-        'security.turn_off_all_security_so_that_viruses_can_take_over_this_computer': True,
+        'app.update.enabled': False,
         
         'browser.sessionstore.resume_from_crash': False,
         

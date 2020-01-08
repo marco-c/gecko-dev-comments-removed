@@ -11,8 +11,6 @@ var updateService = Cc["@mozilla.org/updates/update-service;1"].
 
 
 add_task(async function test_updates_pre_policy() {
-  await SpecialPowers.pushPrefEnv({"set": [["app.update.disabledForTesting", false]]});
-
   is(Services.policies.isAllowed("appUpdate"), true,
      "Since no policies have been set, appUpdate should be allowed by default");
 

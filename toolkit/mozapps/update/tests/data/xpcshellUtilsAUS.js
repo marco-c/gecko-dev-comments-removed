@@ -1110,7 +1110,7 @@ function testFinishWaitForUpdateXMLFiles() {
 
 
 function setDefaultPrefs() {
-  Services.prefs.setBoolPref(PREF_APP_UPDATE_DISABLEDFORTESTING, false);
+  Services.prefs.setBoolPref(PREF_APP_UPDATE_ENABLED, true);
   if (DEBUG_AUS_TEST) {
     
     Services.prefs.setBoolPref(PREF_APP_UPDATE_LOG, true);

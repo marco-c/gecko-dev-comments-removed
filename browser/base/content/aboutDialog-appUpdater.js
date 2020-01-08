@@ -20,7 +20,7 @@ var gAppUpdater;
 
 function onUnload(aEvent) {
   if (gAppUpdater.isChecking)
-    gAppUpdater.checker.stopCurrentCheck();
+    gAppUpdater.checker.stopChecking(Ci.nsIUpdateChecker.CURRENT_CHECK);
   
   gAppUpdater.removeDownloadListener();
   gAppUpdater = null;
@@ -60,8 +60,8 @@ function appUpdater(options = {}) {
   manualLink.href = manualURL;
   document.getElementById("failedLink").href = manualURL;
 
-  if (this.updateDisabledByPolicy) {
-    this.selectPanel("policyDisabled");
+  if (this.updateDisabledAndLocked) {
+    this.selectPanel("adminDisabled");
     return;
   }
 
@@ -78,6 +78,16 @@ function appUpdater(options = {}) {
   if (this.isDownloading) {
     this.startDownload();
     
+    return;
+  }
+
+  
+  
+  
+  
+  if (!this.updateEnabled ||
+      Services.prefs.prefHasUserValue(PREF_APP_UPDATE_ELEVATE_NEVER)) {
+    this.selectPanel("checkForUpdates");
     return;
   }
 
@@ -126,13 +136,24 @@ appUpdater.prototype =
   },
 
   
-  get updateDisabledByPolicy() {
-    return Services.policies && !Services.policies.isAllowed("appUpdate");
+  get updateDisabledAndLocked() {
+    return (!this.updateEnabled &&
+           Services.prefs.prefIsLocked("app.update.enabled")) ||
+           (Services.policies &&
+           !Services.policies.isAllowed("appUpdate"));
+  },
+
+  
+  get updateEnabled() {
+    try {
+      return Services.prefs.getBoolPref("app.update.enabled");
+    } catch (e) { }
+    return true; 
   },
 
   
   get backgroundUpdateEnabled() {
-    return !this.updateDisabledByPolicy &&
+    return this.updateEnabled &&
            gAppUpdater.aus.canStageUpdates;
   },
 
