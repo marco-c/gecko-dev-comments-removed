@@ -76,7 +76,29 @@ public:
 
   
   
+  
   void AwaitIdle() const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_MUST_USE nsresult SetIsPaused(bool aIsPaused);
+
+  
+  bool IsPaused() const;
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIEVENTTARGET_FULL

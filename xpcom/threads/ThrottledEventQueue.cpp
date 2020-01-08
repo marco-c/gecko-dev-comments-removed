@@ -49,6 +49,18 @@ namespace {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 class ThrottledEventQueue::Inner final : public nsISupports
 {
   
@@ -87,8 +99,11 @@ class ThrottledEventQueue::Inner final : public nsISupports
 
   
   
+  
+  
   EventQueue mEventQueue;
 
+  
   
   
   nsCOMPtr<nsISerialEventTarget> mBaseTarget;
@@ -96,12 +111,18 @@ class ThrottledEventQueue::Inner final : public nsISupports
   
   
   
+  
   nsCOMPtr<nsIRunnable> mExecutor;
+
+  
+  
+  bool mIsPaused;
 
   explicit Inner(nsISerialEventTarget* aBaseTarget)
     : mMutex("ThrottledEventQueue")
     , mIdleCondVar(mMutex, "ThrottledEventQueue:Idle")
     , mBaseTarget(aBaseTarget)
+    , mIsPaused(false)
   {
   }
 
@@ -109,9 +130,38 @@ class ThrottledEventQueue::Inner final : public nsISupports
   {
 #ifdef DEBUG
     MutexAutoLock lock(mMutex);
+
+    
+    
     MOZ_ASSERT(!mExecutor);
-    MOZ_ASSERT(mEventQueue.IsEmpty(lock));
+
+    
+    
+    
+    MOZ_ASSERT(mEventQueue.IsEmpty(lock) || IsPaused(lock));
+
+    
+    
+    MOZ_ASSERT_IF(!mEventQueue.IsEmpty(lock), NS_IsMainThread());
 #endif
+  }
+
+  
+  
+  nsresult EnsureExecutor(MutexAutoLock& lock) {
+    if (mExecutor)
+      return NS_OK;
+
+    
+    
+    mExecutor = new Executor(this);
+    nsresult rv = mBaseTarget->Dispatch(mExecutor, NS_DISPATCH_NORMAL);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      mExecutor = nullptr;
+      return rv;
+    }
+
+    return NS_OK;
   }
 
   nsresult
@@ -157,6 +207,17 @@ class ThrottledEventQueue::Inner final : public nsISupports
 
     {
       MutexAutoLock lock(mMutex);
+
+      
+      
+      
+      
+      
+      if (IsPaused(lock)) {
+        
+        mExecutor = nullptr;
+        return;
+      }
 
       
       
@@ -228,9 +289,41 @@ public:
 #endif
 
     MutexAutoLock lock(mMutex);
-    while (mExecutor) {
+    while (mExecutor || IsPaused(lock)) {
       mIdleCondVar.Wait();
     }
+  }
+
+  bool
+  IsPaused() const
+  {
+    MutexAutoLock lock(mMutex);
+    return IsPaused(lock);
+  }
+
+  bool
+  IsPaused(const MutexAutoLock& aProofOfLock) const
+  {
+    return mIsPaused;
+  }
+
+  nsresult
+  SetIsPaused(bool aIsPaused)
+  {
+    MutexAutoLock lock(mMutex);
+
+    
+    
+    
+    if (!aIsPaused && !mEventQueue.IsEmpty(lock)) {
+      nsresult rv = EnsureExecutor(lock);
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+    }
+
+    mIsPaused = aIsPaused;
+    return NS_OK;
   }
 
   nsresult
@@ -250,19 +343,13 @@ public:
     
     MutexAutoLock lock(mMutex);
 
-    
-    
-    
-    
-    if (!mExecutor) {
+    if (!IsPaused(lock)) {
       
       
-      mExecutor = new Executor(this);
-      nsresult rv = mBaseTarget->Dispatch(mExecutor, NS_DISPATCH_NORMAL);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        mExecutor = nullptr;
+      
+      nsresult rv = EnsureExecutor(lock);
+      if (NS_FAILED(rv))
         return rv;
-      }
     }
 
     
@@ -330,6 +417,18 @@ void
 ThrottledEventQueue::AwaitIdle() const
 {
   return mInner->AwaitIdle();
+}
+
+nsresult
+ThrottledEventQueue::SetIsPaused(bool aIsPaused)
+{
+  return mInner->SetIsPaused(aIsPaused);
+}
+
+bool
+ThrottledEventQueue::IsPaused() const
+{
+  return mInner->IsPaused();
 }
 
 NS_IMETHODIMP
