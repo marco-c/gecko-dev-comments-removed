@@ -123,10 +123,6 @@ Evaluate(JSContext* cx, AutoVector<JSObject*>& envChain, const ReadOnlyCompileOp
 
 
 
-
-
-
-
 extern JS_PUBLIC_API(bool)
 EvaluateUtf8(JSContext* cx, const ReadOnlyCompileOptions& options,
              const char* bytes, size_t length, MutableHandle<Value> rval);
@@ -139,16 +135,9 @@ EvaluateUtf8(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 
 
-
-
-
-
 extern JS_PUBLIC_API(bool)
 EvaluateLatin1(JSContext* cx, const ReadOnlyCompileOptions& options,
                const char* bytes, size_t length, MutableHandle<Value> rval);
-
-
-
 
 
 
@@ -173,17 +162,9 @@ Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 
 
-
-
-
-
 extern JS_PUBLIC_API(bool)
 CompileUtf8(JSContext* cx, const ReadOnlyCompileOptions& options,
             const char* bytes, size_t length, MutableHandle<JSScript*> script);
-
-
-
-
 
 
 
@@ -204,15 +185,9 @@ CompileLatin1(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 
 
-
-
-
 extern JS_PUBLIC_API(bool)
 CompileUtf8File(JSContext* cx, const ReadOnlyCompileOptions& options,
                 FILE* file, MutableHandle<JSScript*> script);
-
-
-
 
 
 
