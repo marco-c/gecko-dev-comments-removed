@@ -458,13 +458,6 @@ static const char* gMiddlemanPidOption = "-middlemanPid";
 
 static const char* gChannelIDOption = "-recordReplayChannelID";
 
-
-
-static const int32_t GraphicsMessageId = 42;
-
-
-static const size_t GraphicsMemorySize = 4096 * 4096 * 4;
-
 } 
 } 
 

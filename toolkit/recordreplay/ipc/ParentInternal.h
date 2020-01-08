@@ -55,14 +55,25 @@ static Monitor* gMonitor;
 
 
 
-extern mach_port_t gGraphicsPort;
 extern void* gGraphicsMemory;
 
 void InitializeGraphicsMemory();
+void SendGraphicsMemoryToChild();
 
 
 
 void UpdateGraphicsInUIProcess(const PaintMessage* aMsg);
+
+
+
+static const int32_t GraphicsHandshakeMessageId = 42;
+
+
+
+static const int32_t GraphicsMemoryMessageId = 43;
+
+
+static const size_t GraphicsMemorySize = 4096 * 4096 * 4;
 
 
 
