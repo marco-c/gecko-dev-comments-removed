@@ -590,12 +590,6 @@ tooltip[titletip="true"] {
 
 
 
-progressmeter {
-  -moz-binding: url("chrome://global/content/bindings/progressmeter.xml#progressmeter");
-}
-
-
-
 
 .box-inherit {
   -moz-box-orient: inherit;
