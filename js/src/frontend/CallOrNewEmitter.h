@@ -140,8 +140,6 @@ class MOZ_RAII AutoEmittingRunOnceLambda
 
 
 
-
-
 class MOZ_STACK_CLASS CallOrNewEmitter
 {
   public:
