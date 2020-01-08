@@ -52,6 +52,8 @@ SCOPE_WHITELIST = [
     
     
     re.compile(r'^secrets:get:project/releng/gecko/build/level-[0-9]/\*'),
+    
+    re.compile(r'^docker-worker:feature:allowPtrace$'),
 ]
 
 
