@@ -118,10 +118,6 @@ this.sidebarAction = class extends ExtensionAPI {
       if (button) {
         button.remove();
       }
-      let broadcaster = document.getElementById(this.id);
-      if (broadcaster) {
-        broadcaster.remove();
-      }
       let header = document.getElementById("sidebar-switcher-target");
       header.removeEventListener("SidebarShown", this.updateHeader);
       SidebarUI.sidebars.delete(this.id);
@@ -147,29 +143,18 @@ this.sidebarAction = class extends ExtensionAPI {
 
   createMenuItem(window, details) {
     let {document, SidebarUI} = window;
+    let keyId = `ext-key-id-${this.id}`;
 
     SidebarUI.sidebars.set(this.id, {
       title: details.title,
       url: sidebarURL,
+      menuId: this.menuId,
+      buttonId: this.buttonId,
+      
+      extensionId: this.extension.id,
+      panel: details.panel,
+      browserStyle: this.browserStyle,
     });
-
-    
-    
-    let broadcaster = document.createElementNS(XUL_NS, "broadcaster");
-    broadcaster.setAttribute("id", this.id);
-    broadcaster.setAttribute("type", "checkbox");
-    broadcaster.setAttribute("group", "sidebar");
-    broadcaster.setAttribute("panel", details.panel);
-    if (this.browserStyle) {
-      broadcaster.setAttribute("browserStyle", "true");
-    }
-    broadcaster.setAttribute("extensionId", this.extension.id);
-    let id = `ext-key-id-${this.id}`;
-    broadcaster.setAttribute("key", id);
-
-    
-    
-    broadcaster.setAttribute("oncommand", "SidebarUI.toggle(this.getAttribute('observes'))");
 
     let header = document.getElementById("sidebar-switcher-target");
     header.addEventListener("SidebarShown", this.updateHeader);
@@ -177,20 +162,23 @@ this.sidebarAction = class extends ExtensionAPI {
     
     let menuitem = document.createElementNS(XUL_NS, "menuitem");
     menuitem.setAttribute("id", this.menuId);
+    menuitem.setAttribute("type", "checkbox");
     menuitem.setAttribute("label", details.title);
-    menuitem.setAttribute("observes", this.id);
+    menuitem.setAttribute("oncommand", `SidebarUI.toggle("${this.id}");`);
     menuitem.setAttribute("class", "menuitem-iconic webextension-menuitem");
+    menuitem.setAttribute("key", keyId);
     this.setMenuIcon(menuitem, details);
 
     
     let toolbarbutton = document.createElementNS(XUL_NS, "toolbarbutton");
     toolbarbutton.setAttribute("id", this.buttonId);
+    toolbarbutton.setAttribute("type", "checkbox");
     toolbarbutton.setAttribute("label", details.title);
-    toolbarbutton.setAttribute("observes", this.id);
+    toolbarbutton.setAttribute("oncommand", `SidebarUI.show("${this.id}");`);
     toolbarbutton.setAttribute("class", "subviewbutton subviewbutton-iconic webextension-menuitem");
+    toolbarbutton.setAttribute("key", keyId);
     this.setMenuIcon(toolbarbutton, details);
 
-    document.getElementById("mainBroadcasterSet").appendChild(broadcaster);
     document.getElementById("viewSidebarMenu").appendChild(menuitem);
     let separator = document.getElementById("sidebar-extensions-separator");
     separator.parentNode.insertBefore(toolbarbutton, separator);
@@ -217,7 +205,6 @@ this.sidebarAction = class extends ExtensionAPI {
 
 
 
-
   updateButton(window, tabData) {
     let {document, SidebarUI} = window;
     let title = tabData.title || this.extension.name;
@@ -226,10 +213,9 @@ this.sidebarAction = class extends ExtensionAPI {
       menu = this.createMenuItem(window, tabData);
     }
 
-    let broadcaster = document.getElementById(this.id);
-    let urlChanged = tabData.panel !== broadcaster.getAttribute("panel");
+    let urlChanged = tabData.panel !== SidebarUI.sidebars.get(this.id).panel;
     if (urlChanged) {
-      broadcaster.setAttribute("panel", tabData.panel);
+      SidebarUI.sidebars.get(this.id).panel = tabData.panel;
     }
 
     menu.setAttribute("label", title);
