@@ -859,9 +859,20 @@ class ExtensionData {
   }
 
   hasPermission(perm, includeOptional = false) {
+    
+    
     let manifest_ = "manifest:";
     if (perm.startsWith(manifest_)) {
-      return this.manifest[perm.substr(manifest_.length)] != null;
+      
+      let value = this.manifest;
+      for (let prop of perm.substr(manifest_.length).split(".")) {
+        if (!value) {
+          break;
+        }
+        value = value[prop];
+      }
+
+      return value != null;
     }
 
     if (this.permissions.has(perm)) {

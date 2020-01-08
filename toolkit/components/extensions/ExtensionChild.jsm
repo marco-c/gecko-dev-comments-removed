@@ -773,9 +773,20 @@ class BrowserExtensionContent extends EventEmitter {
   }
 
   hasPermission(perm) {
-    let match = /^manifest:(.*)/.exec(perm);
-    if (match) {
-      return this.manifest[match[1]] != null;
+    
+    
+    let manifest_ = "manifest:";
+    if (perm.startsWith(manifest_)) {
+      
+      let value = this.manifest;
+      for (let prop of perm.substr(manifest_.length).split(".")) {
+        if (!value) {
+          break;
+        }
+        value = value[prop];
+      }
+
+      return value != null;
     }
     return this.permissions.has(perm);
   }
