@@ -187,6 +187,21 @@ void AccessibleWrap::Shutdown() {
   Accessible::Shutdown();
 }
 
+bool AccessibleWrap::DoAction(uint8_t aIndex) const {
+  if (ActionCount()) {
+    return Accessible::DoAction(aIndex);
+  }
+
+  if (mContent) {
+    
+    
+    DoCommand();
+    return true;
+  }
+
+  return false;
+}
+
 int32_t AccessibleWrap::AcquireID() { return sIDSet.GetID(); }
 
 void AccessibleWrap::ReleaseID(int32_t aID) { sIDSet.ReleaseID(aID); }
