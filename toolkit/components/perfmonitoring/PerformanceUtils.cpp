@@ -22,12 +22,15 @@ CollectPerformanceInfo(nsTArray<PerformanceInfo>& aMetrics)
    
    LinkedList<TabGroup>* tabGroups = TabGroup::GetTabGroupList();
 
-   for (TabGroup* tabGroup = tabGroups->getFirst(); tabGroup;
-       tabGroup =
-         static_cast<LinkedListElement<TabGroup>*>(tabGroup)->getNext()) {
-    for (auto iter = tabGroup->Iter(); !iter.Done(); iter.Next()) {
-      DocGroup* docGroup = iter.Get()->mDocGroup;
-      aMetrics.AppendElement(docGroup->ReportPerformanceInfo());
+   
+   if (tabGroups) {
+     for (TabGroup* tabGroup = tabGroups->getFirst(); tabGroup;
+         tabGroup =
+           static_cast<LinkedListElement<TabGroup>*>(tabGroup)->getNext()) {
+      for (auto iter = tabGroup->Iter(); !iter.Done(); iter.Next()) {
+        DocGroup* docGroup = iter.Get()->mDocGroup;
+        aMetrics.AppendElement(docGroup->ReportPerformanceInfo());
+      }
     }
   }
 
