@@ -14,8 +14,6 @@
 
 
 
-
-
 #define LOCAL_GL_1PASS_EXT                                   0x80A1
 #define LOCAL_GL_1PASS_SGIS                                  0x80A1
 #define LOCAL_GL_2D                                          0x0600
@@ -7000,7 +6998,5 @@
 #define LOCAL_WGL_VIDEO_OUT_FRAME                            0x20C8
 #define LOCAL_WGL_VIDEO_OUT_STACKED_FIELDS_1_2               0x20CB
 #define LOCAL_WGL_VIDEO_OUT_STACKED_FIELDS_2_1               0x20CC
-
-
 
 #endif 
