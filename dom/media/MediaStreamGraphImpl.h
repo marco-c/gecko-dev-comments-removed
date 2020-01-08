@@ -652,6 +652,11 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
   int32_t mPortCount;
+  
+
+
+
+  nsTArray<nsCOMPtr<nsIRunnable>> mPendingUpdateRunnables;
 
   
 

@@ -1325,7 +1325,10 @@ class MediaStreamGraph {
 
 
 
-  virtual void DispatchToMainThreadAfterStreamStateUpdate(
+
+
+
+  void DispatchToMainThreadAfterStreamStateUpdate(
       already_AddRefed<nsIRunnable> aRunnable);
 
   
@@ -1359,9 +1362,6 @@ class MediaStreamGraph {
   
   bool OnGraphThreadOrNotRunning() const;
   bool OnGraphThread() const;
-
-  
-  nsTArray<nsCOMPtr<nsIRunnable>> mPendingUpdateRunnables;
 
   
 
