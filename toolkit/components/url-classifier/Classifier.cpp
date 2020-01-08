@@ -795,15 +795,11 @@ Classifier::ApplyUpdatesBackground(TableUpdateArray& aUpdates,
   nsresult rv;
 
   
-  if (mUpdateInterrupted) {
-    LOG(("Update is interrupted. Don't copy files."));
-    return NS_OK;
-  }
-
+  
   rv = CopyInUseDirForUpdate(); 
   if (NS_FAILED(rv)) {
     LOG(("Failed to copy in-use directory for update."));
-    return rv;
+    return (rv == NS_ERROR_ABORT) ? NS_OK : rv;
   }
 
   LOG(("Applying %zu table updates.", aUpdates.Length()));
@@ -1096,6 +1092,64 @@ Classifier::DumpFailedUpdate()
 
 #endif 
 
+
+
+
+
+
+nsresult
+Classifier::CopyDirectoryInterruptible(nsCOMPtr<nsIFile>& aDestDir, nsCOMPtr<nsIFile>& aSourceDir)
+{
+  nsCOMPtr<nsIDirectoryEnumerator> entries;
+  nsresult rv = aSourceDir->GetDirectoryEntries(getter_AddRefs(entries));
+  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_ASSERT(entries);
+
+  nsCOMPtr<nsIFile> source;
+  while (NS_SUCCEEDED(rv = entries->GetNextFile(getter_AddRefs(source))) &&
+         source) {
+    if (mUpdateInterrupted) {
+      LOG(("Update is interrupted. Aborting the directory copy"));
+      return NS_ERROR_ABORT;
+    }
+
+    bool isDirectory;
+    rv = source->IsDirectory(&isDirectory);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if (isDirectory) {
+      
+      nsAutoCString leaf;
+      source->GetNativeLeafName(leaf);
+      MOZ_ASSERT(!leaf.IsEmpty());
+
+      nsCOMPtr<nsIFile> dest;
+      aDestDir->Clone(getter_AddRefs(dest));
+      dest->AppendNative(leaf);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      rv = CopyDirectoryInterruptible(dest, source);
+      NS_ENSURE_SUCCESS(rv, rv);
+    } else {
+      rv = source->CopyToNative(aDestDir, EmptyCString());
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+  }
+
+  
+  
+  bool exist;
+  rv = aDestDir->Exists(&exist);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (!exist) {
+    rv = aSourceDir->CopyToNative(aDestDir, EmptyCString());
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  return NS_OK;
+}
+
 nsresult
 Classifier::CopyInUseDirForUpdate()
 {
@@ -1104,17 +1158,15 @@ Classifier::CopyInUseDirForUpdate()
   
   
 
-  nsCString updatingDirName;
-  nsresult rv = mUpdatingDirectory->GetNativeLeafName(updatingDirName);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   
   mUpdatingDirectory->Remove(true);
   if (!mRootStoreDirectoryForUpdate) {
     LOG(("mRootStoreDirectoryForUpdate is null."));
     return NS_ERROR_NULL_POINTER;
   }
-  rv = mRootStoreDirectoryForUpdate->CopyToNative(nullptr, updatingDirName);
+
+  nsresult rv = CopyDirectoryInterruptible(mUpdatingDirectory,
+                                           mRootStoreDirectoryForUpdate);
   NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
