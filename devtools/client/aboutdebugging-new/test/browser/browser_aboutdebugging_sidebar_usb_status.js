@@ -22,7 +22,8 @@ add_task(async function() {
     "USB status element has the expected content");
 
   info("Install the adb extension and wait for the message to udpate");
-  adbAddon.install();
+  
+  adbAddon.install("internal");
   await waitUntil(() => usbStatusElement.textContent.includes("USB devices enabled"));
 
   
