@@ -773,6 +773,16 @@ WMFVideoMFTManager::Input(MediaRawData* aSample)
     return E_FAIL;
   }
 
+  if (mStreamType == VP9 && aSample->mKeyframe) {
+    
+    
+    int profile =
+      VPXDecoder::GetVP9Profile(MakeSpan(aSample->Data(), aSample->Size()));
+    if (profile != 0 && profile != 2) {
+      return E_FAIL;
+    }
+  }
+
   RefPtr<IMFSample> inputSample;
   HRESULT hr = mDecoder->CreateInputSample(aSample->Data(),
                                            uint32_t(aSample->Size()),
