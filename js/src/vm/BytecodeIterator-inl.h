@@ -1,0 +1,32 @@
+
+
+
+
+
+
+#ifndef vm_BytecodeIterator_inl_h
+#define vm_BytecodeIterator_inl_h
+
+#include "vm/BytecodeIterator.h"
+
+#include "vm/JSScript.h"
+namespace js {
+
+BytecodeIterator::BytecodeIterator(const JSScript* script)
+  : current_(script, script->code())
+{}
+
+
+
+inline BytecodeIterator
+AllBytecodesIterable::begin() {
+    return BytecodeIterator(script_);
+}
+
+inline BytecodeIterator
+AllBytecodesIterable::end() {
+    return BytecodeIterator(BytecodeLocation(script_, script_->codeEnd()));
+}
+
+}
+#endif
