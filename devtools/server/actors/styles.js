@@ -225,6 +225,8 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
+
+
   getComputed: function(node, options) {
     const ret = Object.create(null);
 
