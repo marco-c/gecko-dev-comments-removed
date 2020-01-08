@@ -4,6 +4,13 @@
 
 %include ../shared/compacttheme.inc.css
 
+@media (-moz-windows-accent-color-in-titlebar) {
+  :root[tabsintitlebar]:not(:-moz-window-inactive) {
+    background-color: -moz-win-accentcolor;
+    color: -moz-win-accentcolortext;
+  }
+}
+
 
 
 
@@ -115,19 +122,13 @@
   }
 
   
-  #TabsToolbar,
-  #navigator-toolbox {
-    background-color: transparent;
-  }
-
-  
   @media (-moz-windows-compositor: 0),
          (-moz-windows-default-theme: 0) {
-    :root[tabsintitlebar]:not([inFullscreen]) .titlebar-color {
+    :root[tabsintitlebar]:not([inFullscreen]) {
       color: CaptionText;
     }
 
-    :root[tabsintitlebar]:not([inFullscreen]) .titlebar-color:-moz-window-inactive {
+    :root[tabsintitlebar]:not([inFullscreen]):-moz-window-inactive {
       color: InactiveCaptionText;
     }
 
