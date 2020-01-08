@@ -4,7 +4,6 @@
 
 
 import LabelledCheckbox from "../components/labelled-checkbox.js";
-import PaymentDialog from "./payment-dialog.js";
 import PaymentRequestPage from "../components/payment-request-page.js";
 import PaymentStateSubscriberMixin from "../mixins/PaymentStateSubscriberMixin.js";
 import paymentRequest from "../paymentRequest.js";
@@ -199,7 +198,7 @@ export default class AddressForm extends PaymentStateSubscriberMixin(PaymentRequ
       
       let errorText = (editing && merchantFieldErrors && merchantFieldErrors[errorName]) || "";
       field.setCustomValidity(errorText);
-      let span = PaymentDialog.maybeCreateFieldErrorElement(container);
+      let span = paymentRequest.maybeCreateFieldErrorElement(container);
       span.textContent = errorText;
     }
 
@@ -281,7 +280,7 @@ export default class AddressForm extends PaymentStateSubscriberMixin(PaymentRequ
   onInvalidField(event) {
     let field = event.target;
     let container = field.closest(`#${field.id}-container`);
-    let errorTextSpan = PaymentDialog.maybeCreateFieldErrorElement(container);
+    let errorTextSpan = paymentRequest.maybeCreateFieldErrorElement(container);
     errorTextSpan.textContent = field.validationMessage;
   }
 
