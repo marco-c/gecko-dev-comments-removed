@@ -817,7 +817,8 @@ void APZCTreeManager::NotifyScrollbarDragRejected(
     const ScrollableLayerGuid& aGuid) const {
   RefPtr<GeckoContentController> controller =
       GetContentController(aGuid.mLayersId);
-  MOZ_ASSERT(controller); 
+  
+  MOZ_ASSERT(controller);
   if (controller) {
     controller->NotifyAsyncScrollbarDragRejected(aGuid.mScrollId);
   }

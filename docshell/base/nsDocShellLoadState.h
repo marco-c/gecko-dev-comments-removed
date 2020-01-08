@@ -22,8 +22,7 @@ namespace mozilla {
 namespace dom {
 class DocShellLoadStateInit;
 }
-}
-
+}  
 
 
 
@@ -190,6 +189,7 @@ class nsDocShellLoadState final {
   void CalculateLoadURIFlags();
 
   mozilla::dom::DocShellLoadStateInit Serialize();
+
  protected:
   
   

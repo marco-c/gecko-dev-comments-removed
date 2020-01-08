@@ -80,9 +80,9 @@ class NewRenderer : public RendererEvent {
                                          : nullptr,
             aRenderThread.Shaders() ? aRenderThread.Shaders()->RawShaders()
                                     : nullptr,
-            aRenderThread.ThreadPool().Raw(),
-            &WebRenderMallocSizeOf, &WebRenderMallocEnclosingSizeOf,
-            mDocHandle, &wrRenderer, mMaxTextureSize)) {
+            aRenderThread.ThreadPool().Raw(), &WebRenderMallocSizeOf,
+            &WebRenderMallocEnclosingSizeOf, mDocHandle, &wrRenderer,
+            mMaxTextureSize)) {
       
       return;
     }

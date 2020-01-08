@@ -113,12 +113,8 @@ nsLoadGroup::~nsLoadGroup() {
 
 
 
-NS_IMPL_ISUPPORTS(nsLoadGroup,
-                  nsILoadGroup,
-                  nsILoadGroupChild,
-                  nsIRequest,
-                  nsISupportsPriority,
-                  nsISupportsWeakReference)
+NS_IMPL_ISUPPORTS(nsLoadGroup, nsILoadGroup, nsILoadGroupChild, nsIRequest,
+                  nsISupportsPriority, nsISupportsWeakReference)
 
 
 

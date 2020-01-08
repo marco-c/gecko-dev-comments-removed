@@ -161,29 +161,29 @@ void ReplayInvokeCallback(size_t aCallbackId) {
 
 
 static const char* gStaticClassNames[] = {
-  
-  "NSAutoreleasePool",
-  "NSBezierPath",
-  "NSButtonCell",
-  "NSColor",
-  "NSComboBoxCell",
-  "NSDictionary",
-  "NSGraphicsContext",
-  "NSFont",
-  "NSFontManager",
-  "NSLevelIndicatorCell",
-  "NSNumber",
-  "NSPopUpButtonCell",
-  "NSProgressBarCell",
-  "NSString",
-  "NSWindow",
+    
+    "NSAutoreleasePool",
+    "NSBezierPath",
+    "NSButtonCell",
+    "NSColor",
+    "NSComboBoxCell",
+    "NSDictionary",
+    "NSGraphicsContext",
+    "NSFont",
+    "NSFontManager",
+    "NSLevelIndicatorCell",
+    "NSNumber",
+    "NSPopUpButtonCell",
+    "NSProgressBarCell",
+    "NSString",
+    "NSWindow",
 
-  
-  "CellDrawView",
-  "CheckboxCell",
-  "RadioButtonCell",
-  "SearchFieldCellWithFocusRing",
-  "ToolbarSearchFieldCellWithFocusRing",
+    
+    "CellDrawView",
+    "CheckboxCell",
+    "RadioButtonCell",
+    "SearchFieldCellWithFocusRing",
+    "ToolbarSearchFieldCellWithFocusRing",
 };
 
 
@@ -206,9 +206,7 @@ struct CFConstantString {
 
 static Class gCFConstantStringClass;
 
-static void
-InitializeStaticClasses()
-{
+static void InitializeStaticClasses() {
   gStaticClasses = new Class[ArrayLength(gStaticClassNames)];
 
   for (size_t i = 0; i < ArrayLength(gStaticClassNames); i++) {

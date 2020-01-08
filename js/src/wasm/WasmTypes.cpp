@@ -97,7 +97,8 @@ void Val::trace(JSTracer* trc) {
       
       
       ASSERT_ANYREF_IS_JSOBJECT;
-      TraceManuallyBarrieredEdge(trc, u.anyref_.asJSObjectAddress(), "wasm ref/anyref global");
+      TraceManuallyBarrieredEdge(trc, u.anyref_.asJSObjectAddress(),
+                                 "wasm ref/anyref global");
     }
   }
 }

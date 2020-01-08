@@ -3150,6 +3150,7 @@ nsIContent* nsFocusManager::GetNextTabbableContentInAncestorScopes(
   }
 
   
+  
   *aStartContent = startContent;
   *aCurrentTabIndex = HostOrSlotTabIndexValue(startContent);
 
@@ -3383,6 +3384,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
         bool focusableHostSlot;
         int32_t tabIndex =
             HostOrSlotTabIndexValue(currentContent, &focusableHostSlot);
+        
         
         if ((!aForward || !focusableHostSlot) && tabIndex >= 0 &&
             (aIgnoreTabIndex || aCurrentTabIndex == tabIndex)) {

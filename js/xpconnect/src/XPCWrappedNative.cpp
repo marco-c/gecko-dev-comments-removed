@@ -6,10 +6,10 @@
 
 
 
-#if(__GNUC__ && __linux__ && __PPC64__ && _LITTLE_ENDIAN)
+#if (__GNUC__ && __linux__ && __PPC64__ && _LITTLE_ENDIAN)
 
 
-#define MOZ_GCC_STACK_PROTECTOR_DISABLED 1 // removed at end of file
+#define MOZ_GCC_STACK_PROTECTOR_DISABLED 1  // removed at end of file
 #pragma GCC push_options
 #pragma GCC optimize("no-stack-protector")
 #endif

@@ -347,6 +347,6 @@ extern JS_PUBLIC_API void InitDispatchToEventLoop(
 
 extern JS_PUBLIC_API void ShutdownAsyncTasks(JSContext* cx);
 
-} 
+}  
 
-#endif 
+#endif  

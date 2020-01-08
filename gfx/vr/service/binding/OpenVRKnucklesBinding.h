@@ -11,7 +11,8 @@ namespace mozilla {
 namespace gfx {
 
 struct OpenVRKnucklesBinding {
-  const char* binding = 
+  const char* binding =
+      
   "{\n"
     "  \"version\" : \"0.1\", \n"
     "  \"controller_type\" : \"knuckles\", \n"
@@ -290,9 +291,10 @@ struct OpenVRKnucklesBinding {
     "     }\n"
     "  }\n"
     "}";
+  
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

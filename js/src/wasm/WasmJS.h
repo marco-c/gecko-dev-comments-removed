@@ -155,7 +155,7 @@ class WasmGlobalObject : public NativeObject {
     int64_t i64;
     float f32;
     double f64;
-    JSObject* ref;              
+    JSObject* ref;  
     wasm::AnyRef anyref;
     Cell() : i64(0) {}
     ~Cell() {}
