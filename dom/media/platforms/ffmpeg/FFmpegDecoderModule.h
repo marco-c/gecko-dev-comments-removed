@@ -81,15 +81,10 @@ protected:
   bool SupportsColorDepth(gfx::ColorDepth aColorDepth,
                           DecoderDoctorDiagnostics* aDiagnostics) const override
   {
-    
-    
-    
-    
-    
-#if defined(XP_LINUX) || defined(XP_MACOSX)
-    return true;
-#endif
+#if defined(MOZ_WIDGET_ANDROID)
     return aColorDepth == gfx::ColorDepth::COLOR_8;
+#endif
+    return true;
   }
 
 private:
