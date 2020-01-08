@@ -109,6 +109,10 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["suggest.searches", false],
 
   
+  
+  ["switchTabs.adoptIntoActiveWindow", false],
+
+  
   ["trimURLs", true],
 
   
