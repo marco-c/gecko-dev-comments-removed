@@ -128,6 +128,18 @@ const POLICIES_TESTS = [
   
   {
     policies: {
+      "Certificates": {
+        "ImportEnterpriseRoots": false,
+      },
+    },
+    lockedPrefs: {
+      "security.enterprise_roots.enabled": false,
+    },
+  },
+
+  
+  {
+    policies: {
       "InstallAddonsPermission": {
         "Default": false,
       },
