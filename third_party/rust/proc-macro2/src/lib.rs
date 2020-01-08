@@ -43,8 +43,8 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/proc-macro2/0.4.6")]
-#![cfg_attr(feature = "nightly", feature(proc_macro))]
+#![doc(html_root_url = "https://docs.rs/proc-macro2/0.4.9")]
+#![cfg_attr(feature = "nightly", feature(proc_macro_raw_ident, proc_macro_span))]
 
 #[cfg(feature = "proc-macro")]
 extern crate proc_macro;
@@ -115,6 +115,14 @@ impl TokenStream {
     
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
+    }
+}
+
+
+
+impl Default for TokenStream {
+    fn default() -> Self {
+        TokenStream::new()
     }
 }
 

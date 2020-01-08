@@ -157,6 +157,8 @@
 
 
 
+
+
 extern crate proc_macro;
 extern crate proc_macro2;
 #[macro_use]
@@ -179,6 +181,7 @@ use syn::visit::{self, Visit};
 
 #[doc(hidden)]
 pub use quote::*;
+use proc_macro2::TokenStream;
 
 use unicode_xid::UnicodeXID;
 
@@ -204,7 +207,7 @@ pub enum BindStyle {
 }
 
 impl ToTokens for BindStyle {
-    fn to_tokens(&self, tokens: &mut Tokens) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         match *self {
             BindStyle::Move => {}
             BindStyle::MoveMut => quote_spanned!(Span::call_site() => mut).to_tokens(tokens),
@@ -249,7 +252,7 @@ fn sanitize_ident(s: &str) -> Ident {
         if res.ends_with('_') && c == '_' { continue }
         res.push(c);
     }
-    Ident::from(res)
+    Ident::new(&res, Span::call_site())
 }
 
 
@@ -307,7 +310,7 @@ pub struct BindingInfo<'a> {
 }
 
 impl<'a> ToTokens for BindingInfo<'a> {
-    fn to_tokens(&self, tokens: &mut Tokens) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         self.binding.to_tokens(tokens);
     }
 }
@@ -344,7 +347,7 @@ impl<'a> BindingInfo<'a> {
     
     
     
-    pub fn pat(&self) -> Tokens {
+    pub fn pat(&self) -> TokenStream {
         let BindingInfo {
             ref binding,
             ref style,
@@ -353,6 +356,7 @@ impl<'a> BindingInfo<'a> {
         quote!(#style #binding)
     }
 
+    
     
     
     
@@ -428,7 +432,7 @@ fn get_ty_params<'a>(field: &Field, generics: &Generics) -> Vec<bool> {
         fn visit_ident(&mut self, id: &Ident) {
             for (idx, i) in self.generics.params.iter().enumerate() {
                 if let GenericParam::Type(ref tparam) = *i {
-                    if tparam.ident == id {
+                    if tparam.ident == *id {
                         self.result[idx] = true;
                     }
                 }
@@ -536,8 +540,8 @@ impl<'a> VariantInfo<'a> {
     
     
     
-    pub fn pat(&self) -> Tokens {
-        let mut t = Tokens::new();
+    pub fn pat(&self) -> TokenStream {
+        let mut t = TokenStream::empty();
         if let Some(prefix) = self.prefix {
             prefix.to_tokens(&mut t);
             quote!(::).to_tokens(&mut t);
@@ -612,12 +616,12 @@ impl<'a> VariantInfo<'a> {
     
     
     
-    pub fn construct<F, T>(&self, mut func: F) -> Tokens
+    pub fn construct<F, T>(&self, mut func: F) -> TokenStream
     where
         F: FnMut(&Field, usize) -> T,
         T: ToTokens,
     {
-        let mut t = Tokens::new();
+        let mut t = TokenStream::empty();
         if let Some(prefix) = self.prefix {
             quote!(#prefix ::).to_tokens(&mut t);
         }
@@ -680,13 +684,13 @@ impl<'a> VariantInfo<'a> {
     
     
     
-    pub fn each<F, R>(&self, mut f: F) -> Tokens
+    pub fn each<F, R>(&self, mut f: F) -> TokenStream
     where
         F: FnMut(&BindingInfo) -> R,
         R: ToTokens,
     {
         let pat = self.pat();
-        let mut body = Tokens::new();
+        let mut body = TokenStream::empty();
         for binding in &self.bindings {
             token::Brace::default().surround(&mut body, |body| {
                 f(binding).to_tokens(body);
@@ -728,9 +732,9 @@ impl<'a> VariantInfo<'a> {
     
     
     
-    pub fn fold<F, I, R>(&self, init: I, mut f: F) -> Tokens
+    pub fn fold<F, I, R>(&self, init: I, mut f: F) -> TokenStream
     where
-        F: FnMut(Tokens, &BindingInfo) -> R,
+        F: FnMut(TokenStream, &BindingInfo) -> R,
         I: ToTokens,
         R: ToTokens,
     {
@@ -742,6 +746,7 @@ impl<'a> VariantInfo<'a> {
         quote!(#pat => { #body })
     }
 
+    
     
     
     
@@ -933,6 +938,7 @@ impl<'a> VariantInfo<'a> {
     
     
     
+    
     pub fn referenced_ty_params(&self) -> Vec<&'a Ident> {
         let mut flags = Vec::new();
         for binding in &self.bindings {
@@ -1067,12 +1073,12 @@ impl<'a> Structure<'a> {
     
     
     
-    pub fn each<F, R>(&self, mut f: F) -> Tokens
+    pub fn each<F, R>(&self, mut f: F) -> TokenStream
     where
         F: FnMut(&BindingInfo) -> R,
         R: ToTokens,
     {
-        let mut t = Tokens::new();
+        let mut t = TokenStream::empty();
         for variant in &self.variants {
             variant.each(&mut f).to_tokens(&mut t);
         }
@@ -1120,13 +1126,13 @@ impl<'a> Structure<'a> {
     
     
     
-    pub fn fold<F, I, R>(&self, init: I, mut f: F) -> Tokens
+    pub fn fold<F, I, R>(&self, init: I, mut f: F) -> TokenStream
     where
-        F: FnMut(Tokens, &BindingInfo) -> R,
+        F: FnMut(TokenStream, &BindingInfo) -> R,
         I: ToTokens,
         R: ToTokens,
     {
-        let mut t = Tokens::new();
+        let mut t = TokenStream::empty();
         for variant in &self.variants {
             variant.fold(&init, &mut f).to_tokens(&mut t);
         }
@@ -1175,12 +1181,12 @@ impl<'a> Structure<'a> {
     
     
     
-    pub fn each_variant<F, R>(&self, mut f: F) -> Tokens
+    pub fn each_variant<F, R>(&self, mut f: F) -> TokenStream
     where
         F: FnMut(&VariantInfo) -> R,
         R: ToTokens,
     {
-        let mut t = Tokens::new();
+        let mut t = TokenStream::empty();
         for variant in &self.variants {
             let pat = variant.pat();
             let body = f(variant);
@@ -1192,6 +1198,9 @@ impl<'a> Structure<'a> {
         t
     }
 
+    
+    
+    
     
     
     
@@ -1432,6 +1441,7 @@ impl<'a> Structure<'a> {
     
     
     
+    
     pub fn referenced_ty_params(&self) -> Vec<&'a Ident> {
         let mut flags = Vec::new();
         for variant in &self.variants {
@@ -1609,10 +1619,10 @@ impl<'a> Structure<'a> {
     
     
     
-    pub fn bound_impl<P: ToTokens,B: ToTokens>(&self, path: P, body: B) -> Tokens {
+    pub fn bound_impl<P: ToTokens,B: ToTokens>(&self, path: P, body: B) -> TokenStream {
         self.impl_internal(
-            path.into_tokens(),
-            body.into_tokens(),
+            path.into_token_stream(),
+            body.into_token_stream(),
             quote!(),
             true,
         )
@@ -1683,10 +1693,10 @@ impl<'a> Structure<'a> {
     
     
     
-    pub fn unsafe_bound_impl<P: ToTokens, B: ToTokens>(&self, path: P, body: B) -> Tokens {
+    pub fn unsafe_bound_impl<P: ToTokens, B: ToTokens>(&self, path: P, body: B) -> TokenStream {
         self.impl_internal(
-            path.into_tokens(),
-            body.into_tokens(),
+            path.into_token_stream(),
+            body.into_token_stream(),
             quote!(unsafe),
             true,
         )
@@ -1747,10 +1757,10 @@ impl<'a> Structure<'a> {
     
     
     
-    pub fn unbound_impl<P: ToTokens, B: ToTokens>(&self, path: P, body: B) -> Tokens {
+    pub fn unbound_impl<P: ToTokens, B: ToTokens>(&self, path: P, body: B) -> TokenStream {
         self.impl_internal(
-            path.into_tokens(),
-            body.into_tokens(),
+            path.into_token_stream(),
+            body.into_token_stream(),
             quote!(),
             false,
         )
@@ -1812,10 +1822,10 @@ impl<'a> Structure<'a> {
     
     
     #[deprecated]
-    pub fn unsafe_unbound_impl<P: ToTokens, B: ToTokens>(&self, path: P, body: B) -> Tokens {
+    pub fn unsafe_unbound_impl<P: ToTokens, B: ToTokens>(&self, path: P, body: B) -> TokenStream {
         self.impl_internal(
-            path.into_tokens(),
-            body.into_tokens(),
+            path.into_token_stream(),
+            body.into_token_stream(),
             quote!(unsafe),
             false,
         )
@@ -1823,11 +1833,11 @@ impl<'a> Structure<'a> {
 
     fn impl_internal(
         &self,
-        path: Tokens,
-        body: Tokens,
-        safety: Tokens,
+        path: TokenStream,
+        body: TokenStream,
+        safety: TokenStream,
         add_bounds: bool,
-    ) -> Tokens {
+    ) -> TokenStream {
         let name = &self.ast.ident;
         let mut gen_clone = self.ast.generics.clone();
         gen_clone.params.extend(self.extra_impl.clone().into_iter());
@@ -1844,8 +1854,8 @@ impl<'a> Structure<'a> {
 
         let dummy_const: Ident = sanitize_ident(&format!(
             "_DERIVE_{}_FOR_{}",
-            (&bound).into_tokens(),
-            name.into_tokens(),
+            (&bound).into_token_stream(),
+            name.into_token_stream(),
         ));
 
         
@@ -2036,7 +2046,7 @@ impl<'a> Structure<'a> {
     
     
     
-    pub fn gen_impl(&self, cfg: Tokens) -> Tokens {
+    pub fn gen_impl(&self, cfg: TokenStream) -> TokenStream {
         use syn::buffer::{TokenBuffer, Cursor};
         use syn::synom::PResult;
         use proc_macro2::TokenStream;
@@ -2054,7 +2064,7 @@ impl<'a> Structure<'a> {
         > {
             
             let (id, c) = syn!(c, Ident)?;
-            if id.as_ref() != "gen" {
+            if id != "gen" {
                 let ((), _) = reject!(c,)?;
                 unreachable!()
             }
@@ -2132,8 +2142,8 @@ impl<'a> Structure<'a> {
 
         let dummy_const: Ident = sanitize_ident(&format!(
             "_DERIVE_{}_FOR_{}",
-            (&bound).into_tokens(),
-            name.into_tokens(),
+            (&bound).into_token_stream(),
+            name.into_token_stream(),
         ));
 
         quote! {
