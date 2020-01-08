@@ -34,6 +34,9 @@ class GeckoViewContent extends GeckoViewContentModule {
                                            this);
     this.messageManager.addMessageListener("GeckoView:ZoomToInput",
                                            this);
+
+    
+    Services.obs.notifyObservers(this.messageManager, "tab-content-frameloader-created");
   }
 
   onEnable() {
