@@ -1396,11 +1396,6 @@ class nsIPresShell : public nsStubDocumentObserver {
   
 
 
-  bool IsResolutionSet() { return mResolution.isSome(); }
-
-  
-
-
 
   virtual void SetRestoreResolution(
       float aResolution, mozilla::LayoutDeviceIntSize aDisplaySize) = 0;
