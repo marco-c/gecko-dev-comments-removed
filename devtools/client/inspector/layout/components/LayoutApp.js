@@ -122,7 +122,7 @@ class LayoutApp extends PureComponent {
           this.props.flexbox.flexItemContainer.actorID) {
         
         
-        items.splice(1, 0, {
+        items.splice(0, 0, {
           component: Flexbox,
           componentProps: {
             ...this.props,
