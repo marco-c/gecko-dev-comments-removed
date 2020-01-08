@@ -662,6 +662,12 @@ private:
   
   
   
+  
+  
+  
+  
+  
+  
   RefPtr<nsRange> mCachedRange;
   RefPtr<nsFrameSelection> mFrameSelection;
   RefPtr<nsAutoScrollTimer> mAutoScrollTimer;

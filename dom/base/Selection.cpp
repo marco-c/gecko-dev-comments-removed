@@ -2104,6 +2104,10 @@ Selection::RemoveAllRangesTemporarily()
   RemoveAllRanges(result);
   if (result.Failed()) {
     mCachedRange = nullptr;
+  } else if (mCachedRange) {
+    
+    
+    mCachedRange->ResetTemporarily();
   }
   return result.StealNSResult();
 }

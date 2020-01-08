@@ -164,6 +164,17 @@ public:
 
 
 
+  void ResetTemporarily()
+  {
+    DoSetRange(RawRangeBoundary(), RawRangeBoundary(), mRoot);
+  }
+
+  
+
+
+
+
+
   nsresult SetStart(nsINode* aContainer, uint32_t aOffset)
   {
     ErrorResult error;
