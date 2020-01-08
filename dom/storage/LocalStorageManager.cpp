@@ -395,17 +395,15 @@ nsresult LocalStorageManager::Observe(const char* aTopic,
     return NS_OK;
   }
 
-  
-  
-  if (!strcmp(aTopic, "session-only-cleared")) {
-    ClearCaches(LocalStorageCache::kUnloadSession, pattern, aOriginScope);
+  if (!strcmp(aTopic, "browser:purge-sessionStorage")) {
+    
     return NS_OK;
   }
 
   
   
-  if (!strcmp(aTopic, "domain-data-cleared")) {
-    ClearCaches(LocalStorageCache::kUnloadComplete, pattern, aOriginScope);
+  if (!strcmp(aTopic, "session-only-cleared")) {
+    ClearCaches(LocalStorageCache::kUnloadSession, pattern, aOriginScope);
     return NS_OK;
   }
 

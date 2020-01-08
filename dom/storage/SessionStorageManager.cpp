@@ -244,7 +244,7 @@ nsresult SessionStorageManager::Observe(
 
   
   
-  if (!strcmp(aTopic, "domain-data-cleared")) {
+  if (!strcmp(aTopic, "browser:purge-sessionStorage")) {
     ClearStorages(eAll, pattern, aOriginScope);
     return NS_OK;
   }
