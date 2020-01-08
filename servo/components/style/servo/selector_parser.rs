@@ -223,19 +223,19 @@ impl PseudoElement {
     
     
     
-    pub fn cascade_flags(&self) -> CascadeFlags {
+    pub fn inherits_all(&self) -> bool {
         match *self {
             PseudoElement::After |
             PseudoElement::Before |
             PseudoElement::Selection |
             PseudoElement::DetailsContent |
-            PseudoElement::DetailsSummary => CascadeFlags::empty(),
+            PseudoElement::DetailsSummary |
             
             
             PseudoElement::ServoAnonymousTableCell |
             PseudoElement::ServoAnonymousTableRow |
             PseudoElement::ServoText |
-            PseudoElement::ServoInputText => CascadeFlags::empty(),
+            PseudoElement::ServoInputText => false,
 
             
             
@@ -248,7 +248,7 @@ impl PseudoElement {
             PseudoElement::ServoTableWrapper |
             PseudoElement::ServoAnonymousBlock |
             PseudoElement::ServoInlineBlockWrapper |
-            PseudoElement::ServoInlineAbsolute => CascadeFlags::INHERIT_ALL,
+            PseudoElement::ServoInlineAbsolute => true,
         }
     }
 

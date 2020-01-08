@@ -10,7 +10,7 @@
 
 use cssparser::ToCss;
 use gecko_bindings::structs::{self, CSSPseudoElementType};
-use properties::{CascadeFlags, ComputedValues, PropertyFlags};
+use properties::{ComputedValues, PropertyFlags};
 use properties::longhands::display::computed_value::T as Display;
 use selector_parser::{NonTSPseudoClass, PseudoElementCascadeType, SelectorImpl};
 use std::fmt;
@@ -60,9 +60,7 @@ impl PseudoElement {
     
     
     #[inline]
-    pub fn cascade_flags(&self) -> CascadeFlags {
-        CascadeFlags::empty()
-    }
+    pub fn inherits_all(&self) -> bool { false }
 
     
     

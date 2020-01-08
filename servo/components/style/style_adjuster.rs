@@ -7,7 +7,7 @@
 
 use app_units::Au;
 use dom::TElement;
-use properties::{self, CascadeFlags, ComputedValues, StyleBuilder};
+use properties::{self, ComputedValues, StyleBuilder};
 use properties::computed_value_flags::ComputedValueFlags;
 use properties::longhands::display::computed_value::T as Display;
 use properties::longhands::float::computed_value::T as Float;
@@ -681,10 +681,14 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         &mut self,
         layout_parent_style: &ComputedValues,
         element: Option<E>,
-        flags: CascadeFlags,
     ) where
         E: TElement,
     {
+        debug_assert!(
+            !self.style.flags.contains(ComputedValueFlags::IS_STYLE_IF_VISITED),
+            "Adjusting visited styles is wasted work"
+        );
+
         if cfg!(debug_assertions) {
             if element
                 .and_then(|e| e.implemented_pseudo_element())
@@ -704,15 +708,6 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         
         
         
-
-        
-        
-        
-        
-        
-        if flags.contains(CascadeFlags::VISITED_DEPENDENT_ONLY) {
-            return;
-        }
 
         self.adjust_for_visited(element);
         #[cfg(feature = "gecko")]
