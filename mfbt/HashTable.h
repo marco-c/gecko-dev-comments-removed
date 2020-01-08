@@ -1710,15 +1710,13 @@ private:
   }
 
   
-  static bool wouldBeUnderloaded(uint32_t aCapacity, uint32_t aEntryCount)
+  bool underloaded()
   {
     static_assert(sMaxCapacity <= UINT32_MAX / sMinAlphaNumerator,
                   "multiplication below could overflow");
-    return aCapacity > sMinCapacity &&
-           aEntryCount <= aCapacity * sMinAlphaNumerator / sAlphaDenominator;
+    return capacity() > sMinCapacity &&
+           mEntryCount <= capacity() * sMinAlphaNumerator / sAlphaDenominator;
   }
-
-  bool underloaded() { return wouldBeUnderloaded(capacity(), mEntryCount); }
 
   static MOZ_ALWAYS_INLINE bool match(Entry& aEntry, const Lookup& aLookup)
   {
