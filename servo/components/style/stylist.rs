@@ -583,12 +583,6 @@ impl Stylist {
     }
 
     
-    pub fn prepend_stylesheet(&mut self, sheet: StylistSheet, guard: &SharedRwLockReadGuard) {
-        self.stylesheets
-            .prepend_stylesheet(Some(&self.device), sheet, guard)
-    }
-
-    
     pub fn remove_stylesheet(&mut self, sheet: StylistSheet, guard: &SharedRwLockReadGuard) {
         self.stylesheets
             .remove_stylesheet(Some(&self.device), sheet, guard)

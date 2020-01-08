@@ -345,14 +345,6 @@ where
         self.data_validity = cmp::max(validity, self.data_validity);
     }
 
-    fn prepend(&mut self, sheet: S) {
-        debug_assert!(!self.contains(&sheet));
-        
-        
-        self.set_data_validity_at_least(DataValidity::CascadeInvalid);
-        self.entries.insert(0, StylesheetSetEntry::new(sheet));
-    }
-
     
     fn iter(&self) -> StylesheetCollectionIterator<S> {
         StylesheetCollectionIterator(self.entries.iter())
@@ -415,20 +407,6 @@ macro_rules! sheet_set_methods {
             self.collect_invalidations_for(device, &sheet, guard);
             let collection = self.collection_for(&sheet, guard);
             collection.append(sheet);
-        }
-
-        /// Prepend a new stylesheet to the current set.
-        pub fn prepend_stylesheet(
-            &mut self,
-            device: Option<&Device>,
-            sheet: S,
-            guard: &SharedRwLockReadGuard,
-        ) {
-            debug!(concat!($set_name, "::prepend_stylesheet"));
-            self.collect_invalidations_for(device, &sheet, guard);
-
-            let collection = self.collection_for(&sheet, guard);
-            collection.prepend(sheet);
         }
 
         /// Insert a given stylesheet before another stylesheet in the document.
