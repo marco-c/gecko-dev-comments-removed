@@ -115,6 +115,9 @@ NS_DECL_CI_INTERFACE_GETTER(nsThread)
 
 Array<char, nsThread::kRunnableNameBufSize> nsThread::sMainThreadRunnableName;
 
+uint32_t nsThread::sActiveThreads;
+uint32_t nsThread::sMaxActiveThreads;
+
 
 
 
@@ -416,6 +419,40 @@ nsThread::Enumerate()
   return {};
 }
 
+ uint32_t
+nsThread::MaxActiveThreads()
+{
+  OffTheBooksMutexAutoLock mal(ThreadListMutex());
+  return sMaxActiveThreads;
+}
+
+void
+nsThread::AddToThreadList()
+{
+  OffTheBooksMutexAutoLock mal(ThreadListMutex());
+  MOZ_ASSERT(!isInList());
+
+  sActiveThreads++;
+  sMaxActiveThreads = std::max(sActiveThreads, sMaxActiveThreads);
+
+  ThreadList().insertBack(this);
+}
+
+void
+nsThread::MaybeRemoveFromThreadList()
+{
+  
+  
+  
+  
+  
+  if (isInList()) {
+    OffTheBooksMutexAutoLock mal(ThreadListMutex());
+    sActiveThreads--;
+    removeFrom(ThreadList());
+  }
+}
+
  void
 nsThread::ThreadFunc(void* aArg)
 {
@@ -588,8 +625,7 @@ nsThread::InitCommon()
 #endif
   }
 
-  OffTheBooksMutexAutoLock mal(ThreadListMutex());
-  ThreadList().insertBack(this);
+  AddToThreadList();
 }
 
 
@@ -645,15 +681,7 @@ nsThread::~nsThread()
   NS_ASSERTION(mRequestedShutdownContexts.IsEmpty(),
                "shouldn't be waiting on other threads to shutdown");
 
-  
-  
-  
-  
-  
-  if (isInList()) {
-    OffTheBooksMutexAutoLock mal(ThreadListMutex());
-    removeFrom(ThreadList());
-  }
+  MaybeRemoveFromThreadList();
 
 #ifdef DEBUG
   
@@ -821,12 +849,7 @@ nsThread::ShutdownInternal(bool aSync)
     return nullptr;
   }
 
-  {
-    OffTheBooksMutexAutoLock mal(ThreadListMutex());
-    if (isInList()) {
-      removeFrom(ThreadList());
-    }
-  }
+  MaybeRemoveFromThreadList();
 
   NotNull<nsThread*> currentThread =
     WrapNotNull(nsThreadManager::get().GetCurrentThread());
@@ -856,12 +879,7 @@ nsThread::ShutdownComplete(NotNull<nsThreadShutdownContext*> aContext)
   MOZ_ASSERT(mThread);
   MOZ_ASSERT(aContext->mTerminatingThread == this);
 
-  {
-    OffTheBooksMutexAutoLock mal(ThreadListMutex());
-    if (isInList()) {
-      removeFrom(ThreadList());
-    }
-  }
+  MaybeRemoveFromThreadList();
 
   if (aContext->mAwaitingShutdownAck) {
     
