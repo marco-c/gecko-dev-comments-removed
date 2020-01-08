@@ -37,7 +37,8 @@ struct CSSSizeOrRatio
     , mHeight(0)
     , mHasWidth(false)
     , mHasHeight(false)
-  {}
+  {
+  }
 
   bool CanComputeConcreteSize() const
   {
@@ -47,8 +48,7 @@ struct CSSSizeOrRatio
   bool HasRatio() const { return mRatio.width > 0 && mRatio.height > 0; }
   bool IsEmpty() const
   {
-    return (mHasWidth && mWidth <= 0) ||
-           (mHasHeight && mHeight <= 0) ||
+    return (mHasWidth && mWidth <= 0) || (mHasHeight && mHeight <= 0) ||
            mRatio.width <= 0 || mRatio.height <= 0;
   }
 
@@ -82,8 +82,9 @@ struct CSSSizeOrRatio
   }
   void SetRatio(const nsSize& aRatio)
   {
-    MOZ_ASSERT(!mHasWidth || !mHasHeight,
-               "Probably shouldn't be setting a ratio if we have a concrete size");
+    MOZ_ASSERT(
+      !mHasWidth || !mHasHeight,
+      "Probably shouldn't be setting a ratio if we have a concrete size");
     mRatio = aRatio;
   }
 
@@ -102,13 +103,15 @@ struct CSSSizeOrRatio
 
 
 
-class nsImageRenderer {
+class nsImageRenderer
+{
 public:
   typedef mozilla::image::ImgDrawResult ImgDrawResult;
   typedef mozilla::layers::LayerManager LayerManager;
   typedef mozilla::layers::ImageContainer ImageContainer;
 
-  enum {
+  enum
+  {
     FLAG_SYNC_DECODE_IMAGES = 0x01,
     FLAG_PAINTING_TO_WINDOW = 0x02
   };
@@ -118,7 +121,9 @@ public:
     COVER
   };
 
-  nsImageRenderer(nsIFrame* aForFrame, const nsStyleImage* aImage, uint32_t aFlags);
+  nsImageRenderer(nsIFrame* aForFrame,
+                  const nsStyleImage* aImage,
+                  uint32_t aFlags);
   ~nsImageRenderer() = default;
   
 
@@ -181,9 +186,10 @@ public:
 
 
 
-  static nsSize ComputeConcreteSize(const mozilla::CSSSizeOrRatio& aSpecifiedSize,
-                                    const mozilla::CSSSizeOrRatio& aIntrinsicSize,
-                                    const nsSize& aDefaultSize);
+  static nsSize ComputeConcreteSize(
+    const mozilla::CSSSizeOrRatio& aSpecifiedSize,
+    const mozilla::CSSSizeOrRatio& aIntrinsicSize,
+    const nsSize& aDefaultSize);
 
   
 
@@ -198,32 +204,33 @@ public:
 
 
 
-  ImgDrawResult DrawLayer(nsPresContext*       aPresContext,
-                       gfxContext&          aRenderingContext,
-                       const nsRect&        aDest,
-                       const nsRect&        aFill,
-                       const nsPoint&       aAnchor,
-                       const nsRect&        aDirty,
-                       const nsSize&        aRepeatSize,
-                       float                aOpacity);
+  ImgDrawResult DrawLayer(nsPresContext* aPresContext,
+                          gfxContext& aRenderingContext,
+                          const nsRect& aDest,
+                          const nsRect& aFill,
+                          const nsPoint& aAnchor,
+                          const nsRect& aDirty,
+                          const nsSize& aRepeatSize,
+                          float aOpacity);
 
   
 
 
 
 
-  ImgDrawResult BuildWebRenderDisplayItemsForLayer(nsPresContext*       aPresContext,
-                                                mozilla::wr::DisplayListBuilder& aBuilder,
-                                                mozilla::wr::IpcResourceUpdateQueue& aResource,
-                                                const mozilla::layers::StackingContextHelper& aSc,
-                                                mozilla::layers::WebRenderLayerManager* aManager,
-                                                nsDisplayItem*       aItem,
-                                                const nsRect&        aDest,
-                                                const nsRect&        aFill,
-                                                const nsPoint&       aAnchor,
-                                                const nsRect&        aDirty,
-                                                const nsSize&        aRepeatSize,
-                                                float                aOpacity);
+  ImgDrawResult BuildWebRenderDisplayItemsForLayer(
+    nsPresContext* aPresContext,
+    mozilla::wr::DisplayListBuilder& aBuilder,
+    mozilla::wr::IpcResourceUpdateQueue& aResource,
+    const mozilla::layers::StackingContextHelper& aSc,
+    mozilla::layers::WebRenderLayerManager* aManager,
+    nsDisplayItem* aItem,
+    const nsRect& aDest,
+    const nsRect& aFill,
+    const nsPoint& aAnchor,
+    const nsRect& aDirty,
+    const nsSize& aRepeatSize,
+    float aOpacity);
 
   
 
@@ -244,26 +251,25 @@ public:
 
 
 
-  ImgDrawResult
-  DrawBorderImageComponent(nsPresContext*       aPresContext,
-                           gfxContext&          aRenderingContext,
-                           const nsRect&        aDirtyRect,
-                           const nsRect&        aFill,
-                           const mozilla::CSSIntRect& aSrc,
-                           mozilla::StyleBorderImageRepeat aHFill,
-                           mozilla::StyleBorderImageRepeat aVFill,
-                           const nsSize&        aUnitSize,
-                           uint8_t              aIndex,
-                           const mozilla::Maybe<nsSize>& aSVGViewportSize,
-                           const bool           aHasIntrinsicRatio);
+  ImgDrawResult DrawBorderImageComponent(
+    nsPresContext* aPresContext,
+    gfxContext& aRenderingContext,
+    const nsRect& aDirtyRect,
+    const nsRect& aFill,
+    const mozilla::CSSIntRect& aSrc,
+    mozilla::StyleBorderImageRepeat aHFill,
+    mozilla::StyleBorderImageRepeat aVFill,
+    const nsSize& aUnitSize,
+    uint8_t aIndex,
+    const mozilla::Maybe<nsSize>& aSVGViewportSize,
+    const bool aHasIntrinsicRatio);
 
   
 
 
 
-  ImgDrawResult
-  DrawShapeImage(nsPresContext* aPresContext,
-                 gfxContext& aRenderingContext);
+  ImgDrawResult DrawShapeImage(nsPresContext* aPresContext,
+                               gfxContext& aRenderingContext);
 
   bool IsRasterImage();
   bool IsAnimatedImage();
@@ -271,13 +277,15 @@ public:
   
   already_AddRefed<imgIContainer> GetImage();
 
-  bool IsImageContainerAvailable(layers::LayerManager* aManager, uint32_t aFlags);
+  bool IsImageContainerAvailable(layers::LayerManager* aManager,
+                                 uint32_t aFlags);
   bool IsReady() const { return mPrepareResult == ImgDrawResult::SUCCESS; }
   ImgDrawResult PrepareResult() const { return mPrepareResult; }
   void SetExtendMode(mozilla::gfx::ExtendMode aMode) { mExtendMode = aMode; }
   void SetMaskOp(uint8_t aMaskOp) { mMaskOp = aMaskOp; }
-  void PurgeCacheForViewportChange(const mozilla::Maybe<nsSize>& aSVGViewportSize,
-                                   const bool aHasRatio);
+  void PurgeCacheForViewportChange(
+    const mozilla::Maybe<nsSize>& aSVGViewportSize,
+    const bool aHasRatio);
   nsStyleImageType GetType() const { return mType; }
   already_AddRefed<nsStyleGradient> GetGradientData();
 
@@ -289,15 +297,15 @@ private:
 
 
 
-  ImgDrawResult Draw(nsPresContext*       aPresContext,
-                  gfxContext&          aRenderingContext,
-                  const nsRect&        aDirtyRect,
-                  const nsRect&        aDest,
-                  const nsRect&        aFill,
-                  const nsPoint&       aAnchor,
-                  const nsSize&        aRepeatSize,
-                  const mozilla::CSSIntRect& aSrc,
-                  float                aOpacity = 1.0);
+  ImgDrawResult Draw(nsPresContext* aPresContext,
+                     gfxContext& aRenderingContext,
+                     const nsRect& aDirtyRect,
+                     const nsRect& aDest,
+                     const nsRect& aFill,
+                     const nsPoint& aAnchor,
+                     const nsSize& aRepeatSize,
+                     const mozilla::CSSIntRect& aSrc,
+                     float aOpacity = 1.0);
 
   
 
@@ -306,19 +314,20 @@ private:
 
 
 
-  ImgDrawResult BuildWebRenderDisplayItems(nsPresContext*       aPresContext,
-                                        mozilla::wr::DisplayListBuilder& aBuilder,
-                                        mozilla::wr::IpcResourceUpdateQueue& aResources,
-                                        const mozilla::layers::StackingContextHelper& aSc,
-                                        mozilla::layers::WebRenderLayerManager* aManager,
-                                        nsDisplayItem*       aItem,
-                                        const nsRect&        aDirtyRect,
-                                        const nsRect&        aDest,
-                                        const nsRect&        aFill,
-                                        const nsPoint&       aAnchor,
-                                        const nsSize&        aRepeatSize,
-                                        const mozilla::CSSIntRect& aSrc,
-                                        float                aOpacity = 1.0);
+  ImgDrawResult BuildWebRenderDisplayItems(
+    nsPresContext* aPresContext,
+    mozilla::wr::DisplayListBuilder& aBuilder,
+    mozilla::wr::IpcResourceUpdateQueue& aResources,
+    const mozilla::layers::StackingContextHelper& aSc,
+    mozilla::layers::WebRenderLayerManager* aManager,
+    nsDisplayItem* aItem,
+    const nsRect& aDirtyRect,
+    const nsRect& aDest,
+    const nsRect& aFill,
+    const nsPoint& aAnchor,
+    const nsSize& aRepeatSize,
+    const mozilla::CSSIntRect& aSrc,
+    float aOpacity = 1.0);
 
   
 
@@ -327,20 +336,20 @@ private:
 
 
   already_AddRefed<gfxDrawable> DrawableForElement(const nsRect& aImageRect,
-                                                   gfxContext&  aContext);
+                                                   gfxContext& aContext);
 
-  nsIFrame*                 mForFrame;
-  const nsStyleImage*       mImage;
-  nsStyleImageType          mType;
-  nsCOMPtr<imgIContainer>   mImageContainer;
+  nsIFrame* mForFrame;
+  const nsStyleImage* mImage;
+  nsStyleImageType mType;
+  nsCOMPtr<imgIContainer> mImageContainer;
   RefPtr<nsStyleGradient> mGradientData;
-  nsIFrame*                 mPaintServerFrame;
+  nsIFrame* mPaintServerFrame;
   nsLayoutUtils::SurfaceFromElementResult mImageElementSurface;
-  ImgDrawResult                mPrepareResult;
-  nsSize                    mSize; 
-  uint32_t                  mFlags;
-  mozilla::gfx::ExtendMode  mExtendMode;
-  uint8_t                   mMaskOp;
+  ImgDrawResult mPrepareResult;
+  nsSize mSize; 
+  uint32_t mFlags;
+  mozilla::gfx::ExtendMode mExtendMode;
+  uint8_t mMaskOp;
 };
 
 } 
