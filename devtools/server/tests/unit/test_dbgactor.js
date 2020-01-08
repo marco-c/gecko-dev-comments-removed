@@ -3,112 +3,37 @@
 
 "use strict";
 
-var gClient;
-var gDebuggee;
-
 const xpcInspector = Cc["@mozilla.org/jsinspector;1"].getService(Ci.nsIJSInspector);
 
-function run_test() {
-  initTestDebuggerServer();
-  gDebuggee = testGlobal("test-1");
-  DebuggerServer.addTestGlobal(gDebuggee);
+add_task(threadClientTest(async ({ threadClient, debuggee, client, targetFront }) => {
+  Assert.equal(xpcInspector.eventLoopNestLevel, 0);
 
-  const transport = DebuggerServer.connectPipe();
-  gClient = new DebuggerClient(transport);
-  gClient.addListener("connected", function(event, type, traits) {
-    gClient.listTabs().then((response) => {
-      Assert.ok("tabs" in response);
-      for (const tab of response.tabs) {
-        if (tab.title == "test-1") {
-          test_attach_tab(tab.actor);
-          return false;
-        }
-      }
+  await new Promise(resolve => {
+    client.addListener("paused", function(name, packet) {
+      Assert.equal(name, "paused");
+      Assert.equal(false, "error" in packet);
+      Assert.equal(packet.from, threadClient.actor);
+      Assert.equal(packet.type, "paused");
+      Assert.ok("actor" in packet);
+      Assert.ok("why" in packet);
+      Assert.equal(packet.why.type, "debuggerStatement");
+
       
-      Assert.ok(false);
-      return undefined;
+      
+      Assert.ok(debuggee.a);
+      Assert.ok(!debuggee.b);
+
+      Assert.equal(xpcInspector.eventLoopNestLevel, 1);
+
+      
+      threadClient.resume().then(resolve);
     });
-  });
-
-  gClient.connect();
-
-  do_test_pending();
-}
-
-
-function test_attach_tab(targetActor) {
-  gClient.request({ to: targetActor, type: "attach" }, function(response) {
-    Assert.equal(false, "error" in response);
-    Assert.equal(response.from, targetActor);
-    Assert.equal(response.type, "tabAttached");
-    Assert.ok(typeof response.threadActor === "string");
-
-    test_attach_thread(response.threadActor);
-  });
-}
-
-
-function test_attach_thread(threadActor) {
-  gClient.request({ to: threadActor, type: "attach" }, function(response) {
-    Assert.equal(false, "error" in response);
-    Assert.equal(response.from, threadActor);
-    Assert.equal(response.type, "paused");
-    Assert.ok("why" in response);
-    Assert.equal(response.why.type, "attached");
-
-    test_resume_thread(threadActor);
-  });
-}
-
-
-
-function test_resume_thread(threadActor) {
-  
-  gClient.request({ to: threadActor, type: "resume" }, function(response) {
-    Assert.equal(false, "error" in response);
-    Assert.equal(response.from, threadActor);
-    Assert.equal(response.type, "resumed");
-
-    Assert.equal(xpcInspector.eventLoopNestLevel, 0);
 
     
-    Cu.evalInSandbox("var a = true; var b = false; debugger; var b = true;", gDebuggee);
+    Cu.evalInSandbox("var a = true; var b = false; debugger; var b = true;", debuggee);
     
-    Assert.ok(gDebuggee.b);
+    Assert.ok(debuggee.b);
   });
 
-  gClient.addListener("paused", function(name, packet) {
-    Assert.equal(name, "paused");
-    Assert.equal(false, "error" in packet);
-    Assert.equal(packet.from, threadActor);
-    Assert.equal(packet.type, "paused");
-    Assert.ok("actor" in packet);
-    Assert.ok("why" in packet);
-    Assert.equal(packet.why.type, "debuggerStatement");
-
-    
-    
-    Assert.ok(gDebuggee.a);
-    Assert.ok(!gDebuggee.b);
-
-    Assert.equal(xpcInspector.eventLoopNestLevel, 1);
-
-    
-    gClient.request({ to: threadActor, type: "resume" }, cleanup);
-  });
-}
-
-function cleanup() {
-  gClient.addListener("closed", function(event, result) {
-    do_test_finished();
-  });
-
-  try {
-    const inspector = Cc["@mozilla.org/jsinspector;1"].getService(Ci.nsIJSInspector);
-    Assert.equal(inspector.eventLoopNestLevel, 0);
-  } catch (e) {
-    dump(e);
-  }
-
-  gClient.close();
-}
+  Assert.equal(xpcInspector.eventLoopNestLevel, 0);
+}));
