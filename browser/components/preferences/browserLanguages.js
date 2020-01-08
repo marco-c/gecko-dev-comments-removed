@@ -467,6 +467,8 @@ var gBrowserLanguagesDialog = {
       this._availableLocales.items.shift();
       this._availableLocales.setItems(this._availableLocales.items);
     }
+    
+    this._availableLocales.enableWithMessageId("browser-languages-select-language");
   },
 
   async requestRemoteLanguage(item) {
