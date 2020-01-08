@@ -37,7 +37,7 @@ JSObject* XULFrameElement::WrapNode(JSContext* aCx,
   return XULFrameElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-nsIDocShell* XULFrameElement::GetDocShell() {
+nsDocShell* XULFrameElement::GetDocShell() {
   RefPtr<nsFrameLoader> frameLoader = GetFrameLoader();
   return frameLoader ? frameLoader->GetDocShell(IgnoreErrors()) : nullptr;
 }
@@ -49,12 +49,9 @@ already_AddRefed<nsIWebNavigation> XULFrameElement::GetWebNavigation() {
 }
 
 Nullable<WindowProxyHolder> XULFrameElement::GetContentWindow() {
-  nsCOMPtr<nsIDocShell> docShell = GetDocShell();
+  RefPtr<nsDocShell> docShell = GetDocShell();
   if (docShell) {
-    nsCOMPtr<nsPIDOMWindowOuter> win = docShell->GetWindow();
-    if (win) {
-      return WindowProxyHolder(win.forget());
-    }
+    return WindowProxyHolder(docShell->GetWindowProxy());
   }
 
   return nullptr;
@@ -78,7 +75,7 @@ void XULFrameElement::LoadSrc() {
   RefPtr<nsFrameLoader> frameLoader = GetFrameLoader();
   if (!frameLoader) {
     
-    nsCOMPtr<nsPIDOMWindowOuter> opener = mOpener;
+    RefPtr<BrowsingContext> opener = mOpener;
     if (!opener) {
       
       nsCOMPtr<nsPIDOMWindowOuter> window = OwnerDoc()->GetWindow();
@@ -94,7 +91,8 @@ void XULFrameElement::LoadSrc() {
     
     
     
-    mFrameLoader = nsFrameLoader::Create(this, opener, false);
+    mFrameLoader = nsFrameLoader::Create(
+        this, opener ? opener->GetDOMWindow() : nullptr, false);
     if (NS_WARN_IF(!mFrameLoader)) {
       return;
     }

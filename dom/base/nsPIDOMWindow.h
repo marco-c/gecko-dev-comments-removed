@@ -883,7 +883,10 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   inline nsIDocShell* GetDocShell() const;
 
-  mozilla::dom::BrowsingContext* GetBrowsingContext() const;
+  
+
+
+  inline mozilla::dom::BrowsingContext* GetBrowsingContext() const;
 
   
 
@@ -1103,8 +1106,10 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
 
 
-  void SetOpenerForInitialContentBrowser(nsPIDOMWindowOuter* aOpener);
-  already_AddRefed<nsPIDOMWindowOuter> TakeOpenerForInitialContentBrowser();
+  void SetOpenerForInitialContentBrowser(
+      mozilla::dom::BrowsingContext* aOpener);
+  already_AddRefed<mozilla::dom::BrowsingContext>
+  TakeOpenerForInitialContentBrowser();
 
  protected:
   
@@ -1131,6 +1136,7 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   
   nsCOMPtr<nsIDocShell> mDocShell;
+  RefPtr<mozilla::dom::BrowsingContext> mBrowsingContext;
 
   uint32_t mModalStateDepth;
 
@@ -1180,7 +1186,7 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   mozilla::dom::LargeAllocStatus mLargeAllocStatus;
 
-  nsCOMPtr<nsPIDOMWindowOuter> mOpenerForInitialContentBrowser;
+  RefPtr<mozilla::dom::BrowsingContext> mOpenerForInitialContentBrowser;
 
   using PermissionInfo = std::pair<bool, mozilla::TimeStamp>;
   nsDataHashtable<nsStringHashKey, PermissionInfo> mAutoplayTemporaryPermission;

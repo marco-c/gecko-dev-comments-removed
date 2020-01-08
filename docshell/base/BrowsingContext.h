@@ -12,11 +12,13 @@
 #include "mozilla/WeakPtr.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsIDocShell.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsWrapperCache.h"
 
-class nsIDocShell;
+class nsGlobalWindowOuter;
+class nsOuterWindowProxy;
 
 namespace mozilla {
 
@@ -82,6 +84,12 @@ class BrowsingContext : public nsWrapperCache,
 
   
   
+  nsPIDOMWindowOuter* GetDOMWindow() const {
+    return mDocShell ? mDocShell->GetWindow() : nullptr;
+  }
+
+  
+  
   
   
   void Attach();
@@ -123,6 +131,13 @@ class BrowsingContext : public nsWrapperCache,
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
+  
+  inline JSObject* GetWindowProxy() const { return mWindowProxy; }
+  
+  void SetWindowProxy(JS::Handle<JSObject*> aWindowProxy) {
+    mWindowProxy = aWindowProxy;
+  }
+
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(BrowsingContext)
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(BrowsingContext)
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(BrowsingContext)
@@ -136,6 +151,22 @@ class BrowsingContext : public nsWrapperCache,
                   Type aType);
 
  private:
+  friend class ::nsOuterWindowProxy;
+  friend class ::nsGlobalWindowOuter;
+  
+  
+  
+  void UpdateWindowProxy(JSObject* obj, JSObject* old) {
+    if (mWindowProxy) {
+      MOZ_ASSERT(mWindowProxy == old);
+      mWindowProxy = obj;
+    }
+  }
+  
+  
+  
+  void ClearWindowProxy() { mWindowProxy = nullptr; }
+
   
   const Type mType;
 
@@ -148,6 +179,11 @@ class BrowsingContext : public nsWrapperCache,
   WeakPtr<BrowsingContext> mOpener;
   nsCOMPtr<nsIDocShell> mDocShell;
   nsString mName;
+  
+  
+  
+  
+  JS::Heap<JSObject*> mWindowProxy;
 };
 
 }  
