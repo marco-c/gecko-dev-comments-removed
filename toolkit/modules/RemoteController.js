@@ -83,6 +83,10 @@ RemoteController.prototype = {
       this._supportedCommands[aDisabledCommands[c]] = false;
     }
 
+    
+    if (this._browser != this._browser.ownerDocument.activeElement) {
+      return;
+    }
     this._browser.ownerGlobal.updateCommands(aAction);
   },
 };

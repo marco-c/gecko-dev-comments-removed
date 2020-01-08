@@ -59,6 +59,7 @@ add_task(async function test_init() {
 
 
 add_task(async function test_panelui_opened() {
+  document.commandDispatcher.unlock();
   gURLBar.focus();
   gURLBar.value = "test";
 
