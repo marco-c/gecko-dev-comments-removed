@@ -1801,7 +1801,17 @@ nsFrameSelection::CommonPageMove(bool aForward,
     return;
   }
 
-  if (scrollableFrame) {
+  
+  
+  nsIFrame* frameToClick = scrolledFrame;
+  if (!IsValidSelectionPoint(this, scrolledFrame->GetContent())) {
+    frameToClick = GetFrameToPageSelect();
+    if (NS_WARN_IF(!frameToClick)) {
+      return;
+    }
+  }
+
+  if (scrollableFrame && scrolledFrame == frameToClick) {
     
     
     if (aForward) {
@@ -1812,20 +1822,20 @@ nsFrameSelection::CommonPageMove(bool aForward,
   } else {
     
     if (aForward) {
-      caretPos.y += scrolledFrame->GetSize().height;
+      caretPos.y += frameToClick->GetSize().height;
     } else {
-      caretPos.y -= scrolledFrame->GetSize().height;
+      caretPos.y -= frameToClick->GetSize().height;
     }
   }
 
-  caretPos += caretFrame->GetOffsetTo(scrolledFrame);
+  caretPos += caretFrame->GetOffsetTo(frameToClick);
 
   
   nsPoint desiredPoint;
   desiredPoint.x = caretPos.x;
   desiredPoint.y = caretPos.y + caretPos.height / 2;
   nsIFrame::ContentOffsets offsets =
-      scrolledFrame->GetContentOffsetsFromPoint(desiredPoint);
+      frameToClick->GetContentOffsetsFromPoint(desiredPoint);
 
   if (!offsets.content) {
     return;
