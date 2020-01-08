@@ -165,15 +165,6 @@ public:
 
 
 
-
-
-  Element* LookupImageElement(const nsAString& aElementId);
-
-  
-
-
-
-
   inline bool CheckGetElementByIdArg(const nsAString& aId)
   {
     if (aId.IsEmpty()) {
