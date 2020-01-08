@@ -171,7 +171,7 @@ def process_leak_log(leak_log_file, leak_thresholds=None,
 
     
     
-    knownProcessTypes = ["default", "plugin", "tab", "geckomediaplugin", "gpu", "rdd"]
+    knownProcessTypes = ["default", "plugin", "tab", "geckomediaplugin", "gpu"]
 
     for processType in knownProcessTypes:
         log.info("TEST-INFO | leakcheck | %s process: leak threshold set at %d bytes"

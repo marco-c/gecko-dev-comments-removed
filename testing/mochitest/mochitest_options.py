@@ -842,7 +842,6 @@ class MochitestArguments(ArgumentContainer):
             "tab": options.defaultLeakThreshold,
             
             "geckomediaplugin": 20000,
-            "rdd": 400,
         }
 
         
