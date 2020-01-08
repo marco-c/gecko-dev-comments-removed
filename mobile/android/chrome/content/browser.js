@@ -4184,9 +4184,9 @@ Tab.prototype = {
           if (errorExtra == "fileAccessDenied") {
             
             
-            RuntimePermissions.checkPermission(RuntimePermissions.WRITE_EXTERNAL_STORAGE).then((permissionAlreadyGranted) => {
+            RuntimePermissions.checkPermission(RuntimePermissions.READ_EXTERNAL_STORAGE).then((permissionAlreadyGranted) => {
               if (!permissionAlreadyGranted) {
-                RuntimePermissions.waitForPermissions(RuntimePermissions.WRITE_EXTERNAL_STORAGE).then((permissionGranted) => {
+                RuntimePermissions.waitForPermissions(RuntimePermissions.READ_EXTERNAL_STORAGE).then((permissionGranted) => {
                   if (permissionGranted) {
                     this.browser.reload();
                   }
