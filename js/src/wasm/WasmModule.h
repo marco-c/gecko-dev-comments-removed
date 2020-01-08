@@ -36,6 +36,13 @@ struct CompileArgs;
 
 
 
+typedef RefPtr<JS::OptimizedEncodingListener> Tier2Listener;
+
+
+
+
+
+
 
 
 
@@ -68,6 +75,12 @@ class Module : public JS::WasmModule
     const UniqueConstBytes  debugUnlinkedCode_;
     const UniqueLinkData    debugLinkData_;
     const SharedBytes       debugBytecode_;
+
+    
+    
+    
+
+    mutable Tier2Listener   tier2Listener_;
 
     
     
@@ -116,7 +129,7 @@ class Module : public JS::WasmModule
     {
         MOZ_ASSERT_IF(metadata().debugEnabled, debugUnlinkedCode_ && debugLinkData_);
     }
-    ~Module() override {  }
+    ~Module() override;
 
     const Code& code() const { return *code_; }
     const ModuleSegment& moduleSegment(Tier t) const { return code_->segment(t); }
@@ -144,17 +157,19 @@ class Module : public JS::WasmModule
     
     
 
-    void startTier2(const CompileArgs& args, const ShareableBytes& bytecode);
+    void startTier2(const CompileArgs& args,
+                    const ShareableBytes& bytecode,
+                    JS::OptimizedEncodingListener* listener);
     bool finishTier2(const LinkData& linkData2, UniqueCodeTier code2) const;
 
     void testingBlockOnTier2Complete() const;
     bool testingTier2Active() const { return testingTier2Active_; }
 
     
-    
 
     size_t serializedSize(const LinkData& linkData) const;
     void serialize(const LinkData& linkData, uint8_t* begin, size_t size) const;
+    void serialize(const LinkData& linkData, JS::OptimizedEncodingListener& listener) const;
     static RefPtr<Module> deserialize(const uint8_t* begin, size_t size,
                                       Metadata* maybeMetadata = nullptr);
 
@@ -179,6 +194,9 @@ typedef RefPtr<Module> MutableModule;
 typedef RefPtr<const Module> SharedModule;
 
 
+
+bool
+GetOptimizedEncodingBuildId(JS::BuildIdCharVector* buildId);
 
 RefPtr<JS::WasmModule>
 DeserializeModule(PRFileDesc* bytecode, UniqueChars filename, unsigned line);

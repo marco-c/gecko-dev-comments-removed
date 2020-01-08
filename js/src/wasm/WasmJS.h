@@ -42,8 +42,19 @@ HasCompilerSupport(JSContext* cx);
 
 
 
+
+
 bool
 HasSupport(JSContext* cx);
+
+
+
+
+bool
+HasStreamingSupport(JSContext* cx);
+
+bool
+HasCachingSupport(JSContext* cx);
 
 
 

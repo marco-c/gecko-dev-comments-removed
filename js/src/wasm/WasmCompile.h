@@ -112,15 +112,25 @@ CompileTier2(const CompileArgs& args, const Bytes& bytecode, const Module& modul
 
 
 
-typedef ExclusiveWaitableData<const uint8_t*> ExclusiveStreamEnd;
-typedef ExclusiveWaitableData<const Bytes*> ExclusiveTailBytesPtr;
+
+typedef ExclusiveWaitableData<const uint8_t*> ExclusiveBytesPtr;
+
+struct StreamEndData
+{
+    bool reached;
+    const Bytes* tailBytes;
+    Tier2Listener tier2Listener;
+
+    StreamEndData() : reached(false) {}
+};
+typedef ExclusiveWaitableData<StreamEndData> ExclusiveStreamEndData;
 
 SharedModule
 CompileStreaming(const CompileArgs& args,
                  const Bytes& envBytes,
                  const Bytes& codeBytes,
-                 const ExclusiveStreamEnd& codeStreamEnd,
-                 const ExclusiveTailBytesPtr& tailBytesPtr,
+                 const ExclusiveBytesPtr& codeBytesEnd,
+                 const ExclusiveStreamEndData& streamEnd,
                  const Atomic<bool>& cancelled,
                  UniqueChars* error,
                  UniqueCharsVector* warnings);

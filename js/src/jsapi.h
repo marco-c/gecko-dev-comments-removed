@@ -3421,6 +3421,7 @@ InitDispatchToEventLoop(JSContext* cx, DispatchToEventLoopCallback callback, voi
 
 
 
+typedef js::Vector<char, 0, js::SystemAllocPolicy> BuildIdCharVector;
 
 
 
@@ -3432,6 +3433,41 @@ InitDispatchToEventLoop(JSContext* cx, DispatchToEventLoopCallback callback, voi
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class OptimizedEncodingListener
+{
+  protected:
+    virtual ~OptimizedEncodingListener() {}
+
+  public:
+    
+    
+    virtual MozExternalRefCountType MOZ_XPCOM_ABI AddRef() = 0;
+    virtual MozExternalRefCountType MOZ_XPCOM_ABI Release() = 0;
+
+    
+    
+    virtual void storeOptimizedEncoding(const uint8_t* bytes, size_t length) = 0;
+};
+
+extern JS_PUBLIC_API(bool)
+GetOptimizedEncodingBuildId(BuildIdCharVector* buildId);
 
 class JS_PUBLIC_API(StreamConsumer)
 {
@@ -3449,7 +3485,13 @@ class JS_PUBLIC_API(StreamConsumer)
     
     
     enum CloseReason { EndOfFile, Error };
-    virtual void streamClosed(CloseReason reason) = 0;
+    virtual void streamClosed(CloseReason reason,
+                              OptimizedEncodingListener* listener = nullptr) = 0;
+
+    
+    
+    
+    virtual void consumeOptimizedEncoding(const uint8_t* begin, size_t length) = 0;
 
     
     
@@ -4635,8 +4677,6 @@ SetAsmJSCacheOps(JSContext* cx, const AsmJSCacheOps* callbacks);
 
 
 
-
-typedef js::Vector<char, 0, js::SystemAllocPolicy> BuildIdCharVector;
 
 typedef bool
 (* BuildIdOp)(BuildIdCharVector* buildId);
