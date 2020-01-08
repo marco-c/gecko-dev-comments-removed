@@ -191,8 +191,10 @@ RuleEditor.prototype = {
                  (isHighlighted ? " highlighted" : ""),
           title: l10n("rule.selectorHighlighter.tooltip"),
         });
-        selectorHighlighter.addEventListener("click", () => {
+        selectorHighlighter.addEventListener("click", event => {
           this.ruleView.toggleSelectorHighlighter(selectorHighlighter, selector);
+          
+          event.stopPropagation();
         });
 
         this.uniqueSelector = selector;
