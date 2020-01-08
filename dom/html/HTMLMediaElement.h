@@ -1371,6 +1371,23 @@ protected:
 
   
   
+  
+  void UpdateAudioTrackSilenceRange(bool aAudible);
+
+  
+  
+  
+  void AccumulateAudioTrackSilence();
+
+  
+  bool IsAudioTrackCurrentlySilent() const;
+
+  
+  
+  void ReportAudioTrackSilenceProportionTelemetry();
+
+  
+  
   RefPtr<MediaDecoder> mDecoder;
 
   
@@ -1486,6 +1503,17 @@ protected:
 
   
   bool mIsAudioTrackAudible = false;
+
+  
+  double mAudioTrackSilenceStartedTime = 0.0;
+
+  
+  
+  media::TimeIntervals mSilenceTimeRanges;
+
+  
+  
+  bool mHasAccumulatedSilenceRangeBeforeSeekEnd = false;
 
   enum MutedReasons {
     MUTED_BY_CONTENT               = 0x01,
