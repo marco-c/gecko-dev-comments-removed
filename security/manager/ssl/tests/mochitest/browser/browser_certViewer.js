@@ -13,12 +13,13 @@ var { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm", {});
 add_task(async function testCAandTitle() {
   let cert = await readCertificate("ca.pem", "CTu,CTu,CTu");
   let win = await displayCertificate(cert);
-  checkUsages(win, ["SSL Certificate Authority"]);
+  checkUsages(win, [{id: "verify-ssl-ca"}]);
   checkDetailsPane(win, ["ca"]);
 
   
   
-  Assert.equal(win.document.title, "Certificate Viewer: \u201Cca\u201D",
+  Assert.deepEqual(win.document.l10n.getAttributes(win.document.documentElement),
+                {args: { certName: "ca"}, id: "cert-viewer-title"},
                "Actual and expected title should match");
   await BrowserTestUtils.closeWindow(win);
 });
@@ -26,7 +27,7 @@ add_task(async function testCAandTitle() {
 add_task(async function testSSLEndEntity() {
   let cert = await readCertificate("ssl-ee.pem", ",,");
   let win = await displayCertificate(cert);
-  checkUsages(win, ["SSL Server Certificate", "SSL Client Certificate"]);
+  checkUsages(win, [{id: "verify-ssl-server"}, {id: "verify-ssl-client"}]);
   checkDetailsPane(win, ["ca", "ssl-ee"]);
   await BrowserTestUtils.closeWindow(win);
 });
@@ -34,7 +35,7 @@ add_task(async function testSSLEndEntity() {
 add_task(async function testEmailEndEntity() {
   let cert = await readCertificate("email-ee.pem", ",,");
   let win = await displayCertificate(cert);
-  checkUsages(win, ["Email Recipient Certificate", "Email Signer Certificate"]);
+  checkUsages(win, [{id: "verify-email-recip"}, {id: "verify-email-signer"}]);
   checkDetailsPane(win, ["ca", "email-ee"]);
   await BrowserTestUtils.closeWindow(win);
 });
@@ -42,7 +43,7 @@ add_task(async function testEmailEndEntity() {
 add_task(async function testCodeSignEndEntity() {
   let cert = await readCertificate("code-ee.pem", ",,");
   let win = await displayCertificate(cert);
-  checkError(win, "Could not verify this certificate for unknown reasons.");
+  checkError(win, {id: "cert-not-verified-unknown"});
   checkDetailsPane(win, ["code-ee"]);
   await BrowserTestUtils.closeWindow(win);
 });
@@ -50,7 +51,7 @@ add_task(async function testCodeSignEndEntity() {
 add_task(async function testExpired() {
   let cert = await readCertificate("expired-ca.pem", ",,");
   let win = await displayCertificate(cert);
-  checkError(win, "Could not verify this certificate because it has expired.");
+  checkError(win, {id: "cert-not-verified-cert-expired"});
   checkDetailsPane(win, ["expired-ca"]);
   await BrowserTestUtils.closeWindow(win);
 
@@ -58,9 +59,7 @@ add_task(async function testExpired() {
   
   let eeCert = await readCertificate("ee-from-expired-ca.pem", ",,");
   let eeWin = await displayCertificate(eeCert);
-  checkError(eeWin,
-             "Could not verify this certificate because the CA certificate " +
-             "is invalid.");
+  checkError(eeWin, {id: "cert-not-verified-ca-invalid"});
   checkDetailsPane(eeWin, ["ee-from-expired-ca"]);
   await BrowserTestUtils.closeWindow(eeWin);
 });
@@ -68,9 +67,7 @@ add_task(async function testExpired() {
 add_task(async function testUnknownIssuer() {
   let cert = await readCertificate("unknown-issuer.pem", ",,");
   let win = await displayCertificate(cert);
-  checkError(win,
-             "Could not verify this certificate because the issuer is " +
-             "unknown.");
+  checkError(win, {id: "cert-not-verified-issuer-unknown"});
   checkDetailsPane(win, ["unknown-issuer"]);
   await BrowserTestUtils.closeWindow(win);
 });
@@ -78,10 +75,7 @@ add_task(async function testUnknownIssuer() {
 add_task(async function testInsecureAlgo() {
   let cert = await readCertificate("md5-ee.pem", ",,");
   let win = await displayCertificate(cert);
-  checkError(win,
-             "Could not verify this certificate because it was signed using " +
-             "a signature algorithm that was disabled because that algorithm " +
-             "is not secure.");
+  checkError(win, {id: "cert-not-verified_algorithm-disabled"});
   checkDetailsPane(win, ["md5-ee"]);
   await BrowserTestUtils.closeWindow(win);
 });
@@ -89,8 +83,7 @@ add_task(async function testInsecureAlgo() {
 add_task(async function testUntrusted() {
   let cert = await readCertificate("untrusted-ca.pem", "p,p,p");
   let win = await displayCertificate(cert);
-  checkError(win,
-             "Could not verify this certificate because it is not trusted.");
+  checkError(win, {id: "cert-not-verified-cert-not-trusted"});
   checkDetailsPane(win, ["untrusted-ca"]);
   await BrowserTestUtils.closeWindow(win);
 
@@ -98,9 +91,7 @@ add_task(async function testUntrusted() {
   
   let eeCert = await readCertificate("ee-from-untrusted-ca.pem", ",,");
   let eeWin = await displayCertificate(eeCert);
-  checkError(eeWin,
-             "Could not verify this certificate because the issuer is not " +
-             "trusted.");
+  checkError(eeWin, {id: "cert-not-verified-issuer-not-trusted"});
   checkDetailsPane(eeWin, ["ee-from-untrusted-ca"]);
   await BrowserTestUtils.closeWindow(eeWin);
 });
@@ -119,8 +110,7 @@ add_task(async function testRevoked() {
   
   
   
-  checkUsages(win, ["Email Recipient Certificate", "Email Signer Certificate",
-                    "SSL Client Certificate"]);
+  checkUsages(win, [{id: "verify-email-recip"}, {id: "verify-email-signer"}, {id: "verify-ssl-client"}]);
   checkDetailsPane(win, ["ca", "revoked"]);
   await BrowserTestUtils.closeWindow(win);
 });
@@ -132,7 +122,7 @@ add_task(async function testInvalid() {
   
   let cert = await readCertificate("invalid.pem", ",,");
   let win = await displayCertificate(cert);
-  checkError(win, "Could not verify this certificate for unknown reasons.");
+  checkError(win, {id: "cert-not-verified-unknown"});
   checkDetailsPane(win, ["invalid"]);
   await BrowserTestUtils.closeWindow(win);
 });
@@ -181,10 +171,10 @@ function getUsages(win) {
   Array.from(verifyInfoBox.children).forEach(child => {
     if (child.getAttribute("hidden") != "true" &&
         child.getAttribute("id") != "verified") {
-      determinedUsages.push(child.getAttribute("value"));
+      determinedUsages.push(win.document.l10n.getAttributes(child));
     }
   });
-  return determinedUsages.sort();
+  return determinedUsages.sort(compareL10Ids);
 }
 
 
@@ -200,7 +190,8 @@ function getUsages(win) {
 
 
 function getError(win) {
-  return win.document.getElementById("verified").textContent;
+  let verified = win.document.getElementById("verified");
+  return win.document.l10n.getAttributes(verified);
 }
 
 
@@ -213,16 +204,16 @@ function getError(win) {
 
 
 
-function checkUsages(win, usages) {
-  Assert.equal(getError(win),
-               "This certificate has been verified for the following uses:",
+function checkUsages(win, usagesL10nIds) {
+  Assert.deepEqual(getError(win),
+               { id: "cert-verified" },
                "should have successful verification message");
   let determinedUsages = getUsages(win);
-  usages.sort();
-  Assert.equal(determinedUsages.length, usages.length,
+  usagesL10nIds.sort(compareL10Ids);
+  Assert.deepEqual(determinedUsages.length, usagesL10nIds.length,
                "number of usages as determined by cert viewer should be equal");
-  while (usages.length > 0) {
-    Assert.equal(determinedUsages.pop(), usages.pop(),
+  while (usagesL10nIds.length > 0) {
+    Assert.deepEqual(determinedUsages.pop(), usagesL10nIds.pop(),
                  "usages as determined by cert viewer should be equal");
   }
 }
@@ -236,11 +227,11 @@ function checkUsages(win, usages) {
 
 
 
-function checkError(win, error) {
+function checkError(win, errorL10nId) {
   let determinedUsages = getUsages(win);
   Assert.equal(determinedUsages.length, 0,
                "should not have any successful usages in error case");
-  Assert.equal(getError(win), error,
+  Assert.deepEqual(getError(win), errorL10nId,
                "determined error should be the same as expected error");
 }
 
@@ -264,3 +255,22 @@ function checkDetailsPane(win, names) {
                  "details pain: should have expected cert name");
   }
 }
+
+
+
+
+
+
+
+
+
+
+function compareL10Ids(ida, idb) {
+  if (ida.id < idb.id) {
+    return -1;
+  } else if (ida.id > idb.id) {
+    return 1;
+  }
+  return 0;
+}
+
