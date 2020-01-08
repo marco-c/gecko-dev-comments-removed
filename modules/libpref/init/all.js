@@ -5334,7 +5334,11 @@ pref("dom.vr.autoactivate.enabled", false);
 
 pref("dom.vr.controller_trigger_threshold", "0.1");
 
+#if defined(XP_WIN) && defined(NIGHTLY_BUILD)
+pref("dom.vr.external.enabled", true);
+#else
 pref("dom.vr.external.enabled", false);
+#endif
 
 
 pref("dom.vr.external.notdetected.timeout", 60000);
@@ -5423,8 +5427,8 @@ pref("dom.vr.poseprediction.enabled", true);
 
 pref("dom.vr.require-gesture", true);
 
-#if defined(XP_WIN)
-pref("dom.vr.process.enabled", false);
+#if defined(XP_WIN) && defined(NIGHTLY_BUILD)
+pref("dom.vr.process.enabled", true);
 #endif
 
 pref("dom.vr.puppet.enabled", false);
