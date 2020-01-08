@@ -22,6 +22,9 @@
 
 "use strict";
 
+
+requestLongerTimeout(2);
+
 add_task(async function() {
   
   await pushPref("devtools.webconsole.jsterm.codeMirror", false);
