@@ -337,7 +337,7 @@ void RootAccessible::ProcessDOMEvent(Event* aDOMEvent) {
     
     if (FocusMgr()->HasDOMFocus(targetNode)) {
       nsCOMPtr<nsIDOMXULMultiSelectControlElement> multiSel =
-          do_QueryInterface(targetNode);
+          targetNode->AsElement()->AsXULMultiSelectControl();
       nsAutoString selType;
       multiSel->GetSelType(selType);
       if (selType.IsEmpty() || !selType.EqualsLiteral("single")) {

@@ -39,9 +39,7 @@ class XULSelectControlAccessible : public AccessibleWrap {
   virtual void SetCurrentItem(const Accessible* aItem) override;
 
  protected:
-  
-  
-  nsCOMPtr<nsIDOMXULSelectControlElement> mSelectControl;
+  RefPtr<Element> mSelectControl;
 };
 
 }  

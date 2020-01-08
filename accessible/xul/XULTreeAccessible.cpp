@@ -410,13 +410,13 @@ bool XULTreeAccessible::AreItemsOperable() const {
 }
 
 Accessible* XULTreeAccessible::ContainerWidget() const {
-  if (IsAutoCompletePopup()) {
+  if (IsAutoCompletePopup() && mContent->GetParent()) {
     
     
     
     
     nsCOMPtr<nsIDOMXULMenuListElement> menuListElm =
-        do_QueryInterface(mContent->GetParent());
+        mContent->GetParent()->AsElement()->AsXULMenuList();
     if (menuListElm) {
       RefPtr<mozilla::dom::Element> inputElm;
       menuListElm->GetInputField(getter_AddRefs(inputElm));
