@@ -51,7 +51,6 @@ class HTMLVideoElement;
 enum class ImageBitmapFormat : uint8_t;
 class ImageData;
 class ImageUtils;
-template<typename T> class MapDataIntoBufferSource;
 class Promise;
 class PostMessageEvent; 
 class ImageBitmapShutdownObserver;
@@ -61,7 +60,6 @@ struct ImageBitmapCloneData final
   RefPtr<gfx::DataSourceSurface> mSurface;
   gfx::IntRect mPictureRect;
   gfxAlphaType mAlphaType;
-  bool mIsCroppingAreaOutSideOfSourceImage;
 };
 
 
@@ -150,9 +148,6 @@ public:
   friend CreateImageBitmapFromBlobTask;
   friend CreateImageBitmapFromBlobWorkerTask;
 
-  template<typename T>
-  friend class MapDataIntoBufferSource;
-
   
   ImageBitmapFormat
   FindOptimalFormat(const Optional<Sequence<ImageBitmapFormat>>& aPossibleFormats,
@@ -160,12 +155,6 @@ public:
 
   int32_t
   MappedDataLength(ImageBitmapFormat aFormat, ErrorResult& aRv);
-
-  already_AddRefed<Promise>
-  MapDataInto(JSContext* aCx,
-              ImageBitmapFormat aFormat,
-              const ArrayBufferViewOrArrayBuffer& aBuffer,
-              int32_t aOffset, ErrorResult& aRv);
 
   size_t GetAllocatedSize() const;
 
@@ -198,9 +187,6 @@ protected:
   virtual ~ImageBitmap();
 
   void SetPictureRect(const gfx::IntRect& aRect, ErrorResult& aRv);
-
-  void SetIsCroppingAreaOutSideOfSourceImage(const gfx::IntSize& aSourceSize,
-                                             const Maybe<gfx::IntRect>& aCroppingRect);
 
   static already_AddRefed<ImageBitmap>
   CreateInternal(nsIGlobalObject* aGlobal, HTMLImageElement& aImageEl,
@@ -268,15 +254,6 @@ protected:
   const gfxAlphaType mAlphaType;
 
   RefPtr<ImageBitmapShutdownObserver> mShutdownObserver;
-
-  
-
-
-
-
-
-
-  bool mIsCroppingAreaOutSideOfSourceImage;
 
   
 

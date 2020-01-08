@@ -38,10 +38,6 @@ typedef nsTArray<ChannelPixelLayout> ImagePixelLayout;
 
 
 
-
-
-
-
 class ImageUtils
 {
 public:
@@ -58,10 +54,6 @@ public:
   ImageBitmapFormat GetFormat() const;
 
   uint32_t GetBufferLength() const;
-
-  UniquePtr<ImagePixelLayout>
-  MapDataInto(uint8_t* aBuffer, uint32_t aOffset, uint32_t aBufferLength,
-              ImageBitmapFormat aFormat, ErrorResult& aRv) const;
 
 protected:
   Impl* mImpl;
