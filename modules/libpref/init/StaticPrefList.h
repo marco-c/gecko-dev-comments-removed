@@ -91,64 +91,6 @@ VARCACHE_PREF(
 
 
 
-
-#ifdef RELEASE_OR_BETA
-# define PREF_VALUE false
-#else
-# define PREF_VALUE true
-#endif
-VARCACHE_PREF(
-  "dom.animations-api.compositing.enabled",
-   dom_animations_api_compositing_enabled,
-  bool, PREF_VALUE
-)
-#undef PREF_VALUE
-
-
-
-
-
-
-
-#ifdef RELEASE_OR_BETA
-# define PREF_VALUE false
-#else
-# define PREF_VALUE true
-#endif
-VARCACHE_PREF(
-  "dom.animations-api.getAnimations.enabled",
-   dom_animations_api_getAnimations_enabled,
-  bool, PREF_VALUE
-)
-#undef PREF_VALUE
-
-
-
-#ifdef RELEASE_OR_BETA
-# define PREF_VALUE false
-#else
-# define PREF_VALUE true
-#endif
-VARCACHE_PREF(
-  "dom.animations-api.implicit-keyframes.enabled",
-   dom_animations_api_implicit_keyframes_enabled,
-  bool, PREF_VALUE
-)
-#undef PREF_VALUE
-
-
-#ifdef RELEASE_OR_BETA
-# define PREF_VALUE false
-#else
-# define PREF_VALUE true
-#endif
-VARCACHE_PREF(
-  "dom.animations-api.timelines.enabled",
-   dom_animations_api_timelines_enabled,
-  bool, PREF_VALUE
-)
-#undef PREF_VALUE
-
 VARCACHE_PREF(
   "dom.webcomponents.shadowdom.report_usage",
    dom_webcomponents_shadowdom_report_usage,
@@ -1188,7 +1130,7 @@ VARCACHE_PREF(
 VARCACHE_PREF(
   "privacy.restrict3rdpartystorage.expiration",
    privacy_restrict3rdpartystorage_expiration,
-  uint32_t, 2592000000 
+  uint32_t, 2592000 
 )
 
 
