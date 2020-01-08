@@ -361,7 +361,10 @@ public:
 
 
 
-  void HandleTouchVelocity(uint32_t aTimesampMs, float aSpeedY);
+
+  void HandleDynamicToolbarMovement(uint32_t aStartTimestampMs,
+                                    uint32_t aEndTimestampMs,
+                                    ParentLayerCoord aDeltaY);
 
   
 

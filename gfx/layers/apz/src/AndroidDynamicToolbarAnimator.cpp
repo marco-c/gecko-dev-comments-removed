@@ -642,11 +642,12 @@ AndroidDynamicToolbarAnimator::ProcessTouchDelta(const RefPtr<APZCTreeManager>& 
 
     uint32_t timeDelta = aTimeStamp - mControllerLastEventTimeStamp;
     if (mControllerLastEventTimeStamp && timeDelta && aDelta) {
-      float speed = -(float)aDelta / (float)timeDelta;
       
       
       
-      aApz->ProcessTouchVelocity(aTimeStamp, speed);
+      aApz->ProcessDynamicToolbarMovement(mControllerLastEventTimeStamp,
+                                          aTimeStamp,
+                                          -(float)aDelta);
     }
   }
 

@@ -593,7 +593,10 @@ public:
 
 
 
-  void ProcessTouchVelocity(uint32_t aTimestampMs, float aSpeedY);
+
+  void ProcessDynamicToolbarMovement(uint32_t aStartTimestampMs,
+                                     uint32_t aEndTimestampMs,
+                                     ScreenCoord aDeltaY);
 private:
   typedef bool (*GuidComparator)(const ScrollableLayerGuid&, const ScrollableLayerGuid&);
 
