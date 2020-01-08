@@ -595,16 +595,13 @@ struct BuiltDisplayListDescriptor {
   uintptr_t total_clip_nodes;
   
   uintptr_t total_spatial_nodes;
-  
-  uintptr_t prim_count_estimate;
 
   bool operator==(const BuiltDisplayListDescriptor& aOther) const {
     return builder_start_time == aOther.builder_start_time &&
            builder_finish_time == aOther.builder_finish_time &&
            send_start_time == aOther.send_start_time &&
            total_clip_nodes == aOther.total_clip_nodes &&
-           total_spatial_nodes == aOther.total_spatial_nodes &&
-           prim_count_estimate == aOther.prim_count_estimate;
+           total_spatial_nodes == aOther.total_spatial_nodes;
   }
 };
 
