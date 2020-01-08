@@ -5117,9 +5117,9 @@ GetLabelTarget(nsIContent* aPossibleLabel)
 
 
 void
-EventStateManager::SetFullscreenState(Element* aElement, bool aIsFullscreen)
+EventStateManager::SetFullScreenState(Element* aElement, bool aIsFullScreen)
 {
-  DoStateChange(aElement, NS_EVENT_STATE_FULLSCREEN, aIsFullscreen);
+  DoStateChange(aElement, NS_EVENT_STATE_FULL_SCREEN, aIsFullScreen);
 }
 
 
@@ -5378,9 +5378,7 @@ EventStateManager::RemoveNodeFromChainIfNeeded(EventStates aState,
 void
 EventStateManager::NativeAnonymousContentRemoved(nsIContent* aContent)
 {
-  
-  MOZ_ASSERT(aContent->IsRootOfNativeAnonymousSubtree() ||
-             aContent->GetParentNode()->IsSVGElement(nsGkAtoms::use));
+  MOZ_ASSERT(aContent->IsRootOfNativeAnonymousSubtree());
   RemoveNodeFromChainIfNeeded(NS_EVENT_STATE_HOVER, aContent, false);
   RemoveNodeFromChainIfNeeded(NS_EVENT_STATE_ACTIVE, aContent, false);
 }
