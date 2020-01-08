@@ -29,8 +29,8 @@ add_task(async function init() {
 add_task(async function test_reload() {
   info("Forging data");
   let data = {};
-  let telemetrySnapshots = Services.telemetry.getSnapshotForHistograms("main",
-                                                                       false ).parent;
+  let telemetrySnapshots = Services.telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                                                 false ).parent;
   let i = 0;
   for (let k of Object.keys(HISTOGRAMS)) {
     let id = HISTOGRAMS[k];
@@ -61,8 +61,8 @@ add_task(async function test_reload() {
   
   await wait;
 
-  telemetrySnapshots = Services.telemetry.getSnapshotForHistograms("main",
-                                                                   false ).parent;
+  telemetrySnapshots = Services.telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                                             false ).parent;
   for (let k of Object.keys(HISTOGRAMS)) {
     let id = HISTOGRAMS[k];
     info("Testing histogram " + id);

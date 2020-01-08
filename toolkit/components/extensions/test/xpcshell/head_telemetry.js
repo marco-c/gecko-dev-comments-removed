@@ -14,16 +14,20 @@ function valueSum(arr) {
 }
 
 function clearHistograms() {
-  Services.telemetry.getSnapshotForHistograms("main", true );
-  Services.telemetry.getSnapshotForKeyedHistograms("main", true );
+  Services.telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                        true );
+  Services.telemetry.snapshotKeyedHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                             true );
 }
 
 function getSnapshots(process) {
-  return Services.telemetry.getSnapshotForHistograms("main", false )[process];
+  return Services.telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                               false )[process];
 }
 
 function getKeyedSnapshots(process) {
-  return Services.telemetry.getSnapshotForKeyedHistograms("main", false )[process];
+  return Services.telemetry.snapshotKeyedHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                                    false )[process];
 }
 
 
@@ -31,8 +35,8 @@ function getKeyedSnapshots(process) {
 
 function promiseTelemetryRecorded(id, process, expectedCount) {
   let condition = () => {
-    let snapshot = Services.telemetry.getSnapshotForHistograms("main",
-                                                               false )[process][id];
+    let snapshot = Services.telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                                         false )[process][id];
     return snapshot && valueSum(snapshot.values) >= expectedCount;
   };
   return ContentTaskUtils.waitForCondition(condition);
@@ -40,8 +44,8 @@ function promiseTelemetryRecorded(id, process, expectedCount) {
 
 function promiseKeyedTelemetryRecorded(id, process, expectedKey, expectedCount) {
   let condition = () => {
-    let snapshot = Services.telemetry.getSnapshotForKeyedHistograms("main",
-                                                                    false )[process][id];
+    let snapshot = Services.telemetry.snapshotKeyedHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                                              false )[process][id];
     return snapshot && snapshot[expectedKey] && valueSum(snapshot[expectedKey].values) >= expectedCount;
   };
   return ContentTaskUtils.waitForCondition(condition);
