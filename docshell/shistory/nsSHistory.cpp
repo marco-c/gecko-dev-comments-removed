@@ -1487,8 +1487,9 @@ nsresult nsSHistory::InitiateLoad(nsISHEntry* aFrameEntry,
   nsCOMPtr<nsIURI> newURI = aFrameEntry->GetURI();
   loadState->SetURI(newURI);
   loadState->SetLoadFlags(nsIWebNavigation::LOAD_FLAGS_NONE);
-  
-  loadState->SetTriggeringPrincipal(nsContentUtils::GetSystemPrincipal());
+  nsCOMPtr<nsIPrincipal> triggeringPrincipal =
+      aFrameEntry->GetTriggeringPrincipal();
+  loadState->SetTriggeringPrincipal(triggeringPrincipal);
   loadState->SetFirstParty(false);
 
   
