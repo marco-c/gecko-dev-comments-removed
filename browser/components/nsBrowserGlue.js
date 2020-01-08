@@ -2183,7 +2183,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 75;
+    const UI_VERSION = 76;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     let currentUIVersion;
@@ -2307,16 +2307,8 @@ BrowserGlue.prototype = {
       }
     }
 
-    if (currentUIVersion < 54) {
-      
-      let onboardingPrefs = Services.prefs.getBranch("browser.onboarding.");
-      if (onboardingPrefs) {
-        let onboardingPrefsArray = onboardingPrefs.getChildList("");
-        for (let item of onboardingPrefsArray) {
-          Services.prefs.clearUserPref("browser.onboarding." + item);
-        }
-      }
-    }
+    
+    
 
     if (currentUIVersion < 55) {
       Services.prefs.clearUserPref("browser.customizemode.tip0.shown");
@@ -2539,6 +2531,17 @@ BrowserGlue.prototype = {
       
       
       Services.prefs.setIntPref("browser.livebookmarks.migrationAttemptsLeft", 5);
+    }
+
+    if (currentUIVersion < 76) {
+      
+      let onboardingPrefs = Services.prefs.getBranch("browser.onboarding.");
+      if (onboardingPrefs) {
+        let onboardingPrefsArray = onboardingPrefs.getChildList("");
+        for (let item of onboardingPrefsArray) {
+          Services.prefs.clearUserPref("browser.onboarding." + item);
+        }
+      }
     }
 
     
