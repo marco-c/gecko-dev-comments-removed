@@ -5990,8 +5990,6 @@ pref("dom.datatransfer.mozAtAPIs", true);
 pref("prio.enabled", false);
 #endif
 
-#ifdef NIGHTLY_BUILD
-pref("dom.sidebar.enabled", false);
-#else
+
+
 pref("dom.sidebar.enabled", true);
-#endif
