@@ -110,8 +110,8 @@ let apiManager = new class extends SchemaAPIManager {
   }
 
   getModuleJSONURLs() {
-    return Array.from(XPCOMUtils.enumerateCategoryEntries(CATEGORY_EXTENSION_MODULES),
-                      ([name, url]) => url);
+    return Array.from(Services.catMan.enumerateCategory(CATEGORY_EXTENSION_MODULES),
+                      ({value}) => value);
   }
 
   
@@ -125,7 +125,7 @@ let apiManager = new class extends SchemaAPIManager {
       () => this.loadModuleJSON(this.getModuleJSONURLs()));
 
     let scriptURLs = [];
-    for (let [, value] of XPCOMUtils.enumerateCategoryEntries(CATEGORY_EXTENSION_SCRIPTS)) {
+    for (let {value} of Services.catMan.enumerateCategory(CATEGORY_EXTENSION_SCRIPTS)) {
       scriptURLs.push(value);
     }
 
@@ -143,8 +143,8 @@ let apiManager = new class extends SchemaAPIManager {
       
       return Schemas.load(BASE_SCHEMA).then(() => {
         let promises = [];
-        for (let [, url] of XPCOMUtils.enumerateCategoryEntries(CATEGORY_EXTENSION_SCHEMAS)) {
-          promises.push(Schemas.load(url));
+        for (let {value} of Services.catMan.enumerateCategory(CATEGORY_EXTENSION_SCHEMAS)) {
+          promises.push(Schemas.load(value));
         }
         for (let [url, {content}] of this.schemaURLs) {
           promises.push(Schemas.load(url, content));
