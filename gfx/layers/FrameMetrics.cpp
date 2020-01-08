@@ -19,14 +19,7 @@ FrameMetrics::RecalculateViewportOffset()
   if (!mIsRootContent) {
     return;
   }
-  KeepLayoutViewportEnclosingVisualViewport(GetVisualViewport(), mViewport);
-}
-
- void
-FrameMetrics::KeepLayoutViewportEnclosingVisualViewport(
-    const CSSRect& aVisualViewport,
-    CSSRect& aLayoutViewport)
-{
+  CSSRect visualViewport = GetVisualViewport();
   
   
   
@@ -35,7 +28,7 @@ FrameMetrics::KeepLayoutViewportEnclosingVisualViewport(
   
   
   
-  if (aLayoutViewport.Contains(aVisualViewport) || aVisualViewport.Contains(aLayoutViewport)) {
+  if (mViewport.Contains(visualViewport) || visualViewport.Contains(mViewport)) {
     return;
   }
 
@@ -43,40 +36,39 @@ FrameMetrics::KeepLayoutViewportEnclosingVisualViewport(
   
   
   
-  if ((aLayoutViewport.Width() < aVisualViewport.Width() &&
-        !FuzzyEqualsMultiplicative(aLayoutViewport.Width(), aVisualViewport.Width())) ||
-       (aLayoutViewport.Height() < aVisualViewport.Height() &&
-        !FuzzyEqualsMultiplicative(aLayoutViewport.Height(), aVisualViewport.Height()))) {
+  if ((mViewport.Width() < visualViewport.Width() &&
+        !FuzzyEqualsMultiplicative(mViewport.Width(), visualViewport.Width())) ||
+       (mViewport.Height() < visualViewport.Height() &&
+        !FuzzyEqualsMultiplicative(mViewport.Height(), visualViewport.Height()))) {
 
-     if (aLayoutViewport.X() < aVisualViewport.X()) {
+     if (mViewport.X() < visualViewport.X()) {
         
-        aLayoutViewport.MoveToX(aVisualViewport.X());
-     } else if (aVisualViewport.XMost() < aLayoutViewport.XMost()) {
+        mViewport.MoveToX(visualViewport.X());
+     } else if (visualViewport.XMost() < mViewport.XMost()) {
         
-        aLayoutViewport.MoveByX(aVisualViewport.XMost() - aLayoutViewport.XMost());
+        mViewport.MoveByX(visualViewport.XMost() - mViewport.XMost());
      }
-     if (aLayoutViewport.Y() < aVisualViewport.Y()) {
+     if (mViewport.Y() < visualViewport.Y()) {
         
-        aLayoutViewport.MoveToY(aVisualViewport.Y());
-     } else if (aVisualViewport.YMost() < aLayoutViewport.YMost()) {
+        mViewport.MoveToY(visualViewport.Y());
+     } else if (visualViewport.YMost() < mViewport.YMost()) {
         
-        aLayoutViewport.MoveByY(aVisualViewport.YMost() - aLayoutViewport.YMost());
+        mViewport.MoveByY(visualViewport.YMost() - mViewport.YMost());
      }
    } else {
 
-     if (aVisualViewport.X() < aLayoutViewport.X()) {
-        aLayoutViewport.MoveToX(aVisualViewport.X());
-     } else if (aLayoutViewport.XMost() < aVisualViewport.XMost()) {
-        aLayoutViewport.MoveByX(aVisualViewport.XMost() - aLayoutViewport.XMost());
+     if (visualViewport.X() < mViewport.X()) {
+        mViewport.MoveToX(visualViewport.X());
+     } else if (mViewport.XMost() < visualViewport.XMost()) {
+        mViewport.MoveByX(visualViewport.XMost() - mViewport.XMost());
      }
-     if (aVisualViewport.Y() < aLayoutViewport.Y()) {
-        aLayoutViewport.MoveToY(aVisualViewport.Y());
-     } else if (aLayoutViewport.YMost() < aVisualViewport.YMost()) {
-        aLayoutViewport.MoveByY(aVisualViewport.YMost() - aLayoutViewport.YMost());
+     if (visualViewport.Y() < mViewport.Y()) {
+        mViewport.MoveToY(visualViewport.Y());
+     } else if (mViewport.YMost() < visualViewport.YMost()) {
+        mViewport.MoveByY(visualViewport.YMost() - mViewport.YMost());
      }
    }
 }
-
 
 void
 ScrollMetadata::SetUsesContainerScrolling(bool aValue) {

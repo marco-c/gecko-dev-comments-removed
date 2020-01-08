@@ -538,16 +538,6 @@ public:
   
   void RecalculateViewportOffset();
 
-  
-  
-  
-  
-  
-  
-  static void KeepLayoutViewportEnclosingVisualViewport(
-      const CSSRect& aVisualViewport,
-      CSSRect& aLayoutViewport);
-
 private:
   
   ViewID mScrollId;
