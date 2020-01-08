@@ -504,7 +504,7 @@ class OSXBootstrapper(BaseBootstrapper):
 
     def ensure_stylo_packages(self, state_dir, checkout_root):
         
-        pass
+        self.ensure_rust_package('cbindgen')
 
     def ensure_node_packages(self, state_dir, checkout_root):
         

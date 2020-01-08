@@ -67,7 +67,7 @@ class FreeBSDBootstrapper(BaseBootstrapper):
 
     def ensure_stylo_packages(self, state_dir, checkout_root):
         
-        pass
+        self.ensure_rust_package('cbindgen')
 
     def upgrade_mercurial(self, current):
         self.pkg_install('mercurial')
