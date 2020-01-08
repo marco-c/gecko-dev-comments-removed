@@ -97,11 +97,27 @@ ContentProcess::Init(int aArgc, char* aArgv[])
   Maybe<uint64_t> childID;
   Maybe<bool> isForBrowser;
   Maybe<base::SharedMemoryHandle> prefsHandle;
+  Maybe<FileDescriptor> prefMapHandle;
   Maybe<size_t> prefsLen;
+  Maybe<size_t> prefMapSize;
   Maybe<const char*> schedulerPrefs;
   Maybe<const char*> parentBuildID;
 #if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
   nsCOMPtr<nsIFile> profileDir;
+#endif
+
+  
+  auto parseUIntPtrArg = [] (char*& aArg) {
+    
+    
+    
+    return uintptr_t(strtoull(aArg, &aArg, 10));
+  };
+
+#ifdef XP_WIN
+  auto parseHandleArg = [] (char*& aArg) {
+    return HANDLE(parseUIntPtrArg(aArg));
+  };
 #endif
 
   for (int i = 1; i < aArgc; i++) {
@@ -137,11 +153,22 @@ ContentProcess::Init(int aArgc, char* aArgv[])
       if (++i == aArgc) {
         return false;
       }
-      
-      
-      
       char* str = aArgv[i];
-      prefsHandle = Some(reinterpret_cast<HANDLE>(strtoull(str, &str, 10)));
+      prefsHandle = Some(parseHandleArg(str));
+      if (str[0] != '\0') {
+        return false;
+      }
+
+    } else if (strcmp(aArgv[i], "-prefMapHandle") == 0) {
+      if (++i == aArgc) {
+        return false;
+      }
+      char* str = aArgv[i];
+      
+      
+      
+      FileDescriptor::UniquePlatformHandle handle(parseHandleArg(str));
+      prefMapHandle.emplace(handle.get());
       if (str[0] != '\0') {
         return false;
       }
@@ -151,11 +178,18 @@ ContentProcess::Init(int aArgc, char* aArgv[])
       if (++i == aArgc) {
         return false;
       }
-      
-      
-      
       char* str = aArgv[i];
-      prefsLen = Some(strtoull(str, &str, 10));
+      prefsLen = Some(parseUIntPtrArg(str));
+      if (str[0] != '\0') {
+        return false;
+      }
+
+    } else if (strcmp(aArgv[i], "-prefMapSize") == 0) {
+      if (++i == aArgc) {
+        return false;
+      }
+      char* str = aArgv[i];
+      prefMapSize = Some(parseUIntPtrArg(str));
       if (str[0] != '\0') {
         return false;
       }
@@ -197,6 +231,12 @@ ContentProcess::Init(int aArgc, char* aArgv[])
 #elif XP_UNIX
   prefsHandle = Some(base::FileDescriptor(kPrefsFileDescriptor,
                                            true));
+
+  
+  
+  
+  FileDescriptor::UniquePlatformHandle handle(kPrefMapFileDescriptor);
+  prefMapHandle.emplace(handle.get());
 #endif
 
   
@@ -204,10 +244,16 @@ ContentProcess::Init(int aArgc, char* aArgv[])
       isForBrowser.isNothing() ||
       prefsHandle.isNothing() ||
       prefsLen.isNothing() ||
+      prefMapHandle.isNothing() ||
+      prefMapSize.isNothing() ||
       schedulerPrefs.isNothing() ||
       parentBuildID.isNothing()) {
     return false;
   }
+
+  
+  
+  Preferences::InitSnapshot(prefMapHandle.ref(), *prefMapSize);
 
   
   base::SharedMemory shm;
