@@ -1331,7 +1331,6 @@ var gBrowserInit = {
     gPageStyleMenu.init();
     LanguageDetectionListener.init();
     BrowserOnClick.init();
-    ContentBlocking.init();
     CaptivePortalWatcher.init();
     ZoomUI.init(window);
 
@@ -1477,6 +1476,7 @@ var gBrowserInit = {
     BookmarkingUI.init();
     BrowserSearch.delayedStartupInit();
     AutoShowBookmarksToolbar.init();
+    ContentBlocking.init();
 
     let safeMode = document.getElementById("helpSafeMode");
     if (Services.appinfo.inSafeMode) {
@@ -1913,8 +1913,6 @@ var gBrowserInit = {
 
     BrowserOnClick.uninit();
 
-    ContentBlocking.uninit();
-
     CaptivePortalWatcher.uninit();
 
     SidebarUI.uninit();
@@ -1940,6 +1938,7 @@ var gBrowserInit = {
       Services.prefs.removeObserver(ctrlTab.prefName, ctrlTab);
       ctrlTab.uninit();
       gBrowserThumbnails.uninit();
+      ContentBlocking.uninit();
       FullZoom.destroy();
 
       Services.obs.removeObserver(gIdentityHandler, "perm-changed");
@@ -6775,24 +6774,20 @@ var IndexedDBPromptHelper = {
 
 var CanvasPermissionPromptHelper = {
   _permissionsPrompt: "canvas-permissions-prompt",
-  _permissionsPromptHideDoorHanger: "canvas-permissions-prompt-hide-doorhanger",
   _notificationIcon: "canvas-notification-icon",
 
   init() {
     Services.obs.addObserver(this, this._permissionsPrompt);
-    Services.obs.addObserver(this, this._permissionsPromptHideDoorHanger);
   },
 
   uninit() {
     Services.obs.removeObserver(this, this._permissionsPrompt);
-    Services.obs.removeObserver(this, this._permissionsPromptHideDoorHanger);
   },
 
   
   
   observe(aSubject, aTopic, aData) {
-    if (aTopic != this._permissionsPrompt &&
-        aTopic != this._permissionsPromptHideDoorHanger) {
+    if (aTopic != this._permissionsPrompt) {
       return;
     }
 
@@ -6849,11 +6844,9 @@ var CanvasPermissionPromptHelper = {
       checkbox,
       name: uri.asciiHost,
       learnMoreURL: Services.urlFormatter.formatURLPref("app.support.baseURL") + "fingerprint-permission",
-      dismissed: aTopic == this._permissionsPromptHideDoorHanger,
     };
-    PopupNotifications.show(browser, this._permissionsPrompt, message,
-                            this._notificationIcon, mainAction,
-                            secondaryActions, options);
+    PopupNotifications.show(browser, aTopic, message, this._notificationIcon,
+                            mainAction, secondaryActions, options);
   },
 };
 
