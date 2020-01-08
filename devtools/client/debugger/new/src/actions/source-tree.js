@@ -2,9 +2,10 @@
 
 
 
+
 import type { Action, ThunkArgs } from "./types";
 
-export function setExpandedState(expanded) {
+export function setExpandedState(expanded: Set<string>) {
   return ({ dispatch, getState }: ThunkArgs) => {
     dispatch(
       ({
