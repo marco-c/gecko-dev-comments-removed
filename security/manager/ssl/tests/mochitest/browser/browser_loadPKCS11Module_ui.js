@@ -197,7 +197,13 @@ add_task(async function testAddModuleFailure() {
   gMockPromptService.expectedText = "Unable to add module";
   gMockPromptService.expectedWindow = win;
 
+  
+  
+  
+  expectUncaughtException(true);
+
   testAddModuleHelper(win, true);
+  expectUncaughtException(false);
   
   
   await BrowserTestUtils.closeWindow(win);
