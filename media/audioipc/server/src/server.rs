@@ -86,9 +86,14 @@ impl ServerStreamCallbacks {
         trace!("Stream data callback: {} {}", input.len(), output.len());
 
         
+        
         let real_input = unsafe {
             let nbytes = input.len() * self.input_frame_size as usize;
             slice::from_raw_parts(input.as_ptr(), nbytes)
+        };
+        let real_output = unsafe {
+            let nbytes = output.len() * self.output_frame_size as usize;
+            slice::from_raw_parts_mut(output.as_mut_ptr(), nbytes)
         };
 
         self.input_shm.write(real_input).unwrap();
@@ -104,10 +109,7 @@ impl ServerStreamCallbacks {
             Ok(CallbackResp::Data(frames)) => {
                 if frames >= 0 {
                     let nbytes = frames as usize * self.output_frame_size as usize;
-                    let real_output = unsafe {
-                        trace!("Resize output to {}", nbytes);
-                        slice::from_raw_parts_mut(output.as_mut_ptr(), nbytes)
-                    };
+                    trace!("Reslice output to {}", nbytes);
                     self.output_shm.read(&mut real_output[..nbytes]).unwrap();
                 }
                 frames
