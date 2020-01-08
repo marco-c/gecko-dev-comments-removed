@@ -443,15 +443,12 @@ TokenStreamCharsBase<CharT>::TokenStreamCharsBase(JSContext* cx, const CharT* ch
 
 template<>
 MOZ_MUST_USE bool
-TokenStreamCharsBase<char16_t>::fillCharBufferWithTemplateStringContents(const char16_t* cur,
-                                                                         const char16_t* end)
+TokenStreamCharsBase<char16_t>::fillCharBufferFromSourceNormalizingAsciiLineBreaks(const char16_t* cur,
+                                                                                   const char16_t* end)
 {
     MOZ_ASSERT(this->charBuffer.length() == 0);
 
     while (cur < end) {
-        
-        
-        
         char16_t ch = *cur++;
         if (ch == '\r') {
             ch = '\n';
@@ -881,9 +878,9 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::currentLineAndColumn(uint32_t* line,
 
 template<>
 bool
-TokenStreamCharsBase<Utf8Unit>::addLineOfContext(JSContext* cx, ErrorMetadata* err,
-                                                 uint32_t offset)
+TokenStreamCharsBase<Utf8Unit>::addLineOfContext(ErrorMetadata* err, uint32_t offset)
 {
+    
     
     
     
@@ -893,9 +890,9 @@ TokenStreamCharsBase<Utf8Unit>::addLineOfContext(JSContext* cx, ErrorMetadata* e
 
 template<>
 bool
-TokenStreamCharsBase<char16_t>::addLineOfContext(JSContext* cx, ErrorMetadata* err,
-                                                 uint32_t offset)
+TokenStreamCharsBase<char16_t>::addLineOfContext(ErrorMetadata* err, uint32_t offset)
 {
+    using CharT = char16_t;
     size_t windowStart = sourceUnits.findWindowStart(offset);
     size_t windowEnd = sourceUnits.findWindowEnd(offset);
 
@@ -904,14 +901,28 @@ TokenStreamCharsBase<char16_t>::addLineOfContext(JSContext* cx, ErrorMetadata* e
 
     
     
-    StringBuffer windowBuf(cx);
-    if (!windowBuf.append(sourceUnits.codeUnitPtrAt(windowStart), windowLength) ||
-        !windowBuf.append('\0'))
-    {
-        return false;
+    if (windowLength == 0) {
+        MOZ_ASSERT(err->lineOfContext == nullptr,
+                   "ErrorMetadata::lineOfContext must be null so we don't "
+                   "have to set the lineLength/tokenOffset fields");
+        return true;
     }
 
-    err->lineOfContext.reset(windowBuf.stealChars());
+    
+    
+    
+    
+    this->charBuffer.clear();
+
+    const CharT* start = sourceUnits.codeUnitPtrAt(windowStart);
+    if (!fillCharBufferFromSourceNormalizingAsciiLineBreaks(start, start + windowLength))
+        return false;
+
+    
+    if (!this->charBuffer.append('\0'))
+        return false;
+
+    err->lineOfContext.reset(this->charBuffer.extractOrCopyRawBuffer());
     if (!err->lineOfContext)
         return false;
 

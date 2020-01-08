@@ -1318,8 +1318,8 @@ class TokenStreamCharsBase
 
 
 
-
-    MOZ_MUST_USE bool fillCharBufferWithTemplateStringContents(const CharT* cur, const CharT* end);
+    MOZ_MUST_USE bool
+    fillCharBufferFromSourceNormalizingAsciiLineBreaks(const CharT* cur, const CharT* end);
 
     
 
@@ -1334,7 +1334,7 @@ class TokenStreamCharsBase
 
 
 
-    MOZ_MUST_USE bool addLineOfContext(JSContext* cx, ErrorMetadata* err, uint32_t offset);
+    MOZ_MUST_USE bool addLineOfContext(ErrorMetadata* err, uint32_t offset);
 
   protected:
     
@@ -1474,7 +1474,6 @@ class GeneralTokenStreamChars
     using SpecializedCharsBase = SpecializedTokenStreamCharsBase<CharT>;
 
   private:
-    using CharsBase::addLineOfContext;
     
 
   private:
@@ -1504,8 +1503,9 @@ class GeneralTokenStreamChars
     uint32_t matchExtendedUnicodeEscape(uint32_t* codePoint);
 
   protected:
+    using CharsBase::addLineOfContext;
     using TokenStreamCharsShared::drainCharBufferIntoAtom;
-    using CharsBase::fillCharBufferWithTemplateStringContents;
+    using CharsBase::fillCharBufferFromSourceNormalizingAsciiLineBreaks;
 
     using typename CharsBase::SourceUnits;
 
@@ -1608,16 +1608,14 @@ class GeneralTokenStreamChars
 
 
     MOZ_MUST_USE bool internalComputeLineOfContext(ErrorMetadata* err, uint32_t offset) {
-        TokenStreamAnyChars& anyChars = anyCharsAccess();
-
         
         
         
         
-        if (err->lineNumber != anyChars.lineno)
+        if (err->lineNumber != anyCharsAccess().lineno)
             return true;
 
-        return addLineOfContext(anyChars.cx, err, offset);
+        return addLineOfContext(err, offset);
     }
 
   public:
@@ -1636,7 +1634,10 @@ class GeneralTokenStreamChars
             end = this->sourceUnits.codeUnitPtrAt(anyChars.currentToken().pos.end - 1);
         }
 
-        if (!fillCharBufferWithTemplateStringContents(cur, end))
+        
+        
+        
+        if (!fillCharBufferFromSourceNormalizingAsciiLineBreaks(cur, end))
             return nullptr;
 
         return drainCharBufferIntoAtom(anyChars.cx);
@@ -1881,7 +1882,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using SpecializedChars::consumeRestOfSingleLineComment;
     using TokenStreamCharsShared::copyCharBufferTo;
     using TokenStreamCharsShared::drainCharBufferIntoAtom;
-    using CharsBase::fillCharBufferWithTemplateStringContents;
+    using CharsBase::fillCharBufferFromSourceNormalizingAsciiLineBreaks;
     using SpecializedChars::getCodePoint;
     using GeneralCharsBase::getCodeUnit;
     using SpecializedChars::getFullAsciiCodePoint;
