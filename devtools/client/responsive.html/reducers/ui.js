@@ -7,29 +7,17 @@
 const Services = require("Services");
 
 const {
-  CHANGE_DISPLAY_PIXEL_RATIO,
   TOGGLE_LEFT_ALIGNMENT,
-  TOGGLE_TOUCH_SIMULATION,
 } = require("../actions/index");
 
 const LEFT_ALIGNMENT_ENABLED = "devtools.responsive.leftAlignViewport.enabled";
 
 const INITIAL_UI = {
   
-  displayPixelRatio: 0,
-  
   leftAlignmentEnabled: Services.prefs.getBoolPref(LEFT_ALIGNMENT_ENABLED),
-  
-  touchSimulationEnabled: false,
 };
 
 const reducers = {
-
-  [CHANGE_DISPLAY_PIXEL_RATIO](ui, { displayPixelRatio }) {
-    return Object.assign({}, ui, {
-      displayPixelRatio,
-    });
-  },
 
   [TOGGLE_LEFT_ALIGNMENT](ui, { enabled }) {
     const leftAlignmentEnabled = enabled !== undefined ?
@@ -39,12 +27,6 @@ const reducers = {
 
     return Object.assign({}, ui, {
       leftAlignmentEnabled,
-    });
-  },
-
-  [TOGGLE_TOUCH_SIMULATION](ui, { enabled }) {
-    return Object.assign({}, ui, {
-      touchSimulationEnabled: enabled,
     });
   },
 

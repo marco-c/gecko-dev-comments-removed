@@ -2,17 +2,19 @@
 
 
 
+
+
 "use strict";
 
 const {
-  TOGGLE_LEFT_ALIGNMENT,
+  CHANGE_TOUCH_SIMULATION
 } = require("./index");
 
 module.exports = {
 
-  toggleLeftAlignment(enabled) {
+  changeTouchSimulation(enabled) {
     return {
-      type: TOGGLE_LEFT_ALIGNMENT,
+      type: CHANGE_TOUCH_SIMULATION,
       enabled,
     };
   },

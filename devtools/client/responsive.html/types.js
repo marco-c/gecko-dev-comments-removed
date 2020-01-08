@@ -27,6 +27,11 @@ exports.loadableState = createEnum([
 
 
 
+exports.location = PropTypes.string;
+
+
+
+
 exports.reloadConditions = {
 
   
@@ -128,6 +133,16 @@ exports.networkThrottling = {
 
 
 
+const pixelRatio = exports.pixelRatio = {
+
+  
+  value: PropTypes.number,
+
+};
+
+
+
+
 exports.touchSimulation = {
 
   
@@ -156,7 +171,7 @@ exports.viewport = {
   height: PropTypes.number,
 
   
-  pixelRatio: PropTypes.number,
+  pixelRatio: PropTypes.shape(pixelRatio),
 
   
   
