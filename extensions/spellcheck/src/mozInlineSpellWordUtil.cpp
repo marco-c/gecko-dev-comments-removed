@@ -6,6 +6,7 @@
 #include "mozInlineSpellWordUtil.h"
 
 #include "mozilla/BinarySearch.h"
+#include "mozilla/HTMLEditor.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/dom/Element.h"
 
@@ -59,6 +60,8 @@ mozInlineSpellWordUtil::Init(TextEditor* aTextEditor)
   if (NS_WARN_IF(!mDocument)) {
     return NS_ERROR_FAILURE;
   }
+
+  mIsContentEditableOrDesignMode = !!aTextEditor->AsHTMLEditor();
 
   
   
@@ -163,13 +166,37 @@ FindNextTextNode(nsINode* aNode, int32_t aOffset, nsINode* aRoot)
 
 
 nsresult
-mozInlineSpellWordUtil::SetEnd(nsINode* aEndNode, int32_t aEndOffset)
+mozInlineSpellWordUtil::SetPositionAndEnd(nsINode* aPositionNode,
+                                          int32_t aPositionOffset,
+                                          nsINode* aEndNode,
+                                          int32_t aEndOffset)
 {
+  MOZ_ASSERT(aPositionNode, "Null begin node?");
   MOZ_ASSERT(aEndNode, "Null end node?");
 
   NS_ASSERTION(mRootNode, "Not initialized");
 
+  
+  
+  if (mIsContentEditableOrDesignMode) {
+    nsINode* rootNode = aPositionNode->SubtreeRoot();
+    if (rootNode != aEndNode->SubtreeRoot()) {
+      return NS_ERROR_FAILURE;
+    }
+
+    if (ShadowRoot::FromNode(rootNode)) {
+      mRootNode = rootNode;
+    }
+  }
+
   InvalidateWords();
+
+  if (!IsSpellCheckingTextNode(aPositionNode)) {
+    
+    aPositionNode = FindNextTextNode(aPositionNode, aPositionOffset, mRootNode);
+    aPositionOffset = 0;
+  }
+  mSoftBegin = NodeOffset(aPositionNode, aPositionOffset);
 
   if (!IsSpellCheckingTextNode(aEndNode)) {
     
@@ -177,20 +204,6 @@ mozInlineSpellWordUtil::SetEnd(nsINode* aEndNode, int32_t aEndOffset)
     aEndOffset = 0;
   }
   mSoftEnd = NodeOffset(aEndNode, aEndOffset);
-  return NS_OK;
-}
-
-nsresult
-mozInlineSpellWordUtil::SetPosition(nsINode* aNode, int32_t aOffset)
-{
-  InvalidateWords();
-
-  if (!IsSpellCheckingTextNode(aNode)) {
-    
-    aNode = FindNextTextNode(aNode, aOffset, mRootNode);
-    aOffset = 0;
-  }
-  mSoftBegin = NodeOffset(aNode, aOffset);
 
   nsresult rv = EnsureWords();
   if (NS_FAILED(rv)) {
@@ -198,8 +211,10 @@ mozInlineSpellWordUtil::SetPosition(nsINode* aNode, int32_t aOffset)
   }
 
   int32_t textOffset = MapDOMPositionToSoftTextOffset(mSoftBegin);
-  if (textOffset < 0)
+  if (textOffset < 0) {
     return NS_OK;
+  }
+
   mNextWordIndex = FindRealWordContaining(textOffset, HINT_END, true);
   return NS_OK;
 }

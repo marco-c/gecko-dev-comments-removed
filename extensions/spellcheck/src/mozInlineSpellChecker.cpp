@@ -1370,8 +1370,12 @@ nsresult mozInlineSpellChecker::DoSpellCheck(mozInlineSpellWordUtil& aWordUtil,
       return NS_OK;
     }
 
-    aWordUtil.SetEnd(endNode, endOffset);
-    aWordUtil.SetPosition(beginNode, beginOffset);
+    nsresult rv =
+      aWordUtil.SetPositionAndEnd(beginNode, beginOffset, endNode, endOffset);
+    if (NS_FAILED(rv)) {
+      
+      return NS_OK;
+    }
   }
 
   
