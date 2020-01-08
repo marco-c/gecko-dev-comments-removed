@@ -2557,8 +2557,7 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
             break;
           }
           
-          lastColInRow =
-            cellData.mCurrent.mColumn + cellData.NumberOfFollowingColumns();
+          lastColInRow = cellData.LastColumnIndex();
           cellFoundInRow = true;
         } else if (cellFoundInRow) {
           
