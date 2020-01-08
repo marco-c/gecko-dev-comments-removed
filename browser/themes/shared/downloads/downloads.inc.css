@@ -84,6 +84,11 @@
   padding: 0;
 }
 
+#downloadsSummary {
+  
+  padding-inline-end: 59px;
+}
+
 #downloadsHistory {
   padding-inline-start: 14px;
   padding-inline-end: 14px;
@@ -149,33 +154,18 @@
   background-image: url("chrome://browser/skin/info.svg");
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 .downloadContainer {
-  font-size: calc(100% * var(--downloads-item-font-size-factor));
   margin-inline-end: 13px;
 }
 
 #downloadsSummaryDescription,
 .downloadTarget {
   margin: 0;
-  font-size: calc(100% / var(--downloads-item-font-size-factor));
 }
 
 #downloadsSummaryDetails,
 .downloadDetails {
+  font-size: calc(100% * var(--downloads-item-font-size-factor));
   opacity: var(--downloads-item-details-opacity);
   
 
