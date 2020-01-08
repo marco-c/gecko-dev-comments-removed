@@ -30,12 +30,63 @@ class ConvolverNodeEngine final : public AudioNodeEngine
 public:
   ConvolverNodeEngine(AudioNode* aNode, bool aNormalize)
     : AudioNodeEngine(aNode)
-    , mLeftOverData(INT32_MIN)
-    , mSampleRate(0.0f)
     , mUseBackgroundThreads(!aNode->Context()->IsOffline())
     , mNormalize(aNormalize)
   {
   }
+
+  
+  enum class RightConvolverMode {
+    
+    
+    Always,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Direct,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Difference
+  };
 
   enum Parameters {
     SAMPLE_RATE,
@@ -73,15 +124,43 @@ public:
     
     const size_t MaxFFTSize = 32768;
 
-    mLeftOverData = INT32_MIN; 
+    
+    mRemainingLeftOutput = INT32_MIN;
+    mRemainingRightOutput = 0;
+    mRemainingRightHistory = 0;
 
     if (aBuffer.IsNull() || !mSampleRate) {
       mReverb = nullptr;
       return;
     }
 
+    
+    
+    mRightConvolverMode =
+      aBuffer.ChannelCount() == 1 ? RightConvolverMode::Direct
+      : RightConvolverMode::Always;
+
     mReverb = new WebCore::Reverb(aBuffer, MaxFFTSize, mUseBackgroundThreads,
                                   mNormalize, mSampleRate);
+  }
+
+  void AllocateReverbInput(const AudioBlock& aInput,
+                           uint32_t aTotalChannelCount)
+  {
+    uint32_t inputChannelCount = aInput.ChannelCount();
+    MOZ_ASSERT(inputChannelCount <= aTotalChannelCount);
+    mReverbInput.AllocateChannels(aTotalChannelCount);
+    
+    for (uint32_t i = 0; i < inputChannelCount; ++i) {
+      const float* src = static_cast<const float*>(aInput.mChannelData[i]);
+      float* dest = mReverbInput.ChannelFloatsForWrite(i);
+      AudioBlockCopyChannelWithScale(src, aInput.mVolume, dest);
+    }
+    
+    for (uint32_t i = inputChannelCount; i < aTotalChannelCount; ++i) {
+      float* dest = mReverbInput.ChannelFloatsForWrite(i);
+      std::fill_n(dest, WEBAUDIO_BLOCK_SIZE, 0.0f);
+    }
   }
 
   void ProcessBlock(AudioNodeStream* aStream,
@@ -92,7 +171,7 @@ public:
 
   bool IsActive() const override
   {
-    return mLeftOverData != INT32_MIN;
+    return mRemainingLeftOutput != INT32_MIN;
   }
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override
@@ -117,11 +196,33 @@ private:
   
   AudioBlock mReverbInput;
   nsAutoPtr<WebCore::Reverb> mReverb;
-  int32_t mLeftOverData;
-  float mSampleRate;
+  
+  
+  
+  int32_t mRemainingLeftOutput = INT32_MIN;
+  
+  
+  
+  
+  
+  int32_t mRemainingRightOutput = 0;
+  
+  
+  
+  int32_t mRemainingRightHistory = 0;
+  float mSampleRate = 0.0f;
+  RightConvolverMode mRightConvolverMode = RightConvolverMode::Always;
   bool mUseBackgroundThreads;
   bool mNormalize;
 };
+
+static void
+AddScaledLeftToRight(AudioBlock* aBlock, float aScale)
+{
+  const float* left = static_cast<const float*>(aBlock->mChannelData[0]);
+  float* right = aBlock->ChannelFloatsForWrite(1);
+  AudioBlockAddChannelWithScale(left, aScale, right);
+}
 
 void
 ConvolverNodeEngine::ProcessBlock(AudioNodeStream* aStream,
@@ -135,14 +236,16 @@ ConvolverNodeEngine::ProcessBlock(AudioNodeStream* aStream,
     return;
   }
 
+  uint32_t inputChannelCount = aInput.ChannelCount();
   if (aInput.IsNull()) {
-    if (mLeftOverData > 0) {
-      mLeftOverData -= WEBAUDIO_BLOCK_SIZE;
-      mReverbInput.AllocateChannels(1);
-      WriteZeroesToAudioBlock(&mReverbInput, 0, WEBAUDIO_BLOCK_SIZE);
+    if (mRemainingLeftOutput > 0) {
+      mRemainingLeftOutput -= WEBAUDIO_BLOCK_SIZE;
+      AllocateReverbInput(aInput, 1); 
     } else {
-      if (mLeftOverData != INT32_MIN) {
-        mLeftOverData = INT32_MIN;
+      if (mRemainingLeftOutput != INT32_MIN) {
+        mRemainingLeftOutput = INT32_MIN;
+        MOZ_ASSERT(mRemainingRightOutput <= 0);
+        MOZ_ASSERT(mRemainingRightHistory <= 0);
         aStream->ScheduleCheckForInactive();
         RefPtr<PlayingRefChanged> refchanged =
           new PlayingRefChanged(aStream, PlayingRefChanged::RELEASE);
@@ -153,31 +256,138 @@ ConvolverNodeEngine::ProcessBlock(AudioNodeStream* aStream,
       return;
     }
   } else {
-    if (aInput.mVolume != 1.0f) {
-      
-      uint32_t numChannels = aInput.ChannelCount();
-      mReverbInput.AllocateChannels(numChannels);
-      for (uint32_t i = 0; i < numChannels; ++i) {
-        const float* src = static_cast<const float*>(aInput.mChannelData[i]);
-        float* dest = mReverbInput.ChannelFloatsForWrite(i);
-        AudioBlockCopyChannelWithScale(src, aInput.mVolume, dest);
-      }
-    } else {
-      mReverbInput = aInput;
-    }
-
-    if (mLeftOverData <= 0) {
+    if (mRemainingLeftOutput <= 0) {
       RefPtr<PlayingRefChanged> refchanged =
         new PlayingRefChanged(aStream, PlayingRefChanged::ADDREF);
       aStream->Graph()->
         DispatchToMainThreadAfterStreamStateUpdate(refchanged.forget());
     }
-    mLeftOverData = mReverb->impulseResponseLength();
-    MOZ_ASSERT(mLeftOverData > 0);
+
+    
+    
+    mReverbInput.mVolume = 0.0f;
+
+    
+    
+    if (mRightConvolverMode != RightConvolverMode::Always) {
+      ChannelInterpretation channelInterpretation =
+        aStream->GetChannelInterpretation();
+      if (inputChannelCount == 2) {
+        if (mRemainingRightHistory <= 0) {
+          
+          
+          
+          mRightConvolverMode =
+            (mRemainingLeftOutput <= 0 ||
+             channelInterpretation == ChannelInterpretation::Discrete) ?
+            RightConvolverMode::Direct : RightConvolverMode::Difference;
+        }
+        
+        mRemainingRightOutput =
+          mReverb->impulseResponseLength() + WEBAUDIO_BLOCK_SIZE;
+        mRemainingRightHistory = mRemainingRightOutput;
+        if (mRightConvolverMode == RightConvolverMode::Difference) {
+          AllocateReverbInput(aInput, 2);
+          
+          AddScaledLeftToRight(&mReverbInput, -1.0f);
+        }
+      } else if (mRemainingRightHistory > 0) {
+        
+        
+        if ((mRightConvolverMode == RightConvolverMode::Difference) ^
+            (channelInterpretation == ChannelInterpretation::Discrete)) {
+          MOZ_ASSERT(
+            (mRightConvolverMode == RightConvolverMode::Difference &&
+             channelInterpretation == ChannelInterpretation::Speakers) ||
+            (mRightConvolverMode == RightConvolverMode::Direct &&
+             channelInterpretation == ChannelInterpretation::Discrete));
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          AllocateReverbInput(aInput, 2);
+        } else {
+          if (channelInterpretation == ChannelInterpretation::Discrete) {
+            MOZ_ASSERT(mRightConvolverMode == RightConvolverMode::Difference);
+            
+            
+            
+            
+            AllocateReverbInput(aInput, 2);
+            AddScaledLeftToRight(&mReverbInput, -1.0f);
+          } else {
+            MOZ_ASSERT(channelInterpretation ==
+                       ChannelInterpretation::Speakers);
+            MOZ_ASSERT(mRightConvolverMode == RightConvolverMode::Direct);
+            
+            
+          }
+          
+          
+          
+          
+          
+          mRemainingRightHistory =
+            mReverb->impulseResponseLength() + WEBAUDIO_BLOCK_SIZE;
+        }
+      }
+    }
+
+    if (mReverbInput.mVolume == 0.0f) { 
+      if (aInput.mVolume != 1.0f) {
+        AllocateReverbInput(aInput, inputChannelCount); 
+      } else {
+        mReverbInput = aInput;
+      }
+    }
+
+    mRemainingLeftOutput = mReverb->impulseResponseLength();
+    MOZ_ASSERT(mRemainingLeftOutput > 0);
   }
-  aOutput->AllocateChannels(2);
+
+  
+  
+  uint32_t outputChannelCount = 2;
+  uint32_t reverbOutputChannelCount = 2;
+  if (mRightConvolverMode != RightConvolverMode::Always) {
+    
+    
+    
+    if (mRemainingRightOutput > 0) {
+      MOZ_ASSERT(mRemainingRightHistory > 0);
+      mRemainingRightOutput -= WEBAUDIO_BLOCK_SIZE;
+    } else {
+      outputChannelCount = 1;
+    }
+    
+    if (mRemainingRightHistory > 0) {
+      mRemainingRightHistory -= WEBAUDIO_BLOCK_SIZE;
+    } else {
+      reverbOutputChannelCount = 1;
+    }
+  }
+
+  
+  
+  
+  aOutput->AllocateChannels(reverbOutputChannelCount);
 
   mReverb->process(&mReverbInput, aOutput);
+
+  if (mRightConvolverMode == RightConvolverMode::Difference &&
+      outputChannelCount == 2) {
+    
+    AddScaledLeftToRight(aOutput, 1.0f);
+  } else {
+    
+    aOutput->mChannelData.TruncateLength(outputChannelCount);
+  }
 }
 
 ConvolverNode::ConvolverNode(AudioContext* aContext)
