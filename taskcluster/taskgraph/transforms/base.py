@@ -6,39 +6,35 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import attr
 
-from ..config import GraphConfig
-from ..parameters import Parameters
 from ..util.schema import Schema, validate_schema
 
 
-@attr.s(frozen=True)
 class TransformConfig(object):
-    """
-    A container for configuration affecting transforms.  The `config` argument
-    to transforms is an instance of this class.
-    """
+    """A container for configuration affecting transforms.  The `config`
+    argument to transforms is an instance of this class, possibly with
+    additional kind-specific attributes beyond those set here."""
+    def __init__(self, kind, path, config, params,
+                 kind_dependencies_tasks=None, graph_config=None):
+        
+        self.kind = kind
 
-    
-    kind = attr.ib()
+        
+        self.path = path
 
-    
-    path = attr.ib(type=basestring)
+        
+        self.config = config
 
-    
-    config = attr.ib(type=dict)
+        
+        self.params = params
 
-    
-    params = attr.ib(type=Parameters)
+        
+        
+        self.kind_dependencies_tasks = kind_dependencies_tasks
 
-    
-    
-    kind_dependencies_tasks = attr.ib()
-
-    
-    graph_config = attr.ib(type=GraphConfig)
+        
+        self.graph_config = graph_config or {}
 
 
-@attr.s()
 class TransformSequence(object):
     """
     Container for a sequence of transforms.  Each transform is represented as a
@@ -50,17 +46,24 @@ class TransformSequence(object):
     sequence.
     """
 
-    _transforms = attr.ib(factory=list)
+    def __init__(self, transforms=None):
+        self.transforms = transforms or []
 
     def __call__(self, config, items):
-        for xform in self._transforms:
+        for xform in self.transforms:
             items = xform(config, items)
             if items is None:
                 raise Exception("Transform {} is not a generator".format(xform))
         return items
 
+    def __repr__(self):
+        return '\n'.join(
+            ['TransformSequence(['] +
+            [repr(x) for x in self.transforms] +
+            ['])'])
+
     def add(self, func):
-        self._transforms.append(func)
+        self.transforms.append(func)
         return func
 
     def add_validate(self, schema):
