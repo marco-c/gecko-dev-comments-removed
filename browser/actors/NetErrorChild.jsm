@@ -430,6 +430,9 @@ class NetErrorChild extends ActorChild {
 
         let now = Date.now();
         let certRange = this._getCertValidityRange(docShell);
+        let formatter = new Services.intl.DateTimeFormat(undefined, {
+          dateStyle: "short",
+        });
 
         let approximateDate = now - difference * 1000;
         
@@ -437,9 +440,6 @@ class NetErrorChild extends ActorChild {
         if (Math.abs(difference) > 60 * 60 * 24 && (now - lastFetched) <= 60 * 60 * 24 * 5 &&
             certRange.notBefore < approximateDate && certRange.notAfter > approximateDate) {
           clockSkew = true;
-          let formatter = new Services.intl.DateTimeFormat(undefined, {
-            dateStyle: "short",
-          });
           let systemDate = formatter.format(new Date());
           
           approximateDate = formatter.format(new Date(approximateDate));
@@ -469,9 +469,6 @@ class NetErrorChild extends ActorChild {
           
           if (buildDate > systemDate && new Date(certRange.notAfter) > buildDate) {
             clockSkew = true;
-            let formatter = new Services.intl.DateTimeFormat(undefined, {
-              dateStyle: "short",
-            });
 
             doc.getElementById("wrongSystemTimeWithoutReference_URL")
               .textContent = doc.location.hostname;
@@ -482,8 +479,7 @@ class NetErrorChild extends ActorChild {
         if (!newErrorPagesEnabled) {
           break;
         }
-        let dateOptions = { year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "numeric" };
-        let systemDate = new Services.intl.DateTimeFormat(undefined, dateOptions).format(new Date());
+        let systemDate = formatter.format(new Date());
         doc.getElementById("wrongSystemTime_systemDate1").textContent = systemDate;
         if (clockSkew) {
           doc.body.classList.add("illustrated", "clockSkewError");
