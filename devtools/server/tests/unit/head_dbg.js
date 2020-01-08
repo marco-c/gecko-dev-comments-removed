@@ -850,8 +850,10 @@ async function setupTestFromUrl(url) {
 
 
 
+
+
 function threadClientTest(test, options = {}) {
-  let { principal } = options;
+  let { principal, doNotRunWorker } = options;
   if (!principal) {
     principal = systemPrincipal;
   }
@@ -891,7 +893,10 @@ function threadClientTest(test, options = {}) {
     dump(">>> Run thread client test against a regular DebuggerServer\n");
     await runThreadClientTestWithServer(DebuggerServer, test);
 
-    dump(">>> Run thread client test against a worker DebuggerServer\n");
-    await runThreadClientTestWithServer(WorkerDebuggerServer, test);
+    
+    if (!doNotRunWorker) {
+      dump(">>> Run thread client test against a worker DebuggerServer\n");
+      await runThreadClientTestWithServer(WorkerDebuggerServer, test);
+    }
   };
 }
