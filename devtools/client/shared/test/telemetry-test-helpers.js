@@ -30,8 +30,8 @@ class TelemetryHelpers {
     Services.telemetry.canRecordExtended = this.oldCanRecord;
 
     
-    this.clearHistograms(Services.telemetry.snapshotHistograms);
-    this.clearHistograms(Services.telemetry.snapshotKeyedHistograms);
+    this.clearHistograms(Services.telemetry.getSnapshotForHistograms);
+    this.clearHistograms(Services.telemetry.getSnapshotForKeyedHistograms);
     Services.telemetry.clearScalars();
     Services.telemetry.clearEvents();
   }
@@ -46,27 +46,19 @@ class TelemetryHelpers {
 
 
 
-
-
   clearHistograms(snapshotFunc) {
-    
-    
-    const OPTIN = Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN;
-    const OPTOUT = Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTOUT;
     const tel = Services.telemetry;
 
-    for (const optInOut of [OPTIN, OPTOUT]) {
-      const snapshot = snapshotFunc(optInOut, true, false).parent;
-      const histKeys = Object.keys(snapshot);
+    const snapshot = snapshotFunc("main", true).parent;
+    const histKeys = Object.keys(snapshot);
 
-      for (const getHistogram of [tel.getHistogramById, tel.getKeyedHistogramById]) {
-        for (const key of histKeys) {
-          try {
-            getHistogram(key).clear();
-          } catch (e) {
-            
-            
-          }
+    for (const getHistogram of [tel.getHistogramById, tel.getKeyedHistogramById]) {
+      for (const key of histKeys) {
+        try {
+          getHistogram(key).clear();
+        } catch (e) {
+          
+          
         }
       }
     }
@@ -89,10 +81,6 @@ class TelemetryHelpers {
 
 
   checkTelemetry(histId, key, expected, checkType) {
-    
-    
-    const OPTIN = Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN;
-
     let actual;
     let msg;
 
@@ -128,13 +116,13 @@ class TelemetryHelpers {
         break;
       case "scalar":
         const scalars =
-          Services.telemetry.snapshotScalars(OPTIN, false).parent;
+          Services.telemetry.getSnapshotForScalars("main", false).parent;
 
         is(scalars[histId], expected, `${histId} correct`);
         break;
       case "keyedscalar":
         const keyedScalars =
-          Services.telemetry.snapshotKeyedScalars(OPTIN, false).parent;
+          Services.telemetry.getSnapshotForKeyedScalars("main", false).parent;
         const value = keyedScalars[histId][key];
 
         msg = key ? `${histId}["${key}"] correct.` : `${histId} correct.`;
@@ -153,18 +141,14 @@ class TelemetryHelpers {
 
   generateTelemetryTests(prefix = "") {
     
-    
-    const OPTIN = Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN;
-
-    
     const histograms =
-      Services.telemetry.snapshotHistograms(OPTIN, true, false).parent;
+      Services.telemetry.getSnapshotForHistograms("main", true).parent;
     const keyedHistograms =
-      Services.telemetry.snapshotKeyedHistograms(OPTIN, true, false).parent;
+      Services.telemetry.getSnapshotForKeyedHistograms("main", true).parent;
     const scalars =
-      Services.telemetry.snapshotScalars(OPTIN, false).parent;
+      Services.telemetry.getSnapshotForScalars("main", false).parent;
     const keyedScalars =
-      Services.telemetry.snapshotKeyedScalars(OPTIN, false).parent;
+      Services.telemetry.getSnapshotForKeyedScalars("main", false).parent;
     const allHistograms = Object.assign({},
                                         histograms,
                                         keyedHistograms,
