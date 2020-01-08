@@ -41,14 +41,14 @@ if (!BrowserElementIsReady) {
     if(Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
       
       if (isTopBrowserElement(docShell)) {
-        Services.scriptloader.loadSubScript("chrome://global/content/BrowserElementCopyPaste.js");
+        Services.scriptloader.loadSubScript("chrome://global/content/BrowserElementCopyPaste.js", this);
       }
     } else {
       
-      Services.scriptloader.loadSubScript("chrome://global/content/BrowserElementCopyPaste.js");
+      Services.scriptloader.loadSubScript("chrome://global/content/BrowserElementCopyPaste.js", this);
     }
 
-    Services.scriptloader.loadSubScript("chrome://global/content/BrowserElementChildPreload.js");
+    Services.scriptloader.loadSubScript("chrome://global/content/BrowserElementChildPreload.js", this);
   }
 
   function onDestroy() {

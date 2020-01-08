@@ -8,14 +8,19 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
-var EventUtils = {};
+var EventUtils = {
+  get KeyboardEvent() {
+    return content.KeyboardEvent;
+  },
+  
+  get navigator() {
+    return content.navigator;
+  },
+};
 EventUtils.window = {};
 EventUtils.parent = EventUtils.window;
 EventUtils._EU_Ci = Ci;
 EventUtils._EU_Cc = Cc;
-
-EventUtils.navigator = content.document.defaultView.navigator;
-EventUtils.KeyboardEvent = content.document.defaultView.KeyboardEvent;
 
 Services.scriptloader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/EventUtils.js", EventUtils);
 
