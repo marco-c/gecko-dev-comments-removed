@@ -87,11 +87,6 @@ public:
 
   void MaybeLoadImage(bool aAlwaysForceLoad);
 
-  
-  
-  NS_IMETHOD GetNaturalHeight(uint32_t* aNaturalHeight) override;
-  NS_IMETHOD GetNaturalWidth(uint32_t* aNaturalWidth) override;
-
   bool IsMap()
   {
     return GetBoolAttr(nsGkAtoms::ismap);

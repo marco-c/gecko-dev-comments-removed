@@ -539,10 +539,8 @@ nsObjectLoadingContent::MakePluginListener()
   }
   NS_ASSERTION(!mFinalListener, "overwriting a final listener");
   nsresult rv;
-  RefPtr<nsNPAPIPluginInstance> inst;
+  RefPtr<nsNPAPIPluginInstance> inst = mInstanceOwner->GetInstance();
   nsCOMPtr<nsIStreamListener> finalListener;
-  rv = mInstanceOwner->GetInstance(getter_AddRefs(inst));
-  NS_ENSURE_SUCCESS(rv, false);
   rv = pluginHost->NewPluginStreamListener(mURI, inst,
                                            getter_AddRefs(finalListener));
   NS_ENSURE_SUCCESS(rv, false);
@@ -755,8 +753,7 @@ nsObjectLoadingContent::InstantiatePluginInstance(bool aIsLoading)
     
     
     if (newOwner) {
-      RefPtr<nsNPAPIPluginInstance> inst;
-      newOwner->GetInstance(getter_AddRefs(inst));
+      RefPtr<nsNPAPIPluginInstance> inst = newOwner->GetInstance();
       newOwner->SetFrame(nullptr);
       if (inst) {
         pluginHost->StopPluginInstance(inst);
@@ -769,11 +766,7 @@ nsObjectLoadingContent::InstantiatePluginInstance(bool aIsLoading)
   mInstanceOwner = newOwner;
 
   if (mInstanceOwner) {
-    RefPtr<nsNPAPIPluginInstance> inst;
-    rv = mInstanceOwner->GetInstance(getter_AddRefs(inst));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+    RefPtr<nsNPAPIPluginInstance> inst = mInstanceOwner->GetInstance();
 
     rv = inst->GetRunID(&mRunID);
     mHasRunID = NS_SUCCEEDED(rv);
@@ -794,8 +787,7 @@ nsObjectLoadingContent::InstantiatePluginInstance(bool aIsLoading)
   
   NotifyContentObjectWrapper();
 
-  RefPtr<nsNPAPIPluginInstance> pluginInstance;
-  GetPluginInstance(getter_AddRefs(pluginInstance));
+  RefPtr<nsNPAPIPluginInstance> pluginInstance = GetPluginInstance();
   if (pluginInstance) {
     nsCOMPtr<nsIPluginTag> pluginTag;
     pluginHost->GetPluginTagForInstance(pluginInstance,
@@ -1189,16 +1181,14 @@ nsObjectLoadingContent::HasNewFrame(nsIObjectFrame* aFrame)
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsObjectLoadingContent::GetPluginInstance(nsNPAPIPluginInstance** aInstance)
+nsNPAPIPluginInstance*
+nsObjectLoadingContent::GetPluginInstance()
 {
-  *aInstance = nullptr;
-
   if (!mInstanceOwner) {
-    return NS_OK;
+    return nullptr;
   }
 
-  return mInstanceOwner->GetInstance(aInstance);
+  return mInstanceOwner->GetInstance();
 }
 
 NS_IMETHODIMP
@@ -1206,13 +1196,6 @@ nsObjectLoadingContent::GetContentTypeForMIMEType(const nsACString& aMIMEType,
                                                   uint32_t* aType)
 {
   *aType = GetTypeOfContent(PromiseFlatCString(aMIMEType), false);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsObjectLoadingContent::GetBaseURI(nsIURI **aResult)
-{
-  NS_IF_ADDREF(*aResult = mBaseURI);
   return NS_OK;
 }
 
@@ -2828,9 +2811,8 @@ nsObjectLoadingContent::PluginCrashed(nsIPluginTag* aPluginTag,
   return NS_OK;
 }
 
-nsresult
-nsObjectLoadingContent::ScriptRequestPluginInstance(JSContext* aCx,
-                                                    nsNPAPIPluginInstance **aResult)
+nsNPAPIPluginInstance*
+nsObjectLoadingContent::ScriptRequestPluginInstance(JSContext* aCx)
 {
   
   
@@ -2849,8 +2831,6 @@ nsObjectLoadingContent::ScriptRequestPluginInstance(JSContext* aCx,
 
   nsCOMPtr<nsIContent> thisContent =
     do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
-
-  *aResult = nullptr;
 
   
   
@@ -2875,11 +2855,11 @@ nsObjectLoadingContent::ScriptRequestPluginInstance(JSContext* aCx,
   }
 
   if (mInstanceOwner) {
-    return mInstanceOwner->GetInstance(aResult);
+    return mInstanceOwner->GetInstance();
   }
 
   
-  return NS_OK;
+  return nullptr;
 }
 
 NS_IMETHODIMP
@@ -3027,8 +3007,7 @@ nsObjectLoadingContent::DoStopPlugin(nsPluginInstanceOwner* aInstanceOwner)
       mFrameLoader = nullptr;
     }
   } else {
-    RefPtr<nsNPAPIPluginInstance> inst;
-    aInstanceOwner->GetInstance(getter_AddRefs(inst));
+    RefPtr<nsNPAPIPluginInstance> inst = aInstanceOwner->GetInstance();
     if (inst) {
 #if defined(XP_MACOSX)
       aInstanceOwner->HidePluginWindow();
@@ -3577,11 +3556,7 @@ nsObjectLoadingContent::SetupProtoChain(JSContext* aCx,
   MOZ_ASSERT(IsDOMObject(aObject));
   JSAutoRealm ar(aCx, aObject);
 
-  RefPtr<nsNPAPIPluginInstance> pi;
-  nsresult rv = ScriptRequestPluginInstance(aCx, getter_AddRefs(pi));
-  if (NS_FAILED(rv)) {
-    return;
-  }
+  RefPtr<nsNPAPIPluginInstance> pi = ScriptRequestPluginInstance(aCx);
 
   if (!pi) {
     
@@ -3591,7 +3566,7 @@ nsObjectLoadingContent::SetupProtoChain(JSContext* aCx,
   JS::Rooted<JSObject*> pi_obj(aCx); 
   JS::Rooted<JSObject*> pi_proto(aCx); 
 
-  rv = GetPluginJSObject(aCx, pi, &pi_obj, &pi_proto);
+  nsresult rv = GetPluginJSObject(aCx, pi, &pi_obj, &pi_proto);
   if (NS_FAILED(rv)) {
     return;
   }
@@ -3746,12 +3721,7 @@ nsObjectLoadingContent::DoResolve(JSContext* aCx, JS::Handle<JSObject*> aObject,
 {
   
   
-
-  RefPtr<nsNPAPIPluginInstance> pi;
-  nsresult rv = ScriptRequestPluginInstance(aCx, getter_AddRefs(pi));
-  if (NS_FAILED(rv)) {
-    return mozilla::dom::Throw(aCx, rv);
-  }
+  Unused << ScriptRequestPluginInstance(aCx);
   return true;
 }
 
@@ -3772,8 +3742,7 @@ nsObjectLoadingContent::GetOwnPropertyNames(JSContext* aCx,
   
   
   
-  RefPtr<nsNPAPIPluginInstance> pi;
-  aRv = ScriptRequestPluginInstance(aCx, getter_AddRefs(pi));
+  Unused << ScriptRequestPluginInstance(aCx);
 }
 
 void

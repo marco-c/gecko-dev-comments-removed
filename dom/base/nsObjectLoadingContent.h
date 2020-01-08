@@ -619,8 +619,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     };
 
     
-    nsresult ScriptRequestPluginInstance(JSContext* aCx,
-                                         nsNPAPIPluginInstance** aResult);
+    nsNPAPIPluginInstance* ScriptRequestPluginInstance(JSContext* aCx);
 
     
     static nsresult GetPluginJSObject(JSContext *cx,
