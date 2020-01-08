@@ -11648,7 +11648,7 @@ class OutOfLineSwitch : public OutOfLineCodeBase<CodeGenerator> {
       MOZ_CRASH("NYI: SwitchTableType::Inline");
 #endif
     } else {
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64)
+#if defined(JS_CODEGEN_ARM)
       MOZ_CRASH("NYI: SwitchTableType::OutOfLine");
 #else
       masm.mov(start(), temp);
@@ -11683,7 +11683,7 @@ void CodeGenerator::visitOutOfLineSwitch(
     OutOfLineSwitch<tableType>* jumpTable) {
   jumpTable->setOutOfLine();
   if (tableType == SwitchTableType::OutOfLine) {
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64)
+#if defined(JS_CODEGEN_ARM)
     MOZ_CRASH("NYI: SwitchTableType::OutOfLine");
 #elif defined(JS_CODEGEN_NONE)
     MOZ_CRASH();
@@ -11729,7 +11729,7 @@ void CodeGenerator::visitLoadElementFromStateV(LLoadElementFromStateV* lir) {
   Label join;
 
   
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64)
+#if defined(JS_CODEGEN_ARM)
   auto* jumpTable =
       new (alloc()) OutOfLineSwitch<SwitchTableType::Inline>(alloc());
 #else
@@ -11738,7 +11738,7 @@ void CodeGenerator::visitLoadElementFromStateV(LLoadElementFromStateV* lir) {
 #endif
 
   {
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64)
+#if defined(JS_CODEGEN_ARM)
     
     
     
