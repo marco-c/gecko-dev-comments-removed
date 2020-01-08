@@ -106,6 +106,24 @@ VARCACHE_PREF(
 
 
 
+
+
+
+
+#ifdef RELEASE_OR_BETA
+# define PREF_VALUE false
+#else
+# define PREF_VALUE true
+#endif
+VARCACHE_PREF(
+  "dom.animations-api.getAnimations.enabled",
+   dom_animations_api_getAnimations_enabled,
+  bool, PREF_VALUE
+)
+#undef PREF_VALUE
+
+
+
 #ifdef RELEASE_OR_BETA
 # define PREF_VALUE false
 #else

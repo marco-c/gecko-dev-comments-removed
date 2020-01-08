@@ -3069,9 +3069,6 @@ pref("layout.idle_period.time_limit", 1);
 pref("layout.css.webkit-appearance.enabled", false);
 
 
-
-
-
 #ifdef RELEASE_OR_BETA
 pref("dom.animations-api.core.enabled", false);
 #else
