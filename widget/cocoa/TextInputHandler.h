@@ -274,8 +274,13 @@ public:
 
 
 
+
+
+
+
   void WillDispatchKeyboardEvent(NSEvent* aNativeKeyEvent,
                                  const nsAString* aInsertString,
+                                 uint32_t aIndexOfKeypress,
                                  WidgetKeyboardEvent& aKeyEvent);
 
   
