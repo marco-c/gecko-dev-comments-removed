@@ -74,16 +74,15 @@ public:
                              const nsAString& aPayerEmail,
                              const nsAString& aPayerPhone);
 
+  bool IsRegionSupported(const nsAString& region) const;
+
   
   
   void RequestIPCOver(PaymentRequest* aRequest);
 
 private:
-  PaymentRequestManager() = default;
-  ~PaymentRequestManager()
-  {
-    MOZ_ASSERT(mActivePayments.Count() == 0);
-  }
+  PaymentRequestManager();
+  ~PaymentRequestManager();
 
   PaymentRequestChild* GetPaymentChild(PaymentRequest* aRequest);
 
