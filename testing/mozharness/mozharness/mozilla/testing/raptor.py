@@ -502,6 +502,9 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
         
         env['JSGC_DISABLE_POISONING'] = '1'
 
+        
+        env['MOZ_DISABLE_NONLOCAL_CONNECTIONS'] = '1'
+
         if self.repo_path is not None:
             env['MOZ_DEVELOPER_REPO_DIR'] = self.repo_path
         if self.obj_path is not None:

@@ -223,6 +223,13 @@ class Raptor(object):
 
         else:
             
+            
+            
+            if self.config['app'] == "firefox":
+                self.log.info("setting MOZ_DISABLE_NONLOCAL_CONNECTIONS=1")
+                os.environ['MOZ_DISABLE_NONLOCAL_CONNECTIONS'] = "1"
+
+            
             self.log.info("starting %s" % self.config['app'])
 
             
@@ -239,6 +246,11 @@ class Raptor(object):
             self.output_handler.proc = proc
 
             self.control_server.browser_proc = proc
+
+            
+            if self.config['app'] == "firefox" and test.get('playback', None) is not None:
+                self.log.info("setting MOZ_DISABLE_NONLOCAL_CONNECTIONS=0")
+                os.environ['MOZ_DISABLE_NONLOCAL_CONNECTIONS'] = "0"
 
             
             if self.config['gecko_profile'] is True:
