@@ -320,11 +320,11 @@ private:
   nsTArray<RefPtr<SVGFilterObserver>> mObservers;
 };
 
-class nsSVGFilterProperty : public SVGFilterObserverList
+class SVGFilterObserverListForCSSProp final : public SVGFilterObserverList
 {
 public:
-  nsSVGFilterProperty(const nsTArray<nsStyleFilter>& aFilters,
-                      nsIFrame* aFilteredFrame)
+  SVGFilterObserverListForCSSProp(const nsTArray<nsStyleFilter>& aFilters,
+                                  nsIFrame* aFilteredFrame)
     : SVGFilterObserverList(aFilters, aFilteredFrame->GetContent(),
                             aFilteredFrame)
     , mFrameReference(aFilteredFrame)
@@ -475,7 +475,7 @@ public:
   using URIObserverHashtablePropertyDescriptor =
     const mozilla::FramePropertyDescriptor<URIObserverHashtable>*;
 
-  static void DestroyFilterProperty(nsSVGFilterProperty* aProp)
+  static void DestroyFilterProperty(SVGFilterObserverListForCSSProp* aProp)
   {
     
     
@@ -485,7 +485,8 @@ public:
     aProp->Release();
   }
 
-  NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(FilterProperty, nsSVGFilterProperty,
+  NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(FilterProperty,
+                                      SVGFilterObserverListForCSSProp,
                                       DestroyFilterProperty)
   NS_DECLARE_FRAME_PROPERTY_RELEASABLE(MaskProperty, nsSVGMaskProperty)
   NS_DECLARE_FRAME_PROPERTY_RELEASABLE(ClipPathProperty, nsSVGPaintingProperty)
@@ -509,7 +510,7 @@ public:
                                                PaintingPropertyDescriptor aProperty);
 
   struct EffectProperties {
-    nsSVGFilterProperty*   mFilter;
+    SVGFilterObserverListForCSSProp* mFilterObservers;
     nsSVGMaskProperty*     mMask;
     nsSVGPaintingProperty* mClipPath;
 
@@ -563,7 +564,7 @@ public:
     }
 
     bool HasValidFilter() {
-      return mFilter && mFilter->ReferencesValidResources();
+      return mFilterObservers && mFilterObservers->ReferencesValidResources();
     }
 
     
@@ -571,7 +572,7 @@ public:
 
 
     bool HasNoOrValidFilter() {
-      return !mFilter || mFilter->ReferencesValidResources();
+      return !mFilterObservers || mFilterObservers->ReferencesValidResources();
     }
 
     
@@ -605,7 +606,7 @@ public:
   
 
 
-  static nsSVGFilterProperty *GetFilterProperty(nsIFrame* aFrame);
+  static SVGFilterObserverListForCSSProp* GetFilterObserverList(nsIFrame* aFrame);
 
   
 
