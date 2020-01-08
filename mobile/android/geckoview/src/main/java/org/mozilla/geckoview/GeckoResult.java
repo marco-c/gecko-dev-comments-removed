@@ -2,6 +2,7 @@ package org.mozilla.geckoview;
 
 import org.mozilla.gecko.util.ThreadUtils;
 
+import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -148,6 +149,7 @@ public class GeckoResult<T> {
         }
     }
 
+    private Handler mHandler;
     private boolean mComplete;
     private T mValue;
     private Throwable mError;
@@ -159,6 +161,11 @@ public class GeckoResult<T> {
 
 
     public GeckoResult() {
+        if (ThreadUtils.isOnUiThread()) {
+            mHandler = ThreadUtils.getUiHandler();
+        } else {
+            mHandler = new Handler();
+        }
     }
 
     
@@ -261,6 +268,8 @@ public class GeckoResult<T> {
 
 
 
+
+
     public @NonNull <U> GeckoResult<U> then(@Nullable final OnValueListener<T, U> valueListener,
                                             @Nullable final OnExceptionListener<U> exceptionListener) {
         if (valueListener == null && exceptionListener == null) {
@@ -315,7 +324,7 @@ public class GeckoResult<T> {
             return;
         }
 
-        ThreadUtils.getUiHandler().post(new Runnable() {
+        mHandler.post(new Runnable() {
             @Override
             public void run() {
                 if (mListeners != null) {
@@ -336,7 +345,7 @@ public class GeckoResult<T> {
             throw new IllegalStateException("Cannot dispatch unless result is complete");
         }
 
-        ThreadUtils.getUiHandler().post(new Runnable() {
+        mHandler.post(new Runnable() {
             @Override
             public void run() {
                 runnable.run();
