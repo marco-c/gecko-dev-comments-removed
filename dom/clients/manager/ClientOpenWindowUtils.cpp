@@ -357,11 +357,10 @@ NS_IMPL_ISUPPORTS(LaunchObserver, nsIObserver);
 
 }  
 
-already_AddRefed<ClientOpPromise> ClientOpenWindowInCurrentProcess(
+RefPtr<ClientOpPromise> ClientOpenWindowInCurrentProcess(
     const ClientOpenWindowArgs& aArgs) {
   RefPtr<ClientOpPromise::Private> promise =
       new ClientOpPromise::Private(__func__);
-  RefPtr<ClientOpPromise> ref = promise;
 
 #ifdef MOZ_WIDGET_ANDROID
   
@@ -392,7 +391,7 @@ already_AddRefed<ClientOpPromise> ClientOpenWindowInCurrentProcess(
           WaitForLoad(aArgs, outerWindow, promise);
         },
         [promise](nsresult aResult) { promise->Reject(aResult, __func__); });
-    return ref.forget();
+    return promise.forget();
   }
 
   
@@ -405,13 +404,13 @@ already_AddRefed<ClientOpPromise> ClientOpenWindowInCurrentProcess(
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
     promise->Reject(rv, __func__);
-    return ref.forget();
+    return promise.forget();
   }
 
   MOZ_DIAGNOSTIC_ASSERT(outerWindow);
   WaitForLoad(aArgs, outerWindow, promise);
 
-  return ref.forget();
+  return promise.forget();
 }
 
 }  

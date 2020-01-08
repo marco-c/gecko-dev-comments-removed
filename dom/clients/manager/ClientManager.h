@@ -58,7 +58,7 @@ class ClientManager final : public ClientThing<ClientManagerChild> {
   
   
   
-  already_AddRefed<ClientOpPromise> StartOp(
+  MOZ_MUST_USE RefPtr<ClientOpPromise> StartOp(
       const ClientOpConstructorArgs& aArgs,
       nsISerialEventTarget* aSerialEventTarget);
 
