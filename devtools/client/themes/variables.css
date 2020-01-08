@@ -82,10 +82,6 @@
   --theme-graphs-full-blue: #00f;
 
   
-  --theme-pane-collapse-image: url(chrome://devtools/skin/images/pane-collapse.svg);
-  --theme-pane-expand-image: url(chrome://devtools/skin/images/pane-expand.svg);
-
-  
   --theme-icon-checked-filter: url(chrome://devtools/skin/images/filters.svg#icon-checked-light);
 
   
@@ -191,10 +187,6 @@
   --theme-graphs-full-blue: #00f;
 
   
-  --theme-pane-collapse-image: url(chrome://devtools/skin/images/pane-collapse.svg);
-  --theme-pane-expand-image: url(chrome://devtools/skin/images/pane-expand.svg);
-
-  
   --theme-icon-checked-filter: url(chrome://devtools/skin/images/filters.svg#icon-checked-dark);
 
   
@@ -243,6 +235,11 @@
 
   
   --animation-curve: cubic-bezier(.07,.95,0,1);
+
+  
+  --select-arrow-image: url(chrome://devtools/skin/images/select-arrow.svg);
+  --theme-pane-collapse-image: url(chrome://devtools/skin/images/pane-collapse.svg);
+  --theme-pane-expand-image: url(chrome://devtools/skin/images/pane-expand.svg);
 
   
 
