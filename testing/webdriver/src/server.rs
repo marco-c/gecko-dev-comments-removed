@@ -190,7 +190,6 @@ impl<U: WebDriverExtensionRoute + 'static> Service for HttpHandler<U> {
                 
                 
                 match api.lock() {
-
                     Ok(ref api) => api.decode_request(&method, &uri.path(), &body[..]),
                     Err(e) => panic!("Error decoding request: {:?}", e),
                 }
