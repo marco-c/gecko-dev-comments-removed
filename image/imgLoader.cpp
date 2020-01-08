@@ -684,7 +684,8 @@ static bool ShouldLoadCachedImage(imgRequest* aImgRequest,
     if (!nsContentUtils::IsSystemPrincipal(aTriggeringPrincipal)) {
       
       nsCOMPtr<nsIURI> requestingLocation;
-      if (aTriggeringPrincipal) {
+      if (aTriggeringPrincipal &&
+          aTriggeringPrincipal->GetIsCodebasePrincipal()) {
         rv = aTriggeringPrincipal->GetURI(getter_AddRefs(requestingLocation));
         NS_ENSURE_SUCCESS(rv, false);
       }
