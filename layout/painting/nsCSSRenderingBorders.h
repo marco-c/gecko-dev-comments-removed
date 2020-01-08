@@ -96,7 +96,6 @@ public:
                       const Float* aBorderWidths,
                       RectCornerRadii& aBorderRadii,
                       const nscolor* aBorderColors,
-                      nscolor aBackgroundColor,
                       bool aBackfaceIsVisible,
                       const mozilla::Maybe<Rect>& aClipRect);
 
@@ -146,9 +145,6 @@ private:
 
   
   nscolor mBorderColors[4];
-
-  
-  nscolor mBackgroundColor;
 
   
   bool mAllBordersSameStyle;

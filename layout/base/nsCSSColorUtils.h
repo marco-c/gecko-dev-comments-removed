@@ -20,9 +20,7 @@
             NS_GetLuminosity(a | 0xff000000) - NS_GetLuminosity(b | 0xff000000)))
 
 
-void NS_GetSpecial3DColors(nscolor aResult[2],
-                           nscolor aBackgroundColor,
-                           nscolor aBorderColor);
+void NS_GetSpecial3DColors(nscolor aResult[2], nscolor aBorderColor);
 
 
 int NS_GetBrightness(uint8_t aRed, uint8_t aGreen, uint8_t aBlue);

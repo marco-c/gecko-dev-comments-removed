@@ -217,8 +217,6 @@ impl BorderSideHelpers for BorderSide {
         
         
         
-        
-        
         if self.color.r != 0.0 || self.color.g != 0.0 || self.color.b != 0.0 {
             let scale = if lighter { 1.0 } else { 2.0 / 3.0 };
             return self.color.scale_rgb(scale)
