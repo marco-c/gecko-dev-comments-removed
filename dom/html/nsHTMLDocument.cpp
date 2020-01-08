@@ -1162,6 +1162,11 @@ nsHTMLDocument::SetCookie(const nsAString& aCookie, ErrorResult& rv)
     return;
   }
 
+  if (nsContentUtils::StorageDisabledByAntiTracking(GetInnerWindow(), nullptr,
+                                                    nullptr)) {
+    return;
+  }
+
   
   if (IsCookieAverse()) {
     return;
