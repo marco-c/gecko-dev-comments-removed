@@ -1512,7 +1512,8 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
 
 
 
-    MOZ_MUST_USE bool getNonAsciiCodePoint(int32_t lead, int32_t* cp);
+
+    MOZ_MUST_USE bool getNonAsciiCodePoint(int32_t lead, int32_t* codePoint);
 
     
 
