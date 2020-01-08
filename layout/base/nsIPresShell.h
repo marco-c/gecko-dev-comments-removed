@@ -281,7 +281,7 @@ public:
 
   mozilla::ServoStyleSet* StyleSet() const { return mStyleSet.get(); }
 
-  nsCSSFrameConstructor* FrameConstructor() const { return mFrameConstructor; }
+  nsCSSFrameConstructor* FrameConstructor() const { return mFrameConstructor.get(); }
 
   
 
@@ -1743,7 +1743,7 @@ protected:
   nsCOMPtr<nsIDocument>     mDocument;
   RefPtr<nsPresContext>   mPresContext;
   mozilla::UniquePtr<mozilla::ServoStyleSet> mStyleSet;
-  nsCSSFrameConstructor*    mFrameConstructor; 
+  mozilla::UniquePtr<nsCSSFrameConstructor> mFrameConstructor;
   nsViewManager*           mViewManager;   
   nsPresArena               mFrameArena;
   RefPtr<nsFrameSelection> mSelection;
