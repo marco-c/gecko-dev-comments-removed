@@ -8,12 +8,14 @@
 
 #include "nsIEffectiveTLDService.h"
 
+#include "nsHashKeys.h"
 #include "nsIMemoryReporter.h"
 #include "nsString.h"
 #include "nsCOMPtr.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Dafsa.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/MruCache.h"
 
 class nsIIDNService;
 
@@ -55,22 +57,20 @@ private:
   
   
   
-  
-  
-  
-  
-  static const uint32_t kTableSize = 31;
-  TLDCacheEntry mMruTable[kTableSize];
+  struct TldCache :
+    public mozilla::MruCache<nsACString, TLDCacheEntry, TldCache>
+  {
+    static mozilla::HashNumber Hash(const nsACString& aKey)
+    {
+      return mozilla::HashString(aKey);
+    }
+    static bool Match(const nsACString& aKey, const TLDCacheEntry& aVal)
+    {
+      return aKey == aVal.mHost;
+    }
+  };
 
-  
-
-
-
-
-
-
-
-  inline bool LookupForAdd(const nsACString& aHost, TLDCacheEntry** aEntry);
+  TldCache mMruTable;
 };
 
 #endif 
