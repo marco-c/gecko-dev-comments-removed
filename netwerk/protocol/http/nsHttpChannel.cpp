@@ -715,7 +715,7 @@ nsHttpChannel::CheckFastBlocked()
 
     if (!StaticPrefs::browser_contentblocking_enabled() ||
         !sIsFastBlockEnabled ||
-        IsContentPolicyTypeWhitelistedForFastBlock(mLoadInfo)) ||
+        IsContentPolicyTypeWhitelistedForFastBlock(mLoadInfo) ||
         
         (mLoadInfo && mLoadInfo->GetDocumentHasUserInteracted())) {
 
