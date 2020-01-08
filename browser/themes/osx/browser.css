@@ -106,7 +106,6 @@
 
 .titlebar-buttonbox {
   margin-left: 12px;
-  margin-top: calc(-1 * var(--space-above-tabbar));
 }
 
 
@@ -625,7 +624,7 @@ html|input.urlbar-input {
   box-shadow: var(--focus-ring-box-shadow);
 }
 
-#TabsToolbar {
+#TabsToolbar > .toolbar-items {
   padding-top: var(--space-above-tabbar);
 }
 

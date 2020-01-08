@@ -101,15 +101,15 @@
   }
 }
 
-:root[sizemode="normal"][chromehidden~="menubar"] #TabsToolbar,
-:root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] + #TabsToolbar {
+:root[sizemode="normal"][chromehidden~="menubar"] #TabsToolbar > .toolbar-items,
+:root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] + #TabsToolbar > .toolbar-items {
   padding-top: var(--space-above-tabbar);
 }
 
 
 @media (-moz-os-version: windows-win7) {
-  :root[sizemode="normal"][chromehidden~="menubar"] #TabsToolbar,
-  :root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] + #TabsToolbar {
+  :root[sizemode="normal"][chromehidden~="menubar"] #TabsToolbar > .toolbar-items,
+  :root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] + #TabsToolbar > .toolbar-items {
     padding-top: calc(var(--space-above-tabbar) + 4px);
   }
 }
@@ -960,18 +960,6 @@ notification[value="translation"] {
 
 #TabsToolbar > .titlebar-item {
   margin-bottom: @navbarTabsShadowSize@;
-}
-
-
-:root[sizemode="normal"] #TabsToolbar > .titlebar-item {
-  margin-top: calc(-1 * var(--space-above-tabbar));
-}
-
-
-@media (-moz-os-version: windows-win7) {
-  :root[sizemode="normal"] #TabsToolbar > .titlebar-item {
-    margin-top: calc(-1 * (var(--space-above-tabbar) + 4px));
-  }
 }
 
 :root:not([privatebrowsingmode=temporary]) .accessibility-indicator,
