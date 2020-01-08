@@ -1792,6 +1792,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "privacy.trackingprotection.cryptomining.enabled",
+   privacy_trackingprotection_cryptomining_enabled,
+  bool, true
+)
+
+
 
 
 

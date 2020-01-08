@@ -7,6 +7,7 @@
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 
 
+#include "UrlClassifierFeatureCryptomining.h"
 #include "UrlClassifierFeatureFingerprinting.h"
 #include "UrlClassifierFeatureFlash.h"
 #include "UrlClassifierFeatureLoginReputation.h"
@@ -25,6 +26,7 @@ namespace net {
     return;
   }
 
+  UrlClassifierFeatureCryptomining::MaybeShutdown();
   UrlClassifierFeatureFingerprinting::MaybeShutdown();
   UrlClassifierFeatureFlash::MaybeShutdown();
   UrlClassifierFeatureLoginReputation::MaybeShutdown();
@@ -44,6 +46,12 @@ namespace net {
   
   
   
+
+  
+  feature = UrlClassifierFeatureCryptomining::MaybeCreate(aChannel);
+  if (feature) {
+    aFeatures.AppendElement(feature);
+  }
 
   
   feature = UrlClassifierFeatureFingerprinting::MaybeCreate(aChannel);
@@ -82,6 +90,12 @@ UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
   }
 
   nsCOMPtr<nsIUrlClassifierFeature> feature;
+
+  
+  feature = UrlClassifierFeatureCryptomining::GetIfNameMatches(aName);
+  if (feature) {
+    return feature.forget();
+  }
 
   
   feature = UrlClassifierFeatureFingerprinting::GetIfNameMatches(aName);
@@ -124,6 +138,12 @@ UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
 
   
   nsAutoCString name;
+  name.Assign(UrlClassifierFeatureCryptomining::Name());
+  if (!name.IsEmpty()) {
+    aArray.AppendElement(name);
+  }
+
+  
   name.Assign(UrlClassifierFeatureFingerprinting::Name());
   if (!name.IsEmpty()) {
     aArray.AppendElement(name);
