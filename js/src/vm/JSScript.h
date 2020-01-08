@@ -2132,6 +2132,10 @@ class JSScript : public js::gc::TenuredCell
         void holdScript(JS::HandleFunction fun);
         void dropScript();
     };
+
+    
+    
+    inline bool trackRecordReplayProgress() const;
 };
 
 

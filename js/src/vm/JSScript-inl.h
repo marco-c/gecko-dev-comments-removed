@@ -209,4 +209,19 @@ JSScript::isDebuggee() const
     return realm_->debuggerObservesAllExecution() || bitFields_.hasDebugScript_;
 }
 
+inline bool
+JSScript::trackRecordReplayProgress() const
+{
+    
+    
+    
+    
+    
+    
+    return MOZ_UNLIKELY(mozilla::recordreplay::IsRecordingOrReplaying())
+        && !runtimeFromAnyThread()->parentRuntime
+        && !selfHosted()
+        && !mozilla::recordreplay::IsInternalScript(filename());
+}
+
 #endif 

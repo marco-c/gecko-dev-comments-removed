@@ -1018,7 +1018,7 @@ IonBuilder::buildInline(IonBuilder* callerBuilder, MResumePoint* callerResumePoi
 
     
     
-    if (ReplayDebugger::trackProgress(script())) {
+    if (script()->trackRecordReplayProgress()) {
         MInterruptCheck* check = MInterruptCheck::New(alloc());
         check->setTrackRecordReplayProgress();
         current->add(check);
@@ -1761,7 +1761,7 @@ IonBuilder::jsop_loopentry()
     current->add(check);
     insertRecompileCheck();
 
-    if (ReplayDebugger::trackProgress(script())) {
+    if (script()->trackRecordReplayProgress()) {
         check->setTrackRecordReplayProgress();
 
         
@@ -5775,7 +5775,7 @@ IonBuilder::jsop_eval(uint32_t argc)
         if (string->isConcat() &&
             string->getOperand(1)->type() == MIRType::String &&
             string->getOperand(1)->maybeConstantValue() &&
-            !ReplayDebugger::trackProgress(script()))
+            !script()->trackRecordReplayProgress())
         {
             JSAtom* atom = &string->getOperand(1)->maybeConstantValue()->toString()->asAtom();
 

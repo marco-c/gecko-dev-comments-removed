@@ -995,8 +995,8 @@ InitFromBailout(JSContext* cx, size_t frameNo,
                 break;
         }
         op = JSOp(*pc);
-        if (skippedLoopEntry && ReplayDebugger::trackProgress(script))
-            ReplayDebugger::gProgressCounter++;
+        if (skippedLoopEntry && script->trackRecordReplayProgress())
+            mozilla::recordreplay::AdvanceExecutionProgressCounter();
     }
 
     const uint32_t pcOff = script->pcToOffset(pc);
@@ -1197,8 +1197,8 @@ InitFromBailout(JSContext* cx, size_t frameNo,
 
                 
                 
-                if (skippedLoopEntry && ReplayDebugger::trackProgress(script))
-                    ReplayDebugger::gProgressCounter--;
+                if (skippedLoopEntry && script->trackRecordReplayProgress())
+                    --*mozilla::recordreplay::ExecutionProgressCounter();
             } else {
                 opReturnAddr = nativeCodeForPC;
             }
