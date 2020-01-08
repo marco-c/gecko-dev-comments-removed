@@ -648,10 +648,6 @@ JSRuntime::enqueuePromiseJob(JSContext* cx, HandleFunction job, HandleObject pro
     void* data = cx->enqueuePromiseJobCallbackData;
     RootedObject allocationSite(cx);
     if (promise) {
-#ifdef DEBUG
-        AssertSameCompartment(job, promise);
-#endif
-
         RootedObject unwrappedPromise(cx, promise);
         
         

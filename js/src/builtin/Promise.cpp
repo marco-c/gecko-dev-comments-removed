@@ -1018,13 +1018,9 @@ EnqueuePromiseReactionJob(JSContext* cx, HandleObject reactionObj,
     
     
     RootedObject promise(cx, reaction->promise());
-    if (promise) {
-        if (promise->is<PromiseObject>()) {
-            if (!cx->compartment()->wrap(cx, &promise)) {
-                return false;
-            }
-        } else {
-            promise = nullptr;
+    if (promise && promise->is<PromiseObject>()) {
+        if (!cx->compartment()->wrap(cx, &promise)) {
+            return false;
         }
     }
 
