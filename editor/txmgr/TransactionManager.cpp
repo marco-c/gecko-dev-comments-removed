@@ -197,6 +197,16 @@ TransactionManager::Clear()
 NS_IMETHODIMP
 TransactionManager::BeginBatch(nsISupports* aData)
 {
+  nsresult rv = BeginBatchInternal(aData);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
+
+nsresult
+TransactionManager::BeginBatchInternal(nsISupports* aData)
+{
   
   
   
@@ -224,6 +234,16 @@ TransactionManager::BeginBatch(nsISupports* aData)
 
 NS_IMETHODIMP
 TransactionManager::EndBatch(bool aAllowEmpty)
+{
+  nsresult rv = EndBatchInternal(aAllowEmpty);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
+
+nsresult
+TransactionManager::EndBatchInternal(bool aAllowEmpty)
 {
   
   

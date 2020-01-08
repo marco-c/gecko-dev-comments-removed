@@ -93,6 +93,12 @@ public:
                           bool aDidMerge,
                           nsresult aMergeResult);
 
+  
+
+
+  nsresult BeginBatchInternal(nsISupports* aData);
+  nsresult EndBatchInternal(bool aAllowEmpty);
+
 private:
   virtual ~TransactionManager() = default;
 

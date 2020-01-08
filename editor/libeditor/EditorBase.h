@@ -53,6 +53,7 @@ class nsRange;
 namespace mozilla {
 class AutoSelectionRestorer;
 class AutoTopLevelEditSubActionNotifier;
+class AutoTransactionBatch;
 class AutoTransactionsConserveSelection;
 class AutoUpdateViewBatch;
 class ChangeAttributeTransaction;
@@ -1667,6 +1668,16 @@ protected:
   void BeginUpdateViewBatch();
   void EndUpdateViewBatch();
 
+  
+
+
+
+
+
+
+  void BeginTransactionInternal();
+  void EndTransactionInternal();
+
 protected: 
   
 
@@ -1990,6 +2001,7 @@ protected:
   friend class AutoPlaceholderBatch;
   friend class AutoSelectionRestorer;
   friend class AutoTopLevelEditSubActionNotifier;
+  friend class AutoTransactionBatch;
   friend class AutoTransactionsConserveSelection;
   friend class AutoUpdateViewBatch;
   friend class CompositionTransaction;
