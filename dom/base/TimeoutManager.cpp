@@ -793,6 +793,7 @@ TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadli
     for (RefPtr<Timeout> timeout = mTimeouts.GetFirst();
          timeout != nullptr;
          timeout = next) {
+      next = timeout->getNext();
       
       
       if (timeout->mFiringId != firingId) {
