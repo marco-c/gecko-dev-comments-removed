@@ -175,6 +175,18 @@ Rule.prototype = {
 
 
 
+
+  getDeclaration: function(id) {
+    return this.textProps.find(textProp => textProp.id === id);
+  },
+
+  
+
+
+
+
+
+
   matches: function(options) {
     return this.domRule === options.rule;
   },

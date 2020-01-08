@@ -135,6 +135,17 @@ ElementStyle.prototype = {
 
 
 
+
+  getRule: function(id) {
+    return this.rules.find(rule => rule.domRule.actorID === id);
+  },
+
+  
+
+
+
+
+
   getUsedFontFamilies: function() {
     return new Promise((resolve, reject) => {
       this.ruleView.styleWindow.requestIdleCallback(async () => {
@@ -319,6 +330,28 @@ ElementStyle.prototype = {
         textProp.updateEditor();
       }
     }
+  },
+
+  
+
+
+
+
+
+
+
+  toggleDeclaration: function(ruleId, declarationId) {
+    const rule = this.getRule(ruleId);
+    if (!rule) {
+      return;
+    }
+
+    const declaration = rule.getDeclaration(declarationId);
+    if (!declaration) {
+      return;
+    }
+
+    declaration.setEnabled(!declaration.enabled);
   },
 
   

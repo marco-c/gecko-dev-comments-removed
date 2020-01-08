@@ -23,12 +23,12 @@ const INITIAL_RULES = {
 
 
 
-function getDeclarationState(declaration, index) {
+function getDeclarationState(declaration, ruleId) {
   return {
     
     computedProperties: declaration.computedProperties,
     
-    id: `${declaration.name}${declaration.value}${index}`,
+    id: declaration.id,
     
     isEnabled: declaration.enabled,
     
@@ -39,6 +39,8 @@ function getDeclarationState(declaration, index) {
     name: declaration.name,
     
     priority: declaration.priority,
+    
+    ruleId,
     
     value: declaration.value,
   };
@@ -54,8 +56,8 @@ function getDeclarationState(declaration, index) {
 function getRuleState(rule) {
   return {
     
-    declarations: rule.declarations.map((declaration, i) =>
-      getDeclarationState(declaration, i)),
+    declarations: rule.declarations.map(declaration =>
+      getDeclarationState(declaration, rule.domRule.actorID)),
     
     id: rule.domRule.actorID,
     

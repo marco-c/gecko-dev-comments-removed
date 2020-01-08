@@ -32,12 +32,15 @@ class RulesView {
     this.pageStyle = inspector.pageStyle;
     this.selection = inspector.selection;
     this.store = inspector.store;
+    this.telemetry = inspector.telemetry;
     this.toolbox = inspector.toolbox;
 
     this.showUserAgentStyles = Services.prefs.getBoolPref(PREF_UA_STYLES);
 
     this.onSelection = this.onSelection.bind(this);
+    this.onToggleDeclaration = this.onToggleDeclaration.bind(this);
     this.onTogglePseudoClass = this.onTogglePseudoClass.bind(this);
+    this.updateRules = this.updateRules.bind(this);
 
     this.inspector.sidebar.on("select", this.onSelection);
     this.selection.on("detached-front", this.onSelection);
@@ -52,6 +55,7 @@ class RulesView {
     }
 
     const rulesApp = RulesApp({
+      onToggleDeclaration: this.onToggleDeclaration,
       onTogglePseudoClass: this.onTogglePseudoClass,
     });
 
@@ -84,6 +88,7 @@ class RulesView {
     this.selection = null;
     this.showUserAgentStyles = null;
     this.store = null;
+    this.telemetry = null;
     this.toolbox = null;
   }
 
@@ -139,6 +144,21 @@ class RulesView {
 
 
 
+
+  onToggleDeclaration(ruleId, declarationId) {
+    this.elementStyle.toggleDeclaration(ruleId, declarationId);
+    this.telemetry.recordEvent("edit_rule", "ruleview", null, {
+      "session_id": this.toolbox.sessionId,
+    });
+  }
+
+  
+
+
+
+
+
+
   onTogglePseudoClass(value) {
     this.store.dispatch(togglePseudoClass(value));
     this.inspector.togglePseudoClass(value);
@@ -161,9 +181,18 @@ class RulesView {
 
     this.elementStyle = new ElementStyle(element, this, {}, this.pageStyle,
       this.showUserAgentStyles);
+    this.elementStyle.onChanged = this.updateRules;
     await this.elementStyle.populate();
 
     this.store.dispatch(setPseudoClassLocks(this.elementStyle.element.pseudoClassLocks));
+    this.updateRules();
+  }
+
+  
+
+
+
+  updateRules() {
     this.store.dispatch(updateRules(this.elementStyle.rules));
   }
 }
