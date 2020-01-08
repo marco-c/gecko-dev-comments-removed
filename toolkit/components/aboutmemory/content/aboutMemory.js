@@ -794,6 +794,10 @@ function makeDReportMap(aJSONReports) {
     let path = jr.path.replace(pidRegex, pidSubst);
 
     
+    path = path.replace(/\(tid=(\d+)\)/, "(tid=NNN)");
+    path = path.replace(/#\d+ \(tid=NNN\)/, "#N (tid=NNN)");
+
+    
     
     
     
