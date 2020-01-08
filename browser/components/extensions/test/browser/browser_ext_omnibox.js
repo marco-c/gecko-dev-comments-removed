@@ -3,7 +3,9 @@
 "use strict";
 
 add_task(async function() {
-  let keyword = "test";
+  
+  
+  let keyword = "VeryUniqueKeywordThatDoesNeverMatchAnyTestUrl";
 
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
