@@ -264,6 +264,12 @@ this.VideoControlsImplPageWidget = class {
                 }
                 let preDefinedSize = this.controlBarComputedStyles.getPropertyValue(propertyName);
 
+                
+                
+                if (!preDefinedSize) {
+                  throw new Error("Stylesheet not loaded yet? propertyName: " + propertyName);
+                }
+
                 return parseInt(preDefinedSize, 10);
               }
             },

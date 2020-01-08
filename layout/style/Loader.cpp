@@ -142,6 +142,7 @@ SheetLoadData::SheetLoadData(Loader* aLoader,
                              const nsAString& aTitle,
                              nsIURI* aURI,
                              StyleSheet* aSheet,
+                             bool aSyncLoad,
                              nsIStyleSheetLinkingElement* aOwningElement,
                              IsAlternate aIsAlternate,
                              MediaMatched aMediaMatches,
@@ -156,7 +157,7 @@ SheetLoadData::SheetLoadData(Loader* aLoader,
   , mSheet(aSheet)
   , mNext(nullptr)
   , mPendingChildren(0)
-  , mSyncLoad(false)
+  , mSyncLoad(aSyncLoad)
   , mIsNonDocumentSheet(false)
   , mIsLoading(false)
   , mIsBeingParsed(false)
@@ -1900,6 +1901,7 @@ Loader::LoadInlineStyle(const SheetInfo& aInfo,
                                           aInfo.mTitle,
                                           nullptr,
                                           sheet,
+                                          false,
                                           owningElement,
                                           isAlternate,
                                           matched,
@@ -1959,6 +1961,12 @@ Loader::LoadStyleLink(const SheetInfo& aInfo, nsICSSLoaderObserver* aObserver)
     context = mDocument;
   }
 
+  bool syncLoad = aInfo.mContent &&
+                  aInfo.mContent->IsInUAWidget() &&
+                  IsChromeURI(aInfo.mURI);
+  LOG(("  Link sync load: '%s'", syncLoad ? "true" : "false"));
+  MOZ_ASSERT_IF(syncLoad, !aObserver);
+
   nsresult rv = CheckContentPolicy(loadingPrincipal, principal, aInfo.mURI, context, false);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     
@@ -1984,7 +1992,7 @@ Loader::LoadStyleLink(const SheetInfo& aInfo, nsICSSLoaderObserver* aObserver)
   rv = CreateSheet(aInfo,
                    principal,
                    eAuthorSheetFeatures,
-                   false,
+                   syncLoad,
                    state,
                    &sheet);
   if (NS_FAILED(rv)) {
@@ -2024,6 +2032,7 @@ Loader::LoadStyleLink(const SheetInfo& aInfo, nsICSSLoaderObserver* aObserver)
                                           aInfo.mTitle,
                                           aInfo.mURI,
                                           sheet,
+                                          syncLoad,
                                           owningElement,
                                           isAlternate,
                                           matched,
@@ -2038,7 +2047,8 @@ Loader::LoadStyleLink(const SheetInfo& aInfo, nsICSSLoaderObserver* aObserver)
              "These should better match!");
 
   
-  if (state == eSheetNeedsParser &&
+  if (!syncLoad &&
+      state == eSheetNeedsParser &&
       mSheets->mLoadingDatas.Count() != 0 &&
       !result.ShouldBlock()) {
     LOG(("  Deferring sheet load"));
@@ -2058,7 +2068,9 @@ Loader::LoadStyleLink(const SheetInfo& aInfo, nsICSSLoaderObserver* aObserver)
     return Err(rv);
   }
 
-  data->mMustNotify = true;
+  if (!syncLoad) {
+    data->mMustNotify = true;
+  }
   return result;
 }
 
@@ -2396,6 +2408,7 @@ Loader::PostLoadEvent(nsIURI* aURI,
                       EmptyString(), 
                       aURI,
                       aSheet,
+                      false,
                       aElement,
                       aWasAlternate,
                       aMediaMatched,

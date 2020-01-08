@@ -49,6 +49,7 @@ public:
                 const nsAString& aTitle,
                 nsIURI* aURI,
                 StyleSheet* aSheet,
+                bool aSyncLoad,
                 nsIStyleSheetLinkingElement* aOwningElement,
                 IsAlternate aIsAlternate,
                 MediaMatched aMediaMatched,
@@ -124,6 +125,7 @@ public:
   
   uint32_t mPendingChildren;
 
+  
   
   
   bool mSyncLoad : 1;
