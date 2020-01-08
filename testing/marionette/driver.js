@@ -3548,45 +3548,25 @@ GeckoDriver.prototype.teardownReftest = function() {
 GeckoDriver.prototype.commands = {
   
   "Marionette:AcceptConnections": GeckoDriver.prototype.acceptConnections,
+  "acceptConnections": GeckoDriver.prototype.acceptConnections,  
   "Marionette:GetContext": GeckoDriver.prototype.getContext,
   "Marionette:GetScreenOrientation": GeckoDriver.prototype.getScreenOrientation,
   "Marionette:GetWindowType": GeckoDriver.prototype.getWindowType,
   "Marionette:Quit": GeckoDriver.prototype.quit,
   "Marionette:SetContext": GeckoDriver.prototype.setContext,
   "Marionette:SetScreenOrientation": GeckoDriver.prototype.setScreenOrientation,
-  
-  "Marionette:ActionChain": GeckoDriver.prototype.actionChain,
-  "Marionette:MultiAction": GeckoDriver.prototype.multiAction,
+  "Marionette:ActionChain": GeckoDriver.prototype.actionChain,  
+  "Marionette:MultiAction": GeckoDriver.prototype.multiAction,  
   "Marionette:SingleTap": GeckoDriver.prototype.singleTap,
-  
-  "actionChain": GeckoDriver.prototype.actionChain,
-  "acceptConnections": GeckoDriver.prototype.acceptConnections,
-  "closeChromeWindow": GeckoDriver.prototype.closeChromeWindow,
-  "getChromeWindowHandles": GeckoDriver.prototype.getChromeWindowHandles,
-  "getContext": GeckoDriver.prototype.getContext,
-  "getCurrentChromeWindowHandle": GeckoDriver.prototype.getChromeWindowHandle,
-  "getScreenOrientation": GeckoDriver.prototype.getScreenOrientation,
-  "getWindowType": GeckoDriver.prototype.getWindowType,
-  "multiAction": GeckoDriver.prototype.multiAction,
-  "quit": GeckoDriver.prototype.quit,
-  "quitApplication": GeckoDriver.prototype.quit,
-  "setContext": GeckoDriver.prototype.setContext,
-  "setScreenOrientation": GeckoDriver.prototype.setScreenOrientation,
-  "singleTap": GeckoDriver.prototype.singleTap,
+  "singleTap": GeckoDriver.prototype.singleTap,  
 
   
   "Addon:Install": GeckoDriver.prototype.installAddon,
   "Addon:Uninstall": GeckoDriver.prototype.uninstallAddon,
-  
-  "addon:install": GeckoDriver.prototype.installAddon,
-  "addon:uninstall": GeckoDriver.prototype.uninstallAddon,
 
   
   "L10n:LocalizeEntity": GeckoDriver.prototype.localizeEntity,
   "L10n:LocalizeProperty": GeckoDriver.prototype.localizeProperty,
-  
-  "localization:l10n:localizeEntity": GeckoDriver.prototype.localizeEntity,
-  "localization:l10n:localizeProperty": GeckoDriver.prototype.localizeProperty,
 
   
   "reftest:setup": GeckoDriver.prototype.setupReftest,
