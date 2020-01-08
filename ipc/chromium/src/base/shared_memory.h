@@ -113,6 +113,14 @@ class SharedMemory {
     return ShareToProcessCommon(target_pid, new_handle, true);
   }
 
+#ifdef OS_POSIX
+  
+  
+  
+  
+  static bool AppendPosixShmPrefix(std::string* str, pid_t pid);
+#endif
+
  private:
   bool ShareToProcessCommon(ProcessId target_pid,
                             SharedMemoryHandle* new_handle,
