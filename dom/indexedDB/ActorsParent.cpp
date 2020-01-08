@@ -4496,18 +4496,6 @@ CreateStorageConnection(nsIFile* aDBFile,
   nsresult rv;
   bool exists;
 
-  if (IndexedDatabaseManager::InLowDiskSpaceMode()) {
-    rv = aDBFile->Exists(&exists);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    if (!exists) {
-      NS_WARNING("Refusing to create database because disk space is low!");
-      return NS_ERROR_DOM_INDEXEDDB_QUOTA_ERR;
-    }
-  }
-
   nsCOMPtr<nsIFileURL> dbFileUrl;
   rv = GetDatabaseFileURL(aDBFile,
                           aPersistenceType,
@@ -18900,23 +18888,6 @@ DatabaseMaintenance::DetermineMaintenanceAction(
     return NS_OK;
   }
 
-  bool lowDiskSpace = IndexedDatabaseManager::InLowDiskSpaceMode();
-
-  if (QuotaManager::IsRunningXPCShellTests()) {
-    
-    
-    
-    lowDiskSpace = ((PR_Now() / PR_USEC_PER_MSEC) % 2) == 0;
-  }
-
-  
-  
-  
-  if (lowDiskSpace) {
-    *aMaintenanceAction = MaintenanceAction::IncrementalVacuum;
-    return NS_OK;
-  }
-
   
   
   mozStorageTransaction transaction(aConnection,
@@ -24008,11 +23979,6 @@ CreateFileOp::DoDatabaseWork()
 
   AUTO_PROFILER_LABEL("CreateFileOp::DoDatabaseWork", DOM);
 
-  if (NS_WARN_IF(IndexedDatabaseManager::InLowDiskSpaceMode())) {
-    NS_WARNING("Refusing to create file because disk space is low!");
-    return NS_ERROR_DOM_INDEXEDDB_QUOTA_ERR;
-  }
-
   if (NS_WARN_IF(QuotaManager::IsShuttingDown()) || !OperationMayProceed()) {
     IDB_REPORT_INTERNAL_ERR();
     return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
@@ -24150,10 +24116,6 @@ CreateObjectStoreOp::DoDatabaseWork(DatabaseConnection* aConnection)
   aConnection->AssertIsOnConnectionThread();
 
   AUTO_PROFILER_LABEL("CreateObjectStoreOp::DoDatabaseWork", DOM);
-
-  if (NS_WARN_IF(IndexedDatabaseManager::InLowDiskSpaceMode())) {
-    return NS_ERROR_DOM_INDEXEDDB_QUOTA_ERR;
-  }
 
 #ifdef DEBUG
   {
@@ -24474,10 +24436,6 @@ RenameObjectStoreOp::DoDatabaseWork(DatabaseConnection* aConnection)
 
   AUTO_PROFILER_LABEL("RenameObjectStoreOp::DoDatabaseWork", DOM);
 
-  if (NS_WARN_IF(IndexedDatabaseManager::InLowDiskSpaceMode())) {
-    return NS_ERROR_DOM_INDEXEDDB_QUOTA_ERR;
-  }
-
 #ifdef DEBUG
   {
     
@@ -24565,7 +24523,6 @@ CreateIndexOp::InsertDataFromObjectStore(DatabaseConnection* aConnection)
 {
   MOZ_ASSERT(aConnection);
   aConnection->AssertIsOnConnectionThread();
-  MOZ_ASSERT(!IndexedDatabaseManager::InLowDiskSpaceMode());
   MOZ_ASSERT(mMaybeUniqueIndexTable);
 
   AUTO_PROFILER_LABEL("CreateIndexOp::InsertDataFromObjectStore", DOM);
@@ -24604,7 +24561,6 @@ CreateIndexOp::InsertDataFromObjectStoreInternal(
 {
   MOZ_ASSERT(aConnection);
   aConnection->AssertIsOnConnectionThread();
-  MOZ_ASSERT(!IndexedDatabaseManager::InLowDiskSpaceMode());
   MOZ_ASSERT(mMaybeUniqueIndexTable);
 
   DebugOnly<void*> storageConnection = aConnection->GetStorageConnection();
@@ -24659,10 +24615,6 @@ CreateIndexOp::DoDatabaseWork(DatabaseConnection* aConnection)
   aConnection->AssertIsOnConnectionThread();
 
   AUTO_PROFILER_LABEL("CreateIndexOp::DoDatabaseWork", DOM);
-
-  if (NS_WARN_IF(IndexedDatabaseManager::InLowDiskSpaceMode())) {
-    return NS_ERROR_DOM_INDEXEDDB_QUOTA_ERR;
-  }
 
 #ifdef DEBUG
   {
@@ -25428,10 +25380,6 @@ RenameIndexOp::DoDatabaseWork(DatabaseConnection* aConnection)
 
   AUTO_PROFILER_LABEL("RenameIndexOp::DoDatabaseWork", DOM);
 
-  if (NS_WARN_IF(IndexedDatabaseManager::InLowDiskSpaceMode())) {
-    return NS_ERROR_DOM_INDEXEDDB_QUOTA_ERR;
-  }
-
 #ifdef DEBUG
   {
     
@@ -25928,10 +25876,6 @@ ObjectStoreAddOrPutRequestOp::DoDatabaseWork(DatabaseConnection* aConnection)
   MOZ_ASSERT(aConnection->GetStorageConnection());
 
   AUTO_PROFILER_LABEL("ObjectStoreAddOrPutRequestOp::DoDatabaseWork", DOM);
-
-  if (NS_WARN_IF(IndexedDatabaseManager::InLowDiskSpaceMode())) {
-    return NS_ERROR_DOM_INDEXEDDB_QUOTA_ERR;
-  }
 
   DatabaseConnection::AutoSavepoint autoSave;
   nsresult rv = autoSave.Start(Transaction());

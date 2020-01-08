@@ -75,9 +75,6 @@ StorageObserver::Init()
   }
 
   
-  obs->AddObserver(sSelf, "disk-space-watcher", true);
-
-  
 #ifdef DOM_STORAGE_TESTS
   Preferences::RegisterCallbackAndCall(TestingPrefChanged, kTestingPref);
 #endif
@@ -405,16 +402,6 @@ StorageObserver::Observe(nsISupports* aSubject,
       MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() { return done; }));
 
       mBackgroundThread = nullptr;
-    }
-
-    return NS_OK;
-  }
-
-  if (!strcmp(aTopic, "disk-space-watcher")) {
-    if (NS_LITERAL_STRING("full").Equals(aData)) {
-      Notify("low-disk-space");
-    } else if (NS_LITERAL_STRING("free").Equals(aData)) {
-      Notify("no-low-disk-space");
     }
 
     return NS_OK;

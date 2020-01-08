@@ -246,12 +246,6 @@ LocalStorageCache::ProcessUsageDelta(uint32_t aGetDataSetIndex,
                                      const MutationSource aSource)
 {
   
-  if (aSource == ContentMutation &&
-      aDelta > 0 && mManager && mManager->IsLowDiskSpace()) {
-    return false;
-  }
-
-  
   Data& data = mData[aGetDataSetIndex];
   uint64_t newOriginUsage = data.mOriginQuotaUsage + aDelta;
   if (aSource == ContentMutation &&

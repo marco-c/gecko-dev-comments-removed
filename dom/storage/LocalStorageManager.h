@@ -110,12 +110,6 @@ private:
   typedef nsTHashtable<LocalStorageCacheHashKey> CacheOriginHashtable;
   nsClassHashtable<nsCStringHashKey, CacheOriginHashtable> mCaches;
 
-  
-  
-  
-  bool mLowDiskSpace;
-  bool IsLowDiskSpace() const { return mLowDiskSpace; };
-
   void ClearCaches(uint32_t aUnloadFlags,
                    const OriginAttributesPattern& aPattern,
                    const nsACString& aKeyPrefix);

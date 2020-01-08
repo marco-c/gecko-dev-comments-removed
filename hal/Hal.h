@@ -257,20 +257,6 @@ bool SetProcessPrioritySupported();
 
 void SetProcessPriority(int aPid, hal::ProcessPriority aPriority);
 
-
-
-
-
-
-void StartDiskSpaceWatcher();
-
-
-
-
-
-
-void StopDiskSpaceWatcher();
-
 } 
 } 
 

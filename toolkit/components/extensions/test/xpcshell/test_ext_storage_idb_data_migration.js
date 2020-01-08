@@ -83,7 +83,6 @@ function assertTelemetryEvents(extensionId, expectedEvents) {
 
 add_task(async function setup() {
   Services.prefs.setBoolPref(ExtensionStorageIDB.BACKEND_ENABLED_PREF, true);
-  setLowDiskMode(false);
 
   await promiseStartupManager();
 
@@ -360,70 +359,8 @@ add_task(async function test_storage_local_corrupted_data_migration() {
 
 
 
-
-add_task(async function test_storage_local_data_migration_quota_exceeded_error() {
-  const EXTENSION_ID = "extension-quota-exceeded-error@mozilla.org";
-  const data = {"test_key_string": "test_value"};
-
-  
-  setLowDiskMode(true);
-
-  
-  await createExtensionJSONFileWithData(EXTENSION_ID, data);
-
-  async function background() {
-    const result = await browser.storage.local.get("test_key_string");
-    browser.test.assertEq("test_value", result.test_key_string,
-                          "Got the expected storage.local.get result");
-
-    browser.test.sendMessage("storage-local-quota-exceeded");
-  }
-
-  clearMigrationHistogram();
-
-  let extension = ExtensionTestUtils.loadExtension({
-    manifest: {
-      permissions: ["storage"],
-      applications: {
-        gecko: {
-          id: EXTENSION_ID,
-        },
-      },
-    },
-    background,
-  });
-
-  await extension.startup();
-
-  await extension.awaitMessage("storage-local-quota-exceeded");
-
-  equal(Services.prefs.getBoolPref(`${IDB_MIGRATED_PREF_BRANCH}.${EXTENSION_ID}`, false),
-        false, `Got ${IDB_MIGRATED_PREF_BRANCH} preference set to false as expected`);
-
-  await extension.unload();
-
-  assertTelemetryEvents(EXTENSION_ID, [
-    {
-      method: "migrateResult",
-      extra: {
-        backend: "JSONFile",
-        error_name: "QuotaExceededError",
-      },
-    },
-  ]);
-
-  assertMigrationHistogramCount("success", 0);
-  assertMigrationHistogramCount("failure", 1);
-});
-
-
-
 add_task(async function test_storage_local_data_migration_failure() {
   const EXTENSION_ID = "extension-data-migration-failure@mozilla.org";
-
-  
-  
-  setLowDiskMode(false);
 
   
   const {
@@ -491,7 +428,6 @@ add_task(async function test_storage_local_data_migration_clear_pref() {
   Services.prefs.clearUserPref(LEAVE_STORAGE_PREF);
   Services.prefs.clearUserPref(LEAVE_UUID_PREF);
   Services.prefs.clearUserPref(ExtensionStorageIDB.BACKEND_ENABLED_PREF);
-  setLowDiskMode(false);
   await promiseShutdownManager();
   await TelemetryController.testShutdown();
 });
