@@ -3038,7 +3038,10 @@ void Debugger::updateObservesAsmJSOnDebuggees(IsObserving observing) {
     const GlobalObject& debuggee) {
   if (auto* v = debuggee.getDebuggers()) {
     for (auto p = v->begin(); p != v->end(); p++) {
-      if ((*p)->trackingAllocationSites && (*p)->enabled) {
+      
+      
+      Debugger* dbg = p->unbarrieredGet();
+      if (dbg->trackingAllocationSites && dbg->enabled) {
         return true;
       }
     }
@@ -3176,6 +3179,8 @@ void Debugger::traceCrossCompartmentEdges(JSTracer* trc) {
 
 
  bool Debugger::markIteratively(GCMarker* marker) {
+  MOZ_ASSERT(JS::RuntimeHeapIsCollecting(),
+             "This method should be called during GC.");
   bool markedAny = false;
 
   
@@ -3193,7 +3198,7 @@ void Debugger::traceCrossCompartmentEdges(JSTracer* trc) {
       const GlobalObject::DebuggerVector* debuggers = global->getDebuggers();
       MOZ_ASSERT(debuggers);
       for (auto p = debuggers->begin(); p != debuggers->end(); p++) {
-        Debugger* dbg = *p;
+        Debugger* dbg = p->unbarrieredGet();
 
         
         
@@ -4197,6 +4202,21 @@ static T* findDebuggerInVector(Debugger* dbg,
   T* p;
   for (p = vec->begin(); p != vec->end(); p++) {
     if (*p == dbg) {
+      break;
+    }
+  }
+  MOZ_ASSERT(p != vec->end());
+  return p;
+}
+
+
+
+static ReadBarriered<Debugger*>*
+findDebuggerInVector(Debugger* dbg,
+                     Vector<ReadBarriered<Debugger*>, 0, js::SystemAllocPolicy>* vec) {
+  ReadBarriered<Debugger*>* p;
+  for (p = vec->begin(); p != vec->end(); p++) {
+    if (p->unbarrieredGet() == dbg) {
       break;
     }
   }

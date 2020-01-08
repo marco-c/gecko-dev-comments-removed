@@ -1690,15 +1690,18 @@ void SavedStacks::chooseSamplingProbability(Realm* realm) {
   mozilla::DebugOnly<bool> foundAnyDebuggers = false;
 
   double probability = 0;
-  for (auto dbgp = dbgs->begin(); dbgp < dbgs->end(); dbgp++) {
+  for (auto p = dbgs->begin(); p < dbgs->end(); p++) {
     
     
     MOZ_ASSERT(dbgs->begin() == begin);
+    
+    
+    Debugger* dbgp = p->unbarrieredGet();
 
-    if ((*dbgp)->trackingAllocationSites && (*dbgp)->enabled) {
+    if (dbgp->trackingAllocationSites && dbgp->enabled) {
       foundAnyDebuggers = true;
       probability =
-          std::max((*dbgp)->allocationSamplingProbability, probability);
+          std::max(dbgp->allocationSamplingProbability, probability);
     }
   }
   MOZ_ASSERT(foundAnyDebuggers);
