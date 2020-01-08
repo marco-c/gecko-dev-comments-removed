@@ -223,25 +223,6 @@ void GetTagsSqlFragment(int64_t aTagsFolder,
 
 
 
-class UpdateBatchScoper
-{
-public:
-  explicit UpdateBatchScoper(nsNavHistory& aNavHistory) : mNavHistory(aNavHistory)
-  {
-    mNavHistory.BeginUpdateBatch();
-  }
-  ~UpdateBatchScoper()
-  {
-    mNavHistory.EndUpdateBatch();
-  }
-protected:
-  nsNavHistory& mNavHistory;
-};
-
-
-
-
-
 class FixAndDecayFrecencyRunnable final : public Runnable
 {
 public:
@@ -406,9 +387,7 @@ const int32_t nsNavHistory::kGetInfoIndex_VisitType = 17;
 PLACES_FACTORY_SINGLETON_IMPLEMENTATION(nsNavHistory, gHistoryService)
 
 nsNavHistory::nsNavHistory()
-  : mBatchLevel(0)
-  , mBatchDBTransaction(nullptr)
-  , mCachedNow(0)
+  : mCachedNow(0)
   , mRecentTyped(RECENT_EVENTS_INITIAL_CACHE_LENGTH)
   , mRecentLink(RECENT_EVENTS_INITIAL_CACHE_LENGTH)
   , mRecentBookmark(RECENT_EVENTS_INITIAL_CACHE_LENGTH)
@@ -1203,8 +1182,7 @@ nsNavHistory::ExecuteQuery(nsINavHistoryQuery *aQuery,
 
   
   RefPtr<nsNavHistoryResult> result = new nsNavHistoryResult(rootNode,
-                                                             query, options,
-                                                             isBatching());
+                                                             query, options);
   result.forget(_retval);
   return NS_OK;
 }
@@ -2295,38 +2273,6 @@ nsNavHistory::GetObservers(uint32_t* _count,
   return NS_OK;
 }
 
-
-nsresult
-nsNavHistory::BeginUpdateBatch()
-{
-  if (mBatchLevel++ == 0) {
-    mBatchDBTransaction = new mozStorageTransaction(mDB->MainConn(), false,
-                                                    mozIStorageConnection::TRANSACTION_DEFAULT,
-                                                    true);
-
-    NOTIFY_OBSERVERS(mCanNotify, mObservers, nsINavHistoryObserver, OnBeginUpdateBatch());
-  }
-  return NS_OK;
-}
-
-
-nsresult
-nsNavHistory::EndUpdateBatch()
-{
-  if (--mBatchLevel == 0) {
-    if (mBatchDBTransaction) {
-      DebugOnly<nsresult> rv = mBatchDBTransaction->Commit();
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "Batch failed to commit transaction");
-      delete mBatchDBTransaction;
-      mBatchDBTransaction = nullptr;
-    }
-
-    NOTIFY_OBSERVERS(mCanNotify, mObservers, nsINavHistoryObserver, OnEndUpdateBatch());
-  }
-  return NS_OK;
-}
-
 NS_IMETHODIMP
 nsNavHistory::GetHistoryDisabled(bool *_retval)
 {
@@ -2520,31 +2466,6 @@ nsNavHistory::AsyncExecuteLegacyQuery(nsINavHistoryQuery* aQuery,
 
   rv = statement->ExecuteAsync(aCallback, _stmt);
   NS_ENSURE_SUCCESS(rv, rv);
-
-  return NS_OK;
-}
-
-
-nsresult
-nsNavHistory::NotifyOnPageExpired(nsIURI *aURI, PRTime aVisitTime,
-                                  bool aWholeEntry, const nsACString& aGUID,
-                                  uint16_t aReason, uint32_t aTransitionType)
-{
-  
-  mDaysOfHistory = -1;
-
-  MOZ_ASSERT(!aGUID.IsEmpty());
-  if (aWholeEntry) {
-    
-    NOTIFY_OBSERVERS(mCanNotify, mObservers, nsINavHistoryObserver,
-                     OnDeleteURI(aURI, aGUID, aReason));
-  }
-  else {
-    
-    NOTIFY_OBSERVERS(mCanNotify, mObservers, nsINavHistoryObserver,
-                     OnDeleteVisits(aURI, aVisitTime, aGUID, aReason,
-                                    aTransitionType));
-  }
 
   return NS_OK;
 }

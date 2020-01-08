@@ -186,29 +186,6 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult NotifyOnPageExpired(nsIURI *aURI, PRTime aVisitTime,
-                               bool aWholeEntry, const nsACString& aGUID,
-                               uint16_t aReason, uint32_t aTransitionType);
-
-  
-
-
-
   nsIStringBundle* GetBundle();
   nsICollation* GetCollation();
   void GetStringFromName(const char* aName, nsACString& aResult);
@@ -288,16 +265,6 @@ public:
   void DomainNameFromURI(nsIURI* aURI,
                          nsACString& aDomainName);
   static PRTime NormalizeTime(uint32_t aRelative, PRTime aOffset);
-
-  
-  
-  nsresult BeginUpdateBatch();
-  nsresult EndUpdateBatch();
-
-  
-  int32_t mBatchLevel;
-  
-  mozStorageTransaction* mBatchDBTransaction;
 
   typedef nsDataHashtable<nsCStringHashKey, nsCString> StringHash;
 
@@ -470,10 +437,6 @@ public:
 
   static void StoreLastInsertedId(const nsACString& aTable,
                                   const int64_t aLastInsertedId);
-
-  bool isBatching() {
-    return mBatchLevel > 0;
-  }
 
 #ifdef XP_WIN
   
