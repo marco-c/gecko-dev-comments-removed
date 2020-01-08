@@ -25,10 +25,11 @@ test_newtab({
   before: setDefaultTopSites,
   
   test: async function topsites_pin_unpin() {
-    await ContentTaskUtils.waitForCondition(() => content.document.querySelector(".top-site-icon"),
+    const siteSelector = ".top-site-outer:not(.search-shortcut):not(.placeholder)";
+    await ContentTaskUtils.waitForCondition(() => content.document.querySelector(siteSelector),
       "Topsite tippytop icon not found");
     
-    let topsiteEl = content.document.querySelector(".top-site-outer:not(.search-shortcut)");
+    let topsiteEl = content.document.querySelector(siteSelector);
     let topsiteContextBtn = topsiteEl.querySelector(".context-menu-button");
     topsiteContextBtn.click();
 
