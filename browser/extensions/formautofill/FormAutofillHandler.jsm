@@ -297,7 +297,7 @@ class FormAutofillSection {
         
         if (!option.selected) {
           option.selected = true;
-          element.dispatchEvent(new element.ownerGlobal.UIEvent("input", {bubbles: true}));
+          element.dispatchEvent(new element.ownerGlobal.Event("input", {bubbles: true}));
           element.dispatchEvent(new element.ownerGlobal.Event("change", {bubbles: true}));
         }
         

@@ -161,6 +161,7 @@ PromptFactory.prototype = {
 
   _dispatchEvents: function(aElement) {
     
+    
     aElement.dispatchEvent(new aElement.ownerGlobal.Event("input", { bubbles: true }));
     aElement.dispatchEvent(new aElement.ownerGlobal.Event("change", { bubbles: true }));
   },
