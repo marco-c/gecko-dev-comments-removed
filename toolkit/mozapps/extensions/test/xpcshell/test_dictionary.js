@@ -156,6 +156,9 @@ var HunspellEngine = {
 
 add_task(async function setup() {
   await promiseStartupManager();
+
+  
+  AddonTestUtils.hookAMTelemetryEvents();
 });
 
 
@@ -219,6 +222,19 @@ add_task(async function test_1() {
   } catch (e) {
     
   }
+
+  
+  let amEvents = AddonTestUtils.getAMTelemetryEvents().filter(evt => {
+    return evt.method === "install" && evt.object === "dictionary";
+  }).map(evt => {
+    
+    return evt.extra;
+  });
+
+  Assert.deepEqual(amEvents, [
+    {step: "started", addon_id: addon.id},
+    {step: "completed", addon_id: addon.id},
+  ], "Got the expected telemetry events");
 });
 
 
@@ -250,6 +266,15 @@ add_task(async function test_2() {
   ok(!addon.appDisabled);
   ok(addon.userDisabled);
   ok(!addon.isActive);
+
+  
+  let amEvents = AddonTestUtils.getAMTelemetryEvents().filter(evt => {
+    return evt.object === "dictionary";
+  });
+
+  Assert.deepEqual(amEvents, [
+    {method: "disable", object: "dictionary", value: addon.id, extra: null},
+  ], "Got the expected telemetry events");
 });
 
 

@@ -23,6 +23,9 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {EventEmitter} = ChromeUtils.import("resource://gre/modules/EventEmitter.jsm", {});
 const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm", {});
 
+
+ChromeUtils.defineModuleGetter(this, "AMTelemetry",
+                               "resource://gre/modules/AddonManager.jsm");
 ChromeUtils.defineModuleGetter(this, "Extension",
                                "resource://gre/modules/Extension.jsm");
 XPCOMUtils.defineLazyGetter(this, "Management", () => {
@@ -295,6 +298,7 @@ var AddonTestUtils = {
   addonsList: null,
   appInfo: null,
   addonStartup: null,
+  collectedTelemetryEvents: [],
   testUnpacked: false,
   useRealCertChecks: false,
   usePrivilegedSignatures: true,
@@ -436,6 +440,11 @@ var AddonTestUtils = {
   },
 
   initMochitest(testScope) {
+    if (this.testScope === testScope) {
+      return;
+    }
+    this.testScope = testScope;
+
     this.profileDir = FileUtils.getDir("ProfD", []);
 
     this.profileExtensions = FileUtils.getDir("ProfD", ["extensions"]);
@@ -1369,8 +1378,11 @@ var AddonTestUtils = {
 
 
 
-  async promiseInstallFile(file, ignoreIncompatible = false) {
-    let install = await AddonManager.getInstallForFile(file);
+
+
+
+  async promiseInstallFile(file, ignoreIncompatible = false, installTelemetryInfo) {
+    let install = await AddonManager.getInstallForFile(file, null, installTelemetryInfo);
     if (!install)
       throw new Error(`No AddonInstall created for ${file.path}`);
 
@@ -1637,6 +1649,36 @@ var AddonTestUtils = {
        Services.io.newFileURI(file).spec],
     ]);
     Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, prevPrefVal);
+  },
+
+  
+
+  
+
+
+
+  hookAMTelemetryEvents() {
+    let originalRecordEvent = AMTelemetry.recordEvent;
+    AMTelemetry.recordEvent = (event) => {
+      this.collectedTelemetryEvents.push(event);
+    };
+    this.testScope.registerCleanupFunction(() => {
+      this.testScope.Assert.deepEqual([], this.collectedTelemetryEvents,
+                       "No unexamined telemetry events after test is finished");
+      AMTelemetry.recordEvent = originalRecordEvent;
+    });
+  },
+
+  
+
+
+
+
+
+  getAMTelemetryEvents() {
+    let events = this.collectedTelemetryEvents;
+    this.collectedTelemetryEvents = [];
+    return events;
   },
 };
 

@@ -640,6 +640,9 @@ function attachUpdateHandler(install) {
             type: "update",
             addon: info.addon,
             icon: info.addon.icon,
+            
+            
+            install,
             permissions: difference,
             resolve,
             reject,
