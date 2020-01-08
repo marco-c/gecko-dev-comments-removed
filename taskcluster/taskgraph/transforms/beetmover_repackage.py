@@ -31,13 +31,6 @@ def _compile_regex_mapping(mapping):
     return {re.compile(regex): value for regex, value in mapping.iteritems()}
 
 
-_WINDOWS_BUILD_PLATFORMS = [
-    'win64-nightly',
-    'win32-nightly',
-    'win64-devedition-nightly',
-    'win32-devedition-nightly',
-]
-
 
 
 
