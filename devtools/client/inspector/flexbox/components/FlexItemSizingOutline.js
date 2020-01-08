@@ -46,10 +46,7 @@ class FlexItemSizingOutline extends PureComponent {
     );
   }
 
-  renderFinalOutline(mainFinalSize, mainMaxSize, mainMinSize) {
-    const isClamped = mainFinalSize === mainMaxSize ||
-                      mainFinalSize === mainMinSize;
-
+  renderFinalOutline(mainFinalSize, mainMaxSize, mainMinSize, isClamped) {
     return (
       dom.div({
         className: "flex-outline-final" + (isClamped ? " clamped" : "")
@@ -63,12 +60,18 @@ class FlexItemSizingOutline extends PureComponent {
 
   render() {
     const {
+      flexItemSizing,
+      properties,
+    } = this.props.flexItem;
+    const {
       mainBaseSize,
       mainDeltaSize,
       mainMaxSize,
       mainMinSize,
-    } = this.props.flexItem.flexItemSizing;
+    } = flexItemSizing;
+
     const isRow = this.props.flexDirection.startsWith("row");
+    const dimension = isRow ? "width" : "height";
 
     
     let mainFinalSize = mainBaseSize + mainDeltaSize;
@@ -76,10 +79,17 @@ class FlexItemSizingOutline extends PureComponent {
     mainFinalSize = Math.min(mainFinalSize, mainMaxSize);
 
     
+    
+    
     const showMax = mainMaxSize === mainFinalSize;
 
     
-    const showMin = mainMinSize === mainFinalSize;
+    
+    
+    
+    
+    
+    const showMin = mainMinSize === mainFinalSize && properties[`min-${dimension}`];
 
     
     
@@ -137,7 +147,8 @@ class FlexItemSizingOutline extends PureComponent {
           showMax ? this.renderPoint("max") : null,
           this.renderBasisOutline(mainBaseSize),
           this.renderDeltaOutline(mainDeltaSize),
-          this.renderFinalOutline(mainFinalSize, mainMaxSize, mainMinSize)
+          this.renderFinalOutline(mainFinalSize, mainMaxSize, mainMinSize,
+                                  showMin || showMax)
         )
       )
     );
