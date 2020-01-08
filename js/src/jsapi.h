@@ -28,6 +28,7 @@
 #include "js/CallArgs.h"
 #include "js/CharacterEncoding.h"
 #include "js/Class.h"
+#include "js/CompilationAndEvaluation.h"
 #include "js/CompileOptions.h"
 #include "js/ErrorReport.h"
 #include "js/GCVector.h"
@@ -3015,33 +3016,6 @@ CloneFunctionObject(JSContext* cx, HandleObject funobj, AutoObjectVector& scopeC
 
 } 
 
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-JS_BufferIsCompilableUnit(JSContext* cx, JS::Handle<JSObject*> obj, const char* utf8,
-                          size_t length);
-
-
-
-
-extern JS_PUBLIC_API(bool)
-JS_CompileScript(JSContext* cx, const char* ascii, size_t length,
-                 const JS::CompileOptions& options,
-                 JS::MutableHandleScript script);
-
-
-
-
-extern JS_PUBLIC_API(bool)
-JS_CompileUCScript(JSContext* cx, JS::SourceBufferHolder& srcBuf,
-                   const JS::CompileOptions& options,
-                   JS::MutableHandleScript script);
-
 extern JS_PUBLIC_API(JSObject*)
 JS_GetGlobalFromScript(JSScript* script);
 
@@ -3054,83 +3028,6 @@ JS_GetScriptBaseLineNumber(JSContext* cx, JSScript* script);
 extern JS_PUBLIC_API(JSScript*)
 JS_GetFunctionScript(JSContext* cx, JS::HandleFunction fun);
 
-namespace JS {
-
-
-
-
-extern JS_PUBLIC_API(bool)
-Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
-        SourceBufferHolder& srcBuf, JS::MutableHandleScript script);
-
-extern JS_PUBLIC_API(bool)
-Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
-        const char* bytes, size_t length, JS::MutableHandleScript script);
-
-extern JS_PUBLIC_API(bool)
-Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
-        FILE* file, JS::MutableHandleScript script);
-
-extern JS_PUBLIC_API(bool)
-Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
-        const char* filename, JS::MutableHandleScript script);
-
-extern JS_PUBLIC_API(bool)
-CompileForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options,
-                            SourceBufferHolder& srcBuf, JS::MutableHandleScript script);
-
-extern JS_PUBLIC_API(bool)
-CompileForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options,
-                            const char* bytes, size_t length, JS::MutableHandleScript script);
-
-extern JS_PUBLIC_API(bool)
-CompileForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options,
-                            FILE* file, JS::MutableHandleScript script);
-
-extern JS_PUBLIC_API(bool)
-CompileForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options,
-                            const char* filename, JS::MutableHandleScript script);
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-CompileFunction(JSContext* cx, AutoObjectVector& envChain,
-                const ReadOnlyCompileOptions& options,
-                const char* name, unsigned nargs, const char* const* argnames,
-                SourceBufferHolder& srcBuf, JS::MutableHandleFunction fun);
-
-
-
-
-extern JS_PUBLIC_API(bool)
-CompileFunction(JSContext* cx, AutoObjectVector& envChain,
-                const ReadOnlyCompileOptions& options,
-                const char* name, unsigned nargs, const char* const* argnames,
-                const char* bytes, size_t length, JS::MutableHandleFunction fun);
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-InitScriptSourceElement(JSContext* cx, HandleScript script,
-                        HandleObject element, HandleString elementAttrName = nullptr);
-
-
-
-
-
-extern JS_PUBLIC_API(void)
-ExposeScriptToDebugger(JSContext* cx, HandleScript script);
-
-} 
-
 extern JS_PUBLIC_API(JSString*)
 JS_DecompileScript(JSContext* cx, JS::Handle<JSScript*> script);
 
@@ -3138,96 +3035,7 @@ extern JS_PUBLIC_API(JSString*)
 JS_DecompileFunction(JSContext* cx, JS::Handle<JSFunction*> fun);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-JS_ExecuteScript(JSContext* cx, JS::HandleScript script, JS::MutableHandleValue rval);
-
-extern JS_PUBLIC_API(bool)
-JS_ExecuteScript(JSContext* cx, JS::HandleScript script);
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-JS_ExecuteScript(JSContext* cx, JS::AutoObjectVector& envChain,
-                 JS::HandleScript script, JS::MutableHandleValue rval);
-
-extern JS_PUBLIC_API(bool)
-JS_ExecuteScript(JSContext* cx, JS::AutoObjectVector& envChain, JS::HandleScript script);
-
 namespace JS {
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-CloneAndExecuteScript(JSContext* cx, JS::Handle<JSScript*> script,
-                      JS::MutableHandleValue rval);
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-CloneAndExecuteScript(JSContext* cx, JS::AutoObjectVector& envChain,
-                      JS::Handle<JSScript*> script,
-                      JS::MutableHandleValue rval);
-
-} 
-
-namespace JS {
-
-
-
-
-extern JS_PUBLIC_API(bool)
-Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
-         SourceBufferHolder& srcBuf, JS::MutableHandleValue rval);
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-Evaluate(JSContext* cx, AutoObjectVector& envChain, const ReadOnlyCompileOptions& options,
-         SourceBufferHolder& srcBuf, JS::MutableHandleValue rval);
-
-
-
-
-extern JS_PUBLIC_API(bool)
-Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
-         const char* bytes, size_t length, JS::MutableHandleValue rval);
-
-
-
-
-extern JS_PUBLIC_API(bool)
-Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
-         const char* filename, JS::MutableHandleValue rval);
 
 using ModuleResolveHook = JSScript* (*)(JSContext*, HandleScript, HandleString);
 
