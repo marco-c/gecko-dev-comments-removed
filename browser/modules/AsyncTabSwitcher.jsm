@@ -108,6 +108,12 @@ class AsyncTabSwitcher {
     
     
     
+    this.switchPaintId = -1;
+
+    
+    
+    
+    
     
     this.maybeVisibleTabs = new Set([tabbrowser.selectedTab]);
 
@@ -733,7 +739,18 @@ class AsyncTabSwitcher {
   
   
   
-  onPaint() {
+  onPaint(event) {
+    if (this.switchPaintId != -1 &&
+        event.transactionId >= this.switchPaintId) {
+      let time = TelemetryStopwatch.timeElapsed("FX_TAB_SWITCH_COMPOSITE_E10S_MS", this.window);
+      if (time != -1) {
+        TelemetryStopwatch.finish("FX_TAB_SWITCH_COMPOSITE_E10S_MS", this.window);
+        this.log("DEBUG: tab switch time including compositing = " + time);
+      }
+      this.addMarker("AsyncTabSwitch:Composited");
+      this.switchPaintId = -1;
+    }
+
     this.maybeVisibleTabs.clear();
   }
 
@@ -1027,7 +1044,7 @@ class AsyncTabSwitcher {
         this.onLayersReady(event.originalTarget);
         break;
       case "MozAfterPaint":
-        this.onPaint();
+        this.onPaint(event);
         break;
       case "MozLayerTreeCleared":
         this.onLayersCleared(event.originalTarget);
@@ -1059,6 +1076,9 @@ class AsyncTabSwitcher {
   startTabSwitch() {
     TelemetryStopwatch.cancel("FX_TAB_SWITCH_TOTAL_E10S_MS", this.window);
     TelemetryStopwatch.start("FX_TAB_SWITCH_TOTAL_E10S_MS", this.window);
+
+    TelemetryStopwatch.cancel("FX_TAB_SWITCH_COMPOSITE_E10S_MS", this.window);
+    TelemetryStopwatch.start("FX_TAB_SWITCH_COMPOSITE_E10S_MS", this.window);
     this.addMarker("AsyncTabSwitch:Start");
     this.switchInProgress = true;
   }
