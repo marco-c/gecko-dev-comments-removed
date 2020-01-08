@@ -6,13 +6,19 @@
 
 const { Cu } = require("chrome");
 const { Actor, ActorClassWithSpec } = require("devtools/shared/protocol");
-const { flexboxSpec, gridSpec, layoutSpec } = require("devtools/shared/specs/layout");
-const nodeFilterConstants = require("devtools/shared/dom-node-filter-constants");
+const {
+  flexboxSpec,
+  flexItemSpec,
+  gridSpec,
+  layoutSpec,
+} = require("devtools/shared/specs/layout");
+const { SHOW_ELEMENT } = require("devtools/shared/dom-node-filter-constants");
 const { getStringifiableFragments } =
   require("devtools/server/actors/utils/css-grid-utils");
 
-loader.lazyRequireGetter(this, "nodeConstants", "devtools/shared/dom-node-constants");
 loader.lazyRequireGetter(this, "CssLogic", "devtools/server/actors/inspector/css-logic", true);
+loader.lazyRequireGetter(this, "nodeConstants", "devtools/shared/dom-node-constants");
+
 
 
 
@@ -71,6 +77,77 @@ const FlexboxActor = ActorClassWithSpec(flexboxSpec, {
     
     if (this.walker.hasNode(this.containerEl)) {
       form.containerNodeActorID = this.walker.getNode(this.containerEl).actorID;
+    }
+
+    return form;
+  },
+
+  
+
+
+
+
+
+  getFlexItems() {
+    if (isNodeDead(this.containerEl)) {
+      return [];
+    }
+
+    const flex = this.containerEl.getAsFlexContainer();
+    if (!flex) {
+      return [];
+    }
+
+    const flexItemActors = [];
+
+    for (const line of flex.getLines()) {
+      for (const item of line.getItems()) {
+        flexItemActors.push(new FlexItemActor(this, item.node));
+      }
+    }
+
+    return flexItemActors;
+  },
+});
+
+
+
+
+const FlexItemActor = ActorClassWithSpec(flexItemSpec, {
+  
+
+
+
+
+
+  initialize(flexboxActor, element) {
+    Actor.prototype.initialize.call(this, flexboxActor.conn);
+
+    this.element = element;
+    this.walker = flexboxActor.walker;
+  },
+
+  destroy() {
+    Actor.prototype.destroy.call(this);
+
+    this.element = null;
+    this.walker = null;
+  },
+
+  form(detail) {
+    if (detail === "actorid") {
+      return this.actorID;
+    }
+
+    const form = {
+      actor: this.actorID,
+    };
+
+    
+    
+    
+    if (this.walker.hasNode(this.element)) {
+      form.nodeActorID = this.walker.getNode(this.element).actorID;
     }
 
     return form;
@@ -175,8 +252,7 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
       node = node.rawNode;
     }
 
-    const treeWalker = this.walker.getDocumentWalker(node,
-      nodeFilterConstants.SHOW_ELEMENT);
+    const treeWalker = this.walker.getDocumentWalker(node, SHOW_ELEMENT);
     let currentNode = treeWalker.currentNode;
     let displayType = this.walker.getNode(currentNode).displayType;
 
@@ -287,5 +363,6 @@ function isNodeDead(node) {
 }
 
 exports.FlexboxActor = FlexboxActor;
+exports.FlexItemActor = FlexItemActor;
 exports.GridActor = GridActor;
 exports.LayoutActor = LayoutActor;
