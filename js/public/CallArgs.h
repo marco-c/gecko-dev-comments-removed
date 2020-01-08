@@ -309,13 +309,28 @@ class MOZ_STACK_CLASS CallArgs
     return args;
   }
 
+  
+
+
+  static JS_PUBLIC_API void reportMoreArgsNeeded(JSContext* cx,
+                                                 const char* fnname,
+                                                 unsigned required,
+                                                 unsigned actual);
+
  public:
   
 
 
 
-  JS_PUBLIC_API bool requireAtLeast(JSContext* cx, const char* fnname,
-                                    unsigned required) const;
+  JS_PUBLIC_API inline bool requireAtLeast(JSContext* cx, const char* fnname,
+                                           unsigned required) const {
+    if (MOZ_LIKELY(required <= length())) {
+      return true;
+    }
+
+    reportMoreArgsNeeded(cx, fnname, required, length());
+    return false;
+  }
 };
 
 MOZ_ALWAYS_INLINE CallArgs CallArgsFromVp(unsigned argc, Value* vp) {
