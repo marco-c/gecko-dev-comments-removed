@@ -453,6 +453,7 @@ protected:
   
   inline void CallOnModifyRequestObservers() {
     gHttpHandler->OnModifyRequest(this);
+    MOZ_ASSERT(!mRequestObserversCalled);
     mRequestObserversCalled = true;
   }
 

@@ -590,7 +590,6 @@ nsHttpChannel::OnBeforeConnect()
     mConnectionInfo->SetNoSpdy(mCaps & NS_HTTP_DISALLOW_SPDY);
     mConnectionInfo->SetBeConservative((mCaps & NS_HTTP_BE_CONSERVATIVE) || mBeConservative);
     mConnectionInfo->SetTlsFlags(mTlsFlags);
-    mConnectionInfo->SetTrrUsed(mTRR);
 
     
     gHttpHandler->OnBeforeConnect(this);
@@ -7062,6 +7061,8 @@ nsHttpChannel::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
 {
     nsresult rv;
 
+    MOZ_ASSERT(mRequestObserversCalled);
+
     AUTO_PROFILER_LABEL("nsHttpChannel::OnStartRequest", NETWORK);
 
     if (!(mCanceled || NS_FAILED(mStatus)) && !WRONG_RACING_RESPONSE_SOURCE(request)) {
@@ -8250,6 +8251,10 @@ nsHttpChannel::DoAuthRetry(nsAHttpConnection *conn)
     
     
     mIsPending = false;
+
+    
+    
+    mRequestObserversCalled = false;
 
     
     
