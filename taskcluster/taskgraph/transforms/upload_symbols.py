@@ -79,6 +79,13 @@ def fill_template(config, tasks):
         )
         task['treeherder'] = treeherder
 
+        if dep.attributes.get('nightly'):
+            
+            task['run-on-projects'] = dep.attributes.get('run_on_projects')
+        else:
+            
+            task['run-on-projects'] = ['try']
+
         
         del task['primary-dependency']
 
