@@ -7,7 +7,7 @@
 
 class NonParamAnnotation : public CustomTypeAnnotation {
 public:
-  NonParamAnnotation() : CustomTypeAnnotation("moz_non_param", "non-param"){};
+  NonParamAnnotation() : CustomTypeAnnotation(moz_non_param, "non-param"){};
 
 protected:
   
