@@ -1015,6 +1015,7 @@ exports.isVariable = isVariable;
 exports.isComputedExpression = isComputedExpression;
 exports.getMemberExpression = getMemberExpression;
 exports.getVariables = getVariables;
+exports.getPatternIdentifiers = getPatternIdentifiers;
 exports.isTopLevel = isTopLevel;
 
 var _types = __webpack_require__(2268);
@@ -1166,18 +1167,49 @@ function getVariables(dec) {
 
     
     
+    
     return dec.id.elements.filter(element => element).map(element => {
       return {
-        name: t.isAssignmentPattern(element) ? element.left.name : element.name || element.argument.name,
+        name: t.isAssignmentPattern(element) ? element.left.name : element.name || element.argument && element.argument.name,
         location: element.loc
       };
-    });
+    }).filter(({ name }) => name);
   }
 
   return [{
     name: dec.id.name,
     location: dec.loc
   }];
+}
+
+function getPatternIdentifiers(pattern) {
+  let items = [];
+  if (t.isObjectPattern(pattern)) {
+    items = pattern.properties.map(({ value }) => value);
+  }
+
+  if (t.isArrayPattern(pattern)) {
+    items = pattern.elements;
+  }
+
+  return getIdentifiers(items);
+}
+
+function getIdentifiers(items) {
+  let ids = [];
+  items.forEach(function (item) {
+    if (t.isObjectPattern(item) || t.isArrayPattern(item)) {
+      ids = ids.concat(getPatternIdentifiers(item));
+    } else if (t.isIdentifier(item)) {
+      const { start, end } = item.loc;
+      ids.push({
+        name: item.name,
+        expression: item.name,
+        location: { start, end }
+      });
+    }
+  });
+  return ids;
 }
 
 
@@ -1450,7 +1482,7 @@ function extractSymbol(path, symbols) {
     });
   }
 
-  if (t.isIdentifier(path) && !t.isGenericTypeAnnotation(path.parent)) {
+  if (t.isIdentifier(path) && !t.isGenericTypeAnnotation(path.parent) && !t.isObjectProperty(path.parent) && !t.isArrayPattern(path.parent)) {
     let { start, end } = path.node.loc;
 
     
@@ -1490,25 +1522,11 @@ function extractSymbol(path, symbols) {
   if (t.isVariableDeclarator(path)) {
     const nodeId = path.node.id;
 
-    if (t.isArrayPattern(nodeId)) {
-      return;
-    }
-
-    const properties = nodeId.properties && t.objectPattern(nodeId.properties) ? nodeId.properties : [{
-      value: { name: nodeId.name },
-      loc: path.node.loc
-    }];
-
-    properties.forEach(function (property) {
-      const { start, end } = property.loc;
-      symbols.identifiers.push({
-        name: property.value.name,
-        expression: property.value.name,
-        location: { start, end }
-      });
-    });
+    const ids = (0, _helpers.getPatternIdentifiers)(nodeId);
+    symbols.identifiers = [...symbols.identifiers, ...ids];
   }
 }
+
 
 
 function extractSymbols(sourceId) {

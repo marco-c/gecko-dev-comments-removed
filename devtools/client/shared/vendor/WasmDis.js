@@ -631,7 +631,7 @@ var WasmDisassembler =  (function () {
                 this.appendBuffer(" " + operator.literal.toString());
                 break;
             case 66 :
-                this.appendBuffer(" " + operator.literal.toDouble());
+                this.appendBuffer(" " + operator.literal.toString());
                 break;
             case 67 :
                 this.appendBuffer(" " + formatFloat32(operator.literal));
