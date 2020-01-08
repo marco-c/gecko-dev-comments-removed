@@ -93,6 +93,13 @@ async function getRuntimeInfo(runtime, client) {
   };
 }
 
+function onUSBDebuggerClientClosed() {
+  
+  
+  
+  window.AboutDebugging.store.dispatch(Actions.scanUSBRuntimes());
+}
+
 function connectRuntime(id) {
   return async (dispatch, getState) => {
     dispatch({ type: CONNECT_RUNTIME_START });
@@ -104,6 +111,12 @@ function connectRuntime(id) {
       const connectionPromptEnabled =
         await preferenceFront.getBoolPref(RUNTIME_PREFERENCE.CONNECTION_PROMPT);
       const runtimeDetails = { connectionPromptEnabled, client, info, transportDetails };
+
+      if (runtime.type === RUNTIMES.USB) {
+        
+        
+        client.addOneTimeListener("closed", onUSBDebuggerClientClosed);
+      }
 
       dispatch({
         type: CONNECT_RUNTIME_SUCCESS,
@@ -126,8 +139,15 @@ function disconnectRuntime(id) {
       const runtime = findRuntimeById(id, getState().runtimes);
       const client = runtime.runtimeDetails.client;
 
+      if (runtime.type === RUNTIMES.USB) {
+        client.removeListener("closed", onUSBDebuggerClientClosed);
+      }
+
       await client.close();
-      DebuggerServer.destroy();
+
+      if (runtime.type === RUNTIMES.THIS_FIREFOX) {
+        DebuggerServer.destroy();
+      }
 
       dispatch({
         type: DISCONNECT_RUNTIME_SUCCESS,
@@ -230,6 +250,13 @@ function updateUSBRuntimes(runtimes) {
       
       
       await dispatch(Actions.selectPage(RUNTIMES.THIS_FIREFOX, RUNTIMES.THIS_FIREFOX));
+    }
+
+    
+    const invalidRuntimes =
+      getState().runtimes.usbRuntimes.filter(r => !runtimes.includes(r));
+    for (const invalidRuntime of invalidRuntimes) {
+      await dispatch(disconnectRuntime(invalidRuntime.id));
     }
 
     dispatch({ type: USB_RUNTIMES_UPDATED, runtimes });
