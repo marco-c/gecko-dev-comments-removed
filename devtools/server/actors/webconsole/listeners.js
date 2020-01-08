@@ -13,46 +13,6 @@ const {CONSOLE_WORKER_IDS, WebConsoleUtils} = require("devtools/server/actors/we
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 
-const CONTENT_PROCESS_SCRIPT = "resource://devtools/server/actors/webconsole/content-process-forward.js";
-
-
-
-
-
-
-
-
-
-
-
-function ContentProcessListener(listener) {
-  this.listener = listener;
-
-  Services.ppmm.addMessageListener("Console:Log", this);
-  Services.ppmm.loadProcessScript(CONTENT_PROCESS_SCRIPT, true);
-}
-
-exports.ContentProcessListener = ContentProcessListener;
-
-ContentProcessListener.prototype = {
-  receiveMessage(message) {
-    const logMsg = message.data;
-    logMsg.wrappedJSObject = logMsg;
-    this.listener.onConsoleAPICall(logMsg);
-  },
-
-  destroy() {
-    
-    Services.ppmm.broadcastAsyncMessage("DevTools:StopForwardingContentProcessMessage");
-
-    Services.ppmm.removeMessageListener("Console:Log", this);
-    Services.ppmm.removeDelayedProcessScript(CONTENT_PROCESS_SCRIPT);
-
-    this.listener = null;
-  }
-};
-
-
 
 
 
