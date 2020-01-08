@@ -31,13 +31,12 @@ const {
 
 
 
-async function gInit(toolbox, perfFront, preferenceFront) {
+async function gInit(perfFront, preferenceFront) {
   const store = createStore(reducers);
 
   
   
   store.dispatch(actions.initializeStore({
-    toolbox,
     perfFront,
     receiveProfile,
     
