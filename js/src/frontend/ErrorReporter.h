@@ -7,49 +7,494 @@
 #ifndef frontend_ErrorReporter_h
 #define frontend_ErrorReporter_h
 
+#include "mozilla/Variant.h"
+
 #include <stdarg.h>  
 #include <stddef.h>  
 #include <stdint.h>  
 
 #include "js/CompileOptions.h"
 #include "js/UniquePtr.h"
+#include "vm/ErrorReporting.h"  
 
 class JSErrorNotes;
 
 namespace js {
 namespace frontend {
 
-class ErrorReporter {
+
+
+
+
+
+
+class StrictModeGetter {
  public:
+  virtual bool strictMode() const = 0;
+};
+
+
+
+
+
+
+
+
+class ErrorReportMixin : public StrictModeGetter {
+ public:
+  
+  
   virtual const JS::ReadOnlyCompileOptions& options() const = 0;
 
-  virtual void lineAndColumnAt(size_t offset, uint32_t* line,
-                               uint32_t* column) const = 0;
-  virtual void currentLineAndColumn(uint32_t* line, uint32_t* column) const = 0;
-  virtual bool isOnThisLine(size_t offset, uint32_t lineNum,
-                            bool* onThisLine) const = 0;
-  virtual uint32_t lineAt(size_t offset) const = 0;
-  virtual uint32_t columnAt(size_t offset) const = 0;
+  
+  virtual JSContext* getContext() const = 0;
 
-  virtual bool hasTokenizationStarted() const = 0;
-  virtual void reportErrorNoOffsetVA(unsigned errorNumber, va_list* args) = 0;
-  virtual const char* getFilename() const = 0;
+  
+  struct Current {};
+  struct NoOffset {};
+  using ErrorOffset = mozilla::Variant<uint32_t, Current, NoOffset>;
 
-  void reportErrorNoOffset(unsigned errorNumber, ...) {
+  
+  
+  
+  
+  virtual MOZ_MUST_USE bool computeErrorMetadata(ErrorMetadata* err,
+                                                 const ErrorOffset& offset) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  void error(unsigned errorNumber, ...) {
     va_list args;
     va_start(args, errorNumber);
 
-    reportErrorNoOffsetVA(errorNumber, &args);
+    errorWithNotesAtVA(nullptr, mozilla::AsVariant(Current()), errorNumber,
+                       &args);
 
     va_end(args);
   }
+  void errorWithNotes(UniquePtr<JSErrorNotes> notes, unsigned errorNumber,
+                      ...) {
+    va_list args;
+    va_start(args, errorNumber);
 
-  virtual void errorAtVA(uint32_t offset, unsigned errorNumber,
-                         va_list* args) = 0;
-  virtual bool reportExtraWarningErrorNumberVA(UniquePtr<JSErrorNotes> notes,
+    errorWithNotesAtVA(std::move(notes), mozilla::AsVariant(Current()),
+                       errorNumber, &args);
+
+    va_end(args);
+  }
+  void errorAt(uint32_t offset, unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    errorWithNotesAtVA(nullptr, mozilla::AsVariant(offset), errorNumber, &args);
+
+    va_end(args);
+  }
+  void errorWithNotesAt(UniquePtr<JSErrorNotes> notes, uint32_t offset,
+                        unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    errorWithNotesAtVA(std::move(notes), mozilla::AsVariant(offset),
+                       errorNumber, &args);
+
+    va_end(args);
+  }
+  void errorNoOffset(unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    errorWithNotesAtVA(nullptr, mozilla::AsVariant(NoOffset()), errorNumber,
+                       &args);
+
+    va_end(args);
+  }
+  void errorWithNotesNoOffset(UniquePtr<JSErrorNotes> notes,
+                              unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    errorWithNotesAtVA(std::move(notes), mozilla::AsVariant(NoOffset()),
+                       errorNumber, &args);
+
+    va_end(args);
+  }
+  void errorWithNotesAtVA(UniquePtr<JSErrorNotes> notes,
+                          const ErrorOffset& offset, unsigned errorNumber,
+                          va_list* args) {
+    ErrorMetadata metadata;
+    if (!computeErrorMetadata(&metadata, offset)) {
+      return;
+    }
+
+    ReportCompileError(getContext(), std::move(metadata), std::move(notes),
+                       JSREPORT_ERROR, errorNumber, args);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  MOZ_MUST_USE bool warning(unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    bool result = warningWithNotesAtVA(nullptr, mozilla::AsVariant(Current()),
+                                       errorNumber, &args);
+
+    va_end(args);
+
+    return result;
+  }
+  MOZ_MUST_USE bool warningWithNotes(UniquePtr<JSErrorNotes> notes,
+                                     unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    bool result = warningWithNotesAtVA(
+        std::move(notes), mozilla::AsVariant(Current()), errorNumber, &args);
+
+    va_end(args);
+
+    return result;
+  }
+  MOZ_MUST_USE bool warningAt(uint32_t offset, unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    bool result = warningWithNotesAtVA(nullptr, mozilla::AsVariant(offset),
+                                       errorNumber, &args);
+
+    va_end(args);
+
+    return result;
+  }
+  MOZ_MUST_USE bool warningWithNotesAt(UniquePtr<JSErrorNotes> notes,
+                                       uint32_t offset, unsigned errorNumber,
+                                       ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    bool result = warningWithNotesAtVA(
+        std::move(notes), mozilla::AsVariant(offset), errorNumber, &args);
+
+    va_end(args);
+
+    return result;
+  }
+  MOZ_MUST_USE bool warningNoOffset(unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    bool result = warningWithNotesAtVA(nullptr, mozilla::AsVariant(NoOffset()),
+                                       errorNumber, &args);
+
+    va_end(args);
+
+    return result;
+  }
+  MOZ_MUST_USE bool warningWithNotesNoOffset(UniquePtr<JSErrorNotes> notes,
+                                             unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    bool result = warningWithNotesAtVA(
+        std::move(notes), mozilla::AsVariant(NoOffset()), errorNumber, &args);
+
+    va_end(args);
+
+    return result;
+  }
+  MOZ_MUST_USE bool warningWithNotesAtVA(UniquePtr<JSErrorNotes> notes,
+                                         const ErrorOffset& offset,
+                                         unsigned errorNumber, va_list* args) {
+    ErrorMetadata metadata;
+    if (!computeErrorMetadata(&metadata, offset)) {
+      return false;
+    }
+
+    return compileWarning(std::move(metadata), std::move(notes),
+                          JSREPORT_WARNING, errorNumber, args);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  MOZ_MUST_USE bool extraWarning(unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    bool result = extraWarningWithNotesAtVA(
+        nullptr, mozilla::AsVariant(Current()), errorNumber, &args);
+
+    va_end(args);
+
+    return result;
+  }
+  MOZ_MUST_USE bool extraWarningWithNotes(UniquePtr<JSErrorNotes> notes,
+                                          unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    bool result = extraWarningWithNotesAtVA(
+        std::move(notes), mozilla::AsVariant(Current()), errorNumber, &args);
+
+    va_end(args);
+
+    return result;
+  }
+  MOZ_MUST_USE bool extraWarningAt(uint32_t offset, unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    bool result = extraWarningWithNotesAtVA(nullptr, mozilla::AsVariant(offset),
+                                            errorNumber, &args);
+
+    va_end(args);
+
+    return result;
+  }
+  MOZ_MUST_USE bool extraWarningWithNotesAt(UniquePtr<JSErrorNotes> notes,
+                                            uint32_t offset,
+                                            unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    bool result = extraWarningWithNotesAtVA(
+        std::move(notes), mozilla::AsVariant(offset), errorNumber, &args);
+
+    va_end(args);
+
+    return result;
+  }
+  MOZ_MUST_USE bool extraWarningNoOffset(unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    bool result = extraWarningWithNotesAtVA(
+        nullptr, mozilla::AsVariant(NoOffset()), errorNumber, &args);
+
+    va_end(args);
+
+    return result;
+  }
+  MOZ_MUST_USE bool extraWarningWithNotesNoOffset(UniquePtr<JSErrorNotes> notes,
+                                                  unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    bool result = extraWarningWithNotesAtVA(
+        std::move(notes), mozilla::AsVariant(NoOffset()), errorNumber, &args);
+
+    va_end(args);
+
+    return result;
+  }
+  MOZ_MUST_USE bool extraWarningWithNotesAtVA(UniquePtr<JSErrorNotes> notes,
+                                              const ErrorOffset& offset,
+                                              unsigned errorNumber,
+                                              va_list* args) {
+    if (!options().extraWarningsOption) {
+      return true;
+    }
+
+    ErrorMetadata metadata;
+    if (!computeErrorMetadata(&metadata, offset)) {
+      return false;
+    }
+
+    return compileWarning(std::move(metadata), std::move(notes),
+                          JSREPORT_STRICT | JSREPORT_WARNING, errorNumber,
+                          args);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  MOZ_MUST_USE bool strictModeError(unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    bool result = strictModeErrorWithNotesAtVA(
+        nullptr, mozilla::AsVariant(Current()), errorNumber, &args);
+
+    va_end(args);
+
+    return result;
+  }
+  MOZ_MUST_USE bool strictModeErrorWithNotes(UniquePtr<JSErrorNotes> notes,
+                                             unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    bool result = strictModeErrorWithNotesAtVA(
+        std::move(notes), mozilla::AsVariant(Current()), errorNumber, &args);
+
+    va_end(args);
+
+    return result;
+  }
+  MOZ_MUST_USE bool strictModeErrorAt(uint32_t offset, unsigned errorNumber,
+                                      ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    bool result = strictModeErrorWithNotesAtVA(
+        nullptr, mozilla::AsVariant(offset), errorNumber, &args);
+
+    va_end(args);
+
+    return result;
+  }
+  MOZ_MUST_USE bool strictModeErrorWithNotesAt(UniquePtr<JSErrorNotes> notes,
                                                uint32_t offset,
-                                               unsigned errorNumber,
-                                               va_list* args) = 0;
+                                               unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    bool result = strictModeErrorWithNotesAtVA(
+        std::move(notes), mozilla::AsVariant(offset), errorNumber, &args);
+
+    va_end(args);
+
+    return result;
+  }
+  MOZ_MUST_USE bool strictModeErrorNoOffset(unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    bool result = strictModeErrorWithNotesAtVA(
+        nullptr, mozilla::AsVariant(NoOffset()), errorNumber, &args);
+
+    va_end(args);
+
+    return result;
+  }
+  MOZ_MUST_USE bool strictModeErrorWithNotesNoOffset(
+      UniquePtr<JSErrorNotes> notes, unsigned errorNumber, ...) {
+    va_list args;
+    va_start(args, errorNumber);
+
+    bool result = strictModeErrorWithNotesAtVA(
+        std::move(notes), mozilla::AsVariant(NoOffset()), errorNumber, &args);
+
+    va_end(args);
+
+    return result;
+  }
+  MOZ_MUST_USE bool strictModeErrorWithNotesAtVA(UniquePtr<JSErrorNotes> notes,
+                                                 const ErrorOffset& offset,
+                                                 unsigned errorNumber,
+                                                 va_list* args) {
+    bool strict = strictMode();
+    if (!strict && !options().extraWarningsOption) {
+      return true;
+    }
+
+    ErrorMetadata metadata;
+    if (!computeErrorMetadata(&metadata, offset)) {
+      return false;
+    }
+
+    if (strict) {
+      ReportCompileError(getContext(), std::move(metadata), std::move(notes),
+                         JSREPORT_ERROR, errorNumber, args);
+      return false;
+    }
+
+    return compileWarning(std::move(metadata), std::move(notes),
+                          JSREPORT_WARNING | JSREPORT_STRICT, errorNumber,
+                          args);
+  }
+
+  
+  MOZ_MUST_USE bool compileWarning(ErrorMetadata&& metadata,
+                                   UniquePtr<JSErrorNotes> notes,
+                                   unsigned flags, unsigned errorNumber,
+                                   va_list* args) {
+    if (options().werrorOption) {
+      flags &= ~JSREPORT_WARNING;
+      ReportCompileError(getContext(), std::move(metadata), std::move(notes),
+                         flags, errorNumber, args);
+      return false;
+    }
+
+    return ReportCompileWarning(getContext(), std::move(metadata),
+                                std::move(notes), flags, errorNumber, args);
+  }
+};
+
+
+
+
+class ErrorReporter : public ErrorReportMixin {
+ public:
+  
+  virtual void lineAndColumnAt(size_t offset, uint32_t* line,
+                               uint32_t* column) const = 0;
+
+  
+  virtual void currentLineAndColumn(uint32_t* line, uint32_t* column) const = 0;
+
+  
+  
+  
+  
+  
+  virtual bool isOnThisLine(size_t offset, uint32_t lineNum,
+                            bool* onThisLine) const = 0;
+
+  
+  virtual uint32_t lineAt(size_t offset) const = 0;
+
+  
+  virtual uint32_t columnAt(size_t offset) const = 0;
+
+  
+  
+  virtual bool hasTokenizationStarted() const = 0;
+
+  
+  virtual const char* getFilename() const = 0;
 };
 
 }  

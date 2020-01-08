@@ -180,6 +180,7 @@
 
 
 
+
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
@@ -454,18 +455,6 @@ extern const char* ReservedWordToCharZ(PropertyName* str);
 
 extern const char* ReservedWordToCharZ(TokenKind tt);
 
-
-
-
-
-
-
-
-class StrictModeGetter {
- public:
-  virtual bool strictMode() = 0;
-};
-
 struct TokenStreamFlags {
   bool isEOF : 1;           
   bool isDirtyLine : 1;     
@@ -496,8 +485,6 @@ class TokenStreamShared {
 
  public:
   static constexpr unsigned maxLookahead = 2;
-
-  static constexpr uint32_t NoOffset = UINT32_MAX;
 
   using Modifier = Token::Modifier;
   static constexpr Modifier None = Token::None;
@@ -943,16 +930,12 @@ class TokenStreamAnyChars : public TokenStreamShared {
   }
 
  public:
-  MOZ_MUST_USE bool compileWarning(ErrorMetadata&& metadata,
-                                   UniquePtr<JSErrorNotes> notes,
-                                   unsigned flags, unsigned errorNumber,
-                                   va_list* args);
-
   
   void computeErrorMetadataNoOffset(ErrorMetadata* err);
 
   
 
+  
   
   
   void reportErrorNoOffset(unsigned errorNumber, ...);
@@ -2467,11 +2450,8 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     return false;
   }
 
+ public:
   
-
-  const JS::ReadOnlyCompileOptions& options() const final {
-    return anyCharsAccess().options();
-  }
 
   void lineAndColumnAt(size_t offset, uint32_t* line,
                        uint32_t* column) const final {
@@ -2500,50 +2480,30 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
   bool hasTokenizationStarted() const final;
 
-  void reportErrorNoOffsetVA(unsigned errorNumber, va_list* args) final {
-    anyCharsAccess().reportErrorNoOffsetVA(errorNumber, args);
-  }
-
   const char* getFilename() const final {
     return anyCharsAccess().getFilename();
   }
 
+ private:
   
-  void reportError(unsigned errorNumber, ...);
 
-  
-  void error(unsigned errorNumber, ...);
+  JSContext* getContext() const override { return anyCharsAccess().cx; }
 
-  
-  void errorAt(uint32_t offset, unsigned errorNumber, ...);
-  void errorAtVA(uint32_t offset, unsigned errorNumber, va_list* args);
-
-  
-  MOZ_MUST_USE bool warning(unsigned errorNumber, ...);
+  MOZ_MUST_USE bool strictMode() const override {
+    return anyCharsAccess().strictMode();
+  }
 
  public:
   
-  MOZ_MUST_USE bool computeErrorMetadata(ErrorMetadata* err, uint32_t offset);
 
-  
-  
-  
-  
-  
-  
-  
-  bool reportStrictModeErrorNumberVA(UniquePtr<JSErrorNotes> notes,
-                                     uint32_t offset, bool strictMode,
-                                     unsigned errorNumber, va_list* args);
-  bool reportExtraWarningErrorNumberVA(UniquePtr<JSErrorNotes> notes,
-                                       uint32_t offset, unsigned errorNumber,
-                                       va_list* args);
+  const JS::ReadOnlyCompileOptions& options() const final {
+    return anyCharsAccess().options();
+  }
+
+  MOZ_MUST_USE bool computeErrorMetadata(
+      ErrorMetadata* err, const ErrorOffset& errorOffset) override;
 
  private:
-  
-  
-  bool reportStrictModeError(unsigned errorNumber, ...);
-
   void reportInvalidEscapeError(uint32_t offset, InvalidEscapeType type) {
     switch (type) {
       case InvalidEscapeType::None:
@@ -2699,7 +2659,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
       bool onThisLine;
       if (!anyChars.srcCoords.isOnThisLine(curr.pos.end, anyChars.lineno,
                                            &onThisLine)) {
-        reportError(JSMSG_OUT_OF_MEMORY);
+        error(JSMSG_OUT_OF_MEMORY);
         return false;
       }
 
