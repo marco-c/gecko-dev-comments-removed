@@ -10,11 +10,11 @@
 #include "nsIDOMEventListener.h"
 #include "nsIEditorSpellCheck.h"
 #include "nsIInlineSpellChecker.h"
+#include "mozInlineSpellWordUtil.h"
 #include "nsRange.h"
 #include "nsWeakReference.h"
 
 class InitEditorSpellCheckCallback;
-class mozInlineSpellWordUtil;
 class mozInlineSpellChecker;
 class mozInlineSpellResume;
 class UpdateCurrentDictionaryCallback;
@@ -51,11 +51,6 @@ class mozInlineSpellStatus {
   bool IsFullSpellCheck() const { return mOp == eOpChange && !mRange; }
 
   RefPtr<mozInlineSpellChecker> mSpellChecker;
-
-  
-  
-  
-  int32_t mWordCount;
 
   
   enum Operation {
@@ -138,13 +133,6 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
 
   int32_t mNumWordsInSpellSelection;
   int32_t mMaxNumWordsInSpellSelection;
-
-  
-  
-  
-  
-  
-  int32_t mMaxMisspellingsPerCheck;
 
   
   
@@ -282,6 +270,10 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
 
   void StartToListenToEditSubActions() { mIsListeningToEditSubActions = true; }
   void EndListeningToEditSubActions() { mIsListeningToEditSubActions = false; }
+
+  void CheckCurrentWordsNoSuggest(mozilla::dom::Selection* aSpellCheckSelection,
+                                  const nsTArray<nsString>& aWords,
+                                  const nsTArray<NodeOffsetRange>& aRanges);
 };
 
 #endif  

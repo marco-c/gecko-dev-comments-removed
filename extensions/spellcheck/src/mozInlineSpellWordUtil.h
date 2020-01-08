@@ -22,10 +22,10 @@ class TextEditor;
 }  
 
 struct NodeOffset {
-  nsINode* mNode;
+  nsCOMPtr<nsINode> mNode;
   int32_t mOffset;
 
-  NodeOffset() : mNode(nullptr), mOffset(0) {}
+  NodeOffset() : mOffset(0) {}
   NodeOffset(nsINode* aNode, int32_t aOffset)
       : mNode(aNode), mOffset(aOffset) {}
 
@@ -34,6 +34,9 @@ struct NodeOffset {
   }
 
   bool operator!=(const NodeOffset& aOther) const { return !(*this == aOther); }
+
+  nsINode* Node() const { return mNode.get(); }
+  int32_t Offset() const { return mOffset; }
 };
 
 class NodeOffsetRange {
@@ -47,11 +50,11 @@ class NodeOffsetRange {
   NodeOffsetRange(NodeOffset b, NodeOffset e)
       : mBegin(b), mEnd(e), mEmpty(false) {}
 
-  NodeOffset Begin() { return mBegin; }
+  NodeOffset Begin() const { return mBegin; }
 
-  NodeOffset End() { return mEnd; }
+  NodeOffset End() const { return mEnd; }
 
-  bool Empty() { return mEmpty; }
+  bool Empty() const { return mEmpty; }
 };
 
 
@@ -104,6 +107,7 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
 
   
   nsresult MakeRange(NodeOffset aBegin, NodeOffset aEnd, nsRange** aRange);
+  static already_AddRefed<nsRange> MakeRange(const NodeOffsetRange& aRange);
 
   
   

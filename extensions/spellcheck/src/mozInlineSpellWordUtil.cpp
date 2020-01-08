@@ -331,6 +331,19 @@ nsresult mozInlineSpellWordUtil::MakeRange(NodeOffset aBegin, NodeOffset aEnd,
 }
 
 
+already_AddRefed<nsRange> mozInlineSpellWordUtil::MakeRange(
+    const NodeOffsetRange& aRange) {
+  RefPtr<nsRange> range = new nsRange(aRange.Begin().Node());
+  nsresult rv =
+      range->SetStartAndEnd(aRange.Begin().Node(), aRange.Begin().Offset(),
+                            aRange.End().Node(), aRange.End().Offset());
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
+  return range.forget();
+}
+
+
 
 
 enum CharClass {
