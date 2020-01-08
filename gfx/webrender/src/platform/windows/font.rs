@@ -141,7 +141,23 @@ impl FontContext {
             {
                 font
             } else {
-                panic!("font mismatch for descriptor {:?} {:?}", font_handle, font.to_descriptor())
+                
+                
+                
+                
+                (0 .. family.get_font_count()).filter_map(|idx| {
+                    let alt = family.get_font(idx);
+                    if alt.weight() == font_handle.weight &&
+                        alt.stretch() == font_handle.stretch &&
+                        alt.style() == font_handle.style
+                    {
+                        Some(alt)
+                    } else {
+                        None
+                    }
+                }).next().unwrap_or_else(|| {
+                    panic!("font mismatch for descriptor {:?} {:?}", font_handle, font.to_descriptor())
+                })
             }
         } else {
             panic!("missing font family for descriptor {:?}", font_handle)
