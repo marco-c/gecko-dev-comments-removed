@@ -46,6 +46,8 @@ namespace jit {
     _(GuardAndGetIndexFromString)         \
     _(GuardIndexIsNonNegative)            \
     _(GuardTagNotEqual)                   \
+    _(GuardNoAllocationMetadataBuilder)   \
+    _(GuardObjectGroupNotPretenured)           \
     _(LoadObject)                         \
     _(LoadProto)                          \
     _(LoadEnclosingEnvironment)           \
@@ -94,6 +96,7 @@ namespace jit {
     _(LoadDoubleTruthyResult)             \
     _(LoadStringTruthyResult)             \
     _(LoadObjectTruthyResult)             \
+    _(LoadNewObjectFromTemplateResult)    \
     _(CompareObjectResult)                \
     _(CompareSymbolResult)                \
     _(CompareInt32Result)                 \
@@ -739,6 +742,13 @@ class MOZ_RAII CacheIRCompiler
     JSObject* objectStubField(uint32_t offset) {
         MOZ_ASSERT(stubFieldPolicy_ == StubFieldPolicy::Constant);
         return (JSObject*)readStubWord(offset, StubField::Type::JSObject);
+    }
+    
+    
+    
+    JSObject* objectStubFieldUnchecked(uint32_t offset) {
+        return (JSObject*)writer_.readStubFieldForIon(offset,
+                                                      StubField::Type::JSObject).asWord();
     }
     JSString* stringStubField(uint32_t offset) {
         MOZ_ASSERT(stubFieldPolicy_ == StubFieldPolicy::Constant);
