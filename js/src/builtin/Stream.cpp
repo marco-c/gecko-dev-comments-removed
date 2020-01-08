@@ -468,24 +468,7 @@ const Class TeeState::class_ = {"TeeState",
 
 
 
-
-
-
-
-
-
-enum class SourceAlgorithms {
-  Script,
-  Tee,
-};
-
-static MOZ_MUST_USE bool SetUpReadableStreamDefaultController(
-    JSContext* cx, Handle<ReadableStream*> stream, SourceAlgorithms algorithms,
-    HandleValue underlyingSource, HandleValue pullMethod,
-    HandleValue cancelMethod, double highWaterMark, HandleValue size);
-
-static MOZ_MUST_USE ReadableByteStreamController*
-CreateExternalReadableByteStreamController(
+static MOZ_MUST_USE bool SetUpExternalReadableByteStreamController(
     JSContext* cx, Handle<ReadableStream*> stream,
     JS::ReadableStreamUnderlyingSource* source);
 
@@ -497,13 +480,10 @@ ReadableStream* ReadableStream::createExternalSourceStream(
     return nullptr;
   }
 
-  Rooted<ReadableStreamController*> controller(cx);
-  controller = CreateExternalReadableByteStreamController(cx, stream, source);
-  if (!controller) {
+  if (!SetUpExternalReadableByteStreamController(cx, stream, source)) {
     return nullptr;
   }
 
-  stream->setController(controller);
   return stream;
 }
 
@@ -821,6 +801,22 @@ CLASS_SPEC(ReadableStream, 0, SlotCount, 0, 0, JS_NULL_CLASS_OPS);
 
 
 
+
+
+
+
+
+
+
+enum class SourceAlgorithms {
+  Script,
+  Tee,
+};
+
+static MOZ_MUST_USE bool SetUpReadableStreamDefaultController(
+    JSContext* cx, Handle<ReadableStream*> stream, SourceAlgorithms algorithms,
+    HandleValue underlyingSource, HandleValue pullMethod,
+    HandleValue cancelMethod, double highWaterMark, HandleValue size);
 
 
 
@@ -3427,26 +3423,32 @@ bool ReadableByteStreamController::constructor(JSContext* cx, unsigned argc,
 
 
 
-static MOZ_MUST_USE ReadableByteStreamController*
-CreateExternalReadableByteStreamController(
+static MOZ_MUST_USE bool SetUpExternalReadableByteStreamController(
     JSContext* cx, Handle<ReadableStream*> stream,
     JS::ReadableStreamUnderlyingSource* source) {
+  
   Rooted<ReadableByteStreamController*> controller(
       cx, NewBuiltinClassInstance<ReadableByteStreamController>(cx));
   if (!controller) {
-    return nullptr;
+    return false;
   }
+
+  
+  MOZ_ASSERT(!stream->hasController());
+
+  
+  
 
   
   controller->setStream(stream);
 
   
-  controller->setExternalSource(source);
-
-  
+  controller->setFlags(0);
   MOZ_ASSERT(!controller->pullAgain());
   MOZ_ASSERT(!controller->pulling());
 
+  
+  
   
   
 
@@ -3455,51 +3457,58 @@ CreateExternalReadableByteStreamController(
 
   
   
+  MOZ_ASSERT(!controller->closeRequested());
+  MOZ_ASSERT(!controller->started());
+
+  
   
   controller->setStrategyHWM(0);
 
   
   
   
+  controller->setExternalSource(source);
+
   
   
+  MOZ_ASSERT(controller->autoAllocateChunkSize().isUndefined());
 
   
   if (!SetNewList(cx, controller,
                   ReadableByteStreamController::Slot_PendingPullIntos)) {
-    return nullptr;
+    return false;
   }
 
   
-  
-  
-  
+  stream->setController(controller);
 
+  
+  
   
   RootedObject startPromise(
       cx, PromiseObject::unforgeableResolve(cx, UndefinedHandleValue));
   if (!startPromise) {
-    return nullptr;
+    return false;
   }
 
+  
+  
   RootedObject onStartFulfilled(
       cx, NewHandler(cx, ControllerStartHandler, controller));
   if (!onStartFulfilled) {
-    return nullptr;
+    return false;
   }
-
   RootedObject onStartRejected(
       cx, NewHandler(cx, ControllerStartFailedHandler, controller));
   if (!onStartRejected) {
-    return nullptr;
+    return false;
   }
-
   if (!JS::AddPromiseReactions(cx, startPromise, onStartFulfilled,
                                onStartRejected)) {
-    return nullptr;
+    return false;
   }
 
-  return controller;
+  return true;
 }
 
 static const JSPropertySpec ReadableByteStreamController_properties[] = {
