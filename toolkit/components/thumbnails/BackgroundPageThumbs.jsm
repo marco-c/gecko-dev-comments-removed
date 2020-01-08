@@ -208,10 +208,22 @@ const BackgroundPageThumbs = {
       }
     };
     webProgress.addProgressListener(this._listener, Ci.nsIWebProgress.NOTIFY_STATE_ALL);
-    wlBrowser.loadURI("chrome://global/content/backgroundPageThumbs.xhtml", 0, null, null, null);
+    let triggeringPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+    wlBrowser.loadURI("chrome://global/content/backgroundPageThumbs.xhtml",
+                      0, null, null, null, triggeringPrincipal);
     this._windowlessContainer = wlBrowser;
 
     return false;
+  },
+
+  get userContextId() {
+    if (Services.prefs.getBoolPref(ABOUT_NEWTAB_SEGREGATION_PREF)) {
+      
+      let privateIdentity =
+        ContextualIdentityService.getPrivateIdentity("userContextIdInternal.thumbnail");
+      return privateIdentity.userContextId;
+    }
+    return 0;
   },
 
   _init() {
@@ -258,13 +270,7 @@ const BackgroundPageThumbs = {
     browser.setAttribute("type", "content");
     browser.setAttribute("remote", "true");
     browser.setAttribute("disableglobalhistory", "true");
-
-    if (Services.prefs.getBoolPref(ABOUT_NEWTAB_SEGREGATION_PREF)) {
-      
-      let privateIdentity =
-        ContextualIdentityService.getPrivateIdentity("userContextIdInternal.thumbnail");
-      browser.setAttribute("usercontextid", privateIdentity.userContextId);
-    }
+    browser.setAttribute("usercontextid", this.userContextId);
 
     
     
@@ -508,10 +514,8 @@ Capture.prototype = {
 
       if (Services.prefs.getBoolPref(ABOUT_NEWTAB_SEGREGATION_PREF)) {
         
-        let privateIdentity =
-          ContextualIdentityService.getPrivateIdentity("userContextIdInternal.thumbnail");
         Services.obs.notifyObservers(null, "clear-origin-attributes-data",
-          JSON.stringify({ userContextId: privateIdentity.userContextId }));
+          JSON.stringify({ userContextId: this.userContextId }));
       }
     };
 
