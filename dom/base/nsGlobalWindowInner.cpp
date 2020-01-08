@@ -4888,26 +4888,6 @@ nsGlobalWindowInner::DispatchSyncPopState()
 
 
 
-static nsCanvasFrame*
-FindCanvasFrame(nsIFrame* aFrame)
-{
-    nsCanvasFrame* canvasFrame = do_QueryFrame(aFrame);
-    if (canvasFrame) {
-        return canvasFrame;
-    }
-
-    for (nsIFrame* kid : aFrame->PrincipalChildList()) {
-        canvasFrame = FindCanvasFrame(kid);
-        if (canvasFrame) {
-            return canvasFrame;
-        }
-    }
-
-    return nullptr;
-}
-
-
-
 void
 nsGlobalWindowInner::UpdateCanvasFocus(bool aFocusChanged, nsIContent* aNewContent)
 {
@@ -4927,26 +4907,19 @@ nsGlobalWindowInner::UpdateCanvasFocus(bool aFocusChanged, nsIContent* aNewConte
 
   Element *rootElement = mDoc->GetRootElement();
   if (rootElement) {
-      if ((mHasFocus || aFocusChanged) &&
-          (mFocusedElement == rootElement || aNewContent == rootElement)) {
-          nsIFrame* frame = rootElement->GetPrimaryFrame();
-          if (frame) {
-              frame = frame->GetParent();
-              nsCanvasFrame* canvasFrame = do_QueryFrame(frame);
-              if (canvasFrame) {
-                  canvasFrame->SetHasFocus(mHasFocus && rootElement == aNewContent);
-              }
-          }
+    if ((mHasFocus || aFocusChanged) &&
+        (mFocusedElement == rootElement || aNewContent == rootElement)) {
+      nsCanvasFrame* canvasFrame = presShell->GetCanvasFrame();
+      if (canvasFrame) {
+        canvasFrame->SetHasFocus(mHasFocus && rootElement == aNewContent);
       }
+    }
   } else {
-      
-      nsIFrame* frame = presShell->GetRootFrame();
-      if (frame) {
-          nsCanvasFrame* canvasFrame = FindCanvasFrame(frame);
-          if (canvasFrame) {
-              canvasFrame->SetHasFocus(false);
-          }
-      }
+    
+    nsCanvasFrame* canvasFrame = presShell->GetCanvasFrame();
+    if (canvasFrame) {
+      canvasFrame->SetHasFocus(false);
+    }
   }
 }
 
