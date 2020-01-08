@@ -6798,6 +6798,9 @@ void
 HTMLMediaElement::NotifyShutdownEvent()
 {
   mShuttingDown = true;
+  
+  
+  mAutoplayPermissionRequest.DisconnectIfExists();
   ResetState();
   AddRemoveSelfReference();
 }
