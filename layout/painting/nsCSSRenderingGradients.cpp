@@ -47,7 +47,7 @@ ConvertGradientValueToPixels(const nsStyleCoord& aCoord,
     case eStyleUnit_Coord:
       return NSAppUnitsToFloatPixels(aCoord.GetCoordValue(), aAppUnitsPerPixel);
     case eStyleUnit_Calc: {
-      const nsStyleCoord::Calc* calc = aCoord.GetCalcValue();
+      const nsStyleCoord::Calc *calc = aCoord.GetCalcValue();
       return calc->mPercent * aFillLength +
              NSAppUnitsToFloatPixels(calc->mLength, aAppUnitsPerPixel);
     }
@@ -72,8 +72,8 @@ ComputeGradientLineEndFromAngle(const gfxPoint& aStart,
   gfxPoint farthestCorner(dx > 0 ? aBoxSize.width : 0,
                           dy > 0 ? aBoxSize.height : 0);
   gfxPoint delta = farthestCorner - aStart;
-  double u = delta.x * dy - delta.y * dx;
-  return farthestCorner + gfxPoint(-u * dy, u * dx);
+  double u = delta.x*dy - delta.y*dx;
+  return farthestCorner + gfxPoint(-u*dy, u*dx);
 }
 
 
@@ -94,23 +94,23 @@ ComputeLinearGradientLine(nsPresContext* aPresContext,
     } else {
       angle = -M_PI_2; 
     }
-    gfxPoint center(aBoxSize.width / 2, aBoxSize.height / 2);
+    gfxPoint center(aBoxSize.width/2, aBoxSize.height/2);
     *aLineEnd = ComputeGradientLineEndFromAngle(center, angle, aBoxSize);
     *aLineStart = gfxPoint(aBoxSize.width, aBoxSize.height) - *aLineEnd;
   } else if (!aGradient->mLegacySyntax) {
     float xSign = aGradient->mBgPosX.GetPercentValue() * 2 - 1;
     float ySign = 1 - aGradient->mBgPosY.GetPercentValue() * 2;
     double angle = atan2(ySign * aBoxSize.width, xSign * aBoxSize.height);
-    gfxPoint center(aBoxSize.width / 2, aBoxSize.height / 2);
+    gfxPoint center(aBoxSize.width/2, aBoxSize.height/2);
     *aLineEnd = ComputeGradientLineEndFromAngle(center, angle, aBoxSize);
     *aLineStart = gfxPoint(aBoxSize.width, aBoxSize.height) - *aLineEnd;
   } else {
     int32_t appUnitsPerPixel = aPresContext->AppUnitsPerDevPixel();
-    *aLineStart =
-      gfxPoint(ConvertGradientValueToPixels(
-                 aGradient->mBgPosX, aBoxSize.width, appUnitsPerPixel),
-               ConvertGradientValueToPixels(
-                 aGradient->mBgPosY, aBoxSize.height, appUnitsPerPixel));
+    *aLineStart = gfxPoint(
+      ConvertGradientValueToPixels(aGradient->mBgPosX, aBoxSize.width,
+                                   appUnitsPerPixel),
+      ConvertGradientValueToPixels(aGradient->mBgPosY, aBoxSize.height,
+                                   appUnitsPerPixel));
     if (aGradient->mAngle.IsAngleValue()) {
       MOZ_ASSERT(aGradient->mLegacySyntax);
       double angle = aGradient->mAngle.GetAngleValueInRadians();
@@ -137,14 +137,14 @@ ComputeRadialGradientLine(nsPresContext* aPresContext,
 {
   if (aGradient->mBgPosX.GetUnit() == eStyleUnit_None) {
     
-    *aLineStart = gfxPoint(aBoxSize.width / 2, aBoxSize.height / 2);
+    *aLineStart = gfxPoint(aBoxSize.width/2, aBoxSize.height/2);
   } else {
     int32_t appUnitsPerPixel = aPresContext->AppUnitsPerDevPixel();
-    *aLineStart =
-      gfxPoint(ConvertGradientValueToPixels(
-                 aGradient->mBgPosX, aBoxSize.width, appUnitsPerPixel),
-               ConvertGradientValueToPixels(
-                 aGradient->mBgPosY, aBoxSize.height, appUnitsPerPixel));
+    *aLineStart = gfxPoint(
+      ConvertGradientValueToPixels(aGradient->mBgPosX, aBoxSize.width,
+                                   appUnitsPerPixel),
+      ConvertGradientValueToPixels(aGradient->mBgPosY, aBoxSize.height,
+                                   appUnitsPerPixel));
   }
 
   
@@ -154,57 +154,57 @@ ComputeRadialGradientLine(nsPresContext* aPresContext,
   double topDistance = Abs(aLineStart->y);
   double bottomDistance = Abs(aBoxSize.height - aLineStart->y);
   switch (aGradient->mSize) {
-    case NS_STYLE_GRADIENT_SIZE_CLOSEST_SIDE:
-      radiusX = std::min(leftDistance, rightDistance);
-      radiusY = std::min(topDistance, bottomDistance);
-      if (aGradient->mShape == NS_STYLE_GRADIENT_SHAPE_CIRCULAR) {
-        radiusX = radiusY = std::min(radiusX, radiusY);
-      }
-      break;
-    case NS_STYLE_GRADIENT_SIZE_CLOSEST_CORNER: {
+  case NS_STYLE_GRADIENT_SIZE_CLOSEST_SIDE:
+    radiusX = std::min(leftDistance, rightDistance);
+    radiusY = std::min(topDistance, bottomDistance);
+    if (aGradient->mShape == NS_STYLE_GRADIENT_SHAPE_CIRCULAR) {
+      radiusX = radiusY = std::min(radiusX, radiusY);
+    }
+    break;
+  case NS_STYLE_GRADIENT_SIZE_CLOSEST_CORNER: {
+    
+    double offsetX = std::min(leftDistance, rightDistance);
+    double offsetY = std::min(topDistance, bottomDistance);
+    if (aGradient->mShape == NS_STYLE_GRADIENT_SHAPE_CIRCULAR) {
+      radiusX = radiusY = NS_hypot(offsetX, offsetY);
+    } else {
       
-      double offsetX = std::min(leftDistance, rightDistance);
-      double offsetY = std::min(topDistance, bottomDistance);
-      if (aGradient->mShape == NS_STYLE_GRADIENT_SHAPE_CIRCULAR) {
-        radiusX = radiusY = NS_hypot(offsetX, offsetY);
-      } else {
-        
-        radiusX = offsetX * M_SQRT2;
-        radiusY = offsetY * M_SQRT2;
-      }
-      break;
+      radiusX = offsetX*M_SQRT2;
+      radiusY = offsetY*M_SQRT2;
     }
-    case NS_STYLE_GRADIENT_SIZE_FARTHEST_SIDE:
-      radiusX = std::max(leftDistance, rightDistance);
-      radiusY = std::max(topDistance, bottomDistance);
-      if (aGradient->mShape == NS_STYLE_GRADIENT_SHAPE_CIRCULAR) {
-        radiusX = radiusY = std::max(radiusX, radiusY);
-      }
-      break;
-    case NS_STYLE_GRADIENT_SIZE_FARTHEST_CORNER: {
+    break;
+  }
+  case NS_STYLE_GRADIENT_SIZE_FARTHEST_SIDE:
+    radiusX = std::max(leftDistance, rightDistance);
+    radiusY = std::max(topDistance, bottomDistance);
+    if (aGradient->mShape == NS_STYLE_GRADIENT_SHAPE_CIRCULAR) {
+      radiusX = radiusY = std::max(radiusX, radiusY);
+    }
+    break;
+  case NS_STYLE_GRADIENT_SIZE_FARTHEST_CORNER: {
+    
+    double offsetX = std::max(leftDistance, rightDistance);
+    double offsetY = std::max(topDistance, bottomDistance);
+    if (aGradient->mShape == NS_STYLE_GRADIENT_SHAPE_CIRCULAR) {
+      radiusX = radiusY = NS_hypot(offsetX, offsetY);
+    } else {
       
-      double offsetX = std::max(leftDistance, rightDistance);
-      double offsetY = std::max(topDistance, bottomDistance);
-      if (aGradient->mShape == NS_STYLE_GRADIENT_SHAPE_CIRCULAR) {
-        radiusX = radiusY = NS_hypot(offsetX, offsetY);
-      } else {
-        
-        radiusX = offsetX * M_SQRT2;
-        radiusY = offsetY * M_SQRT2;
-      }
-      break;
+      radiusX = offsetX*M_SQRT2;
+      radiusY = offsetY*M_SQRT2;
     }
-    case NS_STYLE_GRADIENT_SIZE_EXPLICIT_SIZE: {
-      int32_t appUnitsPerPixel = aPresContext->AppUnitsPerDevPixel();
-      radiusX = ConvertGradientValueToPixels(
-        aGradient->mRadiusX, aBoxSize.width, appUnitsPerPixel);
-      radiusY = ConvertGradientValueToPixels(
-        aGradient->mRadiusY, aBoxSize.height, appUnitsPerPixel);
-      break;
-    }
-    default:
-      radiusX = radiusY = 0;
-      MOZ_ASSERT(false, "unknown radial gradient sizing method");
+    break;
+  }
+  case NS_STYLE_GRADIENT_SIZE_EXPLICIT_SIZE: {
+    int32_t appUnitsPerPixel = aPresContext->AppUnitsPerDevPixel();
+    radiusX = ConvertGradientValueToPixels(aGradient->mRadiusX,
+                                           aBoxSize.width, appUnitsPerPixel);
+    radiusY = ConvertGradientValueToPixels(aGradient->mRadiusY,
+                                           aBoxSize.height, appUnitsPerPixel);
+    break;
+  }
+  default:
+    radiusX = radiusY = 0;
+    MOZ_ASSERT(false, "unknown radial gradient sizing method");
   }
   *aRadiusX = radiusX;
   *aRadiusY = radiusY;
@@ -219,12 +219,11 @@ ComputeRadialGradientLine(nsPresContext* aPresContext,
 
   
   
-  *aLineEnd =
-    *aLineStart + gfxPoint(radiusX * cos(-angle), radiusY * sin(-angle));
+  *aLineEnd = *aLineStart + gfxPoint(radiusX*cos(-angle), radiusY*sin(-angle));
 }
 
-static float
-Interpolate(float aF1, float aF2, float aFrac)
+
+static float Interpolate(float aF1, float aF2, float aFrac)
 {
   return aF1 + aFrac * (aF2 - aF1);
 }
@@ -236,18 +235,18 @@ static Color
 InterpolateColor(const Color& aC1, const Color& aC2, float aFrac)
 {
   double other = 1 - aFrac;
-  return Color(aC2.r * aFrac + aC1.r * other,
-               aC2.g * aFrac + aC1.g * other,
-               aC2.b * aFrac + aC1.b * other,
-               aC2.a * aFrac + aC1.a * other);
+  return Color(aC2.r*aFrac + aC1.r*other,
+               aC2.g*aFrac + aC1.g*other,
+               aC2.b*aFrac + aC1.b*other,
+               aC2.a*aFrac + aC1.a*other);
 }
 
 static nscoord
 FindTileStart(nscoord aDirtyCoord, nscoord aTilePos, nscoord aTileDim)
 {
   NS_ASSERTION(aTileDim > 0, "Non-positive tile dimension");
-  double multiples = floor(double(aDirtyCoord - aTilePos) / aTileDim);
-  return NSToCoordRound(multiples * aTileDim + aTilePos);
+  double multiples = floor(double(aDirtyCoord - aTilePos)/aTileDim);
+  return NSToCoordRound(multiples*aTileDim + aTilePos);
 }
 
 static gfxFloat
@@ -287,21 +286,13 @@ RectIsBeyondLinearGradientEdge(const gfxRect& aRect,
                                Color* aOutEdgeColor)
 {
   gfxFloat topLeft = LinearGradientStopPositionForPoint(
-    aGradientStart,
-    aGradientEnd,
-    aPatternMatrix.TransformPoint(aRect.TopLeft()));
+    aGradientStart, aGradientEnd, aPatternMatrix.TransformPoint(aRect.TopLeft()));
   gfxFloat topRight = LinearGradientStopPositionForPoint(
-    aGradientStart,
-    aGradientEnd,
-    aPatternMatrix.TransformPoint(aRect.TopRight()));
+    aGradientStart, aGradientEnd, aPatternMatrix.TransformPoint(aRect.TopRight()));
   gfxFloat bottomLeft = LinearGradientStopPositionForPoint(
-    aGradientStart,
-    aGradientEnd,
-    aPatternMatrix.TransformPoint(aRect.BottomLeft()));
+    aGradientStart, aGradientEnd, aPatternMatrix.TransformPoint(aRect.BottomLeft()));
   gfxFloat bottomRight = LinearGradientStopPositionForPoint(
-    aGradientStart,
-    aGradientEnd,
-    aPatternMatrix.TransformPoint(aRect.BottomRight()));
+    aGradientStart, aGradientEnd, aPatternMatrix.TransformPoint(aRect.BottomRight()));
 
   const ColorStop& firstStop = aStops[0];
   if (topLeft < firstStop.mPosition && topRight < firstStop.mPosition &&
@@ -320,8 +311,7 @@ RectIsBeyondLinearGradientEdge(const gfxRect& aRect,
   return false;
 }
 
-static void
-ResolveMidpoints(nsTArray<ColorStop>& stops)
+static void ResolveMidpoints(nsTArray<ColorStop>& stops)
 {
   for (size_t x = 1; x < stops.Length() - 1;) {
     if (!stops[x].mIsMidpoint) {
@@ -329,10 +319,10 @@ ResolveMidpoints(nsTArray<ColorStop>& stops)
       continue;
     }
 
-    Color color1 = stops[x - 1].mColor;
-    Color color2 = stops[x + 1].mColor;
-    float offset1 = stops[x - 1].mPosition;
-    float offset2 = stops[x + 1].mPosition;
+    Color color1 = stops[x-1].mColor;
+    Color color2 = stops[x+1].mColor;
+    float offset1 = stops[x-1].mPosition;
+    float offset2 = stops[x+1].mPosition;
     float offset = stops[x].mPosition;
     
     if (offset - offset1 == offset2 - offset) {
@@ -372,7 +362,7 @@ ResolveMidpoints(nsTArray<ColorStop>& stops)
       newStops[1].mPosition = offset1 + (offset - offset1) * 2 / 3;
 
       for (size_t y = 0; y < 7; y++) {
-        newStops[y + 2].mPosition = offset + (offset2 - offset) * y / 13;
+        newStops[y+2].mPosition = offset + (offset2 - offset) * y / 13;
       }
     }
     
@@ -383,8 +373,7 @@ ResolveMidpoints(nsTArray<ColorStop>& stops)
       
       
       
-      float relativeOffset =
-        (newStop.mPosition - offset1) / (offset2 - offset1);
+      float relativeOffset = (newStop.mPosition - offset1) / (offset2 - offset1);
       float multiplier = powf(relativeOffset, logf(.5f) / logf(midpoint));
 
       gfx::Float red = color1.r + multiplier * (color2.r - color1.r);
@@ -411,13 +400,13 @@ static Color
 Unpremultiply(const Color& aColor)
 {
   gfx::Float a = aColor.a;
-  return (a > 0.f) ? Color(aColor.r / a, aColor.g / a, aColor.b / a, a)
-                   : aColor;
+  return (a > 0.f)
+       ? Color(aColor.r / a, aColor.g / a, aColor.b / a, a)
+       : aColor;
 }
 
 static Color
-TransparentColor(Color aColor)
-{
+TransparentColor(Color aColor) {
   aColor.a = 0;
   return aColor;
 }
@@ -459,21 +448,15 @@ ResolvePremultipliedAlpha(nsTArray<ColorStop>& aStops)
     }
 
     
-    
     if (leftStop.mColor.a != 1.0f || rightStop.mColor.a != 1.0f) {
       Color premulLeftColor = Premultiply(leftStop.mColor);
       Color premulRightColor = Premultiply(rightStop.mColor);
       
-      size_t stepCount =
-        NSToIntFloor(fabsf(leftStop.mColor.a - rightStop.mColor.a) /
-                     kAlphaIncrementPerGradientStep);
+      size_t stepCount = NSToIntFloor(fabsf(leftStop.mColor.a - rightStop.mColor.a) / kAlphaIncrementPerGradientStep);
       for (size_t y = 1; y < stepCount; y++) {
         float frac = static_cast<float>(y) / stepCount;
-        ColorStop newStop(
-          Interpolate(leftStop.mPosition, rightStop.mPosition, frac),
-          false,
-          Unpremultiply(
-            InterpolateColor(premulLeftColor, premulRightColor, frac)));
+        ColorStop newStop(Interpolate(leftStop.mPosition, rightStop.mPosition, frac), false,
+                          Unpremultiply(InterpolateColor(premulLeftColor, premulRightColor, frac)));
         aStops.InsertElementAt(x, newStop);
         x++;
       }
@@ -482,10 +465,8 @@ ResolvePremultipliedAlpha(nsTArray<ColorStop>& aStops)
 }
 
 static ColorStop
-InterpolateColorStop(const ColorStop& aFirst,
-                     const ColorStop& aSecond,
-                     double aPosition,
-                     const Color& aDefault)
+InterpolateColorStop(const ColorStop& aFirst, const ColorStop& aSecond,
+                     double aPosition, const Color& aDefault)
 {
   MOZ_ASSERT(aFirst.mPosition <= aPosition);
   MOZ_ASSERT(aPosition <= aSecond.mPosition);
@@ -496,12 +477,10 @@ InterpolateColorStop(const ColorStop& aFirst,
     return ColorStop(aPosition, false, aDefault);
   }
 
-  return ColorStop(
-    aPosition,
-    false,
-    Unpremultiply(InterpolateColor(Premultiply(aFirst.mColor),
-                                   Premultiply(aSecond.mColor),
-                                   (aPosition - aFirst.mPosition) / delta)));
+  return ColorStop(aPosition, false,
+                   Unpremultiply(InterpolateColor(Premultiply(aFirst.mColor),
+                                                  Premultiply(aSecond.mColor),
+                                                  (aPosition - aFirst.mPosition) / delta)));
 }
 
 
@@ -515,8 +494,7 @@ ClampColorStops(nsTArray<ColorStop>& aStops)
   
   if (aStops.Length() < 2 || aStops[0].mPosition > 1 ||
       aStops.LastElement().mPosition < 0) {
-    Color c =
-      aStops[0].mPosition > 1 ? aStops[0].mColor : aStops.LastElement().mColor;
+    Color c = aStops[0].mPosition > 1 ? aStops[0].mColor : aStops.LastElement().mColor;
     aStops.Clear();
     aStops.AppendElement(ColorStop(0, false, c));
     return;
@@ -529,8 +507,7 @@ ClampColorStops(nsTArray<ColorStop>& aStops)
   for (size_t i = aStops.Length() - 1; i > 0; i--) {
     if (aStops[i - 1].mPosition < 1 && aStops[i].mPosition >= 1) {
       
-      aStops[i] = InterpolateColorStop(aStops[i - 1],
-                                       aStops[i],
+      aStops[i] = InterpolateColorStop(aStops[i - 1], aStops[i],
                                         1,
                                        aStops[i - 1].mColor);
       
@@ -538,8 +515,7 @@ ClampColorStops(nsTArray<ColorStop>& aStops)
     }
     if (aStops[i - 1].mPosition <= 0 && aStops[i].mPosition > 0) {
       
-      aStops[i - 1] = InterpolateColorStop(aStops[i - 1],
-                                           aStops[i],
+      aStops[i - 1] = InterpolateColorStop(aStops[i - 1], aStops[i],
                                             0,
                                            aStops[i].mColor);
       
@@ -611,8 +587,10 @@ ComputeColorStops(ComputedStyle* aComputedStyle,
     const nsStyleGradientStop& stop = aGradient.mStops[i];
     double position;
 
-    Maybe<double> specifiedPosition = GetSpecifiedGradientPosition(
-      stop.mLocation, aAppUnitsPerPixel, aLineLength);
+    Maybe<double> specifiedPosition =
+      GetSpecifiedGradientPosition(stop.mLocation,
+                                   aAppUnitsPerPixel,
+                                   aLineLength);
 
     if (specifiedPosition) {
       position = *specifiedPosition;
@@ -631,8 +609,8 @@ ComputeColorStops(ComputedStyle* aComputedStyle,
         firstUnsetPosition = i;
       }
       auto stopColor = stop.mColor.CalcColor(aComputedStyle);
-      stops.AppendElement(
-        ColorStop(0, stop.mIsInterpolationHint, Color::FromABGR(stopColor)));
+      stops.AppendElement(ColorStop(0, stop.mIsInterpolationHint,
+                                    Color::FromABGR(stopColor)));
       continue;
     }
 
@@ -640,18 +618,17 @@ ComputeColorStops(ComputedStyle* aComputedStyle,
       
       
       double previousPosition = firstUnsetPosition > 0
-                                  ? stops[firstUnsetPosition - 1].mPosition
-                                  : stops[i - 1].mPosition;
+        ? stops[firstUnsetPosition - 1].mPosition
+        : stops[i - 1].mPosition;
       position = std::max(position, previousPosition);
     }
     auto stopColor = stop.mColor.CalcColor(aComputedStyle);
-    stops.AppendElement(ColorStop(
-      position, stop.mIsInterpolationHint, Color::FromABGR(stopColor)));
+    stops.AppendElement(ColorStop(position, stop.mIsInterpolationHint,
+                                  Color::FromABGR(stopColor)));
     if (firstUnsetPosition > 0) {
       
-      
       double p = stops[firstUnsetPosition - 1].mPosition;
-      double d = (stops[i].mPosition - p) / (i - firstUnsetPosition + 1);
+      double d = (stops[i].mPosition - p)/(i - firstUnsetPosition + 1);
       for (uint32_t j = firstUnsetPosition; j < i; ++j) {
         p += d;
         stops[j].mPosition = p;
@@ -670,36 +647,30 @@ nsCSSGradientRenderer::Create(nsPresContext* aPresContext,
                               const nsSize& aIntrinsicSize)
 {
   nscoord appUnitsPerDevPixel = aPresContext->AppUnitsPerDevPixel();
-  gfxSize srcSize =
-    gfxSize(gfxFloat(aIntrinsicSize.width) / appUnitsPerDevPixel,
-            gfxFloat(aIntrinsicSize.height) / appUnitsPerDevPixel);
+  gfxSize srcSize = gfxSize(gfxFloat(aIntrinsicSize.width)/appUnitsPerDevPixel,
+                            gfxFloat(aIntrinsicSize.height)/appUnitsPerDevPixel);
 
   
   
   gfxPoint lineStart, lineEnd;
   double radiusX = 0, radiusY = 0; 
   if (aGradient->mShape == NS_STYLE_GRADIENT_SHAPE_LINEAR) {
-    ComputeLinearGradientLine(
-      aPresContext, aGradient, srcSize, &lineStart, &lineEnd);
+    ComputeLinearGradientLine(aPresContext, aGradient, srcSize,
+                              &lineStart, &lineEnd);
   } else {
-    ComputeRadialGradientLine(aPresContext,
-                              aGradient,
-                              srcSize,
-                              &lineStart,
-                              &lineEnd,
-                              &radiusX,
-                              &radiusY);
+    ComputeRadialGradientLine(aPresContext, aGradient, srcSize,
+                              &lineStart, &lineEnd, &radiusX, &radiusY);
   }
   
   if (!lineStart.IsFinite() || !lineEnd.IsFinite()) {
     lineStart = lineEnd = gfxPoint(0, 0);
   }
-  gfxFloat lineLength =
-    NS_hypot(lineEnd.x - lineStart.x, lineEnd.y - lineStart.y);
+  gfxFloat lineLength = NS_hypot(lineEnd.x - lineStart.x,
+                                  lineEnd.y - lineStart.y);
 
   
-  nsTArray<ColorStop> stops = ComputeColorStops(
-    aComputedStyle, *aGradient, appUnitsPerDevPixel, lineLength);
+  nsTArray<ColorStop> stops =
+    ComputeColorStops(aComputedStyle, *aGradient, appUnitsPerDevPixel, lineLength);
 
   ResolveMidpoints(stops);
 
@@ -731,8 +702,8 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
 
   nscoord appUnitsPerDevPixel = mPresContext->AppUnitsPerDevPixel();
 
-  gfxFloat lineLength =
-    NS_hypot(mLineEnd.x - mLineStart.x, mLineEnd.y - mLineStart.y);
+  gfxFloat lineLength = NS_hypot(mLineEnd.x - mLineStart.x,
+                                 mLineEnd.y - mLineStart.y);
   bool cellContainsFill = aDest.Contains(aFillArea);
 
   
@@ -802,10 +773,10 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
       
       
       if (stopDelta >= 1e-6) {
-        double instanceCount = ceil(-firstStop / stopDelta);
+        double instanceCount = ceil(-firstStop/stopDelta);
         
         
-        double offset = instanceCount * stopDelta;
+        double offset = instanceCount*stopDelta;
         for (uint32_t i = 0; i < mStops.Length(); i++) {
           mStops[i].mPosition += offset;
         }
@@ -833,7 +804,7 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
               
               
               
-              float frac = float((0.0 - pos) / (nextPos - pos));
+              float frac = float((0.0 - pos)/(nextPos - pos));
               mStops[i].mColor =
                 InterpolateColor(mStops[i].mColor, mStops[i + 1].mColor, frac);
             }
@@ -845,8 +816,7 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
     MOZ_ASSERT(firstStop >= 0.0, "Failed to fix stop offsets");
   }
 
-  if (mGradient->mShape != NS_STYLE_GRADIENT_SHAPE_LINEAR &&
-      !mGradient->mRepeating) {
+  if (mGradient->mShape != NS_STYLE_GRADIENT_SHAPE_LINEAR && !mGradient->mRepeating) {
     
     
     
@@ -864,7 +834,7 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
   double stopEnd = lastStop;
   double stopDelta = lastStop - firstStop;
   bool zeroRadius = mGradient->mShape != NS_STYLE_GRADIENT_SHAPE_LINEAR &&
-                    (mRadiusX < 1e-6 || mRadiusY < 1e-6);
+                      (mRadiusX < 1e-6 || mRadiusY < 1e-6);
   if (stopDelta < 1e-6 || lineLength < 1e-6 || zeroRadius) {
     
     
@@ -884,7 +854,7 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
     stopOrigin = std::min(stopOrigin, 0.0);
     stopEnd = std::max(stopEnd, 1.0);
   }
-  stopScale = 1.0 / (stopEnd - stopOrigin);
+  stopScale = 1.0/(stopEnd - stopOrigin);
 
   
   RefPtr<gfxPattern> gradientPattern;
@@ -893,8 +863,8 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
   if (mGradient->mShape == NS_STYLE_GRADIENT_SHAPE_LINEAR) {
     
     
-    gradientStart = mLineStart + (mLineEnd - mLineStart) * stopOrigin;
-    gradientEnd = mLineStart + (mLineEnd - mLineStart) * stopEnd;
+    gradientStart = mLineStart + (mLineEnd - mLineStart)*stopOrigin;
+    gradientEnd = mLineStart + (mLineEnd - mLineStart)*stopEnd;
 
     if (stopDelta == 0.0) {
       
@@ -906,27 +876,23 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
       gradientEnd = gradientStart + (mLineEnd - mLineStart);
     }
 
-    gradientPattern = new gfxPattern(
-      gradientStart.x, gradientStart.y, gradientEnd.x, gradientEnd.y);
+    gradientPattern = new gfxPattern(gradientStart.x, gradientStart.y,
+                                      gradientEnd.x, gradientEnd.y);
   } else {
     NS_ASSERTION(firstStop >= 0.0,
-                 "Negative stops not allowed for radial gradients");
+                  "Negative stops not allowed for radial gradients");
 
     
     
-    double innerRadius = mRadiusX * stopOrigin;
-    double outerRadius = mRadiusX * stopEnd;
+    double innerRadius = mRadiusX*stopOrigin;
+    double outerRadius = mRadiusX*stopEnd;
     if (stopDelta == 0.0) {
       
       
       outerRadius = innerRadius + 1;
     }
-    gradientPattern = new gfxPattern(mLineStart.x,
-                                     mLineStart.y,
-                                     innerRadius,
-                                     mLineStart.x,
-                                     mLineStart.y,
-                                     outerRadius);
+    gradientPattern = new gfxPattern(mLineStart.x, mLineStart.y, innerRadius,
+                                     mLineStart.x, mLineStart.y, outerRadius);
     if (mRadiusX != mRadiusY) {
       
       
@@ -934,20 +900,18 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
       
       
       matrix.PreTranslate(mLineStart);
-      matrix.PreScale(1.0, mRadiusX / mRadiusY);
+      matrix.PreScale(1.0, mRadiusX/mRadiusY);
       matrix.PreTranslate(-mLineStart);
     }
   }
   
   matrix.PreTranslate(gfxPoint(mPresContext->CSSPixelsToDevPixels(aSrc.x),
                                mPresContext->CSSPixelsToDevPixels(aSrc.y)));
-  matrix.PreScale(
-    gfxFloat(nsPresContext::CSSPixelsToAppUnits(aSrc.width)) / aDest.width,
-    gfxFloat(nsPresContext::CSSPixelsToAppUnits(aSrc.height)) / aDest.height);
+  matrix.PreScale(gfxFloat(nsPresContext::CSSPixelsToAppUnits(aSrc.width))/aDest.width,
+                  gfxFloat(nsPresContext::CSSPixelsToAppUnits(aSrc.height))/aDest.height);
   gradientPattern->SetMatrix(matrix);
 
   if (stopDelta == 0.0) {
-    
     
     
     
@@ -974,19 +938,17 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
   
   
   
-  
   nsTArray<gfx::GradientStop> rawStops(mStops.Length());
   rawStops.SetLength(mStops.Length());
-  for (uint32_t i = 0; i < mStops.Length(); i++) {
+  for(uint32_t i = 0; i < mStops.Length(); i++) {
     rawStops[i].color = mStops[i].mColor;
     rawStops[i].color.a *= aOpacity;
     rawStops[i].offset = stopScale * (mStops[i].mPosition - stopOrigin);
   }
   RefPtr<mozilla::gfx::GradientStops> gs =
-    gfxGradientCache::GetOrCreateGradientStops(
-      aContext.GetDrawTarget(),
-      rawStops,
-      isRepeat ? gfx::ExtendMode::REPEAT : gfx::ExtendMode::CLAMP);
+    gfxGradientCache::GetOrCreateGradientStops(aContext.GetDrawTarget(),
+                                               rawStops,
+                                               isRepeat ? gfx::ExtendMode::REPEAT : gfx::ExtendMode::CLAMP);
   gradientPattern->SetColorStops(gs);
 
   
@@ -999,20 +961,17 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
 
   gfxRect areaToFill =
     nsLayoutUtils::RectToGfxRect(aFillArea, appUnitsPerDevPixel);
-  gfxRect dirtyAreaToFill =
-    nsLayoutUtils::RectToGfxRect(dirty, appUnitsPerDevPixel);
+  gfxRect dirtyAreaToFill = nsLayoutUtils::RectToGfxRect(dirty, appUnitsPerDevPixel);
   dirtyAreaToFill.RoundOut();
 
   Matrix ctm = aContext.CurrentMatrix();
-  bool isCTMPreservingAxisAlignedRectangles =
-    ctm.PreservesAxisAlignedRectangles();
+  bool isCTMPreservingAxisAlignedRectangles = ctm.PreservesAxisAlignedRectangles();
 
   
   nscoord xStart = FindTileStart(dirty.x, aDest.x, aRepeatSize.width);
   nscoord yStart = FindTileStart(dirty.y, aDest.y, aRepeatSize.height);
   nscoord xEnd = forceRepeatToCoverTiles ? xStart + aDest.width : dirty.XMost();
-  nscoord yEnd =
-    forceRepeatToCoverTiles ? yStart + aDest.height : dirty.YMost();
+  nscoord yEnd = forceRepeatToCoverTiles ? yStart + aDest.height : dirty.YMost();
 
   if (TryPaintTilesWithExtendMode(aContext,
                                   gradientPattern,
@@ -1030,7 +989,8 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
     for (nscoord x = xStart; x < xEnd; x += aRepeatSize.width) {
       
       gfxRect tileRect = nsLayoutUtils::RectToGfxRect(
-        nsRect(x, y, aDest.width, aDest.height), appUnitsPerDevPixel);
+                      nsRect(x, y, aDest.width, aDest.height),
+                      appUnitsPerDevPixel);
       
       
       gfxRect fillRect =
@@ -1055,11 +1015,9 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
         
         
         
-        gfxMatrix transform =
-          gfxUtils::TransformRectToRect(fillRect,
-                                        snappedFillRectTopLeft,
-                                        snappedFillRectTopRight,
-                                        snappedFillRectBottomRight);
+        gfxMatrix transform = gfxUtils::TransformRectToRect(fillRect,
+            snappedFillRectTopLeft, snappedFillRectTopRight,
+            snappedFillRectBottomRight);
         aContext.SetMatrixDouble(transform);
       }
       aContext.NewPath();
@@ -1069,18 +1027,13 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
       gfxRect fillRectRelativeToTile = dirtyFillRect - tileRect.TopLeft();
       Color edgeColor;
       if (mGradient->mShape == NS_STYLE_GRADIENT_SHAPE_LINEAR && !isRepeat &&
-          RectIsBeyondLinearGradientEdge(fillRectRelativeToTile,
-                                         matrix,
-                                         mStops,
-                                         gradientStart,
-                                         gradientEnd,
-                                         &edgeColor)) {
+          RectIsBeyondLinearGradientEdge(fillRectRelativeToTile, matrix, mStops,
+                                         gradientStart, gradientEnd, &edgeColor)) {
         edgeColor.a *= aOpacity;
         aContext.SetColor(edgeColor);
       } else {
         aContext.SetMatrixDouble(
-          aContext.CurrentMatrixDouble().Copy().PreTranslate(
-            tileRect.TopLeft()));
+          aContext.CurrentMatrixDouble().Copy().PreTranslate(tileRect.TopLeft()));
         aContext.SetPattern(gradientPattern);
       }
       aContext.Fill();
@@ -1090,15 +1043,14 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
 }
 
 bool
-nsCSSGradientRenderer::TryPaintTilesWithExtendMode(
-  gfxContext& aContext,
-  gfxPattern* aGradientPattern,
-  nscoord aXStart,
-  nscoord aYStart,
-  const gfxRect& aDirtyAreaToFill,
-  const nsRect& aDest,
-  const nsSize& aRepeatSize,
-  bool aForceRepeatToCoverTiles)
+nsCSSGradientRenderer::TryPaintTilesWithExtendMode(gfxContext& aContext,
+                                                   gfxPattern* aGradientPattern,
+                                                   nscoord aXStart,
+                                                   nscoord aYStart,
+                                                   const gfxRect& aDirtyAreaToFill,
+                                                   const nsRect& aDest,
+                                                   const nsSize& aRepeatSize,
+                                                   bool aForceRepeatToCoverTiles)
 {
   
   
@@ -1112,18 +1064,19 @@ nsCSSGradientRenderer::TryPaintTilesWithExtendMode(
   
   
   
-  bool canUseExtendModeForTiling = (aXStart % appUnitsPerDevPixel == 0) &&
-                                   (aYStart % appUnitsPerDevPixel == 0) &&
-                                   (aDest.width % appUnitsPerDevPixel == 0) &&
-                                   (aDest.height % appUnitsPerDevPixel == 0) &&
-                                   (aRepeatSize.width == aDest.width) &&
-                                   (aRepeatSize.height == aDest.height);
+  bool canUseExtendModeForTiling =
+    (aXStart % appUnitsPerDevPixel == 0) &&
+    (aYStart % appUnitsPerDevPixel == 0) &&
+    (aDest.width % appUnitsPerDevPixel == 0) &&
+    (aDest.height % appUnitsPerDevPixel == 0) &&
+    (aRepeatSize.width == aDest.width) &&
+    (aRepeatSize.height == aDest.height);
 
   if (!canUseExtendModeForTiling) {
     return false;
   }
 
-  IntSize tileSize{
+  IntSize tileSize {
     NSAppUnitsToIntPixels(aDest.width, appUnitsPerDevPixel),
     NSAppUnitsToIntPixels(aDest.height, appUnitsPerDevPixel),
   };
@@ -1148,9 +1101,9 @@ nsCSSGradientRenderer::TryPaintTilesWithExtendMode(
   
   RefPtr<gfx::SourceSurface> tileSurface;
   {
-    RefPtr<gfx::DrawTarget> tileTarget =
-      aContext.GetDrawTarget()->CreateSimilarDrawTarget(
-        tileSize, gfx::SurfaceFormat::B8G8R8A8);
+    RefPtr<gfx::DrawTarget> tileTarget = aContext.
+      GetDrawTarget()->
+      CreateSimilarDrawTarget(tileSize, gfx::SurfaceFormat::B8G8R8A8);
     if (!tileTarget || !tileTarget->IsValid()) {
       return false;
     }
@@ -1167,31 +1120,32 @@ nsCSSGradientRenderer::TryPaintTilesWithExtendMode(
 
   
   
-  Matrix tileTransform =
-    Matrix::Translation(NSAppUnitsToFloatPixels(aXStart, appUnitsPerDevPixel),
-                        NSAppUnitsToFloatPixels(aYStart, appUnitsPerDevPixel));
+  Matrix tileTransform = Matrix::Translation(
+    NSAppUnitsToFloatPixels(aXStart, appUnitsPerDevPixel),
+    NSAppUnitsToFloatPixels(aYStart, appUnitsPerDevPixel));
 
   aContext.NewPath();
   aContext.Rectangle(aDirtyAreaToFill);
-  aContext.Fill(SurfacePattern(tileSurface, ExtendMode::REPEAT, tileTransform));
+  aContext.Fill(SurfacePattern(
+    tileSurface,
+    ExtendMode::REPEAT,
+    tileTransform));
 
   return true;
 }
 
 void
-nsCSSGradientRenderer::BuildWebRenderParameters(
-  float aOpacity,
-  wr::ExtendMode& aMode,
-  nsTArray<wr::GradientStop>& aStops,
-  LayoutDevicePoint& aLineStart,
-  LayoutDevicePoint& aLineEnd,
-  LayoutDeviceSize& aGradientRadius)
+nsCSSGradientRenderer::BuildWebRenderParameters(float aOpacity,
+                                                wr::ExtendMode& aMode,
+                                                nsTArray<wr::GradientStop>& aStops,
+                                                LayoutDevicePoint& aLineStart,
+                                                LayoutDevicePoint& aLineEnd,
+                                                LayoutDeviceSize& aGradientRadius)
 {
-  aMode =
-    mGradient->mRepeating ? wr::ExtendMode::Repeat : wr::ExtendMode::Clamp;
+  aMode = mGradient->mRepeating ? wr::ExtendMode::Repeat : wr::ExtendMode::Clamp;
 
   aStops.SetLength(mStops.Length());
-  for (uint32_t i = 0; i < mStops.Length(); i++) {
+  for(uint32_t i = 0; i < mStops.Length(); i++) {
     aStops[i].color.r = mStops[i].mColor.r;
     aStops[i].color.g = mStops[i].mColor.g;
     aStops[i].color.b = mStops[i].mColor.b;
@@ -1205,15 +1159,14 @@ nsCSSGradientRenderer::BuildWebRenderParameters(
 }
 
 void
-nsCSSGradientRenderer::BuildWebRenderDisplayItems(
-  wr::DisplayListBuilder& aBuilder,
-  const layers::StackingContextHelper& aSc,
-  const nsRect& aDest,
-  const nsRect& aFillArea,
-  const nsSize& aRepeatSize,
-  const CSSIntRect& aSrc,
-  bool aIsBackfaceVisible,
-  float aOpacity)
+nsCSSGradientRenderer::BuildWebRenderDisplayItems(wr::DisplayListBuilder& aBuilder,
+                                                  const layers::StackingContextHelper& aSc,
+                                                  const nsRect& aDest,
+                                                  const nsRect& aFillArea,
+                                                  const nsSize& aRepeatSize,
+                                                  const CSSIntRect& aSrc,
+                                                  bool aIsBackfaceVisible,
+                                                  float aOpacity)
 {
   if (aDest.IsEmpty() || aFillArea.IsEmpty()) {
     return;
@@ -1224,39 +1177,32 @@ nsCSSGradientRenderer::BuildWebRenderDisplayItems(
   LayoutDevicePoint lineStart;
   LayoutDevicePoint lineEnd;
   LayoutDeviceSize gradientRadius;
-  BuildWebRenderParameters(
-    aOpacity, extendMode, stops, lineStart, lineEnd, gradientRadius);
+  BuildWebRenderParameters(aOpacity, extendMode, stops, lineStart, lineEnd, gradientRadius);
 
   nscoord appUnitsPerDevPixel = mPresContext->AppUnitsPerDevPixel();
 
-  nsPoint firstTile =
-    nsPoint(FindTileStart(aFillArea.x, aDest.x, aRepeatSize.width),
-            FindTileStart(aFillArea.y, aDest.y, aRepeatSize.height));
+  nsPoint firstTile = nsPoint(FindTileStart(aFillArea.x, aDest.x, aRepeatSize.width),
+                              FindTileStart(aFillArea.y, aDest.y, aRepeatSize.height));
 
   
-  LayoutDeviceRect clipBounds =
-    LayoutDevicePixel::FromAppUnits(aFillArea, appUnitsPerDevPixel);
-  LayoutDeviceRect firstTileBounds = LayoutDevicePixel::FromAppUnits(
-    nsRect(firstTile, aDest.Size()), appUnitsPerDevPixel);
-  LayoutDeviceSize tileRepeat =
-    LayoutDevicePixel::FromAppUnits(aRepeatSize, appUnitsPerDevPixel);
+  LayoutDeviceRect clipBounds = LayoutDevicePixel::FromAppUnits(aFillArea, appUnitsPerDevPixel);
+  LayoutDeviceRect firstTileBounds = LayoutDevicePixel::FromAppUnits(nsRect(firstTile, aDest.Size()), appUnitsPerDevPixel);
+  LayoutDeviceSize tileRepeat = LayoutDevicePixel::FromAppUnits(aRepeatSize, appUnitsPerDevPixel);
 
   
   
-  LayoutDevicePoint tileToClip =
-    clipBounds.BottomRight() - firstTileBounds.TopLeft();
-  LayoutDeviceRect gradientBounds = LayoutDeviceRect(
-    firstTileBounds.TopLeft(), LayoutDeviceSize(tileToClip.x, tileToClip.y));
+  LayoutDevicePoint tileToClip = clipBounds.BottomRight() - firstTileBounds.TopLeft();
+  LayoutDeviceRect gradientBounds = LayoutDeviceRect(firstTileBounds.TopLeft(),
+                                                     LayoutDeviceSize(tileToClip.x, tileToClip.y));
 
   
   LayoutDeviceSize tileSpacing = tileRepeat - firstTileBounds.Size();
 
   
-  LayoutDeviceRect srcTransform = LayoutDeviceRect(
-    nsPresContext::CSSPixelsToAppUnits(aSrc.x),
-    nsPresContext::CSSPixelsToAppUnits(aSrc.y),
-    aDest.width / ((float)nsPresContext::CSSPixelsToAppUnits(aSrc.width)),
-    aDest.height / ((float)nsPresContext::CSSPixelsToAppUnits(aSrc.height)));
+  LayoutDeviceRect srcTransform = LayoutDeviceRect(nsPresContext::CSSPixelsToAppUnits(aSrc.x),
+                                                   nsPresContext::CSSPixelsToAppUnits(aSrc.y),
+                                                   aDest.width / ((float)nsPresContext::CSSPixelsToAppUnits(aSrc.width)),
+                                                   aDest.height / ((float)nsPresContext::CSSPixelsToAppUnits(aSrc.height)));
 
   lineStart.x = (lineStart.x - srcTransform.x) * srcTransform.width;
   lineStart.y = (lineStart.y - srcTransform.y) * srcTransform.height;

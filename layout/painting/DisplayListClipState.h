@@ -22,23 +22,20 @@ namespace mozilla {
 
 
 
-class DisplayListClipState
-{
+class DisplayListClipState {
 public:
   DisplayListClipState()
     : mClipChainContentDescendants(nullptr)
     , mClipChainContainingBlockDescendants(nullptr)
     , mCurrentCombinedClipChain(nullptr)
     , mCurrentCombinedClipChainIsValid(false)
-  {
-  }
+  {}
 
   
 
 
 
-  const DisplayItemClipChain* GetCurrentCombinedClipChain(
-    nsDisplayListBuilder* aBuilder);
+  const DisplayItemClipChain* GetCurrentCombinedClipChain(nsDisplayListBuilder* aBuilder);
 
   const DisplayItemClipChain* GetClipChainForContainingBlockDescendants() const
   {
@@ -51,8 +48,7 @@ public:
 
   const ActiveScrolledRoot* GetContentClipASR() const
   {
-    return mClipChainContentDescendants ? mClipChainContentDescendants->mASR
-                                        : nullptr;
+    return mClipChainContentDescendants ? mClipChainContentDescendants->mASR : nullptr;
   }
 
   class AutoSaveRestore;
@@ -61,12 +57,12 @@ public:
 
   class AutoClipMultiple;
 
-  enum
-  {
+  enum {
     ASSUME_DRAWING_RESTRICTED_TO_CONTENT_RECT = 0x01
   };
 
 private:
+
   void Clear()
   {
     mClipChainContentDescendants = nullptr;
@@ -75,8 +71,7 @@ private:
     mCurrentCombinedClipChainIsValid = false;
   }
 
-  void SetClipChainForContainingBlockDescendants(
-    const DisplayItemClipChain* aClipChain)
+  void SetClipChainForContainingBlockDescendants(const DisplayItemClipChain* aClipChain)
   {
     mClipChainContainingBlockDescendants = aClipChain;
     InvalidateCurrentCombinedClipChain(aClipChain ? aClipChain->mASR : nullptr);
@@ -102,8 +97,7 @@ private:
                               const nscoord* aRadii,
                               DisplayItemClipChain& aClipChainOnStack);
 
-  void InvalidateCurrentCombinedClipChain(
-    const ActiveScrolledRoot* aInvalidateUpTo);
+  void InvalidateCurrentCombinedClipChain(const ActiveScrolledRoot* aInvalidateUpTo);
 
   
 
@@ -113,11 +107,10 @@ private:
 
 
 
-  void ClipContainingBlockDescendantsToContentBox(
-    nsDisplayListBuilder* aBuilder,
-    nsIFrame* aFrame,
-    DisplayItemClipChain& aClipChainOnStack,
-    uint32_t aFlags);
+  void ClipContainingBlockDescendantsToContentBox(nsDisplayListBuilder* aBuilder,
+                                                  nsIFrame* aFrame,
+                                                  DisplayItemClipChain& aClipChainOnStack,
+                                                  uint32_t aFlags);
 
   
 
@@ -150,8 +143,7 @@ private:
 
 
 
-class DisplayListClipState::AutoSaveRestore
-{
+class DisplayListClipState::AutoSaveRestore {
 public:
   explicit AutoSaveRestore(nsDisplayListBuilder* aBuilder);
   void Restore()
@@ -161,7 +153,10 @@ public:
     mRestored = true;
 #endif
   }
-  ~AutoSaveRestore() { Restore(); }
+  ~AutoSaveRestore()
+  {
+    Restore();
+  }
 
   void Clear()
   {
@@ -172,8 +167,7 @@ public:
 #endif
   }
 
-  void SetClipChainForContainingBlockDescendants(
-    const DisplayItemClipChain* aClipChain)
+  void SetClipChainForContainingBlockDescendants(const DisplayItemClipChain* aClipChain)
   {
     mState.SetClipChainForContainingBlockDescendants(aClipChain);
   }
@@ -214,8 +208,7 @@ public:
 #ifdef DEBUG
     mClipUsed = true;
 #endif
-    mState.ClipContentDescendants(
-      mBuilder, aRect, aRoundedRect, aRadii, mClipChain);
+    mState.ClipContentDescendants(mBuilder, aRect, aRoundedRect, aRadii, mClipChain);
   }
 
   
@@ -226,18 +219,16 @@ public:
 
 
 
-  void ClipContainingBlockDescendantsToContentBox(
-    nsDisplayListBuilder* aBuilder,
-    nsIFrame* aFrame,
-    uint32_t aFlags = 0)
+  void ClipContainingBlockDescendantsToContentBox(nsDisplayListBuilder* aBuilder,
+                                                  nsIFrame* aFrame,
+                                                  uint32_t aFlags = 0)
   {
     NS_ASSERTION(!mRestored, "Already restored!");
     NS_ASSERTION(!mClipUsed, "mClip already used");
 #ifdef DEBUG
     mClipUsed = true;
 #endif
-    mState.ClipContainingBlockDescendantsToContentBox(
-      aBuilder, aFrame, mClipChain, aFlags);
+    mState.ClipContainingBlockDescendantsToContentBox(aBuilder, aFrame, mClipChain, aFlags);
   }
 
 protected:
@@ -251,9 +242,7 @@ protected:
 #endif
 };
 
-class DisplayListClipState::AutoClipContainingBlockDescendantsToContentBox
-  : public AutoSaveRestore
-{
+class DisplayListClipState::AutoClipContainingBlockDescendantsToContentBox : public AutoSaveRestore {
 public:
   AutoClipContainingBlockDescendantsToContentBox(nsDisplayListBuilder* aBuilder,
                                                  nsIFrame* aFrame,
@@ -263,8 +252,7 @@ public:
 #ifdef DEBUG
     mClipUsed = true;
 #endif
-    mState.ClipContainingBlockDescendantsToContentBox(
-      aBuilder, aFrame, mClipChain, aFlags);
+    mState.ClipContainingBlockDescendantsToContentBox(aBuilder, aFrame, mClipChain, aFlags);
   }
 };
 
@@ -273,16 +261,14 @@ public:
 
 
 
-class DisplayListClipState::AutoClipMultiple : public AutoSaveRestore
-{
+class DisplayListClipState::AutoClipMultiple : public AutoSaveRestore {
 public:
   explicit AutoClipMultiple(nsDisplayListBuilder* aBuilder)
     : AutoSaveRestore(aBuilder)
 #ifdef DEBUG
     , mExtraClipUsed(false)
 #endif
-  {
-  }
+  {}
 
   
 
@@ -297,8 +283,7 @@ public:
 #ifdef DEBUG
     mExtraClipUsed = true;
 #endif
-    mState.ClipContainingBlockDescendants(
-      mBuilder, aRect, aRadii, mExtraClipChain);
+    mState.ClipContainingBlockDescendants(mBuilder, aRect, aRadii, mExtraClipChain);
   }
 
 protected:

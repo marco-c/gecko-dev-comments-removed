@@ -17,22 +17,30 @@ namespace mozilla {
 
 
 template<typename T>
-class MatrixStack
-{
+class MatrixStack {
 public:
   MatrixStack() = default;
 
-  ~MatrixStack() { MOZ_ASSERT(mMatrices.IsEmpty()); }
+  ~MatrixStack()
+  {
+    MOZ_ASSERT(mMatrices.IsEmpty());
+  }
 
   
 
 
-  const T& CurrentMatrix() const { return mCurrentMatrix; }
+  const T& CurrentMatrix() const
+  {
+    return mCurrentMatrix;
+  }
 
   
 
 
-  bool HasTransform() const { return mMatrices.Length() > 0; }
+  bool HasTransform() const
+  {
+    return mMatrices.Length() > 0;
+  }
 
   
 

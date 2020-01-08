@@ -22,13 +22,11 @@ namespace mozilla {
 
 
 
-class ActiveLayerTracker
-{
+class ActiveLayerTracker {
 public:
   static void Shutdown();
 
   
-
 
 
 
@@ -55,16 +53,14 @@ public:
 
 
 
-  static void NotifyAnimated(nsIFrame* aFrame,
-                             nsCSSPropertyID aProperty,
+  static void NotifyAnimated(nsIFrame* aFrame, nsCSSPropertyID aProperty,
                              const nsAString& aNewValue,
                              nsDOMCSSDeclaration* aDOMCSSDecl);
   
 
 
 
-  static void NotifyAnimatedFromScrollHandler(nsIFrame* aFrame,
-                                              nsCSSPropertyID aProperty,
+  static void NotifyAnimatedFromScrollHandler(nsIFrame* aFrame, nsCSSPropertyID aProperty,
                                               nsIFrame* aScrollFrame);
   
 
@@ -74,8 +70,7 @@ public:
 
 
 
-  static void NotifyInlineStyleRuleModified(nsIFrame* aFrame,
-                                            nsCSSPropertyID aProperty,
+  static void NotifyInlineStyleRuleModified(nsIFrame* aFrame, nsCSSPropertyID aProperty,
                                             const nsAString& aNewValue,
                                             nsDOMCSSDeclaration* aDOMCSSDecl);
   
@@ -94,8 +89,7 @@ public:
 
 
 
-  static bool IsStyleAnimated(nsDisplayListBuilder* aBuilder,
-                              nsIFrame* aFrame,
+  static bool IsStyleAnimated(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                               nsCSSPropertyID aProperty);
   
 

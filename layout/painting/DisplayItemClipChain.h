@@ -34,20 +34,16 @@ struct ActiveScrolledRoot;
 
 
 
-
-struct DisplayItemClipChain
-{
+struct DisplayItemClipChain {
 
   
 
 
 
-  static const DisplayItemClip* ClipForASR(
-    const DisplayItemClipChain* aClipChain,
-    const ActiveScrolledRoot* aASR);
+  static const DisplayItemClip* ClipForASR(const DisplayItemClipChain* aClipChain,
+                                           const ActiveScrolledRoot* aASR);
 
-  static bool Equal(const DisplayItemClipChain* aClip1,
-                    const DisplayItemClipChain* aClip2);
+  static bool Equal(const DisplayItemClipChain* aClip1, const DisplayItemClipChain* aClip2);
   
 
 
@@ -58,32 +54,29 @@ struct DisplayItemClipChain
 
   bool HasRoundedCorners() const;
 
-  void AddRef() { mRefCount++; }
-  void Release()
-  {
+  void AddRef() {
+    mRefCount++;
+  }
+  void Release() {
     MOZ_ASSERT(mRefCount > 0);
     mRefCount--;
   }
 
-  DisplayItemClipChain(const DisplayItemClip& aClip,
-                       const ActiveScrolledRoot* aASR,
-                       const DisplayItemClipChain* aParent)
+  DisplayItemClipChain(const DisplayItemClip& aClip, const ActiveScrolledRoot* aASR, const DisplayItemClipChain* aParent)
     : mClip(aClip)
     , mASR(aASR)
     , mParent(aParent)
 #ifdef DEBUG
     , mOnStack(true)
 #endif
-  {
-  }
+  {}
 
   DisplayItemClipChain()
     : mASR(nullptr)
 #ifdef DEBUG
     , mOnStack(true)
 #endif
-  {
-  }
+  {}
 
   DisplayItemClip mClip;
   const ActiveScrolledRoot* mASR;

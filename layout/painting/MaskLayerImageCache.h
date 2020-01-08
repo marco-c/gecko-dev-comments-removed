@@ -36,7 +36,6 @@ class MaskLayerImageCache
 {
   typedef mozilla::layers::ImageContainer ImageContainer;
   typedef mozilla::layers::KnowsCompositor KnowsCompositor;
-
 public:
   MaskLayerImageCache();
   ~MaskLayerImageCache();
@@ -59,10 +58,8 @@ public:
               aPresContext->AppUnitsToGfxUnits(aRRect.mRect.height))
     {
       MOZ_COUNT_CTOR(PixelRoundedRect);
-      NS_FOR_CSS_HALF_CORNERS(corner)
-      {
-        mRadii[corner] =
-          aPresContext->AppUnitsToGfxUnits(aRRect.mRadii[corner]);
+      NS_FOR_CSS_HALF_CORNERS(corner) {
+        mRadii[corner] = aPresContext->AppUnitsToGfxUnits(aRRect.mRadii[corner]);
       }
     }
 
@@ -70,10 +67,15 @@ public:
       : mRect(aPRR.mRect)
     {
       MOZ_COUNT_CTOR(PixelRoundedRect);
-      NS_FOR_CSS_HALF_CORNERS(corner) { mRadii[corner] = aPRR.mRadii[corner]; }
+      NS_FOR_CSS_HALF_CORNERS(corner) {
+        mRadii[corner] = aPRR.mRadii[corner];
+      }
     }
 
-    ~PixelRoundedRect() { MOZ_COUNT_DTOR(PixelRoundedRect); }
+    ~PixelRoundedRect()
+    {
+      MOZ_COUNT_DTOR(PixelRoundedRect);
+    }
 
     
     
@@ -91,30 +93,27 @@ public:
       }
     }
 
-    bool operator==(const PixelRoundedRect& aOther) const
-    {
+    bool operator==(const PixelRoundedRect& aOther) const {
       if (!mRect.IsEqualInterior(aOther.mRect)) {
         return false;
       }
 
-      NS_FOR_CSS_HALF_CORNERS(corner)
-      {
+      NS_FOR_CSS_HALF_CORNERS(corner) {
         if (mRadii[corner] != aOther.mRadii[corner]) {
           return false;
         }
       }
       return true;
     }
-    bool operator!=(const PixelRoundedRect& aOther) const
-    {
+    bool operator!=(const PixelRoundedRect& aOther) const {
       return !(*this == aOther);
     }
 
     
     PLDHashNumber Hash() const
     {
-      PLDHashNumber hash = HashBytes(&mRect.x, 4 * sizeof(gfxFloat));
-      hash = AddToHash(hash, HashBytes(mRadii, 8 * sizeof(gfxFloat)));
+      PLDHashNumber hash = HashBytes(&mRect.x, 4*sizeof(gfxFloat));
+      hash = AddToHash(hash, HashBytes(mRadii, 8*sizeof(gfxFloat)));
 
       return hash;
     }
@@ -145,7 +144,9 @@ public:
 
     ~MaskLayerImageKey();
 
-    bool HasZeroLayerCount() const { return mLayerCount == 0; }
+    bool HasZeroLayerCount() const {
+      return mLayerCount == 0;
+    }
 
     PLDHashNumber Hash() const
     {
@@ -167,7 +168,6 @@ public:
 
     nsTArray<PixelRoundedRect> mRoundedClipRects;
     RefPtr<KnowsCompositor> mKnowsCompositor;
-
   private:
     void IncLayerCount() const { ++mLayerCount; }
     void DecLayerCount() const
@@ -197,17 +197,13 @@ public:
       }
     }
 
-    MaskLayerImageKeyRef()
-      : mRawPtr(nullptr)
-    {
-    }
+    MaskLayerImageKeyRef() : mRawPtr(nullptr) {}
     MaskLayerImageKeyRef(const MaskLayerImageKeyRef&) = delete;
     void operator=(const MaskLayerImageKeyRef&) = delete;
 
     void Reset(const MaskLayerImageKey* aPtr)
     {
-      MOZ_ASSERT(
-        aPtr, "Cannot initialize a MaskLayerImageKeyRef with a null pointer");
+      MOZ_ASSERT(aPtr, "Cannot initialize a MaskLayerImageKeyRef with a null pointer");
       aPtr->IncLayerCount();
       if (mRawPtr) {
         mRawPtr->DecLayerCount();
@@ -227,12 +223,14 @@ public:
   
   
   
-  void PutImage(const MaskLayerImageKey* aKey, ImageContainer* aContainer);
+  void PutImage(const MaskLayerImageKey* aKey,
+                ImageContainer* aContainer);
 
   
   void Sweep();
 
 protected:
+
   class MaskLayerImageEntry : public PLDHashEntryHdr
   {
   public:
@@ -249,23 +247,29 @@ protected:
     {
       NS_ERROR("ALLOW_MEMMOVE == true, should never be called");
     }
-    ~MaskLayerImageEntry() { MOZ_COUNT_DTOR(MaskLayerImageEntry); }
+    ~MaskLayerImageEntry()
+    {
+      MOZ_COUNT_DTOR(MaskLayerImageEntry);
+    }
 
     
-    bool KeyEquals(KeyTypePointer aKey) const { return *mKey == *aKey; }
+    bool KeyEquals(KeyTypePointer aKey) const
+    {
+      return *mKey == *aKey;
+    }
 
     
     static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
 
     
-    static PLDHashNumber HashKey(KeyTypePointer aKey) { return aKey->Hash(); }
+    static PLDHashNumber HashKey(KeyTypePointer aKey)
+    {
+      return aKey->Hash();
+    }
 
     
     
-    enum
-    {
-      ALLOW_MEMMOVE = true
-    };
+    enum { ALLOW_MEMMOVE = true };
 
     bool operator==(const MaskLayerImageEntry& aOther) const
     {
@@ -279,6 +283,8 @@ protected:
   nsTHashtable<MaskLayerImageEntry> mMaskImageContainers;
 };
 
+
 } 
+
 
 #endif

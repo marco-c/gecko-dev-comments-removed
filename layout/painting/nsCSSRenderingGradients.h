@@ -25,26 +25,16 @@ class DisplayListBuilder;
 
 
 
-struct ColorStop
-{
-  ColorStop()
-    : mPosition(0)
-    , mIsMidpoint(false)
-  {
-  }
-  ColorStop(double aPosition, bool aIsMidPoint, const gfx::Color& aColor)
-    : mPosition(aPosition)
-    , mIsMidpoint(aIsMidPoint)
-    , mColor(aColor)
-  {
-  }
+struct ColorStop {
+  ColorStop(): mPosition(0), mIsMidpoint(false) {}
+  ColorStop(double aPosition, bool aIsMidPoint, const gfx::Color& aColor) :
+    mPosition(aPosition), mIsMidpoint(aIsMidPoint), mColor(aColor) {}
   double mPosition; 
   bool mIsMidpoint;
   gfx::Color mColor;
 };
 
-class nsCSSGradientRenderer final
-{
+class nsCSSGradientRenderer final {
 public:
   
 
@@ -106,8 +96,7 @@ private:
     , mGradient(nullptr)
     , mRadiusX(0.0)
     , mRadiusY(0.0)
-  {
-  }
+  {}
 
   
 

@@ -57,8 +57,7 @@ public:
     Float r;
 
     Result(const Point& aC, Float aR)
-      : C(aC)
-      , r(aR)
+     : C(aC), r(aR)
     {
       MOZ_ASSERT(aR >= 0);
     }
@@ -117,15 +116,10 @@ public:
   
   
   
-  DottedCornerFinder(const Bezier& aOuterBezier,
-                     const Bezier& aInnerBezier,
+  DottedCornerFinder(const Bezier& aOuterBezier, const Bezier& aInnerBezier,
                      mozilla::Corner aCorner,
-                     Float aBorderRadiusX,
-                     Float aBorderRadiusY,
-                     const Point& aC0,
-                     Float aR0,
-                     const Point& aCn,
-                     Float aRn,
+                     Float aBorderRadiusX, Float aBorderRadiusY,
+                     const Point& aC0, Float aR0, const Point& aCn, Float aRn,
                      const Size& aCornerDim);
 
   bool HasMore(void) const;
@@ -266,8 +260,7 @@ private:
   
   size_t mMaxCount;
 
-  enum
-  {
+  enum {
     
     
     
@@ -425,25 +418,20 @@ private:
 
   
   
-  void FindPointAndRadius(Point& C,
-                          Float& r,
-                          const Point& innerTangent,
-                          const Point& normal,
-                          Float t);
+  void FindPointAndRadius(Point& C, Float& r, const Point& innerTangent,
+                          const Point& normal, Float t);
 
   
   Float FindNext(Float overlap);
 
   
   void FindBestOverlap(Float aMinR,
-                       Float aMinBorderRadius,
-                       Float aMaxBorderRadius);
+                       Float aMinBorderRadius, Float aMaxBorderRadius);
 
   
   
   bool GetCountAndLastOverlap(Float aOverlap,
-                              size_t* aCount,
-                              Float* aActualOverlap);
+                              size_t* aCount, Float* aActualOverlap);
 };
 
 } 
