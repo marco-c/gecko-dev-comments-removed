@@ -51,6 +51,9 @@ FrameTargetActorProxy.prototype = {
       }
       this.exit();
     };
+
+    await this._unzombifyIfNeeded();
+
     const connect = DebuggerServer.connectToFrame(this._conn, this._browser, onDestroy);
     const form = await connect;
 
@@ -100,6 +103,11 @@ FrameTargetActorProxy.prototype = {
     if (this.exited) {
       return this.connect();
     }
+
+    
+    
+    
+    await this._unzombifyIfNeeded();
 
     const form = await new Promise(resolve => {
       const onFormUpdate = msg => {
@@ -175,6 +183,28 @@ FrameTargetActorProxy.prototype = {
     }
 
     return null;
+  },
+
+  async _unzombifyIfNeeded() {
+    if (!this.options.forceUnzombify || !this._isZombieTab()) {
+      return;
+    }
+
+    
+    const browserApp = this._browser ? this._browser.ownerGlobal.BrowserApp : null;
+    if (browserApp) {
+      
+      
+      const waitForUnzombify = new Promise(resolve => {
+        this._browser.addEventListener("DOMContentLoaded", resolve,
+                                       { capture: true, once: true });
+      });
+
+      const tab = browserApp.getTabForBrowser(this._browser);
+      tab.unzombify();
+
+      await waitForUnzombify;
+    }
   },
 
   form() {
