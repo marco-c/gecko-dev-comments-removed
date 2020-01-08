@@ -6459,6 +6459,25 @@ nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel() {
     return sCSDSupportLevel;
   }
 
+  
+  const char *decorationOverride = getenv("MOZ_GTK_TITLEBAR_DECORATION");
+  if (decorationOverride) {
+    if (strcmp(decorationOverride, "none") == 0) {
+      sCSDSupportLevel = CSD_SUPPORT_NONE;
+    } else if (strcmp(decorationOverride, "client") == 0) {
+      sCSDSupportLevel = CSD_SUPPORT_CLIENT;
+    } else if (strcmp(decorationOverride, "system") == 0) {
+      sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
+    }
+    return sCSDSupportLevel;
+  }
+
+  
+  if (!GDK_IS_X11_DISPLAY(gdk_display_get_default())) {
+    sCSDSupportLevel = CSD_SUPPORT_CLIENT;
+    return sCSDSupportLevel;
+  }
+
   const char *currentDesktop = getenv("XDG_CURRENT_DESKTOP");
   if (currentDesktop) {
     
@@ -6508,30 +6527,12 @@ nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel() {
   }
 
   
-  if (!GDK_IS_X11_DISPLAY(gdk_display_get_default()) &&
-      sCSDSupportLevel == CSD_SUPPORT_SYSTEM) {
-    sCSDSupportLevel = CSD_SUPPORT_CLIENT;
-  }
-
-  
   
   
   if (sCSDSupportLevel == CSD_SUPPORT_SYSTEM) {
     const char *csdOverride = getenv("GTK_CSD");
     if (csdOverride && g_strcmp0(csdOverride, "1") == 0) {
       sCSDSupportLevel = CSD_SUPPORT_CLIENT;
-    }
-  }
-
-  
-  const char *decorationOverride = getenv("MOZ_GTK_TITLEBAR_DECORATION");
-  if (decorationOverride) {
-    if (strcmp(decorationOverride, "none") == 0) {
-      sCSDSupportLevel = CSD_SUPPORT_NONE;
-    } else if (strcmp(decorationOverride, "client") == 0) {
-      sCSDSupportLevel = CSD_SUPPORT_CLIENT;
-    } else if (strcmp(decorationOverride, "system") == 0) {
-      sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
     }
   }
 
