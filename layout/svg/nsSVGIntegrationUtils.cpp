@@ -303,7 +303,7 @@ nsRect
   
   
   
-  if (SVGObserverUtils::GetAndObserveFilters(aFrame, nullptr) ==
+  if (SVGObserverUtils::GetAndObserveFilters(firstFrame, nullptr) ==
         SVGObserverUtils::eHasRefsSomeInvalid) {
     return aPreEffectsOverflowRect;
   }
