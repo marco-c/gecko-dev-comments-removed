@@ -183,7 +183,7 @@ nsLanguageAtomService::GetUncachedLanguageGroup(nsAtom* aLanguage) const
       langGroup = NS_Atomize(langStr);
       return langGroup.forget();
     }
-  } else if (!langStr.IsEmpty()) {
+  } else {
     
     Locale loc(langStr);
     if (loc.IsWellFormed()) {
