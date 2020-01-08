@@ -25,6 +25,7 @@ namespace a11y {
 
 class HyperTextAccessible;
 class DocAccessible;
+class Attribute;
 
 class nsAccUtils
 {
@@ -261,6 +262,10 @@ public:
 
 
   static bool MustPrune(Accessible* aAccessible);
+
+  static bool PersistentPropertiesToArray(nsIPersistentProperties* aProps,
+                                          nsTArray<Attribute>* aAttributes);
+
 };
 
 } 
