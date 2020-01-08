@@ -383,6 +383,10 @@ function makeSearchMatch(input, extra = {}) {
   if (extra.heuristic) {
     style.push("heuristic");
   }
+  if ("searchSuggestion" in extra) {
+    params.searchSuggestion = extra.searchSuggestion;
+    style.push("suggestion");
+  }
   return {
     uri: makeActionURI("searchengine", params),
     title: params.engineName,
@@ -465,6 +469,33 @@ function addTestEngine(basename, httpServer = undefined) {
     info("Adding engine from URL: " + dataUrl + basename);
     Services.search.addEngine(dataUrl + basename, null, false);
   });
+}
+
+
+
+
+
+
+
+
+
+
+async function addTestSuggestionsEngine(suggestionsFn = null) {
+  
+  let server = makeTestServer(9000);
+  server.registerPathHandler("/suggest", (req, resp) => {
+    
+    
+    let searchStr = decodeURIComponent(req.queryString.replace(/\+/g, " "));
+    let suggestions =
+      suggestionsFn ? suggestionsFn(searchStr) :
+      ["foo", "bar"].map(s => searchStr + " " + s);
+    let data = [searchStr, suggestions];
+    resp.setHeader("Content-Type", "application/json", false);
+    resp.write(JSON.stringify(data));
+  });
+  let engine = await addTestEngine("engine-suggestions.xml", server);
+  return engine;
 }
 
 

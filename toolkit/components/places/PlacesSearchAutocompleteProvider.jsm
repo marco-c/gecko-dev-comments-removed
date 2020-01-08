@@ -21,17 +21,16 @@ const SearchAutocompleteProviderInternal = {
   
 
 
-  priorityMatches: null,
+
+
+  enginesByDomain: new Map(),
 
   
 
 
-  aliasMatches: null,
-
-  
 
 
-  defaultMatch: null,
+  enginesByAlias: new Map(),
 
   initialize() {
     return new Promise((resolve, reject) => {
@@ -68,18 +67,8 @@ const SearchAutocompleteProviderInternal = {
   },
 
   _refresh() {
-    this.priorityMatches = [];
-    this.aliasMatches = [];
-    this.defaultMatch = null;
-
-    let currentEngine = Services.search.currentEngine;
-    
-    if (currentEngine) {
-      this.defaultMatch = {
-        engineName: currentEngine.name,
-        iconUrl: currentEngine.iconURI ? currentEngine.iconURI.spec : null,
-      };
-    }
+    this.enginesByDomain.clear();
+    this.enginesByAlias.clear();
 
     
     
@@ -88,87 +77,86 @@ const SearchAutocompleteProviderInternal = {
 
   _addEngine(engine) {
     let domain = engine.getResultDomain();
-
     if (domain && !engine.hidden) {
-      this.priorityMatches.push({
-        token: domain,
-        
-        
-        url: engine.searchForm,
-        engineName: engine.name,
-        iconUrl: engine.iconURI ? engine.iconURI.spec : null,
-      });
+      this.enginesByDomain.set(domain, engine);
     }
 
     let aliases = [];
-
     if (engine.alias) {
       aliases.push(engine.alias);
     }
     aliases.push(...engine.wrappedJSObject._internalAliases);
-
-    if (aliases.length) {
-      this.aliasMatches.push({
-        aliases,
-        engineName: engine.name,
-        iconUrl: engine.iconURI ? engine.iconURI.spec : null,
-        resultDomain: domain,
-      });
+    for (let alias of aliases) {
+      this.enginesByAlias.set(alias.toLocaleLowerCase(), engine);
     }
-  },
-
-  getSuggestionController(searchToken, inPrivateContext, maxLocalResults,
-                          maxRemoteResults, userContextId) {
-    let engine = Services.search.currentEngine;
-    if (!engine) {
-      return null;
-    }
-    return new SearchSuggestionControllerWrapper(engine, searchToken,
-                                                 inPrivateContext,
-                                                 maxLocalResults, maxRemoteResults,
-                                                 userContextId);
   },
 
   QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver,
                                           Ci.nsISupportsWeakReference]),
 };
 
-function SearchSuggestionControllerWrapper(engine, searchToken,
-                                           inPrivateContext,
-                                           maxLocalResults, maxRemoteResults,
-                                           userContextId) {
-  this._controller = new SearchSuggestionController();
-  this._controller.maxLocalResults = maxLocalResults;
-  this._controller.maxRemoteResults = maxRemoteResults;
-  let promise = this._controller.fetch(searchToken, inPrivateContext, engine, userContextId);
-  this._suggestions = [];
-  this._success = false;
-  this._promise = promise.then(results => {
-    this._success = true;
-    this._suggestions = [];
-    if (results) {
-      this._suggestions = this._suggestions.concat(
-        results.local.map(r => ({ suggestion: r, historical: true }))
-      );
-      this._suggestions = this._suggestions.concat(
-        results.remote.map(r => ({ suggestion: r, historical: false }))
-      );
-    }
-  }).catch(err => {
-    
-  });
-}
+class SuggestionsFetch {
+  
 
-SearchSuggestionControllerWrapper.prototype = {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  constructor(engine,
+              searchToken,
+              inPrivateContext,
+              maxLocalResults,
+              maxRemoteResults,
+              userContextId) {
+    this._controller = new SearchSuggestionController();
+    this._controller.maxLocalResults = maxLocalResults;
+    this._controller.maxRemoteResults = maxRemoteResults;
+    this._engine = engine;
+    this._suggestions = [];
+    this._success = false;
+    this._promise = this._controller.fetch(searchToken, inPrivateContext, engine, userContextId).then(results => {
+      this._success = true;
+      if (results) {
+        this._suggestions.push(
+          ...results.local.map(r => ({ suggestion: r, historical: true })),
+          ...results.remote.map(r => ({ suggestion: r, historical: false }))
+        );
+      }
+    }).catch(err => {
+      
+    });
+  }
+
+  
+
+
+  get engine() {
+    return this._engine;
+  }
 
   
 
 
   get fetchCompletePromise() {
     return this._promise;
-  },
+  }
 
   
+
+
+
+
 
 
 
@@ -178,14 +166,8 @@ SearchSuggestionControllerWrapper.prototype = {
 
 
   consume() {
-    if (!this._suggestions.length)
-      return null;
-    let { suggestion, historical } = this._suggestions.shift();
-    return { match: SearchAutocompleteProviderInternal.defaultMatch,
-             suggestion,
-             historical,
-           };
-  },
+    return this._suggestions.shift() || null;
+  }
 
   
 
@@ -193,15 +175,15 @@ SearchSuggestionControllerWrapper.prototype = {
 
   get resultsCount() {
     return this._success ? this._suggestions.length : -1;
-  },
+  }
 
   
 
 
   stop() {
     this._controller.stop();
-  },
-};
+  }
+}
 
 var gInitializationPromise = null;
 
@@ -225,24 +207,18 @@ var PlacesSearchAutocompleteProvider = Object.freeze({
 
 
 
-
-
-
-
-
-
-
-
-
-  async findMatchByToken(searchToken) {
+  async engineForDomainPrefix(prefix) {
     await this.ensureInitialized();
 
     
     
-    return SearchAutocompleteProviderInternal.priorityMatches.find(m => {
-      return m.token.startsWith(searchToken) ||
-             m.token.startsWith("www." + searchToken);
-    });
+    let tuples = SearchAutocompleteProviderInternal.enginesByDomain.entries();
+    for (let [domain, engine] of tuples) {
+      if (domain.startsWith(prefix) || domain.startsWith("www." + prefix)) {
+        return engine;
+      }
+    }
+    return null;
   },
 
   
@@ -252,28 +228,23 @@ var PlacesSearchAutocompleteProvider = Object.freeze({
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-  async findMatchByAlias(searchToken) {
+  async engineForAlias(alias) {
     await this.ensureInitialized();
 
-    return SearchAutocompleteProviderInternal.aliasMatches
-             .find(m => m.aliases.some(a => a.toLocaleLowerCase() == searchToken.toLocaleLowerCase()));
+    return SearchAutocompleteProviderInternal
+           .enginesByAlias.get(alias.toLocaleLowerCase()) || null;
   },
 
-  async getDefaultMatch() {
+  
+
+
+
+
+
+  async currentEngine() {
     await this.ensureInitialized();
 
-    return SearchAutocompleteProviderInternal.defaultMatch;
+    return Services.search.currentEngine;
   },
 
   
@@ -308,13 +279,39 @@ var PlacesSearchAutocompleteProvider = Object.freeze({
     };
   },
 
-  getSuggestionController(searchToken, inPrivateContext, maxLocalResults,
-                          maxRemoteResults, userContextId) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  newSuggestionsFetch(engine,
+                      searchToken,
+                      inPrivateContext,
+                      maxLocalResults,
+                      maxRemoteResults,
+                      userContextId) {
     if (!SearchAutocompleteProviderInternal.initialized) {
       throw new Error("The component has not been initialized.");
     }
-    return SearchAutocompleteProviderInternal.getSuggestionController(
-      searchToken, inPrivateContext, maxLocalResults, maxRemoteResults,
-      userContextId);
+    if (!engine) {
+      throw new Error("`engine` is null");
+    }
+    return new SuggestionsFetch(engine, searchToken, inPrivateContext,
+                                maxLocalResults, maxRemoteResults,
+                                userContextId);
   },
 });
