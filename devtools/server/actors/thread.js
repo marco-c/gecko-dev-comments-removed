@@ -88,6 +88,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this.onUpdatedSourceEvent = this.onUpdatedSourceEvent.bind(this);
 
     this.uncaughtExceptionHook = this.uncaughtExceptionHook.bind(this);
+    this.createCompletionGrip = this.createCompletionGrip.bind(this);
     this.onDebuggerStatement = this.onDebuggerStatement.bind(this);
     this.onNewScript = this.onNewScript.bind(this);
     this.objectGrip = this.objectGrip.bind(this);
@@ -522,15 +523,15 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     };
   },
 
-  _makeOnPop: function({ thread, pauseAndRespond, createValueGrip: createValueGripHook,
-                          startLocation }) {
+  _makeOnPop: function({ thread, pauseAndRespond, startLocation, steppingType }) {
     const result = function(completion) {
       
       const generatedLocation = thread.sources.getFrameLocation(this);
-      const { originalSourceActor } = thread.unsafeSynchronize(
+      const originalLocation = thread.unsafeSynchronize(
         thread.sources.getOriginalLocation(generatedLocation)
       );
 
+      const { originalSourceActor } = originalLocation;
       const url = originalSourceActor.url;
 
       if (thread.sources.isBlackBoxed(url)) {
@@ -541,16 +542,24 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       
       this.reportedPop = true;
 
+      if (steppingType == "finish") {
+        const parentFrame = thread._getNextStepFrame(this);
+        if (parentFrame && parentFrame.script) {
+          const { onStep } = thread._makeSteppingHooks(
+            originalLocation, "next", false, completion
+          );
+          parentFrame.onStep = onStep;
+          return undefined;
+        }
+      }
+
       return pauseAndRespond(this, packet => {
-        packet.why.frameFinished = {};
-        if (!completion) {
-          packet.why.frameFinished.terminated = true;
-        } else if (completion.hasOwnProperty("return")) {
-          packet.why.frameFinished.return = createValueGripHook(completion.return);
-        } else if (completion.hasOwnProperty("yield")) {
-          packet.why.frameFinished.return = createValueGripHook(completion.yield);
+        if (completion) {
+          thread.createCompletionGrip(packet, completion);
         } else {
-          packet.why.frameFinished.throw = createValueGripHook(completion.throw);
+          packet.why.frameFinished = {
+            terminated: true
+          };
         }
         return packet;
       });
@@ -621,7 +630,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   },
 
   _makeOnStep: function({ thread, pauseAndRespond, startFrame,
-                          startLocation, steppingType }) {
+                          startLocation, steppingType, completion, rewinding }) {
     
     if (steppingType === "break") {
       return () => pauseAndRespond(this);
@@ -647,20 +656,42 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       }
 
       
-      if (this !== startFrame) {
+      if (rewinding && this !== startFrame) {
         return pauseAndRespond(this);
       }
 
       
       if (thread._intraFrameLocationIsStepTarget(startLocation,
                                                  this.script, this.offset)) {
-        return pauseAndRespond(this);
+        return pauseAndRespond(
+          this,
+          packet => thread.createCompletionGrip(packet, completion)
+        );
       }
 
       
       
       return undefined;
     };
+  },
+
+  createCompletionGrip: function(packet, completion) {
+    if (!completion) {
+      return packet;
+    }
+
+    const createGrip = value => createValueGrip(value, this._pausePool, this.objectGrip);
+    packet.why.frameFinished = {};
+
+    if (completion.hasOwnProperty("return")) {
+      packet.why.frameFinished.return = createGrip(completion.return);
+    } else if (completion.hasOwnProperty("yield")) {
+      packet.why.frameFinished.return = createGrip(completion.yield);
+    } else if (completion.hasOwnProperty("throw")) {
+      packet.why.frameFinished.throw = createGrip(completion.throw);
+    }
+
+    return packet;
   },
 
   
@@ -696,7 +727,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   
 
 
-  _makeSteppingHooks: function(startLocation, steppingType, rewinding) {
+  _makeSteppingHooks: function(startLocation, steppingType, rewinding, completion) {
     
     
     
@@ -707,12 +738,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         { type: "resumeLimit" },
         onPacket
       ),
-      createValueGrip: v => createValueGrip(v, this._pausePool, this.objectGrip),
       thread: this,
       startFrame: this.youngestFrame,
       startLocation: startLocation,
       steppingType: steppingType,
-      rewinding: rewinding
+      rewinding: rewinding,
+      completion
     };
 
     return {

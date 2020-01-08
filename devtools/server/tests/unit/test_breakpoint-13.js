@@ -71,15 +71,10 @@ function test_simple_breakpoint() {
           
           Assert.equal(gDebuggee.a, 1);
           Assert.equal(gDebuggee.b, undefined);
-          Assert.equal(packet.frame.where.line, gDebuggee.line0 + 5);
-          Assert.equal(packet.why.type, "resumeLimit");
-          Assert.equal(packet.poppedFrames.length, 1);
-        },
-        function(packet) {
-          
           Assert.equal(packet.frame.where.line, gDebuggee.line0 + 6);
           Assert.notEqual(packet.why.type, "debuggerStatement");
           Assert.equal(packet.why.type, "resumeLimit");
+          Assert.equal(packet.poppedFrames.length, 1);
         },
         function(packet) {
           
