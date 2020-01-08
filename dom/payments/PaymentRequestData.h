@@ -225,6 +225,36 @@ public:
                const nsAString& aPaymentMethodErrors,
                const nsAString& aShippingAddressErrors);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum eState {
+    eCreated,
+    eInteractive,
+    eClosed
+  };
+
+  void
+  SetState(const eState aState)
+  {
+    mState = aState;
+  }
+
+  const eState&
+  GetState() const
+  {
+    return mState;
+  }
+
 private:
   ~PaymentRequest() = default;
 
@@ -240,6 +270,7 @@ private:
   
   
   PaymentRequestParent* mIPC;
+  eState mState;
 };
 
 class PaymentAddress final : public nsIPaymentAddress
