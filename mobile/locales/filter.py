@@ -18,7 +18,6 @@ def test(mod, path, entity=None):
     if mod == "toolkit":
         
         if path in (
-            "chrome/global/aboutAbout.dtd",
             "chrome/global/aboutReader.properties",
             "chrome/global/aboutRights.dtd",
             "chrome/global/charsetMenu.properties",
@@ -36,6 +35,10 @@ def test(mod, path, entity=None):
         ):
             return "error"
         if re.match(r"crashreporter/[^/]*.ftl", path):
+            
+            return "error"
+
+        if re.match(r"toolkit/about/[^/]*About.ftl", path):
             
             return "error"
         return "ignore"
