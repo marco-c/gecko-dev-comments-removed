@@ -37,7 +37,6 @@ function handleThreadState(toolbox, event, packet) {
 
 function attachThread(toolbox) {
   const target = toolbox.target;
-  const { form: { chromeDebugger, actor } } = target;
 
   const useSourceMaps = false;
   const autoBlackBox = false;
@@ -83,17 +82,14 @@ function attachThread(toolbox) {
       });
     };
 
-    if (target.isBrowsingContext) {
+    if (target.activeTab) {
       
       target.activeTab.attachThread(threadOptions).then(handleResponse);
     } else if (target.isAddon) {
       
-      target.client.attachAddon(actor).then(([res]) => {
+      target.client.attachAddon(target.form.actor).then(([res]) => {
         target.client.attachThread(res.threadActor).then(handleResponse);
       });
-    } else {
-      
-      target.client.attachThread(chromeDebugger).then(handleResponse);
     }
   });
 }

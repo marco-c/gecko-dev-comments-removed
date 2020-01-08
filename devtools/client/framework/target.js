@@ -228,13 +228,7 @@ function TabTarget({ form, client, chrome, tab = null }) {
   if (this._form.traits && ("isBrowsingContext" in this._form.traits)) {
     this._isBrowsingContext = this._form.traits.isBrowsingContext;
   } else {
-    
-    
-    
-    
-    const isContentProcessTarget =
-      this._form.actor.match(/conn\d+\.(content-process\d+\/)?contentProcessTarget\d+/);
-    this._isBrowsingContext = !this.isLegacyAddon && !isContentProcessTarget;
+    this._isBrowsingContext = !this.isLegacyAddon && !this.isContentProcess;
   }
 
   
@@ -453,6 +447,15 @@ TabTarget.prototype = {
     ));
   },
 
+  get isContentProcess() {
+    
+    
+    
+    
+    return !!(this._form && this._form.actor &&
+      this._form.actor.match(/conn\d+\.(content-process\d+\/)?contentProcessTarget\d+/));
+  },
+
   get isLocalTab() {
     return !!this._tab;
   },
@@ -515,7 +518,7 @@ TabTarget.prototype = {
     }
 
     
-    const attachTarget = async () => {
+    const attachBrowsingContextTarget = async () => {
       const [response, targetFront] = await this._client.attachTarget(this._form.actor);
       this.activeTab = targetFront;
       this.threadActor = response.threadActor;
@@ -560,7 +563,10 @@ TabTarget.prototype = {
       
       
       if (this.isBrowsingContext) {
-        await attachTarget();
+        await attachBrowsingContextTarget();
+      } else if (this.isContentProcess) {
+        
+        this.activeTab = await this._client.attachContentProcessTarget(this._form);
       }
 
       
