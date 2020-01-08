@@ -130,7 +130,12 @@ pref("security.cert_pinning.max_max_age_seconds", 5184000);
 
 
 
+
+#ifdef NIGHTLY_BUILD
+pref("security.pki.distrust_ca_policy", 2);
+#else
 pref("security.pki.distrust_ca_policy", 1);
+#endif
 
 
 
