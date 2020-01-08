@@ -54,7 +54,6 @@
 
 
 
-
 #define DEFINE_STATIC_ATOM_SUBCLASS(name_)                                     \
   class name_ : public nsStaticAtom                                            \
   {                                                                            \
@@ -110,6 +109,16 @@ struct GkAtoms
   const nsStaticAtom mAtoms[static_cast<size_t>(Atoms::AtomsCount)];
 };
 
+
+
+
+
+#if defined(__GNUC__) && !defined(__clang__)
+extern NS_EXTERNAL_VIS const GkAtoms gGkAtoms;
+#else
+extern const GkAtoms gGkAtoms;
+#endif
+
 } 
 } 
 
@@ -144,8 +153,24 @@ public:
   
   
   
-  #define GK_ATOM(name_, value_, hash_, type_, atom_type_) \
-    static type_* name_;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  #define GK_ATOM(name_, value_, hash_, type_, atom_type_)                    \
+    static constexpr nsStaticAtom* name_ =                                    \
+      const_cast<nsStaticAtom*>(                                              \
+        &mozilla::detail::gGkAtoms.mAtoms[                                    \
+          static_cast<size_t>(mozilla::detail::GkAtoms::Atoms::name_)]);
   #include "nsGkAtomList.h"
   #undef GK_ATOM
 };

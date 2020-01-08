@@ -6,6 +6,10 @@
 
 
 
+#![allow(non_upper_case_globals)]
+
+
+
 use gecko_bindings::bindings::Gecko_AddRefAtom;
 use gecko_bindings::bindings::Gecko_Atomize;
 use gecko_bindings::bindings::Gecko_Atomize16;
@@ -280,7 +284,7 @@ impl Atom {
     
     
     #[inline]
-    pub unsafe fn from_static(ptr: *mut nsStaticAtom) -> Self {
+    pub unsafe fn from_static(ptr: *const nsStaticAtom) -> Self {
         let atom = Atom(ptr as *mut WeakAtom);
         debug_assert!(
             atom.is_static(),

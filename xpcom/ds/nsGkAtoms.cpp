@@ -64,34 +64,3 @@ extern constexpr GkAtoms gGkAtoms = {
 
 const nsStaticAtom* const nsGkAtoms::sAtoms = mozilla::detail::gGkAtoms.mAtoms;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define GK_ATOM(name_, value_, hash_, type_, atom_type_)                       \
-  type_* nsGkAtoms::name_ =                                                    \
-    const_cast<type_*>(                                                        \
-      static_cast<const type_*>(                                               \
-        &mozilla::detail::gGkAtoms.mAtoms[                                     \
-          static_cast<size_t>(mozilla::detail::GkAtoms::Atoms::name_)]));
-#include "nsGkAtomList.h"
-#undef GK_ATOM
-

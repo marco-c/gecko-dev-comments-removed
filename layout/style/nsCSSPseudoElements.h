@@ -104,12 +104,12 @@ public:
 #endif
 
   
-  
-  
   #define CSS_PSEUDO_ELEMENT(name_, value_, flags_)       \
-    static constexpr nsICSSPseudoElement* const& name_()  \
+    static nsICSSPseudoElement* name_()                   \
     {                                                     \
-      return nsGkAtoms::PseudoElement_##name_;            \
+      return const_cast<nsICSSPseudoElement*>(            \
+        static_cast<const nsICSSPseudoElement*>(          \
+          nsGkAtoms::PseudoElement_##name_));             \
     }
   #include "nsCSSPseudoElementList.h"
   #undef CSS_PSEUDO_ELEMENT

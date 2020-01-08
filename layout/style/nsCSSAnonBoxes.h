@@ -95,12 +95,12 @@ public:
 #endif
 
   
-  
-  
   #define CSS_ANON_BOX(name_, value_)                     \
-    static constexpr nsICSSAnonBoxPseudo* const& name_()  \
+    static nsICSSAnonBoxPseudo* name_()                   \
     {                                                     \
-      return nsGkAtoms::AnonBox_##name_;                  \
+      return const_cast<nsICSSAnonBoxPseudo*>(            \
+        static_cast<const nsICSSAnonBoxPseudo*>(          \
+          nsGkAtoms::AnonBox_##name_));                   \
     }
   #include "nsCSSAnonBoxList.h"
   #undef CSS_ANON_BOX
