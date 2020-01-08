@@ -156,32 +156,6 @@ EvaluateLatin1(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 
 
-
-
-
-
-
-
-
-
-inline bool
-Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
-         const char* bytes, size_t length, MutableHandle<Value> rval)
-{
-    return options.utf8
-           ? EvaluateUtf8(cx, options, bytes, length, rval)
-           : EvaluateLatin1(cx, options, bytes, length, rval);
-}
-
-
-
-
-
-
-
-
-
-
 extern JS_PUBLIC_API(bool)
 EvaluateUtf8Path(JSContext* cx, const ReadOnlyCompileOptions& options,
                  const char* filename, MutableHandle<Value> rval);
