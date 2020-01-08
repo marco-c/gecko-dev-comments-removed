@@ -3059,11 +3059,7 @@ HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
       }
 
       if (!found) {
-        
-        
-        
-        
-        break;
+        return nullptr;
       }
     }
     iter->Next();

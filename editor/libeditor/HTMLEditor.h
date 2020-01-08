@@ -1096,8 +1096,6 @@ protected:
 
 
 
-
-
   already_AddRefed<Element>
   GetSelectedElement(const nsAtom* aTagName,
                      ErrorResult& aRv);
