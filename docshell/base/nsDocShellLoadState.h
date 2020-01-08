@@ -107,7 +107,7 @@ class nsDocShellLoadState final {
 
   void SetSendReferrer(bool aSendReferrer);
 
-  uint32_t ReferrerPolicy() const;
+  mozilla::net::ReferrerPolicy ReferrerPolicy() const;
 
   void SetReferrerPolicy(mozilla::net::ReferrerPolicy aReferrerPolicy);
 
@@ -138,6 +138,12 @@ class nsDocShellLoadState final {
 
   void SetLoadFlags(uint32_t aFlags);
 
+  void SetLoadFlag(uint32_t aFlag);
+
+  void UnsetLoadFlag(uint32_t aFlag);
+
+  bool HasLoadFlags(uint32_t aFlag);
+
   bool FirstParty() const;
 
   void SetFirstParty(bool aFirstParty);
@@ -149,10 +155,6 @@ class nsDocShellLoadState final {
   const nsString& FileName() const;
 
   void SetFileName(const nsAString& aFileName);
-
-  uint32_t DocShellInternalLoadFlags() const;
-
-  void SetDocShellInternalLoadFlags(uint32_t aFlags);
 
   
   
@@ -178,7 +180,7 @@ class nsDocShellLoadState final {
   
   
   
-  void CalculateDocShellInternalLoadFlags();
+  void CalculateLoadURIFlags();
 
  protected:
   
@@ -193,8 +195,13 @@ class nsDocShellLoadState final {
   nsCOMPtr<nsIURI> mURI;
 
   
+  
   nsCOMPtr<nsIURI> mOriginalURI;
 
+  
+  
+  
+  
   
   
   
@@ -204,12 +211,19 @@ class nsDocShellLoadState final {
   
   
   
+  
+  
+  
+  
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
 
   
   
+  
+  
   bool mKeepResultPrincipalURIIfSet;
 
+  
   
   bool mLoadReplace;
 
@@ -228,6 +242,11 @@ class nsDocShellLoadState final {
   
   
   
+  
+  
+  
+  
+
   nsCOMPtr<nsIPrincipal> mPrincipalToInherit;
 
   
@@ -264,10 +283,6 @@ class nsDocShellLoadState final {
 
   
   
-  bool mIsSrcdocLoad;
-
-  
-  
   
   nsString mSrcdocData;
 
@@ -293,11 +308,6 @@ class nsDocShellLoadState final {
   
   
   nsString mFileName;
-
-  
-  
-  
-  uint32_t mDocShellInternalLoadFlags;
 
   
   
