@@ -11439,15 +11439,15 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
   }
 
   
-  if (aFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
-    if (aFrame->IsColumnSetWrapperFrame()) {
-      
-      
-      TRACE("Multi-column");
-      RecreateFramesForContent(aFrame->GetContent(), InsertionKind::Async);
-      return true;
-    }
+  if (aFrame->IsColumnSetWrapperFrame()) {
+    
+    
+    TRACE("Multi-column");
+    RecreateFramesForContent(aFrame->GetContent(), InsertionKind::Async);
+    return true;
+  }
 
+  if (aFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
     bool anyColumnSpanItems = false;
     for (FCItemIterator iter(aItems); !iter.IsDone(); iter.Next()) {
       if (iter.item().mComputedStyle->StyleColumn()->IsColumnSpanStyle()) {
