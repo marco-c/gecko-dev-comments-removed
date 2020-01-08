@@ -777,10 +777,8 @@ pref("apz.y_stationary_size_multiplier", "1.5");
 pref("gfx.hidpi.enabled", 2);
 #endif
 
-#if !defined(MOZ_WIDGET_ANDROID)
 
-pref("layout.scroll.root-frame-containers", false);
-#endif
+pref("layout.scroll.root-frame-containers", 0);
 
 pref("layout.scrollbars.always-layerize-track", false);
 
