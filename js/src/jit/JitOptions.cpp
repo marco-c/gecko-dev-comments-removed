@@ -126,6 +126,9 @@ DefaultJitOptions::DefaultJitOptions()
     SET_DEFAULT(disableCacheIRBinaryArith, false);
 
     
+    SET_DEFAULT(disableCacheIRCompare, false);
+
+    
     SET_DEFAULT(disableSharedStubs, false);
 
     
