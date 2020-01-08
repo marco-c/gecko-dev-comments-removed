@@ -151,8 +151,6 @@ void AndroidFlingPhysics::Init(const ParentLayerPoint& aStartingVelocity,
                                float aPLPPI)
 {
   mVelocity = aStartingVelocity.Length();
-  
-  MOZ_ASSERT(mVelocity != 0.0f);
   const double tuningCoeff = ComputeDeceleration(aPLPPI);
   mTargetDuration = ComputeFlingDuration(mVelocity, tuningCoeff);
   MOZ_ASSERT(!mTargetDuration.IsZero());
