@@ -249,6 +249,12 @@ var PermissionPromptPrototype = {
 
 
 
+  onAfterShow() {},
+
+  
+
+
+
 
 
 
@@ -358,10 +364,19 @@ var PermissionPromptPrototype = {
     
     options.persistent = true;
     options.hideClose = !Services.prefs.getBoolPref("privacy.permissionPrompts.showCloseButton");
-    
-    
-    
-    options.eventCallback = topic => topic == "swapping";
+    options.eventCallback = (topic) => {
+      
+      
+      
+      if (topic == "swapping") {
+        return true;
+      }
+      
+      if (topic == "removed") {
+        this.onAfterShow();
+      }
+      return false;
+    };
 
     this.onBeforeShow();
     chromeWin.PopupNotifications.show(this.browser,
@@ -817,7 +832,27 @@ AutoplayPermissionPrompt.prototype = {
     }];
   },
 
+  onAfterShow() {
+    
+    this.browser.removeEventListener(
+      "DOMAudioPlaybackStarted", this.handlePlaybackStart);
+  },
+
   onBeforeShow() {
+    
+    this.handlePlaybackStart = () => {
+      let chromeWin = this.browser.ownerGlobal;
+      if (!chromeWin.PopupNotifications) {
+        return;
+      }
+      let notification = chromeWin.PopupNotifications.getNotification(
+        this.notificationID, this.browser);
+      if (notification) {
+        chromeWin.PopupNotifications.remove(notification);
+      }
+    };
+    this.browser.addEventListener(
+      "DOMAudioPlaybackStarted", this.handlePlaybackStart);
   },
 };
 
