@@ -1065,12 +1065,6 @@ nsGlobalWindowInner::~nsGlobalWindowInner()
     sInnerWindowsById->Remove(mWindowID);
   }
 
-  
-  
-  if (mAutoplayPermissionManager) {
-    mAutoplayPermissionManager->DenyPlayRequestIfExists();
-  }
-
   nsContentUtils::InnerOrOuterWindowDestroyed();
 
 #ifdef DEBUG
@@ -6274,6 +6268,11 @@ nsGlobalWindowInner::GetTopLevelPrincipal()
 nsIPrincipal*
 nsGlobalWindowInner::GetTopLevelStorageAreaPrincipal()
 {
+  if (mDoc && (mDoc->GetSandboxFlags() & SANDBOXED_STORAGE_ACCESS)) {
+    
+    return nullptr;
+  }
+
   nsPIDOMWindowOuter* outerWindow = GetParentInternal();
   if (!outerWindow) {
     
