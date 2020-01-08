@@ -256,6 +256,33 @@ void LIRGenerator::visitWasmUnsignedToFloat32(MWasmUnsignedToFloat32* ins) {
   define(lir, ins);
 }
 
+
+
+
+
+static bool OptimizableConstantAccess(MDefinition* base,
+                                      const wasm::MemoryAccessDesc& access) {
+  MOZ_ASSERT(base->isConstant());
+  MOZ_ASSERT(base->type() == MIRType::Int32);
+
+  if (!(base->toConstant()->isInt32(0) || access.offset() == 0)) {
+    return false;
+  }
+  if (access.type() == Scalar::Int64) {
+    
+    
+    
+    int32_t v;
+    if (base->toConstant()->isInt32(0)) {
+      v = access.offset();
+    } else {
+      v = base->toConstant()->toInt32();
+    }
+    return v <= int32_t(INT32_MAX - INT64HIGH_OFFSET);
+  }
+  return true;
+}
+
 void LIRGenerator::visitWasmLoad(MWasmLoad* ins) {
   MDefinition* base = ins->base();
   MOZ_ASSERT(base->type() == MIRType::Int32);
@@ -273,13 +300,8 @@ void LIRGenerator::visitWasmLoad(MWasmLoad* ins) {
     return;
   }
 
-  
-  
-  
-
   LAllocation baseAlloc;
-  if (!base->isConstant() ||
-      !(base->toConstant()->isInt32(0) || ins->access().offset() == 0)) {
+  if (!base->isConstant() || !OptimizableConstantAccess(base, ins->access())) {
     baseAlloc = ins->type() == MIRType::Int64 ? useRegister(base)
                                               : useRegisterAtStart(base);
   }
@@ -326,13 +348,8 @@ void LIRGenerator::visitWasmStore(MWasmStore* ins) {
     return;
   }
 
-  
-  
-  
-
   LAllocation baseAlloc;
-  if (!base->isConstant() ||
-      !(base->toConstant()->isInt32(0) || ins->access().offset() == 0)) {
+  if (!base->isConstant() || !OptimizableConstantAccess(base, ins->access())) {
     baseAlloc = useRegisterAtStart(base);
   }
 
