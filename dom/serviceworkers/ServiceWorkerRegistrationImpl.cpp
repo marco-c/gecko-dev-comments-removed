@@ -827,7 +827,12 @@ ServiceWorkerRegistrationWorkerThread::Update(ServiceWorkerRegistrationCallback&
   }
 
   
-  MOZ_ASSERT(!workerRef->Private()->IsLoadingWorkerScript());
+  
+  
+  if (workerRef->Private()->IsLoadingWorkerScript()) {
+    aSuccessCB(mDescriptor);
+    return;
+  }
 
   auto promise = MakeRefPtr<ServiceWorkerRegistrationPromise::Private>(__func__);
   auto holder =
