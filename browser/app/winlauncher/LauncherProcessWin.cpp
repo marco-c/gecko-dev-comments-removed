@@ -158,7 +158,15 @@ IsSameBinaryAsParentProcess()
   nsAutoHandle parentProcess(::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION,
                                            FALSE, parentPid.unwrap()));
   if (!parentProcess.get()) {
-    return LAUNCHER_ERROR_FROM_LAST();
+    DWORD err = ::GetLastError();
+    if (err == ERROR_INVALID_PARAMETER) {
+      
+      
+      
+      return false;
+    }
+
+    return LAUNCHER_ERROR_FROM_WIN32(err);
   }
 
   WCHAR parentExe[MAX_PATH + 1] = {};
