@@ -41,7 +41,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AddonSettings: "resource://gre/modules/addons/AddonSettings.jsm",
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
-  ContextualIdentityService: "resource://gre/modules/ContextualIdentityService.jsm",
   ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.jsm",
   ExtensionStorage: "resource://gre/modules/ExtensionStorage.jsm",
   ExtensionStorageIDB: "resource://gre/modules/ExtensionStorageIDB.jsm",
@@ -113,10 +112,8 @@ const {sharedData} = Services.ppmm;
 
 
 
-XPCOMUtils.defineLazyGetter(this, "WEBEXT_STORAGE_USER_CONTEXT_ID", () => {
-  return ContextualIdentityService.getDefaultPrivateIdentity(
-    "userContextIdInternal.webextStorageLocal").userContextId;
-});
+
+const WEBEXT_STORAGE_USER_CONTEXT_ID = -1 >>> 0;
 
 
 const CHILD_SHUTDOWN_TIMEOUT_MS = 8000;
@@ -1834,15 +1831,6 @@ class Extension extends ExtensionData {
         } else if (ExtensionStorageIDB.isMigratedExtension(this)) {
           this.setSharedData("storageIDBBackend", true);
           this.setSharedData("storageIDBPrincipal", ExtensionStorageIDB.getStoragePrincipal(this));
-        } else {
-          
-          
-          this.once("ready", () => ChromeUtils.idleDispatch(() => {
-            if (this.hasShutdown) {
-              return;
-            }
-            ExtensionStorageIDB.selectBackend({extension: this});
-          }));
         }
       }
 
