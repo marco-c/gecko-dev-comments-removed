@@ -19,7 +19,7 @@
 #include "StreamTracks.h"
 #include "VideoSegment.h"
 #include "VideoUtils.h"
-#include "cubeb/cubeb.h"
+#include "CubebDeviceEnumerator.h"
 #include "ipc/IPCMessageUtils.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Mutex.h"
@@ -46,44 +46,6 @@
 #include "webrtc/modules/video_capture/video_capture_defines.h"
 
 namespace mozilla {
-
-
-
-class CubebDeviceEnumerator final
-{
-public:
-  CubebDeviceEnumerator();
-  ~CubebDeviceEnumerator();
-  
-  
-  
-  void EnumerateAudioInputDevices(nsTArray<RefPtr<AudioDeviceInfo>>& aOutDevices);
-  
-  
-  
-  already_AddRefed<AudioDeviceInfo>
-  DeviceInfoFromID(CubebUtils::AudioDeviceID aID);
-
-protected:
-
-  
-  
-  
-  
-  static void AudioDeviceListChanged_s(cubeb* aContext, void* aUser);
-  
-  
-  void AudioDeviceListChanged();
-
-private:
-  
-  Mutex mMutex;
-  nsTArray<RefPtr<AudioDeviceInfo>> mDevices;
-  
-  
-  
-  bool mManualInvalidation;
-};
 
 class MediaEngineWebRTC : public MediaEngine
 {
