@@ -4217,6 +4217,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
         innermost(false),
         innermostForRealm(cx->zone()),
         scriptVector(cx, ScriptVector(cx)),
+        lazyScriptVector(cx, LazyScriptVector(cx)),
         wasmInstanceVector(cx, WasmInstanceObjectVector(cx)),
         oom(false)
     {}
@@ -4386,8 +4387,15 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
 
 
     bool findScripts() {
-        if (!prepareQuery() || !delazifyScripts())
+        if (!prepareQuery())
             return false;
+
+        bool delazified = false;
+        if (needsDelazifyBeforeQuery()) {
+            if (!delazifyScripts())
+                return false;
+            delazified = true;
+        }
 
         Realm* singletonRealm = nullptr;
         if (realms.count() == 1)
@@ -4395,8 +4403,11 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
 
         
         MOZ_ASSERT(scriptVector.empty());
+        MOZ_ASSERT(lazyScriptVector.empty());
         oom = false;
         IterateScripts(cx, singletonRealm, this, considerScript);
+        if (!delazified)
+            IterateLazyScripts(cx, singletonRealm, this, considerLazyScript);
         if (oom) {
             ReportOutOfMemory(cx);
             return false;
@@ -4406,6 +4417,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
         for (JSScript** i = scriptVector.begin(); i != scriptVector.end(); ++i)
             JS::ExposeScriptToActiveJS(*i);
 
+        
         
         
         
@@ -4440,6 +4452,9 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
 
     Handle<ScriptVector> foundScripts() const {
         return scriptVector;
+    }
+    Handle<LazyScriptVector> foundLazyScripts() const {
+        return lazyScriptVector;
     }
 
     Handle<WasmInstanceObjectVector> foundWasmInstances() const {
@@ -4503,6 +4518,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
 
 
     Rooted<ScriptVector> scriptVector;
+    Rooted<LazyScriptVector> lazyScriptVector;
 
     
 
@@ -4574,17 +4590,23 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
         self->consider(script, nogc);
     }
 
-    
+    static void considerLazyScript(JSRuntime* rt, void* data, LazyScript* lazyScript,
+                                   const JS::AutoRequireNoGC& nogc) {
+        ScriptQuery* self = static_cast<ScriptQuery*>(data);
+        self->consider(lazyScript, nogc);
+    }
 
+    bool needsDelazifyBeforeQuery() const {
+        
+        
+        
+        
+        
+        return innermost || hasLine;
+    }
 
-
-
-    void consider(JSScript* script, const JS::AutoRequireNoGC& nogc) {
-        if (oom || script->selfHosted())
-            return;
-        Realm* realm = script->realm();
-        if (!realms.has(realm))
-            return;
+    template <typename T>
+    MOZ_MUST_USE bool commonFilter(T script, const JS::AutoRequireNoGC& nogc) {
         if (urlCString.ptr()) {
             bool gotFilename = false;
             if (script->filename() && strcmp(script->filename(), urlCString.ptr()) == 0)
@@ -4597,25 +4619,41 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
                 gotSourceURL = true;
             }
             if (!gotFilename && !gotSourceURL)
-                return;
-        }
-        if (hasLine) {
-            if (line < script->lineno() || script->lineno() + GetScriptLineExtent(script) < line)
-                return;
+                return false;
         }
         if (displayURLString) {
             if (!script->scriptSource() || !script->scriptSource()->hasDisplayURL())
-                return;
+                return false;
 
             const char16_t* s = script->scriptSource()->displayURL();
             if (CompareChars(s, js_strlen(s), displayURLString) != 0)
-                return;
+                return false;
         }
         if (hasSource && !(source.is<ScriptSourceObject*>() &&
                            source.as<ScriptSourceObject*>()->source() == script->scriptSource()))
         {
-            return;
+            return false;
         }
+        return true;
+    }
+
+    
+
+
+
+
+    void consider(JSScript* script, const JS::AutoRequireNoGC& nogc) {
+        if (oom || script->selfHosted())
+            return;
+        Realm* realm = script->realm();
+        if (!realms.has(realm))
+            return;
+        if (hasLine) {
+            if (line < script->lineno() || script->lineno() + GetScriptLineExtent(script) < line)
+                return;
+        }
+        if (!commonFilter(script, nogc))
+            return;
 
         if (innermost) {
             
@@ -4652,6 +4690,27 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
                 return;
             }
         }
+    }
+
+    void consider(LazyScript* lazyScript, const JS::AutoRequireNoGC& nogc) {
+        MOZ_ASSERT(!needsDelazifyBeforeQuery());
+
+        if (oom)
+            return;
+        Realm* realm = lazyScript->realm();
+        if (!realms.has(realm))
+            return;
+
+        
+        if (lazyScript->maybeScript())
+            return;
+
+        if (!commonFilter(lazyScript, nogc))
+            return;
+
+        
+        if (!lazyScriptVector.append(lazyScript))
+            oom = true;
     }
 
     
@@ -4697,9 +4756,10 @@ Debugger::findScripts(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     Handle<ScriptVector> scripts(query.foundScripts());
+    Handle<LazyScriptVector> lazyScripts(query.foundLazyScripts());
     Handle<WasmInstanceObjectVector> wasmInstances(query.foundWasmInstances());
 
-    size_t resultLength = scripts.length() + wasmInstances.length();
+    size_t resultLength = scripts.length() + lazyScripts.length() + wasmInstances.length();
     RootedArrayObject result(cx, NewDenseFullyAllocatedArray(cx, resultLength));
     if (!result)
         return false;
@@ -4713,7 +4773,15 @@ Debugger::findScripts(JSContext* cx, unsigned argc, Value* vp)
         result->setDenseElement(i, ObjectValue(*scriptObject));
     }
 
-    size_t wasmStart = scripts.length();
+    size_t lazyStart = scripts.length();
+    for (size_t i = 0; i < lazyScripts.length(); i++) {
+        JSObject* scriptObject = dbg->wrapLazyScript(cx, lazyScripts[i]);
+        if (!scriptObject)
+            return false;
+        result->setDenseElement(lazyStart + i, ObjectValue(*scriptObject));
+    }
+
+    size_t wasmStart = scripts.length() + lazyScripts.length();
     for (size_t i = 0; i < wasmInstances.length(); i++) {
         JSObject* scriptObject = dbg->wrapWasmScript(cx, wasmInstances[i]);
         if (!scriptObject)

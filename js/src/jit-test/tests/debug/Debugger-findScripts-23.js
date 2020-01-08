@@ -8,7 +8,7 @@ assertEq(g.eval('isLazyFunction(f)'), true);
 
 dbg.addDebuggee(g);
 dbg.findScripts();
-assertEq(g.eval('isLazyFunction(f)'), false);
+assertEq(g.eval('isLazyFunction(f)'), true);
 
 dbg.removeAllDebuggees();
 relazifyFunctions();
@@ -16,4 +16,4 @@ assertEq(g.eval('isLazyFunction(f)'), true);
 
 dbg.addDebuggee(g);
 var scripts = dbg.findScripts();
-assertEq(g.eval('isLazyFunction(f)'), false);
+assertEq(g.eval('isLazyFunction(f)'), true);
