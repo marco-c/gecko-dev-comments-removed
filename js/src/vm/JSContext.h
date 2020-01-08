@@ -601,7 +601,9 @@ struct JSContext : public JS::RootingContext,
 
     
   private:
-    mozilla::Atomic<bool, mozilla::SequentiallyConsistent> suppressProfilerSampling;
+    mozilla::Atomic<bool,
+                    mozilla::SequentiallyConsistent,
+                    mozilla::recordreplay::Behavior::DontPreserve> suppressProfilerSampling;
 
   public:
     bool isProfilerSamplingEnabled() const {
@@ -818,7 +820,8 @@ struct JSContext : public JS::RootingContext,
     js::ThreadData<bool> interruptCallbackDisabled;
 
     
-    mozilla::Atomic<uint32_t, mozilla::Relaxed> interruptBits_;
+    mozilla::Atomic<uint32_t, mozilla::Relaxed,
+                    mozilla::recordreplay::Behavior::DontPreserve> interruptBits_;
 
     
     
@@ -899,7 +902,8 @@ struct JSContext : public JS::RootingContext,
         ionReturnOverride_ = v;
     }
 
-    mozilla::Atomic<uintptr_t, mozilla::Relaxed> jitStackLimit;
+    mozilla::Atomic<uintptr_t, mozilla::Relaxed,
+                    mozilla::recordreplay::Behavior::DontPreserve> jitStackLimit;
 
     
     js::ThreadData<uintptr_t> jitStackLimitNoInterrupt;

@@ -263,7 +263,8 @@ class ArenaLists
         ParallelAlloc
     };
 
-    using ConcurrentUseState = mozilla::Atomic<ConcurrentUse, mozilla::SequentiallyConsistent>;
+    using ConcurrentUseState = mozilla::Atomic<ConcurrentUse, mozilla::SequentiallyConsistent,
+                                               mozilla::recordreplay::Behavior::DontPreserve>;
 
     
     UnprotectedData<AllAllocKindArray<ConcurrentUseState>> concurrentUseState_;

@@ -47,7 +47,9 @@ static size_t allocGranularity = 0;
 
 #if defined(XP_UNIX)
 
-static mozilla::Atomic<int, mozilla::Relaxed> growthDirection(0);
+static mozilla::Atomic<int,
+                       mozilla::Relaxed,
+                       mozilla::recordreplay::Behavior::DontPreserve> growthDirection(0);
 #endif
 
 

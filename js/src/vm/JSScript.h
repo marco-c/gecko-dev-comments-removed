@@ -794,7 +794,8 @@ class SharedScriptData
     
     
     
-    mozilla::Atomic<uint32_t> refCount_;
+    mozilla::Atomic<uint32_t, mozilla::SequentiallyConsistent,
+                    mozilla::recordreplay::Behavior::DontPreserve> refCount_;
 
     uint32_t natoms_;
     uint32_t codeLength_;
@@ -1008,7 +1009,8 @@ class JSScript : public js::gc::TenuredCell
     
     
     
-    mozilla::Atomic<uint32_t, mozilla::Relaxed> warmUpCount = {};
+    mozilla::Atomic<uint32_t, mozilla::Relaxed,
+                    mozilla::recordreplay::Behavior::DontPreserve> warmUpCount = {};
 
     
 

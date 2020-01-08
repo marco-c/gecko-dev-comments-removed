@@ -160,7 +160,8 @@ class Zone : public JS::shadow::Zone,
         Pending,
         Active
     };
-    mozilla::Atomic<HelperThreadUse> helperThreadUse_;
+    mozilla::Atomic<HelperThreadUse, mozilla::SequentiallyConsistent,
+                    mozilla::recordreplay::Behavior::DontPreserve> helperThreadUse_;
 
     
     
