@@ -129,6 +129,14 @@ public:
                                ContentBlockingAllowListPurpose aPurpose,
                                bool& aIsAllowListed);
 
+  enum class BlockingDecision {
+    eBlock,
+    eAllow,
+  };
+
+  
+  
+  
   
   
   
@@ -140,10 +148,12 @@ public:
   
   
   static void
-  NotifyRejection(nsIChannel* aChannel, uint32_t aRejectedReason);
+  NotifyBlockingDecision(nsIChannel* aChannel, BlockingDecision aDecision,
+                         uint32_t aRejectedReason);
 
   static void
-  NotifyRejection(nsPIDOMWindowInner* aWindow, uint32_t aRejectedReason);
+  NotifyBlockingDecision(nsPIDOMWindowInner* aWindow, BlockingDecision aDecision,
+                         uint32_t aRejectedReason);
 };
 
 } 
