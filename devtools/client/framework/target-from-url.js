@@ -7,6 +7,8 @@
 const { TargetFactory } = require("devtools/client/framework/target");
 const { DebuggerServer } = require("devtools/server/main");
 const { DebuggerClient } = require("devtools/shared/client/debugger-client");
+const { remoteClientManager } =
+  require("devtools/client/shared/remote-debugging/remote-client-manager");
 
 
 
@@ -39,9 +41,14 @@ const { DebuggerClient } = require("devtools/shared/client/debugger-client");
 
 exports.targetFromURL = async function targetFromURL(url) {
   const client = await clientFromURL(url);
-  await client.connect();
-
   const params = url.searchParams;
+
+  
+  if (!params.get("remoteId")) {
+    
+    await client.connect();
+  }
+
   const type = params.get("type");
   if (!type) {
     throw new Error("targetFromURL, missing type parameter");
@@ -123,8 +130,17 @@ exports.targetFromURL = async function targetFromURL(url) {
 
 
 
+
+
 async function clientFromURL(url) {
   const params = url.searchParams;
+
+  
+  const remoteId = params.get("remoteId");
+  if (remoteId) {
+    return remoteClientManager.getClientByRemoteId(remoteId).client;
+  }
+
   const host = params.get("host");
   const port = params.get("port");
   const webSocket = !!params.get("ws");
