@@ -41,7 +41,6 @@ from .clobber import (
     Clobberer,
 )
 from ..base import (
-    BuildEnvironmentNotFoundException,
     MozbuildObject,
 )
 from ..backend import (
@@ -56,6 +55,9 @@ from ..compilation.warnings import (
 )
 from ..shellutil import (
     quote as shell_quote,
+)
+from ..telemetry import (
+    gather_telemetry,
 )
 from ..util import (
     FileAvoidWrite,
@@ -1285,15 +1287,10 @@ class BuildDriver(MozbuildObject):
             
             self.notify('Build complete' if not status else 'Build failed')
 
+        gather_telemetry(monitor, mach_context, self.substs, ccache_diff)
+
         if status:
             return status
-
-        long_build = monitor.elapsed > 600
-
-        if long_build:
-            output.on_line('We know it took a while, but your build finally finished successfully!')
-        else:
-            output.on_line('Your build was successful!')
 
         if monitor.have_resource_usage:
             excessive, swap_in, swap_out = monitor.have_excessive_swapping()
@@ -1301,36 +1298,14 @@ class BuildDriver(MozbuildObject):
             
 
             print('To view resource usage of the build, run |mach '
-                'resource-usage|.')
+                  'resource-usage|.')
 
-            telemetry_handler = getattr(mach_context,
-                                        'telemetry_handler', None)
-            telemetry_data = monitor.get_resource_usage()
+        long_build = monitor.elapsed > 600
 
-            
-            
-            
-            telemetry_data['substs'] = {}
-            try:
-                for key in ['MOZ_ARTIFACT_BUILDS', 'MOZ_USING_CCACHE', 'MOZ_USING_SCCACHE']:
-                    value = self.substs.get(key, False)
-                    telemetry_data['substs'][key] = value
-            except BuildEnvironmentNotFoundException:
-                pass
-
-            
-            
-            
-            if ccache_diff:
-                telemetry_data['ccache'] = {}
-                for key in [key[0] for key in ccache_diff.STATS_KEYS]:
-                    try:
-                        telemetry_data['ccache'][key] = ccache_diff._values[key]
-                    except KeyError:
-                        pass
-
-            if telemetry_handler:
-                telemetry_handler(mach_context, telemetry_data)
+        if long_build:
+            output.on_line('We know it took a while, but your build finally finished successfully!')
+        else:
+            output.on_line('Your build was successful!')
 
         
         
